@@ -2587,7 +2587,7 @@ public class BodyTranslator extends Translator {
             }
 
             case "||": {
-                final RubyNode defined = new DefinedNode(context, lhs.getRubySourceSection(), lhs);
+                final RubyNode defined = new DefinedNode(context, lhs.getSourceIndexLength(), lhs);
                 lhs = new AndNode(defined, lhs);
 
                 return translateOpAsgOrNode(node, lhs, rhs);
@@ -2686,7 +2686,7 @@ public class BodyTranslator extends Translator {
 
         // This is needed for class variables. Constants are handled separately in visitOpAsgnConstDeclNode.
         if (node.getFirstNode().needsDefinitionCheck() && !(node.getFirstNode() instanceof InstVarParseNode)) {
-            RubyNode defined = new DefinedNode(context, lhs.getRubySourceSection(), lhs);
+            RubyNode defined = new DefinedNode(context, lhs.getSourceIndexLength(), lhs);
             lhs = new AndNode(defined, lhs);
         }
 
@@ -2917,7 +2917,7 @@ public class BodyTranslator extends Translator {
                 // allow `expression rescue $!` pattern
                 && (!(rescueBody.getBodyNode() instanceof GlobalVarParseNode) || !((GlobalVarParseNode) rescueBody.getBodyNode()).getName().equals("$!"))
                 && rescueBody.getOptRescueNode() == null) {
-            tryPart = new DisablingBacktracesNode(context, fullSourceSection, tryPart);
+            tryPart = new DisablingBacktracesNode(context, sourceSection, tryPart);
 
             RubyNode bodyNode;
 
@@ -3366,7 +3366,7 @@ public class BodyTranslator extends Translator {
 
     private RubyNode addNewlineIfNeeded(ParseNode jrubyNode, RubyNode node) {
         if (jrubyNode.isNewline()) {
-            final SourceIndexLength current = node.getEncapsulatingRubySourceSection();
+            final SourceIndexLength current = node.getEncapsulatingSourceIndexLength();
 
             if (current == null) {
                 return node;

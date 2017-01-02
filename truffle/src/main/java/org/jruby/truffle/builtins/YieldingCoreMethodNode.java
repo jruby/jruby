@@ -25,12 +25,7 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
     @Child private BooleanCastNode booleanCastNode;
 
     public YieldingCoreMethodNode() {
-        this(null, (SourceSection) null);
-    }
-
-    public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        dispatchNode = new YieldNode(context);
+        this(null, null);
     }
 
     public YieldingCoreMethodNode(RubyContext context, SourceIndexLength sourceSection) {

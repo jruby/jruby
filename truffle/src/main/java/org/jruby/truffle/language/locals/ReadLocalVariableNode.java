@@ -12,7 +12,6 @@ package org.jruby.truffle.language.locals;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SourceIndexLength;
@@ -69,7 +68,7 @@ public class ReadLocalVariableNode extends ReadLocalNode {
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return WriteLocalVariableNode.createWriteLocalVariableNode(getContext(), getRubySourceSection(), frameSlot, rhs);
+        return WriteLocalVariableNode.createWriteLocalVariableNode(getContext(), getSourceIndexLength(), frameSlot, rhs);
     }
 
 }

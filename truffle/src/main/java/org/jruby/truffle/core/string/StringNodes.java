@@ -2748,13 +2748,13 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "isSingleByteOptimizable(string)" })
         public Object stringChrAtSingleByte(DynamicObject string, int byteIndex,
-                                            @Cached("create(getContext(), getRubySourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
+                                            @Cached("create(getContext(), getSourceIndexLength())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             return stringByteSubstringNode.executeStringByteSubstring(string, byteIndex, 1);
         }
 
         @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "!isSingleByteOptimizable(string)" })
         public Object stringChrAt(DynamicObject string, int byteIndex,
-                                  @Cached("create(getContext(), getRubySourceSection())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
+                                  @Cached("create(getContext(), getSourceIndexLength())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             // Taken from Rubinius's Character::create_from.
 
             final Rope rope = rope(string);
@@ -3281,7 +3281,7 @@ public abstract class StringNodes {
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
         public Object stringToF(DynamicObject string, boolean strict,
-                                @Cached("create(getContext(), getRubySourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
+                                @Cached("create(getContext(), getSourceIndexLength())") FixnumOrBignumNode fixnumOrBignumNode) {
             final Rope rope = rope(string);
             if (rope.isEmpty()) {
                 throw new RaiseException(coreExceptions().argumentError(coreStrings().INVALID_VALUE_FOR_FLOAT.getRope(), this));
@@ -4088,7 +4088,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public Object stringToInum(DynamicObject string, int fixBase, boolean strict,
-                                   @Cached("create(getContext(), getRubySourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
+                                   @Cached("create(getContext(), getSourceIndexLength())") FixnumOrBignumNode fixnumOrBignumNode) {
             return ConvertBytes.byteListToInum19(getContext(),
                     this,
                     fixnumOrBignumNode,

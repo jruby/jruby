@@ -41,7 +41,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
     protected DynamicObject makeGeneric(VirtualFrame frame, Object[] alreadyExecuted) {
         CompilerAsserts.neverPartOfCompilation();
 
-        replace(new ObjectArrayLiteralNode(getContext(), getRubySourceSection(), values));
+        replace(new ObjectArrayLiteralNode(getContext(), getSourceIndexLength(), values));
 
         final Object[] executedValues = new Object[values.length];
 
@@ -250,15 +250,15 @@ public abstract class ArrayLiteralNode extends RubyNode {
             final Object store = Layouts.ARRAY.getStore(array);
 
             if (store == null) {
-                replace(new EmptyArrayLiteralNode(getContext(), getRubySourceSection(), values));
+                replace(new EmptyArrayLiteralNode(getContext(), getSourceIndexLength(), values));
             } if (store instanceof int[]) {
-                replace(new IntegerArrayLiteralNode(getContext(), getRubySourceSection(), values));
+                replace(new IntegerArrayLiteralNode(getContext(), getSourceIndexLength(), values));
             } else if (store instanceof long[]) {
-                replace(new LongArrayLiteralNode(getContext(), getRubySourceSection(), values));
+                replace(new LongArrayLiteralNode(getContext(), getSourceIndexLength(), values));
             } else if (store instanceof double[]) {
-                replace(new FloatArrayLiteralNode(getContext(), getRubySourceSection(), values));
+                replace(new FloatArrayLiteralNode(getContext(), getSourceIndexLength(), values));
             } else {
-                replace(new ObjectArrayLiteralNode(getContext(), getRubySourceSection(), values));
+                replace(new ObjectArrayLiteralNode(getContext(), getSourceIndexLength(), values));
             }
 
             return array;

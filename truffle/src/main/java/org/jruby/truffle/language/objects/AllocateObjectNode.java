@@ -56,7 +56,7 @@ public abstract class AllocateObjectNode extends RubyNode {
     }
 
     public AllocateObjectNode(AllocateObjectNode node) {
-        this(node.getContext(), node.getRubySourceSection());
+        this(node.getContext(), node.getSourceIndexLength());
     }
 
     public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {

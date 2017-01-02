@@ -249,7 +249,7 @@ public class MethodTranslator extends BodyTranslator {
             body = translateNodeOrNil(sourceSection, bodyNode);
         }
 
-        final SourceIndexLength bodySourceSection = body.getRubySourceSection();
+        final SourceIndexLength bodySourceSection = body.getSourceIndexLength();
 
         final RubyNode checkArity = createCheckArityNode(context, source, sourceSection, arity);
 

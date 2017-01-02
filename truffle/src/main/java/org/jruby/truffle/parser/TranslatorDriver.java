@@ -229,17 +229,17 @@ public class TranslatorDriver {
 
         // Catch next
 
-        truffleNode = new CatchNextNode(context, truffleNode.getRubySourceSection(), truffleNode);
+        truffleNode = new CatchNextNode(context, truffleNode.getSourceIndexLength(), truffleNode);
 
         // Catch return
 
         if (parserContext != ParserContext.INLINE) {
-            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getRubySourceSection(), truffleNode);
+            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceIndexLength(), truffleNode);
         }
 
         // Catch retry
 
-        truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getRubySourceSection(), truffleNode);
+        truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceIndexLength(), truffleNode);
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
             truffleNode = Translator.sequence(context, source, sourceIndexLength, Arrays.asList(
@@ -257,7 +257,7 @@ public class TranslatorDriver {
             truffleNode = new TopLevelRaiseHandler(context, sourceIndexLength, truffleNode);
         }
 
-        return new RubyRootNode(context, truffleNode.getRubySourceSection().toSourceSection(source), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
+        return new RubyRootNode(context, truffleNode.getSourceIndexLength().toSourceSection(source), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }
 
     public RootParseNode parse(Source source, DynamicScope blockScope,

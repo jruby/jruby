@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class DisablingBacktracesNode extends RubyNode {
 
@@ -26,7 +27,7 @@ public class DisablingBacktracesNode extends RubyNode {
         }
     };
 
-    public DisablingBacktracesNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public DisablingBacktracesNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }

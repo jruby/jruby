@@ -40,13 +40,6 @@ public class WriteLocalVariableNode extends RubyNode {
         this.valueNode = valueNode;
     }
 
-    protected WriteLocalVariableNode(RubyContext context, SourceSection sourceSection,
-                                     FrameSlot frameSlot, RubyNode valueNode) {
-        super(context, sourceSection);
-        this.frameSlot = frameSlot;
-        this.valueNode = valueNode;
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         if (writeFrameSlotNode == null) {

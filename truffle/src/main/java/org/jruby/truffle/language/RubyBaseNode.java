@@ -64,23 +64,9 @@ public abstract class RubyBaseNode extends Node {
         this.context = context;
     }
 
-    public RubyBaseNode(SourceSection sourceSection) {
-        if (sourceSection != null) {
-            unsafeSetSourceSection(new SourceIndexLength(sourceSection.getCharIndex(), sourceSection.getCharLength()));
-        }
-    }
-
     public RubyBaseNode(SourceIndexLength sourceSection) {
         if (sourceSection != null) {
             unsafeSetSourceSection(sourceSection);
-        }
-    }
-
-    public RubyBaseNode(RubyContext context, SourceSection sourceSection) {
-        this.context = context;
-
-        if (sourceSection != null) {
-            unsafeSetSourceSection(new SourceIndexLength(sourceSection.getCharIndex(), sourceSection.getCharLength()));
         }
     }
 
@@ -223,7 +209,7 @@ public abstract class RubyBaseNode extends Node {
         return rootNode.getSourceSection().getSource();
     }
 
-    public SourceIndexLength getRubySourceSection() {
+    public SourceIndexLength getSourceIndexLength() {
         if (sourceCharIndex == -1) {
             return null;
         } else {
@@ -231,12 +217,12 @@ public abstract class RubyBaseNode extends Node {
         }
     }
 
-    public SourceIndexLength getEncapsulatingRubySourceSection() {
+    public SourceIndexLength getEncapsulatingSourceIndexLength() {
         Node node = this;
 
         while (node != null) {
             if (node instanceof RubyBaseNode && ((RubyBaseNode) node).sourceCharIndex != -1) {
-                return ((RubyBaseNode) node).getRubySourceSection();
+                return ((RubyBaseNode) node).getSourceIndexLength();
             }
 
             if (node instanceof RootNode) {
@@ -254,7 +240,7 @@ public abstract class RubyBaseNode extends Node {
         if (sourceCharIndex == -1) {
             return null;
         } else {
-            return getRubySourceSection().toSourceSection(getSource());
+            return getSourceIndexLength().toSourceSection(getSource());
         }
     }
 

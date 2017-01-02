@@ -96,7 +96,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         int end = base.getCharEnd();
 
         for (RubyNode node : sequence) {
-            final SourceIndexLength sourceSection = node.getRubySourceSection();
+            final SourceIndexLength sourceSection = node.getSourceIndexLength();
 
             if (sourceSection != null) {
                 start = Integer.min(start, sourceSection.getCharIndex());
