@@ -108,7 +108,7 @@ public class ReloadArgumentsTranslator extends Translator {
                 keyValues[2 * i] = key;
                 keyValues[2 * i + 1] = value;
             }
-            kwArgsNode = HashLiteralNode.create(context, sourceSectionX, keyValues);
+            kwArgsNode = HashLiteralNode.create(context, sourceSection, keyValues);
         }
 
         if (node.hasKeyRest()) {
@@ -116,7 +116,7 @@ public class ReloadArgumentsTranslator extends Translator {
             if (kwArgsNode == null) {
                 kwArgsNode = keyRest;
             } else {
-                kwArgsNode = new ConcatHashLiteralNode(context, sourceSectionX, new RubyNode[]{kwArgsNode, keyRest});
+                kwArgsNode = new ConcatHashLiteralNode(context, sourceSection, new RubyNode[]{kwArgsNode, keyRest});
             }
 
         }

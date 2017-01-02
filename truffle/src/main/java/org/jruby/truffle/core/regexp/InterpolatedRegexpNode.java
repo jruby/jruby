@@ -23,6 +23,7 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.parser.BodyTranslator;
@@ -33,7 +34,7 @@ public class InterpolatedRegexpNode extends RubyNode {
     private final RegexpOptions options;
     @Child private CallDispatchHeadNode toS;
 
-    public InterpolatedRegexpNode(RubyContext context, SourceSection sourceSection, RubyNode[] children, RegexpOptions options) {
+    public InterpolatedRegexpNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] children, RegexpOptions options) {
         super(context, sourceSection);
         this.children = children;
         this.options = options;

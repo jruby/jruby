@@ -20,6 +20,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.ObjectIDOperations;
 import org.jruby.truffle.language.objects.ObjectIVarGetNode;
@@ -118,7 +119,7 @@ public abstract class ObjectNodes {
         @Child private IsTaintedNode isTaintedNode;
         @Child private TaintNode taintNode;
 
-        public ObjectInfectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public ObjectInfectPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 

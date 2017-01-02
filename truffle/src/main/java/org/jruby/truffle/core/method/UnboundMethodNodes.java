@@ -71,10 +71,10 @@ public abstract class UnboundMethodNodes {
         @Child private MetaClassNode metaClassNode;
         @Child private CanBindMethodToModuleNode canBindMethodToModuleNode;
 
-        public BindNode(RubyContext context, SourceSection sourceSection) {
+        public BindNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            metaClassNode = MetaClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
-            canBindMethodToModuleNode = CanBindMethodToModuleNodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
+            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
+            canBindMethodToModuleNode = CanBindMethodToModuleNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization

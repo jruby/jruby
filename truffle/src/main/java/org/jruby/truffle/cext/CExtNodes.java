@@ -37,6 +37,7 @@ import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;
@@ -352,7 +353,7 @@ public class CExtNodes {
         @Child
         ModuleNodes.SetVisibilityNode setVisibilityNode;
 
-        public CextModuleFunctionNode(RubyContext context, SourceSection sourceSection) {
+        public CextModuleFunctionNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, null, Visibility.MODULE_FUNCTION, null, null);
         }

@@ -67,6 +67,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -381,7 +382,7 @@ public abstract class RegexpNodes {
         @Child private CallDispatchHeadNode toSNode;
         @Child private ToStrNode toStrNode;
 
-        public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
+        public MatchOperatorNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             dupNode = DispatchHeadNodeFactory.createMethodCall(context);
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
@@ -465,7 +466,7 @@ public abstract class RegexpNodes {
         @Child private CallDispatchHeadNode dupNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
 
-        public MatchStartNode(RubyContext context, SourceSection sourceSection) {
+        public MatchStartNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             dupNode = DispatchHeadNodeFactory.createMethodCall(context);
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
@@ -634,7 +635,7 @@ public abstract class RegexpNodes {
         @Child private CallDispatchHeadNode dupNode;
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
 
-        public SearchFromNode(RubyContext context, SourceSection sourceSection) {
+        public SearchFromNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             dupNode = DispatchHeadNodeFactory.createMethodCall(context);
             makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
@@ -704,7 +705,7 @@ public abstract class RegexpNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateNode = AllocateObjectNode.create();
         }

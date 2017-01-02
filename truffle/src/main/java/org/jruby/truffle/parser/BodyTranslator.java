@@ -314,7 +314,6 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitAliasNode(AliasParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final DynamicObject oldName = translateNameNodeToSymbol(node.getOldName());
         final DynamicObject newName = translateNameNodeToSymbol(node.getNewName());
@@ -337,7 +336,7 @@ public class BodyTranslator extends Translator {
         oldNameNode.unsafeSetSourceSection(sourceSection);
 
         final RubyNode ret = ModuleNodesFactory.AliasMethodNodeFactory.create(
-                new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, sourceSection)),
+                new RaiseIfFrozenNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection)),
                 newNameNode,
                 oldNameNode);
 
@@ -402,12 +401,11 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitArgsPushNode(ArgsPushParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode args = node.getFirstNode().accept(this);
         final RubyNode value = node.getSecondNode().accept(this);
         final RubyNode ret = ArrayAppendOneNodeGen.create(
-                KernelNodesFactory.DupNodeFactory.create(context, fullSourceSection, new RubyNode[] { args }),
+                KernelNodesFactory.DupNodeFactory.create(context, sourceSection, new RubyNode[] { args }),
                 value);
 
         return addNewlineIfNeeded(node, ret);
@@ -547,7 +545,7 @@ public class BodyTranslator extends Translator {
                 final RubyNode ret = translateSingleBlockArg(sourceSection, node);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("check_frozen")) {
-                final RubyNode ret = translateCheckFrozen(fullSourceSection);
+                final RubyNode ret = translateCheckFrozen(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof Colon2ConstParseNode // Truffle::Graal.<method>
@@ -697,7 +695,7 @@ public class BodyTranslator extends Translator {
         return new SingleBlockArgNode(context, sourceSection);
     }
 
-    private RubyNode translateCheckFrozen(SourceSection sourceSection) {
+    private RubyNode translateCheckFrozen(SourceIndexLength sourceSection) {
         return new RaiseIfFrozenNode(context, sourceSection, new SelfNode(environment.getFrameDescriptor()));
     }
 
@@ -1282,7 +1280,7 @@ public class BodyTranslator extends Translator {
             children.add(child.accept(this));
         }
 
-        final InterpolatedRegexpNode i = new InterpolatedRegexpNode(context, sourceSection.toSourceSection(source), children.toArray(new RubyNode[children.size()]), node.getOptions());
+        final InterpolatedRegexpNode i = new InterpolatedRegexpNode(context, sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
 
         if (node.getOptions().isOnce()) {
             final RubyNode ret = new OnceNode(i);
@@ -1368,8 +1366,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDefnNode(DefnParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
-        final RubyNode classNode = new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, sourceSection));
+        final RubyNode classNode = new RaiseIfFrozenNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection));
 
         String methodName = node.getName();
 
@@ -1433,13 +1430,12 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDotNode(DotParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final RubyNode begin = node.getBeginNode().accept(this);
         final RubyNode end = node.getEndNode().accept(this);
         final RubyNode rangeClass = new ObjectLiteralNode(context.getCoreLibrary().getRangeClass());
         final RubyNode isExclusive = new ObjectLiteralNode(node.isExclusive());
 
-        final RubyNode ret = RangeNodesFactory.NewNodeFactory.create(context, fullSourceSection, rangeClass, begin, end, isExclusive);
+        final RubyNode ret = RangeNodesFactory.NewNodeFactory.create(context, sourceSection, rangeClass, begin, end, isExclusive);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1832,7 +1828,6 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitHashNode(HashParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final List<RubyNode> hashConcats = new ArrayList<>();
 
@@ -1841,9 +1836,9 @@ public class BodyTranslator extends Translator {
         for (Tuple<ParseNode, ParseNode> pair: node.getPairs()) {
             if (pair.getKey() == null) {
                 // This null case is for splats {a: 1, **{b: 2}, c: 3}
-                final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, fullSourceSection, keyValues.toArray(new RubyNode[keyValues.size()]));
+                final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, sourceSection, keyValues.toArray(new RubyNode[keyValues.size()]));
                 hashConcats.add(hashLiteralSoFar);
-                hashConcats.add(new EnsureSymbolKeysNode(context, fullSourceSection,
+                hashConcats.add(new EnsureSymbolKeysNode(context, sourceSection,
                     HashCastNodeGen.create(context, sourceSection, pair.getValue().accept(this))));
                 keyValues.clear();
             } else {
@@ -1857,7 +1852,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, fullSourceSection, keyValues.toArray(new RubyNode[keyValues.size()]));
+        final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, sourceSection, keyValues.toArray(new RubyNode[keyValues.size()]));
         hashConcats.add(hashLiteralSoFar);
 
         if (hashConcats.size() == 1) {
@@ -1865,7 +1860,7 @@ public class BodyTranslator extends Translator {
             return addNewlineIfNeeded(node, ret);
         }
 
-        final RubyNode ret = new ConcatHashLiteralNode(context, fullSourceSection, hashConcats.toArray(new RubyNode[hashConcats.size()]));
+        final RubyNode ret = new ConcatHashLiteralNode(context, sourceSection, hashConcats.toArray(new RubyNode[hashConcats.size()]));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1903,19 +1898,18 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitInstAsgnNode(InstAsgnParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final String name = node.getName();
 
         final RubyNode rhs;
         if (node.getValueNode() == null) {
-            rhs = new DeadNode(context, fullSourceSection, new Exception("null RHS of instance variable assignment"));
+            rhs = new DeadNode(context, sourceSection, new Exception("null RHS of instance variable assignment"));
         } else {
             rhs = node.getValueNode().accept(this);
         }
 
         // Every case will use a SelfParseNode, just don't it use more than once.
         // Also note the check for frozen.
-        final RubyNode self = new RaiseIfFrozenNode(context, fullSourceSection, new SelfNode(environment.getFrameDescriptor()));
+        final RubyNode self = new RaiseIfFrozenNode(context, sourceSection, new SelfNode(environment.getFrameDescriptor()));
 
         final String path = getSourcePath(sourceSection);
         final String corePath = corePath();
@@ -2083,7 +2077,7 @@ public class BodyTranslator extends Translator {
         RubyNode rhs;
 
         if (node.getValueNode() == null) {
-            rhs = new DeadNode(context, sourceSection.toSourceSection(source), new Exception());
+            rhs = new DeadNode(context, sourceSection, new Exception());
         } else {
             rhs = node.getValueNode().accept(this);
         }
@@ -3151,11 +3145,10 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitUndefNode(UndefParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
 
         final RubyNode ret = ModuleNodesFactory.UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[]{
-                new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, sourceSection)),
+                new RaiseIfFrozenNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection)),
                 new ObjectLiteralNode(new Object[]{ nameSymbol })
         });
         return addNewlineIfNeeded(node, ret);

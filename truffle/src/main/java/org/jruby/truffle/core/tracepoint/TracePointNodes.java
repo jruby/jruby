@@ -25,6 +25,7 @@ import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 
 @CoreClass("TracePoint")
@@ -35,7 +36,7 @@ public abstract class TracePointNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
@@ -50,7 +51,7 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "initialize", rest = true, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+        public InitializeNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -66,7 +67,7 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "enable", needsBlock = true)
     public abstract static class EnableNode extends YieldingCoreMethodNode {
 
-        public EnableNode(RubyContext context, SourceSection sourceSection) {
+        public EnableNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -114,7 +115,7 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "disable", needsBlock = true)
     public abstract static class DisableNode extends YieldingCoreMethodNode {
 
-        public DisableNode(RubyContext context, SourceSection sourceSection) {
+        public DisableNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -152,7 +153,7 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "enabled?")
     public abstract static class EnabledNode extends CoreMethodArrayArgumentsNode {
 
-        public EnabledNode(RubyContext context, SourceSection sourceSection) {
+        public EnabledNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -166,7 +167,7 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "event")
     public abstract static class EventNode extends CoreMethodArrayArgumentsNode {
 
-        public EventNode(RubyContext context, SourceSection sourceSection) {
+        public EventNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -180,7 +181,7 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "path")
     public abstract static class PathNode extends CoreMethodArrayArgumentsNode {
 
-        public PathNode(RubyContext context, SourceSection sourceSection) {
+        public PathNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -194,7 +195,7 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "lineno")
     public abstract static class LineNode extends CoreMethodArrayArgumentsNode {
 
-        public LineNode(RubyContext context, SourceSection sourceSection) {
+        public LineNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -208,7 +209,7 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "binding")
     public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
 
-        public BindingNode(RubyContext context, SourceSection sourceSection) {
+        public BindingNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 

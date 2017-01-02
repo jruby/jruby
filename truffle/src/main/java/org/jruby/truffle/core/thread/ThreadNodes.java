@@ -65,6 +65,7 @@ import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.control.RaiseException;
@@ -492,7 +493,7 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_get_name")
     public static abstract class ThreadGetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadGetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public ThreadGetNamePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -504,7 +505,7 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_set_name")
     public static abstract class ThreadSetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadSetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public ThreadSetNamePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -517,7 +518,7 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
     public static abstract class ThreadGetPriorityPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadGetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public ThreadGetPriorityPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -549,7 +550,7 @@ public abstract class ThreadNodes {
         static final int RUBY_MIN_THREAD_PRIORITY = -3;
         static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
-        public ThreadSetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public ThreadSetPriorityPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -579,7 +580,7 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_set_group")
     public static abstract class ThreadSetGroupPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadSetGroupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public ThreadSetGroupPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 

@@ -22,6 +22,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 @CoreClass("Truffle::Ropes")
@@ -75,7 +76,7 @@ public abstract class TruffleRopesNodes {
 
         @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
 
-        public DebugPrintRopeNode(RubyContext context, SourceSection sourceSection) {
+        public DebugPrintRopeNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(null, null, null);
         }
@@ -112,7 +113,7 @@ public abstract class TruffleRopesNodes {
     public abstract static class DebugGetStructureCreationNode extends CoreMethodArrayArgumentsNode {
 
 
-        public DebugGetStructureCreationNode(RubyContext context, SourceSection sourceSection) {
+        public DebugGetStructureCreationNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 

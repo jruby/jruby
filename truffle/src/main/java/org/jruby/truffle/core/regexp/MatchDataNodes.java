@@ -41,6 +41,7 @@ import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.util.Arrays;
@@ -363,7 +364,7 @@ public abstract class MatchDataNodes {
 
         @Child private TaintResultNode taintResultNode;
 
-        public PreMatchNode(RubyContext context, SourceSection sourceSection) {
+        public PreMatchNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             taintResultNode = new TaintResultNode(getContext(), null);
         }
@@ -380,7 +381,7 @@ public abstract class MatchDataNodes {
 
         @Child private TaintResultNode taintResultNode;
 
-        public PostMatchNode(RubyContext context, SourceSection sourceSection) {
+        public PostMatchNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             taintResultNode = new TaintResultNode(getContext(), null);
         }

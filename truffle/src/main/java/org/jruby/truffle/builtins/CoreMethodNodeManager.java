@@ -311,7 +311,7 @@ public class CoreMethodNodeManager {
         }
 
         if (n == 0 && method.raiseIfFrozenSelf()) {
-            argument = new RaiseIfFrozenNode(context, sourceSection.toSourceSection(source), argument);
+            argument = new RaiseIfFrozenNode(context, sourceSection, argument);
         }
 
         return argument;

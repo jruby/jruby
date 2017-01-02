@@ -7,6 +7,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class EnsureSymbolKeysNode extends RubyNode {
@@ -15,7 +16,7 @@ public class EnsureSymbolKeysNode extends RubyNode {
 
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public EnsureSymbolKeysNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public EnsureSymbolKeysNode(RubyContext context, SourceIndexLength sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
     }

@@ -30,6 +30,7 @@ import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -264,7 +265,7 @@ public abstract class ClassNodes {
         @Child private CallDispatchHeadNode allocateNode;
         @Child private CallDispatchHeadNode initialize;
 
-        public NewNode(RubyContext context, SourceSection sourceSection) {
+        public NewNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
             initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);

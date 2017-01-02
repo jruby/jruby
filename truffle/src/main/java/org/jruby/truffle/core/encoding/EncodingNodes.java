@@ -41,6 +41,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 @CoreClass("Encoding")
@@ -81,7 +82,7 @@ public abstract class EncodingNodes {
             return EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null, null, null);
         }
 
-        public NegotiateCompatibleEncodingNode(RubyContext context, SourceSection sourceSection) {
+        public NegotiateCompatibleEncodingNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             getEncodingNode = ToEncodingNode.create();
         }
@@ -303,7 +304,7 @@ public abstract class EncodingNodes {
 
         @Child private NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode;
 
-        public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
+        public CompatibleQueryNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             negotiateCompatibleEncodingNode = NegotiateCompatibleEncodingNode.create();
         }
@@ -468,7 +469,7 @@ public abstract class EncodingNodes {
             return EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null, null);
         }
 
-        public CheckEncodingNode(RubyContext context, SourceSection sourceSection) {
+        public CheckEncodingNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(context, sourceSection, null, null);
         }

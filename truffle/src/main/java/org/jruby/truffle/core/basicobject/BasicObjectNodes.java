@@ -42,6 +42,7 @@ import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -86,7 +87,7 @@ public abstract class BasicObjectNodes {
 
         @Child private CallDispatchHeadNode equalNode;
 
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
+        public NotEqualNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             equalNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
@@ -176,7 +177,7 @@ public abstract class BasicObjectNodes {
 
         @Child private YieldNode yield;
 
-        public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
+        public InstanceEvalNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
         }
@@ -228,7 +229,7 @@ public abstract class BasicObjectNodes {
 
         @Child private YieldNode yield;
 
-        public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
+        public InstanceExecNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
         }
@@ -402,7 +403,7 @@ public abstract class BasicObjectNodes {
 
         @Child private CallDispatchHeadNode dispatchNode;
 
-        public SendNode(RubyContext context, SourceSection sourceSection) {
+        public SendNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, true,
@@ -426,7 +427,7 @@ public abstract class BasicObjectNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
@@ -444,7 +445,7 @@ public abstract class BasicObjectNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public InternalAllocateNode(RubyContext context, SourceSection sourceSection) {
+        public InternalAllocateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }

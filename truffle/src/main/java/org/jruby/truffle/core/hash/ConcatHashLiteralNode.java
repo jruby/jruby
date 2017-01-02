@@ -17,6 +17,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class ConcatHashLiteralNode extends RubyNode {
 
     @Children private final RubyNode[] children;
 
-    public ConcatHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
+    public ConcatHashLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         this.children = children;
     }

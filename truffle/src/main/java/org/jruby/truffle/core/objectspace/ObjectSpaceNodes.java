@@ -27,6 +27,7 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.ObjectGraph;
@@ -144,7 +145,7 @@ public abstract class ObjectSpaceNodes {
         // Wanting #method_missing(:call) to be called for a finalizer seems highly unlikely.
         @Child private DoesRespondDispatchHeadNode respondToCallNode;
 
-        public DefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
+        public DefineFinalizerNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             respondToCallNode = new DoesRespondDispatchHeadNode(getContext(), true);
         }

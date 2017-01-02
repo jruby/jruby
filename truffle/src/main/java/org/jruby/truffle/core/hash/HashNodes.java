@@ -41,6 +41,7 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -169,7 +170,7 @@ public abstract class HashNodes {
 
         @CompilationFinal private Object undefinedValue;
 
-        public GetIndexNode(RubyContext context, SourceSection sourceSection) {
+        public GetIndexNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
@@ -301,7 +302,7 @@ public abstract class HashNodes {
 
         @Child private GetIndexNode getIndexNode;
 
-        public GetOrUndefinedNode(RubyContext context, SourceSection sourceSection) {
+        public GetOrUndefinedNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             getIndexNode = GetIndexNodeFactory.create(context, sourceSection, null);
             getIndexNode.setUndefinedValue(NotProvided.INSTANCE);
@@ -405,7 +406,7 @@ public abstract class HashNodes {
         @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
         @Child private YieldNode yieldNode;
 
-        public DeleteNode(RubyContext context, SourceSection sourceSection) {
+        public DeleteNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             yieldNode = new YieldNode(context);
         }

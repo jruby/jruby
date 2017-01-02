@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Dead nodes are removed wherever they are found during translation. They fill in for some missing
@@ -23,7 +24,7 @@ public class DeadNode extends RubyNode {
 
     private final Exception reason;
 
-    public DeadNode(RubyContext context, SourceSection sourceSection, Exception reason) {
+    public DeadNode(RubyContext context, SourceIndexLength sourceSection, Exception reason) {
         super(context, sourceSection);
         this.reason = reason;
     }

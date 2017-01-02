@@ -34,6 +34,7 @@ import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;
@@ -116,7 +117,7 @@ public abstract class BindingNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public DupNode(RubyContext context, SourceSection sourceSection) {
+        public DupNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
@@ -287,7 +288,7 @@ public abstract class BindingNodes {
             return NameToJavaStringNodeGen.create(name);
         }
 
-        public LocalVariableSetNode(RubyContext context, SourceSection sourceSection) {
+        public LocalVariableSetNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 

@@ -35,6 +35,7 @@ import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -213,7 +214,7 @@ public abstract class RangeNodes {
 
         @Child private AllocateObjectNode allocateObjectNode;
 
-        public DupNode(RubyContext context, SourceSection sourceSection) {
+        public DupNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNode.create();
         }
@@ -511,7 +512,7 @@ public abstract class RangeNodes {
         @Child private CallDispatchHeadNode cmpNode;
         @Child private AllocateObjectNode allocateNode;
 
-        public NewNode(RubyContext context, SourceSection sourceSection) {
+        public NewNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             rangeClass = context.getCoreLibrary().getRangeClass();
         }
@@ -593,7 +594,7 @@ public abstract class RangeNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+        public AllocateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateNode = AllocateObjectNode.create();
         }

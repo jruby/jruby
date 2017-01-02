@@ -19,6 +19,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.IsFrozenNode;
@@ -30,7 +31,7 @@ public abstract class HashLiteralNode extends RubyNode {
     @Child protected CallDispatchHeadNode dupNode;
     @Child protected CallDispatchHeadNode freezeNode;
 
-    protected HashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+    protected HashLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] keyValues) {
         super(context, sourceSection);
         assert keyValues.length % 2 == 0;
         this.keyValues = keyValues;
@@ -50,7 +51,7 @@ public abstract class HashLiteralNode extends RubyNode {
         return keyValues[2 * index + 1];
     }
 
-    public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+    public static HashLiteralNode create(RubyContext context, SourceIndexLength sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);
         } else if (keyValues.length <= context.getOptions().HASH_PACKED_ARRAY_MAX * 2) {
@@ -70,7 +71,7 @@ public abstract class HashLiteralNode extends RubyNode {
 
     public static class EmptyHashLiteralNode extends HashLiteralNode {
 
-        public EmptyHashLiteralNode(RubyContext context, SourceSection sourceSection) {
+        public EmptyHashLiteralNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection, new RubyNode[]{});
         }
 
@@ -90,7 +91,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @Child private CallDispatchHeadNode equalNode;
         @Child private IsFrozenNode isFrozenNode;
 
-        public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+        public SmallHashLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
             hashNode = new HashNode();
             equalNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -147,7 +148,7 @@ public abstract class HashLiteralNode extends RubyNode {
 
         @Child SetNode setNode;
 
-        public GenericHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+        public GenericHashLiteralNode(RubyContext context, SourceIndexLength sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
         }
 

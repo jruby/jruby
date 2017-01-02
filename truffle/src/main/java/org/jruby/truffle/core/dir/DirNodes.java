@@ -48,6 +48,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.UnsafeGroup;
@@ -61,7 +62,7 @@ public abstract class DirNodes {
 
         @Child private AllocateObjectNode allocateNode;
 
-        public DirAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public DirAllocatePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             allocateNode = AllocateObjectNode.create();
         }
