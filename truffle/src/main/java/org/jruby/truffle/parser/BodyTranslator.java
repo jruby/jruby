@@ -1684,7 +1684,6 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitGlobalAsgnNode(GlobalAsgnParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         RubyNode rhs = node.getValueNode().accept(this);
 
@@ -1707,7 +1706,7 @@ public class BodyTranslator extends Translator {
             rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$_")) {
             if (getSourcePath(sourceSection).endsWith(buildPartialPath("truffle", "rubysl", "rubysl-stringio", "lib", "rubysl", "stringio", "stringio.rb"))) {
-                rhs = RubiniusLastStringWriteNodeGen.create(context, sourceSection.toSourceSection(source), rhs);
+                rhs = RubiniusLastStringWriteNodeGen.create(context, sourceSection, rhs);
             } else {
                 rhs = WrapInThreadLocalNodeGen.create(context, sourceSection, rhs);
             }
@@ -1808,7 +1807,7 @@ public class BodyTranslator extends Translator {
 
             if (name.equals("$_")) {
                 if (getSourcePath(sourceSection).equals(corePath() + "regexp.rb")) {
-                    readNode = new RubiniusLastStringReadNode(context, fullSourceSection);
+                    readNode = new RubiniusLastStringReadNode(context, sourceSection);
                 } else {
                     readNode = new GetFromThreadLocalNode(context, sourceSection, readNode);
                 }

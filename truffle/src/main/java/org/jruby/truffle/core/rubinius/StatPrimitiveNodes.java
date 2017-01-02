@@ -23,6 +23,7 @@ import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 public abstract class StatPrimitiveNodes {
@@ -152,7 +153,7 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_stat", unsafe = UnsafeGroup.IO)
     public static abstract class StatStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StatStatPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -179,7 +180,7 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_fstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatFStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatFStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StatFStatPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -201,7 +202,7 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_lstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatLStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatLStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StatLStatPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 

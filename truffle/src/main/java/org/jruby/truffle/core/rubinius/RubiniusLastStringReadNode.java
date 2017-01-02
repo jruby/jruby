@@ -19,11 +19,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 
 public class RubiniusLastStringReadNode extends RubyNode {
 
-    public RubiniusLastStringReadNode(RubyContext context, SourceSection sourceSection) {
+    public RubiniusLastStringReadNode(RubyContext context, SourceIndexLength sourceSection) {
         super(context, sourceSection);
     }
 

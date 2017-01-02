@@ -92,6 +92,7 @@ import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.core.thread.ThreadManager.ResultWithinTime;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -113,7 +114,7 @@ public abstract class IOPrimitiveNodes {
         public IOPrimitiveArrayArgumentsNode() {
         }
 
-        public IOPrimitiveArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
+        public IOPrimitiveArrayArgumentsNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -143,7 +144,7 @@ public abstract class IOPrimitiveNodes {
         @Child private CallDispatchHeadNode newBufferNode;
         @Child private AllocateObjectNode allocateNode;
 
-        public IOAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public IOAllocatePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             newBufferNode = DispatchHeadNodeFactory.createMethodCall(context);
             allocateNode = AllocateObjectNode.create();
         }
@@ -601,7 +602,7 @@ public abstract class IOPrimitiveNodes {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
-        public IOReopenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public IOReopenPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
@@ -633,7 +634,7 @@ public abstract class IOPrimitiveNodes {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
-        public IOReopenPathPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public IOReopenPathPrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
@@ -797,7 +798,7 @@ public abstract class IOPrimitiveNodes {
 
         @Child private CallDispatchHeadNode ensureOpenNode;
 
-        public IOClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public IOClosePrimitiveNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             ensureOpenNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
