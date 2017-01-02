@@ -126,9 +126,9 @@ public abstract class ModuleNodes {
 
         @Child private IsANode isANode;
 
-        public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
+        public ContainsInstanceNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            isANode = IsANodeGen.create(context, new SourceIndexLength(sourceSection), null, null);
+            isANode = IsANodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
@@ -332,9 +332,9 @@ public abstract class ModuleNodes {
 
         @Child TaintResultNode taintResultNode;
 
-        public AppendFeaturesNode(RubyContext context, SourceSection sourceSection) {
+        public AppendFeaturesNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, new SourceIndexLength(sourceSection));
+            taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
         @Specialization(guards = "isRubyModule(target)")
@@ -356,7 +356,7 @@ public abstract class ModuleNodes {
         final boolean isGetter;
         @Child NameToJavaStringNode nameToJavaStringNode;
 
-        public GenerateAccessorNode(RubyContext context, SourceSection sourceSection, boolean isGetter) {
+        public GenerateAccessorNode(RubyContext context, SourceIndexLength sourceSection, boolean isGetter) {
             super(context, sourceSection);
             this.isGetter = isGetter;
             this.nameToJavaStringNode = NameToJavaStringNode.create();
@@ -399,10 +399,10 @@ public abstract class ModuleNodes {
             final RubyNode self = new ProfileArgumentNode(new ReadSelfNode());
             final RubyNode accessInstanceVariable;
             if (isGetter) {
-                accessInstanceVariable = new ReadInstanceVariableNode(getContext(), new SourceIndexLength(sourceSection), ivar, self);
+                accessInstanceVariable = new ReadInstanceVariableNode(getContext(), sourceIndexLength, ivar, self);
             } else {
                 RubyNode readArgument = new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR));
-                accessInstanceVariable = new WriteInstanceVariableNode(getContext(), new SourceIndexLength(sourceSection), ivar, self, readArgument);
+                accessInstanceVariable = new WriteInstanceVariableNode(getContext(), sourceIndexLength, ivar, self, readArgument);
             }
             final RubyNode sequence = Translator.sequence(getContext(), sourceSection.getSource(), sourceIndexLength, Arrays.asList(checkArity, accessInstanceVariable));
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence, false);
@@ -419,7 +419,7 @@ public abstract class ModuleNodes {
         @Child GenerateAccessorNode generateGetterNode;
         @Child GenerateAccessorNode generateSetterNode;
 
-        public AttrNode(RubyContext context, SourceSection sourceSection) {
+        public AttrNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             this.generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
             this.generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
@@ -452,7 +452,7 @@ public abstract class ModuleNodes {
         @Child GenerateAccessorNode generateGetterNode;
         @Child GenerateAccessorNode generateSetterNode;
 
-        public AttrAccessorNode(RubyContext context, SourceSection sourceSection) {
+        public AttrAccessorNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             this.generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
             this.generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
@@ -474,7 +474,7 @@ public abstract class ModuleNodes {
 
         @Child GenerateAccessorNode generateGetterNode;
 
-        public AttrReaderNode(RubyContext context, SourceSection sourceSection) {
+        public AttrReaderNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             this.generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, true, null, null);
         }
@@ -494,7 +494,7 @@ public abstract class ModuleNodes {
 
         @Child GenerateAccessorNode generateSetterNode;
 
-        public AttrWriterNode(RubyContext context, SourceSection sourceSection) {
+        public AttrWriterNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             this.generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(context, sourceSection, false, null, null);
         }
@@ -517,7 +517,7 @@ public abstract class ModuleNodes {
     })
     public abstract static class AutoloadNode extends CoreMethodNode {
 
-        public AutoloadNode(RubyContext context, SourceSection sourceSection) {
+        public AutoloadNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
         }
 
@@ -580,7 +580,7 @@ public abstract class ModuleNodes {
         @Child private YieldNode yield;
         @Child private ToStrNode toStrNode;
 
-        public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
+        public ClassEvalNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             yield = new YieldNode(context, DeclarationContext.CLASS_EVAL);
         }
@@ -664,7 +664,7 @@ public abstract class ModuleNodes {
 
         @Child private YieldNode yield;
 
-        public ClassExecNode(RubyContext context, SourceSection sourceSection) {
+        public ClassExecNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             yield = new YieldNode(context, DeclarationContext.CLASS_EVAL);
         }
@@ -996,9 +996,9 @@ public abstract class ModuleNodes {
 
         @Child AddMethodNode addMethodNode;
 
-        public DefineMethodNode(RubyContext context, SourceSection sourceSection) {
+        public DefineMethodNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            addMethodNode = AddMethodNodeGen.create(context, new SourceIndexLength(sourceSection), false, false, null, null, null);
+            addMethodNode = AddMethodNodeGen.create(context, sourceSection, false, false, null, null, null);
         }
 
         @CreateCast("name")
@@ -1065,7 +1065,7 @@ public abstract class ModuleNodes {
             final SharedMethodInfo info = Layouts.PROC.getSharedMethodInfo(proc).withName(name);
 
             final RubyNode body = NodeUtil.cloneNode(rootNode.getBody());
-            final RubyNode newBody = new CallMethodWithProcBody(getContext(), info.getSourceSection(), Layouts.PROC.getDeclarationFrame(proc), body);
+            final RubyNode newBody = new CallMethodWithProcBody(getContext(), new SourceIndexLength(info.getSourceSection()), Layouts.PROC.getDeclarationFrame(proc), body);
             final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody, false);
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
@@ -1078,7 +1078,7 @@ public abstract class ModuleNodes {
             private final MaterializedFrame declarationFrame;
             @Child private RubyNode procBody;
 
-            public CallMethodWithProcBody(RubyContext context, SourceSection sourceSection, MaterializedFrame declarationFrame, RubyNode procBody) {
+            public CallMethodWithProcBody(RubyContext context, SourceIndexLength sourceSection, MaterializedFrame declarationFrame, RubyNode procBody) {
                 super(context, sourceSection);
                 this.declarationFrame = declarationFrame;
                 this.procBody = procBody;
@@ -1112,9 +1112,9 @@ public abstract class ModuleNodes {
 
         @Child private SingletonClassNode singletonClassNode;
 
-        public ExtendObjectNode(RubyContext context, SourceSection sourceSection) {
+        public ExtendObjectNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
@@ -1271,7 +1271,7 @@ public abstract class ModuleNodes {
 
         @Child SetVisibilityNode setVisibilityNode;
 
-        public ModuleFunctionNode(RubyContext context, SourceSection sourceSection) {
+        public ModuleFunctionNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.MODULE_FUNCTION, null, null);
         }
@@ -1335,7 +1335,7 @@ public abstract class ModuleNodes {
 
         @Child SetVisibilityNode setVisibilityNode;
 
-        public PublicNode(RubyContext context, SourceSection sourceSection) {
+        public PublicNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
         }
@@ -1355,9 +1355,9 @@ public abstract class ModuleNodes {
         @Child SingletonClassNode singletonClassNode;
         @Child SetMethodVisibilityNode setMethodVisibilityNode;
 
-        public PublicClassMethodNode(RubyContext context, SourceSection sourceSection) {
+        public PublicClassMethodNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
             this.setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
         }
 
@@ -1378,7 +1378,7 @@ public abstract class ModuleNodes {
 
         @Child SetVisibilityNode setVisibilityNode;
 
-        public PrivateNode(RubyContext context, SourceSection sourceSection) {
+        public PrivateNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
         }
@@ -1397,7 +1397,7 @@ public abstract class ModuleNodes {
 
         @Child TaintResultNode taintResultNode;
 
-        public PrependFeaturesNode(RubyContext context, SourceSection sourceSection) {
+        public PrependFeaturesNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             taintResultNode = new TaintResultNode(context, null);
         }
@@ -1421,9 +1421,9 @@ public abstract class ModuleNodes {
         @Child SingletonClassNode singletonClassNode;
         @Child SetMethodVisibilityNode setMethodVisibilityNode;
 
-        public PrivateClassMethodNode(RubyContext context, SourceSection sourceSection) {
+        public PrivateClassMethodNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, new SourceIndexLength(sourceSection), null);
+            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
             this.setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
         }
 
@@ -1478,7 +1478,7 @@ public abstract class ModuleNodes {
 
         final Visibility visibility;
 
-        public AbstractInstanceMethodsNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
+        public AbstractInstanceMethodsNode(RubyContext context, SourceIndexLength sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
         }
@@ -1500,7 +1500,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_instance_methods", optional = 1)
     public abstract static class PublicInstanceMethodsNode extends AbstractInstanceMethodsNode {
 
-        public PublicInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+        public PublicInstanceMethodsNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection, Visibility.PUBLIC);
         }
 
@@ -1509,7 +1509,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "protected_instance_methods", optional = 1)
     public abstract static class ProtectedInstanceMethodsNode extends AbstractInstanceMethodsNode {
 
-        public ProtectedInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+        public ProtectedInstanceMethodsNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection, Visibility.PROTECTED);
         }
 
@@ -1517,7 +1517,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_instance_methods", optional = 1)
     public abstract static class PrivateInstanceMethodsNode extends AbstractInstanceMethodsNode {
 
-        public PrivateInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+        public PrivateInstanceMethodsNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection, Visibility.PRIVATE);
         }
 
@@ -1532,7 +1532,7 @@ public abstract class ModuleNodes {
 
         final Visibility visibility;
 
-        public AbstractMethodDefinedNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
+        public AbstractMethodDefinedNode(RubyContext context, SourceIndexLength sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
         }
@@ -1553,7 +1553,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_method_defined?", required = 1)
     public abstract static class PublicMethodDefinedNode extends AbstractMethodDefinedNode {
 
-        public PublicMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+        public PublicMethodDefinedNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection, Visibility.PUBLIC);
         }
 
@@ -1562,7 +1562,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "protected_method_defined?", required = 1)
     public abstract static class ProtectedMethodDefinedNode extends AbstractMethodDefinedNode {
 
-        public ProtectedMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+        public ProtectedMethodDefinedNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection, Visibility.PROTECTED);
         }
 
@@ -1571,7 +1571,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_method_defined?", required = 1)
     public abstract static class PrivateMethodDefinedNode extends AbstractMethodDefinedNode {
 
-        public PrivateMethodDefinedNode(RubyContext context, SourceSection sourceSection) {
+        public PrivateMethodDefinedNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection, Visibility.PRIVATE);
         }
 
@@ -1645,7 +1645,7 @@ public abstract class ModuleNodes {
 
         @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
 
-        public DeprecateConstantNode(RubyContext context, SourceSection sourceSection) {
+        public DeprecateConstantNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNode.create();
         }
@@ -1680,7 +1680,7 @@ public abstract class ModuleNodes {
 
         @Child SetVisibilityNode setVisibilityNode;
 
-        public ProtectedNode(RubyContext context, SourceSection sourceSection) {
+        public ProtectedNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.PROTECTED, null, null);
         }
@@ -1751,10 +1751,10 @@ public abstract class ModuleNodes {
         @Child IsFrozenNode isFrozenNode;
         @Child CallDispatchHeadNode methodRemovedNode;
 
-        public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
+        public RemoveMethodNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.isFrozenNode = IsFrozenNodeGen.create(context, new SourceIndexLength(sourceSection), null);
+            this.isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             this.methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
@@ -1827,10 +1827,10 @@ public abstract class ModuleNodes {
         @Child RaiseIfFrozenNode raiseIfFrozenNode;
         @Child CallDispatchHeadNode methodUndefinedNode;
 
-        public UndefMethodNode(RubyContext context, SourceSection sourceSection) {
+        public UndefMethodNode(RubyContext context, SourceIndexLength sourceSection) {
             super(context, sourceSection);
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.raiseIfFrozenNode = new RaiseIfFrozenNode(context, sourceSection, new ProfileArgumentNode(new ReadSelfNode()));
+            this.raiseIfFrozenNode = new RaiseIfFrozenNode(context, null, new ProfileArgumentNode(new ReadSelfNode()));
             this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
@@ -1863,7 +1863,7 @@ public abstract class ModuleNodes {
 
         @Child SetMethodVisibilityNode setMethodVisibilityNode;
 
-        public SetVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
+        public SetVisibilityNode(RubyContext context, SourceIndexLength sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
             this.setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(context, sourceSection, visibility, null, null);
@@ -1899,11 +1899,11 @@ public abstract class ModuleNodes {
         @Child NameToJavaStringNode nameToJavaStringNode;
         @Child AddMethodNode addMethodNode;
 
-        public SetMethodVisibilityNode(RubyContext context, SourceSection sourceSection, Visibility visibility) {
+        public SetMethodVisibilityNode(RubyContext context, SourceIndexLength sourceSection, Visibility visibility) {
             super(context, sourceSection);
             this.visibility = visibility;
             this.nameToJavaStringNode = NameToJavaStringNode.create();
-            this.addMethodNode = AddMethodNodeGen.create(context, new SourceIndexLength(sourceSection), true, false, null, null, null);
+            this.addMethodNode = AddMethodNodeGen.create(context, sourceSection, true, false, null, null, null);
         }
 
         public abstract DynamicObject executeSetMethodVisibility(VirtualFrame frame, DynamicObject module, Object name);

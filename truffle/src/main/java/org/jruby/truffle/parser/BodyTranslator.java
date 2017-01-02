@@ -3155,7 +3155,7 @@ public class BodyTranslator extends Translator {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
         final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
 
-        final RubyNode ret = ModuleNodesFactory.UndefMethodNodeFactory.create(context, fullSourceSection, new RubyNode[]{
+        final RubyNode ret = ModuleNodesFactory.UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[]{
                 new RaiseIfFrozenNode(context, fullSourceSection, new GetDefaultDefineeNode(context, sourceSection)),
                 new ObjectLiteralNode(new Object[]{ nameSymbol })
         });

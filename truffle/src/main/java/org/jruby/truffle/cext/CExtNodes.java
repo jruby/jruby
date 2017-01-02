@@ -354,7 +354,7 @@ public class CExtNodes {
 
         public CextModuleFunctionNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.MODULE_FUNCTION, null, null);
+            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, null, Visibility.MODULE_FUNCTION, null, null);
         }
 
         @Specialization(guards = {"isRubyModule(module)", "isRubySymbol(name)"})
