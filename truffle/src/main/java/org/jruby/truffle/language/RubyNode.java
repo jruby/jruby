@@ -23,7 +23,9 @@ public abstract class RubyNode extends RubyBaseNode {
     }
 
     public RubyNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
+        if (sourceSection != null) {
+            unsafeSetSourceSection(sourceSection);
+        }
     }
 
     // Fundamental execute methods

@@ -30,11 +30,12 @@ public class FixnumOrBignumNode extends RubyBaseNode {
     }
 
     public FixnumOrBignumNode() {
-        this(null);
     }
 
     public FixnumOrBignumNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
+        if (sourceSection != null) {
+            unsafeSetSourceSection(sourceSection);
+        }
     }
 
     private final ConditionProfile lowerProfile = ConditionProfile.createBinaryProfile();

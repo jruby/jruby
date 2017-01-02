@@ -33,7 +33,9 @@ public class GeneralDivModNode extends RubyBaseNode {
     private final BranchProfile useObjectPairProfile = BranchProfile.create();
 
     public GeneralDivModNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
+        if (sourceSection != null) {
+            unsafeSetSourceSection(sourceSection);
+        }
         fixnumOrBignumQuotient = new FixnumOrBignumNode();
         fixnumOrBignumRemainder = new FixnumOrBignumNode();
     }

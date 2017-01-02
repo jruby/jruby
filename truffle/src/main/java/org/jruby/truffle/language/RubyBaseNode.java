@@ -57,15 +57,6 @@ public abstract class RubyBaseNode extends Node {
 
     private int flags;
 
-    public RubyBaseNode() {
-    }
-
-    public RubyBaseNode(SourceIndexLength sourceSection) {
-        if (sourceSection != null) {
-            unsafeSetSourceSection(sourceSection);
-        }
-    }
-
     // Guards which use the context and so can't be static
 
     protected boolean isNil(Object value) {
