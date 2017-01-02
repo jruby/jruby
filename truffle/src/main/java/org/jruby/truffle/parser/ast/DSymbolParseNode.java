@@ -29,8 +29,8 @@
  ***** END LICENSE BLOCK *****/
  package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.language.SourceIndexLength;
+import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 /**
  * ParseNode representing symbol in a form like ':"3jane"'.

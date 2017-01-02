@@ -30,6 +30,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.collections.Memo;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.EncodingUtils;
@@ -37,13 +38,10 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.collections.Memo;
-import org.jruby.truffle.parser.ParserByteList;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentHashMap;
 

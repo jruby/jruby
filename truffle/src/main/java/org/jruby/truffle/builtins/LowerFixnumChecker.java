@@ -13,12 +13,11 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.core.array.ArrayUtils;
+import org.jruby.truffle.language.RubyNode;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-
-import org.jruby.truffle.core.array.ArrayUtils;
-import org.jruby.truffle.language.RubyNode;
 
 public class LowerFixnumChecker {
 

@@ -11,7 +11,6 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.language.RubyNode;
 
 import java.util.function.Supplier;
 

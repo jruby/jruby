@@ -6,8 +6,8 @@
 
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 import org.jruby.truffle.language.SourceIndexLength;
+import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
 
 import java.util.List;
 

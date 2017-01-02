@@ -28,8 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.options;
 
-import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.core.string.KCode;
+import org.jruby.truffle.core.string.StringSupport;
 
 import java.io.File;
 import java.io.IOException;

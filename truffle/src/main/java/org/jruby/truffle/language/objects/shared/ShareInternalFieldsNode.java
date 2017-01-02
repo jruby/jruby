@@ -17,10 +17,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.collections.BoundaryIterable;
 import org.jruby.truffle.core.array.ArrayGuards;
 import org.jruby.truffle.core.queue.LinkedBlockingQueueLocksConditions;
 import org.jruby.truffle.language.objects.ShapeCachingGuards;
-import org.jruby.truffle.collections.BoundaryIterable;
 
 /**
  * Share the internal field of an object, accessible by its Layout

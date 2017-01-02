@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.parser;
 
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SourceIndexLength;
 

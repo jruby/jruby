@@ -28,7 +28,6 @@
 package org.jruby.truffle.core.string;
 
 import org.jruby.truffle.core.rope.Rope;
-import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.parser.SafeDoubleParser;
 
 public class DoubleConverter {

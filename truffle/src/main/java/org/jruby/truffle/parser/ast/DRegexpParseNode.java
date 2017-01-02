@@ -34,9 +34,9 @@ package org.jruby.truffle.parser.ast;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * A regexp which contains some expressions which will need to be evaluated everytime the regexp 

@@ -33,10 +33,10 @@ package org.jruby.truffle.parser.ast;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 

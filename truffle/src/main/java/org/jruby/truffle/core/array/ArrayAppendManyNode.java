@@ -19,7 +19,6 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.language.RubyNode;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
-import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
 @NodeChildren({
         @NodeChild("array"),

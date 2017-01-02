@@ -19,9 +19,8 @@ import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.ByteList;
-import org.jruby.truffle.parser.ReOptions;
 import org.jruby.truffle.core.string.KCode;
+import org.jruby.truffle.parser.ReOptions;
 
 public class RegexpOptions implements Cloneable {
     private static String WINDOWS31J = "Windows-31J";

@@ -12,7 +12,6 @@ package org.jruby.truffle.language.dispatch;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.interop.OutgoingForeignCallNode;
 import org.jruby.truffle.interop.OutgoingForeignCallNodeGen;
 

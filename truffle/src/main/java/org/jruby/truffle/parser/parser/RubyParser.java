@@ -40,12 +40,12 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.interop.ForeignCodeNode;
-import org.jruby.truffle.collections.Tuple;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.RubyWarnings;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;

@@ -30,9 +30,9 @@ package org.jruby.truffle.options;
 
 import com.oracle.truffle.api.TruffleOptions;
 import jnr.posix.util.Platform;
+import org.jruby.truffle.core.string.KCode;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.JavaException;
-import org.jruby.truffle.core.string.KCode;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

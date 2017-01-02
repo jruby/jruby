@@ -12,7 +12,6 @@ package org.jruby.truffle.language.locals;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ReadLocalNode;

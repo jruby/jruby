@@ -45,11 +45,11 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.TruffleOptions;
+import org.jruby.truffle.options.MainExitException;
 import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.options.OptionsCatalog;
 import org.jruby.truffle.options.OutputStrings;
 import org.jruby.truffle.options.RubyInstanceConfig;
-import org.jruby.truffle.options.MainExitException;
 
 import java.lang.management.ManagementFactory;
 

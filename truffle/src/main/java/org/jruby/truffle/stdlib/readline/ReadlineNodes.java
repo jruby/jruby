@@ -46,13 +46,10 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-
 import jline.console.CursorBuffer;
 import jline.console.completer.Completer;
 import jline.console.completer.FileNameCompleter;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -68,6 +65,7 @@ import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.TaintNode;
+
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;

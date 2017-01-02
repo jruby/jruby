@@ -28,8 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.language.SourceIndexLength;
+import org.jruby.truffle.parser.ParserByteList;
 
 /**
  * Represents __FILE__ nodes

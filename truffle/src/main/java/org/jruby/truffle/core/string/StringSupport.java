@@ -36,7 +36,6 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
-import org.jruby.truffle.parser.ParserByteList;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -44,10 +43,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
-import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
+import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
+import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 
 public final class StringSupport {
     public static final int TRANS_SIZE = 256;

@@ -24,6 +24,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.collections.Memo;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.CodeLoader;
@@ -31,7 +32,6 @@ import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
-import org.jruby.truffle.collections.Memo;
 
 import java.io.IOException;
 import java.io.InputStream;

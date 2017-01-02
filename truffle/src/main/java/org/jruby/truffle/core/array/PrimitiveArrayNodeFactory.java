@@ -9,9 +9,8 @@
  */
 package org.jruby.truffle.core.array;
 
-import org.jruby.truffle.language.SourceIndexLength;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.literal.IntegerFixnumLiteralNode;
 
 public abstract class PrimitiveArrayNodeFactory {

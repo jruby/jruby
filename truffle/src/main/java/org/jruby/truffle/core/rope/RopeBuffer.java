@@ -12,8 +12,6 @@ package org.jruby.truffle.core.rope;
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.string.ByteList;
 
-import java.nio.charset.StandardCharsets;
-
 public class RopeBuffer extends LeafRope {
 
     private final ByteList byteList;

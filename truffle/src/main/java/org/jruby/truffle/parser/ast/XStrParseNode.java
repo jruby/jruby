@@ -32,10 +32,10 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.List;
 

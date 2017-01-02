@@ -28,8 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.scope;
 
-import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.language.SourceIndexLength;
+import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
 import org.jruby.truffle.parser.ast.DVarParseNode;
