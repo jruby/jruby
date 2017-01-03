@@ -1108,17 +1108,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "encoding")
-    public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject encoding(DynamicObject string,
-                                      @Cached("create()") EncodingNodes.GetRubyEncodingNode getRubyEncodingNode) {
-            return getRubyEncodingNode.executeGetRubyEncoding(StringOperations.encoding(string));
-        }
-
-    }
-
     @CoreMethod(names = "force_encoding", required = 1, raiseIfFrozenSelf = true)
     public abstract static class ForceEncodingNode extends CoreMethodArrayArgumentsNode {
 

@@ -1699,4 +1699,8 @@ class String
     frozen? ? self : dup.freeze
   end
 
+  def encoding
+    Truffle.invoke_primitive :encoding_get_object_encoding, self
+  end
+
 end

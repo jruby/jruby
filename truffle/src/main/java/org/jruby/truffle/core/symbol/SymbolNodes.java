@@ -69,17 +69,6 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "encoding")
-    public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
-
-        @Specialization
-        public DynamicObject encoding(DynamicObject symbol,
-                                      @Cached("create()")EncodingNodes.GetRubyEncodingNode getRubyEncodingNode) {
-            return getRubyEncodingNode.executeGetRubyEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
-        }
-
-    }
-
     @CoreMethod(names = "hash")
     public abstract static class HashNode extends CoreMethodArrayArgumentsNode {
 

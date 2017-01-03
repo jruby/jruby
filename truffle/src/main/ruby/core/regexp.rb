@@ -255,7 +255,7 @@ class Regexp
   end
 
   def encoding
-    source.encoding
+    Truffle.invoke_primitive :encoding_get_object_encoding, self
   end
 
   def ~
