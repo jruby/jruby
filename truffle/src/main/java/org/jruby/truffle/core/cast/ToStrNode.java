@@ -27,12 +27,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToStrNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toStrNode;
-
-    public ToStrNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-        toStrNode = DispatchHeadNodeFactory.createMethodCall();
-    }
+    @Child private CallDispatchHeadNode toStrNode = DispatchHeadNodeFactory.createMethodCall();
 
     public abstract DynamicObject executeToStr(VirtualFrame frame, Object object);
 

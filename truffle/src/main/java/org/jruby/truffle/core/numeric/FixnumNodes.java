@@ -575,11 +575,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = { "==", "===" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode reverseCallNode;
-
-        public EqualNode() {
-            reverseCallNode = DispatchHeadNodeFactory.createMethodCall();
-        }
+        @Child private CallDispatchHeadNode reverseCallNode = DispatchHeadNodeFactory.createMethodCall();
 
         @Specialization
         public boolean equal(int a, int b) {

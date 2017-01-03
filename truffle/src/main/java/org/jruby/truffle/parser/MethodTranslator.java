@@ -106,7 +106,7 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode preludeProc;
         if (shouldConsiderDestructuringArrayArg(arity)) {
             final RubyNode readArrayNode = new ProfileArgumentNode(new ReadPreArgumentNode(0, MissingArgumentBehavior.RUNTIME_ERROR));
-            final RubyNode castArrayNode = ArrayCastNodeGen.create(sourceSection, readArrayNode);
+            final RubyNode castArrayNode = ArrayCastNodeGen.create(readArrayNode);
 
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
             final RubyNode writeArrayNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, arraySlot, castArrayNode);

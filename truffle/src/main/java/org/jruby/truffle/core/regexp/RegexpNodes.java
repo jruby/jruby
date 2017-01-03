@@ -374,15 +374,11 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dupNode;
+        @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         @Child private RegexpSetLastMatchPrimitiveNode setLastMatchNode = RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         @Child private CallDispatchHeadNode toSNode;
         @Child private ToStrNode toStrNode;
-
-        public MatchOperatorNode() {
-            dupNode = DispatchHeadNodeFactory.createMethodCall();
-        }
 
         @Specialization(guards = "isRubyString(string)")
         public Object matchString(VirtualFrame frame, DynamicObject regexp, DynamicObject string) {
@@ -410,7 +406,7 @@ public abstract class RegexpNodes {
         public Object matchGeneric(VirtualFrame frame, DynamicObject regexp, DynamicObject other) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
 
             return matchWithStringCopy(regexp, toStrNode.executeToStr(frame, other));
@@ -458,12 +454,8 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "match_start", required = 2, lowerFixnum = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dupNode;
+        @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-
-        public MatchStartNode() {
-            dupNode = DispatchHeadNodeFactory.createMethodCall();
-        }
 
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(VirtualFrame frame, DynamicObject regexp, DynamicObject string, int startPos) {
@@ -613,7 +605,7 @@ public abstract class RegexpNodes {
         public DynamicObject quote(VirtualFrame frame, Object raw) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
 
             return executeQuote(frame, toStrNode.executeToStr(frame, raw));
@@ -625,12 +617,8 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "search_from", required = 2, lowerFixnum = 2)
     public abstract static class SearchFromNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dupNode;
+        @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-
-        public SearchFromNode() {
-            dupNode = DispatchHeadNodeFactory.createMethodCall();
-        }
 
         @Specialization(guards = "isRubyString(string)")
         public Object searchFrom(VirtualFrame frame, DynamicObject regexp, DynamicObject string, int startPos) {

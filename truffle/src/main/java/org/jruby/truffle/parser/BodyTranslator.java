@@ -1286,7 +1286,8 @@ public class BodyTranslator extends Translator {
             children.add(child.accept(this));
         }
 
-        final InterpolatedRegexpNode i = new InterpolatedRegexpNode(sourceSection, children.toArray(new RubyNode[children.size()]), node.getOptions());
+        final InterpolatedRegexpNode i = new InterpolatedRegexpNode(children.toArray(new RubyNode[children.size()]), node.getOptions());
+        i.unsafeSetSourceSection(sourceSection);
 
         if (node.getOptions().isOnce()) {
             final RubyNode ret = new OnceNode(i);
@@ -1318,10 +1319,12 @@ public class BodyTranslator extends Translator {
         final ToSNode[] children = new ToSNode[childNodes.length];
 
         for (int i = 0; i < childNodes.length; i++) {
-            children[i] = ToSNodeGen.create(sourceSection, childNodes[i].accept(this));
+            children[i] = ToSNodeGen.create(childNodes[i].accept(this));
         }
 
-        return new InterpolatedStringNode(sourceSection, children);
+        final RubyNode ret = new InterpolatedStringNode(children);
+        ret.unsafeSetSourceSection(sourceSection);
+        return ret;
     }
 
     @Override
@@ -1849,10 +1852,10 @@ public class BodyTranslator extends Translator {
         for (Tuple<ParseNode, ParseNode> pair: node.getPairs()) {
             if (pair.getKey() == null) {
                 // This null case is for splats {a: 1, **{b: 2}, c: 3}
-                final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, sourceSection, keyValues.toArray(new RubyNode[keyValues.size()]));
+                final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, keyValues.toArray(new RubyNode[keyValues.size()]));
                 hashConcats.add(hashLiteralSoFar);
                 hashConcats.add(new EnsureSymbolKeysNode(sourceSection,
-                    HashCastNodeGen.create(sourceSection, pair.getValue().accept(this))));
+                    HashCastNodeGen.create(pair.getValue().accept(this))));
                 keyValues.clear();
             } else {
                 keyValues.add(pair.getKey().accept(this));
@@ -1865,7 +1868,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, sourceSection, keyValues.toArray(new RubyNode[keyValues.size()]));
+        final RubyNode hashLiteralSoFar = HashLiteralNode.create(context, keyValues.toArray(new RubyNode[keyValues.size()]));
         hashConcats.add(hashLiteralSoFar);
 
         if (hashConcats.size() == 1) {
@@ -2306,7 +2309,8 @@ public class BodyTranslator extends Translator {
              * the temp.
              */
 
-            final RubyNode splatCastNode = SplatCastNodeGen.create(sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true, environment.findLocalVarNode(tempRHSName, source, sourceSection));
+            final RubyNode splatCastNode = SplatCastNodeGen.create(translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true, environment.findLocalVarNode(tempRHSName, source, sourceSection));
+            splatCastNode.unsafeSetSourceSection(sourceSection);
 
             final RubyNode writeTemp = environment.findLocalVarNode(tempName, source, sourceSection).makeWriteNode(splatCastNode);
 
@@ -2398,9 +2402,11 @@ public class BodyTranslator extends Translator {
             final RubyNode writeTempRHS = environment.findLocalVarNode(tempRHSName, source, sourceSection).makeWriteNode(rhsTranslated);
             sequence.add(writeTempRHS);
 
-            final SplatCastNode rhsSplatCast = SplatCastNodeGen.create(sourceSection,
+            final SplatCastNode rhsSplatCast = SplatCastNodeGen.create(
                     nilBehavior,
                     true, environment.findLocalVarNode(tempRHSName, source, sourceSection));
+
+            rhsSplatCast.unsafeSetSourceSection(sourceSection);
 
             final String tempRHSSplattedName = environment.allocateLocalTemp("rhs");
             final RubyNode writeTempSplattedRHS = environment.findLocalVarNode(tempRHSSplattedName, source, sourceSection).makeWriteNode(rhsSplatCast);
@@ -2457,7 +2463,8 @@ public class BodyTranslator extends Translator {
              */
 
 
-            final RubyNode splatCastNode = SplatCastNodeGen.create(sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, environment.findLocalVarNode(tempRHSName, source, sourceSection));
+            final RubyNode splatCastNode = SplatCastNodeGen.create(translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, false, environment.findLocalVarNode(tempRHSName, source, sourceSection));
+            splatCastNode.unsafeSetSourceSection(sourceSection);
 
             final RubyNode writeTemp = environment.findLocalVarNode(tempName, source, sourceSection).makeWriteNode(splatCastNode);
 
@@ -3099,7 +3106,8 @@ public class BodyTranslator extends Translator {
         final SourceIndexLength sourceSection = node.getPosition();
 
         final RubyNode value = translateNodeOrNil(sourceSection, node.getValue());
-        final RubyNode ret = SplatCastNodeGen.create(sourceSection, SplatCastNode.NilBehavior.CONVERT, false, value);
+        final RubyNode ret = SplatCastNodeGen.create(SplatCastNode.NilBehavior.CONVERT, false, value);
+        ret.unsafeSetSourceSection(sourceSection);
         return addNewlineIfNeeded(node, ret);
     }
 

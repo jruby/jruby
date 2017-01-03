@@ -180,7 +180,7 @@ public abstract class StringNodes {
         @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
-            return ToStrNodeGen.create(null, other);
+            return ToStrNodeGen.create(other);
         }
 
         @Specialization(guards = { "!isRopeBuffer(string)", "isRubyString(other)" })
@@ -351,7 +351,7 @@ public abstract class StringNodes {
             if (respondToToStrNode.doesRespondToString(frame, b, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    toStrNode = insert(ToStrNodeGen.create(null, null));
+                    toStrNode = insert(ToStrNodeGen.create(null));
                 }
 
                 try {
@@ -680,7 +680,7 @@ public abstract class StringNodes {
         @Child private EncodingNodes.NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null, null);
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
-            return ToStrNodeGen.create(null, other);
+            return ToStrNodeGen.create(other);
         }
 
         @Specialization(guards = {"isRubyString(other)", "bothSingleByteOptimizable(string, other)"})
@@ -722,7 +722,7 @@ public abstract class StringNodes {
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
 
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
-        @Child private ToStrNode toStr = ToStrNodeGen.create(null, null);
+        @Child private ToStrNode toStr = ToStrNodeGen.create(null);
 
         @Specialization(guards = "isEmpty(string)")
         public int count(DynamicObject string, Object[] args) {
@@ -778,7 +778,7 @@ public abstract class StringNodes {
         @Child private TaintResultNode taintResultNode;
 
         @CreateCast("salt") public RubyNode coerceSaltToString(RubyNode other) {
-            return ToStrNodeGen.create(null, other);
+            return ToStrNodeGen.create(other);
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -829,7 +829,7 @@ public abstract class StringNodes {
     public abstract static class DeleteBangNode extends CoreMethodArrayArgumentsNode {
 
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
-        @Child private ToStrNode toStr = ToStrNodeGen.create(null, null);
+        @Child private ToStrNode toStr = ToStrNodeGen.create(null);
 
         public abstract DynamicObject executeDeleteBang(VirtualFrame frame, DynamicObject string, Object[] args);
 
@@ -1089,7 +1089,7 @@ public abstract class StringNodes {
                                            @Cached("createBinaryProfile()") ConditionProfile mutableRopeProfile) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
 
             return forceEncodingString(string, toStrNode.executeToStr(frame, encoding), differentEncodingProfile, mutableRopeProfile);
@@ -1150,7 +1150,7 @@ public abstract class StringNodes {
         public DynamicObject initialize(VirtualFrame frame, DynamicObject self, Object from) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
 
             return initialize(self, toStrNode.executeToStr(frame, from));
@@ -1268,7 +1268,7 @@ public abstract class StringNodes {
     public abstract static class ReplaceNode extends CoreMethodNode {
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
-            return ToStrNodeGen.create(null, other);
+            return ToStrNodeGen.create(other);
         }
 
         @Specialization(guards = "string == other")
@@ -1772,7 +1772,7 @@ public abstract class StringNodes {
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
 
             final DynamicObject[] otherStrings = new DynamicObject[args.length];
@@ -1862,17 +1862,10 @@ public abstract class StringNodes {
     @CoreMethod(names = "sum", optional = 1)
     public abstract static class SumNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode addNode;
-        @Child private CallDispatchHeadNode subNode;
-        @Child private CallDispatchHeadNode shiftNode;
-        @Child private CallDispatchHeadNode andNode;
-
-        public SumNode() {
-            addNode = DispatchHeadNodeFactory.createMethodCall();
-            subNode = DispatchHeadNodeFactory.createMethodCall();
-            shiftNode = DispatchHeadNodeFactory.createMethodCall();
-            andNode = DispatchHeadNodeFactory.createMethodCall();
-        }
+        @Child private CallDispatchHeadNode addNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private CallDispatchHeadNode subNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private CallDispatchHeadNode shiftNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private CallDispatchHeadNode andNode = DispatchHeadNodeFactory.createMethodCall();
 
         @Specialization
         public Object sum(VirtualFrame frame, DynamicObject string, int bits) {
@@ -2050,11 +2043,11 @@ public abstract class StringNodes {
         @Child private DeleteBangNode deleteBangNode;
 
         @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
-            return ToStrNodeGen.create(null, fromStr);
+            return ToStrNodeGen.create(fromStr);
         }
 
         @CreateCast("toStrNode") public RubyNode coerceToStrToString(RubyNode toStr) {
-            return ToStrNodeGen.create(null, toStr);
+            return ToStrNodeGen.create(toStr);
         }
 
         @Specialization(guards = "isEmpty(self)")
@@ -2095,11 +2088,11 @@ public abstract class StringNodes {
         @Child private DeleteBangNode deleteBangNode;
 
         @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
-            return ToStrNodeGen.create(null, fromStr);
+            return ToStrNodeGen.create(fromStr);
         }
 
         @CreateCast("toStrNode") public RubyNode coerceToStrToString(RubyNode toStr) {
-            return ToStrNodeGen.create(null, toStr);
+            return ToStrNodeGen.create(toStr);
         }
 
         @Specialization(guards = "isEmpty(self)")

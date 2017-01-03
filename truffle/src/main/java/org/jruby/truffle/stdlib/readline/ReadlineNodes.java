@@ -89,7 +89,7 @@ public abstract class ReadlineNodes {
     public abstract static class SetBasicWordBreakCharactersNode extends CoreMethodNode {
 
         @CreateCast("characters") public RubyNode coerceCharactersToString(RubyNode characters) {
-            return ToStrNodeGen.create(null, characters);
+            return ToStrNodeGen.create(characters);
         }
 
         @TruffleBoundary

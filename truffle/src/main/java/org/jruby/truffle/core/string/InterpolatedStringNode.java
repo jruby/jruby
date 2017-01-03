@@ -29,20 +29,15 @@ public final class InterpolatedStringNode extends RubyNode {
 
     @Children private final ToSNode[] children;
 
-    @Child private StringNodes.StringAppendPrimitiveNode appendNode;
-    @Child private CallDispatchHeadNode dupNode;
-    @Child private IsTaintedNode isTaintedNode;
-    @Child private TaintNode taintNode;
+    @Child private StringNodes.StringAppendPrimitiveNode appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(new RubyNode[] {});
+    @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
+    @Child private IsTaintedNode isTaintedNode = IsTaintedNode.create();
+    @Child private TaintNode taintNode = TaintNode.create();
 
     private final ConditionProfile taintProfile = ConditionProfile.createCountingProfile();
 
-    public InterpolatedStringNode(SourceIndexLength sourceSection, ToSNode[] children) {
-        super(sourceSection);
+    public InterpolatedStringNode(ToSNode[] children) {
         this.children = children;
-        appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(new RubyNode[] {});
-        dupNode = DispatchHeadNodeFactory.createMethodCall();
-        isTaintedNode = IsTaintedNode.create();
-        taintNode = TaintNode.create();
     }
 
     @ExplodeLoop

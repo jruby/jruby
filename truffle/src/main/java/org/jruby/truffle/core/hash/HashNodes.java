@@ -160,16 +160,12 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode callDefaultNode;
+        @Child private CallDispatchHeadNode callDefaultNode = DispatchHeadNodeFactory.createMethodCall();
         @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
         @Child private HashNode hashNode = new HashNode();
         @Child private CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
 
         @CompilationFinal private Object undefinedValue;
-
-        public GetIndexNode() {
-            callDefaultNode = DispatchHeadNodeFactory.createMethodCall();
-        }
 
         public abstract Object executeGet(VirtualFrame frame, DynamicObject hash, Object key);
 

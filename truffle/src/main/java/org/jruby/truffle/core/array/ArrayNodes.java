@@ -1028,11 +1028,7 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class InjectNode extends YieldingCoreMethodNode {
 
-        @Child private CallDispatchHeadNode dispatch;
-
-        public InjectNode() {
-            dispatch = DispatchHeadNodeFactory.createMethodCall(MissingBehavior.CALL_METHOD_MISSING);
-        }
+        @Child private CallDispatchHeadNode dispatch = DispatchHeadNodeFactory.createMethodCall(MissingBehavior.CALL_METHOD_MISSING);
 
         // With block
 
@@ -1658,14 +1654,10 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "sort", needsBlock = true)
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
-        @Child private CallDispatchHeadNode compareDispatchNode;
+        @Child private CallDispatchHeadNode compareDispatchNode = DispatchHeadNodeFactory.createMethodCall();
         @Child private YieldNode yieldNode = new YieldNode();
 
         private final BranchProfile errorProfile = BranchProfile.create();
-
-        public SortNode() {
-            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall();
-        }
 
         @Specialization(guards = "isEmptyArray(array)")
         public DynamicObject sortNull(DynamicObject array, Object unusedBlock) {

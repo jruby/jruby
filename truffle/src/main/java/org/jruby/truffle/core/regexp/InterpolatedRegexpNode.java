@@ -30,13 +30,11 @@ public class InterpolatedRegexpNode extends RubyNode {
 
     @Children private final RubyNode[] children;
     private final RegexpOptions options;
-    @Child private CallDispatchHeadNode toS;
+    @Child private CallDispatchHeadNode toS = DispatchHeadNodeFactory.createMethodCall();
 
-    public InterpolatedRegexpNode(SourceIndexLength sourceSection, RubyNode[] children, RegexpOptions options) {
-        super(sourceSection);
+    public InterpolatedRegexpNode(RubyNode[] children, RegexpOptions options) {
         this.children = children;
         this.options = options;
-        toS = DispatchHeadNodeFactory.createMethodCall();
     }
 
     @Override

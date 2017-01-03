@@ -29,12 +29,7 @@ import org.jruby.truffle.language.dispatch.MissingBehavior;
 @NodeChild("child")
 public abstract class HashCastNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toHashNode;
-
-    public HashCastNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-        toHashNode = DispatchHeadNodeFactory.createMethodCall(MissingBehavior.RETURN_MISSING);
-    }
+    @Child private CallDispatchHeadNode toHashNode = DispatchHeadNodeFactory.createMethodCall(MissingBehavior.RETURN_MISSING);
 
     protected abstract RubyNode getChild();
 

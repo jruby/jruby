@@ -131,13 +131,8 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_allocate", unsafe = UnsafeGroup.IO)
     public static abstract class IOAllocatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode newBufferNode;
-        @Child private AllocateObjectNode allocateNode;
-
-        public IOAllocatePrimitiveNode() {
-            newBufferNode = DispatchHeadNodeFactory.createMethodCall();
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private CallDispatchHeadNode newBufferNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
@@ -590,11 +585,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_reopen", unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode resetBufferingNode;
-
-        public IOReopenPrimitiveNode() {
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
-        }
+        @Child private CallDispatchHeadNode resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
 
         @TruffleBoundary(throwsControlFlowException = true)
         private void performReopen(DynamicObject self, DynamicObject target) {
@@ -621,11 +612,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_reopen_path", lowerFixnum = 2, unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPathPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode resetBufferingNode;
-
-        public IOReopenPathPrimitiveNode() {
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
-        }
+        @Child private CallDispatchHeadNode resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
 
         @TruffleBoundary(throwsControlFlowException = true)
         public void performReopenPath(DynamicObject self, DynamicObject path, int mode) {
@@ -784,11 +771,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_close", unsafe = UnsafeGroup.IO)
     public static abstract class IOClosePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode ensureOpenNode;
-
-        public IOClosePrimitiveNode() {
-            ensureOpenNode = DispatchHeadNodeFactory.createMethodCall();
-        }
+        @Child private CallDispatchHeadNode ensureOpenNode = DispatchHeadNodeFactory.createMethodCall();
 
         @Specialization
         public int close(VirtualFrame frame, DynamicObject io) {

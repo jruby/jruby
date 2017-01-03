@@ -198,7 +198,7 @@ public abstract class KernelNodes {
             // TODO BJF Aug 4, 2016 Needs SafeStringValue here
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
             return backtick(frame, toStrNode.executeToStr(frame, command));
         }
@@ -447,11 +447,7 @@ public abstract class KernelNodes {
 
     public abstract static class CopyNode extends UnaryCoreMethodNode {
 
-        @Child private CallDispatchHeadNode allocateNode;
-
-        public CopyNode() {
-            allocateNode = DispatchHeadNodeFactory.createMethodCall(true);
-        }
+        @Child private CallDispatchHeadNode allocateNode = DispatchHeadNodeFactory.createMethodCall(true);
 
         public abstract DynamicObject executeCopy(VirtualFrame frame, DynamicObject self);
 
@@ -478,20 +474,12 @@ public abstract class KernelNodes {
     @CoreMethod(names = "clone")
     public abstract static class CloneNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CopyNode copyNode;
-        @Child private CallDispatchHeadNode initializeCloneNode;
-        @Child private IsFrozenNode isFrozenNode;
+        @Child private CopyNode copyNode = CopyNodeFactory.create(null);
+        @Child private CallDispatchHeadNode initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
+        @Child private IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(null);
         @Child private FreezeNode freezeNode;
         @Child private PropagateTaintNode propagateTaintNode = PropagateTaintNode.create();
-        @Child private SingletonClassNode singletonClassNode;
-
-        public CloneNode() {
-            copyNode = CopyNodeFactory.create(null);
-            // Calls private initialize_clone on the new copy.
-            initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
-            isFrozenNode = IsFrozenNodeGen.create(null);
-            singletonClassNode = SingletonClassNodeGen.create(null);
-        }
+        @Child private SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
 
         @Specialization
         public DynamicObject clone(VirtualFrame frame, DynamicObject self,
@@ -533,12 +521,7 @@ public abstract class KernelNodes {
     public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CopyNode copyNode = CopyNodeFactory.create(null);
-        @Child private CallDispatchHeadNode initializeDupNode;
-
-        public DupNode() {
-            // Calls private initialize_dup on the new copy.
-            initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
-        }
+        @Child private CallDispatchHeadNode initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
         @Specialization
         public DynamicObject dup(VirtualFrame frame, DynamicObject self) {
@@ -566,7 +549,7 @@ public abstract class KernelNodes {
 
         @CreateCast("source")
         public RubyNode coerceSourceToString(RubyNode source) {
-            return ToStrNodeGen.create(null, source);
+            return ToStrNodeGen.create(source);
         }
 
         protected DynamicObject getCallerBinding(VirtualFrame frame) {
@@ -884,11 +867,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = { "initialize_dup", "initialize_clone" }, required = 1)
     public abstract static class InitializeDupCloneNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode initializeCopyNode;
-
-        public InitializeDupCloneNode() {
-            initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
-        }
+        @Child private CallDispatchHeadNode initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
         @Specialization
         public Object initializeDup(VirtualFrame frame, DynamicObject self, DynamicObject from) {
@@ -1156,15 +1135,11 @@ public abstract class KernelNodes {
 
         @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
         @Child LookupMethodNode lookupMethodNode = LookupMethodNodeGen.create(null, true, false, null, null);
-        @Child CallDispatchHeadNode respondToMissingNode;
-
-        public MethodNode() {
-            respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(true);
-        }
+        @Child CallDispatchHeadNode respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(true);
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToSymbolOrStringNodeGen.create(null, name);
+            return NameToSymbolOrStringNodeGen.create(name);
         }
 
         @Specialization
@@ -1190,7 +1165,7 @@ public abstract class KernelNodes {
         private InternalMethod createMissingMethod(Object self, DynamicObject name, String normalizedName, InternalMethod methodMissing) {
             final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
-            final RubyNode newBody = new CallMethodMissingWithStaticName(new SourceIndexLength(info.getSourceSection()), name);
+            final RubyNode newBody = new CallMethodMissingWithStaticName(name);
             final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody, false);
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
@@ -1201,12 +1176,10 @@ public abstract class KernelNodes {
         private static class CallMethodMissingWithStaticName extends RubyNode {
 
             private final DynamicObject methodName;
-            @Child private CallDispatchHeadNode methodMissing;
+            @Child private CallDispatchHeadNode methodMissing = DispatchHeadNodeFactory.createMethodCall();
 
-            public CallMethodMissingWithStaticName(SourceIndexLength sourceSection, DynamicObject methodName) {
-                super(sourceSection);
+            public CallMethodMissingWithStaticName(DynamicObject methodName) {
                 this.methodName = methodName;
-                methodMissing = DispatchHeadNodeFactory.createMethodCall();
             }
 
             @Override

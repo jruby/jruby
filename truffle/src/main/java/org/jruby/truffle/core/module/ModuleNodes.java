@@ -547,7 +547,7 @@ public abstract class ModuleNodes {
         protected DynamicObject toStr(VirtualFrame frame, Object object) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
             return toStrNode.executeToStr(frame, object);
         }
@@ -809,7 +809,7 @@ public abstract class ModuleNodes {
 
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
-            return NameToSymbolOrStringNodeGen.create(null, name);
+            return NameToSymbolOrStringNodeGen.create(name);
         }
 
         @CreateCast("inherit")
@@ -1649,11 +1649,7 @@ public abstract class ModuleNodes {
 
         @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
         @Child IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(null);
-        @Child CallDispatchHeadNode methodRemovedNode;
-
-        public RemoveMethodNode() {
-            this.methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
-        }
+        @Child CallDispatchHeadNode methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
         @Specialization
         public DynamicObject removeMethods(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -1722,11 +1718,7 @@ public abstract class ModuleNodes {
 
         @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
         @Child RaiseIfFrozenNode raiseIfFrozenNode = new RaiseIfFrozenNode(null, new ProfileArgumentNode(new ReadSelfNode()));
-        @Child CallDispatchHeadNode methodUndefinedNode;
-
-        public UndefMethodNode() {
-            this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
-        }
+        @Child CallDispatchHeadNode methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
         @Specialization
         public DynamicObject undefMethods(VirtualFrame frame, DynamicObject module, Object[] names) {

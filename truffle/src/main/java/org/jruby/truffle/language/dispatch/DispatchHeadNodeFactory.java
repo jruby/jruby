@@ -12,9 +12,7 @@ package org.jruby.truffle.language.dispatch;
 public class DispatchHeadNodeFactory {
 
     public static CallDispatchHeadNode createMethodCall() {
-        return new CallDispatchHeadNode(
-                false,
-                MissingBehavior.CALL_METHOD_MISSING);
+        return createMethodCall(false);
     }
 
     public static CallDispatchHeadNode createMethodCallOnSelf() {
@@ -22,13 +20,13 @@ public class DispatchHeadNodeFactory {
     }
 
     public static CallDispatchHeadNode createMethodCall(boolean ignoreVisibility) {
-        return new CallDispatchHeadNode(
+        return createMethodCall(
                 ignoreVisibility,
                 MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public static CallDispatchHeadNode createMethodCall(MissingBehavior missingBehavior) {
-        return new CallDispatchHeadNode(
+        return createMethodCall(
                 false,
                 missingBehavior);
     }

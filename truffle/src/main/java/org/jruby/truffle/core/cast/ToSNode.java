@@ -26,13 +26,8 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 @NodeChild(type = RubyNode.class)
 public abstract class ToSNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode callToSNode;
+    @Child private CallDispatchHeadNode callToSNode = DispatchHeadNodeFactory.createMethodCall(true);
     @Child private KernelNodes.ToSNode kernelToSNode;
-
-    public ToSNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-        callToSNode = DispatchHeadNodeFactory.createMethodCall(true);
-    }
 
     protected DynamicObject kernelToS(Object object) {
         if (kernelToSNode == null) {
