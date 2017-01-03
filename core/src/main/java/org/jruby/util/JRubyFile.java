@@ -163,7 +163,7 @@ public class JRubyFile extends JavaSecuredFile {
         final String path = super.getPath();
         if (path.startsWith("uri:")) {
             // TODO better do not collapse // to / for uri: files
-            return path.replaceFirst(":/([^/])", "://$1" );
+            return normalizeSeps(path.replaceFirst(":/([^/])", "://$1" ));
         }
         return normalizeSeps(new File(path).getAbsolutePath());
     }

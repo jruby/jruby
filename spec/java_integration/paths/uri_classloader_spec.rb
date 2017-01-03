@@ -5,8 +5,13 @@ describe "uri:classloader path strings" do
   let(:unc_like_path) { "uri:classloader://foo/b.gemspec" }
   let(:normal_path) { "uri:classloader:/foo/b.gemspec" }
 
+  let(:sub_path) { "../../../vendor/jface/*.jar" }
+  let(:base_path) { "uri:classloader:/gems/swt-4.6.1/lib/swt/full.rb" }
+  let(:resolved_path) { "uri:classloader:/gems/swt-4.6.1/vendor/jface/*.jar" }
+
   it "sent to expand_path will normalize slashes" do
     expect(File.expand_path(unc_like_path)).to eq(normal_path)
+    expect(File.expand_path(sub_path, base_path)).to eq(resolved_path)
     # On windows this converts to many backslashes on front and backslashes
     # Everywhere. JRuby #3771 is tracking this.  We should add a check
     # to not only make sure :/ vs :\\\\ but also that not \ is present at
