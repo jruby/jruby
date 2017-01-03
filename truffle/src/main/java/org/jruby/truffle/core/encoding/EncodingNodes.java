@@ -80,8 +80,7 @@ public abstract class EncodingNodes {
 
         public abstract DynamicObject executeGetRubyEncoding(Encoding encoding);
 
-        @Specialization(guards = "isSameEncoding(encoding, cachedRubyEncoding)",
-                limit = "getCacheLimit()")
+        @Specialization(guards = "isSameEncoding(encoding, cachedRubyEncoding)", limit = "getCacheLimit()")
         protected DynamicObject getRubyEncodingCached(Encoding encoding,
                                                       @Cached("getRubyEncodingUncached(encoding)") DynamicObject cachedRubyEncoding) {
             return cachedRubyEncoding;
