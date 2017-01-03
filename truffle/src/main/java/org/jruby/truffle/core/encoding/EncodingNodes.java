@@ -429,12 +429,7 @@ public abstract class EncodingNodes {
     @Primitive(name = "encoding_get_object_encoding", needsSelf = false)
     public static abstract class EncodingGetObjectEncodingNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private GetRubyEncodingNode getRubyEncodingNode;
-
-        public EncodingGetObjectEncodingNode() {
-            super();
-            getRubyEncodingNode = EncodingNodesFactory.GetRubyEncodingNodeGen.create();
-        }
+        @Child private GetRubyEncodingNode getRubyEncodingNode = EncodingNodesFactory.GetRubyEncodingNodeGen.create();
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
