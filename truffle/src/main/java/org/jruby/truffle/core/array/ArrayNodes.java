@@ -1036,8 +1036,7 @@ public abstract class ArrayNodes {
 
         @Child private CallDispatchHeadNode dispatch;
 
-        public InjectNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public InjectNode() {
             dispatch = DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.CALL_METHOD_MISSING);
         }
 

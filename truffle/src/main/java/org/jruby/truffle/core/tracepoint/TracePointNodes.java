@@ -66,10 +66,6 @@ public abstract class TracePointNodes {
     @CoreMethod(names = "enable", needsBlock = true)
     public abstract static class EnableNode extends YieldingCoreMethodNode {
 
-        public EnableNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
-
         @Specialization(guards = "isTracePoint(tracePoint)")
         public boolean enable(VirtualFrame frame, DynamicObject tracePoint, NotProvided block) {
             return enable(frame, tracePoint, (DynamicObject) null);
@@ -113,10 +109,6 @@ public abstract class TracePointNodes {
 
     @CoreMethod(names = "disable", needsBlock = true)
     public abstract static class DisableNode extends YieldingCoreMethodNode {
-
-        public DisableNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
 
         @Specialization(guards = "isTracePoint(tracePoint)")
         public boolean disable(VirtualFrame frame, DynamicObject tracePoint, NotProvided block) {

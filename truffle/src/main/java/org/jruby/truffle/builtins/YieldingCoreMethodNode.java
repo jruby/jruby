@@ -19,16 +19,11 @@ import org.jruby.truffle.language.yield.YieldNode;
 
 public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
-    @Child private YieldNode dispatchNode;
+    @Child private YieldNode dispatchNode = new YieldNode();
     @Child private BooleanCastNode booleanCastNode;
 
     public YieldingCoreMethodNode() {
-        this(null);
-    }
-
-    public YieldingCoreMethodNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-        dispatchNode = new YieldNode();
+        super();
     }
 
     public Object yield(VirtualFrame frame, DynamicObject block, Object... arguments) {
