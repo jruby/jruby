@@ -40,7 +40,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     public ArrayCastNode(SourceIndexLength sourceSection, SplatCastNode.NilBehavior nilBehavior) {
         super(sourceSection);
-        toArrayNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING);
+        toArrayNode = DispatchHeadNodeFactory.createMethodCall(true, MissingBehavior.RETURN_MISSING);
         this.nilBehavior = nilBehavior;
     }
 

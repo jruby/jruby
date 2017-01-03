@@ -77,7 +77,7 @@ public abstract class ToFNode extends RubyNode {
     private double coerceObject(VirtualFrame frame, Object object, BranchProfile errorProfile) {
         if (toFNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toFNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            toFNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
         final Object coerced;

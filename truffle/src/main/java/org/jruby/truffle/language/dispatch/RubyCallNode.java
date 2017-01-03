@@ -94,7 +94,7 @@ public class RubyCallNode extends RubyNode {
 
         if (dispatchHead == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            dispatchHead = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), ignoreVisibility));
+            dispatchHead = insert(DispatchHeadNodeFactory.createMethodCall(ignoreVisibility));
         }
 
         final Object returnValue = dispatchHead.dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
@@ -180,7 +180,7 @@ public class RubyCallNode extends RubyNode {
     private Object respondToMissing(VirtualFrame frame, Object receiverObject) {
         if (respondToMissing == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            respondToMissing = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
+            respondToMissing = insert(DispatchHeadNodeFactory.createMethodCall(true, MissingBehavior.RETURN_MISSING));
         }
         final DynamicObject method = getContext().getSymbolTable().getSymbol(methodName);
         return respondToMissing.call(frame, receiverObject, "respond_to_missing?", method, false);

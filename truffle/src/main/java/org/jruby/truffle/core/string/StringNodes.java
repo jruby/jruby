@@ -297,7 +297,7 @@ public abstract class StringNodes {
             if (respondToNode.doesRespondToString(frame, b, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
                 if (objectEqualNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                    objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall());
                 }
 
                 return objectEqualNode.callBoolean(frame, b, "==", null, a);
@@ -375,7 +375,7 @@ public abstract class StringNodes {
             if (respondToCmpNode.doesRespondToString(frame, b, create7BitString("<=>", UTF8Encoding.INSTANCE), false)) {
                 if (cmpNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                    cmpNode = insert(DispatchHeadNodeFactory.createMethodCall());
                 }
 
                 final Object cmpResult = cmpNode.call(frame, b, "<=>", a);
@@ -560,7 +560,7 @@ public abstract class StringNodes {
         public Object slice2(VirtualFrame frame, DynamicObject string, DynamicObject matchStr, NotProvided length) {
             if (includeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                includeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                includeNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             boolean result = includeNode.callBoolean(frame, string, "include?", null, matchStr);
@@ -568,7 +568,7 @@ public abstract class StringNodes {
             if (result) {
                 if (dupNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                    dupNode = insert(DispatchHeadNodeFactory.createMethodCall());
                 }
 
                 throw new TaintResultNode.DoNotTaint(dupNode.call(frame, matchStr, "dup"));
@@ -1868,10 +1868,10 @@ public abstract class StringNodes {
         @Child private CallDispatchHeadNode andNode;
 
         public SumNode() {
-            addNode = DispatchHeadNodeFactory.createMethodCall(getContext());
-            subNode = DispatchHeadNodeFactory.createMethodCall(getContext());
-            shiftNode = DispatchHeadNodeFactory.createMethodCall(getContext());
-            andNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            addNode = DispatchHeadNodeFactory.createMethodCall();
+            subNode = DispatchHeadNodeFactory.createMethodCall();
+            shiftNode = DispatchHeadNodeFactory.createMethodCall();
+            andNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @Specialization

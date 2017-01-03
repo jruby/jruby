@@ -40,7 +40,6 @@ import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -86,7 +85,7 @@ public abstract class BasicObjectNodes {
         @Child private CallDispatchHeadNode equalNode;
 
         public NotEqualNode() {
-            equalNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            equalNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @Specialization
@@ -391,7 +390,7 @@ public abstract class BasicObjectNodes {
         @Child private CallDispatchHeadNode dispatchNode;
 
         public SendNode() {
-            dispatchNode = new CallDispatchHeadNode(getContext(), true,
+            dispatchNode = new CallDispatchHeadNode(true,
                     MissingBehavior.CALL_METHOD_MISSING);
         }
 

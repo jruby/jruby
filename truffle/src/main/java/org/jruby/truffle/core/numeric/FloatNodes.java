@@ -34,7 +34,6 @@ import org.jruby.truffle.core.cast.DefaultValueNodeGen;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -172,8 +171,8 @@ public abstract class FloatNodes {
             if (complexProfile.profile(a < 0 && b != Math.round(b))) {
                 if (complexConvertNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    complexConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                    complexPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                    complexConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
+                    complexPowNode = insert(DispatchHeadNodeFactory.createMethodCall());
                 }
 
                 final Object aComplex = complexConvertNode.call(frame, coreLibrary().getComplexClass(), "convert", a, 0);
@@ -228,7 +227,7 @@ public abstract class FloatNodes {
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
 
             return redoCoercedNode.call(frame, a, "redo_coerced", getSymbol("/"), b);
@@ -417,7 +416,7 @@ public abstract class FloatNodes {
         public Object equal(VirtualFrame frame, double a, DynamicObject b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
 
             return fallbackCallNode.call(frame, a, "equal_fallback", b);

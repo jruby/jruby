@@ -116,7 +116,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected CallDispatchHeadNode createConstMissingNode() {
-        return DispatchHeadNodeFactory.createMethodCall(getContext());
+        return DispatchHeadNodeFactory.createMethodCall();
     }
 
     protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {

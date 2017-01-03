@@ -25,7 +25,7 @@ public class LoadRequiredLibrariesNode extends RubyNode {
 
     public LoadRequiredLibrariesNode(SourceIndexLength sourceSection) {
         super(sourceSection);
-        requireNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
+        requireNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
     }
 
     @Override

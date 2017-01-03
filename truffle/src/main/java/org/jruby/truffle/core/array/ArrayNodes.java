@@ -58,7 +58,6 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -977,7 +976,7 @@ public abstract class ArrayNodes {
         protected Object callToAry(VirtualFrame frame, Object object) {
             if (toAryNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
             }
             return toAryNode.call(frame, object, "to_ary");
         }
@@ -1032,7 +1031,7 @@ public abstract class ArrayNodes {
         @Child private CallDispatchHeadNode dispatch;
 
         public InjectNode() {
-            dispatch = DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.CALL_METHOD_MISSING);
+            dispatch = DispatchHeadNodeFactory.createMethodCall(MissingBehavior.CALL_METHOD_MISSING);
         }
 
         // With block
@@ -1665,7 +1664,7 @@ public abstract class ArrayNodes {
         private final BranchProfile errorProfile = BranchProfile.create();
 
         public SortNode() {
-            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @Specialization(guards = "isEmptyArray(array)")
@@ -1805,7 +1804,7 @@ public abstract class ArrayNodes {
         private Object zipRuby(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             if (zipInternalCall == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             final Object[] others = RubyArguments.getArguments(frame);

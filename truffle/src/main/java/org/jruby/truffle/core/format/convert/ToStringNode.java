@@ -97,7 +97,7 @@ public abstract class ToStringNode extends FormatNode {
     public byte[] toString(VirtualFrame frame, DynamicObject array) {
         if (toSNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
+            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(true,
                     MissingBehavior.RETURN_MISSING));
         }
 
@@ -118,7 +118,7 @@ public abstract class ToStringNode extends FormatNode {
     public byte[] toString(VirtualFrame frame, Object object) {
         if (toStrNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
+            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(true,
                     MissingBehavior.RETURN_MISSING));
         }
 

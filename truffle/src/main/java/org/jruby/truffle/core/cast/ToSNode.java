@@ -31,7 +31,7 @@ public abstract class ToSNode extends RubyNode {
 
     public ToSNode(SourceIndexLength sourceSection) {
         super(sourceSection);
-        callToSNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
+        callToSNode = DispatchHeadNodeFactory.createMethodCall(true);
     }
 
     protected DynamicObject kernelToS(Object object) {

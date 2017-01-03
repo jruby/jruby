@@ -90,7 +90,6 @@ import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.core.thread.ThreadManager.ResultWithinTime;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -136,7 +135,7 @@ public abstract class IOPrimitiveNodes {
         @Child private AllocateObjectNode allocateNode;
 
         public IOAllocatePrimitiveNode() {
-            newBufferNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            newBufferNode = DispatchHeadNodeFactory.createMethodCall();
             allocateNode = AllocateObjectNode.create();
         }
 
@@ -594,7 +593,7 @@ public abstract class IOPrimitiveNodes {
         @Child private CallDispatchHeadNode resetBufferingNode;
 
         public IOReopenPrimitiveNode() {
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -625,7 +624,7 @@ public abstract class IOPrimitiveNodes {
         @Child private CallDispatchHeadNode resetBufferingNode;
 
         public IOReopenPathPrimitiveNode() {
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @TruffleBoundary(throwsControlFlowException = true)
@@ -788,7 +787,7 @@ public abstract class IOPrimitiveNodes {
         @Child private CallDispatchHeadNode ensureOpenNode;
 
         public IOClosePrimitiveNode() {
-            ensureOpenNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            ensureOpenNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @Specialization

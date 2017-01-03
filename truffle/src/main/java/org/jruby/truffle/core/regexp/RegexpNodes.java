@@ -66,7 +66,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -382,7 +381,7 @@ public abstract class RegexpNodes {
         @Child private ToStrNode toStrNode;
 
         public MatchOperatorNode() {
-            dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            dupNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -396,7 +395,7 @@ public abstract class RegexpNodes {
         public Object matchSymbol(VirtualFrame frame, DynamicObject regexp, DynamicObject symbol) {
             if (toSNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                toSNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return matchWithStringCopy(regexp, (DynamicObject) toSNode.call(frame, symbol, "to_s"));
@@ -463,7 +462,7 @@ public abstract class RegexpNodes {
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         public MatchStartNode() {
-            dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            dupNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -630,7 +629,7 @@ public abstract class RegexpNodes {
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         public SearchFromNode() {
-            dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            dupNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @Specialization(guards = "isRubyString(string)")

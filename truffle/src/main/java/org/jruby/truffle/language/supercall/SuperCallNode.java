@@ -86,7 +86,7 @@ public class SuperCallNode extends RubyNode {
     private Object callMethodMissing(VirtualFrame frame, Object receiver, DynamicObject block, Object[] arguments) {
         if (callMethodMissingNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            callMethodMissingNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+            callMethodMissingNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
         }
         return callMethodMissingNode.callWithBlock(frame, receiver, "method_missing", block, arguments);
     }

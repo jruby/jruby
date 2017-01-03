@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
@@ -53,7 +52,7 @@ public class ReadLastBacktraceNode extends RubyNode {
     private CallDispatchHeadNode getGetBacktraceNode() {
         if (getBacktraceNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            getBacktraceNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            getBacktraceNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         return getBacktraceNode;

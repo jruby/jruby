@@ -34,8 +34,8 @@ public abstract class HashLiteralNode extends RubyNode {
         super(sourceSection);
         assert keyValues.length % 2 == 0;
         this.keyValues = keyValues;
-        dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
-        freezeNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+        dupNode = DispatchHeadNodeFactory.createMethodCall();
+        freezeNode = DispatchHeadNodeFactory.createMethodCall();
     }
 
     public int size() {
@@ -93,7 +93,7 @@ public abstract class HashLiteralNode extends RubyNode {
         public SmallHashLiteralNode(SourceIndexLength sourceSection, RubyNode[] keyValues) {
             super(sourceSection, keyValues);
             hashNode = new HashNode();
-            equalNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            equalNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @ExplodeLoop

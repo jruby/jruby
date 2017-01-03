@@ -209,7 +209,7 @@ public abstract class KernelNodes {
 
             if (toHashNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             final DynamicObject env = getContext().getCoreLibrary().getENV();
@@ -305,7 +305,7 @@ public abstract class KernelNodes {
         private boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                equalNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return equalNode.callBoolean(frame, left, "==", null, right);
@@ -335,7 +335,7 @@ public abstract class KernelNodes {
         private boolean areEql(VirtualFrame frame, Object left, Object right) {
             if (eqlNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                eqlNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                eqlNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
             return eqlNode.callBoolean(frame, left, "eql?", null, right);
         }
@@ -450,7 +450,7 @@ public abstract class KernelNodes {
         @Child private CallDispatchHeadNode allocateNode;
 
         public CopyNode() {
-            allocateNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
+            allocateNode = DispatchHeadNodeFactory.createMethodCall(true);
         }
 
         public abstract DynamicObject executeCopy(VirtualFrame frame, DynamicObject self);
@@ -488,7 +488,7 @@ public abstract class KernelNodes {
         public CloneNode() {
             copyNode = CopyNodeFactory.create(null);
             // Calls private initialize_clone on the new copy.
-            initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
+            initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
             isFrozenNode = IsFrozenNodeGen.create(null);
             singletonClassNode = SingletonClassNodeGen.create(null);
         }
@@ -537,7 +537,7 @@ public abstract class KernelNodes {
 
         public DupNode() {
             // Calls private initialize_dup on the new copy.
-            initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
+            initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
         }
 
         @Specialization
@@ -887,7 +887,7 @@ public abstract class KernelNodes {
         @Child private CallDispatchHeadNode initializeCopyNode;
 
         public InitializeDupCloneNode() {
-            initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
+            initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
         }
 
         @Specialization
@@ -1159,7 +1159,7 @@ public abstract class KernelNodes {
         @Child CallDispatchHeadNode respondToMissingNode;
 
         public MethodNode() {
-            respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
+            respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(true);
         }
 
         @CreateCast("name")
@@ -1206,7 +1206,7 @@ public abstract class KernelNodes {
             public CallMethodMissingWithStaticName(SourceIndexLength sourceSection, DynamicObject methodName) {
                 super(sourceSection);
                 this.methodName = methodName;
-                methodMissing = DispatchHeadNodeFactory.createMethodCall(getContext());
+                methodMissing = DispatchHeadNodeFactory.createMethodCall();
             }
 
             @Override
@@ -1378,7 +1378,7 @@ public abstract class KernelNodes {
         @Child private DispatchHeadNode dispatchNode;
 
         public PublicSendNode() {
-            dispatchNode = new DispatchHeadNode(getContext(), false, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+            dispatchNode = new DispatchHeadNode(false, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
         }
 
         @Specialization
@@ -1547,7 +1547,7 @@ public abstract class KernelNodes {
         private boolean respondToMissing(VirtualFrame frame, Object object, DynamicObject name, boolean includeProtectedAndPrivate) {
             if (respondToMissingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToMissingNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                respondToMissingNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
             }
 
             return respondToMissingNode.callBoolean(frame, object, "respond_to_missing?", null, name, includeProtectedAndPrivate);

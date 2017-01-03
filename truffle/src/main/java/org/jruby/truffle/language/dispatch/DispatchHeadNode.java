@@ -10,13 +10,11 @@
 package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyBaseNode;
 
-public class DispatchHeadNode extends Node {
+public class DispatchHeadNode extends RubyBaseNode {
 
-    protected final RubyContext context;
     protected final boolean ignoreVisibility;
     protected final boolean onlyCallPublic;
     protected final MissingBehavior missingBehavior;
@@ -25,11 +23,9 @@ public class DispatchHeadNode extends Node {
     @Child private DispatchNode first;
 
     public DispatchHeadNode(
-            RubyContext context,
             boolean ignoreVisibility,
             boolean onlyCallPublic,
             MissingBehavior missingBehavior, DispatchAction dispatchAction) {
-        this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.onlyCallPublic = onlyCallPublic;
         this.missingBehavior = missingBehavior;

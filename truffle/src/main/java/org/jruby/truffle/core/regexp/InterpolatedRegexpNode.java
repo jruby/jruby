@@ -36,7 +36,7 @@ public class InterpolatedRegexpNode extends RubyNode {
         super(sourceSection);
         this.children = children;
         this.options = options;
-        toS = DispatchHeadNodeFactory.createMethodCall(getContext());
+        toS = DispatchHeadNodeFactory.createMethodCall();
     }
 
     @Override

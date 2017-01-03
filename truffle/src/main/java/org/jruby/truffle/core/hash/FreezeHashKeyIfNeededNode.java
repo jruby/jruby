@@ -61,7 +61,7 @@ public abstract class FreezeHashKeyIfNeededNode extends RubyNode {
     private Object dup(VirtualFrame frame, Object value) {
         if (dupNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            dupNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
         return dupNode.call(frame, value, "dup");
     }
@@ -69,7 +69,7 @@ public abstract class FreezeHashKeyIfNeededNode extends RubyNode {
     private Object freeze(VirtualFrame frame, Object value) {
         if (freezeNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            freezeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            freezeNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
         return freezeNode.call(frame, value, "freeze");
     }

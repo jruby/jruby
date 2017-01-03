@@ -1652,7 +1652,7 @@ public abstract class ModuleNodes {
         @Child CallDispatchHeadNode methodRemovedNode;
 
         public RemoveMethodNode() {
-            this.methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
+            this.methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
         }
 
         @Specialization
@@ -1725,7 +1725,7 @@ public abstract class ModuleNodes {
         @Child CallDispatchHeadNode methodUndefinedNode;
 
         public UndefMethodNode() {
-            this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
+            this.methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
         }
 
         @Specialization

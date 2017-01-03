@@ -344,7 +344,7 @@ public abstract class BignumNodes {
 
             if (reverseCallNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                reverseCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                reverseCallNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             final Object reversedResult = reverseCallNode.call(frame, b, "==", a);

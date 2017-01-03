@@ -115,7 +115,7 @@ public class DefineClassNode extends RubyNode {
     private void callInherited(VirtualFrame frame, DynamicObject superClass, DynamicObject childClass) {
         if (inheritedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+            inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
         }
         inheritedNode.call(frame, superClass, "inherited", childClass);
     }

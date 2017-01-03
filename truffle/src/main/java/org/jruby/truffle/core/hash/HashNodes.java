@@ -39,7 +39,6 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -169,7 +168,7 @@ public abstract class HashNodes {
         @CompilationFinal private Object undefinedValue;
 
         public GetIndexNode() {
-            callDefaultNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            callDefaultNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         public abstract Object executeGet(VirtualFrame frame, DynamicObject hash, Object key);
@@ -557,7 +556,7 @@ public abstract class HashNodes {
         public Object each(VirtualFrame frame, DynamicObject hash, NotProvided block) {
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
 
             InternalMethod method = RubyArguments.getMethod(frame);

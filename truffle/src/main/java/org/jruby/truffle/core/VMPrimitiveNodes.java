@@ -61,7 +61,6 @@ import org.jruby.truffle.core.kernel.KernelNodesFactory;
 import org.jruby.truffle.core.proc.ProcSignalHandler;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ThrowException;
@@ -151,8 +150,8 @@ public abstract class VMPrimitiveNodes {
         @Child private CallDispatchHeadNode arrayAppendNode;
 
         public VMExtendedModulesNode() {
-            newArrayNode = DispatchHeadNodeFactory.createMethodCall(getContext());
-            arrayAppendNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            newArrayNode = DispatchHeadNodeFactory.createMethodCall();
+            arrayAppendNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @Specialization

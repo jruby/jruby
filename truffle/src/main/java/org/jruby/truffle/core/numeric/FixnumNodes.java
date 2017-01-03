@@ -32,7 +32,6 @@ import org.jruby.truffle.core.numeric.FixnumNodesFactory.DivNodeFactory;
 import org.jruby.truffle.core.rope.LazyIntRope;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -579,7 +578,7 @@ public abstract class FixnumNodes {
         @Child private CallDispatchHeadNode reverseCallNode;
 
         public EqualNode() {
-            reverseCallNode = DispatchHeadNodeFactory.createMethodCall(getContext());
+            reverseCallNode = DispatchHeadNodeFactory.createMethodCall();
         }
 
         @Specialization
@@ -919,7 +918,7 @@ public abstract class FixnumNodes {
         public Object leftShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
             return fallbackCallNode.call(frame, a, "left_shift_fallback", b);
         }
@@ -999,7 +998,7 @@ public abstract class FixnumNodes {
         public Object rightShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
             return fallbackCallNode.call(frame, a, "right_shift_fallback", b);
         }

@@ -30,7 +30,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -102,7 +101,7 @@ public abstract class CmpIntNode extends RubyNode {
     public int cmpObject(VirtualFrame frame, Object value, Object receiver, Object other) {
         if (gtNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            gtNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            gtNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         if (gtNode.callBoolean(frame, value, ">", null, 0)) {
@@ -111,7 +110,7 @@ public abstract class CmpIntNode extends RubyNode {
 
         if (ltNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            ltNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            ltNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         if (ltNode.callBoolean(frame, value, "<", null, 0)) {

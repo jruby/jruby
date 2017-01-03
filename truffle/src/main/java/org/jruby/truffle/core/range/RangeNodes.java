@@ -33,7 +33,6 @@ import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -144,7 +143,7 @@ public abstract class RangeNodes {
         private Object eachInternal(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             if (eachInternalCall == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                eachInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                eachInternalCall = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return eachInternalCall.callWithBlock(frame, range, "each_internal", block);
@@ -328,7 +327,7 @@ public abstract class RangeNodes {
         private Object stepInternal(VirtualFrame frame, DynamicObject range, Object step, DynamicObject block) {
             if (stepInternalCall == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                stepInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                stepInternalCall = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return stepInternalCall.callWithBlock(frame, range, "step_internal", block, step);
@@ -434,7 +433,7 @@ public abstract class RangeNodes {
         public Object toA(VirtualFrame frame, DynamicObject range) {
             if (toAInternalCall == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toAInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                toAInternalCall = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return toAInternalCall.call(frame, range, "to_a_internal");
@@ -546,7 +545,7 @@ public abstract class RangeNodes {
                 boolean excludeEnd) {
             if (cmpNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                cmpNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
             if (allocateNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();

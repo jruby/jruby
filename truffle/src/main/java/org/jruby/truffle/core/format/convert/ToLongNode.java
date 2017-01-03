@@ -81,7 +81,7 @@ public abstract class ToLongNode extends FormatNode {
 
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
+            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(true, MissingBehavior.RETURN_MISSING));
         }
 
         final Object value = toIntNode.call(frame, object, "to_int");

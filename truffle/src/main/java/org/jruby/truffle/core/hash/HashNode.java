@@ -51,7 +51,7 @@ public class HashNode extends RubyBaseNode {
     private Object hash(VirtualFrame frame, Object object) {
         if (hashNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            hashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            hashNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
         return hashNode.call(frame, object, "hash");
     }

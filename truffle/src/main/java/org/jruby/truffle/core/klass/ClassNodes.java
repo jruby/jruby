@@ -29,7 +29,6 @@ import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
@@ -265,8 +264,8 @@ public abstract class ClassNodes {
         @Child private CallDispatchHeadNode initialize;
 
         public NewNode() {
-            allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
-            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
+            allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
+            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf();
         }
 
         @Specialization
@@ -295,7 +294,7 @@ public abstract class ClassNodes {
         void triggerInheritedHook(VirtualFrame frame, DynamicObject subClass, DynamicObject superClass) {
             if (inheritedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
             inheritedNode.call(frame, superClass, "inherited", subClass);
         }

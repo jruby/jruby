@@ -60,7 +60,7 @@ public class UpdateLastBacktraceNode extends RubyNode {
     private CallDispatchHeadNode getSetBacktraceNode() {
         if (setBacktraceNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            setBacktraceNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            setBacktraceNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         return setBacktraceNode;

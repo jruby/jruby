@@ -110,7 +110,7 @@ abstract class ForeignReadStringCachedHelperNode extends RubyNode {
     protected CallDispatchHeadNode getCallNode() {
         if (callNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            callNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            callNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
         return callNode;
