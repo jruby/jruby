@@ -127,10 +127,6 @@ public abstract class ReadlineNodes {
 
         @Child private TaintNode taintNode = TaintNode.create();
 
-        public ReadlineNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
-
         @CreateCast("prompt") public RubyNode coercePromptToJavaString(RubyNode prompt) {
             return NameToJavaStringWithDefaultNodeGen.create(null, coreStrings().EMPTY_STRING.toString(), prompt);
         }

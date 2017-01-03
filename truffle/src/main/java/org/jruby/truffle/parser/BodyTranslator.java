@@ -400,13 +400,13 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitArgsPushNode(ArgsPushParseNode node) {
-        final SourceIndexLength sourceSection = node.getPosition();
-
         final RubyNode args = node.getFirstNode().accept(this);
         final RubyNode value = node.getSecondNode().accept(this);
         final RubyNode ret = ArrayAppendOneNodeGen.create(
-                KernelNodesFactory.DupNodeFactory.create(sourceSection, new RubyNode[] { args }),
+                KernelNodesFactory.DupNodeFactory.create(new RubyNode[] { args }),
                 value);
+
+        ret.unsafeSetSourceSection(node.getPosition());
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -1434,7 +1434,8 @@ public class BodyTranslator extends Translator {
         final RubyNode rangeClass = new ObjectLiteralNode(context.getCoreLibrary().getRangeClass());
         final RubyNode isExclusive = new ObjectLiteralNode(node.isExclusive());
 
-        final RubyNode ret = RangeNodesFactory.NewNodeFactory.create(sourceSection, rangeClass, begin, end, isExclusive);
+        final RubyNode ret = RangeNodesFactory.NewNodeFactory.create(rangeClass, begin, end, isExclusive);
+        ret.unsafeSetSourceSection(sourceSection);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -3143,10 +3144,13 @@ public class BodyTranslator extends Translator {
         final SourceIndexLength sourceSection = node.getPosition();
         final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
 
-        final RubyNode ret = ModuleNodesFactory.UndefMethodNodeFactory.create(sourceSection, new RubyNode[]{
-                new RaiseIfFrozenNode(sourceSection, new GetDefaultDefineeNode(sourceSection)),
+        final RubyNode ret = ModuleNodesFactory.UndefMethodNodeFactory.create(new RubyNode[]{
+                new RaiseIfFrozenNode(null, new GetDefaultDefineeNode(null)),
                 new ObjectLiteralNode(new Object[]{ nameSymbol })
         });
+
+        ret.unsafeSetSourceSection(sourceSection);
+
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -3182,7 +3186,6 @@ public class BodyTranslator extends Translator {
 
     private RubyNode translateWhileNode(WhileParseNode node, boolean conditionInversed) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         RubyNode condition = node.getConditionNode().accept(this);
         if (conditionInversed) {

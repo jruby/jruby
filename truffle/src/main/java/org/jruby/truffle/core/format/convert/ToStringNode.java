@@ -135,7 +135,7 @@ public abstract class ToStringNode extends FormatNode {
         if (inspectOnConversionFailure) {
             if (inspectNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(null, null));
+                inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(null));
             }
 
             return Layouts.STRING.getRope(inspectNode.toS(object)).getBytes();

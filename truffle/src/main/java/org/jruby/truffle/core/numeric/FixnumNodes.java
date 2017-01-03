@@ -388,7 +388,7 @@ public abstract class FixnumNodes {
     public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
 
         @Child DivNode divNode = DivNodeFactory.create(null);
-        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null);
+        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null);
 
         @Specialization
         public Object idiv(VirtualFrame frame, Object a, Object b,
@@ -578,8 +578,7 @@ public abstract class FixnumNodes {
 
         @Child private CallDispatchHeadNode reverseCallNode;
 
-        public EqualNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public EqualNode() {
             reverseCallNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 

@@ -16,11 +16,4 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value = "arguments", type = RubyNode[].class)
 public abstract class CoreMethodArrayArgumentsNode extends CoreMethodNode {
 
-    public CoreMethodArrayArgumentsNode() {
-    }
-
-    public CoreMethodArrayArgumentsNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
 }

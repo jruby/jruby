@@ -143,8 +143,7 @@ public abstract class ObjectSpaceNodes {
         // Wanting #method_missing(:call) to be called for a finalizer seems highly unlikely.
         @Child private DoesRespondDispatchHeadNode respondToCallNode;
 
-        public DefineFinalizerNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public DefineFinalizerNode() {
             respondToCallNode = new DoesRespondDispatchHeadNode(getContext(), true);
         }
 

@@ -168,8 +168,7 @@ public abstract class HashNodes {
 
         @CompilationFinal private Object undefinedValue;
 
-        public GetIndexNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public GetIndexNode() {
             callDefaultNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
@@ -300,9 +299,8 @@ public abstract class HashNodes {
 
         @Child private GetIndexNode getIndexNode;
 
-        public GetOrUndefinedNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            getIndexNode = GetIndexNodeFactory.create(sourceSection, null);
+        public GetOrUndefinedNode() {
+            getIndexNode = GetIndexNodeFactory.create(null);
             getIndexNode.setUndefinedValue(NotProvided.INSTANCE);
         }
 
@@ -402,12 +400,7 @@ public abstract class HashNodes {
         @Child private CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
         @Child private HashNode hashNode = new HashNode();
         @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
-        @Child private YieldNode yieldNode;
-
-        public DeleteNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            yieldNode = new YieldNode();
-        }
+        @Child private YieldNode yieldNode = new YieldNode();
 
         @Specialization(guards = "isNullHash(hash)")
         public Object deleteNull(VirtualFrame frame, DynamicObject hash, Object key, NotProvided block) {

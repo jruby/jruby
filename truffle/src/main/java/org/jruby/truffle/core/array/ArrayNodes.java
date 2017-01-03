@@ -84,12 +84,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public AllocateNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
@@ -974,7 +969,7 @@ public abstract class ArrayNodes {
         public boolean respondToToAry(VirtualFrame frame, Object object) {
             if (respondToToAryNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(null, null, null, null));
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(null, null, null));
             }
             return respondToToAryNode.doesRespondToString(frame, object, create7BitString("to_ary", UTF8Encoding.INSTANCE), true);
         }
@@ -1665,14 +1660,12 @@ public abstract class ArrayNodes {
     public abstract static class SortNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode compareDispatchNode;
-        @Child private YieldNode yieldNode;
+        @Child private YieldNode yieldNode = new YieldNode();
 
         private final BranchProfile errorProfile = BranchProfile.create();
 
-        public SortNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public SortNode() {
             compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(getContext());
-            yieldNode = new YieldNode();
         }
 
         @Specialization(guards = "isEmptyArray(array)")

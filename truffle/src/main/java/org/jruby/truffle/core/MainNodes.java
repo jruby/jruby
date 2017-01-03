@@ -26,12 +26,7 @@ public abstract class MainNodes {
     @CoreMethod(names = "public", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PublicNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ModuleNodes.PublicNode publicNode;
-
-        public PublicNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            publicNode = ModuleNodesFactory.PublicNodeFactory.create(null, null);
-        }
+        @Child private ModuleNodes.PublicNode publicNode = ModuleNodesFactory.PublicNodeFactory.create(null);
 
         @Specialization
         public DynamicObject doPublic(VirtualFrame frame, Object[] args) {
@@ -43,12 +38,7 @@ public abstract class MainNodes {
     @CoreMethod(names = "private", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PrivateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ModuleNodes.PrivateNode privateNode;
-
-        public PrivateNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            privateNode = ModuleNodesFactory.PrivateNodeFactory.create(null, null);
-        }
+        @Child private ModuleNodes.PrivateNode privateNode = ModuleNodesFactory.PrivateNodeFactory.create(null);
 
         @Specialization
         public DynamicObject doPrivate(VirtualFrame frame, Object[] args) {

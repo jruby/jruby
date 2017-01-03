@@ -264,8 +264,7 @@ public abstract class ClassNodes {
         @Child private CallDispatchHeadNode allocateNode;
         @Child private CallDispatchHeadNode initialize;
 
-        public NewNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public NewNode() {
             allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
             initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
         }

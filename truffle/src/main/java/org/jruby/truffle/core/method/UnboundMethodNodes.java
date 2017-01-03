@@ -67,14 +67,8 @@ public abstract class UnboundMethodNodes {
     @CoreMethod(names = "bind", required = 1)
     public abstract static class BindNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private MetaClassNode metaClassNode;
-        @Child private CanBindMethodToModuleNode canBindMethodToModuleNode;
-
-        public BindNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            metaClassNode = MetaClassNodeGen.create(sourceSection, null);
-            canBindMethodToModuleNode = CanBindMethodToModuleNodeGen.create(sourceSection, null, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null, null);
+        @Child private CanBindMethodToModuleNode canBindMethodToModuleNode = CanBindMethodToModuleNodeGen.create(null, null, null);
 
         @Specialization
         public DynamicObject bind(DynamicObject unboundMethod, Object object,

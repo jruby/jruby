@@ -68,12 +68,7 @@ public abstract class ReadlineHistoryNodes {
     @CoreMethod(names = { "push", "<<" }, rest = true)
     public abstract static class PushNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private NameToJavaStringNode toJavaStringNode;
-
-        public PushNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            toJavaStringNode = NameToJavaStringNodeGen.create();
-        }
+        @Child private NameToJavaStringNode toJavaStringNode = NameToJavaStringNodeGen.create();
 
         @Specialization
         public DynamicObject push(VirtualFrame frame, DynamicObject history, Object... lines) {

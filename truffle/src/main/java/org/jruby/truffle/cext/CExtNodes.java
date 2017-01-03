@@ -349,12 +349,7 @@ public class CExtNodes {
     public abstract static class CextModuleFunctionNode extends CoreMethodArrayArgumentsNode {
 
         @Child
-        ModuleNodes.SetVisibilityNode setVisibilityNode;
-
-        public CextModuleFunctionNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(null, Visibility.MODULE_FUNCTION, null, null);
-        }
+        ModuleNodes.SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(null, Visibility.MODULE_FUNCTION, null, null);
 
         @Specialization(guards = {"isRubyModule(module)", "isRubySymbol(name)"})
         public DynamicObject cextModuleFunction(VirtualFrame frame, DynamicObject module, DynamicObject name) {

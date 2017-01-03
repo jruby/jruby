@@ -16,11 +16,4 @@ import org.jruby.truffle.language.SourceIndexLength;
 @GenerateNodeFactory
 public abstract class CoreMethodNode extends RubyNode {
 
-    public CoreMethodNode() {
-    }
-
-    public CoreMethodNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
 }

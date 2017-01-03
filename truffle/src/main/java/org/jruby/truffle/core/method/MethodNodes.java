@@ -79,12 +79,7 @@ public abstract class MethodNodes {
     @CoreMethod(names = { "call", "[]" }, needsBlock = true, rest = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
-        @Child CallBoundMethodNode callBoundMethodNode;
-
-        public CallNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            callBoundMethodNode = CallBoundMethodNodeGen.create(sourceSection, null, null, null);
-        }
+        @Child CallBoundMethodNode callBoundMethodNode = CallBoundMethodNodeGen.create(null, null, null, null);
 
         @Specialization
         protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object maybeBlock) {
@@ -193,12 +188,7 @@ public abstract class MethodNodes {
     @CoreMethod(names = "unbind")
     public abstract static class UnbindNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-
-        public UnbindNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            classNode = LogicalClassNodeGen.create(sourceSection, null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null, null);
 
         @Specialization
         public DynamicObject unbind(VirtualFrame frame, DynamicObject method) {

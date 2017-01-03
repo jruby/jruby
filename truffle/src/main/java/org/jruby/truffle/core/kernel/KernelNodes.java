@@ -345,12 +345,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = { "<=>" }, required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private SameOrEqualNode equalNode;
-
-        public CompareNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            equalNode = SameOrEqualNodeFactory.create(null);
-        }
+        @Child private SameOrEqualNode equalNode = SameOrEqualNodeFactory.create(null);
 
         @Specialization
         public Object compare(VirtualFrame frame, Object self, Object other) {
@@ -441,12 +436,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "class")
     public abstract static class KernelClassNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-
-        public KernelClassNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            classNode = LogicalClassNodeGen.create(sourceSection, null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null, null);
 
         @Specialization
         public DynamicObject getClass(VirtualFrame frame, Object self) {
@@ -459,8 +449,7 @@ public abstract class KernelNodes {
 
         @Child private CallDispatchHeadNode allocateNode;
 
-        public CopyNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public CopyNode() {
             allocateNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
         }
 
@@ -496,13 +485,12 @@ public abstract class KernelNodes {
         @Child private PropagateTaintNode propagateTaintNode = PropagateTaintNode.create();
         @Child private SingletonClassNode singletonClassNode;
 
-        public CloneNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            copyNode = CopyNodeFactory.create(sourceSection, null);
+        public CloneNode() {
+            copyNode = CopyNodeFactory.create(null);
             // Calls private initialize_clone on the new copy.
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
-            isFrozenNode = IsFrozenNodeGen.create(sourceSection, null);
-            singletonClassNode = SingletonClassNodeGen.create(sourceSection, null);
+            isFrozenNode = IsFrozenNodeGen.create(null, null);
+            singletonClassNode = SingletonClassNodeGen.create(null, null);
         }
 
         @Specialization
@@ -544,12 +532,10 @@ public abstract class KernelNodes {
     @CoreMethod(names = "dup", taintFrom = 0)
     public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CopyNode copyNode;
+        @Child private CopyNode copyNode = CopyNodeFactory.create(null);
         @Child private CallDispatchHeadNode initializeDupNode;
 
-        public DupNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            copyNode = CopyNodeFactory.create(sourceSection, null);
+        public DupNode() {
             // Calls private initialize_dup on the new copy.
             initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
         }
@@ -775,12 +761,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "freeze")
     public abstract static class KernelFreezeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private FreezeNode freezeNode;
-
-        public KernelFreezeNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            freezeNode = FreezeNodeGen.create(sourceSection, null);
-        }
+        @Child private FreezeNode freezeNode = FreezeNodeGen.create(null, null);
 
         @Specialization
         public Object freeze(Object self) {
@@ -905,8 +886,7 @@ public abstract class KernelNodes {
 
         @Child private CallDispatchHeadNode initializeCopyNode;
 
-        public InitializeDupCloneNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public InitializeDupCloneNode() {
             initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf(getContext());
         }
 
@@ -920,12 +900,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "instance_of?", required = 1)
     public abstract static class InstanceOfNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-
-        public InstanceOfNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            classNode = LogicalClassNodeGen.create(sourceSection, null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null, null);
 
         @Specialization(guards = "isRubyModule(rubyClass)")
         public boolean instanceOf(VirtualFrame frame, Object self, DynamicObject rubyClass) {
@@ -1050,12 +1025,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "instance_variables")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private BasicObjectNodes.InstanceVariablesNode instanceVariablesNode;
-
-        public InstanceVariablesNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            instanceVariablesNode = BasicObjectNodesFactory.InstanceVariablesNodeFactory.create(new RubyNode[] {});
-        }
+        @Child private BasicObjectNodes.InstanceVariablesNode instanceVariablesNode = BasicObjectNodesFactory.InstanceVariablesNodeFactory.create(new RubyNode[] {});
 
         @Specialization
         public DynamicObject instanceVariables(VirtualFrame frame, Object self) {
@@ -1067,12 +1037,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = { "is_a?", "kind_of?" }, required = 1)
     public abstract static class KernelIsANode extends CoreMethodArrayArgumentsNode {
 
-        @Child IsANode isANode;
-
-        public KernelIsANode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            isANode = IsANodeGen.create(sourceSection, null, null);
-        }
+        @Child IsANode isANode = IsANodeGen.create(null, null, null);
 
         @Specialization
         public boolean isA(Object self, DynamicObject module) {
@@ -1189,14 +1154,11 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodNode extends CoreMethodNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode;
-        @Child LookupMethodNode lookupMethodNode;
+        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child LookupMethodNode lookupMethodNode = LookupMethodNodeGen.create(null, true, false, null, null);
         @Child CallDispatchHeadNode respondToMissingNode;
 
-        public MethodNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(sourceSection, true, false, null, null);
+        public MethodNode() {
             respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
         }
 
@@ -1290,7 +1252,7 @@ public abstract class KernelNodes {
         }
 
         protected SingletonMethodsNode createSingletonMethodsNode() {
-            return SingletonMethodsNodeFactory.create(null, null, null);
+            return SingletonMethodsNodeFactory.create(null, null);
         }
 
     }
@@ -1330,12 +1292,7 @@ public abstract class KernelNodes {
     })
     public abstract static class PrivateMethodsNode extends CoreMethodNode {
 
-        @Child private MetaClassNode metaClassNode;
-
-        public PrivateMethodsNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(sourceSection, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null, null);
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
@@ -1356,12 +1313,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "proc", isModuleFunction = true, needsBlock = true)
     public abstract static class ProcNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ProcNewNode procNewNode;
-
-        public ProcNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            procNewNode = ProcNewNodeFactory.create(null);
-        }
+        @Child ProcNewNode procNewNode = ProcNewNodeFactory.create(null);
 
         @Specialization
         public DynamicObject proc(VirtualFrame frame, Object maybeBlock) {
@@ -1377,12 +1329,7 @@ public abstract class KernelNodes {
     })
     public abstract static class ProtectedMethodsNode extends CoreMethodNode {
 
-        @Child private MetaClassNode metaClassNode;
-
-        public ProtectedMethodsNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(sourceSection, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null, null);
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
@@ -1407,12 +1354,7 @@ public abstract class KernelNodes {
     })
     public abstract static class PublicMethodsNode extends CoreMethodNode {
 
-        @Child private MetaClassNode metaClassNode;
-
-        public PublicMethodsNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(sourceSection, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null, null);
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
@@ -1435,8 +1377,7 @@ public abstract class KernelNodes {
 
         @Child private DispatchHeadNode dispatchNode;
 
-        public PublicSendNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public PublicSendNode() {
             dispatchNode = new DispatchHeadNode(getContext(), false, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
         }
 
@@ -1552,9 +1493,7 @@ public abstract class KernelNodes {
         @Child private CallDispatchHeadNode respondToMissingNode;
         private final ConditionProfile ignoreVisibilityProfile = ConditionProfile.createBinaryProfile();
 
-        public RespondToNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-
+        public RespondToNode() {
             dispatch = new DoesRespondDispatchHeadNode(getContext(), false);
             dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(getContext(), true);
             dispatchRespondToMissing = new DoesRespondDispatchHeadNode(getContext(), true);
@@ -1649,12 +1588,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "singleton_class")
     public abstract static class SingletonClassMethodNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private SingletonClassNode singletonClassNode;
-
-        public SingletonClassMethodNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(sourceSection, null);
-        }
+        @Child private SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null, null);
 
         @Specialization
         public DynamicObject singletonClass(Object self) {
@@ -1670,12 +1604,7 @@ public abstract class KernelNodes {
     })
     public abstract static class SingletonMethodsNode extends CoreMethodNode {
 
-        @Child private MetaClassNode metaClassNode;
-
-        public SingletonMethodsNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(sourceSection, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null, null);
 
         public abstract DynamicObject executeSingletonMethods(VirtualFrame frame, Object self, boolean includeAncestors);
 
@@ -1758,15 +1687,10 @@ public abstract class KernelNodes {
 
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private TaintNode taintNode;
-        @Child private BooleanCastNode readDebugGlobalNode;
+        @Child private BooleanCastNode readDebugGlobalNode = BooleanCastNodeGen.create(ReadGlobalVariableNodeGen.create("$DEBUG"));
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
         private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
-
-        public SprintfNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            this.readDebugGlobalNode = BooleanCastNodeGen.create(ReadGlobalVariableNodeGen.create("$DEBUG"));
-        }
 
         @Specialization(guards = { "isRubyString(format)", "ropesEqual(format, cachedFormat)", "isDebug(frame) == cachedIsDebug" })
         public DynamicObject formatCached(
@@ -1932,18 +1856,10 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"to_s", "inspect"}) // Basic inspect, refined later in core
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-        @Child private ObjectNodes.ObjectIDPrimitiveNode objectIDNode;
-        @Child private TaintResultNode taintResultNode;
-        @Child private ToHexStringNode toHexStringNode;
-
-        public ToSNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            classNode = LogicalClassNodeGen.create(sourceSection, null);
-            objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(null);
-            taintResultNode = new TaintResultNode(null);
-            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null, null);
+        @Child private ObjectNodes.ObjectIDPrimitiveNode objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
+        @Child private ToHexStringNode toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);
 
         public abstract DynamicObject executeToS(Object self);
 

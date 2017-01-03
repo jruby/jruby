@@ -72,12 +72,7 @@ public abstract class TruffleRopesNodes {
     @CoreMethod(names = "debug_print_rope", onSingleton = true, required = 1, optional = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintRopeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
-
-        public DebugPrintRopeNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(null, null, null);
-        }
+        @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(null, null, null);
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
@@ -109,11 +104,6 @@ public abstract class TruffleRopesNodes {
      */
     @CoreMethod(names = "debug_get_structure_creation", onSingleton = true, required = 1)
     public abstract static class DebugGetStructureCreationNode extends CoreMethodArrayArgumentsNode {
-
-
-        public DebugGetStructureCreationNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")

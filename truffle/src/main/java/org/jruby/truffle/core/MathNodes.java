@@ -386,16 +386,10 @@ public abstract class MathNodes {
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IsANode isANode;
-        @Child private ToFNode toFNode;
+        @Child private IsANode isANode = IsANodeGen.create(null, null, null);
+        @Child private ToFNode toFNode = ToFNode.create();
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
-
-        public LGammaNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            isANode = IsANodeGen.create(sourceSection, null, null);
-            toFNode = ToFNode.create();
-        }
 
         @Specialization
         public DynamicObject lgamma(int a) {
@@ -574,20 +568,10 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleMonadicMathNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IsANode isANode;
-        @Child private ToFNode toFNode;
+        @Child private IsANode isANode = IsANodeGen.create(null, null, null);
+        @Child private ToFNode toFNode = ToFNode.create();
 
         protected final BranchProfile exceptionProfile = BranchProfile.create();
-
-        protected SimpleMonadicMathNode() {
-            this(null);
-        }
-
-        protected SimpleMonadicMathNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            isANode = IsANodeGen.create(sourceSection, null, null);
-            toFNode = ToFNode.create();
-        }
 
         // TODO: why can't we leave this abstract?
 
@@ -629,22 +613,11 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleDyadicMathNode extends CoreMethodArrayArgumentsNode {
 
-        @Child protected IsANode isANode;
-        @Child protected ToFNode floatANode;
-        @Child protected ToFNode floatBNode;
+        @Child protected IsANode isANode = IsANodeGen.create(null, null, null);
+        @Child protected ToFNode floatANode = ToFNode.create();
+        @Child protected ToFNode floatBNode = ToFNode.create();
 
         protected final BranchProfile exceptionProfile = BranchProfile.create();
-
-        protected SimpleDyadicMathNode() {
-            this(null);
-        }
-
-        protected SimpleDyadicMathNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            isANode = IsANodeGen.create(sourceSection, null, null);
-            floatANode = ToFNode.create();
-            floatBNode = ToFNode.create();
-        }
 
         // TODO: why can't we leave this abstract?
 

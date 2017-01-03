@@ -250,12 +250,7 @@ public abstract class FiberNodes {
     @CoreMethod(names = "resume", rest = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class ResumeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child FiberTransferNode fiberTransferNode;
-
-        public ResumeNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
-        }
+        @Child FiberTransferNode fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
 
         @Specialization
         public Object resume(VirtualFrame frame, DynamicObject fiberBeingResumed, Object[] args) {
@@ -267,12 +262,7 @@ public abstract class FiberNodes {
     @CoreMethod(names = "yield", onSingleton = true, rest = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class YieldNode extends CoreMethodArrayArgumentsNode {
 
-        @Child FiberTransferNode fiberTransferNode;
-
-        public YieldNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
-        }
+        @Child FiberTransferNode fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
 
         @Specialization
         public Object yield(VirtualFrame frame, Object[] args,

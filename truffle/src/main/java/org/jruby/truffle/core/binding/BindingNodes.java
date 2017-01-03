@@ -114,12 +114,7 @@ public abstract class BindingNodes {
     @CoreMethod(names = { "dup", "clone" })
     public abstract static class DupNode extends UnaryCoreMethodNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public DupNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject dup(DynamicObject binding) {
@@ -285,10 +280,6 @@ public abstract class BindingNodes {
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
             return NameToJavaStringNodeGen.create(name);
-        }
-
-        public LocalVariableSetNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
         }
 
         @Specialization(guards = {

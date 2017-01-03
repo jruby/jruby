@@ -334,14 +334,8 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "compatible?", onSingleton = true, required = 2)
     public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private GetRubyEncodingNode getRubyEncodingNode;
-        @Child private NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode;
-
-        public CompatibleQueryNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            getRubyEncodingNode = EncodingNodesFactory.GetRubyEncodingNodeGen.create();
-            negotiateCompatibleEncodingNode = NegotiateCompatibleEncodingNode.create();
-        }
+        @Child private GetRubyEncodingNode getRubyEncodingNode = EncodingNodesFactory.GetRubyEncodingNodeGen.create();
+        @Child private NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode = NegotiateCompatibleEncodingNode.create();
 
         public abstract DynamicObject executeCompatibleQuery(Object first, Object second);
 

@@ -16,11 +16,4 @@ import org.jruby.truffle.language.SourceIndexLength;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
-    public ArrayCoreMethodNode() {
-    }
-
-    public ArrayCoreMethodNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
 }

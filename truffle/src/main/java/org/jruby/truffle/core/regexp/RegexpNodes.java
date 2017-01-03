@@ -376,16 +376,13 @@ public abstract class RegexpNodes {
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dupNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-        @Child private RegexpSetLastMatchPrimitiveNode setLastMatchNode;
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RegexpSetLastMatchPrimitiveNode setLastMatchNode = RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         @Child private CallDispatchHeadNode toSNode;
         @Child private ToStrNode toStrNode;
 
-        public MatchOperatorNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public MatchOperatorNode() {
             dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-            setLastMatchNode = RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -463,12 +460,10 @@ public abstract class RegexpNodes {
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dupNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
-        public MatchStartNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public MatchStartNode() {
             dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -632,12 +627,10 @@ public abstract class RegexpNodes {
     public abstract static class SearchFromNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dupNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
-        public SearchFromNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public SearchFromNode() {
             dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -702,12 +695,7 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public AllocateNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {

@@ -210,12 +210,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = { "dup", "clone" })
     public abstract static class DupNode extends UnaryCoreMethodNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public DupNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization(guards = "isIntRange(range)")
         public DynamicObject dupIntRange(DynamicObject range) {
@@ -505,15 +500,10 @@ public abstract class RangeNodes {
     })
     public abstract static class NewNode extends CoreMethodNode {
 
-        protected final DynamicObject rangeClass;
+        protected final DynamicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
 
         @Child private CallDispatchHeadNode cmpNode;
         @Child private AllocateObjectNode allocateNode;
-
-        public NewNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            rangeClass = getContext().getCoreLibrary().getRangeClass();
-        }
 
         @CreateCast("excludeEnd")
         public RubyNode coerceToBoolean(RubyNode excludeEnd) {
@@ -590,12 +580,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public AllocateNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {

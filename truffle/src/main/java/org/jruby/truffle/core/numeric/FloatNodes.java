@@ -546,12 +546,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "ceil")
     public abstract static class CeilNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
-        public CeilNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
-        }
+        @Child private FixnumOrBignumNode fixnumOrBignum = new FixnumOrBignumNode();
 
         @Specialization
         public Object ceil(double n) {
@@ -563,12 +558,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "floor")
     public abstract static class FloorNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
-        public FloorNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
-        }
+        @Child private FixnumOrBignumNode fixnumOrBignum = new FixnumOrBignumNode();
 
         public abstract Object executeFloor(double n);
 
@@ -732,12 +722,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = { "to_i", "to_int", "truncate" })
     public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
-        public ToINode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode();
-        }
+        @Child private FixnumOrBignumNode fixnumOrBignum = new FixnumOrBignumNode();
 
         public abstract Object executeToI(VirtualFrame frame, double value);
 

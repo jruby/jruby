@@ -106,12 +106,7 @@ public abstract class PsychParserNodes {
     @CoreMethod(names = "parse", required = 1, optional = 1)
     public abstract static class ParseNode extends CoreMethodArrayArgumentsNode {
 
-        @Node.Child private ToStrNode toStrNode;
-
-        public ParseNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            toStrNode = ToStrNodeGen.create(null, null);
-        }
+        @Node.Child private ToStrNode toStrNode = ToStrNodeGen.create(null, null);
 
         public abstract Object executeParse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, Object path);
 

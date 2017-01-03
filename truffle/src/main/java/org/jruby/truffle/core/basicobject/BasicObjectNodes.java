@@ -85,8 +85,7 @@ public abstract class BasicObjectNodes {
 
         @Child private CallDispatchHeadNode equalNode;
 
-        public NotEqualNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public NotEqualNode() {
             equalNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
@@ -173,12 +172,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_eval", needsBlock = true, optional = 3, lowerFixnum = 3, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldNode yield;
-
-        public InstanceEvalNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            yield = new YieldNode(DeclarationContext.INSTANCE_EVAL);
-        }
+        @Child private YieldNode yield = new YieldNode(DeclarationContext.INSTANCE_EVAL);
 
         @Specialization(guards = { "isRubyString(string)", "isRubyString(fileName)" })
         public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, DynamicObject fileName, int line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
@@ -225,12 +219,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_exec", needsBlock = true, rest = true)
     public abstract static class InstanceExecNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldNode yield;
-
-        public InstanceExecNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            yield = new YieldNode(DeclarationContext.INSTANCE_EVAL);
-        }
+        @Child private YieldNode yield = new YieldNode(DeclarationContext.INSTANCE_EVAL);
 
         @Specialization
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, DynamicObject block) {
@@ -401,9 +390,7 @@ public abstract class BasicObjectNodes {
 
         @Child private CallDispatchHeadNode dispatchNode;
 
-        public SendNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-
+        public SendNode() {
             dispatchNode = new CallDispatchHeadNode(getContext(), true,
                     MissingBehavior.CALL_METHOD_MISSING);
         }
@@ -423,12 +410,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public AllocateNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
@@ -441,12 +423,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "internal_allocate", constructor = true)
     public abstract static class InternalAllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public InternalAllocateNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject internal_allocate(DynamicObject rubyClass) {

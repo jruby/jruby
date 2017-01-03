@@ -158,12 +158,7 @@ public abstract class StringNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public AllocateNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
@@ -180,14 +175,8 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class AddNode extends CoreMethodNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-        @Child private TaintResultNode taintResultNode;
-
-        public AddNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-            taintResultNode = new TaintResultNode(null);
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
+        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
             return ToStrNodeGen.create(null, other);
@@ -249,13 +238,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "*", required = 1, lowerFixnum = 1, taintFrom = 0)
     public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
         @Child private ToIntNode toIntNode;
-
-        public MulNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
 
         public abstract DynamicObject executeInt(VirtualFrame frame, DynamicObject string, int times);
 
@@ -292,15 +276,10 @@ public abstract class StringNodes {
     @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private StringEqualNode stringEqualNode;
+        @Child private StringEqualNode stringEqualNode = StringEqualNodeGen.create(null, null);
         @Child private KernelNodes.RespondToNode respondToNode;
         @Child private CallDispatchHeadNode objectEqualNode;
         @Child private CheckLayoutNode checkLayoutNode;
-
-        public EqualNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            stringEqualNode = StringEqualNodeGen.create(null, null);
-        }
 
         @Specialization(guards = "isRubyString(b)")
         public boolean equal(DynamicObject a, DynamicObject b) {
@@ -311,7 +290,7 @@ public abstract class StringNodes {
         public boolean equal(VirtualFrame frame, DynamicObject a, Object b) {
             if (respondToNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(null, null, null, null));
+                respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(null, null, null));
             }
 
             if (respondToNode.doesRespondToString(frame, b, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
@@ -365,7 +344,7 @@ public abstract class StringNodes {
         public Object compare(VirtualFrame frame, DynamicObject a, Object b) {
             if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(null, null, null, null));
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(null, null, null));
             }
 
             if (respondToToStrNode.doesRespondToString(frame, b, create7BitString("to_str", UTF8Encoding.INSTANCE), false)) {
@@ -389,7 +368,7 @@ public abstract class StringNodes {
 
             if (respondToCmpNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(null, null, null, null));
+                respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(null, null, null));
             }
 
             if (respondToCmpNode.doesRespondToString(frame, b, create7BitString("<=>", UTF8Encoding.INSTANCE), false)) {
@@ -444,18 +423,13 @@ public abstract class StringNodes {
     @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnum = { 1, 2 }, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
         @Child private CallDispatchHeadNode includeNode;
         @Child private CallDispatchHeadNode dupNode;
         @Child private NormalizeIndexNode normalizeIndexNode;
         @Child private StringSubstringPrimitiveNode substringNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
-
-        public GetIndexNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
 
         @Specialization
         public Object getIndex(VirtualFrame frame, DynamicObject string, int index, NotProvided length) {
@@ -632,12 +606,7 @@ public abstract class StringNodes {
     @CoreMethod(names = "b", taintFrom = 0)
     public abstract static class BNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.WithEncodingNode withEncodingNode;
-
-        public BNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            withEncodingNode = RopeNodesFactory.WithEncodingNodeGen.create(null, null, null);
-        }
+        @Child private RopeNodes.WithEncodingNode withEncodingNode = RopeNodesFactory.WithEncodingNodeGen.create(null, null, null);
 
         @Specialization
         public DynamicObject b(DynamicObject string) {
@@ -707,12 +676,7 @@ public abstract class StringNodes {
     })
     public abstract static class CaseCmpNode extends CoreMethodNode {
 
-        @Child private EncodingNodes.NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode;
-
-        public CaseCmpNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null, null);
-        }
+        @Child private EncodingNodes.NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null, null);
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
             return ToStrNodeGen.create(null, other);
@@ -756,14 +720,8 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
-        @Child private ToStrNode toStr;
-
-        public CountNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
-            toStr = ToStrNodeGen.create(null, null);
-        }
+        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
+        @Child private ToStrNode toStr = ToStrNodeGen.create(null, null);
 
         @Specialization(guards = "isEmpty(string)")
         public int count(DynamicObject string, Object[] args) {
@@ -869,14 +827,8 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class DeleteBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
-        @Child private ToStrNode toStr;
-
-        public DeleteBangNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
-            toStr = ToStrNodeGen.create(null, null);
-        }
+        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
+        @Child private ToStrNode toStr = ToStrNodeGen.create(null, null);
 
         public abstract DynamicObject executeDeleteBang(VirtualFrame frame, DynamicObject string, Object[] args);
 
@@ -935,12 +887,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class DowncaseBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-
-        public DowncaseBangNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-        }
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
 
         @Specialization(guards = { "isEmpty(string)", "isSingleByteOptimizable(string)" })
         public DynamicObject downcaseSingleByteEmpty(DynamicObject string) {
@@ -1105,13 +1052,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "force_encoding", required = 1, raiseIfFrozenSelf = true)
     public abstract static class ForceEncodingNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.WithEncodingNode withEncodingNode;
+        @Child private RopeNodes.WithEncodingNode withEncodingNode = RopeNodesFactory.WithEncodingNodeGen.create(null, null, null);
         @Child private ToStrNode toStrNode;
-
-        public ForceEncodingNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            withEncodingNode = RopeNodesFactory.WithEncodingNodeGen.create(null, null, null);
-        }
 
         @Specialization(guards = "isRubyString(encodingName)")
         public DynamicObject forceEncodingString(DynamicObject string, DynamicObject encodingName,
@@ -1157,14 +1099,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "getbyte", required = 1, lowerFixnum = 1)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private NormalizeIndexNode normalizeIndexNode;
-        @Child private RopeNodes.GetByteNode ropeGetByteNode;
-
-        public GetByteNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
-            ropeGetByteNode = RopeNodesFactory.GetByteNodeGen.create(null, null);
-        }
+        @Child private NormalizeIndexNode normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
+        @Child private RopeNodes.GetByteNode ropeGetByteNode = RopeNodesFactory.GetByteNodeGen.create(null, null);
 
         @Specialization
         public Object getByte(DynamicObject string, int index,
@@ -1250,12 +1186,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class LstripBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public LstripBangNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @Specialization(guards = "isEmpty(string)")
         public DynamicObject lstripBangEmptyString(DynamicObject string) {
@@ -1365,12 +1296,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class RstripBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public RstripBangNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @Specialization(guards = "isEmpty(string)")
         public DynamicObject rstripBangEmptyString(DynamicObject string) {
@@ -1437,12 +1363,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SwapcaseBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-
-        public SwapcaseBangNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-        }
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
 
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
@@ -1488,12 +1409,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class DumpNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public DumpNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization(guards = "isAsciiCompatible(string)")
         public DynamicObject dumpAsciiCompatible(DynamicObject string) {
@@ -1694,22 +1610,12 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SetByteNode extends CoreMethodNode {
 
-        @Child private CheckIndexNode checkIndexNode;
-        @Child private RopeNodes.MakeConcatNode composedMakeConcatNode;
-        @Child private RopeNodes.MakeConcatNode middleMakeConcatNode;
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-        @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode;
-        @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode;
-
-        public SetByteNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            checkIndexNode = StringNodesFactory.CheckIndexNodeGen.create(null, null);
-            composedMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
-            middleMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-            leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-            rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
+        @Child private CheckIndexNode checkIndexNode = StringNodesFactory.CheckIndexNodeGen.create(null, null);
+        @Child private RopeNodes.MakeConcatNode composedMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeConcatNode middleMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
+        @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
             return FixnumLowerNodeGen.create(null, ToIntNodeGen.create(index));
@@ -1960,8 +1866,7 @@ public abstract class StringNodes {
         @Child private CallDispatchHeadNode shiftNode;
         @Child private CallDispatchHeadNode andNode;
 
-        public SumNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public SumNode() {
             addNode = DispatchHeadNodeFactory.createMethodCall(getContext());
             subNode = DispatchHeadNodeFactory.createMethodCall(getContext());
             shiftNode = DispatchHeadNodeFactory.createMethodCall(getContext());
@@ -2071,12 +1976,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class ReverseBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-
-        public ReverseBangNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-        }
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
 
         @Specialization(guards = "reverseIsEqualToSelf(string)")
         public DynamicObject reverseNoOp(DynamicObject string) {
@@ -2166,7 +2066,7 @@ public abstract class StringNodes {
             if (rope(toStr).isEmpty()) {
                 if (deleteBangNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(null, new RubyNode[] {}));
+                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(new RubyNode[] {}));
                 }
 
                 return deleteBangNode.executeDeleteBang(frame, self, new DynamicObject[] { fromStr });
@@ -2211,7 +2111,7 @@ public abstract class StringNodes {
             if (rope(toStr).isEmpty()) {
                 if (deleteBangNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(null, new RubyNode[] {}));
+                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(new RubyNode[] {}));
                 }
 
                 return deleteBangNode.executeDeleteBang(frame, self, new DynamicObject[] { fromStr });
@@ -2326,12 +2226,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class UpcaseBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-
-        public UpcaseBangNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-        }
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public DynamicObject upcaseSingleByte(DynamicObject string,
@@ -2411,14 +2306,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "capitalize!", raiseIfFrozenSelf = true)
     public abstract static class CapitalizeBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.GetCodePointNode getCodePointNode;
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-
-        public CapitalizeBangNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            getCodePointNode = RopeNodes.GetCodePointNode.create();
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-        }
+        @Child private RopeNodes.GetCodePointNode getCodePointNode = RopeNodes.GetCodePointNode.create();
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
 
         @Specialization
         @TruffleBoundary(throwsControlFlowException = true)
@@ -2469,12 +2358,7 @@ public abstract class StringNodes {
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public ClearNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            makeSubstringNode = RopeNodes.MakeSubstringNode.createX();
-        }
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.createX();
 
         @Specialization
         public DynamicObject clear(DynamicObject string) {

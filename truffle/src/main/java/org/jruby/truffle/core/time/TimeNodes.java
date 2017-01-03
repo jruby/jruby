@@ -99,12 +99,7 @@ public abstract class TimeNodes {
     @CoreMethod(names = "localtime_internal", optional = 1)
     public abstract static class LocalTimeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private GetTimeZoneNode getTimeZoneNode;
-
-        public LocalTimeNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            getTimeZoneNode = GetTimeZoneNodeGen.create();
-        }
+        @Child private GetTimeZoneNode getTimeZoneNode = GetTimeZoneNodeGen.create();
 
         @Specialization
         public DynamicObject localtime(VirtualFrame frame, DynamicObject time, NotProvided offset) {
@@ -166,12 +161,7 @@ public abstract class TimeNodes {
     @CoreMethod(names = "dup_internal", required = 1, visibility = Visibility.PROTECTED)
     public static abstract class DupInternalNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public DupInternalNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject dup(DynamicObject time, DynamicObject klass) {
@@ -214,12 +204,7 @@ public abstract class TimeNodes {
     @CoreMethod(names = "gmt?")
     public abstract static class GmtNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private InternalGMTNode internalGMTNode;
-
-        public GmtNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            internalGMTNode = TimeNodesFactory.InternalGMTNodeFactory.create(null);
-        }
+        @Child private InternalGMTNode internalGMTNode = TimeNodesFactory.InternalGMTNodeFactory.create(null);
 
         @Specialization
         public boolean allocate(DynamicObject time) {
@@ -232,12 +217,7 @@ public abstract class TimeNodes {
     @CoreMethod(names = "internal_offset")
     public abstract static class InternalOffsetCoreNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private InternalOffsetNode internalOffsetNode;
-
-        public InternalOffsetCoreNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            internalOffsetNode = TimeNodesFactory.InternalOffsetNodeFactory.create(null);
-        }
+        @Child private InternalOffsetNode internalOffsetNode = TimeNodesFactory.InternalOffsetNodeFactory.create(null);
 
         @Specialization
         public Object allocate(DynamicObject time) {
@@ -249,12 +229,7 @@ public abstract class TimeNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public AllocateNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {

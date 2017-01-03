@@ -37,7 +37,7 @@ public abstract class ToSNode extends RubyNode {
     protected DynamicObject kernelToS(Object object) {
         if (kernelToSNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            kernelToSNode = insert(KernelNodesFactory.ToSNodeFactory.create(null, null));
+            kernelToSNode = insert(KernelNodesFactory.ToSNodeFactory.create(null));
         }
         return kernelToSNode.executeToS(object);
     }
