@@ -17,16 +17,6 @@ public class SourceIndexLength {
     private final int charIndex;
     private final int length;
 
-    public SourceIndexLength(SourceSection sourceSection) {
-        if (sourceSection == null) {
-            charIndex = -1;
-            length = 0;
-        } else {
-            charIndex = sourceSection.getCharIndex();
-            length = sourceSection.getCharLength();
-        }
-    }
-
     public SourceIndexLength(int charIndex, int length) {
         this.charIndex = charIndex;
         this.length = length;
