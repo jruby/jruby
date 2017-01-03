@@ -39,7 +39,7 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(SourceIndexLength sourceSection, ToSNode[] children) {
         super(sourceSection);
         this.children = children;
-        appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(null, new RubyNode[] {});
+        appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(new RubyNode[] {});
         dupNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         isTaintedNode = IsTaintedNode.create();
         taintNode = TaintNode.create();

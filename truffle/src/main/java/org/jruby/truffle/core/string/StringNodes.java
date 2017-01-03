@@ -605,7 +605,7 @@ public abstract class StringNodes {
         private StringSubstringPrimitiveNode getSubstringNode() {
             if (substringNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                substringNode = insert(StringNodesFactory.StringSubstringPrimitiveNodeFactory.create(null, null));
+                substringNode = insert(StringNodesFactory.StringSubstringPrimitiveNodeFactory.create(null));
             }
 
             return substringNode;
@@ -2535,15 +2535,10 @@ public abstract class StringNodes {
     @Primitive(name = "string_append")
     public static abstract class StringAppendPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private StringAppendNode stringAppendNode;
+        @Child private StringAppendNode stringAppendNode = StringNodesFactory.StringAppendNodeGen.create(null, null, null);
 
         public static StringAppendPrimitiveNode create() {
-            return StringNodesFactory.StringAppendPrimitiveNodeFactory.create(null, null);
-        }
-
-        public StringAppendPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            stringAppendNode = StringNodesFactory.StringAppendNodeGen.create(null, null, null);
+            return StringNodesFactory.StringAppendPrimitiveNodeFactory.create(null);
         }
 
         public abstract DynamicObject executeStringAppend(DynamicObject string, DynamicObject other);
@@ -2560,16 +2555,9 @@ public abstract class StringNodes {
     @Primitive(name = "string_awk_split")
     public static abstract class StringAwkSplitPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private RopeNodes.GetCodePointNode getCodePointNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-        @Child private TaintResultNode taintResultNode;
-
-        public StringAwkSplitPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            getCodePointNode = RopeNodes.GetCodePointNode.create();
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-            taintResultNode = new TaintResultNode(null);
-        }
+        @Child private RopeNodes.GetCodePointNode getCodePointNode = RopeNodes.GetCodePointNode.create();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
 
         @TruffleBoundary
         @Specialization
@@ -2646,21 +2634,13 @@ public abstract class StringNodes {
     })
     public static abstract class StringByteSubstringPrimitiveNode extends PrimitiveNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-        @Child private NormalizeIndexNode normalizeIndexNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-        @Child private TaintResultNode taintResultNode;
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
+        @Child private NormalizeIndexNode normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
 
-        public static StringByteSubstringPrimitiveNode create(SourceIndexLength sourceSection) {
-            return StringNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(null, null, null, null);
-        }
-
-        public StringByteSubstringPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
-            taintResultNode = new TaintResultNode(null);
+        public static StringByteSubstringPrimitiveNode create() {
+            return StringNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(null, null, null);
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
@@ -2738,13 +2718,13 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "isSingleByteOptimizable(string)" })
         public Object stringChrAtSingleByte(DynamicObject string, int byteIndex,
-                                            @Cached("create(getSourceIndexLength())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
+                                            @Cached("create()") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             return stringByteSubstringNode.executeStringByteSubstring(string, byteIndex, 1);
         }
 
         @Specialization(guards = { "!indexOutOfBounds(string, byteIndex)", "!isSingleByteOptimizable(string)" })
         public Object stringChrAt(DynamicObject string, int byteIndex,
-                                  @Cached("create(getSourceIndexLength())") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
+                                  @Cached("create()") StringByteSubstringPrimitiveNode stringByteSubstringNode) {
             // Taken from Rubinius's Character::create_from.
 
             final Rope rope = rope(string);
@@ -2772,12 +2752,7 @@ public abstract class StringNodes {
     @Primitive(name = "string_compare_substring")
     public static abstract class StringCompareSubstringPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private NormalizeIndexNode normalizeIndexNode;
-
-        public StringCompareSubstringPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
-        }
+        @Child private NormalizeIndexNode normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
 
         @Specialization(guards = "isRubyString(other)")
         public int stringCompareSubstring(VirtualFrame frame, DynamicObject string, DynamicObject other, int start, int size,
@@ -3124,15 +3099,9 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringFindCharacterNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         @Child private TaintResultNode taintResultNode;
-
-        public StringFindCharacterNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
 
         @Specialization(guards = "offset < 0")
         public Object stringFindCharacterNegativeOffset(DynamicObject string, int offset) {
@@ -3308,14 +3277,8 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringIndexPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child StringByteCharacterIndexNode byteIndexToCharIndexNode;
-        @Child NormalizeIndexNode normalizeIndexNode;
-
-        public StringIndexPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            byteIndexToCharIndexNode = StringNodesFactory.StringByteCharacterIndexNodeFactory.create(null);
-            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
-        }
+        @Child StringByteCharacterIndexNode byteIndexToCharIndexNode = StringNodesFactory.StringByteCharacterIndexNodeFactory.create(null);
+        @Child NormalizeIndexNode normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
 
         @Specialization(guards = { "isRubyString(pattern)", "isBrokenCodeRange(pattern)" })
         public DynamicObject stringIndexBrokenCodeRange(DynamicObject string, DynamicObject pattern, int start) {
@@ -3789,14 +3752,8 @@ public abstract class StringNodes {
     @Primitive(name = "string_rindex", lowerFixnum = 2)
     public static abstract class StringRindexPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private RopeNodes.GetByteNode patternGetByteNode;
-        @Child private RopeNodes.GetByteNode stringGetByteNode;
-
-        public StringRindexPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            patternGetByteNode = RopeNodes.GetByteNode.create();
-            stringGetByteNode = RopeNodes.GetByteNode.create();
-        }
+        @Child private RopeNodes.GetByteNode patternGetByteNode = RopeNodes.GetByteNode.create();
+        @Child private RopeNodes.GetByteNode stringGetByteNode = RopeNodes.GetByteNode.create();
 
         @Specialization(guards = "isRubyString(pattern)")
         public Object stringRindex(DynamicObject string, DynamicObject pattern, int start,
@@ -3864,16 +3821,9 @@ public abstract class StringNodes {
     @Primitive(name = "string_pattern", lowerFixnum = { 1, 2 })
     public static abstract class StringPatternPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-        @Child private RopeNodes.MakeRepeatingNode makeRepeatingNode;
-
-        public StringPatternPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-            makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
-            makeRepeatingNode = RopeNodes.MakeRepeatingNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
+        @Child private RopeNodes.MakeRepeatingNode makeRepeatingNode = RopeNodes.MakeRepeatingNode.create();
 
         @Specialization(guards = "value >= 0")
         public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
@@ -4092,14 +4042,8 @@ public abstract class StringNodes {
     @Primitive(name = "string_byte_append")
     public static abstract class StringByteAppendPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeConcatNode makeConcatNode;
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-
-        public StringByteAppendPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-        }
+        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
 
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject stringByteAppend(DynamicObject string, DynamicObject other) {
@@ -4129,14 +4073,9 @@ public abstract class StringNodes {
     public static abstract class StringSubstringPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateNode;
-        @Child private NormalizeIndexNode normalizeIndexNode;
+        @Child private NormalizeIndexNode normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
         @Child private TaintResultNode taintResultNode;
-
-        public StringSubstringPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
-        }
 
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 

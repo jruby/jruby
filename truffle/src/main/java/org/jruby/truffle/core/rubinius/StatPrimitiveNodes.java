@@ -151,10 +151,6 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_stat", unsafe = UnsafeGroup.IO)
     public static abstract class StatStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatStatPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int stat(DynamicObject rubyStat, DynamicObject path) {
@@ -178,10 +174,6 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_fstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatFStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatFStatPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public int fstat(DynamicObject rubyStat, int fd) {
@@ -199,10 +191,6 @@ public abstract class StatPrimitiveNodes {
 
     @Primitive(name = "stat_lstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatLStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        public StatLStatPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")

@@ -58,12 +58,7 @@ public abstract class DirNodes {
     @Primitive(name = "dir_allocate")
     public static abstract class DirAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public DirAllocatePrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject dirClass) {

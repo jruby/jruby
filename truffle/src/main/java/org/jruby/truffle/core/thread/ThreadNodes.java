@@ -492,9 +492,6 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_get_name")
     public static abstract class ThreadGetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadGetNamePrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
 
         @Specialization(guards = "isRubyThread(thread)")
         public DynamicObject getName(DynamicObject thread) {
@@ -504,9 +501,6 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_set_name")
     public static abstract class ThreadSetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadSetNamePrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
 
         @Specialization(guards = "isRubyThread(thread)")
         public DynamicObject setName(DynamicObject thread, DynamicObject name) {
@@ -517,9 +511,6 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
     public static abstract class ThreadGetPriorityPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadGetPriorityPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
 
         @Specialization(guards = "isRubyThread(thread)")
         public int getPriority(DynamicObject thread) {
@@ -549,10 +540,6 @@ public abstract class ThreadNodes {
         static final int RUBY_MIN_THREAD_PRIORITY = -3;
         static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
-        public ThreadSetPriorityPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
-
         @Specialization(guards = "isRubyThread(thread)")
         public int getPriority(DynamicObject thread, int rubyPriority) {
             if (rubyPriority < RUBY_MIN_THREAD_PRIORITY) {
@@ -579,9 +566,6 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_set_group")
     public static abstract class ThreadSetGroupPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadSetGroupPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
 
         @Specialization(guards = "isRubyThread(thread)")
         public DynamicObject setGroup(DynamicObject thread, DynamicObject threadGroup) {

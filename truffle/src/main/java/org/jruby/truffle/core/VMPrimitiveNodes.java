@@ -96,12 +96,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_catch", needsSelf = false)
     public abstract static class CatchNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private YieldNode dispatchNode;
-
-        public CatchNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            dispatchNode = new YieldNode();
-        }
+        @Child private YieldNode dispatchNode = new YieldNode();
 
         @Specialization
         public Object doCatch(VirtualFrame frame, Object tag, DynamicObject block,
@@ -155,8 +150,7 @@ public abstract class VMPrimitiveNodes {
         @Child private CallDispatchHeadNode newArrayNode;
         @Child private CallDispatchHeadNode arrayAppendNode;
 
-        public VMExtendedModulesNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public VMExtendedModulesNode() {
             newArrayNode = DispatchHeadNodeFactory.createMethodCall(getContext());
             arrayAppendNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
@@ -209,12 +203,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_class", needsSelf = false)
     public static abstract class VMObjectClassPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-
-        public VMObjectClassPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            classNode = LogicalClassNodeGen.create(sourceSection, null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null, null);
 
         @Specialization
         public DynamicObject vmObjectClass(VirtualFrame frame, Object object) {
@@ -237,12 +226,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_kind_of", needsSelf = false)
     public static abstract class VMObjectKindOfPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private IsANode isANode;
-
-        public VMObjectKindOfPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            isANode = IsANodeGen.create(sourceSection, null, null);
-        }
+        @Child private IsANode isANode = IsANodeGen.create(null, null, null);
 
         @Specialization
         public boolean vmObjectKindOf(Object object, DynamicObject rubyClass) {
@@ -253,10 +237,6 @@ public abstract class VMPrimitiveNodes {
 
     @Primitive(name = "vm_method_is_basic", needsSelf = false)
     public static abstract class VMMethodIsBasicNode extends PrimitiveArrayArgumentsNode {
-
-        public VMMethodIsBasicNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
 
         @Specialization
         public boolean vmMethodIsBasic(VirtualFrame frame, DynamicObject method) {
@@ -271,10 +251,9 @@ public abstract class VMPrimitiveNodes {
         @Child NameToJavaStringNode nameToJavaStringNode;
         @Child LookupMethodNode lookupMethodNode;
 
-        public VMMethodLookupNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public VMMethodLookupNode() {
             nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(sourceSection, true, false, null, null);
+            lookupMethodNode = LookupMethodNodeGen.create(null, true, false, null, null);
         }
 
         @Specialization
@@ -293,12 +272,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_respond_to", needsSelf = false)
     public static abstract class VMObjectRespondToPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private KernelNodes.RespondToNode respondToNode;
-
-        public VMObjectRespondToPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            respondToNode = KernelNodesFactory.RespondToNodeFactory.create(null, null, null, null);
-        }
+        @Child private KernelNodes.RespondToNode respondToNode = KernelNodesFactory.RespondToNodeFactory.create(null, null, null, null);
 
         @Specialization
         public boolean vmObjectRespondTo(VirtualFrame frame, Object object, Object name, boolean includePrivate) {
@@ -311,12 +285,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_singleton_class", needsSelf = false)
     public static abstract class VMObjectSingletonClassPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private KernelNodes.SingletonClassMethodNode singletonClassNode;
-
-        public VMObjectSingletonClassPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(null, null);
-        }
+        @Child private KernelNodes.SingletonClassMethodNode singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(null, null);
 
         @Specialization
         public Object vmObjectClass(Object object) {
@@ -327,10 +296,6 @@ public abstract class VMPrimitiveNodes {
 
     @Primitive(name = "vm_raise_exception", needsSelf = false)
     public static abstract class VMRaiseExceptionPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        public VMRaiseExceptionPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
 
         @Specialization(guards = "isRubyException(exception)")
         public DynamicObject vmRaiseException(DynamicObject exception) {

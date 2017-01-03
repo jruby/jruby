@@ -109,13 +109,6 @@ public abstract class IOPrimitiveNodes {
 
         private final BranchProfile errorProfile = BranchProfile.create();
 
-        public IOPrimitiveArrayArgumentsNode() {
-        }
-
-        public IOPrimitiveArrayArgumentsNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
-
         protected int ensureSuccessful(int result, int errno, String extra) {
             assert result >= -1;
             if (result == -1) {
@@ -142,7 +135,7 @@ public abstract class IOPrimitiveNodes {
         @Child private CallDispatchHeadNode newBufferNode;
         @Child private AllocateObjectNode allocateNode;
 
-        public IOAllocatePrimitiveNode(SourceIndexLength sourceSection) {
+        public IOAllocatePrimitiveNode() {
             newBufferNode = DispatchHeadNodeFactory.createMethodCall(getContext());
             allocateNode = AllocateObjectNode.create();
         }
@@ -600,8 +593,7 @@ public abstract class IOPrimitiveNodes {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
-        public IOReopenPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public IOReopenPrimitiveNode() {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
@@ -632,8 +624,7 @@ public abstract class IOPrimitiveNodes {
 
         @Child private CallDispatchHeadNode resetBufferingNode;
 
-        public IOReopenPathPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public IOReopenPathPrimitiveNode() {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 
@@ -796,8 +787,7 @@ public abstract class IOPrimitiveNodes {
 
         @Child private CallDispatchHeadNode ensureOpenNode;
 
-        public IOClosePrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
+        public IOClosePrimitiveNode() {
             ensureOpenNode = DispatchHeadNodeFactory.createMethodCall(getContext());
         }
 

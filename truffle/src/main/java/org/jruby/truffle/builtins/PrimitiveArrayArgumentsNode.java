@@ -14,15 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SourceIndexLength;
 
-@GenerateNodeFactory
 @NodeChild(value = "arguments", type = RubyNode[].class)
 public abstract class PrimitiveArrayArgumentsNode extends PrimitiveNode {
-
-    public PrimitiveArrayArgumentsNode() {
-    }
-
-    public PrimitiveArrayArgumentsNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
 
 }

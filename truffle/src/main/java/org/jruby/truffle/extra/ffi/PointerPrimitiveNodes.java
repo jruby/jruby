@@ -37,12 +37,7 @@ public abstract class PointerPrimitiveNodes {
     @Primitive(name = "pointer_allocate", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerAllocatePrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject pointerClass) {
@@ -54,12 +49,7 @@ public abstract class PointerPrimitiveNodes {
     @Primitive(name = "pointer_malloc", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerMallocPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerMallocPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject malloc(DynamicObject pointerClass, int size) {
@@ -105,12 +95,7 @@ public abstract class PointerPrimitiveNodes {
     @Primitive(name = "pointer_add", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerAddPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerAddPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject add(DynamicObject a, int b) {
@@ -194,12 +179,7 @@ public abstract class PointerPrimitiveNodes {
     @Primitive(name = "pointer_read_pointer", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadPointerPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerReadPointerPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject readPointer(DynamicObject pointer) {

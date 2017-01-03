@@ -66,12 +66,7 @@ public abstract class IOBufferPrimitiveNodes {
     @Primitive(name = "iobuffer_allocate", unsafe = UnsafeGroup.IO)
     public static abstract class IOBufferAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public IOBufferAllocatePrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject classToAllocate) {

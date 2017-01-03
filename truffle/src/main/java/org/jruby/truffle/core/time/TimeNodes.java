@@ -266,14 +266,8 @@ public abstract class TimeNodes {
     @Primitive(name = "time_s_now")
     public static abstract class TimeSNowPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-        @Child private GetTimeZoneNode getTimeZoneNode;
-
-        public TimeSNowPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-            getTimeZoneNode = GetTimeZoneNodeGen.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
+        @Child private GetTimeZoneNode getTimeZoneNode = GetTimeZoneNodeGen.create();
 
         @Specialization
         public DynamicObject timeSNow(VirtualFrame frame, DynamicObject timeClass) {
@@ -291,14 +285,8 @@ public abstract class TimeNodes {
     @Primitive(name = "time_s_specific", lowerFixnum = 2)
     public static abstract class TimeSSpecificPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private GetTimeZoneNode getTimeZoneNode;
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public TimeSSpecificPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            getTimeZoneNode = GetTimeZoneNodeGen.create();
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private GetTimeZoneNode getTimeZoneNode = GetTimeZoneNodeGen.create();
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization(guards = { "isUTC" })
         public DynamicObject timeSSpecificUTC(DynamicObject timeClass, long seconds, int nanoseconds, boolean isUTC, Object offset) {
@@ -357,10 +345,6 @@ public abstract class TimeNodes {
     @Primitive(name = "time_decompose")
     public static abstract class TimeDecomposePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public TimeDecomposePrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public DynamicObject timeDecompose(DynamicObject time) {
@@ -416,14 +400,8 @@ public abstract class TimeNodes {
     @Primitive(name = "time_s_from_array", needsSelf = true, lowerFixnum = { 1 /*sec*/, 2 /* min */, 3 /* hour */, 4 /* mday */, 5 /* month */, 6 /* year */, 7 /*nsec*/, 8 /*isdst*/})
     public static abstract class TimeSFromArrayPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child GetTimeZoneNode getTimeZoneNode;
-        @Child AllocateObjectNode allocateObjectNode;
-
-        public TimeSFromArrayPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            getTimeZoneNode = GetTimeZoneNodeGen.create();
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child GetTimeZoneNode getTimeZoneNode = GetTimeZoneNodeGen.create();
+        @Child AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization(guards = {"!fromutc", "!isNil(utcoffset)"})
         public DynamicObject timeSFromArray(VirtualFrame frame, DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,

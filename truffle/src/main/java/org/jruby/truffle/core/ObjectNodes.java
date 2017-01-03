@@ -117,10 +117,6 @@ public abstract class ObjectNodes {
         @Child private IsTaintedNode isTaintedNode;
         @Child private TaintNode taintNode;
 
-        public ObjectInfectPrimitiveNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-        }
-
         @Specialization
         public Object objectInfect(Object host, Object source) {
             if (isTaintedNode == null) {
