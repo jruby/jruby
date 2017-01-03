@@ -55,7 +55,7 @@ public class ConvertBytes {
     static {
         MIN_VALUE_BYTES = new byte[37][];
         for (int i = 2; i <= 36; i++) {
-            MIN_VALUE_BYTES[i] =  ByteList.plain(Long.toString(Long.MIN_VALUE, i));
+            MIN_VALUE_BYTES[i] =  StringOperations.plain(Long.toString(Long.MIN_VALUE, i));
         }
     }
 

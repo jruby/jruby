@@ -515,27 +515,6 @@ public class ByteList {
         return new String(bytes(), StandardCharsets.US_ASCII);
     }
 
-    /**
-     * Create a byte[] from a CharSequence assuming a raw/ISO-8859-1 encoding
-     *
-     * @param s the CharSequence to convert
-     * @return a byte[]
-     */
-    public static byte[] plain(CharSequence s) {
-        if (s instanceof String) return encode(s, StandardCharsets.ISO_8859_1);
-
-        // Not a String...get it the slow way
-        byte[] bytes = new byte[s.length()];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = (byte) s.charAt(i);
-        }
-        return bytes;
-    }
-
-    public static byte[] encode(CharSequence data, Charset charset) {
-        return charset.encode(CharBuffer.wrap(data)).array();
-    }
-
 
     /**
      * @return the bytes

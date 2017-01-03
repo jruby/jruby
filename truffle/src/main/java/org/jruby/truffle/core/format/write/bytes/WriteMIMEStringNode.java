@@ -49,6 +49,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.core.string.StringOperations;
 
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
@@ -85,7 +86,7 @@ public abstract class WriteMIMEStringNode extends FormatNode {
     private static final byte[] hex_table;
 
     static {
-        hex_table = ByteList.plain("0123456789ABCDEF");
+        hex_table = StringOperations.plain("0123456789ABCDEF");
     }
 
     /**

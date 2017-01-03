@@ -47,6 +47,7 @@ import org.jruby.truffle.language.RubyGuards;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 public abstract class StringOperations {
 
@@ -122,4 +123,25 @@ public abstract class StringOperations {
         return RopeOperations.decodeUTF8(Layouts.STRING.getRope(string));
     }
 
+    /**
+     * Create a byte[] from a CharSequence assuming a raw/ISO-8859-1 encoding
+     *
+     * @param s the CharSequence to convert
+     * @return a byte[]
+     */
+    @TruffleBoundary
+    public static byte[] plain(CharSequence s) {
+        // Taken from org.jruby.util.ByteList.plain
+
+        if (s instanceof String) {
+            return StandardCharsets.ISO_8859_1.encode(CharBuffer.wrap(s)).array();
+        }
+
+        // Not a String...get it the slow way
+        byte[] bytes = new byte[s.length()];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) s.charAt(i);
+        }
+        return bytes;
+    }
 }
