@@ -1191,7 +1191,7 @@ public final class StringSupport {
                 }
                 enc.codeToMbc(c, buf, t);
                 // MRI does not check s < send again because their null terminator can still be compared
-                if (mayModify && (s >= send || ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;
+                if (mayModify && (s >= send || ArrayUtils.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 t += tlen;
             }
@@ -1260,7 +1260,7 @@ public final class StringSupport {
                 // headius: I don't see how s and t could ever be the same, since they refer to different buffers
 //                if (s != t) {
                 enc.codeToMbc(c, buf, t);
-                if (mayModify && ByteList.memcmp(sbytes, s, buf, t, tlen) != 0) {
+                if (mayModify && ArrayUtils.memcmp(sbytes, s, buf, t, tlen) != 0) {
                     modify = true;
                 }
 //                }

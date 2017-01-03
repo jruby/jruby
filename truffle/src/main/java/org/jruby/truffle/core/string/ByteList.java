@@ -536,44 +536,6 @@ public class ByteList {
         return charset.encode(CharBuffer.wrap(data)).array();
     }
 
-    /**
-     * Are these two byte arrays similiar (semantics similiar to compareTo).  This is slightly
-     * special in that it will only compare the same number of bytes based on the lesser of the two
-     * lengths.
-     *
-     * @return -1, 0, 1
-     */
-    public static int memcmp(final byte[] first, final int firstStart, final int firstLen, final byte[] second, final int secondStart, final int secondLen) {
-        if (first == second) return 0;
-        final int len =  Math.min(firstLen,secondLen);
-        int offset = -1;
-        while (++offset < len && first[firstStart + offset] == second[secondStart + offset]) {
-        }
-        if (offset < len) {
-            return (first[firstStart + offset]&0xFF) > (second[secondStart + offset]&0xFF) ? 1 : -1;
-        }
-        return firstLen == secondLen ? 0 : firstLen == len ? -1 : 1;
-
-    }
-
-    /**
-     * Are these two byte arrays similiar (semantics similiar to compareTo).
-     *
-     * @return -1, 0, 1
-     */
-    public static int memcmp(final byte[] first, final int firstStart, final byte[] second, final int secondStart, int len) {
-        int a = firstStart;
-        int b = secondStart;
-        int tmp;
-
-        for (; len != 0; --len) {
-            if ((tmp = first[a++] - second[b++]) != 0) {
-                return tmp;
-            }
-        }
-        return 0;
-    }
-
 
     /**
      * @return the bytes

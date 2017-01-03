@@ -433,4 +433,18 @@ public abstract class ArrayUtils {
         return newArray;
     }
 
+    public static int memcmp(final byte[] first, final int firstStart, final byte[] second, final int secondStart, int size) {
+        assert firstStart + size <= first.length;
+        assert secondStart + size <= second.length;
+
+        int cmp;
+
+        for (int i = 0; i < size; i++) {
+            if ((cmp = (first[firstStart + i] & 0xff) - (second[secondStart + i] & 0xff)) != 0) {
+                return cmp;
+            }
+        }
+
+        return 0;
+    }
 }

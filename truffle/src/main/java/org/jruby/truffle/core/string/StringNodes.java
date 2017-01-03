@@ -94,6 +94,7 @@ import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.PrimitiveNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayCoreMethodNode;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.ArrayAttributeCastNodeGen;
 import org.jruby.truffle.core.cast.CmpIntNode;
 import org.jruby.truffle.core.cast.CmpIntNodeGen;
@@ -2664,8 +2665,7 @@ public abstract class StringNodes {
             final Rope otherRope = StringOperations.rope(other);
 
             // TODO (nirvdrum 21-Jan-16): Reimplement with something more friendly to rope byte[] layout?
-            return ByteList.memcmp(rope.getBytes(), 0, size,
-                    otherRope.getBytes(), start, size);
+            return ArrayUtils.memcmp(rope.getBytes(), 0, otherRope.getBytes(), start, size);
         }
 
         @TruffleBoundary
@@ -3682,7 +3682,7 @@ public abstract class StringNodes {
 
                     while (cur >= 0) {
                         // TODO (nirvdrum 21-Jan-16): Investigate a more rope efficient memcmp.
-                        if (ByteList.memcmp(stringRope.getBytes(), cur, patternRope.getBytes(), 0, matchSize) == 0) {
+                        if (ArrayUtils.memcmp(stringRope.getBytes(), cur, patternRope.getBytes(), 0, matchSize) == 0) {
                             return cur;
                         }
 
