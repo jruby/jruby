@@ -27,8 +27,7 @@ public class TopLevelRaiseHandler extends RubyNode {
     @Child private IntegerCastNode integerCastNode;
     @Child private SetExceptionVariableNode setExceptionVariableNode;
 
-    public TopLevelRaiseHandler(SourceIndexLength sourceSection, RubyNode body) {
-        super(sourceSection);
+    public TopLevelRaiseHandler(RubyNode body) {
         this.body = body;
     }
 

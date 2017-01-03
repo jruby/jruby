@@ -31,9 +31,8 @@ public class ReadRestArgumentNode extends RubyNode {
     @Child private ReadUserKeywordsHashNode readUserKeywordsHashNode;
     @Child private SnippetNode snippetNode = new SnippetNode();
 
-    public ReadRestArgumentNode(SourceIndexLength sourceSection, int startIndex, int indexFromCount,
+    public ReadRestArgumentNode(int startIndex, int indexFromCount,
                                 boolean keywordArguments, int minimumForKWargs) {
-        super(sourceSection);
         this.startIndex = startIndex;
         this.indexFromCount = indexFromCount;
         this.keywordArguments = keywordArguments;

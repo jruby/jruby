@@ -34,9 +34,8 @@ public class ExceptionTranslatingNode extends RubyNode {
     private final BranchProfile unsupportedProfile = BranchProfile.create();
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public ExceptionTranslatingNode(SourceIndexLength sourceSection, RubyNode child,
+    public ExceptionTranslatingNode(RubyNode child,
                                     UnsupportedOperationBehavior unsupportedOperationBehavior) {
-        super(sourceSection);
         this.child = child;
         this.unsupportedOperationBehavior = unsupportedOperationBehavior;
     }

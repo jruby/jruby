@@ -17,15 +17,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 @Instrumentable(factory = RubyNodeWrapper.class)
 public abstract class RubyNode extends RubyBaseNode {
 
-    public RubyNode() {
-    }
-
-    public RubyNode(SourceIndexLength sourceSection) {
-        if (sourceSection != null) {
-            unsafeSetSourceSection(sourceSection);
-        }
-    }
-
     // Fundamental execute methods
 
     public abstract Object execute(VirtualFrame frame);

@@ -40,22 +40,17 @@ import org.jruby.truffle.language.control.RaiseException;
 public abstract class AllocateObjectNode extends RubyNode {
 
     public static AllocateObjectNode create() {
-        return AllocateObjectNodeGen.create((SourceIndexLength) null, null, null);
+        return AllocateObjectNodeGen.create(null, null);
     }
 
     private final boolean useCallerFrameForTracing;
 
-    public AllocateObjectNode(SourceIndexLength sourceSection) {
-        this(sourceSection, true);
+    public AllocateObjectNode() {
+        this(true);
     }
 
-    public AllocateObjectNode(SourceIndexLength sourceSection, boolean useCallerFrameForTracing) {
-        super(sourceSection);
+    public AllocateObjectNode(boolean useCallerFrameForTracing) {
         this.useCallerFrameForTracing = useCallerFrameForTracing;
-    }
-
-    public AllocateObjectNode(AllocateObjectNode node) {
-        this(node.getSourceIndexLength());
     }
 
     public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {

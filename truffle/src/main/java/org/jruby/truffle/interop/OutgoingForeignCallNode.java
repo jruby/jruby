@@ -41,8 +41,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
 
     private final String name;
 
-    public OutgoingForeignCallNode(SourceIndexLength sourceSection, String name) {
-        super(sourceSection);
+    public OutgoingForeignCallNode(String name) {
         this.name = name;
     }
 

@@ -26,14 +26,12 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode {
     private final String name;
 
     @Child protected LookupConstantWithLexicalScopeNode lookupConstantNode;
-    @Child private GetConstantNode getConstantNode;
+    @Child private GetConstantNode getConstantNode = GetConstantNode.create();
 
-    public ReadConstantWithLexicalScopeNode(SourceIndexLength sourceSection, LexicalScope lexicalScope, String name) {
-        super(sourceSection);
+    public ReadConstantWithLexicalScopeNode(LexicalScope lexicalScope, String name) {
         this.lexicalScope = lexicalScope;
         this.name = name;
         this.lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name);
-        this.getConstantNode = GetConstantNode.create();
     }
 
     @Override

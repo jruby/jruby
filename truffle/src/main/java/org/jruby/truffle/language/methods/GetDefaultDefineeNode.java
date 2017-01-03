@@ -19,12 +19,7 @@ import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 
 public class GetDefaultDefineeNode extends RubyNode {
 
-    @Child private SingletonClassNode singletonClassNode;
-
-    public GetDefaultDefineeNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-        this.singletonClassNode = SingletonClassNodeGen.create(null);
-    }
+    @Child private SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {

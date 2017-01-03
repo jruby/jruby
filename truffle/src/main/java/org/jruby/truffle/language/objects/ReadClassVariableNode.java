@@ -25,9 +25,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     private final BranchProfile missingProfile = BranchProfile.create();
 
-    public ReadClassVariableNode(SourceIndexLength sourceSection,
-                                 LexicalScope lexicalScope, String name) {
-        super(sourceSection);
+    public ReadClassVariableNode(LexicalScope lexicalScope, String name) {
         this.lexicalScope = lexicalScope;
         this.name = name;
     }

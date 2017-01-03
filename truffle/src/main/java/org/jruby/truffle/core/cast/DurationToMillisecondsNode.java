@@ -66,7 +66,7 @@ public abstract class DurationToMillisecondsNode extends RubyNode {
     public long duration(VirtualFrame frame, DynamicObject duration) {
         if (floatCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            floatCastNode = insert(NumericToFloatNodeGen.create(null, "to_f", null));
+            floatCastNode = insert(NumericToFloatNodeGen.create("to_f", null));
         }
         return duration(floatCastNode.executeDouble(frame, duration));
     }

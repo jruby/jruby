@@ -20,9 +20,7 @@ public class DefinedWrapperNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public DefinedWrapperNode(SourceIndexLength sourceSection,
-                              CoreString definition, RubyNode child) {
-        super(sourceSection);
+    public DefinedWrapperNode(CoreString definition, RubyNode child) {
         this.definition = definition;
         this.child = child;
     }

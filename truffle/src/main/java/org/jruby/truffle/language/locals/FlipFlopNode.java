@@ -23,9 +23,8 @@ public class FlipFlopNode extends RubyNode {
     @Child private BooleanCastNode end;
     @Child private FlipFlopStateNode stateNode;
 
-    public FlipFlopNode(SourceIndexLength sourceSection, RubyNode begin, RubyNode end,
+    public FlipFlopNode(RubyNode begin, RubyNode end,
                         FlipFlopStateNode stateNode, boolean exclusive) {
-        super(sourceSection);
         this.exclusive = exclusive;
         this.begin = BooleanCastNodeGen.create(begin);
         this.end = BooleanCastNodeGen.create(end);

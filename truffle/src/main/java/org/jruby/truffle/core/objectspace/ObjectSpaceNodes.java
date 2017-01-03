@@ -25,7 +25,6 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.ObjectGraph;
@@ -144,7 +143,7 @@ public abstract class ObjectSpaceNodes {
         @Child private DoesRespondDispatchHeadNode respondToCallNode;
 
         public DefineFinalizerNode() {
-            respondToCallNode = new DoesRespondDispatchHeadNode(getContext(), true);
+            respondToCallNode = new DoesRespondDispatchHeadNode(true);
         }
 
         @Specialization

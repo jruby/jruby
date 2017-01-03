@@ -20,8 +20,7 @@ public class DataNode extends RubyNode {
 
     private final int endPosition;
 
-    public DataNode(SourceIndexLength sourceSection, int endPosition) {
-        super(sourceSection);
+    public DataNode(int endPosition) {
         this.endPosition = endPosition;
     }
 

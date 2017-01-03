@@ -30,8 +30,7 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     private final ConditionProfile matchNilProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadMatchReferenceNode(SourceIndexLength sourceSection, GetFromThreadLocalNode readMatchNode, int index) {
-        super(sourceSection);
+    public ReadMatchReferenceNode(GetFromThreadLocalNode readMatchNode, int index) {
         this.readMatchNode = readMatchNode;
         this.index = index;
     }

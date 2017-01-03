@@ -26,8 +26,7 @@ public class CatchForProcNode extends RubyNode {
     private final BranchProfile nextProfile = BranchProfile.create();
     private final BranchProfile retryProfile = BranchProfile.create();
 
-    public CatchForProcNode(SourceIndexLength sourceSection, RubyNode body) {
-        super(sourceSection);
+    public CatchForProcNode(RubyNode body) {
         this.body = body;
     }
 

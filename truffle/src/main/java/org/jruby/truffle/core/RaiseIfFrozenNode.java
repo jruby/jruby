@@ -23,12 +23,10 @@ public class RaiseIfFrozenNode extends RubyNode {
     private final BranchProfile errorProfile = BranchProfile.create();
 
     @Child private RubyNode child;
-    @Child private IsFrozenNode isFrozenNode;
+    @Child private IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(null);
 
-    public RaiseIfFrozenNode(SourceIndexLength sourceSection, RubyNode child) {
-        super(sourceSection);
+    public RaiseIfFrozenNode(RubyNode child) {
         this.child = child;
-        isFrozenNode = IsFrozenNodeGen.create(null);
     }
 
     @Override

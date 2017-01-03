@@ -79,7 +79,7 @@ public abstract class MethodNodes {
     @CoreMethod(names = { "call", "[]" }, needsBlock = true, rest = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
-        @Child CallBoundMethodNode callBoundMethodNode = CallBoundMethodNodeGen.create(null, null, null, null);
+        @Child CallBoundMethodNode callBoundMethodNode = CallBoundMethodNodeGen.create(null, null, null);
 
         @Specialization
         protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object maybeBlock) {
@@ -235,7 +235,7 @@ public abstract class MethodNodes {
             final SourceSection sourceSection = method.getSharedMethodInfo().getSourceSection();
             final RootNode oldRootNode = ((RootCallTarget) method.getCallTarget()).getRootNode();
 
-            final SetReceiverNode setReceiverNode = new SetReceiverNode(new SourceIndexLength(sourceSection), Layouts.METHOD.getReceiver(methodObject), method.getCallTarget());
+            final SetReceiverNode setReceiverNode = new SetReceiverNode(Layouts.METHOD.getReceiver(methodObject), method.getCallTarget());
             final RootNode newRootNode = new RubyRootNode(getContext(), sourceSection, oldRootNode.getFrameDescriptor(), method.getSharedMethodInfo(), setReceiverNode, false);
             return Truffle.getRuntime().createCallTarget(newRootNode);
         }
@@ -251,8 +251,7 @@ public abstract class MethodNodes {
         private final Object receiver;
         @Child private DirectCallNode methodCallNode;
 
-        public SetReceiverNode(SourceIndexLength sourceSection, Object receiver, CallTarget methodCallTarget) {
-            super(sourceSection);
+        public SetReceiverNode(Object receiver, CallTarget methodCallTarget) {
             this.receiver = receiver;
             this.methodCallNode = DirectCallNode.create(methodCallTarget);
         }

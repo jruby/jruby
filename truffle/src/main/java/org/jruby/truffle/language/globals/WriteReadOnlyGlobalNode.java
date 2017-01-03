@@ -20,8 +20,7 @@ public class WriteReadOnlyGlobalNode extends RubyNode {
 
     @Child private RubyNode value;
 
-    public WriteReadOnlyGlobalNode(SourceIndexLength sourceSection, String name, RubyNode value) {
-        super(sourceSection);
+    public WriteReadOnlyGlobalNode(String name, RubyNode value) {
         this.name = name;
         this.value = value;
     }

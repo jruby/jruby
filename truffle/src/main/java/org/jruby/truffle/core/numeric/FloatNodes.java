@@ -625,7 +625,7 @@ public abstract class FloatNodes {
 
         @CreateCast("ndigits")
         public RubyNode coerceDefault(RubyNode ndigits) {
-            return DefaultValueNodeGen.create(null, 0, ndigits);
+            return DefaultValueNodeGen.create(0, ndigits);
         }
 
         @Specialization(guards = { "ndigits == 0", "doubleInIntRange(n)" })

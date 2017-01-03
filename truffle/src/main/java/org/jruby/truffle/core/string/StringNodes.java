@@ -177,7 +177,7 @@ public abstract class StringNodes {
     public abstract static class AddNode extends CoreMethodNode {
 
         @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
-        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
             return ToStrNodeGen.create(other);
@@ -673,7 +673,7 @@ public abstract class StringNodes {
     })
     public abstract static class CaseCmpNode extends CoreMethodNode {
 
-        @Child private EncodingNodes.NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null, null);
+        @Child private EncodingNodes.NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null);
 
         @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
             return ToStrNodeGen.create(other);
@@ -717,7 +717,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
+        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null);
         @Child private ToStrNode toStr = ToStrNodeGen.create(null);
 
         @Specialization(guards = "isEmpty(string)")
@@ -807,7 +807,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(null));
+                taintResultNode = insert(new TaintResultNode());
             }
 
             final DynamicObject ret = createString(RopeOperations.ropeFromByteList(new ByteList(cryptedString, 0, cryptedString.length - 1, ASCIIEncoding.INSTANCE, false)));
@@ -824,7 +824,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class DeleteBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
+        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null);
         @Child private ToStrNode toStr = ToStrNodeGen.create(null);
 
         public abstract DynamicObject executeDeleteBang(VirtualFrame frame, DynamicObject string, Object[] args);
@@ -1037,7 +1037,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(null));
+                taintResultNode = insert(new TaintResultNode());
             }
 
             final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), substringRope);
@@ -1786,7 +1786,7 @@ public abstract class StringNodes {
 
             if (checkEncodingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null));
+                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(null, null));
             }
 
             final Rope rope = rope(string);
@@ -2064,7 +2064,7 @@ public abstract class StringNodes {
 
             if (checkEncodingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null));
+                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(null, null));
             }
 
             return StringNodesHelper.trTransHelper(getContext(), checkEncodingNode, self, fromStr, toStr, false);
@@ -2109,7 +2109,7 @@ public abstract class StringNodes {
 
             if (checkEncodingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null));
+                checkEncodingNode = insert(EncodingNodesFactory.CheckEncodingNodeGen.create(null, null));
             }
 
             return StringNodesHelper.trTransHelper(getContext(), checkEncodingNode, self, fromStr, toStr, true);
@@ -2403,7 +2403,7 @@ public abstract class StringNodes {
     @Primitive(name = "string_append")
     public static abstract class StringAppendPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private StringAppendNode stringAppendNode = StringNodesFactory.StringAppendNodeGen.create(null, null, null);
+        @Child private StringAppendNode stringAppendNode = StringNodesFactory.StringAppendNodeGen.create(null, null);
 
         public static StringAppendPrimitiveNode create() {
             return StringNodesFactory.StringAppendPrimitiveNodeFactory.create(null);
@@ -2425,7 +2425,7 @@ public abstract class StringNodes {
 
         @Child private RopeNodes.GetCodePointNode getCodePointNode = RopeNodes.GetCodePointNode.create();
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         @TruffleBoundary
         @Specialization
@@ -2505,18 +2505,18 @@ public abstract class StringNodes {
         @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
         @Child private NormalizeIndexNode normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
         @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         public static StringByteSubstringPrimitiveNode create() {
             return StringNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(null, null, null);
         }
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
-            return ArrayAttributeCastNodeGen.create(null, "index", index);
+            return ArrayAttributeCastNodeGen.create("index", index);
         }
 
         @CreateCast("length") public RubyNode coerceLengthToInt(RubyNode length) {
-            return ArrayAttributeCastNodeGen.create(null, "length", length);
+            return ArrayAttributeCastNodeGen.create("length", length);
         }
 
         public Object executeStringByteSubstring(DynamicObject string, Object index, Object length) { return nil(); }
@@ -3018,7 +3018,7 @@ public abstract class StringNodes {
         private Object maybeTaint(DynamicObject source, DynamicObject value) {
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(null));
+                taintResultNode = insert(new TaintResultNode());
             }
 
             return taintResultNode.maybeTaint(source, value);
@@ -4119,7 +4119,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(null));
+                taintResultNode = insert(new TaintResultNode());
             }
 
             final DynamicObject ret = allocateNode.allocate(
@@ -4143,7 +4143,7 @@ public abstract class StringNodes {
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintResultNode = insert(new TaintResultNode(null));
+                taintResultNode = insert(new TaintResultNode());
             }
 
             final DynamicObject ret = allocateNode.allocate(
@@ -4182,17 +4182,11 @@ public abstract class StringNodes {
     @NodeChildren({ @NodeChild("string"), @NodeChild("other") })
     public static abstract class StringAppendNode extends RubyNode {
 
-        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode;
-        @Child private RopeNodes.MakeConcatNode makeConcatNode;
+        @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null);
+        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
 
         public static StringAppendNode create() {
-            return StringNodesFactory.StringAppendNodeGen.create(null, null, null);
-        }
-
-        public StringAppendNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
-            makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+            return StringNodesFactory.StringAppendNodeGen.create(null, null);
         }
 
         public abstract Rope executeStringAppend(DynamicObject string, DynamicObject other);

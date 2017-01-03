@@ -23,9 +23,8 @@ public class WriteClassVariableNode extends RubyNode {
 
     @Child private RubyNode rhs;
 
-    public WriteClassVariableNode(SourceIndexLength sourceSection, LexicalScope lexicalScope,
+    public WriteClassVariableNode(LexicalScope lexicalScope,
                                   String name, RubyNode rhs) {
-        super(sourceSection);
         this.lexicalScope = lexicalScope;
         this.name = name;
         this.rhs = rhs;

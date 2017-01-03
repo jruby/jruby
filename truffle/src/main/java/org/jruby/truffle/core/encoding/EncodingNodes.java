@@ -108,15 +108,10 @@ public abstract class EncodingNodes {
     @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
     public static abstract class NegotiateCompatibleEncodingNode extends RubyNode {
 
-        @Child private ToEncodingNode getEncodingNode;
+        @Child private ToEncodingNode getEncodingNode = ToEncodingNode.create();
 
         public static NegotiateCompatibleEncodingNode create() {
-            return EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null, null);
-        }
-
-        public NegotiateCompatibleEncodingNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            getEncodingNode = ToEncodingNode.create();
+            return EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null);
         }
 
         public abstract Encoding executeNegotiate(Object first, Object second);
@@ -496,12 +491,11 @@ public abstract class EncodingNodes {
         @Child private ToEncodingNode toEncodingNode;
 
         public static CheckEncodingNode create() {
-            return EncodingNodesFactory.CheckEncodingNodeGen.create(null, null, null);
+            return EncodingNodesFactory.CheckEncodingNodeGen.create(null, null);
         }
 
-        public CheckEncodingNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(sourceSection, null, null);
+        public CheckEncodingNode() {
+            negotiateCompatibleEncodingNode = EncodingNodesFactory.NegotiateCompatibleEncodingNodeGen.create(null, null);
         }
 
         public abstract Encoding executeCheckEncoding(Object first, Object second);

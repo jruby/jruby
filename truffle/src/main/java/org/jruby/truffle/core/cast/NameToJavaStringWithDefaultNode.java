@@ -25,12 +25,10 @@ import org.jruby.truffle.language.SourceIndexLength;
 public abstract class NameToJavaStringWithDefaultNode extends RubyNode {
 
     private final String defaultValue;
-    @Child private NameToJavaStringNode toJavaStringNode;
+    @Child private NameToJavaStringNode toJavaStringNode = NameToJavaStringNodeGen.create(null);
 
-    public NameToJavaStringWithDefaultNode(SourceIndexLength sourceSection, String defaultValue) {
-        super(sourceSection);
+    public NameToJavaStringWithDefaultNode(String defaultValue) {
         this.defaultValue = defaultValue;
-        toJavaStringNode = NameToJavaStringNodeGen.create(null);
     }
 
     public abstract String executeString(VirtualFrame frame, Object value);

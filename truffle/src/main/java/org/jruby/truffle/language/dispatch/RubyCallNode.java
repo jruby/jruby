@@ -49,8 +49,6 @@ public class RubyCallNode extends RubyNode {
     private final ConditionProfile nilProfile;
 
     public RubyCallNode(RubyCallNodeParameters parameters) {
-        super(parameters.getSection());
-
         this.methodName = parameters.getMethodName();
         this.receiver = parameters.getReceiver();
         this.arguments = parameters.getArguments();

@@ -33,19 +33,15 @@ public class SuperCallNode extends RubyNode {
 
     @Child private RubyNode arguments;
     @Child private RubyNode block;
-    @Child ProcOrNullNode procOrNullNode;
+    @Child ProcOrNullNode procOrNullNode = ProcOrNullNodeGen.create(null);
 
-    @Child LookupSuperMethodNode lookupSuperMethodNode;
-    @Child CallInternalMethodNode callMethodNode;
+    @Child LookupSuperMethodNode lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null);
+    @Child CallInternalMethodNode callMethodNode = CallInternalMethodNodeGen.create(null, new RubyNode[] {});
     @Child CallDispatchHeadNode callMethodMissingNode;
 
-    public SuperCallNode(SourceIndexLength sourceSection, RubyNode arguments, RubyNode block) {
-        super(sourceSection);
+    public SuperCallNode(RubyNode arguments, RubyNode block) {
         this.arguments = arguments;
         this.block = block;
-        this.procOrNullNode = ProcOrNullNodeGen.create(null);
-        this.lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null, null);
-        this.callMethodNode = CallInternalMethodNodeGen.create(null, new RubyNode[] {});
     }
 
     @Override

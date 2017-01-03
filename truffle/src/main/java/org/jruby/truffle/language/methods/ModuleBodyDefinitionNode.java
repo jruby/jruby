@@ -40,9 +40,8 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     private final boolean dynamicLexicalScope;
     private final Map<DynamicObject, LexicalScope> lexicalScopes;
 
-    public ModuleBodyDefinitionNode(SourceIndexLength sourceSection, String name, SharedMethodInfo sharedMethodInfo,
+    public ModuleBodyDefinitionNode(String name, SharedMethodInfo sharedMethodInfo,
                                     CallTarget callTarget, boolean captureBlock, boolean dynamicLexicalScope) {
-        super(sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
@@ -52,7 +51,7 @@ public class ModuleBodyDefinitionNode extends RubyNode {
     }
 
     public ModuleBodyDefinitionNode(ModuleBodyDefinitionNode node) {
-        this(node.getSourceIndexLength(), node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock, node.dynamicLexicalScope);
+        this(node.name, node.sharedMethodInfo, node.callTarget, node.captureBlock, node.dynamicLexicalScope);
     }
 
     public InternalMethod createMethod(VirtualFrame frame, LexicalScope staticLexicalScope, DynamicObject module) {

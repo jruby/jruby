@@ -28,19 +28,8 @@ public final class WhileNode extends RubyNode {
 
     @Child private LoopNode loopNode;
 
-    private WhileNode(SourceIndexLength sourceSection, RepeatingNode repeatingNode) {
-        super(sourceSection);
+    public WhileNode(RepeatingNode repeatingNode) {
         loopNode = Truffle.getRuntime().createLoopNode(repeatingNode);
-    }
-
-    public static WhileNode createWhile(RubyContext context, SourceIndexLength sourceSection, RubyNode condition, RubyNode body) {
-        final RepeatingNode repeatingNode = new WhileRepeatingNode(context, condition, body);
-        return new WhileNode(sourceSection, repeatingNode);
-    }
-
-    public static WhileNode createDoWhile(RubyContext context, SourceIndexLength sourceSection, RubyNode condition, RubyNode body) {
-        final RepeatingNode repeatingNode = new DoWhileRepeatingNode(context, condition, body);
-        return new WhileNode(sourceSection, repeatingNode);
     }
 
     @Override
@@ -78,7 +67,7 @@ public final class WhileNode extends RubyNode {
 
     }
 
-    private static class WhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
+    public static class WhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
 
         public WhileRepeatingNode(RubyContext context, RubyNode condition, RubyNode body) {
             super(context, condition, body);
@@ -107,7 +96,7 @@ public final class WhileNode extends RubyNode {
 
     }
 
-    private static class DoWhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
+    public static class DoWhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
 
         public DoWhileRepeatingNode(RubyContext context, RubyNode condition, RubyNode body) {
             super(context, condition, body);

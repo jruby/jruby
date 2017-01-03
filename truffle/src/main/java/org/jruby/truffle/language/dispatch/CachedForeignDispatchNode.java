@@ -24,7 +24,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
     public CachedForeignDispatchNode(DispatchNode next, Object cachedName) {
         super(cachedName, next, DispatchAction.CALL_METHOD);
         name = cachedName.toString();
-        outgoingForeignCallNode = OutgoingForeignCallNodeGen.create(null, name, null, null);
+        outgoingForeignCallNode = OutgoingForeignCallNodeGen.create(name, null, null);
     }
 
     @Override

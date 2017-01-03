@@ -24,8 +24,7 @@ public class CatchBreakNode extends RubyNode {
 
     private final ConditionProfile matchingBreakProfile = ConditionProfile.createCountingProfile();
 
-    public CatchBreakNode(SourceIndexLength sourceSection, BreakID breakID, RubyNode body) {
-        super(sourceSection);
+    public CatchBreakNode(BreakID breakID, RubyNode body) {
         this.breakID = breakID;
         this.body = body;
     }

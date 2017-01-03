@@ -23,8 +23,7 @@ public abstract class DefaultValueNode extends RubyNode {
 
     private final Object defaultValue;
 
-    public DefaultValueNode(SourceIndexLength sourceSection, Object defaultValue) {
-        super(sourceSection);
+    public DefaultValueNode(Object defaultValue) {
         this.defaultValue = defaultValue;
     }
 

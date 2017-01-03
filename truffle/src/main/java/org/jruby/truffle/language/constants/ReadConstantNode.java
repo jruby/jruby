@@ -25,15 +25,12 @@ public class ReadConstantNode extends RubyNode {
     private final String name;
 
     @Child RubyNode moduleNode;
-    @Child LookupConstantNode lookupConstantNode;
-    @Child GetConstantNode getConstantNode;
+    @Child LookupConstantNode lookupConstantNode = LookupConstantNodeGen.create(false, false);
+    @Child GetConstantNode getConstantNode = GetConstantNode.create();
 
-    public ReadConstantNode(SourceIndexLength sourceSection, RubyNode moduleNode, String name) {
-        super(sourceSection);
+    public ReadConstantNode(RubyNode moduleNode, String name) {
         this.name = name;
         this.moduleNode = moduleNode;
-        this.lookupConstantNode = LookupConstantNodeGen.create(false, false);
-        this.getConstantNode = GetConstantNode.create();
     }
 
     @Override

@@ -32,8 +32,7 @@ public class MethodDefinitionNode extends RubyNode {
 
     @Child private GetDefaultDefineeNode getDefaultDefineeNode;
 
-    public MethodDefinitionNode(SourceIndexLength sourceSection, String name, SharedMethodInfo sharedMethodInfo, CallTarget callTarget) {
-        super(sourceSection);
+    public MethodDefinitionNode(String name, SharedMethodInfo sharedMethodInfo, CallTarget callTarget) {
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
@@ -47,7 +46,7 @@ public class MethodDefinitionNode extends RubyNode {
         if (RubyArguments.getDeclarationContext(frame) == DeclarationContext.INSTANCE_EVAL) {
             if (getDefaultDefineeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                getDefaultDefineeNode = insert(new GetDefaultDefineeNode(null));
+                getDefaultDefineeNode = insert(new GetDefaultDefineeNode());
             }
             capturedDefaultDefinee = getDefaultDefineeNode.execute(frame);
         } else {

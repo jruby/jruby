@@ -27,8 +27,7 @@ public class WriteInstanceVariableNode extends RubyNode {
 
     private final ConditionProfile objectProfile = ConditionProfile.createBinaryProfile();
 
-    public WriteInstanceVariableNode(SourceIndexLength sourceSection, String name, RubyNode receiver, RubyNode rhs) {
-        super(sourceSection);
+    public WriteInstanceVariableNode(String name, RubyNode receiver, RubyNode rhs) {
         this.name = name;
         this.receiver = receiver;
         this.rhs = rhs;

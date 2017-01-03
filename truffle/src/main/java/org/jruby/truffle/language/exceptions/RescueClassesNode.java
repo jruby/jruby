@@ -19,9 +19,8 @@ public class RescueClassesNode extends RescueNode {
 
     @Children final RubyNode[] handlingClassNodes;
 
-    public RescueClassesNode(SourceIndexLength sourceSection,
-                             RubyNode[] handlingClassNodes, RubyNode rescueBody) {
-        super(sourceSection, rescueBody);
+    public RescueClassesNode(RubyNode[] handlingClassNodes, RubyNode rescueBody) {
+        super(rescueBody);
         this.handlingClassNodes = handlingClassNodes;
     }
 

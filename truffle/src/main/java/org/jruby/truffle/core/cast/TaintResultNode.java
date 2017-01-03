@@ -39,8 +39,7 @@ public class TaintResultNode extends RubyNode {
         this.isTaintedNode = IsTaintedNode.create();
     }
 
-    public TaintResultNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
+    public TaintResultNode() {
         this.taintFromSelf = false;
         this.taintFromParameter = -1;
         this.isTaintedNode = IsTaintedNode.create();

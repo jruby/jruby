@@ -22,8 +22,7 @@ public class CheckOutputSeparatorVariableTypeNode extends RubyNode {
 
     private final BranchProfile unsuitableTypeProfile = BranchProfile.create();
 
-    public CheckOutputSeparatorVariableTypeNode(SourceIndexLength sourceSection, RubyNode child) {
-        super(sourceSection);
+    public CheckOutputSeparatorVariableTypeNode(RubyNode child) {
         this.child = child;
     }
 

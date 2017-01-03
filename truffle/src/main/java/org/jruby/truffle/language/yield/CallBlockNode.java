@@ -35,8 +35,7 @@ public abstract class CallBlockNode extends RubyNode {
 
     private final DeclarationContext declarationContext;
 
-    public CallBlockNode(SourceIndexLength sourceSection, DeclarationContext declarationContext) {
-        super(sourceSection);
+    public CallBlockNode(DeclarationContext declarationContext) {
         this.declarationContext = declarationContext;
     }
 

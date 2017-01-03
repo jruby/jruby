@@ -21,8 +21,7 @@ public final class SequenceNode extends RubyNode {
 
     @Children private final RubyNode[] body;
 
-    public SequenceNode(SourceIndexLength sourceSection, RubyNode... body) {
-        super(sourceSection);
+    public SequenceNode(RubyNode... body) {
         this.body = body;
     }
 

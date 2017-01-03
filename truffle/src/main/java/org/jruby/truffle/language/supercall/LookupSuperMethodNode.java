@@ -33,12 +33,7 @@ import org.jruby.truffle.language.objects.MetaClassNodeGen;
 @NodeChild("self")
 public abstract class LookupSuperMethodNode extends RubyNode {
 
-    @Child private MetaClassNode metaClassNode;
-
-    public LookupSuperMethodNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-        metaClassNode = MetaClassNodeGen.create(null);
-    }
+    @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
 
     public abstract InternalMethod executeLookupSuperMethod(VirtualFrame frame, Object self);
 

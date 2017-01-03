@@ -20,8 +20,7 @@ public class InvokePrimitiveNode extends RubyNode {
 
     private final ConditionProfile primitiveSucceededCondition = ConditionProfile.createBinaryProfile();
 
-    public InvokePrimitiveNode(SourceIndexLength sourceSection, RubyNode primitive) {
-        super(sourceSection);
+    public InvokePrimitiveNode(RubyNode primitive) {
         this.primitive = primitive;
     }
 

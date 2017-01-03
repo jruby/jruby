@@ -22,8 +22,7 @@ public class CheckMatchVariableTypeNode extends RubyNode {
 
     private final BranchProfile unsuitableTypeProfile = BranchProfile.create();
 
-    public CheckMatchVariableTypeNode(SourceIndexLength sourceSection, RubyNode child) {
-        super(sourceSection);
+    public CheckMatchVariableTypeNode(RubyNode child) {
         this.child = child;
     }
 

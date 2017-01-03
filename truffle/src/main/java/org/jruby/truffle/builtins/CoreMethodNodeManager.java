@@ -196,7 +196,7 @@ public class CoreMethodNodeManager {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
-        final RubyNode checkArity = Translator.createCheckArityNode(sourceIndexLength, sharedMethodInfo.getArity());
+        final RubyNode checkArity = Translator.createCheckArityNode(sharedMethodInfo.getArity());
 
         RubyNode node;
         if (!isSafe(context, method.unsafe())) {
@@ -206,7 +206,7 @@ public class CoreMethodNodeManager {
             node = transformResult(method, node);
         }
 
-        RubyNode bodyNode = new ExceptionTranslatingNode(sourceIndexLength, node, method.unsupportedOperationBehavior());
+        RubyNode bodyNode = new ExceptionTranslatingNode(node, method.unsupportedOperationBehavior());
 
         if (context.getOptions().CHAOS) {
             bodyNode = ChaosNodeGen.create(bodyNode);
@@ -228,7 +228,7 @@ public class CoreMethodNodeManager {
 
         if (needsSelf) {
             RubyNode readSelfNode = new ProfileArgumentNode(new ReadSelfNode());
-            argumentsNodes.add(transformArgument(sourceSection, method, readSelfNode, 0));
+            argumentsNodes.add(transformArgument(method, readSelfNode, 0));
         }
 
         final int required = method.required();
@@ -241,7 +241,7 @@ public class CoreMethodNodeManager {
 
         for (int n = 0; n < nArgs; n++) {
             RubyNode readArgumentNode = new ProfileArgumentNode(new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED));
-            argumentsNodes.add(transformArgument(sourceSection, method, readArgumentNode, n + 1));
+            argumentsNodes.add(transformArgument(method, readArgumentNode, n + 1));
         }
 
         if (method.rest()) {
@@ -301,13 +301,13 @@ public class CoreMethodNodeManager {
         return method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
     }
 
-    private static RubyNode transformArgument(SourceIndexLength sourceSection, CoreMethod method, RubyNode argument, int n) {
+    private static RubyNode transformArgument(CoreMethod method, RubyNode argument, int n) {
         if (ArrayUtils.contains(method.lowerFixnum(), n)) {
             argument = FixnumLowerNodeGen.create(argument);
         }
 
         if (n == 0 && method.raiseIfFrozenSelf()) {
-            argument = new RaiseIfFrozenNode(sourceSection, argument);
+            argument = new RaiseIfFrozenNode(argument);
         }
 
         return argument;

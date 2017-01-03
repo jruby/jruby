@@ -30,12 +30,7 @@ import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
 
-    @Child private AllocateObjectNode allocateObjectNode;
-
-    public ArrayReadSliceNormalizedNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-        allocateObjectNode = AllocateObjectNode.create();
-    }
+    @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
     public abstract DynamicObject executeReadSlice(DynamicObject array, int index, int length);
 

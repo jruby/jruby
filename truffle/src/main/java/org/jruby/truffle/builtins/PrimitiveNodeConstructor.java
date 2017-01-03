@@ -21,6 +21,7 @@ import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.language.arguments.ReadSelfNode;
+import org.jruby.truffle.parser.Translator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +60,7 @@ public class PrimitiveNodeConstructor {
 
         final RubyNode primitiveNode = CoreMethodNodeManager.createNodeFromFactory(context, source, sourceSection, factory, arguments);
 
-        return new CallPrimitiveNode(sourceSection, primitiveNode, fallback);
+        return Translator.withSourceSection(sourceSection, new CallPrimitiveNode(primitiveNode, fallback));
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, Source source, SourceIndexLength sourceSection, RubyNode[] arguments) {
@@ -89,7 +90,7 @@ public class PrimitiveNodeConstructor {
             primitiveNode = factory.createNode(new Object[] { arguments });
         }
 
-        return new InvokePrimitiveNode(sourceSection, primitiveNode);
+        return Translator.withSourceSection(sourceSection, new InvokePrimitiveNode(primitiveNode));
     }
 
     private RubyNode transformArgument(RubyNode argument, int n) {

@@ -14,7 +14,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 
 public class RubyCallNodeParameters {
 
-    private final SourceIndexLength section;
     private final RubyNode receiver;
     private final String methodName;
     private final RubyNode block;
@@ -25,17 +24,16 @@ public class RubyCallNodeParameters {
     private final boolean isSafeNavigation;
     private final boolean isAttrAssign;
 
-    public RubyCallNodeParameters(SourceIndexLength section,
+    public RubyCallNodeParameters(
             RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
             boolean isSplatted, boolean ignoreVisibility) {
-        this(section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
+        this(receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
     }
 
-    public RubyCallNodeParameters(SourceIndexLength section,
+    public RubyCallNodeParameters(
             RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
             boolean isSplatted, boolean ignoreVisibility,
             boolean isVCall, boolean isSafeNavigation, boolean isAttrAssign) {
-        this.section = section;
         this.receiver = receiver;
         this.methodName = methodName;
         this.block = block;
@@ -48,11 +46,7 @@ public class RubyCallNodeParameters {
     }
 
     public RubyCallNodeParameters withReceiverAndArguments(RubyNode receiver, RubyNode[] arguments, RubyNode block) {
-        return new RubyCallNodeParameters(section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, isVCall, isSafeNavigation, isAttrAssign);
-    }
-
-    public SourceIndexLength getSection() {
-        return section;
+        return new RubyCallNodeParameters(receiver, methodName, block, arguments, isSplatted, ignoreVisibility, isVCall, isSafeNavigation, isAttrAssign);
     }
 
     public RubyNode getReceiver() {

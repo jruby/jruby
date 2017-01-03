@@ -27,8 +27,7 @@ public class ReadThreadLocalGlobalVariableNode extends RubyNode {
     @Child private ThreadLocalObjectNode threadLocalVariablesObjectNode;
     @Child private ReadObjectFieldNode readNode;
 
-    public ReadThreadLocalGlobalVariableNode(SourceIndexLength sourceSection, String name, boolean alwaysDefined) {
-        super(sourceSection);
+    public ReadThreadLocalGlobalVariableNode(String name, boolean alwaysDefined) {
         this.name = name;
         this.alwaysDefined = alwaysDefined;
     }

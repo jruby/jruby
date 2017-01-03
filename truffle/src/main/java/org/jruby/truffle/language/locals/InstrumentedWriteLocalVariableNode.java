@@ -21,8 +21,8 @@ public class InstrumentedWriteLocalVariableNode extends WriteLocalVariableNode {
 
     private final String name;
 
-    public InstrumentedWriteLocalVariableNode(SourceIndexLength sourceSection, FrameSlot frameSlot, RubyNode valueNode) {
-        super(sourceSection, frameSlot, valueNode);
+    public InstrumentedWriteLocalVariableNode(FrameSlot frameSlot, RubyNode valueNode) {
+        super(frameSlot, valueNode);
         name = frameSlot.getIdentifier().toString();
     }
 

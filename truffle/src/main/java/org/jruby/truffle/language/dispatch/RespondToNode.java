@@ -11,20 +11,17 @@ package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class RespondToNode extends RubyNode {
 
     private final String methodName;
 
     @Child private RubyNode child;
-    @Child private DoesRespondDispatchHeadNode dispatch;
+    @Child private DoesRespondDispatchHeadNode dispatch = new DoesRespondDispatchHeadNode(true);
 
-    public RespondToNode(SourceIndexLength sourceSection, RubyNode child, String methodName) {
-        super(sourceSection);
+    public RespondToNode(RubyNode child, String methodName) {
         this.methodName = methodName;
         this.child = child;
-        this.dispatch = new DoesRespondDispatchHeadNode(getContext(), true);
     }
 
     @Override

@@ -18,15 +18,9 @@ public class DisablingBacktracesNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    private static final ThreadLocal<Boolean> BACTRACES_DISABLED = new ThreadLocal<Boolean>() {
-        @Override
-        protected Boolean initialValue() {
-            return false;
-        }
-    };
+    private static final ThreadLocal<Boolean> BACTRACES_DISABLED = ThreadLocal.withInitial(() -> false);
 
-    public DisablingBacktracesNode(SourceIndexLength sourceSection, RubyNode child) {
-        super(sourceSection);
+    public DisablingBacktracesNode(RubyNode child) {
         this.child = child;
     }
 

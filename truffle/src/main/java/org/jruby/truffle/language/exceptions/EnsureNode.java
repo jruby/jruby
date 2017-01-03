@@ -26,8 +26,7 @@ public class EnsureNode extends RubyNode {
     private final BranchProfile rubyExceptionPath = BranchProfile.create();
     private final BranchProfile javaExceptionPath = BranchProfile.create();
 
-    public EnsureNode(SourceIndexLength sourceSection, RubyNode tryPart, RubyNode ensurePart) {
-        super(sourceSection);
+    public EnsureNode(RubyNode tryPart, RubyNode ensurePart) {
         this.tryPart = tryPart;
         this.ensurePart = ensurePart;
     }

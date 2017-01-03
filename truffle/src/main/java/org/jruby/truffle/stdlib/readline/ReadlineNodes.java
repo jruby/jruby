@@ -128,7 +128,7 @@ public abstract class ReadlineNodes {
         @Child private TaintNode taintNode = TaintNode.create();
 
         @CreateCast("prompt") public RubyNode coercePromptToJavaString(RubyNode prompt) {
-            return NameToJavaStringWithDefaultNodeGen.create(null, coreStrings().EMPTY_STRING.toString(), prompt);
+            return NameToJavaStringWithDefaultNodeGen.create(coreStrings().EMPTY_STRING.toString(), prompt);
         }
 
         @CreateCast("addToHistory") public RubyNode coerceToBoolean(RubyNode addToHistory) {

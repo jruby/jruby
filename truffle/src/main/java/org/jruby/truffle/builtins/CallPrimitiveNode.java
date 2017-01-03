@@ -21,8 +21,7 @@ public class CallPrimitiveNode extends RubyNode {
 
     private final ConditionProfile successProfile = ConditionProfile.createBinaryProfile();
 
-    public CallPrimitiveNode(SourceIndexLength sourceSection, RubyNode primitive, RubyNode fallback) {
-        super(sourceSection);
+    public CallPrimitiveNode(RubyNode primitive, RubyNode fallback) {
         this.primitive = primitive;
         this.fallback = fallback;
     }

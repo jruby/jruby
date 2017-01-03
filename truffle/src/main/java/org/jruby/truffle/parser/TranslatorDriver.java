@@ -214,7 +214,7 @@ public class TranslatorDriver {
                 final String name = argumentNames[n];
                 final RubyNode readNode = new ProfileArgumentNode(new ReadPreArgumentNode(n, MissingArgumentBehavior.NIL));
                 final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(name);
-                sequence.add(WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceIndexLength, slot, readNode));
+                sequence.add(WriteLocalVariableNode.createWriteLocalVariableNode(context, slot, readNode));
             }
 
             sequence.add(truffleNode);
@@ -229,17 +229,17 @@ public class TranslatorDriver {
 
         // Catch next
 
-        truffleNode = new CatchNextNode(truffleNode.getSourceIndexLength(), truffleNode);
+        truffleNode = new CatchNextNode(truffleNode);
 
         // Catch return
 
         if (parserContext != ParserContext.INLINE) {
-            truffleNode = new CatchReturnAsErrorNode(truffleNode.getSourceIndexLength(), truffleNode);
+            truffleNode = new CatchReturnAsErrorNode(truffleNode);
         }
 
         // Catch retry
 
-        truffleNode = new CatchRetryAsErrorNode(truffleNode.getSourceIndexLength(), truffleNode);
+        truffleNode = new CatchRetryAsErrorNode(truffleNode);
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
             truffleNode = Translator.sequence(sourceIndexLength, Arrays.asList(
@@ -249,15 +249,15 @@ public class TranslatorDriver {
 
             if (node.hasEndPosition()) {
                 truffleNode = Translator.sequence(sourceIndexLength, Arrays.asList(
-                        new DataNode(sourceIndexLength, node.getEndPosition()),
+                        new DataNode(node.getEndPosition()),
                         truffleNode));
             }
 
-            truffleNode = new ExceptionTranslatingNode(sourceIndexLength, truffleNode, UnsupportedOperationBehavior.TYPE_ERROR);
-            truffleNode = new TopLevelRaiseHandler(sourceIndexLength, truffleNode);
+            truffleNode = new ExceptionTranslatingNode(truffleNode, UnsupportedOperationBehavior.TYPE_ERROR);
+            truffleNode = new TopLevelRaiseHandler(truffleNode);
         }
 
-        return new RubyRootNode(context, truffleNode.getSourceIndexLength().toSourceSection(source), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
+        return new RubyRootNode(context, sourceIndexLength.toSourceSection(source), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }
 
     public RootParseNode parse(Source source, DynamicScope blockScope,

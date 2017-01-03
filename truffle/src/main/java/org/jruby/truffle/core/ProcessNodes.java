@@ -53,7 +53,7 @@ public abstract class ProcessNodes {
 
         @CreateCast("unit")
         public RubyNode coerceUnit(RubyNode unit) {
-            return DefaultValueNodeGen.create(null, floatSecondSymbol, unit);
+            return DefaultValueNodeGen.create(floatSecondSymbol, unit);
         }
 
         @Specialization(guards = { "isMonotonic(clock_id)", "isRubySymbol(unit)" })

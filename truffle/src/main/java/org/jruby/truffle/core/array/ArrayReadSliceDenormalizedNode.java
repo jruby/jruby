@@ -26,12 +26,7 @@ import org.jruby.truffle.language.SourceIndexLength;
 })
 public abstract class ArrayReadSliceDenormalizedNode extends RubyNode {
 
-    @Child private ArrayReadSliceNormalizedNode readNode;
-
-    public ArrayReadSliceDenormalizedNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-        readNode = ArrayReadSliceNormalizedNodeGen.create(null, null, null, null);
-    }
+    @Child private ArrayReadSliceNormalizedNode readNode = ArrayReadSliceNormalizedNodeGen.create(null, null, null);
 
     public abstract DynamicObject executeReadSlice(DynamicObject array, int index, int length);
 

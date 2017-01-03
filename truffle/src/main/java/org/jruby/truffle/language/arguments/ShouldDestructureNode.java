@@ -41,7 +41,7 @@ public class ShouldDestructureNode extends RubyNode {
 
         if (respondToCheck == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            respondToCheck = insert(new RespondToNode(null, readArrayNode, "to_ary"));
+            respondToCheck = insert(new RespondToNode(readArrayNode, "to_ary"));
         }
 
         return respondToCheck.executeBoolean(frame);

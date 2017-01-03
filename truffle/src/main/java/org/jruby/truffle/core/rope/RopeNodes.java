@@ -1047,15 +1047,10 @@ public abstract class RopeNodes {
     @ImportStatic(RopeGuards.class)
     public abstract static class FlattenNode extends RubyNode {
 
-        @Child private MakeLeafRopeNode makeLeafRopeNode;
+        @Child private MakeLeafRopeNode makeLeafRopeNode = MakeLeafRopeNode.create();
 
         public static FlattenNode create() {
-            return RopeNodesFactory.FlattenNodeGen.create(null, null);
-        }
-
-        public FlattenNode(SourceIndexLength sourceSection) {
-            super(sourceSection);
-            makeLeafRopeNode = MakeLeafRopeNode.create();
+            return RopeNodesFactory.FlattenNodeGen.create(null);
         }
 
         public abstract LeafRope executeFlatten(Rope rope);

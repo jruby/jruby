@@ -28,8 +28,7 @@ public class ReadSuperArgumentsNode extends RubyNode {
 
     private final boolean isSplatted;
 
-    public ReadSuperArgumentsNode(SourceIndexLength sourceSection, RubyNode[] arguments, boolean isSplatted) {
-        super(sourceSection);
+    public ReadSuperArgumentsNode(RubyNode[] arguments, boolean isSplatted) {
         assert !isSplatted || arguments.length == 1;
         this.arguments = arguments;
         this.isSplatted = isSplatted;

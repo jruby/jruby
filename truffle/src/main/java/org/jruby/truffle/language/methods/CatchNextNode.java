@@ -21,8 +21,7 @@ public class CatchNextNode extends RubyNode {
 
     private final BranchProfile nextProfile = BranchProfile.create();
 
-    public CatchNextNode(SourceIndexLength sourceSection, RubyNode body) {
-        super(sourceSection);
+    public CatchNextNode(RubyNode body) {
         this.body = body;
     }
 

@@ -23,8 +23,7 @@ public class EnsureSymbolKeysNode extends RubyNode {
 
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public EnsureSymbolKeysNode(SourceIndexLength sourceSection, RubyNode child) {
-        super(sourceSection);
+    public EnsureSymbolKeysNode(RubyNode child) {
         this.child = child;
     }
 

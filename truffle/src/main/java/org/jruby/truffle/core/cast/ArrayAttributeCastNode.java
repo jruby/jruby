@@ -33,8 +33,7 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
 
     final String indexName;
 
-    public ArrayAttributeCastNode(SourceIndexLength sourceSection, String indexName) {
-        super(sourceSection);
+    public ArrayAttributeCastNode(String indexName) {
         this.indexName = indexName;
     }
 

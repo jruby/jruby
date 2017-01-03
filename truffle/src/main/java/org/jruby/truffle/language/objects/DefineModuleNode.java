@@ -33,8 +33,7 @@ public abstract class DefineModuleNode extends RubyNode {
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public DefineModuleNode(SourceIndexLength sourceSection, String name) {
-        super(sourceSection);
+    public DefineModuleNode(String name) {
         this.name = name;
     }
 

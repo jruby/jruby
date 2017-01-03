@@ -31,8 +31,7 @@ public abstract class RescueNode extends RubyNode {
 
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public RescueNode(SourceIndexLength sourceSection, RubyNode rescueBody) {
-        super(sourceSection);
+    public RescueNode(RubyNode rescueBody) {
         this.rescueBody = rescueBody;
     }
 

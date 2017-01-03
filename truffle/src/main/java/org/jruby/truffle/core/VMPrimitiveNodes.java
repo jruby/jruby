@@ -247,7 +247,7 @@ public abstract class VMPrimitiveNodes {
 
         public VMMethodLookupNode() {
             nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(null, true, false, null, null);
+            lookupMethodNode = LookupMethodNodeGen.create(true, false, null, null);
         }
 
         @Specialization

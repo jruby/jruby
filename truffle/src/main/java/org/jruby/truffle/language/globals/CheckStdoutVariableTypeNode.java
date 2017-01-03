@@ -25,8 +25,7 @@ public class CheckStdoutVariableTypeNode extends RubyNode {
 
     private final BranchProfile unsuitableTypeProfile = BranchProfile.create();
 
-    public CheckStdoutVariableTypeNode(SourceIndexLength sourceSection, RubyNode child) {
-        super(sourceSection);
+    public CheckStdoutVariableTypeNode(RubyNode child) {
         this.child = child;
     }
 
@@ -45,7 +44,7 @@ public class CheckStdoutVariableTypeNode extends RubyNode {
     private DoesRespondDispatchHeadNode getRespondToWriteNode() {
         if (respondToWriteNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            respondToWriteNode = insert(new DoesRespondDispatchHeadNode(getContext(), false));
+            respondToWriteNode = insert(new DoesRespondDispatchHeadNode(false));
         }
 
         return respondToWriteNode;

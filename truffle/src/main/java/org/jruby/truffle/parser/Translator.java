@@ -83,7 +83,7 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
             final RubyNode[] flatSequence = flattened.toArray(new RubyNode[flattened.size()]);
 
             final SourceIndexLength enclosingSourceSection = enclosing(sourceSection, flatSequence);
-            return new SequenceNode(enclosingSourceSection, flatSequence);
+            return withSourceSection(enclosingSourceSection, new SequenceNode(flatSequence));
         }
     }
 
@@ -144,11 +144,11 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         return rubyNode;
     }
 
-    public static RubyNode createCheckArityNode(SourceIndexLength sourceSection, Arity arity) {
+    public static RubyNode createCheckArityNode(Arity arity) {
         if (!arity.acceptsKeywords()) {
             return new CheckArityNode(arity);
         } else {
-            return new CheckKeywordArityNode(sourceSection, arity);
+            return new CheckKeywordArityNode(arity);
         }
     }
 
@@ -163,7 +163,14 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
     public static RubyNode loadSelf(RubyContext context, TranslatorEnvironment environment) {
         final FrameSlot slot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
         SourceIndexLength sourceSection = null;
-        return WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, slot, new ProfileArgumentNode(new ReadSelfNode()));
+        return WriteLocalVariableNode.createWriteLocalVariableNode(context, slot, new ProfileArgumentNode(new ReadSelfNode()));
+    }
+
+    public static <T extends RubyNode> T withSourceSection(SourceIndexLength sourceSection, T node) {
+        if (sourceSection != null) {
+            node.unsafeSetSourceSection(sourceSection);
+        }
+        return node;
     }
 
 }

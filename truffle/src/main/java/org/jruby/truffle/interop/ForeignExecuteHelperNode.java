@@ -39,7 +39,7 @@ abstract class ForeignExecuteHelperNode extends RubyNode {
     }
 
     protected CallBlockNode createCallBlockNode() {
-        return CallBlockNodeGen.create(null, DeclarationContext.BLOCK, null, null, null, null);
+        return CallBlockNodeGen.create(DeclarationContext.BLOCK, null, null, null, null);
     }
 
     @Specialization(guards = "isRubyMethod(method)")
@@ -49,7 +49,7 @@ abstract class ForeignExecuteHelperNode extends RubyNode {
     }
 
     protected CallBoundMethodNode createCallBoundMethodNode() {
-        return CallBoundMethodNodeGen.create(null, null, null, null);
+        return CallBoundMethodNodeGen.create(null, null, null);
     }
 
 }

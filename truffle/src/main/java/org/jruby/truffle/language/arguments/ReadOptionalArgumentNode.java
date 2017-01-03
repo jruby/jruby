@@ -35,11 +35,10 @@ public class ReadOptionalArgumentNode extends RubyNode {
 
     private final BranchProfile defaultValueProfile = BranchProfile.create();
 
-    public ReadOptionalArgumentNode(SourceIndexLength sourceSection, int index, int minimum,
+    public ReadOptionalArgumentNode(int index, int minimum,
                                     boolean considerRejectedKWArgs, boolean reduceMinimumWhenNoKWargs,
                                     int requiredForKWArgs, ReadRestArgumentNode readRestArgumentNode,
                                     RubyNode defaultValue) {
-        super(sourceSection);
         this.index = index;
         this.minimum = minimum;
         this.considerRejectedKWArgs = considerRejectedKWArgs;

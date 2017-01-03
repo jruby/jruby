@@ -361,7 +361,7 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "pre_match")
     public abstract static class PreMatchNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         @Specialization
         public Object preMatch(DynamicObject matchData) {
@@ -373,7 +373,7 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "post_match")
     public abstract static class PostMatchNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         @Specialization
         public Object postMatch(DynamicObject matchData) {

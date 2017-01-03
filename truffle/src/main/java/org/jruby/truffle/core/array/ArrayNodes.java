@@ -186,7 +186,7 @@ public abstract class ArrayNodes {
         public Object index(DynamicObject array, int index, NotProvided length) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(null, null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(null, null));
             }
             return readNode.executeRead(array, index);
         }
@@ -199,7 +199,7 @@ public abstract class ArrayNodes {
 
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(null, null, null, null));
+                readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(null, null, null));
             }
 
             return readSliceNode.executeReadSlice(array, start, length);
@@ -226,7 +226,7 @@ public abstract class ArrayNodes {
 
                 if (readNormalizedSliceNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(null, null, null, null));
+                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(null, null, null));
                 }
 
                 return readNormalizedSliceNode.executeReadSlice(array, normalizedIndex, length);
@@ -466,7 +466,7 @@ public abstract class ArrayNodes {
         private DynamicObject readSlice(DynamicObject array, int start, int length) {
             if (readSliceNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(null, null, null, null));
+                readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(null, null, null));
             }
             return readSliceNode.executeReadSlice(array, start, length);
         }
@@ -499,7 +499,7 @@ public abstract class ArrayNodes {
         public Object at(DynamicObject array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                readNode = insert(ArrayReadDenormalizedNodeGen.create(null, null, null));
+                readNode = insert(ArrayReadDenormalizedNodeGen.create(null, null));
             }
             return readNode.executeRead(array, index);
         }

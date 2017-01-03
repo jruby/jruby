@@ -37,8 +37,7 @@ public abstract class AddMethodNode extends RubyNode {
 
     @Child private SingletonClassNode singletonClassNode;
 
-    public AddMethodNode(SourceIndexLength sourceSection, boolean ignoreNameVisibility, boolean isLiteralDef) {
-        super(sourceSection);
+    public AddMethodNode(boolean ignoreNameVisibility, boolean isLiteralDef) {
         this.ignoreNameVisibility = ignoreNameVisibility;
         this.isLiteralDef = isLiteralDef;
     }

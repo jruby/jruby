@@ -14,7 +14,6 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class WriteLocalVariableNode extends RubyNode {
 
@@ -23,18 +22,16 @@ public class WriteLocalVariableNode extends RubyNode {
     @Child private RubyNode valueNode;
     @Child private WriteFrameSlotNode writeFrameSlotNode;
 
-    public static WriteLocalVariableNode createWriteLocalVariableNode(RubyContext context, SourceIndexLength sourceSection,
+    public static WriteLocalVariableNode createWriteLocalVariableNode(RubyContext context,
                                                                       FrameSlot frameSlot, RubyNode valueNode) {
         if (context.getCallGraph() == null) {
-            return new WriteLocalVariableNode(sourceSection, frameSlot, valueNode);
+            return new WriteLocalVariableNode(frameSlot, valueNode);
         } else {
-            return new InstrumentedWriteLocalVariableNode(sourceSection, frameSlot, valueNode);
+            return new InstrumentedWriteLocalVariableNode(frameSlot, valueNode);
         }
     }
 
-    protected WriteLocalVariableNode(SourceIndexLength sourceSection,
-                                     FrameSlot frameSlot, RubyNode valueNode) {
-        super(sourceSection);
+    protected WriteLocalVariableNode(FrameSlot frameSlot, RubyNode valueNode) {
         this.frameSlot = frameSlot;
         this.valueNode = valueNode;
     }

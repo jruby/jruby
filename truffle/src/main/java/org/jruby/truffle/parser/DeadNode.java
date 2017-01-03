@@ -22,8 +22,7 @@ public class DeadNode extends RubyNode {
 
     private final Exception reason;
 
-    public DeadNode(SourceIndexLength sourceSection, Exception reason) {
-        super(sourceSection);
+    public DeadNode(Exception reason) {
         this.reason = reason;
     }
 

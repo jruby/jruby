@@ -95,7 +95,6 @@ import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
@@ -1134,7 +1133,7 @@ public abstract class KernelNodes {
     public abstract static class MethodNode extends CoreMethodNode {
 
         @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
-        @Child LookupMethodNode lookupMethodNode = LookupMethodNodeGen.create(null, true, false, null, null);
+        @Child LookupMethodNode lookupMethodNode = LookupMethodNodeGen.create(true, false, null, null);
         @Child CallDispatchHeadNode respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(true);
 
         @CreateCast("name")
@@ -1467,9 +1466,9 @@ public abstract class KernelNodes {
         private final ConditionProfile ignoreVisibilityProfile = ConditionProfile.createBinaryProfile();
 
         public RespondToNode() {
-            dispatch = new DoesRespondDispatchHeadNode(getContext(), false);
-            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(getContext(), true);
-            dispatchRespondToMissing = new DoesRespondDispatchHeadNode(getContext(), true);
+            dispatch = new DoesRespondDispatchHeadNode(false);
+            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(true);
+            dispatchRespondToMissing = new DoesRespondDispatchHeadNode(true);
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);
@@ -1831,7 +1830,7 @@ public abstract class KernelNodes {
 
         @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null);
         @Child private ObjectNodes.ObjectIDPrimitiveNode objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(null);
-        @Child private TaintResultNode taintResultNode = new TaintResultNode(null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
         @Child private ToHexStringNode toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);
 
         public abstract DynamicObject executeToS(Object self);

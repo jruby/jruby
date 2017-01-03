@@ -26,8 +26,7 @@ public class ReadInstanceVariableNode extends RubyNode {
 
     private final ConditionProfile objectProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadInstanceVariableNode(SourceIndexLength sourceSection, String name, RubyNode receiver) {
-        super(sourceSection);
+    public ReadInstanceVariableNode(String name, RubyNode receiver) {
         this.name = name;
         this.receiver = receiver;
     }

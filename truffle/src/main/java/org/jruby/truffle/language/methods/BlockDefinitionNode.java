@@ -41,9 +41,8 @@ public class BlockDefinitionNode extends RubyNode {
 
     @Child private ReadFrameSlotNode readFrameOnStackMarkerNode;
 
-    public BlockDefinitionNode(SourceIndexLength sourceSection, ProcType type, SharedMethodInfo sharedMethodInfo,
+    public BlockDefinitionNode(ProcType type, SharedMethodInfo sharedMethodInfo,
                                CallTarget callTargetForProcs, CallTarget callTargetForLambdas, BreakID breakID, FrameSlot frameOnStackMarkerSlot) {
-        super(sourceSection);
         this.type = type;
         this.sharedMethodInfo = sharedMethodInfo;
 

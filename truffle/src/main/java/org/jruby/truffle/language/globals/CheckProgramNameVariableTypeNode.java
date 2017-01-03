@@ -22,8 +22,7 @@ public class CheckProgramNameVariableTypeNode extends RubyNode {
 
     private final BranchProfile unsuitableTypeProfile = BranchProfile.create();
 
-    public CheckProgramNameVariableTypeNode(SourceIndexLength sourceSection, RubyNode child) {
-        super(sourceSection);
+    public CheckProgramNameVariableTypeNode(RubyNode child) {
         this.child = child;
     }
 
