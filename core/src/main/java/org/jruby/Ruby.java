@@ -3167,10 +3167,6 @@ public final class Ruby implements Constantizable {
 
         final ThreadContext context = getCurrentContext();
 
-        // Disable event hooks during runtime teardown
-        // This avoids deadlocks if some other thread is holding a debugger lock while we're trying to exit
-        context.setEventHooksEnabled(false);
-
         // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
         // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
         // bogus scope back for at_exit block run.  This is buggy if at_exit is capturing vars.
