@@ -230,10 +230,6 @@ public abstract class StringNodes {
             return ret;
         }
 
-        protected Encoding getEncoding(DynamicObject string) {
-            return Layouts.STRING.getRope(string).getEncoding();
-        }
-
     }
 
     @CoreMethod(names = "*", required = 1, lowerFixnum = 1, taintFrom = 0)
