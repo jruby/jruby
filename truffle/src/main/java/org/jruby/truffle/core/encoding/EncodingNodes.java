@@ -71,6 +71,41 @@ public abstract class EncodingNodes {
         }
     }
 
+    @NodeChild("encoding")
+    public abstract static class GetRubyEncodingNode extends RubyNode {
+
+        public static GetRubyEncodingNode create() {
+            return EncodingNodesFactory.GetRubyEncodingNodeGen.create(null);
+        }
+
+        public abstract DynamicObject executeGetRubyEncoding(Encoding encoding);
+
+        @Specialization(guards = "isSameEncoding(encoding, cachedRubyEncoding)",
+                limit = "getCacheLimit()")
+        protected DynamicObject getRubyEncodingCached(Encoding encoding,
+                                                      @Cached("getRubyEncodingUncached(encoding)") DynamicObject cachedRubyEncoding) {
+            return cachedRubyEncoding;
+        }
+
+        @Specialization(contains = "getRubyEncodingCached")
+        protected DynamicObject getRubyEncodingUncached(Encoding encoding) {
+            if (encoding == null) {
+                throw new UnsupportedOperationException("cannot convert null Java encoding to a Ruby encoding");
+            }
+
+            return getContext().getEncodingManager().getRubyEncoding(encoding);
+        }
+
+        protected boolean isSameEncoding(Encoding encoding, DynamicObject rubyEncoding) {
+            return encoding == Layouts.ENCODING.getEncoding(rubyEncoding);
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().ENCODING_LOADED_CLASSES_CACHE;
+        }
+
+    }
+
     @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
     public static abstract class NegotiateCompatibleEncodingNode extends RubyNode {
 
@@ -300,10 +335,12 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "compatible?", onSingleton = true, required = 2)
     public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private GetRubyEncodingNode getRubyEncodingNode;
         @Child private NegotiateCompatibleEncodingNode negotiateCompatibleEncodingNode;
 
         public CompatibleQueryNode(SourceIndexLength sourceSection) {
             super(sourceSection);
+            getRubyEncodingNode = EncodingNodesFactory.GetRubyEncodingNodeGen.create();
             negotiateCompatibleEncodingNode = NegotiateCompatibleEncodingNode.create();
         }
 
@@ -318,7 +355,7 @@ public abstract class EncodingNodes {
                 return nil();
             }
 
-            return getContext().getEncodingManager().getRubyEncoding(negotiatedEncoding);
+            return getRubyEncodingNode.executeGetRubyEncoding(negotiatedEncoding);
         }
 
         protected int getCacheLimit() {
