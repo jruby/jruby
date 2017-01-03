@@ -25,24 +25,27 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.core.string;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.util.IntHash;
 import org.jruby.truffle.collections.IntHashMap;
+import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
-import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
+import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
+import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 
 public final class StringSupport {
     public static final int TRANS_SIZE = 256;
@@ -103,6 +106,7 @@ public final class StringSupport {
     }
 
     // rb_enc_precise_mbclen
+    @TruffleBoundary
     public static int preciseLength(Encoding enc, byte[]bytes, int p, int end) {
         if (p >= end) return -1 - (1);
         int n = enc.length(bytes, p, end);
@@ -118,11 +122,6 @@ public final class StringSupport {
     // MBCLEN_NEEDMORE, ONIGENC_MBCLEN_NEEDMORE
     public static int MBCLEN_NEEDMORE(int n) {
         return -1 - n;
-    }
-
-    // MBCLEN_NEEDMORE_LEN, ONIGENC_MBCLEN_NEEDMORE_LEN
-    public static int MBCLEN_NEEDMORE_LEN(int r) {
-        return -1 - r;
     }
 
     // MBCLEN_INVALID_P, ONIGENC_MBCLEN_INVALID_P
@@ -149,84 +148,7 @@ public final class StringSupport {
         return -1;
     }
 
-    public static CodeRange codeRangeScan(Encoding enc, byte[]bytes, int p, int len) {
-        if (enc == ASCIIEncoding.INSTANCE) {
-            return searchNonAscii(bytes, p, p + len) != -1 ? CR_VALID : CR_7BIT;
-        }
-        if (enc.isAsciiCompatible()) {
-            return codeRangeScanAsciiCompatible(enc, bytes, p, len);
-        }
-        return codeRangeScanNonAsciiCompatible(enc, bytes, p, len);
-    }
-
-    private static CodeRange codeRangeScanAsciiCompatible(Encoding enc, byte[]bytes, int p, int len) {
-        int end = p + len;
-        p = searchNonAscii(bytes, p, end);
-        if (p == -1) return CR_7BIT;
-
-        while (p < end) {
-            int cl = preciseLength(enc, bytes, p, end);
-            if (cl <= 0) return CR_BROKEN;
-            p += cl;
-            if (p < end) {
-                p = searchNonAscii(bytes, p, end);
-                if (p == -1) return CR_VALID;
-            }
-        }
-        return p > end ? CR_BROKEN : CR_VALID;
-    }
-
-    private static CodeRange codeRangeScanNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int len) {
-        int end = p + len;
-        while (p < end) {
-            int cl = preciseLength(enc, bytes, p, end);
-            if (cl <= 0) return CR_BROKEN;
-            p += cl;
-        }
-        return p > end ? CR_BROKEN : CR_VALID;
-    }
-
-    public static CodeRange codeRangeScan(Encoding enc, ByteList bytes) {
-        return codeRangeScan(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
-    }
-
-    private static final long NONASCII_MASK = 0x8080808080808080L;
-    private static int countUtf8LeadBytes(long d) {
-        d |= ~(d >>> 1);
-        d >>>= 6;
-        d &= NONASCII_MASK >>> 7;
-        d += (d >>> 8);
-        d += (d >>> 16);
-        d += (d >>> 32);
-        return (int)(d & 0xf);
-    }
-
     private static final int LONG_SIZE = 8;
-    private static final int LOWBITS = LONG_SIZE - 1;
-    @SuppressWarnings("deprecation")
-    public static int utf8Length(byte[] bytes, int p, int end) {
-        final ByteBuffer buffer = ByteBuffer.wrap(bytes, 0, end);
-        int len = 0;
-        if (end - p > LONG_SIZE * 2) {
-            int ep = ~LOWBITS & (p + LOWBITS);
-            while (p < ep) {
-                if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
-            }
-            int eend = ~LOWBITS & end;
-            while (p < eend) {
-                len += countUtf8LeadBytes(buffer.getLong(p));
-                p += LONG_SIZE;
-            }
-        }
-        while (p < end) {
-            if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
-        }
-        return len;
-    }
-
-    public static int utf8Length(ByteList bytes) {
-        return utf8Length(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
-    }
 
     // MRI: rb_enc_strlen
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
@@ -272,16 +194,6 @@ public final class StringSupport {
         return c;
     }
 
-    public static long strLengthWithCodeRange(Encoding enc, byte[]bytes, int p, int end) {
-        if (enc.isFixedWidth()) {
-            return (end - p + enc.minLength() - 1) / enc.minLength();
-        } else if (enc.isAsciiCompatible()) {
-            return strLengthWithCodeRangeAsciiCompatible(enc, bytes, p, end);
-        } else {
-            return strLengthWithCodeRangeNonAsciiCompatible(enc, bytes, p, end);
-        }
-    }
-
     public static long strLengthWithCodeRangeAsciiCompatible(Encoding enc, byte[]bytes, int p, int end) {
         CodeRange cr = CR_UNKNOWN;
         int c = 0;
@@ -325,10 +237,6 @@ public final class StringSupport {
         return pack(c, cr == CR_UNKNOWN ? CR_7BIT.toInt() : cr.toInt());
     }
 
-    public static long strLengthWithCodeRange(ByteList bytes, Encoding enc) {
-        return strLengthWithCodeRange(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
-    }
-
     // arg cannot be negative
     public static long pack(int result, int arg) {
         return ((long)arg << 31) | result;
@@ -359,7 +267,6 @@ public final class StringSupport {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
     public static int utf8Nth(byte[]bytes, int p, int e, int nth) {
         // FIXME: Missing our UNSAFE impl because it was doing the wrong thing: See GH #1986
         while (p < e) {
@@ -432,11 +339,6 @@ public final class StringSupport {
 
     public static int offset(Encoding enc, byte[]bytes, int p, int end, int n) {
         int pp = nth(enc, bytes, p, end, n);
-        return pp == -1 ? end - p : pp - p;
-    }
-
-    public static int offset(Encoding enc, byte[]bytes, int p, int end, int n, boolean singlebyte) {
-        int pp = nth(enc, bytes, p, end, n, singlebyte);
         return pp == -1 ? end - p : pp - p;
     }
 
@@ -532,10 +434,10 @@ public final class StringSupport {
     /**
      * rb_str_count
      */
-    public static int strCount(ByteList str, boolean[] table, TrTables tables, Encoding enc) {
-        final byte[] bytes = str.getUnsafeBytes();
-        int p = str.getBegin();
-        final int end = p + str.getRealSize();
+    public static int strCount(Rope str, boolean[] table, TrTables tables, Encoding enc) {
+        final byte[] bytes = str.getBytes();
+        int p = 0;
+        final int end = str.byteLength();
         final boolean asciiCompat = enc.isAsciiCompatible();
 
         int count = 0;
@@ -555,30 +457,14 @@ public final class StringSupport {
         return count;
     }
 
-    public static int strLengthFromRubyString(CodeRangeable string) {
-        final ByteList bytes = string.getByteList();
-
-        if (isSingleByteOptimizable(string, bytes.getEncoding())) return bytes.getRealSize();
-        return strLengthFromRubyStringFull(string, bytes, bytes.getEncoding());
-    }
-
-    private static int strLengthFromRubyStringFull(CodeRangeable string, ByteList bytes, Encoding enc) {
-        if (string.isCodeRangeValid() && enc.isUTF8()) return utf8Length(bytes);
-
-        long lencr = strLengthWithCodeRange(bytes, enc);
-        CodeRange cr = CodeRange.fromInt(unpackArg(lencr));
-        if (cr != CR_UNKNOWN) string.setCodeRange(cr);
-        return unpackResult(lencr);
-    }
-
     /**
      * rb_str_tr / rb_str_tr_bang
      */
     public static final class TR {
-        public TR(ByteList bytes) {
-            p = bytes.getBegin();
-            pend = bytes.getRealSize() + p;
-            buf = bytes.getUnsafeBytes();
+        public TR(Rope bytes) {
+            p = 0;
+            pend = bytes.byteLength() + p;
+            buf = bytes.getBytes();
             now = max = 0;
             gen = false;
         }
@@ -597,14 +483,14 @@ public final class StringSupport {
 
     private static final Object DUMMY_VALUE = "";
 
-    public static TrTables trSetupTable(final ByteList str,
+    public static TrTables trSetupTable(final Rope str,
                                         final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
         int i, l[] = {0};
         final boolean cflag;
 
         final TR tr = new TR(str);
 
-        if (str.realSize() > 1 && EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, l, enc) == '^') {
+        if (str.byteLength() > 1 && EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, l, enc) == '^') {
             cflag = true;
             tr.p += l[0];
         }
@@ -751,15 +637,14 @@ public final class StringSupport {
     public enum NeighborChar {NOT_CHAR, FOUND, WRAPPED}
 
     // MRI: str_succ
-    public static ByteList succCommon(ByteList original) {
+    public static ByteList succCommon(Rope original) {
         byte carry[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int carryP = 0;
         carry[0] = 1;
         int carryLen = 1;
 
-        ByteList valueCopy = new ByteList(original);
-        valueCopy.setEncoding(original.getEncoding());
         Encoding enc = original.getEncoding();
+        ByteList valueCopy = new ByteList(original.getBytes(), enc, true);
         int p = valueCopy.getBegin();
         int end = p + valueCopy.getRealSize();
         int s = end;
@@ -975,64 +860,14 @@ public final class StringSupport {
         return string.getCodeRange() == CR_7BIT || encoding.maxLength() == 1;
     }
 
-    public static int index(CodeRangeable sourceString, CodeRangeable otherString, int offset, Encoding enc) {
-        if (otherString.scanForCodeRange() == CR_BROKEN) return -1;
-
-        int sourceLen = strLengthFromRubyString(sourceString);
-        int otherLen = strLengthFromRubyString(otherString);
-
-        if (offset < 0) {
-            offset += sourceLen;
-            if (offset < 0) return -1;
-        }
-
-        final ByteList source = sourceString.getByteList();
-        final ByteList other = otherString.getByteList();
-
-        if (sourceLen - offset < otherLen) return -1;
-        byte[] bytes = source.getUnsafeBytes();
-        int p = source.getBegin();
-        int end = p + source.getRealSize();
-        if (offset != 0) {
-            offset = isSingleByteOptimizable(sourceString, enc) ? offset : offset(enc, bytes, p, end, offset);
-            p += offset;
-        }
-        if (otherLen == 0) return offset;
-
-        while (true) {
-            int pos = source.indexOf(other, p - source.getBegin());
-            if (pos < 0) return pos;
-            pos -= (p - source.getBegin());
-            int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
-            if (t == p + pos) return pos + offset;
-            if ((sourceLen -= t - p) <= 0) return -1;
-            offset += t - p;
-            p = t;
-        }
-    }
-
-    public static void associateEncoding(CodeRangeable string, Encoding enc) {
-        final ByteList value = string.getByteList();
-
-        if (value.getEncoding() != enc) {
-            if ((string.getCodeRange() != CR_7BIT) || !enc.isAsciiCompatible()) string.clearCodeRange();
-            value.setEncoding(enc);
-        }
-    }
-
     /**
      * rb_str_delete_bang
      */
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
-        rubyString.modify();
-        rubyString.keepCodeRange();
-
-        final ByteList value = rubyString.getByteList();
-
-        int s = value.getBegin();
+    public static Rope delete_bangCommon19(Rope rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
+        int s = 0;
         int t = s;
-        int send = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        int send = s + rubyString.byteLength();
+        byte[]bytes = rubyString.getBytesCopy();
         boolean modify = false;
         boolean asciiCompatible = enc.isAsciiCompatible();
         CodeRange cr = asciiCompatible ? CR_7BIT : CR_VALID;
@@ -1059,10 +894,8 @@ public final class StringSupport {
                 s += cl;
             }
         }
-        value.setRealSize(t - value.getBegin());
-        rubyString.setCodeRange(cr);
 
-        return modify ? rubyString : null;
+        return modify ? RopeOperations.create(ArrayUtils.extractRange(bytes, 0, t), enc, cr) : null;
     }
 
     public static ByteList addByteLists(ByteList value1, ByteList value2) {
@@ -1077,23 +910,17 @@ public final class StringSupport {
      * rb_str_tr / rb_str_tr_bang
      */
 
-    public static CodeRangeable trTransHelper(CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
+    public static Rope trTransHelper(Rope self, Rope srcStr, Rope replStr, Encoding e1, Encoding enc, boolean sflag) {
         // This method does not handle the cases where either srcStr or replStr are empty.  It is the responsibility
         // of the caller to take the appropriate action in those cases.
 
-        final ByteList srcList = srcStr.getByteList();
-        final ByteList replList = replStr.getByteList();
-
         CodeRange cr = self.getCodeRange();
-        Encoding e1 = self.checkEncoding(srcStr);
-        Encoding e2 = self.checkEncoding(replStr);
-        Encoding enc = e1 == e2 ? e1 : srcStr.checkEncoding(replStr);
 
-        final StringSupport.TR trSrc = new StringSupport.TR(srcList);
+        final StringSupport.TR trSrc = new StringSupport.TR(srcStr);
         boolean cflag = false;
         int[] l = {0};
 
-        if (srcStr.getByteList().getRealSize() > 1 &&
+        if (srcStr.byteLength() > 1 &&
                 EncodingUtils.encAscget(trSrc.buf, trSrc.p, trSrc.pend, l, enc) == '^' &&
                 trSrc.p + 1 < trSrc.pend){
             cflag = true;
@@ -1102,10 +929,10 @@ public final class StringSupport {
 
         int c, c0, last = 0;
         final int[]trans = new int[StringSupport.TRANS_SIZE];
-        final StringSupport.TR trRepl = new StringSupport.TR(replList);
+        final StringSupport.TR trRepl = new StringSupport.TR(replStr);
         boolean modify = false;
         IntHash<Integer> hash = null;
-        boolean singlebyte = StringSupport.isSingleByteOptimizable(self, EncodingUtils.STR_ENC_GET(self));
+        boolean singlebyte = self.isSingleByteOptimizable();
 
         if (cflag) {
             for (int i = 0; i< StringSupport.TRANS_SIZE; i++) {
@@ -1148,14 +975,15 @@ public final class StringSupport {
         if (cr == CR_VALID) {
             cr = CR_7BIT;
         }
-        self.modifyAndKeepCodeRange();
-        int s = self.getByteList().getBegin();
-        int send = s + self.getByteList().getRealSize();
-        byte sbytes[] = self.getByteList().getUnsafeBytes();
 
+        int s = 0;
+        int send = self.byteLength();
+
+        final Rope ret;
         if (sflag) {
+            byte sbytes[] = self.getBytes();
             int clen, tlen;
-            int max = self.getByteList().getRealSize();
+            int max = self.byteLength();
             int save = -1;
             byte[] buf = new byte[max];
             int t = 0;
@@ -1205,13 +1033,14 @@ public final class StringSupport {
                 }
                 enc.codeToMbc(c, buf, t);
                 // MRI does not check s < send again because their null terminator can still be compared
-                if (mayModify && (s >= send || ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;
+                if (mayModify && (s >= send || ArrayUtils.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 t += tlen;
             }
-            self.getByteList().setUnsafeBytes(buf);
-            self.getByteList().setRealSize(t);
+
+            ret = RopeOperations.create(ArrayUtils.extractRange(buf, 0, t), enc, cr);
         } else if (enc.isSingleByte() || (singlebyte && hash == null)) {
+            byte sbytes[] = self.getBytesCopy();
             while (s < send) {
                 c = sbytes[s] & 0xff;
                 if (trans[c] != -1) {
@@ -1226,8 +1055,11 @@ public final class StringSupport {
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 s++;
             }
+
+            ret = RopeOperations.create(sbytes, enc, cr);
         } else {
-            int clen, tlen, max = (int)(self.getByteList().realSize() * 1.2);
+            byte sbytes[] = self.getBytes();
+            int clen, tlen, max = (int)(self.byteLength() * 1.2);
             byte[] buf = new byte[max];
             int t = 0;
 
@@ -1270,7 +1102,7 @@ public final class StringSupport {
                 // headius: I don't see how s and t could ever be the same, since they refer to different buffers
 //                if (s != t) {
                 enc.codeToMbc(c, buf, t);
-                if (mayModify && ByteList.memcmp(sbytes, s, buf, t, tlen) != 0) {
+                if (mayModify && ArrayUtils.memcmp(sbytes, s, buf, t, tlen) != 0) {
                     modify = true;
                 }
 //                }
@@ -1279,15 +1111,14 @@ public final class StringSupport {
                 s += clen;
                 t += tlen;
             }
-            self.getByteList().setUnsafeBytes(buf);
-            self.getByteList().setRealSize(t);
+
+            ret = RopeOperations.create(ArrayUtils.extractRange(buf, 0, t), enc, cr);
         }
 
         if (modify) {
-            if (cr != CR_BROKEN) self.setCodeRange(cr);
-            StringSupport.associateEncoding(self, enc);
-            return self;
+            return ret;
         }
+
         return null;
     }
 
@@ -1306,14 +1137,15 @@ public final class StringSupport {
         }
     }
 
-    public static int multiByteCasecmp(Encoding enc, ByteList value, ByteList otherValue) {
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
+    @TruffleBoundary
+    public static int multiByteCasecmp(Encoding enc, Rope value, Rope otherValue) {
+        byte[]bytes = value.getBytes();
+        int p = 0;
+        int end = value.byteLength();
 
-        byte[]obytes = otherValue.getUnsafeBytes();
-        int op = otherValue.getBegin();
-        int oend = op + otherValue.getRealSize();
+        byte[]obytes = otherValue.getBytes();
+        int op = 0;
+        int oend = otherValue.byteLength();
 
         while (p < end && op < oend) {
             final int c, oc;

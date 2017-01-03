@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,7 +14,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
@@ -27,15 +26,12 @@ import org.jruby.truffle.language.objects.IsFrozenNodeGen;
 public abstract class HashLiteralNode extends RubyNode {
 
     @Children protected final RubyNode[] keyValues;
-    @Child protected CallDispatchHeadNode dupNode;
-    @Child protected CallDispatchHeadNode freezeNode;
+    @Child protected CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
+    @Child protected CallDispatchHeadNode freezeNode = DispatchHeadNodeFactory.createMethodCall();
 
-    protected HashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
-        super(context, sourceSection);
+    protected HashLiteralNode(RubyNode[] keyValues) {
         assert keyValues.length % 2 == 0;
         this.keyValues = keyValues;
-        dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-        freezeNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     public int size() {
@@ -50,13 +46,13 @@ public abstract class HashLiteralNode extends RubyNode {
         return keyValues[2 * index + 1];
     }
 
-    public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+    public static HashLiteralNode create(RubyContext context, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
-            return new EmptyHashLiteralNode(context, sourceSection);
+            return new EmptyHashLiteralNode();
         } else if (keyValues.length <= context.getOptions().HASH_PACKED_ARRAY_MAX * 2) {
-            return new SmallHashLiteralNode(context, sourceSection, keyValues);
+            return new SmallHashLiteralNode(keyValues);
         } else {
-            return new GenericHashLiteralNode(context, sourceSection, keyValues);
+            return new GenericHashLiteralNode(keyValues);
         }
     }
 
@@ -70,8 +66,8 @@ public abstract class HashLiteralNode extends RubyNode {
 
     public static class EmptyHashLiteralNode extends HashLiteralNode {
 
-        public EmptyHashLiteralNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection, new RubyNode[]{});
+        public EmptyHashLiteralNode() {
+            super(new RubyNode[]{});
         }
 
         @ExplodeLoop
@@ -86,14 +82,12 @@ public abstract class HashLiteralNode extends RubyNode {
 
         private final ConditionProfile stringKeyProfile = ConditionProfile.createBinaryProfile();
 
-        @Child private HashNode hashNode;
-        @Child private CallDispatchHeadNode equalNode;
+        @Child private HashNode hashNode = new HashNode();
+        @Child private CallDispatchHeadNode equalNode = DispatchHeadNodeFactory.createMethodCall();
         @Child private IsFrozenNode isFrozenNode;
 
-        public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
-            super(context, sourceSection, keyValues);
-            hashNode = new HashNode();
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
+        public SmallHashLiteralNode(RubyNode[] keyValues) {
+            super(keyValues);
         }
 
         @ExplodeLoop
@@ -136,7 +130,7 @@ public abstract class HashLiteralNode extends RubyNode {
         protected boolean isFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(null));
             }
             return isFrozenNode.executeIsFrozen(object);
         }
@@ -147,8 +141,8 @@ public abstract class HashLiteralNode extends RubyNode {
 
         @Child SetNode setNode;
 
-        public GenericHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
-            super(context, sourceSection, keyValues);
+        public GenericHashLiteralNode(RubyNode[] keyValues) {
+            super(keyValues);
         }
 
         @ExplodeLoop

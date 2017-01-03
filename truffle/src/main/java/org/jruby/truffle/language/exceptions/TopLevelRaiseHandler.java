@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,13 +12,12 @@ package org.jruby.truffle.language.exceptions;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -28,8 +27,7 @@ public class TopLevelRaiseHandler extends RubyNode {
     @Child private IntegerCastNode integerCastNode;
     @Child private SetExceptionVariableNode setExceptionVariableNode;
 
-    public TopLevelRaiseHandler(RubyContext context, SourceSection sourceSection, RubyNode body) {
-        super(context, sourceSection);
+    public TopLevelRaiseHandler(RubyNode body) {
         this.body = body;
     }
 
@@ -68,7 +66,7 @@ public class TopLevelRaiseHandler extends RubyNode {
     private int castToInt(Object value) {
         if (integerCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            integerCastNode = insert(IntegerCastNodeGen.create(getContext(), null, null));
+            integerCastNode = insert(IntegerCastNodeGen.create(null));
         }
 
         return integerCastNode.executeCastInt(value);

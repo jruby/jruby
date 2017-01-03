@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,11 +10,10 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -22,12 +21,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 /** Load libraries required from the command line (-r LIBRARY) */
 public class LoadRequiredLibrariesNode extends RubyNode {
 
-    @Child CallDispatchHeadNode requireNode;
-
-    public LoadRequiredLibrariesNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        requireNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-    }
+    @Child CallDispatchHeadNode requireNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
     @Override
     public Object execute(VirtualFrame frame) {

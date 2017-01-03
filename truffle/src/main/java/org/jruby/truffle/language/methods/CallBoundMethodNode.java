@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,12 +14,11 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 @NodeChildren({
@@ -29,14 +28,8 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 })
 public abstract class CallBoundMethodNode extends RubyNode {
 
-    @Child CallInternalMethodNode callInternalMethodNode;
-    @Child ProcOrNullNode procOrNullNode;
-
-    public CallBoundMethodNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        callInternalMethodNode = CallInternalMethodNodeGen.create(context, sourceSection, null, null);
-        procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
-    }
+    @Child CallInternalMethodNode callInternalMethodNode = CallInternalMethodNodeGen.create(null, null);
+    @Child ProcOrNullNode procOrNullNode = ProcOrNullNodeGen.create(null);
 
     public abstract Object executeCallBoundMethod(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block);
 

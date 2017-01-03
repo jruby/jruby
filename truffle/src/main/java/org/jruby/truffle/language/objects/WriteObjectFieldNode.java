@@ -113,7 +113,7 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
         } catch (IncompatibleLocationException e) {
             // remove this entry
             validLocation.invalidate();
-            execute(object, value);
+            newShape.getLastProperty().setGeneric(object, value, oldShape, newShape);
         }
     }
 
@@ -182,6 +182,11 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public String toString() {
+        return name + " =";
     }
 
 }

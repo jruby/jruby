@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,12 +16,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChild(value = "lexicalParentModule", type = RubyNode.class)
@@ -34,8 +33,7 @@ public abstract class DefineModuleNode extends RubyNode {
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public DefineModuleNode(RubyContext context, SourceSection sourceSection, String name) {
-        super(context, sourceSection);
+    public DefineModuleNode(String name) {
         this.name = name;
     }
 

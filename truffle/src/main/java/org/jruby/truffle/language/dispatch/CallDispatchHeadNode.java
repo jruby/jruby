@@ -12,7 +12,6 @@ package org.jruby.truffle.language.dispatch;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 
@@ -22,20 +21,18 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
 
     public static CallDispatchHeadNode createMethodCall() {
         return new CallDispatchHeadNode(
-                null,
                 false,
                 MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public static CallDispatchHeadNode createMethodCallIgnoreVisibility() {
         return new CallDispatchHeadNode(
-                null,
                 true,
                 MissingBehavior.CALL_METHOD_MISSING);
     }
 
-    public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
-        super(context, ignoreVisibility, false, missingBehavior, DispatchAction.CALL_METHOD);
+    public CallDispatchHeadNode(boolean ignoreVisibility, MissingBehavior missingBehavior) {
+        super(ignoreVisibility, false, missingBehavior, DispatchAction.CALL_METHOD);
     }
 
     public Object call(VirtualFrame frame, Object receiver, Object method, Object... arguments) {

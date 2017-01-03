@@ -28,15 +28,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 /*
  * The rest argument for a method (def foo(a, *b, c)).
  */
 public class RestArgParseNode extends ArgumentParseNode implements INameNode {
-    public RestArgParseNode(ISourcePosition position, String name, int index) {
+    public RestArgParseNode(SourceIndexLength position, String name, int index) {
         super(position, name, index);
     }
 

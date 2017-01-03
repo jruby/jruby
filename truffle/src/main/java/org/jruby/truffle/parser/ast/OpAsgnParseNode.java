@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -47,7 +47,7 @@ public class OpAsgnParseNode extends ParseNode {
     private final String variableNameAsgn;
     private final boolean isLazy;
 
-    public OpAsgnParseNode(ISourcePosition position, ParseNode receiverNode, ParseNode valueNode, String variableName, String operatorName, boolean isLazy) {
+    public OpAsgnParseNode(SourceIndexLength position, ParseNode receiverNode, ParseNode valueNode, String variableName, String operatorName, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment());
 
         assert receiverNode != null : "receiverNode is not null";

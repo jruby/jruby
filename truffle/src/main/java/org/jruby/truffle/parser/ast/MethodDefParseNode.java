@@ -32,8 +32,8 @@ package org.jruby.truffle.parser.ast;
  * Base class for DefnParseNode and DefsParseNode
  */
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 import org.jruby.truffle.parser.scope.StaticScope;
 
 public abstract class MethodDefParseNode extends ParseNode implements INameNode, DefNode {
@@ -41,10 +41,9 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
     protected final ArgsParseNode argsNode;
     protected final StaticScope scope;
     protected final ParseNode bodyNode;
-    protected final int endLine;
 
-    public MethodDefParseNode(ISourcePosition position, String name, ArgsParseNode argsNode,
-                              StaticScope scope, ParseNode bodyNode, int endLine) {
+    public MethodDefParseNode(SourceIndexLength position, String name, ArgsParseNode argsNode,
+                              StaticScope scope, ParseNode bodyNode) {
         super(position, bodyNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode must not be null";
@@ -53,7 +52,6 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
         this.argsNode = argsNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
-        this.endLine = endLine;
     }
 
 
@@ -91,11 +89,4 @@ public abstract class MethodDefParseNode extends ParseNode implements INameNode,
         return name;
     }
 
-    /**
-     * Which line is the 'end' encountered on.  Useful for RETURN event generation.
-     * @return the zero-based line number
-     */
-    public int getEndLine() {
-        return endLine;
-    }
 }

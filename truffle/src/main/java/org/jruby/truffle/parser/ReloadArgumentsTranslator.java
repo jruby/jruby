@@ -16,7 +16,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
 import org.jruby.truffle.language.arguments.ReadPreArgumentNode;
@@ -60,7 +60,7 @@ public class ReloadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitArgsNode(ArgsParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final SourceIndexLength sourceSection = node.getPosition();
 
         final List<RubyNode> sequence = new ArrayList<>();
         final ParseNode[] args = node.getArgs();
@@ -104,11 +104,11 @@ public class ReloadArgumentsTranslator extends Translator {
                 final KeywordArgParseNode kwArg = (KeywordArgParseNode) args[keywordIndex + i];
                 final RubyNode value = kwArg.accept(this);
                 final String name = ((INameNode) kwArg.getAssignable()).getName();
-                RubyNode key = new ObjectLiteralNode(context, sourceSectionX, context.getSymbolTable().getSymbol(name));
+                RubyNode key = new ObjectLiteralNode(context.getSymbolTable().getSymbol(name));
                 keyValues[2 * i] = key;
                 keyValues[2 * i + 1] = value;
             }
-            kwArgsNode = HashLiteralNode.create(context, sourceSectionX, keyValues);
+            kwArgsNode = HashLiteralNode.create(context, keyValues);
         }
 
         if (node.hasKeyRest()) {
@@ -116,7 +116,7 @@ public class ReloadArgumentsTranslator extends Translator {
             if (kwArgsNode == null) {
                 kwArgsNode = keyRest;
             } else {
-                kwArgsNode = new ConcatHashLiteralNode(context, sourceSectionX, new RubyNode[]{kwArgsNode, keyRest});
+                kwArgsNode = new ConcatHashLiteralNode(new RubyNode[]{kwArgsNode, keyRest});
             }
 
         }
@@ -125,18 +125,18 @@ public class ReloadArgumentsTranslator extends Translator {
             sequence.add(kwArgsNode);
         }
 
-        return new SequenceNode(sourceSection.toSourceSection(source), sequence.toArray(new RubyNode[sequence.size()]));
+        return new SequenceNode(sequence.toArray(new RubyNode[sequence.size()]));
     }
 
     @Override
     public RubyNode visitArgumentNode(ArgumentParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final SourceIndexLength sourceSection = node.getPosition();
         return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
     }
 
     @Override
     public RubyNode visitOptArgNode(OptArgParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final SourceIndexLength sourceSection = node.getPosition();
         return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
     }
 
@@ -147,13 +147,13 @@ public class ReloadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitRestArgNode(RestArgParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final SourceIndexLength sourceSection = node.getPosition();
         return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
     }
 
     @Override
     public RubyNode visitKeywordArgNode(KeywordArgParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final SourceIndexLength sourceSection = node.getPosition();
         final AssignableParseNode asgnNode = node.getAssignable();
         final String name = ((INameNode) asgnNode).getName();
         return methodBodyTranslator.getEnvironment().findLocalVarNode(name, source, sourceSection);
@@ -161,13 +161,13 @@ public class ReloadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitKeywordRestArgNode(KeywordRestArgParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final SourceIndexLength sourceSection = node.getPosition();
         return methodBodyTranslator.getEnvironment().findLocalVarNode(node.getName(), source, sourceSection);
     }
 
     @Override
     protected RubyNode defaultVisit(ParseNode node) {
-        final RubySourceSection sourceSection = translate(node.getPosition());
+        final SourceIndexLength sourceSection = node.getPosition();
         return nilNode(source, sourceSection);
     }
 

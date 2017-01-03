@@ -11,6 +11,7 @@ package org.jruby.truffle.core.encoding;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -23,7 +24,10 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
-import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.core.array.ArrayUtils;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -71,7 +75,7 @@ public abstract class TruffleEncodingNodes {
             CompilerAsserts.neverPartOfCompilation();
             for (Hash.HashEntry<EncodingDB.Entry> entry : EncodingDB.getAliases().entryIterator()) {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e = (CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) entry;
-                final ByteList aliasName = new ByteList(e.bytes, e.p, e.end - e.p, USASCIIEncoding.INSTANCE, false);
+                final Rope aliasName = RopeOperations.create(ArrayUtils.extractRange(e.bytes, e.p, e.end), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT);
                 yield(frame, block, createString(aliasName), entry.value.getIndex());
             }
             return nil();
@@ -82,12 +86,13 @@ public abstract class TruffleEncodingNodes {
     public abstract static class GetDefaultEncodingNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(name)")
-        public DynamicObject getDefaultEncoding(DynamicObject name) {
+        public DynamicObject getDefaultEncoding(DynamicObject name,
+                                                @Cached("create()")EncodingNodes.GetRubyEncodingNode getRubyEncodingNode) {
             final Encoding encoding = getEncoding(StringOperations.getString(name));
             if (encoding == null) {
                 return nil();
             } else {
-                return getContext().getEncodingManager().getRubyEncoding(encoding);
+                return getRubyEncodingNode.executeGetRubyEncoding(encoding);
             }
         }
 

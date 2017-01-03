@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -28,6 +28,7 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsTaintedNode;
+
 import java.nio.charset.StandardCharsets;
 
 @NodeChildren({
@@ -96,7 +97,7 @@ public abstract class ToStringNode extends FormatNode {
     public byte[] toString(VirtualFrame frame, DynamicObject array) {
         if (toSNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
+            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(true,
                     MissingBehavior.RETURN_MISSING));
         }
 
@@ -117,7 +118,7 @@ public abstract class ToStringNode extends FormatNode {
     public byte[] toString(VirtualFrame frame, Object object) {
         if (toStrNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
+            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(true,
                     MissingBehavior.RETURN_MISSING));
         }
 
@@ -134,7 +135,7 @@ public abstract class ToStringNode extends FormatNode {
         if (inspectOnConversionFailure) {
             if (inspectNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(), null, null));
+                inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(null));
             }
 
             return Layouts.STRING.getRope(inspectNode.toS(object)).getBytes();

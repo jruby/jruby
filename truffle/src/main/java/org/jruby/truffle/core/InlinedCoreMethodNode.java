@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreMethodNodeManager;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -42,12 +43,11 @@ public class InlinedCoreMethodNode extends RubyNode {
     private RubyCallNode replacedBy = null;
 
     public InlinedCoreMethodNode(RubyCallNodeParameters callNodeParameters, InternalMethod method, InlinableBuiltin builtin) {
-        super(callNodeParameters.getContext(), callNodeParameters.getSection());
         this.callNodeParameters = callNodeParameters;
         this.method = method;
-        this.tracingUnused = callNodeParameters.getContext().getTraceManager().getUnusedAssumption();
+        this.tracingUnused = getContext().getTraceManager().getUnusedAssumption();
         this.builtin = builtin;
-        this.lookupMethodNode = LookupMethodNodeGen.create(callNodeParameters.getContext(), callNodeParameters.getSection(), false, false, null, null);
+        this.lookupMethodNode = LookupMethodNodeGen.create(false, false, null, null);
         this.receiverNode = callNodeParameters.getReceiver();
         this.argumentNodes = callNodeParameters.getArguments();
     }
@@ -101,12 +101,10 @@ public class InlinedCoreMethodNode extends RubyNode {
         });
     }
 
-    public static InlinedCoreMethodNode inlineBuiltin(RubyCallNodeParameters callParameters, InternalMethod method, NodeFactory<? extends InlinableBuiltin> builtinFactory) {
-        final RubyContext context = callParameters.getContext();
+    public static InlinedCoreMethodNode inlineBuiltin(RubyContext context, Source source, RubyCallNodeParameters callParameters, InternalMethod method, NodeFactory<? extends InlinableBuiltin> builtinFactory) {
         // Let arguments to null as we need to execute the receiver ourselves to lookup the method
         final List<RubyNode> arguments = Arrays.asList(new RubyNode[1 + callParameters.getArguments().length]);
-        final InlinableBuiltin builtinNode = CoreMethodNodeManager.createNodeFromFactory(context, callParameters.getSection(), builtinFactory, arguments);
-
+        final InlinableBuiltin builtinNode = CoreMethodNodeManager.createNodeFromFactory(context, source, null, builtinFactory, arguments);
         return new InlinedCoreMethodNode(callParameters, method, builtinNode);
     }
 

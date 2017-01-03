@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,11 +17,10 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChildren({
@@ -31,10 +30,6 @@ import org.jruby.truffle.language.control.RaiseException;
 public abstract class IsANode extends RubyNode {
 
     @Child private MetaClassNode metaClassNode;
-
-    public IsANode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     public abstract boolean executeIsA(Object self, DynamicObject module);
 
@@ -76,7 +71,7 @@ public abstract class IsANode extends RubyNode {
     protected DynamicObject getMetaClass(Object object) {
         if (metaClassNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            metaClassNode = insert(MetaClassNodeGen.create(getContext(), null, null));
+            metaClassNode = insert(MetaClassNodeGen.create(null));
         }
 
         return metaClassNode.executeMetaClass(object);

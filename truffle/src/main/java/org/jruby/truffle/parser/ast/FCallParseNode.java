@@ -32,9 +32,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -46,10 +46,10 @@ public class FCallParseNode extends ParseNode implements INameNode, IArgumentNod
     protected ParseNode argsNode;
     protected ParseNode iterNode;
 
-    public FCallParseNode(ISourcePosition position, String name) {
+    public FCallParseNode(SourceIndexLength position, String name) {
         this(position, name, null, null);
     }
-    public FCallParseNode(ISourcePosition position, String name, ParseNode argsNode, ParseNode iterNode) {
+    public FCallParseNode(SourceIndexLength position, String name, ParseNode argsNode, ParseNode iterNode) {
         super(position, argsNode != null && argsNode.containsVariableAssignment() || iterNode != null && iterNode.containsVariableAssignment());
         this.name = name;
         this.argsNode = argsNode;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -19,12 +19,11 @@ import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.ByteList;
-import org.jruby.truffle.parser.ReOptions;
 import org.jruby.truffle.core.string.KCode;
+import org.jruby.truffle.parser.ReOptions;
 
 public class RegexpOptions implements Cloneable {
-    private static ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'});
+    private static String WINDOWS31J = "Windows-31J";
     public static final RegexpOptions NULL_OPTIONS = new RegexpOptions(KCode.NONE, true);
     
     public RegexpOptions() {
@@ -154,7 +153,7 @@ public class RegexpOptions implements Cloneable {
             return EUCJPEncoding.INSTANCE;
         } else if (explicitKCode == KCode.SJIS) {
             setFixed(true);
-            return Layouts.ENCODING.getEncoding(runtime.getEncodingManager().getRubyEncoding(WINDOWS31J.toString()));
+            return Layouts.ENCODING.getEncoding(runtime.getEncodingManager().getRubyEncoding(WINDOWS31J));
         } else if (explicitKCode == KCode.UTF8) {
             setFixed(true);
             return UTF8Encoding.INSTANCE;

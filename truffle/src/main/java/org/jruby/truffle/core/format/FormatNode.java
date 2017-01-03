@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -35,6 +35,7 @@ public abstract class FormatNode extends Node {
     private final ConditionProfile codeRangeIncreasedProfile = ConditionProfile.createBinaryProfile();
 
     public FormatNode(RubyContext context) {
+        assert context != null;
         this.context = context;
     }
 

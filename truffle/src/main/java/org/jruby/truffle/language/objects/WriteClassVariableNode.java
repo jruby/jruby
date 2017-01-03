@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,11 +11,10 @@ package org.jruby.truffle.language.objects;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class WriteClassVariableNode extends RubyNode {
 
@@ -24,9 +23,8 @@ public class WriteClassVariableNode extends RubyNode {
 
     @Child private RubyNode rhs;
 
-    public WriteClassVariableNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope,
+    public WriteClassVariableNode(LexicalScope lexicalScope,
                                   String name, RubyNode rhs) {
-        super(context, sourceSection);
         this.lexicalScope = lexicalScope;
         this.name = name;
         this.rhs = rhs;

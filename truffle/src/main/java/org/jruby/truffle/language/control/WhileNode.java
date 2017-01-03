@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -22,24 +22,14 @@ import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public final class WhileNode extends RubyNode {
 
     @Child private LoopNode loopNode;
 
-    private WhileNode(RubyContext context, SourceSection sourceSection, RepeatingNode repeatingNode) {
-        super(context, sourceSection);
+    public WhileNode(RepeatingNode repeatingNode) {
         loopNode = Truffle.getRuntime().createLoopNode(repeatingNode);
-    }
-
-    public static WhileNode createWhile(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode body) {
-        final RepeatingNode repeatingNode = new WhileRepeatingNode(context, condition, body);
-        return new WhileNode(context, sourceSection, repeatingNode);
-    }
-
-    public static WhileNode createDoWhile(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode body) {
-        final RepeatingNode repeatingNode = new DoWhileRepeatingNode(context, condition, body);
-        return new WhileNode(context, sourceSection, repeatingNode);
     }
 
     @Override
@@ -77,7 +67,7 @@ public final class WhileNode extends RubyNode {
 
     }
 
-    private static class WhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
+    public static class WhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
 
         public WhileRepeatingNode(RubyContext context, RubyNode condition, RubyNode body) {
             super(context, condition, body);
@@ -106,7 +96,7 @@ public final class WhileNode extends RubyNode {
 
     }
 
-    private static class DoWhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
+    public static class DoWhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
 
         public DoWhileRepeatingNode(RubyContext context, RubyNode condition, RubyNode body) {
             super(context, condition, body);

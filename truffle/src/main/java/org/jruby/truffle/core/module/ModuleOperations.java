@@ -302,15 +302,15 @@ public abstract class ModuleOperations {
     }
 
     public static InternalMethod lookupSuperMethod(InternalMethod currentMethod, DynamicObject objectMetaClass) {
-        assert RubyGuards.isRubyClass(objectMetaClass);
+        assert RubyGuards.isRubyModule(objectMetaClass);
         final String name = currentMethod.getSharedMethodInfo().getName(); // use the original name
         return lookupSuperMethod(currentMethod.getDeclaringModule(), name, objectMetaClass);
     }
 
     @TruffleBoundary
-    public static InternalMethod lookupSuperMethod(DynamicObject declaringModule, String name, DynamicObject objectMetaClass) {
+    private static InternalMethod lookupSuperMethod(DynamicObject declaringModule, String name, DynamicObject objectMetaClass) {
         assert RubyGuards.isRubyModule(declaringModule);
-        assert RubyGuards.isRubyClass(objectMetaClass);
+        assert RubyGuards.isRubyModule(objectMetaClass);
 
         boolean foundDeclaringModule = false;
         for (DynamicObject module : Layouts.MODULE.getFields(objectMetaClass).ancestors()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -46,13 +46,10 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-
 import jline.console.CursorBuffer;
 import jline.console.completer.Completer;
 import jline.console.completer.FileNameCompleter;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -65,8 +62,10 @@ import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.TaintNode;
+
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
@@ -90,7 +89,7 @@ public abstract class ReadlineNodes {
     public abstract static class SetBasicWordBreakCharactersNode extends CoreMethodNode {
 
         @CreateCast("characters") public RubyNode coerceCharactersToString(RubyNode characters) {
-            return ToStrNodeGen.create(null, null, characters);
+            return ToStrNodeGen.create(characters);
         }
 
         @TruffleBoundary
@@ -128,12 +127,8 @@ public abstract class ReadlineNodes {
 
         @Child private TaintNode taintNode = TaintNode.create();
 
-        public ReadlineNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @CreateCast("prompt") public RubyNode coercePromptToJavaString(RubyNode prompt) {
-            return NameToJavaStringWithDefaultNodeGen.create(null, null, coreStrings().EMPTY_STRING.toString(), prompt);
+            return NameToJavaStringWithDefaultNodeGen.create(coreStrings().EMPTY_STRING.toString(), prompt);
         }
 
         @CreateCast("addToHistory") public RubyNode coerceToBoolean(RubyNode addToHistory) {
@@ -261,13 +256,10 @@ public abstract class ReadlineNodes {
     // Complete using a Proc object
     public static class ProcCompleter implements Completer {
 
-        private final DynamicObject procCompleter;
-
         //\t\n\"\\'`@$><=;|&{(
         static private String[] delimiters = {" ", "\t", "\n", "\"", "\\", "'", "`", "@", "$", ">", "<", "=", ";", "|", "&", "{", "("};
 
         public ProcCompleter(DynamicObject procCompleter) {
-            this.procCompleter = procCompleter;
         }
 
         @TruffleBoundary
@@ -281,7 +273,7 @@ public abstract class ReadlineNodes {
 
         @TruffleBoundary
         public static void setDelimiter(String delimiter) {
-            List<String> l = new ArrayList<String>();
+            List<String> l = new ArrayList<>();
             CharBuffer buf = CharBuffer.wrap(delimiter);
             while (buf.hasRemaining()) {
                 l.add(String.valueOf(buf.get()));

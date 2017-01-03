@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,9 +12,8 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.IsFrozenNode;
 import org.jruby.truffle.language.objects.IsFrozenNodeGen;
@@ -24,12 +23,10 @@ public class RaiseIfFrozenNode extends RubyNode {
     private final BranchProfile errorProfile = BranchProfile.create();
 
     @Child private RubyNode child;
-    @Child private IsFrozenNode isFrozenNode;
+    @Child private IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(null);
 
-    public RaiseIfFrozenNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public RaiseIfFrozenNode(RubyNode child) {
         this.child = child;
-        isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
     }
 
     @Override

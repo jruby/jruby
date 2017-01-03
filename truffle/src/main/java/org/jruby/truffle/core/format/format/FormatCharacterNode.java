@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -86,7 +86,7 @@ public abstract class FormatCharacterNode extends FormatNode {
         if (toStrResult == null || isNil(toStrResult)) {
             if (toIntegerNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toIntegerNode = insert(ToIntegerNodeGen.create(getContext(), null));
+                toIntegerNode = insert(ToIntegerNodeGen.create(getContext(),null));
             }
             final int charValue = (int) toIntegerNode.executeToInteger(frame, value);
             // TODO BJF check char length is > 0

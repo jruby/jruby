@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,11 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.TruffleFatalException;
@@ -35,9 +34,8 @@ public class ExceptionTranslatingNode extends RubyNode {
     private final BranchProfile unsupportedProfile = BranchProfile.create();
     private final BranchProfile errorProfile = BranchProfile.create();
 
-    public ExceptionTranslatingNode(RubyContext context, SourceSection sourceSection, RubyNode child,
+    public ExceptionTranslatingNode(RubyNode child,
                                     UnsupportedOperationBehavior unsupportedOperationBehavior) {
-        super(context, sourceSection);
         this.child = child;
         this.unsupportedOperationBehavior = unsupportedOperationBehavior;
     }
@@ -175,6 +173,10 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     @TruffleBoundary
     public DynamicObject translate(Throwable throwable) {
+        if (throwable instanceof AssertionError && !getContext().getOptions().EXCEPTIONS_TRANSLATE_ASSERT) {
+            throw (AssertionError) throwable;
+        }
+
         if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA
                 || getContext().getOptions().EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
             throwable.printStackTrace();

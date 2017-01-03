@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,10 +13,9 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.shared.WriteBarrierNode;
 
 @NodeChild(value = "value")
@@ -27,8 +26,7 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
     @Child ReferenceEqualNode referenceEqualNode = ReferenceEqualNode.create();
     @Child WriteBarrierNode writeBarrierNode = WriteBarrierNode.create();
 
-    public WriteGlobalVariableNode(RubyContext context, SourceSection sourceSection, String name) {
-        super(context, sourceSection);
+    public WriteGlobalVariableNode(String name) {
         this.name = name;
     }
 
@@ -37,6 +35,9 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
     public Object writeTryToKeepConstant(Object value,
                     @Cached("getStorage()") GlobalVariableStorage storage,
                     @Cached("storage.getValue()") Object previousValue) {
+        // NOTE: we still do the volatile write to get the proper memory barrier,
+        // as the global variable could be used as a publication mechanism.
+        storage.setValueInternal(value);
         return previousValue;
     }
 

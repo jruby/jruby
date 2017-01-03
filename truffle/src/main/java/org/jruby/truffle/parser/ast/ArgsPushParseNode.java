@@ -28,8 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +38,7 @@ public class ArgsPushParseNode extends ParseNode {
     private ParseNode firstNode;
     private ParseNode secondNode;
 
-    public ArgsPushParseNode(ISourcePosition position, ParseNode firstNode, ParseNode secondNode) {
+    public ArgsPushParseNode(SourceIndexLength position, ParseNode firstNode, ParseNode secondNode) {
         super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
 
         assert firstNode != null : "ArgsPushParseNode.first == null";

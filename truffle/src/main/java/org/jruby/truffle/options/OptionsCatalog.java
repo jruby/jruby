@@ -39,6 +39,7 @@ public class OptionsCatalog {
     public static final OptionDescription PLATFORM_SAFE_AT_EXIT = new BooleanOptionDescription("platform.safe.at_exit", "Treat #at_exit as safe", false);
     public static final OptionDescription PLATFORM_SAFE_PUTS = new BooleanOptionDescription("platform.safe_puts", "Treat safe_puts as safe", true);
     public static final OptionDescription PLATFORM_USE_JAVA = new BooleanOptionDescription("platform.use_java", "Use a pure-Java platform", false);
+    public static final OptionDescription TRACE_CALLS = new BooleanOptionDescription("trace.calls", "Support tracing (set_trace_func", true);
     public static final OptionDescription COVERAGE_GLOBAL = new BooleanOptionDescription("coverage.global", "Run coverage for all code and print results on exit", false);
     public static final OptionDescription INLINE_JS = new BooleanOptionDescription("inline_js", "Allow inline JavaScript", false);
     public static final OptionDescription CORE_LOAD_PATH = new StringOptionDescription("core.load_path", "Location to load the Truffle core library from", "truffle:/jruby-truffle");
@@ -90,6 +91,7 @@ public class OptionsCatalog {
     public static final OptionDescription EXCEPTIONS_STORE_JAVA = new BooleanOptionDescription("exceptions.store_java", "Store the Java exception with the Ruby backtrace", false);
     public static final OptionDescription EXCEPTIONS_PRINT_JAVA = new BooleanOptionDescription("exceptions.print_java", "Print Java exceptions at the point of translating them to Ruby exceptions", false);
     public static final OptionDescription EXCEPTIONS_PRINT_UNCAUGHT_JAVA = new BooleanOptionDescription("exceptions.print_uncaught_java", "Print uncaught Java exceptions at the point of translating them to Ruby exceptions", false);
+    public static final OptionDescription EXCEPTIONS_TRANSLATE_ASSERT = new BooleanOptionDescription("exceptions.translate_assert", "Translate failed Java assertions to Ruby exceptions", true);
     public static final OptionDescription BACKTRACES_HIDE_CORE_FILES = new BooleanOptionDescription("backtraces.hide_core_files", "Hide core source files in backtraces", true);
     public static final OptionDescription BACKTRACES_INTERLEAVE_JAVA = new BooleanOptionDescription("backtraces.interleave_java", "Interleave Java stacktraces into the Ruby backtrace", false);
     public static final OptionDescription BACKTRACES_LIMIT = new IntegerOptionDescription("backtraces.limit", "Limit the size of Ruby backtraces", 9999);
@@ -156,6 +158,8 @@ public class OptionsCatalog {
                 return PLATFORM_SAFE_PUTS;
             case "platform.use_java":
                 return PLATFORM_USE_JAVA;
+            case "trace.calls":
+                return TRACE_CALLS;
             case "coverage.global":
                 return COVERAGE_GLOBAL;
             case "inline_js":
@@ -258,6 +262,8 @@ public class OptionsCatalog {
                 return EXCEPTIONS_PRINT_JAVA;
             case "exceptions.print_uncaught_java":
                 return EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
+            case "exceptions.translate_assert":
+                return EXCEPTIONS_TRANSLATE_ASSERT;
             case "backtraces.hide_core_files":
                 return BACKTRACES_HIDE_CORE_FILES;
             case "backtraces.interleave_java":

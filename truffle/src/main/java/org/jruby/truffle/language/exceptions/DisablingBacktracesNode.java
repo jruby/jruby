@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,23 +11,16 @@ package org.jruby.truffle.language.exceptions;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 public class DisablingBacktracesNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    private static final ThreadLocal<Boolean> BACTRACES_DISABLED = new ThreadLocal<Boolean>() {
-        @Override
-        protected Boolean initialValue() {
-            return false;
-        }
-    };
+    private static final ThreadLocal<Boolean> BACTRACES_DISABLED = ThreadLocal.withInitial(() -> false);
 
-    public DisablingBacktracesNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public DisablingBacktracesNode(RubyNode child) {
         this.child = child;
     }
 

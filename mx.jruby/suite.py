@@ -146,12 +146,6 @@ suite = {
             "201985f0f15af95f03494ab9ef0400e849090d6c",
             "MIT"),
 
-        "JLINE": mavenLib(
-            "jline:jline:2.11",
-            "9504d5e2da5d78237239c5226e8200ec21182040",
-            "ef2539b992e5605be966b6db7cfc83930f0da39b",
-            "BSD-new"
-        )
     },
 
     "projects": {
@@ -164,6 +158,7 @@ suite = {
             "dependencies": [
                 "truffle:TRUFFLE_API",
                 "truffle:TRUFFLE_DEBUG",
+                "truffle:JLINE",
                 "ASM",
                 "JNR_POSIX",
                 "JNR_CONSTANTS",
@@ -173,7 +168,6 @@ suite = {
                 "SNAKEYAML",
                 "JONI",
                 "JCODINGS",
-                "JLINE",
             ],
             "annotationProcessors": ["truffle:TRUFFLE_DSL_PROCESSOR"],
             "javaCompliance": "1.8",

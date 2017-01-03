@@ -48,7 +48,7 @@ ruby/test_io_m17n.rb
 # ruby/test_iterator.rb /Users/chrisseaton/Documents/ruby/jruby/test/mri/lib/minitest/unit.rb:1417:in `sort': internal implementation error - NullPointerException null org.jruby.truffle.runtime.subsystems.TraceManager$4.probeTaggedAs(TraceManager.java:117) (RubyTruffleError)
 ruby/test_lambda.rb
 ruby/test_literal.rb
-# ruby/test_m17n.rb # NPE in Body Translator
+ruby/test_m17n.rb
 # ruby/test_m17n_comb.rb # cannot load such file -- etc
 # ruby/test_marshal.rb # including this causes error in test_objectspace.rb
 ruby/test_math.rb

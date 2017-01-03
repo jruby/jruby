@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -46,6 +46,7 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.options.Options;
 import org.jruby.truffle.options.OptionsBuilder;
+import org.jruby.truffle.options.Verbosity;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -110,24 +111,30 @@ public class RubyContext extends ExecutionContext {
 
     private String currentDirectory;
 
+    public static ThreadLocal<RubyContext> contextsBeingCreated = new ThreadLocal<>();
+
     public RubyContext(TruffleLanguage.Env env) {
-        this.env = env;
+        contextsBeingCreated.set(this);
 
-        final OptionsBuilder optionsBuilder = new OptionsBuilder();
-        optionsBuilder.set(env.getConfig());
-        optionsBuilder.set(System.getProperties());
-        options = optionsBuilder.build();
+        try {
+            this.env = env;
 
-        this.jrubyHome = findJRubyHome();
-        this.currentDirectory = System.getProperty("user.dir");
+            final OptionsBuilder optionsBuilder = new OptionsBuilder();
+            optionsBuilder.set(env.getConfig());
+            optionsBuilder.set(System.getProperties());
+            options = optionsBuilder.build();
 
-        if (options.CALL_GRAPH) {
-            callGraph = new CallGraph();
-        } else {
-            callGraph = null;
-        }
+            this.jrubyHome = findJRubyHome();
+            this.currentDirectory = System.getProperty("user.dir");
+            this.verbose = options.VERBOSITY.equals(Verbosity.TRUE);
 
-        // Stuff that needs to be loaded before we load any code
+            if (options.CALL_GRAPH) {
+                callGraph = new CallGraph();
+            } else {
+                callGraph = null;
+            }
+
+            // Stuff that needs to be loaded before we load any code
 
         /*
          * The Graal option TimeThreshold sets how long a method has to become hot after it has started running, in ms.
@@ -136,9 +143,9 @@ public class RubyContext extends ExecutionContext {
          * produces poor benchmark results. Here we just set it to a very high value, to effectively disable it.
          */
 
-        if (compilerOptions.supportsOption("MinTimeThreshold")) {
-            compilerOptions.setOption("MinTimeThreshold", 100000000);
-        }
+            if (compilerOptions.supportsOption("MinTimeThreshold")) {
+                compilerOptions.setOption("MinTimeThreshold", 100000000);
+            }
 
         /*
          * The Graal option InliningMaxCallerSize sets the maximum size of a method for where we consider to inline
@@ -147,67 +154,69 @@ public class RubyContext extends ExecutionContext {
          * key methods from the core library from inlining other methods.
          */
 
-        if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
-            compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
-        }
+            if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
+                compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
+            }
 
-        // Load the core library classes
+            // Load the core library classes
 
-        coreLibrary = new CoreLibrary(this);
-        coreLibrary.initialize();
+            coreLibrary = new CoreLibrary(this);
+            coreLibrary.initialize();
 
-        symbolTable = new SymbolTable(coreLibrary.getSymbolFactory());
+            symbolTable = new SymbolTable(coreLibrary.getSymbolFactory());
 
-        // Create objects that need core classes
+            // Create objects that need core classes
 
-        nativePlatform = NativePlatformFactory.createPlatform(this);
-        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+            nativePlatform = NativePlatformFactory.createPlatform(this);
+            rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
-        // The encoding manager relies on POSIX having been initialized, so we can't process it during
-        // normal core library initialization.
-        coreLibrary.initializeEncodingManager();
+            // The encoding manager relies on POSIX having been initialized, so we can't process it during
+            // normal core library initialization.
+            coreLibrary.initializeEncodingManager();
 
-        threadManager = new ThreadManager(this);
-        threadManager.initialize();
+            threadManager = new ThreadManager(this);
+            threadManager.initialize();
 
-        // Load the nodes
+            // Load the nodes
 
-        Main.printTruffleTimeMetric("before-load-nodes");
-        coreLibrary.addCoreMethods(primitiveManager);
-        Main.printTruffleTimeMetric("after-load-nodes");
+            Main.printTruffleTimeMetric("before-load-nodes");
+            coreLibrary.addCoreMethods(primitiveManager);
+            Main.printTruffleTimeMetric("after-load-nodes");
 
-        // Capture known builtin methods
+            // Capture known builtin methods
 
-        final Instrumenter instrumenter = env.lookup(Instrumenter.class);
-        traceManager = new TraceManager(this, instrumenter);
-        coreMethods = new CoreMethods(this);
+            final Instrumenter instrumenter = env.lookup(Instrumenter.class);
+            traceManager = new TraceManager(this, instrumenter);
+            coreMethods = new CoreMethods(this);
+            coverageManager = new CoverageManager(this, instrumenter);
 
-        // Load the reset of the core library
+            // Load the reset of the core library
 
-        coreLibrary.loadRubyCore();
+            coreLibrary.loadRubyCore();
 
-        // Load other subsystems
+            // Load other subsystems
 
-        final PrintStream configStandardOut = System.out;
-        debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
+            final PrintStream configStandardOut = System.out;
+            debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
-        // The instrumentation server can't be run with AOT because com.sun.net.httpserver.spi.HttpServerProvider uses runtime class loading.
-        if (!TruffleOptions.AOT && options.INSTRUMENTATION_SERVER_PORT != 0) {
-            instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
-            instrumentationServerManager.start();
-        } else {
-            instrumentationServerManager = null;
-        }
+            // The instrumentation server can't be run with AOT because com.sun.net.httpserver.spi.HttpServerProvider uses runtime class loading.
+            if (!TruffleOptions.AOT && options.INSTRUMENTATION_SERVER_PORT != 0) {
+                instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
+                instrumentationServerManager.start();
+            } else {
+                instrumentationServerManager = null;
+            }
 
-        coverageManager = new CoverageManager(this, instrumenter);
+            coreLibrary.initializePostBoot();
 
-        coreLibrary.initializePostBoot();
+            consoleHolder = new ConsoleHolder();
 
-        consoleHolder = new ConsoleHolder();
-
-        // Share once everything is loaded
-        if (options.SHARED_OBJECTS_ENABLED && options.SHARED_OBJECTS_FORCE) {
-            sharedObjects.startSharing();
+            // Share once everything is loaded
+            if (options.SHARED_OBJECTS_ENABLED && options.SHARED_OBJECTS_FORCE) {
+                sharedObjects.startSharing();
+            }
+        } finally {
+            contextsBeingCreated.remove();
         }
     }
 
@@ -386,7 +395,11 @@ public class RubyContext extends ExecutionContext {
     }
 
     public static RubyContext getInstance() {
-        return RubyLanguage.INSTANCE.unprotectedFindContext(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
+        try {
+            return RubyLanguage.INSTANCE.unprotectedFindContext(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
+        } catch (IllegalStateException e) {
+            return contextsBeingCreated.get();
+        }
     }
 
     public SourceLoader getSourceLoader() {

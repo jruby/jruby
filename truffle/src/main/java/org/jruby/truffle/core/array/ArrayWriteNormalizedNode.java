@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,14 +15,11 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
-import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -31,10 +28,6 @@ import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 })
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayWriteNormalizedNode extends RubyNode {
-
-    public ArrayWriteNormalizedNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     public abstract Object executeWrite(DynamicObject array, int index, Object value);
 
@@ -80,31 +73,33 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Writing beyond the end of an array - may need to generalize to Object[] or otherwise extend
 
     @Specialization(guards = {
-            "!isObjectArray(array)", "!isInBounds(array, index)", "!isExtendingByOne(array, index)",
-    })
+            "!isInBounds(array, index)", "!isExtendingByOne(array, index)", "strategy.matches(array)", "!strategy.accepts(nil())"
+    }, limit = "ARRAY_STRATEGIES")
     public Object writeBeyondPrimitive(DynamicObject array, int index, Object value,
+            @Cached("of(array)") ArrayStrategy strategy,
             @Cached("create(getContext())") ArrayGeneralizeNode generalizeNode) {
         final int newSize = index + 1;
         final Object[] objectStore = generalizeNode.executeGeneralize(array, newSize);
-        for (int n = getSize(array); n < index; n++) {
+        for (int n = strategy.getSize(array); n < index; n++) {
             objectStore[n] = nil();
         }
         objectStore[index] = value;
-        setStoreAndSize(array, objectStore, newSize);
+        strategy.setStoreAndSize(array, objectStore, newSize);
         return value;
     }
 
     @Specialization(guards = {
-            "isObjectArray(array)", "!isInBounds(array, index)", "!isExtendingByOne(array, index)"
+            "!isInBounds(array, index)", "!isExtendingByOne(array, index)", "strategy.matches(array)", "strategy.accepts(nil())"
     })
     public Object writeBeyondObject(DynamicObject array, int index, Object value,
+            @Cached("of(array)") ArrayStrategy strategy,
             @Cached("create(getContext())") ArrayEnsureCapacityNode ensureCapacityNode) {
         ensureCapacityNode.executeEnsureCapacity(array, index + 1);
-        final Object[] objectStore = ((Object[]) Layouts.ARRAY.getStore(array));
-        for (int n = getSize(array); n < index; n++) {
-            objectStore[n] = nil();
+        final ArrayMirror store = strategy.newMirror(array);
+        for (int n = strategy.getSize(array); n < index; n++) {
+            store.set(n, nil());
         }
-        objectStore[index] = value;
+        store.set(index, value);
         setSize(array, index + 1);
         return value;
     }

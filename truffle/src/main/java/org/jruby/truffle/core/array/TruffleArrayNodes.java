@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.core.array;
 
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.builtins.CoreClass;
@@ -17,12 +19,12 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.getStore;
-import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
 @CoreClass("Truffle::Array")
 public class TruffleArrayNodes {
 
     @CoreMethod(names = "steal_storage", onSingleton = true, required = 2)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class StealStorageNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "array == other")
@@ -30,12 +32,14 @@ public class TruffleArrayNodes {
             return array;
         }
 
-        @Specialization(guards = { "array != other", "isRubyArray(other)" })
-        public DynamicObject stealStorage(DynamicObject array, DynamicObject other) {
+        @Specialization(guards = {"array != other", "strategy.matches(array)", "otherStrategy.matches(other)"}, limit = "ARRAY_STRATEGIES")
+        public DynamicObject stealStorage(DynamicObject array, DynamicObject other,
+                        @Cached("of(array)") ArrayStrategy strategy,
+                        @Cached("of(other)") ArrayStrategy otherStrategy) {
             final int size = getSize(other);
             final Object store = getStore(other);
-            setStoreAndSize(array, store, size);
-            setStoreAndSize(other, null, 0);
+            strategy.setStoreAndSize(array, store, size);
+            otherStrategy.setStoreAndSize(other, null, 0);
 
             return array;
         }

@@ -31,14 +31,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 /**
  * Captures END statements (END {...})
  */
 public class PostExeParseNode extends IterParseNode {
-    public PostExeParseNode(ISourcePosition position, ParseNode body) {
+    public PostExeParseNode(SourceIndexLength position, ParseNode body) {
         super(position, new ArgsParseNode(position, null, null, null, null, null, null, null), body, null);
     }
 

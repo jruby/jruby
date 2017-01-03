@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -21,11 +21,9 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -173,8 +171,8 @@ public abstract class FloatNodes {
             if (complexProfile.profile(a < 0 && b != Math.round(b))) {
                 if (complexConvertNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    complexConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                    complexPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                    complexConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
+                    complexPowNode = insert(DispatchHeadNodeFactory.createMethodCall());
                 }
 
                 final Object aComplex = complexConvertNode.call(frame, coreLibrary().getComplexClass(), "convert", a, 0);
@@ -229,7 +227,7 @@ public abstract class FloatNodes {
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
 
             return redoCoercedNode.call(frame, a, "redo_coerced", getSymbol("/"), b);
@@ -283,12 +281,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private GeneralDivModNode divModNode;
-
-        public DivModNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            divModNode = new GeneralDivModNode(context, sourceSection);
-        }
+        @Child private GeneralDivModNode divModNode = new GeneralDivModNode();
 
         @Specialization
         public DynamicObject divMod(double a, long b) {
@@ -423,7 +416,7 @@ public abstract class FloatNodes {
         public Object equal(VirtualFrame frame, double a, DynamicObject b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
 
             return fallbackCallNode.call(frame, a, "equal_fallback", b);
@@ -552,12 +545,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "ceil")
     public abstract static class CeilNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
-        public CeilNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
+        @Child private FixnumOrBignumNode fixnumOrBignum = new FixnumOrBignumNode();
 
         @Specialization
         public Object ceil(double n) {
@@ -569,12 +557,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "floor")
     public abstract static class FloorNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
-        public FloorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
+        @Child private FixnumOrBignumNode fixnumOrBignum = new FixnumOrBignumNode();
 
         public abstract Object executeFloor(double n);
 
@@ -642,7 +625,7 @@ public abstract class FloatNodes {
 
         @CreateCast("ndigits")
         public RubyNode coerceDefault(RubyNode ndigits) {
-            return DefaultValueNodeGen.create(null, null, 0, ndigits);
+            return DefaultValueNodeGen.create(0, ndigits);
         }
 
         @Specialization(guards = { "ndigits == 0", "doubleInIntRange(n)" })
@@ -738,12 +721,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = { "to_i", "to_int", "truncate" })
     public abstract static class ToINode extends CoreMethodArrayArgumentsNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
-        public ToINode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
-        }
+        @Child private FixnumOrBignumNode fixnumOrBignum = new FixnumOrBignumNode();
 
         public abstract Object executeToI(VirtualFrame frame, double value);
 

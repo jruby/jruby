@@ -32,8 +32,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -45,7 +45,7 @@ public class IfParseNode extends ParseNode {
     private final ParseNode thenBody;
     private final ParseNode elseBody;
 
-    public IfParseNode(ISourcePosition position, ParseNode condition, ParseNode thenBody, ParseNode elseBody) {
+    public IfParseNode(SourceIndexLength position, ParseNode condition, ParseNode thenBody, ParseNode elseBody) {
         super(position, condition.containsVariableAssignment || thenBody != null && thenBody.containsVariableAssignment ||
                 elseBody != null && elseBody.containsVariableAssignment);
 

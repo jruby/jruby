@@ -105,7 +105,8 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(pattern)")
         public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
-            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteListReadOnly(pattern));
+            final Rope patternRope = StringOperations.rope(pattern);
+            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(patternRope);
 
             if (index == -1) {
                 return nil();

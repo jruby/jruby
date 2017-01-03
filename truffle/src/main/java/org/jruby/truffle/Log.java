@@ -25,6 +25,8 @@ public class Log {
 
     private static class RubyLevel extends Level {
 
+        private static final long serialVersionUID = 3759389129096588683L;
+
         public RubyLevel(String name, Level parent) {
             super(name, parent.intValue(), parent.getResourceBundleName());
         }

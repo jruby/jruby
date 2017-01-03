@@ -31,9 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class BlockArgParseNode extends ParseNode implements INameNode {
     private final int count;
     private String name;
 
-    public BlockArgParseNode(ISourcePosition position, int count, String name) {
+    public BlockArgParseNode(SourceIndexLength position, int count, String name) {
         super(position, false);
         this.count = count;
         this.name = name;

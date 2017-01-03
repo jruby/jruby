@@ -41,6 +41,7 @@ public class Options {
     public final boolean PLATFORM_SAFE_AT_EXIT;
     public final boolean PLATFORM_SAFE_PUTS;
     public final boolean PLATFORM_USE_JAVA;
+    public final boolean TRACE_CALLS;
     public final boolean COVERAGE_GLOBAL;
     public final boolean INLINE_JS;
     public final String CORE_LOAD_PATH;
@@ -92,6 +93,7 @@ public class Options {
     public final boolean EXCEPTIONS_STORE_JAVA;
     public final boolean EXCEPTIONS_PRINT_JAVA;
     public final boolean EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
+    public final boolean EXCEPTIONS_TRANSLATE_ASSERT;
     public final boolean BACKTRACES_HIDE_CORE_FILES;
     public final boolean BACKTRACES_INTERLEAVE_JAVA;
     public final int BACKTRACES_LIMIT;
@@ -134,6 +136,7 @@ public class Options {
         PLATFORM_SAFE_AT_EXIT = builder.getOrDefault(OptionsCatalog.PLATFORM_SAFE_AT_EXIT, PLATFORM_SAFE);
         PLATFORM_SAFE_PUTS = builder.getOrDefault(OptionsCatalog.PLATFORM_SAFE_PUTS);
         PLATFORM_USE_JAVA = builder.getOrDefault(OptionsCatalog.PLATFORM_USE_JAVA);
+        TRACE_CALLS = builder.getOrDefault(OptionsCatalog.TRACE_CALLS);
         COVERAGE_GLOBAL = builder.getOrDefault(OptionsCatalog.COVERAGE_GLOBAL);
         INLINE_JS = builder.getOrDefault(OptionsCatalog.INLINE_JS);
         CORE_LOAD_PATH = builder.getOrDefault(OptionsCatalog.CORE_LOAD_PATH);
@@ -185,6 +188,7 @@ public class Options {
         EXCEPTIONS_STORE_JAVA = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_STORE_JAVA);
         EXCEPTIONS_PRINT_JAVA = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_PRINT_JAVA);
         EXCEPTIONS_PRINT_UNCAUGHT_JAVA = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_PRINT_UNCAUGHT_JAVA);
+        EXCEPTIONS_TRANSLATE_ASSERT = builder.getOrDefault(OptionsCatalog.EXCEPTIONS_TRANSLATE_ASSERT);
         BACKTRACES_HIDE_CORE_FILES = builder.getOrDefault(OptionsCatalog.BACKTRACES_HIDE_CORE_FILES);
         BACKTRACES_INTERLEAVE_JAVA = builder.getOrDefault(OptionsCatalog.BACKTRACES_INTERLEAVE_JAVA);
         BACKTRACES_LIMIT = builder.getOrDefault(OptionsCatalog.BACKTRACES_LIMIT);

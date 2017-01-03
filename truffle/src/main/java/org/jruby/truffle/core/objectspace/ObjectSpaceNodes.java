@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,9 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -144,9 +142,8 @@ public abstract class ObjectSpaceNodes {
         // Wanting #method_missing(:call) to be called for a finalizer seems highly unlikely.
         @Child private DoesRespondDispatchHeadNode respondToCallNode;
 
-        public DefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            respondToCallNode = new DoesRespondDispatchHeadNode(getContext(), true);
+        public DefineFinalizerNode() {
+            respondToCallNode = new DoesRespondDispatchHeadNode(true);
         }
 
         @Specialization

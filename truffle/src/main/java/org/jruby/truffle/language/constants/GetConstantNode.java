@@ -100,7 +100,7 @@ public abstract class GetConstantNode extends RubyNode {
 
         if (constMissingNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            constMissingNode = insert(createConstMissingNode());
+            constMissingNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         return constMissingNode.call(frame, module, "const_missing", symbolName);
@@ -113,10 +113,6 @@ public abstract class GetConstantNode extends RubyNode {
 
     protected boolean isValidConstantName(String name) {
         return Identifiers.isValidConstantName19(name);
-    }
-
-    protected CallDispatchHeadNode createConstMissingNode() {
-        return DispatchHeadNodeFactory.createMethodCall(getContext());
     }
 
     protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {

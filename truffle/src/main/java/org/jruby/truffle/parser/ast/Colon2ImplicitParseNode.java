@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Represents a bare class declaration (e.g. class Foo/module Foo).  This is slightly misnamed
@@ -36,7 +36,7 @@ import org.jruby.truffle.parser.lexer.ISourcePosition;
  * In JRuby 2, we will rename this.
  */
 public class Colon2ImplicitParseNode extends Colon2ParseNode {
-    public Colon2ImplicitParseNode(ISourcePosition position, String name) {
+    public Colon2ImplicitParseNode(SourceIndexLength position, String name) {
         super(position, null, name);
     }
 }

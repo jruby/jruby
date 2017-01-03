@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -44,10 +44,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.exception.ExceptionOperations;
@@ -55,6 +53,7 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.UnsafeGroup;
@@ -67,12 +66,7 @@ public abstract class IOBufferPrimitiveNodes {
     @Primitive(name = "iobuffer_allocate", unsafe = UnsafeGroup.IO)
     public static abstract class IOBufferAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public IOBufferAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject classToAllocate) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -33,6 +33,7 @@ import org.jruby.truffle.core.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
@@ -206,7 +207,7 @@ public abstract class FiberNodes {
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                singleValueCastNode = insert(SingleValueCastNodeGen.create(getContext(), null, null));
+                singleValueCastNode = insert(SingleValueCastNodeGen.create(null));
             }
             return singleValueCastNode.executeSingleValue(frame, args);
         }
@@ -249,12 +250,7 @@ public abstract class FiberNodes {
     @CoreMethod(names = "resume", rest = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class ResumeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child FiberTransferNode fiberTransferNode;
-
-        public ResumeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
-        }
+        @Child FiberTransferNode fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
 
         @Specialization
         public Object resume(VirtualFrame frame, DynamicObject fiberBeingResumed, Object[] args) {
@@ -266,12 +262,7 @@ public abstract class FiberNodes {
     @CoreMethod(names = "yield", onSingleton = true, rest = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class YieldNode extends CoreMethodArrayArgumentsNode {
 
-        @Child FiberTransferNode fiberTransferNode;
-
-        public YieldNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
-        }
+        @Child FiberTransferNode fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
 
         @Specialization
         public Object yield(VirtualFrame frame, Object[] args,

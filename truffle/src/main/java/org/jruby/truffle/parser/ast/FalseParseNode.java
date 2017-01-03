@@ -31,9 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ import java.util.List;
  * Represents a false literal.
  */
 public class FalseParseNode extends ParseNode implements INameNode, SideEffectFree {
-    public FalseParseNode(ISourcePosition position) {
+    public FalseParseNode(SourceIndexLength position) {
         super(position, false);
     }
 

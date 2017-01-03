@@ -151,7 +151,7 @@ public abstract class RandomizerPrimitiveNodes {
         @Specialization
         public int randomizerRandInt(DynamicObject randomizer, int limit) {
             final Randomizer r = Layouts.RANDOMIZER.getRandomizer(randomizer);
-            return (int) randInt(r, (long) limit);
+            return (int) randInt(r, limit);
         }
 
         @Specialization

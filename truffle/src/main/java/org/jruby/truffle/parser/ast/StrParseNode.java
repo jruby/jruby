@@ -33,11 +33,11 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.string.ByteList;
-import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.language.SourceIndexLength;
+import org.jruby.truffle.parser.ParserByteList;
+import org.jruby.truffle.parser.ParserByteListBuilder;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -45,35 +45,35 @@ import java.util.List;
  * Representing a simple String literal.
  */
 public class StrParseNode extends ParseNode implements ILiteralNode, SideEffectFree {
-    private final ByteList value;
+    private ParserByteList value;
     private final CodeRange codeRange;
     private boolean frozen;
 
-    public StrParseNode(ISourcePosition position, ByteList value) {
-        this(position, value, StringSupport.codeRangeScan(value.getEncoding(), value));
+    public StrParseNode(SourceIndexLength position, ParserByteList value) {
+        this(position, value, value.codeRangeScan());
     }
 
-    public StrParseNode(ISourcePosition position, ByteList value, CodeRange codeRange) {
+    public StrParseNode(SourceIndexLength position, ParserByteList value, CodeRange codeRange) {
         super(position, false);
 
         this.value = value;
         this.codeRange = codeRange;
     }
 
-    public StrParseNode(ISourcePosition position, StrParseNode head, StrParseNode tail) {
+    public StrParseNode(SourceIndexLength position, StrParseNode head, StrParseNode tail) {
         super(position, false);
 
-        ByteList headBL = head.getValue();
-        ByteList tailBL = tail.getValue();
+        ParserByteList headBL = head.getValue();
+        ParserByteList tailBL = tail.getValue();
 
-        ByteList myValue = new ByteList(headBL.getRealSize() + tailBL.getRealSize());
+        ParserByteListBuilder myValue = new ParserByteListBuilder();
         myValue.setEncoding(headBL.getEncoding());
         myValue.append(headBL);
         myValue.append(tailBL);
 
         frozen = head.isFrozen() && tail.isFrozen();
-        value = myValue;
-        codeRange = StringSupport.codeRangeScan(value.getEncoding(), value);
+        value = myValue.toParserByteList();
+        codeRange = value.codeRangeScan();
     }
 
     public NodeType getNodeType() {
@@ -91,7 +91,7 @@ public class StrParseNode extends ParseNode implements ILiteralNode, SideEffectF
      * Gets the value.
      * @return Returns a String
      */
-    public ByteList getValue() {
+    public ParserByteList getValue() {
         return value;
     }
 
@@ -114,5 +114,9 @@ public class StrParseNode extends ParseNode implements ILiteralNode, SideEffectF
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+    }
+
+    public void setValue(ParserByteList value) {
+        this.value = value;
     }
 }

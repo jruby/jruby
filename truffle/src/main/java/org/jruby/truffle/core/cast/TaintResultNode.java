@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,9 +16,8 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.TaintNode;
@@ -40,8 +39,7 @@ public class TaintResultNode extends RubyNode {
         this.isTaintedNode = IsTaintedNode.create();
     }
 
-    public TaintResultNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public TaintResultNode() {
         this.taintFromSelf = false;
         this.taintFromParameter = -1;
         this.isTaintedNode = IsTaintedNode.create();

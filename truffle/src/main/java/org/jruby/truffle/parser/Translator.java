@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.arguments.CheckKeywordArityNode;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
@@ -27,8 +27,6 @@ import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.objects.SelfNode;
 import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,48 +70,41 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         this.source = source;
     }
 
-    public static RubyNode sequence(RubyContext context, Source source, RubySourceSection sourceSection, List<RubyNode> sequence) {
+    public static RubyNode sequence(SourceIndexLength sourceSection, List<RubyNode> sequence) {
         final List<RubyNode> flattened = flatten(sequence, true);
 
         if (flattened.isEmpty()) {
-            return new NilLiteralNode(context, sourceSection.toSourceSection(source), true);
+            final RubyNode literal = new NilLiteralNode(true);
+            literal.unsafeSetSourceSection(sourceSection);
+            return literal;
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
             final RubyNode[] flatSequence = flattened.toArray(new RubyNode[flattened.size()]);
 
-            final RubySourceSection enclosingSourceSection = enclosing(sourceSection, flatSequence);
-
-            final SourceSection sequenceSourceSection;
-
-            if (enclosingSourceSection == null) {
-                sequenceSourceSection = null;
-            } else {
-                sequenceSourceSection = enclosingSourceSection.toSourceSection(source);
-            }
-
-            return new SequenceNode(sequenceSourceSection, flatSequence);
+            final SourceIndexLength enclosingSourceSection = enclosing(sourceSection, flatSequence);
+            return withSourceSection(enclosingSourceSection, new SequenceNode(flatSequence));
         }
     }
 
-    public static RubySourceSection enclosing(RubySourceSection base, RubyNode... sequence) {
+    public static SourceIndexLength enclosing(SourceIndexLength base, RubyNode... sequence) {
         if (base == null) {
             return base;
         }
 
-        int startLine = base.getStartLine();
-        int endLine = base.getEndLine();
+        int start = base.getCharIndex();
+        int end = base.getCharEnd();
 
         for (RubyNode node : sequence) {
-            final RubySourceSection sourceSection = node.getRubySourceSection();
+            final SourceIndexLength sourceSection = node.getSourceIndexLength();
 
             if (sourceSection != null) {
-                startLine = Integer.min(startLine, sourceSection.getStartLine());
-                endLine = Integer.max(endLine, sourceSection.getEndLine());
+                start = Integer.min(start, sourceSection.getCharIndex());
+                end = Integer.max(end, sourceSection.getCharEnd());
             }
         }
 
-        return new RubySourceSection(startLine, endLine);
+        return new SourceIndexLength(start, end - start);
     }
 
     private static List<RubyNode> flatten(List<RubyNode> sequence, boolean allowTrailingNil) {
@@ -137,20 +128,13 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         return flattened;
     }
 
-    protected RubySourceSection translate(ISourcePosition sourcePosition) {
-        return translate(source, sourcePosition);
+    protected RubyNode nilNode(Source source, SourceIndexLength sourceSection) {
+        final RubyNode literal = new NilLiteralNode(false);
+        literal.unsafeSetSourceSection(sourceSection);
+        return literal;
     }
 
-    private RubySourceSection translate(Source source, ISourcePosition sourcePosition) {
-        assert sourcePosition != InvalidSourcePosition.INSTANCE;
-        return new RubySourceSection(sourcePosition.getLine() + 1);
-    }
-
-    protected RubyNode nilNode(Source source, RubySourceSection sourceSection) {
-        return new NilLiteralNode(context, sourceSection.toSourceSection(source), false);
-    }
-
-    protected RubyNode translateNodeOrNil(RubySourceSection sourceSection, ParseNode node) {
+    protected RubyNode translateNodeOrNil(SourceIndexLength sourceSection, ParseNode node) {
         final RubyNode rubyNode;
         if (node == null || node instanceof NilImplicitParseNode) {
             rubyNode = nilNode(source, sourceSection);
@@ -160,15 +144,15 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         return rubyNode;
     }
 
-    public static RubyNode createCheckArityNode(RubyContext context, Source source, RubySourceSection sourceSection, Arity arity) {
+    public static RubyNode createCheckArityNode(Arity arity) {
         if (!arity.acceptsKeywords()) {
             return new CheckArityNode(arity);
         } else {
-            return new CheckKeywordArityNode(context, sourceSection.toSourceSection(source), arity);
+            return new CheckKeywordArityNode(arity);
         }
     }
 
-    public SourceSection translateSourceSection(Source source, RubySourceSection sourceSection) {
+    public SourceSection translateSourceSection(Source source, SourceIndexLength sourceSection) {
         if (sourceSection == null) {
             return null;
         } else {
@@ -178,8 +162,15 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
 
     public static RubyNode loadSelf(RubyContext context, TranslatorEnvironment environment) {
         final FrameSlot slot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        RubySourceSection sourceSection = null;
-        return WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, slot, new ProfileArgumentNode(new ReadSelfNode()));
+        SourceIndexLength sourceSection = null;
+        return WriteLocalVariableNode.createWriteLocalVariableNode(context, slot, new ProfileArgumentNode(new ReadSelfNode()));
+    }
+
+    public static <T extends RubyNode> T withSourceSection(SourceIndexLength sourceSection, T node) {
+        if (sourceSection != null) {
+            node.unsafeSetSourceSection(sourceSection);
+        }
+        return node;
     }
 
 }

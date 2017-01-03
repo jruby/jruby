@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -24,17 +24,16 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.util.ArrayDeque;
@@ -1048,15 +1047,10 @@ public abstract class RopeNodes {
     @ImportStatic(RopeGuards.class)
     public abstract static class FlattenNode extends RubyNode {
 
-        @Child private MakeLeafRopeNode makeLeafRopeNode;
+        @Child private MakeLeafRopeNode makeLeafRopeNode = MakeLeafRopeNode.create();
 
         public static FlattenNode create() {
-            return RopeNodesFactory.FlattenNodeGen.create(null, null, null);
-        }
-
-        public FlattenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeLeafRopeNode = MakeLeafRopeNode.create();
+            return RopeNodesFactory.FlattenNodeGen.create(null);
         }
 
         public abstract LeafRope executeFlatten(Rope rope);

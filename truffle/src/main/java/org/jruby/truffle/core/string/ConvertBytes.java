@@ -55,7 +55,7 @@ public class ConvertBytes {
     static {
         MIN_VALUE_BYTES = new byte[37][];
         for (int i = 2; i <= 36; i++) {
-            MIN_VALUE_BYTES[i] =  ByteList.plain(Long.toString(Long.MIN_VALUE, i));
+            MIN_VALUE_BYTES[i] =  StringOperations.plain(Long.toString(Long.MIN_VALUE, i));
         }
     }
 
@@ -86,17 +86,6 @@ public class ConvertBytes {
             return false;
         }
         return space[c];
-    }
-
-    /** ISSPACE || *str == '_'
-     *
-     */
-    private boolean isSpaceOrUnderscore(int str) {
-        byte c;
-        if(str == end || (c = data[str]) < 0) {
-            return false;
-        }
-        return spaceOrUnderscore[c];
     }
 
     private boolean getSign() {
@@ -700,7 +689,7 @@ public class ConvertBytes {
         int bitcnt = 0;
         for(int i = ilen, o = olen; --o >= 0; ) {
             if(bitcnt < shift) {
-                bitbuf |= ((int)in[--i] & 0xff) << bitcnt;
+                bitbuf |= (in[--i] & 0xff) << bitcnt;
                 bitcnt += 8;
             }
             out[o] = digits[bitbuf & mask];
@@ -713,7 +702,6 @@ public class ConvertBytes {
     private final static byte[] conv_digit = new byte[128];
     private final static boolean[] digit = new boolean[128];
     private final static boolean[] space = new boolean[128];
-    private final static boolean[] spaceOrUnderscore = new boolean[128];
 
     static {
         Arrays.fill(conv_digit, (byte)-1);
@@ -738,15 +726,6 @@ public class ConvertBytes {
         space['\f'] = true;
         space['\r'] = true;
         space[' '] = true;
-
-        Arrays.fill(spaceOrUnderscore, false);
-        spaceOrUnderscore['\t'] = true;
-        spaceOrUnderscore['\n'] = true;
-        spaceOrUnderscore[11] = true; // \v
-        spaceOrUnderscore['\f'] = true;
-        spaceOrUnderscore['\r'] = true;
-        spaceOrUnderscore[' '] = true;
-        spaceOrUnderscore['_'] = true;
     }
 
     public static byte[] bytesToUUIDBytes(byte[] randBytes, boolean upper) {

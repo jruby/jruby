@@ -1,7 +1,6 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 
 import java.util.List;
 
@@ -15,7 +14,7 @@ import java.util.List;
  */
 public class RequiredKeywordArgumentValueParseNode extends ParseNode implements InvisibleNode {
     public RequiredKeywordArgumentValueParseNode() {
-        super(InvalidSourcePosition.INSTANCE, false);
+        super(null, false);
     }
 
     @Override

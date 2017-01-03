@@ -29,7 +29,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-#  RbConfig::expand method imported from Ruby sources
+#  RbConfig.expand method imported from MRI sources
 #
 
 module RbConfig
@@ -118,7 +118,7 @@ module RbConfig
     File.join CONFIG['bindir'], jruby_truffle
   end
 
-  def RbConfig::expand(val, config = CONFIG)
+  def RbConfig.expand(val, config = CONFIG)
     newval = val.gsub(/\$\$|\$\(([^()]+)\)|\$\{([^{}]+)\}/) {
       var = $&
       if !(v = $1 || $2)
@@ -126,7 +126,7 @@ module RbConfig
       elsif key = config[v = v[/\A[^:]+(?=(?::(.*?)=(.*))?\z)/]]
         pat, sub = $1, $2
         config[v] = false
-        config[v] = RbConfig::expand(key, config)
+        config[v] = RbConfig.expand(key, config)
         key = key.gsub(/#{Regexp.quote(pat)}(?=\s|\z)/n) {sub} if pat
         key
       else

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,15 +14,14 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 public abstract class StatPrimitiveNodes {
@@ -152,10 +151,6 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_stat", unsafe = UnsafeGroup.IO)
     public static abstract class StatStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int stat(DynamicObject rubyStat, DynamicObject path) {
@@ -179,10 +174,6 @@ public abstract class StatPrimitiveNodes {
     @Primitive(name = "stat_fstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatFStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        public StatFStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @TruffleBoundary
         @Specialization
         public int fstat(DynamicObject rubyStat, int fd) {
@@ -200,10 +191,6 @@ public abstract class StatPrimitiveNodes {
 
     @Primitive(name = "stat_lstat", unsafe = UnsafeGroup.IO)
     public static abstract class StatLStatPrimitiveNode extends PrimitiveArrayArgumentsNode {
-
-        public StatLStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")

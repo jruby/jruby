@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,10 +17,10 @@ import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
@@ -46,50 +46,16 @@ import java.math.BigInteger;
 public abstract class RubyBaseNode extends Node {
 
     private static final int FLAG_NEWLINE = 0;
-    private static final int FLAG_CALL = 1;
-    private static final int FLAG_ROOT = 2;
+    private static final int FLAG_COVERAGE_LINE = 1;
+    private static final int FLAG_CALL = 2;
+    private static final int FLAG_ROOT = 3;
 
     @CompilationFinal private RubyContext context;
 
-    private int sourceStartLine;
-    private int sourceEndLine;
+    private int sourceCharIndex = -1;
+    private int sourceLength;
 
     private int flags;
-
-    public RubyBaseNode() {
-    }
-
-    public RubyBaseNode(RubyContext context) {
-        this.context = context;
-    }
-
-    public RubyBaseNode(SourceSection sourceSection) {
-        if (sourceSection != null) {
-            unsafeSetSourceSection(new RubySourceSection(sourceSection));
-        }
-    }
-
-    public RubyBaseNode(RubySourceSection sourceSection) {
-        if (sourceSection != null) {
-            unsafeSetSourceSection(sourceSection);
-        }
-    }
-
-    public RubyBaseNode(RubyContext context, SourceSection sourceSection) {
-        this.context = context;
-
-        if (sourceSection != null) {
-            unsafeSetSourceSection(new RubySourceSection(sourceSection));
-        }
-    }
-
-    public RubyBaseNode(RubyContext context, RubySourceSection sourceSection) {
-        this.context = context;
-
-        if (sourceSection != null) {
-            unsafeSetSourceSection(sourceSection);
-        }
-    }
 
     // Guards which use the context and so can't be static
 
@@ -206,30 +172,40 @@ public abstract class RubyBaseNode extends Node {
 
     // Source section
 
-    public void unsafeSetSourceSection(RubySourceSection sourceSection) {
-        assert sourceStartLine == 0;
-        sourceStartLine = sourceSection.getStartLine();
-        sourceEndLine = sourceSection.getEndLine();
+    public void unsafeSetSourceSection(SourceIndexLength sourceSection) {
+        assert sourceCharIndex == -1;
+        sourceCharIndex = sourceSection.getCharIndex();
+        sourceLength = sourceSection.getLength();
     }
 
-    public RubySourceSection getRubySourceSection() {
-        if (sourceStartLine == 0) {
+    protected Source getSource() {
+        final RootNode rootNode = getRootNode();
+
+        if (rootNode == null) {
+            return null;
+        }
+
+        return rootNode.getSourceSection().getSource();
+    }
+
+    public SourceIndexLength getSourceIndexLength() {
+        if (sourceCharIndex == -1) {
             return null;
         } else {
-            return new RubySourceSection(sourceStartLine, sourceEndLine);
+            return new SourceIndexLength(sourceCharIndex, sourceLength);
         }
     }
 
-    public RubySourceSection getEncapsulatingRubySourceSection() {
+    public SourceIndexLength getEncapsulatingSourceIndexLength() {
         Node node = this;
 
         while (node != null) {
-            if (node instanceof RubyBaseNode && ((RubyBaseNode) node).sourceStartLine != 0) {
-                return ((RubyBaseNode) node).getRubySourceSection();
+            if (node instanceof RubyBaseNode && ((RubyBaseNode) node).sourceCharIndex != -1) {
+                return ((RubyBaseNode) node).getSourceIndexLength();
             }
 
             if (node instanceof RootNode) {
-                return new RubySourceSection(node.getSourceSection());
+                return new SourceIndexLength(node.getSourceSection().getCharIndex(), node.getSourceSection().getCharLength());
             }
 
             node = node.getParent();
@@ -240,16 +216,10 @@ public abstract class RubyBaseNode extends Node {
 
     @Override
     public SourceSection getSourceSection() {
-        if (sourceStartLine == 0) {
+        if (sourceCharIndex == -1) {
             return null;
         } else {
-            final RootNode rootNode = getRootNode();
-
-            if (rootNode == null) {
-                return null;
-            }
-
-            return getRubySourceSection().toSourceSection(rootNode.getSourceSection().getSource());
+            return getSourceIndexLength().toSourceSection(getSource());
         }
     }
 
@@ -257,6 +227,10 @@ public abstract class RubyBaseNode extends Node {
 
     public void unsafeSetIsNewLine() {
         flags |= 1 << FLAG_NEWLINE;
+    }
+
+    public void unsafeSetIsCoverageLine() {
+        flags |= 1 << FLAG_COVERAGE_LINE;
     }
 
     public void unsafeSetIsCall() {
@@ -269,6 +243,10 @@ public abstract class RubyBaseNode extends Node {
 
     private boolean isNewLine() {
         return ((flags >> FLAG_NEWLINE) & 1) == 1;
+    }
+
+    private boolean isCoverageLine() {
+        return ((flags >> FLAG_COVERAGE_LINE) & 1) == 1;
     }
 
     private boolean isCall() {
@@ -285,10 +263,12 @@ public abstract class RubyBaseNode extends Node {
             return isCall();
         }
 
-        if (tag == TraceManager.LineTag.class
-                || tag == CoverageManager.LineTag.class
-                || tag == StandardTags.StatementTag.class) {
+        if (tag == TraceManager.LineTag.class || tag == StandardTags.StatementTag.class) {
             return isNewLine();
+        }
+
+        if (tag == CoverageManager.LineTag.class) {
+            return isCoverageLine();
         }
 
         if (tag == StandardTags.RootTag.class) {

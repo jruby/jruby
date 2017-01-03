@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,6 +14,8 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
+
+import java.lang.reflect.Array;
 
 public abstract class ArrayOperations {
 
@@ -45,12 +47,27 @@ public abstract class ArrayOperations {
 
     @TruffleBoundary
     public static Object[] toObjectArray(DynamicObject array) {
-        return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).getBoxedCopy(Layouts.ARRAY.getSize(array));
+        return ArrayReflector.reflect(getBackingStore(array)).getBoxedCopy(Layouts.ARRAY.getSize(array));
     }
 
     @TruffleBoundary
     public static Iterable<Object> toIterable(DynamicObject array) {
-        return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).iterableUntil(Layouts.ARRAY.getSize(array));
+        return ArrayReflector.reflect(getBackingStore(array)).iterableUntil(Layouts.ARRAY.getSize(array));
+    }
+
+    @TruffleBoundary
+    public static Object getBackingStore(DynamicObject array) {
+        return Layouts.ARRAY.getStore(array);
+    }
+
+    @TruffleBoundary
+    public static int getStoreCapacity(DynamicObject array) {
+        Object store = getBackingStore(array);
+        if (store == null) {
+            return 0;
+        } else {
+            return Array.getLength(store);
+        }
     }
 
 }

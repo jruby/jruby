@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,15 +13,14 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 @CoreClass("Truffle::Ropes")
@@ -73,12 +72,7 @@ public abstract class TruffleRopesNodes {
     @CoreMethod(names = "debug_print_rope", onSingleton = true, required = 1, optional = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintRopeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode;
-
-        public DebugPrintRopeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(null, null, null);
-        }
+        @Child private RopeNodes.DebugPrintRopeNode debugPrintRopeNode = RopeNodesFactory.DebugPrintRopeNodeGen.create(null, null, null);
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
@@ -110,11 +104,6 @@ public abstract class TruffleRopesNodes {
      */
     @CoreMethod(names = "debug_get_structure_creation", onSingleton = true, required = 1)
     public abstract static class DebugGetStructureCreationNode extends CoreMethodArrayArgumentsNode {
-
-
-        public DebugGetStructureCreationNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")

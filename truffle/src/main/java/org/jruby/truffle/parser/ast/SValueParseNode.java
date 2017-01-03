@@ -29,15 +29,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
 public class SValueParseNode extends ParseNode {
     protected final ParseNode node;
 
-    public SValueParseNode(ISourcePosition position, ParseNode node) {
+    public SValueParseNode(SourceIndexLength position, ParseNode node) {
         super(position, node.containsVariableAssignment());
 
         assert node != null : "node is not null";

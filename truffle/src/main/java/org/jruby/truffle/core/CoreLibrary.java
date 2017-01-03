@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,9 +11,9 @@ package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -127,6 +127,7 @@ import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.options.OutputStrings;
 import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.platform.Platform;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.stdlib.CoverageNodesFactory;
@@ -137,7 +138,6 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
-import org.jruby.truffle.platform.Platform;
 import org.jruby.truffle.stdlib.readline.ReadlineHistoryNodesFactory;
 import org.jruby.truffle.stdlib.readline.ReadlineNodesFactory;
 
@@ -335,10 +335,9 @@ public class CoreLibrary {
         @Child SingletonClassNode singletonClassNode;
         @Child FreezeNode freezeNode;
 
-        public CoreLibraryNode(RubyContext context) {
-            super(context);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, null, null);
-            this.freezeNode = FreezeNodeGen.create(context, null, null);
+        public CoreLibraryNode() {
+            this.singletonClassNode = SingletonClassNodeGen.create(null);
+            this.freezeNode = FreezeNodeGen.create(null);
             adoptChildren();
         }
 
@@ -362,7 +361,7 @@ public class CoreLibrary {
     public CoreLibrary(RubyContext context) {
         this.context = context;
         this.coreLoadPath = buildCoreLoadPath();
-        this.node = new CoreLibraryNode(context);
+        this.node = new CoreLibraryNode();
 
         // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
         // Therefore, only initialize the core classes and modules here.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,9 +18,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -145,7 +143,7 @@ public abstract class RangeNodes {
         private Object eachInternal(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             if (eachInternalCall == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                eachInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                eachInternalCall = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return eachInternalCall.callWithBlock(frame, range, "each_internal", block);
@@ -211,12 +209,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = { "dup", "clone" })
     public abstract static class DupNode extends UnaryCoreMethodNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public DupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization(guards = "isIntRange(range)")
         public DynamicObject dupIntRange(DynamicObject range) {
@@ -334,7 +327,7 @@ public abstract class RangeNodes {
         private Object stepInternal(VirtualFrame frame, DynamicObject range, Object step, DynamicObject block) {
             if (stepInternalCall == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                stepInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                stepInternalCall = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return stepInternalCall.callWithBlock(frame, range, "step_internal", block, step);
@@ -440,7 +433,7 @@ public abstract class RangeNodes {
         public Object toA(VirtualFrame frame, DynamicObject range) {
             if (toAInternalCall == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toAInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                toAInternalCall = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return toAInternalCall.call(frame, range, "to_a_internal");
@@ -506,15 +499,10 @@ public abstract class RangeNodes {
     })
     public abstract static class NewNode extends CoreMethodNode {
 
-        protected final DynamicObject rangeClass;
+        protected final DynamicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
 
         @Child private CallDispatchHeadNode cmpNode;
         @Child private AllocateObjectNode allocateNode;
-
-        public NewNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            rangeClass = context.getCoreLibrary().getRangeClass();
-        }
 
         @CreateCast("excludeEnd")
         public RubyNode coerceToBoolean(RubyNode excludeEnd) {
@@ -557,7 +545,7 @@ public abstract class RangeNodes {
                 boolean excludeEnd) {
             if (cmpNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                cmpNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
             if (allocateNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -591,12 +579,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {

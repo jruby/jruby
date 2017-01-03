@@ -64,12 +64,7 @@ class Hash
     Rubinius::Type.try_convert obj, Hash, :to_hash
   end
 
-  # #entries is a method provided by Enumerable which calls #to_a,
-  # so we have to not collide with that.
-  attr_reader_specific :entries, :__entries__
-
-  # Renamed version of the Rubinius Hash#[] method
-  #def self.[](*args)
+  # Fallback for Hash.[]
   def self._constructor_fallback(*args)
     if args.size == 1
       obj = args.first
@@ -84,7 +79,7 @@ class Hash
 
     return new if args.empty?
 
-    if args.size & 1 == 1
+    if args.size.odd?
       raise ArgumentError, "Expected an even number, got #{args.length}"
     end
 
@@ -128,16 +123,42 @@ class Hash
     return false unless other.size == size
 
     Thread.detect_recursion self, other do
-      each_item do |item|
-        other_item = other.find_item(item.key)
+      each_pair do |key, value|
+        other_value = other._get_or_undefined(key)
 
         # Other doesn't even have this key
-        return false unless other_item
+        return false if undefined.equal?(other_value)
 
         # Order of the comparison matters! We must compare our value with
         # the other Hash's value and not the other way around.
-        unless Rubinius::Type::object_equal(item.value, other_item.value) or
-               item.value == other_item.value
+        unless Rubinius::Type.object_equal(value, other_value) or value == other_value
+          return false
+        end
+      end
+    end
+    true
+  end
+
+  def eql?(other)
+    # Just like ==, but uses eql? to compare values.
+    return true if self.equal? other
+    unless other.kind_of? Hash
+      return false unless other.respond_to? :to_hash
+      return other.eql?(self)
+    end
+
+    return false unless other.size == size
+
+    Thread.detect_recursion self, other do
+      each_pair do |key, value|
+        other_value = other._get_or_undefined(key)
+
+        # Other doesn't even have this key
+        return false if undefined.equal?(other_value)
+
+        # Order of the comparison matters! We must compare our value with
+        # the other Hash's value and not the other way around.
+        unless Rubinius::Type.object_equal(value, other_value) or value.eql?(other_value)
           return false
         end
       end
@@ -158,7 +179,8 @@ class Hash
   end
 
   def assoc(key)
-    each_item { |e| return e.key, e.value if key == e.key }
+    each_pair { |k,v| return k, v if key == k }
+    nil
   end
 
   def default(key=undefined)
@@ -195,8 +217,9 @@ class Hash
   end
 
   def fetch(key, default=undefined)
-    if item = find_item(key)
-      return item.value
+    value = _get_or_undefined(key)
+    unless undefined.equal?(value)
+      return value
     end
 
     return yield(key) if block_given?
@@ -219,7 +242,7 @@ class Hash
 
     Truffle.check_frozen
 
-    each_item { |e| delete e.key unless yield(e.key, e.value) }
+    each_pair { |k,v| delete k unless yield(k, v) }
 
     self
   end
@@ -230,17 +253,16 @@ class Hash
     other = Rubinius::Type.coerce_to other, Hash, :to_hash
 
     if block_given?
-      other.each_item do |item|
-        key = item.key
+      other.each_pair do |key,value|
         if key? key
-          __store__ key, yield(key, self[key], item.value)
+          __store__ key, yield(key, self[key], value)
         else
-          __store__ key, item.value
+          __store__ key, value
         end
       end
     else
-      other.each_item do |item|
-        __store__ item.key, item.value
+      other.each_pair do |key,value|
+        __store__ key, value
       end
     end
     self
@@ -249,7 +271,8 @@ class Hash
   alias_method :update, :merge!
 
   def rassoc(value)
-    each_item { |e| return e.key, e.value if value == e.value }
+    each_pair { |k,v| return k, v if value == v }
+    nil
   end
 
   def select
@@ -257,9 +280,9 @@ class Hash
 
     selected = Hash.allocate
 
-    each_item do |item|
-      if yield(item.key, item.value)
-        selected[item.key] = item.value
+    each_pair do |key,value|
+      if yield(key, value)
+        selected[key] = value
       end
     end
 
@@ -274,7 +297,7 @@ class Hash
     return nil if empty?
 
     previous_size = size
-    each_item { |e| delete e.key unless yield(e.key, e.value) }
+    each_pair { |k,v| delete k unless yield(k, v) }
     return nil if previous_size == size
 
     self
@@ -288,40 +311,12 @@ class Hash
     end
   end
 
-  def eql?(other)
-    # Just like ==, but uses eql? to compare values.
-    return true if self.equal? other
-    unless other.kind_of? Hash
-      return false unless other.respond_to? :to_hash
-      return other.eql?(self)
-    end
-
-    return false unless other.size == size
-
-    Thread.detect_recursion self, other do
-      each_item do |item|
-        other_item = other.find_item(item.key)
-
-        # Other doesn't even have this key
-        return false unless other_item
-
-        # Order of the comparison matters! We must compare our value with
-        # the other Hash's value and not the other way around.
-        unless Rubinius::Type::object_equal(item.value, other_item.value) or
-               item.value.eql?(other_item.value)
-          return false
-        end
-      end
-    end
-    true
-  end
-
   def hash
     val = size
     Thread.detect_outermost_recursion self do
-      each_item do |item|
-        val ^= item.key.hash
-        val ^= item.value.hash
+      each_pair do |key,value|
+        val ^= key.hash
+        val ^= value.hash
       end
     end
 
@@ -340,21 +335,22 @@ class Hash
   def each_key
     return to_enum(:each_key) { size } unless block_given?
 
-    each_item { |item| yield item.key }
+    each_pair { |key,value| yield key }
     self
   end
 
   def each_value
     return to_enum(:each_value) { size } unless block_given?
 
-    each_item { |item| yield item.value }
+    each_pair { |key,value| yield value }
     self
   end
 
   def index(value)
-    each_item do |item|
-      return item.key if item.value == value
+    each_pair do |k,v|
+      return k if v == value
     end
+    nil
   end
 
   alias_method :key, :index
@@ -362,10 +358,10 @@ class Hash
   def inspect
     out = []
     return '{...}' if Thread.detect_recursion self do
-      each_item do |item|
-        str =  item.key.inspect
+      each_pair do |key,value|
+        str =  key.inspect
         str << '=>'
-        str << item.value.inspect
+        str << value.inspect
         out << str
       end
     end
@@ -378,7 +374,7 @@ class Hash
   alias_method :to_s, :inspect
 
   def key?(key)
-    find_item(key) != nil
+    !undefined.equal?(_get_or_undefined(key))
   end
 
   alias_method :has_key?, :key?
@@ -387,10 +383,18 @@ class Hash
 
   def keys
     ary = []
-    each_item do |item|
-      ary << item.key
+    each_key do |key|
+      ary << key
     end
     ary
+  end
+
+  def reject(&block)
+    return to_enum(:reject) { size } unless block_given?
+    copy = dup
+    copy.untaint # not tainted as it is a new Hash
+    copy.delete_if(&block)
+    copy
   end
 
   def reject!(&block)
@@ -414,8 +418,8 @@ class Hash
   def to_a
     ary = []
 
-    each_item do |item|
-      ary << [item.key, item.value]
+    each_pair do |key,value|
+      ary << [key, value]
     end
 
     Rubinius::Type.infect ary, self
@@ -423,8 +427,8 @@ class Hash
   end
 
   def value?(value)
-    each_item do |item|
-      return true if item.value == value
+    each_value do |v|
+      return true if v == value
     end
     false
   end
@@ -434,23 +438,18 @@ class Hash
   def values
     ary = []
 
-    each_item do |item|
-      ary << item.value
+    each_value do |value|
+      ary << value
     end
 
     ary
   end
 
   def values_at(*args)
-    args.map do |key|
-      if item = find_item(key)
-        item.value
-      else
-        default key
-      end
-    end
+    args.map { |key| self[key] }
   end
 
+  # NOT standard??
   alias_method :indices, :values_at
   alias_method :indexes, :values_at
 
@@ -474,55 +473,7 @@ class Hash
     end
   end
 
-  # Implementation of a fundamental Rubinius method that allows their Hash
-  # implementation to work. We probably want to remove uses of this in the long
-  # term, as it creates objects which already exist for them and we have to
-  # create, but for now it allows us to use more Rubinius code unmodified.
-
-  class KeyValue
-
-    attr_reader :key
-    attr_reader :value
-
-    def initialize(key, value)
-      @key = key
-      @value = value
-    end
-
-  end
-
-  alias_method :each_original, :each
-
-  def each_item
-    # use aliased each to protect against overriding #each
-    each_original do |key, value|
-      yield KeyValue.new(key, value)
-    end
-    nil
-  end
-
-  def find_item(key)
-    value = _get_or_undefined(key)
-    if undefined.equal?(value)
-      nil
-    else
-      # TODO CS 7-Mar-15 maybe we should return the stored key?
-      KeyValue.new(key, value)
-    end
-  end
-
   def merge_fallback(other, &block)
     merge(Rubinius::Type.coerce_to other, Hash, :to_hash, &block)
   end
-
-  # Rubinius' Hash#reject taints but we don't want this
-
-  def reject(&block)
-    return to_enum(:reject) { size } unless block_given?
-    copy = dup
-    copy.untaint
-    copy.delete_if(&block)
-    copy
-  end
-
 end

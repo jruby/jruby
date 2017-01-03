@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class YieldParseNode extends ParseNode {
      * @param position position of the node in the source
      * @param argsNode the arguments to the yield (null == no args)
      */
-    public YieldParseNode(ISourcePosition position, ParseNode argsNode) {
+    public YieldParseNode(SourceIndexLength position, ParseNode argsNode) {
         super(position, argsNode != null && argsNode.containsVariableAssignment());
 
         this.argsNode = argsNode;

@@ -44,8 +44,6 @@ import java.util.List;
 public class EncodingUtils {
     public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.UNIVERSAL_NEWLINE_DECORATOR : 0;
 
-    private static final byte[] NULL_BYTE_ARRAY = ByteList.NULL_ARRAY;
-
     static final int VMODE = 0;
     static final int PERM = 1;
 
@@ -173,7 +171,7 @@ public class EncodingUtils {
     }
 
     public static void strBufCat(ByteList str, byte[] ptrBytes, int ptr, int len) {
-        int total, off = -1;
+        int total;
 
         // termlen is not relevant since we have no termination sequence
 

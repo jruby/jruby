@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,17 +18,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import com.sun.security.auth.module.UnixSystem;
 import jnr.constants.platform.Fcntl;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.core.rope.RopeNodes;
-import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.time.GetTimeZoneNode;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodes;
@@ -116,7 +112,6 @@ public abstract class TrufflePosixNodes {
 
     }
 
-
     @CoreMethod(names = "fsync", isModuleFunction = true, required = 1, lowerFixnum = 1, unsafe = UnsafeGroup.IO)
     public abstract static class FsyncNode extends CoreMethodArrayArgumentsNode {
 
@@ -127,7 +122,6 @@ public abstract class TrufflePosixNodes {
         }
 
     }
-
 
     @CoreMethod(names = "fchown", isModuleFunction = true, required = 3, lowerFixnum = {1, 2, 3}, unsafe = UnsafeGroup.IO)
     public abstract static class FchownNode extends CoreMethodArrayArgumentsNode {
@@ -585,13 +579,6 @@ public abstract class TrufflePosixNodes {
 
     @CoreMethod(names = "getcwd", isModuleFunction = true, unsafe = UnsafeGroup.IO)
     public abstract static class GetcwdNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
-
-        public GetcwdNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-        }
 
         @TruffleBoundary
         @Specialization

@@ -50,7 +50,7 @@ public abstract class ReadHashValueNode extends FormatNode {
 
         if (fetchNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            fetchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            fetchNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
         return fetchNode.call(frame, hash, "fetch", key);

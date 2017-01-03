@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,9 +17,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -33,14 +32,12 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class NumericToFloatNode extends RubyNode {
 
-    @Child private IsANode isANode;
+    @Child private IsANode isANode = IsANodeGen.create(null, null);
     @Child CallDispatchHeadNode toFloatCallNode;
 
     private final String method;
 
-    public NumericToFloatNode(RubyContext context, SourceSection sourceSection, String method) {
-        super(context, sourceSection);
-        isANode = IsANodeGen.create(context, sourceSection, null, null);
+    public NumericToFloatNode(String method) {
         this.method = method;
     }
 
@@ -49,7 +46,7 @@ public abstract class NumericToFloatNode extends RubyNode {
     private Object callToFloat(VirtualFrame frame, DynamicObject value) {
         if (toFloatCallNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toFloatCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.RETURN_MISSING));
+            toFloatCallNode = insert(DispatchHeadNodeFactory.createMethodCall(MissingBehavior.RETURN_MISSING));
         }
         return toFloatCallNode.call(frame, value, method);
     }

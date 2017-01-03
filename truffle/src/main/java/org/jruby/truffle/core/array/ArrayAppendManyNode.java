@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -19,7 +19,6 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.language.RubyNode;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
-import static org.jruby.truffle.core.array.ArrayHelpers.setStoreAndSize;
 
 @NodeChildren({
         @NodeChild("array"),
@@ -49,7 +48,7 @@ public abstract class ArrayAppendManyNode extends RubyNode {
             final int capacity = ArrayUtils.capacity(getContext(), storeMirror.getLength(), newSize);
             final ArrayMirror newStoreMirror = storeMirror.copyArrayAndMirror(capacity);
             otherStoreMirror.copyTo(newStoreMirror, 0, oldSize, otherSize);
-            setStoreAndSize(array, newStoreMirror.getArray(), newSize);
+            strategy.setStoreAndSize(array, newStoreMirror.getArray(), newSize);
         } else {
             otherStoreMirror.copyTo(storeMirror, 0, oldSize, otherSize);
             setSize(array, newSize);
@@ -72,7 +71,7 @@ public abstract class ArrayAppendManyNode extends RubyNode {
         final ArrayMirror newStoreMirror = generalized.newArray(newSize);
         strategy.newMirror(array).copyTo(newStoreMirror, 0, 0, oldSize);
         otherStrategy.newMirror(other).copyTo(newStoreMirror, 0, oldSize, otherSize);
-        setStoreAndSize(array, newStoreMirror.getArray(), newSize);
+        generalized.setStoreAndSize(array, newStoreMirror.getArray(), newSize);
         return array;
     }
 

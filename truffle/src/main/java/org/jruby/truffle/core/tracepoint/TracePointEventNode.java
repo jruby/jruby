@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -78,7 +78,7 @@ class TracePointEventNode extends ExecutionEventNode {
     protected YieldNode getYieldNode() {
         if (yieldNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            yieldNode = insert(new YieldNode(context));
+            yieldNode = insert(new YieldNode());
         }
 
         return yieldNode;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,10 +11,9 @@ package org.jruby.truffle.core.cast;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Return the given default value if the argument is not provided.
@@ -24,8 +23,7 @@ public abstract class DefaultValueNode extends RubyNode {
 
     private final Object defaultValue;
 
-    public DefaultValueNode(RubyContext context, SourceSection sourceSection, Object defaultValue) {
-        super(context, sourceSection);
+    public DefaultValueNode(Object defaultValue) {
         this.defaultValue = defaultValue;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -11,13 +11,12 @@ package org.jruby.truffle.language.constants;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 /** Read a literal constant on a given module: MOD::CONST */
@@ -26,15 +25,12 @@ public class ReadConstantNode extends RubyNode {
     private final String name;
 
     @Child RubyNode moduleNode;
-    @Child LookupConstantNode lookupConstantNode;
-    @Child GetConstantNode getConstantNode;
+    @Child LookupConstantNode lookupConstantNode = LookupConstantNodeGen.create(false, false);
+    @Child GetConstantNode getConstantNode = GetConstantNode.create();
 
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
-        super(context, sourceSection);
+    public ReadConstantNode(RubyNode moduleNode, String name) {
         this.name = name;
         this.moduleNode = moduleNode;
-        this.lookupConstantNode = LookupConstantNodeGen.create(false, false);
-        this.getConstantNode = GetConstantNode.create();
     }
 
     @Override

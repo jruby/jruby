@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -40,14 +40,13 @@ package org.jruby.truffle.core.dir;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.UnsafeGroup;
@@ -59,12 +58,7 @@ public abstract class DirNodes {
     @Primitive(name = "dir_allocate")
     public static abstract class DirAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public DirAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject dirClass) {

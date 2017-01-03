@@ -79,14 +79,8 @@ public class SyntaxException extends RuntimeException {
     private int line;
     private PID pid;
 
-    @Deprecated
-    public SyntaxException(PID pid, ISourcePosition position, String lastLine, String message, Object... data) {
-        this(pid, position.getFile(), position.getLine(), lastLine, message, data);
-    }
-
-    public SyntaxException(PID pid, String file, int line, String lastLine, String message, Object... data) {
+    public SyntaxException(PID pid, String file, int line, String lastLine, String message) {
         super(prepareMessage(message, lastLine));
-
         this.pid = pid;
         this.file = file;
         this.line = line;
@@ -100,11 +94,6 @@ public class SyntaxException extends RuntimeException {
         }
         
         return message;
-    }
-
-    @Deprecated
-    public ISourcePosition getPosition() {
-        return new SimpleSourcePosition(file, line);
     }
 
     public String getFile() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -73,7 +73,7 @@ public abstract class ReadBERNode extends FormatNode {
 
     public ReadBERNode(RubyContext context) {
         super(context);
-        fixnumOrBignumNode = FixnumOrBignumNode.create(context, null);
+        fixnumOrBignumNode = FixnumOrBignumNode.create(null);
     }
 
     @Specialization

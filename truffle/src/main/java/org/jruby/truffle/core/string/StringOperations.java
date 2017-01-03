@@ -39,7 +39,6 @@ import org.jcodings.Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayOperations;
-import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeOperations;
@@ -48,12 +47,13 @@ import org.jruby.truffle.language.RubyGuards;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 public abstract class StringOperations {
 
     /** Creates a String from the ByteList, with unknown CR */
     public static DynamicObject createString(RubyContext context, ByteList bytes) {
-        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), ropeFromByteList(bytes, CodeRange.CR_UNKNOWN));
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RopeOperations.ropeFromByteList(bytes, CodeRange.CR_UNKNOWN));
     }
 
     public static DynamicObject createString(RubyContext context, Rope rope) {
@@ -62,39 +62,6 @@ public abstract class StringOperations {
 
     public static String getString(DynamicObject string) {
         return RopeOperations.decodeRope(StringOperations.rope(string));
-    }
-
-    public static StringCodeRangeableWrapper getCodeRangeableReadWrite(final DynamicObject string,
-                                                                       final EncodingNodes.CheckEncodingNode checkEncodingNode) {
-        return new StringCodeRangeableWrapper(string, checkEncodingNode) {
-            private final ByteList byteList = RopeOperations.toByteListCopy(StringOperations.rope(string));
-            CodeRange codeRange = StringOperations.codeRange(string);
-
-            @Override
-            public void setCodeRange(CodeRange newCodeRange) {
-                this.codeRange = newCodeRange;
-            }
-
-            @Override
-            public CodeRange getCodeRange() {
-                return codeRange;
-            }
-
-            @Override
-            public ByteList getByteList() {
-                return byteList;
-            }
-        };
-    }
-
-    public static StringCodeRangeableWrapper getCodeRangeableReadOnly(final DynamicObject string,
-                                                                      final EncodingNodes.CheckEncodingNode checkEncodingNode) {
-        return new StringCodeRangeableWrapper(string, checkEncodingNode) {
-            @Override
-            public ByteList getByteList() {
-                return StringOperations.getByteListReadOnly(string);
-            }
-        };
     }
 
     public static int clampExclusiveIndex(DynamicObject string, int index) {
@@ -124,19 +91,6 @@ public abstract class StringOperations {
 
     public static Rope encodeRope(CharSequence value, Encoding encoding) {
         return encodeRope(value, encoding, CodeRange.CR_UNKNOWN);
-    }
-
-    public static ByteList getByteListReadOnly(DynamicObject object) {
-        return RopeOperations.getByteListReadOnly(rope(object));
-    }
-
-    public static Rope ropeFromByteList(ByteList byteList) {
-        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), CodeRange.CR_UNKNOWN);
-    }
-
-    public static Rope ropeFromByteList(ByteList byteList, CodeRange codeRange) {
-        // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
-        return RopeOperations.create(byteList.bytes(), byteList.getEncoding(), codeRange);
     }
 
     public static Rope rope(DynamicObject string) {
@@ -169,4 +123,25 @@ public abstract class StringOperations {
         return RopeOperations.decodeUTF8(Layouts.STRING.getRope(string));
     }
 
+    /**
+     * Create a byte[] from a CharSequence assuming a raw/ISO-8859-1 encoding
+     *
+     * @param s the CharSequence to convert
+     * @return a byte[]
+     */
+    @TruffleBoundary
+    public static byte[] plain(CharSequence s) {
+        // Taken from org.jruby.util.ByteList.plain
+
+        if (s instanceof String) {
+            return StandardCharsets.ISO_8859_1.encode(CharBuffer.wrap(s)).array();
+        }
+
+        // Not a String...get it the slow way
+        byte[] bytes = new byte[s.length()];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) s.charAt(i);
+        }
+        return bytes;
+    }
 }

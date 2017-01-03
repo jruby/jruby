@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -53,7 +53,7 @@ public abstract class FreezeHashKeyIfNeededNode extends RubyNode {
     protected boolean isFrozen(Object value) {
         if (isFrozenNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
+            isFrozenNode = insert(IsFrozenNodeGen.create(null));
         }
         return isFrozenNode.executeIsFrozen(value);
     }
@@ -61,7 +61,7 @@ public abstract class FreezeHashKeyIfNeededNode extends RubyNode {
     private Object dup(VirtualFrame frame, Object value) {
         if (dupNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            dupNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
         return dupNode.call(frame, value, "dup");
     }
@@ -69,7 +69,7 @@ public abstract class FreezeHashKeyIfNeededNode extends RubyNode {
     private Object freeze(VirtualFrame frame, Object value) {
         if (freezeNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            freezeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            freezeNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
         return freezeNode.call(frame, value, "freeze");
     }

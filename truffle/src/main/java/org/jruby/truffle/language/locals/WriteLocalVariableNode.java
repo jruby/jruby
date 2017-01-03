@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,10 +12,8 @@ package org.jruby.truffle.language.locals;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
 
 public class WriteLocalVariableNode extends RubyNode {
 
@@ -24,34 +22,16 @@ public class WriteLocalVariableNode extends RubyNode {
     @Child private RubyNode valueNode;
     @Child private WriteFrameSlotNode writeFrameSlotNode;
 
-    public static WriteLocalVariableNode createWriteLocalVariableNode(RubyContext context, RubySourceSection sourceSection,
+    public static WriteLocalVariableNode createWriteLocalVariableNode(RubyContext context,
                                                                       FrameSlot frameSlot, RubyNode valueNode) {
         if (context.getCallGraph() == null) {
-            return new WriteLocalVariableNode(context, sourceSection, frameSlot, valueNode);
+            return new WriteLocalVariableNode(frameSlot, valueNode);
         } else {
-            return new InstrumentedWriteLocalVariableNode(context, sourceSection, frameSlot, valueNode);
+            return new InstrumentedWriteLocalVariableNode(frameSlot, valueNode);
         }
     }
 
-    public static WriteLocalVariableNode createWriteLocalVariableNode(RubyContext context, SourceSection sourceSection,
-                                                                      FrameSlot frameSlot, RubyNode valueNode) {
-        if (context.getCallGraph() == null) {
-            return new WriteLocalVariableNode(context, sourceSection, frameSlot, valueNode);
-        } else {
-            return new InstrumentedWriteLocalVariableNode(context, sourceSection, frameSlot, valueNode);
-        }
-    }
-
-    protected WriteLocalVariableNode(RubyContext context, RubySourceSection sourceSection,
-                                     FrameSlot frameSlot, RubyNode valueNode) {
-        super(context, sourceSection);
-        this.frameSlot = frameSlot;
-        this.valueNode = valueNode;
-    }
-
-    protected WriteLocalVariableNode(RubyContext context, SourceSection sourceSection,
-                                     FrameSlot frameSlot, RubyNode valueNode) {
-        super(context, sourceSection);
+    protected WriteLocalVariableNode(FrameSlot frameSlot, RubyNode valueNode) {
         this.frameSlot = frameSlot;
         this.valueNode = valueNode;
     }

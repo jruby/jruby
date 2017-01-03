@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,6 +14,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -29,7 +30,7 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.MissingArgumentBehavior;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
@@ -187,25 +188,25 @@ public class CoreMethodNodeManager {
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
         final SourceSection sourceSection = sharedMethodInfo.getSourceSection();
-        final RubySourceSection rubySourceSection = new RubySourceSection(sourceSection);
+        final SourceIndexLength sourceIndexLength = new SourceIndexLength(sourceSection.getCharIndex(), sourceSection.getCharLength());
 
-        final RubyNode methodNode = createCoreMethodNode(context, sourceSection, methodDetails.getNodeFactory(), method);
+        final RubyNode methodNode = createCoreMethodNode(context, sourceSection.getSource(), sourceIndexLength, methodDetails.getNodeFactory(), method);
 
         if (CHECK_DSL_USAGE) {
             AmbiguousOptionalArgumentChecker.verifyNoAmbiguousOptionalArguments(methodDetails);
         }
 
-        final RubyNode checkArity = Translator.createCheckArityNode(context, sourceSection.getSource(), rubySourceSection, sharedMethodInfo.getArity());
+        final RubyNode checkArity = Translator.createCheckArityNode(sharedMethodInfo.getArity());
 
         RubyNode node;
         if (!isSafe(context, method.unsafe())) {
-            node = new UnsafeNode(context, sourceSection);
+            node = new UnsafeNode();
         } else {
-            node = Translator.sequence(context, sourceSection.getSource(), rubySourceSection, Arrays.asList(checkArity, methodNode));
+            node = Translator.sequence(sourceIndexLength, Arrays.asList(checkArity, methodNode));
             node = transformResult(method, node);
         }
 
-        RubyNode bodyNode = new ExceptionTranslatingNode(context, sourceSection, node, method.unsupportedOperationBehavior());
+        RubyNode bodyNode = new ExceptionTranslatingNode(node, method.unsupportedOperationBehavior());
 
         if (context.getOptions().CHAOS) {
             bodyNode = ChaosNodeGen.create(bodyNode);
@@ -216,7 +217,7 @@ public class CoreMethodNodeManager {
         return Truffle.getRuntime().createCallTarget(rootNode);
     }
 
-    public static RubyNode createCoreMethodNode(RubyContext context, SourceSection sourceSection, NodeFactory<? extends RubyNode> nodeFactory, CoreMethod method) {
+    public static RubyNode createCoreMethodNode(RubyContext context, Source source, SourceIndexLength sourceSection, NodeFactory<? extends RubyNode> nodeFactory, CoreMethod method) {
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
         if (method.needsCallerFrame()) {
@@ -227,7 +228,7 @@ public class CoreMethodNodeManager {
 
         if (needsSelf) {
             RubyNode readSelfNode = new ProfileArgumentNode(new ReadSelfNode());
-            argumentsNodes.add(transformArgument(context, sourceSection, method, readSelfNode, 0));
+            argumentsNodes.add(transformArgument(method, readSelfNode, 0));
         }
 
         final int required = method.required();
@@ -240,7 +241,7 @@ public class CoreMethodNodeManager {
 
         for (int n = 0; n < nArgs; n++) {
             RubyNode readArgumentNode = new ProfileArgumentNode(new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED));
-            argumentsNodes.add(transformArgument(context, sourceSection, method, readArgumentNode, n + 1));
+            argumentsNodes.add(transformArgument(method, readArgumentNode, n + 1));
         }
 
         if (method.rest()) {
@@ -251,10 +252,10 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(new ReadBlockNode(NotProvided.INSTANCE));
         }
 
-        return createNodeFromFactory(context, sourceSection, nodeFactory, argumentsNodes);
+        return createNodeFromFactory(context, source, sourceSection, nodeFactory, argumentsNodes);
     }
 
-    public static <T> T createNodeFromFactory(RubyContext context, SourceSection sourceSection, NodeFactory<? extends T> nodeFactory, List<RubyNode> argumentsNodes) {
+    public static <T> T createNodeFromFactory(RubyContext context, Source source, SourceIndexLength sourceSection, NodeFactory<? extends T> nodeFactory, List<RubyNode> argumentsNodes) {
         final T methodNode;
         List<List<Class<?>>> signatures = nodeFactory.getNodeSignatures();
 
@@ -267,16 +268,26 @@ public class CoreMethodNodeManager {
             final RubyNode[] argumentsArray = argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]);
             if (signature.size() == 1 && signature.get(0) == RubyNode[].class) {
                 methodNode = nodeFactory.createNode(new Object[] { argumentsArray });
-            } else if (signature.size() >= 3 && signature.get(2) == RubyNode[].class) {
-                methodNode = nodeFactory.createNode(context, sourceSection, argumentsArray);
-            } else if (signature.get(0) != RubyContext.class) {
+            } else if (signature.size() >= 2 && signature.get(1) == RubyNode[].class) {
+                if (signature.get(0) == SourceIndexLength.class) {
+                    methodNode = nodeFactory.createNode(sourceSection, argumentsArray);
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+            } else if (signature.get(0) != SourceIndexLength.class) {
                 Object[] args = argumentsArray;
                 methodNode = nodeFactory.createNode(args);
             } else {
-                Object[] args = new Object[2 + argumentsNodes.size()];
+                Object[] args = new Object[1 + argumentsNodes.size()];
                 args[0] = context;
-                args[1] = sourceSection;
-                System.arraycopy(argumentsArray, 0, args, 2, argumentsNodes.size());
+
+                if (signature.get(0) == SourceIndexLength.class) {
+                    args[0] = sourceSection;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
+                System.arraycopy(argumentsArray, 0, args, 1, argumentsNodes.size());
                 methodNode = nodeFactory.createNode(args);
             }
         }
@@ -290,13 +301,13 @@ public class CoreMethodNodeManager {
         return method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
     }
 
-    private static RubyNode transformArgument(RubyContext context, SourceSection sourceSection, CoreMethod method, RubyNode argument, int n) {
+    private static RubyNode transformArgument(CoreMethod method, RubyNode argument, int n) {
         if (ArrayUtils.contains(method.lowerFixnum(), n)) {
-            argument = FixnumLowerNodeGen.create(null, null, argument);
+            argument = FixnumLowerNodeGen.create(argument);
         }
 
         if (n == 0 && method.raiseIfFrozenSelf()) {
-            argument = new RaiseIfFrozenNode(context, sourceSection, argument);
+            argument = new RaiseIfFrozenNode(argument);
         }
 
         return argument;

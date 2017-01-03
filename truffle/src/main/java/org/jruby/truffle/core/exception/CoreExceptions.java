@@ -42,6 +42,10 @@ public class CoreExceptions {
         return argumentError(coreStrings().ONE_HASH_REQUIRED.getRope(), currentNode, null);
     }
 
+    public DynamicObject argumentError(Rope message, Node currentNode) {
+        return argumentError(message, currentNode, null);
+    }
+
     public DynamicObject argumentError(String message, Node currentNode) {
         return argumentError(message, currentNode, null);
     }
@@ -428,6 +432,11 @@ public class CoreExceptions {
     @TruffleBoundary
     public DynamicObject typeErrorInheritUninitializedClass(Node currentNode) {
         return typeError("can't inherit uninitialized class", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorRescueInvalidClause(Node currentNode) {
+        return typeError("class or module required for rescue clause", currentNode);
     }
 
     @TruffleBoundary

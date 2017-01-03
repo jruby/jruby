@@ -194,16 +194,6 @@ public class Platform {
                 break;
         }
         libPattern = Pattern.compile(libpattern);
-        int version = 5;
-        try {
-            String versionString = System.getProperty("java.version");
-            if (versionString != null) {
-                String[] v = versionString.split("\\.");
-                version = Integer.valueOf(v[1]);
-            }
-        } catch (Exception ex) {
-            version = 0;
-        }
     }
 
     /**

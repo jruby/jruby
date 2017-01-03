@@ -32,8 +32,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -53,7 +53,7 @@ public class NewlineParseNode extends ParseNode {
     private final ParseNode nextNode;
 
     @Deprecated
-    public NewlineParseNode(ISourcePosition position, ParseNode nextNode) {
+    public NewlineParseNode(SourceIndexLength position, ParseNode nextNode) {
         super(position, nextNode.containsVariableAssignment());
 
         assert nextNode != null : "nextNode is not null";

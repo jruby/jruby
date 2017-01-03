@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -45,7 +45,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
@@ -58,23 +57,24 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.collections.BoundaryIterable;
 import org.jruby.truffle.core.adapaters.InputStreamAdapter;
 import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.ByteList;
-import org.jruby.truffle.core.string.EncodingUtils;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.SnippetNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.collections.BoundaryIterable;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.AliasEvent;
@@ -106,12 +106,7 @@ public abstract class PsychParserNodes {
     @CoreMethod(names = "parse", required = 1, optional = 1)
     public abstract static class ParseNode extends CoreMethodArrayArgumentsNode {
 
-        @Node.Child private ToStrNode toStrNode;
-
-        public ParseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toStrNode = ToStrNodeGen.create(getContext(), null, null);
-        }
+        @Node.Child private ToStrNode toStrNode = ToStrNodeGen.create(null);
 
         public abstract Object executeParse(VirtualFrame frame, DynamicObject parserObject, DynamicObject yaml, Object path);
 
@@ -153,8 +148,8 @@ public abstract class PsychParserNodes {
             if (!RubyGuards.isRubyString(yaml) && respondToReadNode.doesRespondTo(frame, "read", yaml)) {
                 reader = newStreamReader(yaml);
             } else {
-                ByteList byteList = StringOperations.getByteListReadOnly(toStrNode.executeToStr(frame, yaml));
-                reader = newStringReader(byteList);
+                Rope rope = StringOperations.rope(toStrNode.executeToStr(frame, yaml));
+                reader = newStringReader(rope);
             }
 
             final Parser parser = newParser(reader);
@@ -308,11 +303,11 @@ public abstract class PsychParserNodes {
         }
 
         @TruffleBoundary
-        private StreamReader newStringReader(ByteList byteList) {
-            Encoding encoding = byteList.getEncoding();
+        private StreamReader newStringReader(Rope rope) {
+            Encoding encoding = rope.getEncoding();
 
             if (!(encoding instanceof UnicodeEncoding)) {
-                byteList = strConvEnc(getContext(), byteList, encoding);
+                rope = strConvEnc(getContext(), rope, encoding);
 
                 encoding = UTF8Encoding.INSTANCE;
             }
@@ -320,7 +315,7 @@ public abstract class PsychParserNodes {
             return new StreamReader(
                     new InputStreamReader(
                             new ByteArrayInputStream(
-                                    byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize()),
+                                    rope.getBytes(), 0, rope.byteLength()),
                             encoding.getCharset()));
         }
 
@@ -440,15 +435,15 @@ public abstract class PsychParserNodes {
             return string;
         }
 
-        private ByteList strConvEnc(RubyContext context, ByteList byteList, Encoding encoding) {
-            return strConvEnc2(context, byteList, encoding, UTF8Encoding.INSTANCE);
+        private Rope strConvEnc(RubyContext context, Rope rope, Encoding encoding) {
+            return strConvEnc2(context, rope, encoding, UTF8Encoding.INSTANCE);
         }
 
-        private static ByteList strConvEnc2(RubyContext context, ByteList value, Encoding fromEncoding, Encoding toEncoding) {
+        private static Rope strConvEnc2(RubyContext context, Rope value, Encoding fromEncoding, Encoding toEncoding) {
             return strConvEncOpts(context, value, fromEncoding, toEncoding, 0, null);
         }
 
-        private static ByteList strConvEncOpts(RubyContext context, ByteList str, Encoding fromEncoding,
+        private static Rope strConvEncOpts(RubyContext context, Rope str, Encoding fromEncoding,
                                                 Encoding toEncoding, int ecflags, Object ecopts) {
             if (toEncoding == null) return str;
             if (fromEncoding == null) fromEncoding = str.getEncoding();
@@ -456,22 +451,20 @@ public abstract class PsychParserNodes {
             if ((toEncoding.isAsciiCompatible() && isAsciiOnly(str)) ||
                     toEncoding == ASCIIEncoding.INSTANCE) {
                 if (str.getEncoding() != toEncoding) {
-                    str = str.dup();
-                    str.setEncoding(toEncoding);
+                    return str.withEncoding(toEncoding, CodeRange.CR_7BIT);
                 }
                 return str;
             }
 
-            ByteList strByteList = str;
-            int len = strByteList.getRealSize();
+            int len = str.byteLength();
             ByteList newStr = new ByteList(len);
             int olen = len;
 
             EConv ec = econvOpenOpts(context, fromEncoding, toEncoding, ecflags, ecopts);
             if (ec == null) return str;
 
-            byte[] sbytes = strByteList.getUnsafeBytes();
-            Ptr sp = new Ptr(strByteList.getBegin());
+            byte[] sbytes = str.getBytes();
+            Ptr sp = new Ptr(0);
             int start = sp.p;
 
             byte[] destbytes;
@@ -512,7 +505,7 @@ public abstract class PsychParserNodes {
                     len = dp.p;
                     newStr.setRealSize(len);
                     newStr.setEncoding(toEncoding);
-                    return newStr;
+                    return RopeOperations.ropeFromByteList(newStr);
 
                 default:
                     // some error, return original
@@ -525,12 +518,8 @@ public abstract class PsychParserNodes {
             return ec;
         }
 
-        private static boolean isAsciiOnly(ByteList string) {
-            return string.getEncoding().isAsciiCompatible() && scanForCodeRange(string) == CodeRange.CR_7BIT;
-        }
-
-        private static CodeRange scanForCodeRange(ByteList string) {
-            return StringSupport.codeRangeScan(EncodingUtils.getActualEncoding(string.getEncoding(), string), string);
+        private static boolean isAsciiOnly(Rope string) {
+            return string.getEncoding().isAsciiCompatible() && string.getCodeRange() == CodeRange.CR_7BIT;
         }
 
     }

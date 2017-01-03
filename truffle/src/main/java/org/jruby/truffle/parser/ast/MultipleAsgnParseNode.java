@@ -27,8 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class MultipleAsgnParseNode extends AssignableParseNode {
     private final ParseNode rest;
     private final ListParseNode post;
 
-    public MultipleAsgnParseNode(ISourcePosition position, ListParseNode pre, ParseNode rest, ListParseNode post) {
+    public MultipleAsgnParseNode(SourceIndexLength position, ListParseNode pre, ParseNode rest, ListParseNode post) {
         super(position);
         this.pre = pre;
         this.rest = rest;

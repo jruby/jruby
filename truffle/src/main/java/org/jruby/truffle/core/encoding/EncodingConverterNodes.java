@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,7 +15,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -23,7 +22,6 @@ import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscodingManager;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -41,6 +39,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -118,12 +117,7 @@ public abstract class EncodingConverterNodes {
     @Primitive(name = "encoding_converter_primitive_convert")
     public static abstract class PrimitiveConvertNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
         public Object encodingConverterPrimitiveConvert(DynamicObject encodingConverter, DynamicObject source,
@@ -223,7 +217,7 @@ public abstract class EncodingConverterNodes {
                     outBytes.setEncoding(ec.destinationEncoding);
                 }
 
-                StringOperations.setRope(target, StringOperations.ropeFromByteList(outBytes));
+                StringOperations.setRope(target, RopeOperations.ropeFromByteList(outBytes));
 
                 return getSymbol(res.symbolicName());
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -24,11 +24,13 @@ package org.jruby.truffle.core.rope;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
+import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.collections.Memo;
 import org.jruby.truffle.core.encoding.EncodingManager;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.EncodingUtils;
@@ -36,7 +38,6 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.collections.Memo;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -141,6 +142,10 @@ public class RopeOperations {
     @TruffleBoundary
     public static String decode(Charset charset, byte[] bytes, int offset, int byteLength) {
         return charset.decode(ByteBuffer.wrap(bytes, offset, byteLength)).toString();
+    }
+
+    public static String decodeRope(Charset charset, Rope rope) {
+        return charset.decode(ByteBuffer.wrap(rope.getBytes(), 0, rope.byteLength())).toString();
     }
 
     // MRI: get_actual_encoding
@@ -611,4 +616,35 @@ public class RopeOperations {
         return CR_VALID;
     }
 
+    @TruffleBoundary
+    public static int caseInsensitiveCmp(Rope value, Rope other) {
+        // Taken from org.jruby.util.ByteList#caseInsensitiveCmp.
+
+        if (other == value) return 0;
+
+        final int size = value.byteLength();
+        final int len =  Math.min(size, other.byteLength());
+        final byte[] other_bytes = other.getBytes();
+
+        for (int offset = -1; ++offset < len;) {
+            int myCharIgnoreCase = AsciiTables.ToLowerCaseTable[value.getBytes()[offset] & 0xff] & 0xff;
+            int otherCharIgnoreCase = AsciiTables.ToLowerCaseTable[other_bytes[offset] & 0xff] & 0xff;
+            if (myCharIgnoreCase < otherCharIgnoreCase) {
+                return -1;
+            } else if (myCharIgnoreCase > otherCharIgnoreCase) {
+                return 1;
+            }
+        }
+
+        return size == other.byteLength() ? 0 : size == len ? -1 : 1;
+    }
+
+    public static Rope ropeFromByteList(ByteList byteList) {
+        return create(byteList.bytes(), byteList.getEncoding(), CR_UNKNOWN);
+    }
+
+    public static Rope ropeFromByteList(ByteList byteList, CodeRange codeRange) {
+        // TODO (nirvdrum 08-Jan-16) We need to make a copy of the ByteList's bytes for now to be safe, but we should be able to use the unsafe bytes as we move forward.
+        return create(byteList.bytes(), byteList.getEncoding(), codeRange);
+    }
 }

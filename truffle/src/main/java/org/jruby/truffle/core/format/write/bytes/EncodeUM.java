@@ -36,6 +36,7 @@
 package org.jruby.truffle.core.format.write.bytes;
 
 import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.core.string.StringOperations;
 
 public class EncodeUM {
 
@@ -46,10 +47,10 @@ public class EncodeUM {
 
     static {
         uu_table =
-                ByteList.plain("`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
+                StringOperations.plain("`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
         b64_table =
-                ByteList.plain("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
-        sHexDigits = ByteList.plain("0123456789abcdef0123456789ABCDEFx");
+                StringOperations.plain("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+        sHexDigits = StringOperations.plain("0123456789abcdef0123456789ABCDEFx");
 
         // b64_xtable for decoding Base 64
         for (int i = 0; i < 256; i++) {

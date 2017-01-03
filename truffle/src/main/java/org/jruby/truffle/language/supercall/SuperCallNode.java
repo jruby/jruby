@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,13 +13,12 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -34,19 +33,15 @@ public class SuperCallNode extends RubyNode {
 
     @Child private RubyNode arguments;
     @Child private RubyNode block;
-    @Child ProcOrNullNode procOrNullNode;
+    @Child ProcOrNullNode procOrNullNode = ProcOrNullNodeGen.create(null);
 
-    @Child LookupSuperMethodNode lookupSuperMethodNode;
-    @Child CallInternalMethodNode callMethodNode;
+    @Child LookupSuperMethodNode lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null);
+    @Child CallInternalMethodNode callMethodNode = CallInternalMethodNodeGen.create(null, new RubyNode[] {});
     @Child CallDispatchHeadNode callMethodMissingNode;
 
-    public SuperCallNode(RubyContext context, SourceSection sourceSection, RubyNode arguments, RubyNode block) {
-        super(context, sourceSection);
+    public SuperCallNode(RubyNode arguments, RubyNode block) {
         this.arguments = arguments;
         this.block = block;
-        this.procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
-        this.lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, sourceSection, null);
-        this.callMethodNode = CallInternalMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
     }
 
     @Override
@@ -87,7 +82,7 @@ public class SuperCallNode extends RubyNode {
     private Object callMethodMissing(VirtualFrame frame, Object receiver, DynamicObject block, Object[] arguments) {
         if (callMethodMissingNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            callMethodMissingNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+            callMethodMissingNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
         }
         return callMethodMissingNode.callWithBlock(frame, receiver, "method_missing", block, arguments);
     }

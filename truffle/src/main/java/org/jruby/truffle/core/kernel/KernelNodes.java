@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -37,7 +37,6 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
@@ -158,7 +157,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-
 @CoreClass("Kernel")
 public abstract class KernelNodes {
 
@@ -199,7 +197,7 @@ public abstract class KernelNodes {
             // TODO BJF Aug 4, 2016 Needs SafeStringValue here
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
             return backtick(frame, toStrNode.executeToStr(frame, command));
         }
@@ -210,7 +208,7 @@ public abstract class KernelNodes {
 
             if (toHashNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             final DynamicObject env = getContext().getCoreLibrary().getENV();
@@ -223,7 +221,7 @@ public abstract class KernelNodes {
                     "pid", result.getPid(),
                     "code", result.getCode());
 
-            return result.output;
+            return result.getOutput();
         }
 
         @TruffleBoundary
@@ -306,7 +304,7 @@ public abstract class KernelNodes {
         private boolean areEqual(VirtualFrame frame, Object left, Object right) {
             if (equalNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                equalNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return equalNode.callBoolean(frame, left, "==", null, right);
@@ -336,7 +334,7 @@ public abstract class KernelNodes {
         private boolean areEql(VirtualFrame frame, Object left, Object right) {
             if (eqlNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                eqlNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                eqlNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
             return eqlNode.callBoolean(frame, left, "eql?", null, right);
         }
@@ -346,12 +344,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = { "<=>" }, required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private SameOrEqualNode equalNode;
-
-        public CompareNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            equalNode = SameOrEqualNodeFactory.create(null);
-        }
+        @Child private SameOrEqualNode equalNode = SameOrEqualNodeFactory.create(null);
 
         @Specialization
         public Object compare(VirtualFrame frame, Object self, Object other) {
@@ -442,12 +435,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "class")
     public abstract static class KernelClassNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-
-        public KernelClassNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null);
 
         @Specialization
         public DynamicObject getClass(VirtualFrame frame, Object self) {
@@ -458,12 +446,7 @@ public abstract class KernelNodes {
 
     public abstract static class CopyNode extends UnaryCoreMethodNode {
 
-        @Child private CallDispatchHeadNode allocateNode;
-
-        public CopyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateNode = DispatchHeadNodeFactory.createMethodCall(context, true);
-        }
+        @Child private CallDispatchHeadNode allocateNode = DispatchHeadNodeFactory.createMethodCall(true);
 
         public abstract DynamicObject executeCopy(VirtualFrame frame, DynamicObject self);
 
@@ -490,21 +473,12 @@ public abstract class KernelNodes {
     @CoreMethod(names = "clone")
     public abstract static class CloneNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CopyNode copyNode;
-        @Child private CallDispatchHeadNode initializeCloneNode;
-        @Child private IsFrozenNode isFrozenNode;
+        @Child private CopyNode copyNode = CopyNodeFactory.create(null);
+        @Child private CallDispatchHeadNode initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
+        @Child private IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(null);
         @Child private FreezeNode freezeNode;
         @Child private PropagateTaintNode propagateTaintNode = PropagateTaintNode.create();
-        @Child private SingletonClassNode singletonClassNode;
-
-        public CloneNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            copyNode = CopyNodeFactory.create(context, sourceSection, null);
-            // Calls private initialize_clone on the new copy.
-            initializeCloneNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-            isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
-            singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
 
         @Specialization
         public DynamicObject clone(VirtualFrame frame, DynamicObject self,
@@ -527,7 +501,7 @@ public abstract class KernelNodes {
             if (isFrozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
                 if (freezeNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    freezeNode = insert(FreezeNodeGen.create(null, null, null));
+                    freezeNode = insert(FreezeNodeGen.create(null));
                 }
 
                 freezeNode.executeFreeze(newObject);
@@ -545,15 +519,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "dup", taintFrom = 0)
     public abstract static class DupNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CopyNode copyNode;
-        @Child private CallDispatchHeadNode initializeDupNode;
-
-        public DupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            copyNode = CopyNodeFactory.create(context, sourceSection, null);
-            // Calls private initialize_dup on the new copy.
-            initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-        }
+        @Child private CopyNode copyNode = CopyNodeFactory.create(null);
+        @Child private CallDispatchHeadNode initializeDupNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
         @Specialization
         public DynamicObject dup(VirtualFrame frame, DynamicObject self) {
@@ -581,7 +548,7 @@ public abstract class KernelNodes {
 
         @CreateCast("source")
         public RubyNode coerceSourceToString(RubyNode source) {
-            return ToStrNodeGen.create(null, null, source);
+            return ToStrNodeGen.create(source);
         }
 
         protected DynamicObject getCallerBinding(VirtualFrame frame) {
@@ -776,12 +743,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "freeze")
     public abstract static class KernelFreezeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private FreezeNode freezeNode;
-
-        public KernelFreezeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            freezeNode = FreezeNodeGen.create(context, sourceSection, null);
-        }
+        @Child private FreezeNode freezeNode = FreezeNodeGen.create(null);
 
         @Specialization
         public Object freeze(Object self) {
@@ -799,7 +761,7 @@ public abstract class KernelNodes {
         public boolean isFrozen(Object self) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(null));
             }
 
             return isFrozenNode.executeIsFrozen(self);
@@ -904,12 +866,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = { "initialize_dup", "initialize_clone" }, required = 1)
     public abstract static class InitializeDupCloneNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode initializeCopyNode;
-
-        public InitializeDupCloneNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-        }
+        @Child private CallDispatchHeadNode initializeCopyNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
         @Specialization
         public Object initializeDup(VirtualFrame frame, DynamicObject self, DynamicObject from) {
@@ -921,12 +878,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "instance_of?", required = 1)
     public abstract static class InstanceOfNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-
-        public InstanceOfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null);
 
         @Specialization(guards = "isRubyModule(rubyClass)")
         public boolean instanceOf(VirtualFrame frame, Object self, DynamicObject rubyClass) {
@@ -1051,12 +1003,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "instance_variables")
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private BasicObjectNodes.InstanceVariablesNode instanceVariablesNode;
-
-        public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            instanceVariablesNode = BasicObjectNodesFactory.InstanceVariablesNodeFactory.create(new RubyNode[] {});
-        }
+        @Child private BasicObjectNodes.InstanceVariablesNode instanceVariablesNode = BasicObjectNodesFactory.InstanceVariablesNodeFactory.create(new RubyNode[] {});
 
         @Specialization
         public DynamicObject instanceVariables(VirtualFrame frame, Object self) {
@@ -1068,12 +1015,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = { "is_a?", "kind_of?" }, required = 1)
     public abstract static class KernelIsANode extends CoreMethodArrayArgumentsNode {
 
-        @Child IsANode isANode;
-
-        public KernelIsANode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
-        }
+        @Child IsANode isANode = IsANodeGen.create(null, null);
 
         @Specialization
         public boolean isA(Object self, DynamicObject module) {
@@ -1190,20 +1132,13 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodNode extends CoreMethodNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode;
-        @Child LookupMethodNode lookupMethodNode;
-        @Child CallDispatchHeadNode respondToMissingNode;
-
-        public MethodNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
-            respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
-        }
+        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child LookupMethodNode lookupMethodNode = LookupMethodNodeGen.create(true, false, null, null);
+        @Child CallDispatchHeadNode respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(true);
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToSymbolOrStringNodeGen.create(null, null, name);
+            return NameToSymbolOrStringNodeGen.create(name);
         }
 
         @Specialization
@@ -1229,7 +1164,7 @@ public abstract class KernelNodes {
         private InternalMethod createMissingMethod(Object self, DynamicObject name, String normalizedName, InternalMethod methodMissing) {
             final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
-            final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
+            final RubyNode newBody = new CallMethodMissingWithStaticName(name);
             final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody, false);
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
@@ -1240,12 +1175,10 @@ public abstract class KernelNodes {
         private static class CallMethodMissingWithStaticName extends RubyNode {
 
             private final DynamicObject methodName;
-            @Child private CallDispatchHeadNode methodMissing;
+            @Child private CallDispatchHeadNode methodMissing = DispatchHeadNodeFactory.createMethodCall();
 
-            public CallMethodMissingWithStaticName(RubyContext context, SourceSection sourceSection, DynamicObject methodName) {
-                super(context, sourceSection);
+            public CallMethodMissingWithStaticName(DynamicObject methodName) {
                 this.methodName = methodName;
-                methodMissing = DispatchHeadNodeFactory.createMethodCall(context);
             }
 
             @Override
@@ -1287,11 +1220,11 @@ public abstract class KernelNodes {
         }
 
         protected MetaClassNode createMetaClassNode() {
-            return MetaClassNodeGen.create(getContext(), null, null);
+            return MetaClassNodeGen.create(null);
         }
 
         protected SingletonMethodsNode createSingletonMethodsNode() {
-            return SingletonMethodsNodeFactory.create(getContext(), null, null, null);
+            return SingletonMethodsNodeFactory.create(null, null);
         }
 
     }
@@ -1331,12 +1264,7 @@ public abstract class KernelNodes {
     })
     public abstract static class PrivateMethodsNode extends CoreMethodNode {
 
-        @Child private MetaClassNode metaClassNode;
-
-        public PrivateMethodsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
@@ -1357,12 +1285,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "proc", isModuleFunction = true, needsBlock = true)
     public abstract static class ProcNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ProcNewNode procNewNode;
-
-        public ProcNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            procNewNode = ProcNewNodeFactory.create(null);
-        }
+        @Child ProcNewNode procNewNode = ProcNewNodeFactory.create(null);
 
         @Specialization
         public DynamicObject proc(VirtualFrame frame, Object maybeBlock) {
@@ -1378,12 +1301,7 @@ public abstract class KernelNodes {
     })
     public abstract static class ProtectedMethodsNode extends CoreMethodNode {
 
-        @Child private MetaClassNode metaClassNode;
-
-        public ProtectedMethodsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
@@ -1408,12 +1326,7 @@ public abstract class KernelNodes {
     })
     public abstract static class PublicMethodsNode extends CoreMethodNode {
 
-        @Child private MetaClassNode metaClassNode;
-
-        public PublicMethodsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
 
         @CreateCast("includeAncestors")
         public RubyNode coerceToBoolean(RubyNode includeAncestors) {
@@ -1436,9 +1349,8 @@ public abstract class KernelNodes {
 
         @Child private DispatchHeadNode dispatchNode;
 
-        public PublicSendNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dispatchNode = new DispatchHeadNode(context, false, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
+        public PublicSendNode() {
+            dispatchNode = new DispatchHeadNode(false, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
         }
 
         @Specialization
@@ -1459,7 +1371,7 @@ public abstract class KernelNodes {
 
         @CreateCast("feature")
         public RubyNode coerceFeatureToPath(RubyNode feature) {
-            return ToPathNodeGen.create(null, null, feature);
+            return ToPathNodeGen.create(feature);
         }
 
         @Specialization(guards = "isRubyString(featureString)")
@@ -1553,12 +1465,10 @@ public abstract class KernelNodes {
         @Child private CallDispatchHeadNode respondToMissingNode;
         private final ConditionProfile ignoreVisibilityProfile = ConditionProfile.createBinaryProfile();
 
-        public RespondToNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-
-            dispatch = new DoesRespondDispatchHeadNode(context, false);
-            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true);
-            dispatchRespondToMissing = new DoesRespondDispatchHeadNode(context, true);
+        public RespondToNode() {
+            dispatch = new DoesRespondDispatchHeadNode(false);
+            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(true);
+            dispatchRespondToMissing = new DoesRespondDispatchHeadNode(true);
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);
@@ -1609,7 +1519,7 @@ public abstract class KernelNodes {
         private boolean respondToMissing(VirtualFrame frame, Object object, DynamicObject name, boolean includeProtectedAndPrivate) {
             if (respondToMissingNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                respondToMissingNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                respondToMissingNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
             }
 
             return respondToMissingNode.callBoolean(frame, object, "respond_to_missing?", null, name, includeProtectedAndPrivate);
@@ -1650,12 +1560,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "singleton_class")
     public abstract static class SingletonClassMethodNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private SingletonClassNode singletonClassNode;
-
-        public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
 
         @Specialization
         public DynamicObject singletonClass(Object self) {
@@ -1671,12 +1576,7 @@ public abstract class KernelNodes {
     })
     public abstract static class SingletonMethodsNode extends CoreMethodNode {
 
-        @Child private MetaClassNode metaClassNode;
-
-        public SingletonMethodsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
 
         public abstract DynamicObject executeSingletonMethods(VirtualFrame frame, Object self, boolean includeAncestors);
 
@@ -1759,15 +1659,10 @@ public abstract class KernelNodes {
 
         @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode;
         @Child private TaintNode taintNode;
-        @Child private BooleanCastNode readDebugGlobalNode;
+        @Child private BooleanCastNode readDebugGlobalNode = BooleanCastNodeGen.create(ReadGlobalVariableNodeGen.create("$DEBUG"));
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
         private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
-
-        public SprintfNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            this.readDebugGlobalNode = BooleanCastNodeGen.create(ReadGlobalVariableNodeGen.create("$DEBUG"));
-        }
 
         @Specialization(guards = { "isRubyString(format)", "ropesEqual(format, cachedFormat)", "isDebug(frame) == cachedIsDebug" })
         public DynamicObject formatCached(
@@ -1933,18 +1828,10 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"to_s", "inspect"}) // Basic inspect, refined later in core
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-        @Child private ObjectNodes.ObjectIDPrimitiveNode objectIDNode;
-        @Child private TaintResultNode taintResultNode;
-        @Child private ToHexStringNode toHexStringNode;
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
-            objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(null);
-            taintResultNode = new TaintResultNode(context, sourceSection);
-            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null);
+        @Child private ObjectNodes.ObjectIDPrimitiveNode objectIDNode = ObjectNodesFactory.ObjectIDPrimitiveNodeFactory.create(null);
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
+        @Child private ToHexStringNode toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(null);
 
         public abstract DynamicObject executeToS(Object self);
 
@@ -2007,7 +1894,7 @@ public abstract class KernelNodes {
         protected void checkFrozen(Object object) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(null));
             }
             isFrozenNode.raiseIfFrozen(object);
         }

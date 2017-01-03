@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -119,7 +119,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     private CallDispatchHeadNode getLimitCall() {
         if (limitCall == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            limitCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            limitCall = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         return limitCall;
@@ -128,7 +128,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     private IntegerCastNode getLimitIntegerCast() {
         if (limitIntegerCast == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            limitIntegerCast = insert(IntegerCastNodeGen.create(getContext(), null, null));
+            limitIntegerCast = insert(IntegerCastNodeGen.create(null));
         }
 
         return limitIntegerCast;
@@ -137,7 +137,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     private CallDispatchHeadNode getRoundModeCall() {
         if (roundModeCall == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            roundModeCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            roundModeCall = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         return roundModeCall;
@@ -146,7 +146,7 @@ public abstract class BigDecimalCoreMethodNode extends CoreMethodNode {
     private IntegerCastNode getRoundModeIntegerCast() {
         if (roundModeIntegerCast == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            roundModeIntegerCast = insert(IntegerCastNodeGen.create(getContext(), null, null));
+            roundModeIntegerCast = insert(IntegerCastNodeGen.create(null));
         }
 
         return roundModeIntegerCast;

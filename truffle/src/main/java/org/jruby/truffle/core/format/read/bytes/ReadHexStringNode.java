@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -54,8 +54,8 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
-import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
 import org.jruby.truffle.core.format.write.bytes.EncodeUM;
+import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

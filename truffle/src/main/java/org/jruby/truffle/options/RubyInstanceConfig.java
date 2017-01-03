@@ -30,9 +30,9 @@ package org.jruby.truffle.options;
 
 import com.oracle.truffle.api.TruffleOptions;
 import jnr.posix.util.Platform;
+import org.jruby.truffle.core.string.KCode;
 import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.JavaException;
-import org.jruby.truffle.core.string.KCode;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -56,6 +56,7 @@ import java.util.regex.Pattern;
  * line options, those available through JVM properties, and those suitable for
  * embedding.
  */
+@SuppressWarnings("unused")
 public class RubyInstanceConfig {
 
     public RubyInstanceConfig(boolean isSecurityRestricted) {
@@ -129,7 +130,6 @@ public class RubyInstanceConfig {
     }
 
     private static final String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
-    private static final Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
     public static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
 
     private String calculateJRubyHome() {

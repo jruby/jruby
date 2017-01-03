@@ -97,7 +97,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
     protected DoesRespondDispatchHeadNode getDefinedNode() {
         if (definedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            definedNode = insert(new DoesRespondDispatchHeadNode(getContext(), true));
+            definedNode = insert(new DoesRespondDispatchHeadNode(true));
         }
 
         return definedNode;
@@ -106,7 +106,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
     protected DoesRespondDispatchHeadNode getIndexDefinedNode() {
         if (indexDefinedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            indexDefinedNode = insert(new DoesRespondDispatchHeadNode(getContext(), true));
+            indexDefinedNode = insert(new DoesRespondDispatchHeadNode(true));
         }
 
         return indexDefinedNode;
@@ -124,7 +124,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
     protected CallDispatchHeadNode getCallNode() {
         if (callNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            callNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            callNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
         return callNode;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,18 +16,17 @@ import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.UnsafeGroup;
@@ -38,12 +37,7 @@ public abstract class PointerPrimitiveNodes {
     @Primitive(name = "pointer_allocate", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerAllocatePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject pointerClass) {
@@ -55,12 +49,7 @@ public abstract class PointerPrimitiveNodes {
     @Primitive(name = "pointer_malloc", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerMallocPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerMallocPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject malloc(DynamicObject pointerClass, int size) {
@@ -106,12 +95,7 @@ public abstract class PointerPrimitiveNodes {
     @Primitive(name = "pointer_add", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerAddPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerAddPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject add(DynamicObject a, int b) {
@@ -195,12 +179,7 @@ public abstract class PointerPrimitiveNodes {
     @Primitive(name = "pointer_read_pointer", unsafe = UnsafeGroup.MEMORY)
     public static abstract class PointerReadPointerPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public PointerReadPointerPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject readPointer(DynamicObject pointer) {

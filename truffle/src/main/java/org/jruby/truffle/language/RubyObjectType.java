@@ -19,6 +19,7 @@ import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.interop.RubyMessageResolutionAccessor;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 
 public class RubyObjectType extends ObjectType {
 
@@ -36,8 +37,9 @@ public class RubyObjectType extends ObjectType {
         } else if (RubyGuards.isRubyModule(object)) {
             return Layouts.MODULE.getFields(object).getName();
         } else {
-            return StringUtils.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object),
-                    Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName());
+            final String className = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName();
+            final Object isShared = SharedObjects.isShared(object) ? "(shared)" : "";
+            return StringUtils.format("DynamicObject@%x<%s>%s", System.identityHashCode(object), className, isShared);
         }
     }
 

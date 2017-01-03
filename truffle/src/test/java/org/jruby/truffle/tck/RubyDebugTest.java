@@ -153,12 +153,6 @@ public class RubyDebugTest {
                         "n", "2", "nMinusOne", "1",
                         "nMOFact", "1",
                         "res", "nil");
-        stepOut();
-        assertLocation(23, "res = fac(2)" + System.lineSeparator()
-            + "  puts res" + System.lineSeparator() // wrong!?
-            + "  res", // wrong!?
-                        "res", "2");
-
         continueExecution();
 
         // Init before eval:
@@ -185,10 +179,6 @@ public class RubyDebugTest {
 
     private void stepOver(final int size) {
         run.addLast(() -> suspendedEvent.prepareStepOver(size));
-    }
-
-    private void stepOut() {
-        run.addLast(() -> suspendedEvent.prepareStepOut());
     }
 
     private void continueExecution() {

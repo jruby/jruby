@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -33,7 +33,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -89,8 +88,8 @@ public abstract class RegexpNodes {
 
         if (regex.getEncoding() != enc) {
             final Encoding[] fixedEnc = new Encoding[] { null };
-            final ByteList sourceByteList = RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp));
-            final ByteList preprocessed = ClassicRegexp.preprocess(context, sourceByteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            final Rope sourceRope = Layouts.REGEXP.getSource(regexp);
+            final ByteList preprocessed = ClassicRegexp.preprocess(context, sourceRope, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             final RegexpOptions options = Layouts.REGEXP.getOptions(regexp);
             final Encoding newEnc = checkEncoding(regexp, stringRope, true);
             regex = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(),
@@ -251,10 +250,9 @@ public abstract class RegexpNodes {
         bytes = shimModifiers(bytes);
 
         try {
-            final ByteList byteList = RopeOperations.getByteListReadOnly(bytes);
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
-            ByteList unescaped = ClassicRegexp.preprocess(context, byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            ByteList unescaped = ClassicRegexp.preprocess(context, bytes, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             if (fixedEnc[0] != null) {
                 if ((fixedEnc[0] != enc && options.isFixed()) ||
                         (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
@@ -376,18 +374,11 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dupNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-        @Child private RegexpSetLastMatchPrimitiveNode setLastMatchNode;
+        @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RegexpSetLastMatchPrimitiveNode setLastMatchNode = RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         @Child private CallDispatchHeadNode toSNode;
         @Child private ToStrNode toStrNode;
-
-        public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-            setLastMatchNode = RegexpSetLastMatchPrimitiveNodeFactory.create(null);
-        }
 
         @Specialization(guards = "isRubyString(string)")
         public Object matchString(VirtualFrame frame, DynamicObject regexp, DynamicObject string) {
@@ -400,7 +391,7 @@ public abstract class RegexpNodes {
         public Object matchSymbol(VirtualFrame frame, DynamicObject regexp, DynamicObject symbol) {
             if (toSNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                toSNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return matchWithStringCopy(regexp, (DynamicObject) toSNode.call(frame, symbol, "to_s"));
@@ -415,7 +406,7 @@ public abstract class RegexpNodes {
         public Object matchGeneric(VirtualFrame frame, DynamicObject regexp, DynamicObject other) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
 
             return matchWithStringCopy(regexp, toStrNode.executeToStr(frame, other));
@@ -463,14 +454,8 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "match_start", required = 2, lowerFixnum = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dupNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public MatchStartNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
+        @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(VirtualFrame frame, DynamicObject regexp, DynamicObject string, int startPos) {
@@ -608,7 +593,7 @@ public abstract class RegexpNodes {
         public DynamicObject quoteString(DynamicObject raw) {
             final Rope rope = StringOperations.rope(raw);
             boolean isAsciiOnly = rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CodeRange.CR_7BIT;
-            return createString(ClassicRegexp.quote19(StringOperations.getByteListReadOnly(raw), isAsciiOnly));
+            return createString(ClassicRegexp.quote19(rope, isAsciiOnly));
         }
 
         @Specialization(guards = "isRubySymbol(raw)")
@@ -620,7 +605,7 @@ public abstract class RegexpNodes {
         public DynamicObject quote(VirtualFrame frame, Object raw) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
 
             return executeQuote(frame, toStrNode.executeToStr(frame, raw));
@@ -632,14 +617,8 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "search_from", required = 2, lowerFixnum = 2)
     public abstract static class SearchFromNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dupNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public SearchFromNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
+        @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @Specialization(guards = "isRubyString(string)")
         public Object searchFrom(VirtualFrame frame, DynamicObject regexp, DynamicObject string, int startPos) {
@@ -665,7 +644,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            final ClassicRegexp classicRegexp = ClassicRegexp.newRegexp(getContext(), RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp)), Layouts.REGEXP.getRegex(regexp).getOptions());
+            final ClassicRegexp classicRegexp = ClassicRegexp.newRegexp(getContext(), Layouts.REGEXP.getSource(regexp), Layouts.REGEXP.getRegex(regexp).getOptions());
             return createString(classicRegexp.toByteList());
         }
 
@@ -703,12 +682,7 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {

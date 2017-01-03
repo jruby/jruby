@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -70,14 +70,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.array.ArrayGuards;
@@ -110,13 +108,6 @@ public abstract class IOPrimitiveNodes {
 
         private final BranchProfile errorProfile = BranchProfile.create();
 
-        public IOPrimitiveArrayArgumentsNode() {
-        }
-
-        public IOPrimitiveArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         protected int ensureSuccessful(int result, int errno, String extra) {
             assert result >= -1;
             if (result == -1) {
@@ -140,13 +131,8 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_allocate", unsafe = UnsafeGroup.IO)
     public static abstract class IOAllocatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode newBufferNode;
-        @Child private AllocateObjectNode allocateNode;
-
-        public IOAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            newBufferNode = DispatchHeadNodeFactory.createMethodCall(context);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private CallDispatchHeadNode newBufferNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
@@ -599,12 +585,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_reopen", unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode resetBufferingNode;
-
-        public IOReopenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+        @Child private CallDispatchHeadNode resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
 
         @TruffleBoundary(throwsControlFlowException = true)
         private void performReopen(DynamicObject self, DynamicObject target) {
@@ -631,12 +612,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_reopen_path", lowerFixnum = 2, unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPathPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode resetBufferingNode;
-
-        public IOReopenPathPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+        @Child private CallDispatchHeadNode resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
 
         @TruffleBoundary(throwsControlFlowException = true)
         public void performReopenPath(DynamicObject self, DynamicObject path, int mode) {
@@ -795,12 +771,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_close", unsafe = UnsafeGroup.IO)
     public static abstract class IOClosePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode ensureOpenNode;
-
-        public IOClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            ensureOpenNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+        @Child private CallDispatchHeadNode ensureOpenNode = DispatchHeadNodeFactory.createMethodCall();
 
         @Specialization
         public int close(VirtualFrame frame, DynamicObject io) {

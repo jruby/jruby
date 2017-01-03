@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,12 +16,11 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.MetaClassNode;
@@ -34,12 +33,7 @@ import org.jruby.truffle.language.objects.MetaClassNodeGen;
 @NodeChild("self")
 public abstract class LookupSuperMethodNode extends RubyNode {
 
-    @Child private MetaClassNode metaClassNode;
-
-    public LookupSuperMethodNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
-    }
+    @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
 
     public abstract InternalMethod executeLookupSuperMethod(VirtualFrame frame, Object self);
 

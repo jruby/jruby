@@ -34,8 +34,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.parser.scope.DynamicScope;
-import org.jruby.truffle.parser.scope.ManyVarsDynamicScope;
-import org.jruby.truffle.parser.scope.StaticScopeFactory;
+import org.jruby.truffle.parser.scope.StaticScope;
 
 public class ParserConfiguration {
     private DynamicScope existingScope = null;
@@ -56,19 +55,12 @@ public class ParserConfiguration {
     private Encoding defaultEncoding;
     private RubyContext context;
 
-    private int[] coverage = EMPTY_COVERAGE;
-
-    private final StaticScopeFactory staticScopeFactory;
-
-    private static final int[] EMPTY_COVERAGE = new int[0];
-
     public ParserConfiguration(RubyContext context, int lineNumber, boolean inlineSource, boolean isFileParse, boolean saveData) {
         this.context = context;
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
         this.isEvalParse = !isFileParse;
         this.saveData = saveData;
-        staticScopeFactory = new StaticScopeFactory();
     }
 
     public void setFrozenStringLiteral(boolean frozenStringLiteral) {
@@ -137,7 +129,7 @@ public class ParserConfiguration {
         // will always happen because of $~ and $_).
         // FIXME: Because we end up adjusting this after-the-fact, we can't use
         // any of the specific-size scopes.
-        return new ManyVarsDynamicScope(staticScopeFactory.newLocalScope(null, file), existingScope);
+        return new DynamicScope(new StaticScope(StaticScope.Type.LOCAL, (StaticScope) null, file), existingScope);
     }
 
     public boolean isCoverageEnabled() {
@@ -158,9 +150,5 @@ public class ParserConfiguration {
      */
     public boolean isInlineSource() {
         return inlineSource;
-    }
-
-    public StaticScopeFactory getStaticScopeFactory() {
-        return staticScopeFactory;
     }
 }

@@ -44,6 +44,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
+import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.language.control.RaiseException;
@@ -247,7 +248,7 @@ public class RubyDateFormatter {
         }
     }
 
-    public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
+    public List<Token> compilePattern(Rope pattern, boolean dateLibrary) {
         List<Token> compiledPattern = new LinkedList<>();
 
         Encoding enc = pattern.getEncoding();
@@ -258,7 +259,7 @@ public class RubyDateFormatter {
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
         }
 
-        ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
+        ByteArrayInputStream in = new ByteArrayInputStream(pattern.getBytes(), 0, pattern.byteLength());
         Reader reader = new InputStreamReader(in, EncodingManager.charsetForEncoding(pattern.getEncoding()));
         lexer.yyreset(reader);
 
@@ -617,16 +618,6 @@ public class RubyDateFormatter {
     private Object getEnvTimeZone() {
         return DebugHelpers.eval(context, "Time.now.zone");
     }
-
-    /* JRUBY-3560
-     * joda-time disallows use of three-letter time zone IDs.
-     * Since MRI accepts these values, we need to translate them.
-     */
-    private static final Map<String, String> LONG_TZNAME = map(
-            "MET", "CET", // JRUBY-2759
-            "ROC", "Asia/Taipei", // Republic of China
-            "WET", "Europe/Lisbon" // Western European Time
-    );
 
     /* Some TZ values need to be overriden for Time#zone
      */

@@ -28,9 +28,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -43,13 +43,13 @@ public class ArgumentParseNode extends ParseNode implements INameNode {
     private String identifier;
     private int location;
 
-    public ArgumentParseNode(ISourcePosition position, String identifier) {
+    public ArgumentParseNode(SourceIndexLength position, String identifier) {
         super(position, false);
 
         this.identifier = identifier;
     }
 
-    public ArgumentParseNode(ISourcePosition position, String identifier, int location) {
+    public ArgumentParseNode(SourceIndexLength position, String identifier, int location) {
         this(position, identifier);
 
         this.location = location; // All variables should be depth 0 in this case

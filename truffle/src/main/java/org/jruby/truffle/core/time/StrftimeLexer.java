@@ -22,6 +22,7 @@ import org.jruby.truffle.core.time.RubyDateFormatter.Token;
  * on 9/16/13 8:59 PM from the specification file
  * <tt>core/src/main/java/org/jruby/lexer/StrftimeLexer.flex</tt>
  */
+@SuppressWarnings("unused")
 public class StrftimeLexer {
 
   /** This character denotes the end of file */

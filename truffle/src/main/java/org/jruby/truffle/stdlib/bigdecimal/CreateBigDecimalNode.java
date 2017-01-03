@@ -58,7 +58,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
     public final DynamicObject executeCreate(VirtualFrame frame, Object value) {
         if (allocateNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            allocateNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            allocateNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
         return executeInitialize(

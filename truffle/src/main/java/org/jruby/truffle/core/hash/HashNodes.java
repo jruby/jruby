@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -23,10 +23,8 @@ import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.Log;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -162,17 +160,12 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode callDefaultNode;
+        @Child private CallDispatchHeadNode callDefaultNode = DispatchHeadNodeFactory.createMethodCall();
         @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
         @Child private HashNode hashNode = new HashNode();
         @Child private CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
 
         @CompilationFinal private Object undefinedValue;
-
-        public GetIndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
 
         public abstract Object executeGet(VirtualFrame frame, DynamicObject hash, Object key);
 
@@ -301,9 +294,8 @@ public abstract class HashNodes {
 
         @Child private GetIndexNode getIndexNode;
 
-        public GetOrUndefinedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            getIndexNode = GetIndexNodeFactory.create(context, sourceSection, null);
+        public GetOrUndefinedNode() {
+            getIndexNode = GetIndexNodeFactory.create(null);
             getIndexNode.setUndefinedValue(NotProvided.INSTANCE);
         }
 
@@ -403,12 +395,7 @@ public abstract class HashNodes {
         @Child private CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
         @Child private HashNode hashNode = new HashNode();
         @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
-        @Child private YieldNode yieldNode;
-
-        public DeleteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            yieldNode = new YieldNode(context);
-        }
+        @Child private YieldNode yieldNode = new YieldNode();
 
         @Specialization(guards = "isNullHash(hash)")
         public Object deleteNull(VirtualFrame frame, DynamicObject hash, Object key, NotProvided block) {
@@ -565,7 +552,7 @@ public abstract class HashNodes {
         public Object each(VirtualFrame frame, DynamicObject hash, NotProvided block) {
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
 
             InternalMethod method = RubyArguments.getMethod(frame);
@@ -1105,7 +1092,7 @@ public abstract class HashNodes {
         public Object shiftEmptyDefaultProc(VirtualFrame frame, DynamicObject hash) {
             if (yieldNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                yieldNode = insert(new YieldNode(getContext()));
+                yieldNode = insert(new YieldNode());
             }
 
             return yieldNode.dispatch(frame, Layouts.HASH.getDefaultBlock(hash), hash, nil());

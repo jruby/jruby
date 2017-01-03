@@ -32,9 +32,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -49,7 +49,7 @@ public class LocalAsgnParseNode extends AssignableParseNode implements INameNode
     // is what index in the right scope to set the value.
     private final int location;
 
-    public LocalAsgnParseNode(ISourcePosition position, String name, int location, ParseNode valueNode) {
+    public LocalAsgnParseNode(SourceIndexLength position, String name, int location, ParseNode valueNode) {
         super(position, valueNode, true);
         this.name = name;
         this.location = location;

@@ -32,10 +32,10 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.language.SourceIndexLength;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -43,13 +43,13 @@ import java.util.List;
  * A Backtick(`) string
  */
 public class XStrParseNode extends ParseNode implements ILiteralNode {
-    private final ByteList value;
+    private final ParserByteList value;
     private CodeRange coderange;
 
-    public XStrParseNode(ISourcePosition position, ByteList value, CodeRange coderange) {
+    public XStrParseNode(SourceIndexLength position, ParserByteList value, CodeRange coderange) {
         // FIXME: Shouldn't this have codeRange like StrParseNode?
         super(position, false);
-        this.value = (value == null ? ByteList.create("") : value);
+        this.value = (value == null ? new ParserByteList(new byte[]{}) : value);
         this.coderange = coderange;
     }
 
@@ -69,7 +69,7 @@ public class XStrParseNode extends ParseNode implements ILiteralNode {
      * Gets the value.
      * @return Returns a String
      */
-    public ByteList getValue() {
+    public ParserByteList getValue() {
         return value;
     }
 
