@@ -53,7 +53,7 @@ public abstract class FreezeHashKeyIfNeededNode extends RubyNode {
     protected boolean isFrozen(Object value) {
         if (isFrozenNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            isFrozenNode = insert(IsFrozenNodeGen.create(null, null));
+            isFrozenNode = insert(IsFrozenNodeGen.create(null));
         }
         return isFrozenNode.executeIsFrozen(value);
     }

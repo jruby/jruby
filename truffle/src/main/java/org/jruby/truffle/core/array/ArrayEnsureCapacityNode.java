@@ -27,12 +27,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayEnsureCapacityNode extends RubyNode {
 
-    public ArrayEnsureCapacityNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public static ArrayEnsureCapacityNode create(RubyContext context) {
-        return ArrayEnsureCapacityNodeGen.create(null, null, null);
+        return ArrayEnsureCapacityNodeGen.create(null, null);
     }
 
     public abstract Object executeEnsureCapacity(DynamicObject array, int requiredCapacity);

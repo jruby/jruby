@@ -24,10 +24,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value="object", type=RubyNode.class)
 public abstract class LogicalClassNode extends RubyNode {
 
-    public LogicalClassNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public abstract DynamicObject executeLogicalClass(Object value);
 
     @Specialization(guards = "value")

@@ -43,9 +43,9 @@ public class SuperCallNode extends RubyNode {
         super(sourceSection);
         this.arguments = arguments;
         this.block = block;
-        this.procOrNullNode = ProcOrNullNodeGen.create(null, null);
+        this.procOrNullNode = ProcOrNullNodeGen.create(null);
         this.lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null, null);
-        this.callMethodNode = CallInternalMethodNodeGen.create(sourceSection, null, new RubyNode[] {});
+        this.callMethodNode = CallInternalMethodNodeGen.create(null, new RubyNode[] {});
     }
 
     @Override

@@ -30,10 +30,6 @@ public abstract class ToAryNode extends RubyNode {
 
     @Child private CallDispatchHeadNode toAryNode;
 
-    public ToAryNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Specialization(guards = "isRubyArray(array)")
     public DynamicObject coerceRubyArray(DynamicObject array) {
         return array;

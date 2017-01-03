@@ -336,8 +336,8 @@ public class CoreLibrary {
         @Child FreezeNode freezeNode;
 
         public CoreLibraryNode() {
-            this.singletonClassNode = SingletonClassNodeGen.create(null, null);
-            this.freezeNode = FreezeNodeGen.create(null, null);
+            this.singletonClassNode = SingletonClassNodeGen.create(null);
+            this.freezeNode = FreezeNodeGen.create(null);
             adoptChildren();
         }
 

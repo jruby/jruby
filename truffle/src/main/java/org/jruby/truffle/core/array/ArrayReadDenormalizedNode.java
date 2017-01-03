@@ -29,7 +29,7 @@ public abstract class ArrayReadDenormalizedNode extends RubyNode {
 
     public ArrayReadDenormalizedNode(SourceIndexLength sourceSection) {
         super(sourceSection);
-        readNode = ArrayReadNormalizedNodeGen.create(null, null, null);
+        readNode = ArrayReadNormalizedNodeGen.create(null, null);
     }
 
     public abstract Object executeRead(DynamicObject array, int index);

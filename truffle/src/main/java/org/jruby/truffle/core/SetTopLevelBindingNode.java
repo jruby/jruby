@@ -18,10 +18,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 
 public class SetTopLevelBindingNode extends RubyNode {
 
-    public SetTopLevelBindingNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         final DynamicObject binding = BindingNodes.createBinding(getContext(), frame.materialize());

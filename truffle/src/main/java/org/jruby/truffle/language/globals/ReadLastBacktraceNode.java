@@ -25,10 +25,6 @@ public class ReadLastBacktraceNode extends RubyNode {
 
     private final ConditionProfile lastExceptionNilProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadLastBacktraceNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         final Object lastException = getGetLastExceptionNode().execute(frame);

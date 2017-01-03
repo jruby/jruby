@@ -49,10 +49,6 @@ public abstract class CmpIntNode extends RubyNode {
     @Child private CallDispatchHeadNode gtNode;
     @Child private CallDispatchHeadNode ltNode;
 
-    public CmpIntNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public abstract int executeCmpInt(VirtualFrame frame, Object cmpResult, Object a, Object b);
 
     @Specialization

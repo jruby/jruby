@@ -16,10 +16,6 @@ import org.jruby.truffle.language.control.RaiseException;
 
 public class UnsafeNode extends RubyNode {
 
-    public UnsafeNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         throw new RaiseException(coreExceptions().internalErrorUnsafe(this));

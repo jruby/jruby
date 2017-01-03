@@ -153,11 +153,17 @@ public class TranslatorEnvironment {
                         type = LocalVariableType.FRAME_LOCAL;
                     }
 
+                    final ReadLocalNode node;
+
                     if (level == 0) {
-                        return new ReadLocalVariableNode(sourceSection, type, slot);
+                        node = new ReadLocalVariableNode(type, slot);
                     } else {
-                        return new ReadDeclarationVariableNode(sourceSection, type, level, slot);
+                        node = new ReadDeclarationVariableNode(type, level, slot);
                     }
+
+                    node.unsafeSetSourceSection(sourceSection);
+
+                    return node;
                 }
 
                 current = current.parent;

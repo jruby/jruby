@@ -19,10 +19,6 @@ import org.jruby.truffle.language.Visibility;
 
 public class GetCurrentVisibilityNode extends RubyNode {
 
-    public GetCurrentVisibilityNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public Visibility execute(VirtualFrame frame) {
         return DeclarationContext.findVisibility(frame);

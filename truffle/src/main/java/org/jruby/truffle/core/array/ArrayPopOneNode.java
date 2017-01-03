@@ -27,10 +27,6 @@ import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayPopOneNode extends RubyNode {
 
-    public ArrayPopOneNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public abstract Object executePopOne(DynamicObject array);
 
     // Pop from an empty array

@@ -28,7 +28,7 @@ public class RaiseIfFrozenNode extends RubyNode {
     public RaiseIfFrozenNode(SourceIndexLength sourceSection, RubyNode child) {
         super(sourceSection);
         this.child = child;
-        isFrozenNode = IsFrozenNodeGen.create(sourceSection, null);
+        isFrozenNode = IsFrozenNodeGen.create(null);
     }
 
     @Override

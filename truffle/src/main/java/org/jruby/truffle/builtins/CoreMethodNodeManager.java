@@ -200,7 +200,7 @@ public class CoreMethodNodeManager {
 
         RubyNode node;
         if (!isSafe(context, method.unsafe())) {
-            node = new UnsafeNode(sourceIndexLength);
+            node = new UnsafeNode();
         } else {
             node = Translator.sequence(sourceIndexLength, Arrays.asList(checkArity, methodNode));
             node = transformResult(method, node);
@@ -228,7 +228,7 @@ public class CoreMethodNodeManager {
 
         if (needsSelf) {
             RubyNode readSelfNode = new ProfileArgumentNode(new ReadSelfNode());
-            argumentsNodes.add(transformArgument(context, source, sourceSection, method, readSelfNode, 0));
+            argumentsNodes.add(transformArgument(sourceSection, method, readSelfNode, 0));
         }
 
         final int required = method.required();
@@ -241,7 +241,7 @@ public class CoreMethodNodeManager {
 
         for (int n = 0; n < nArgs; n++) {
             RubyNode readArgumentNode = new ProfileArgumentNode(new ReadPreArgumentNode(n, MissingArgumentBehavior.UNDEFINED));
-            argumentsNodes.add(transformArgument(context, source, sourceSection, method, readArgumentNode, n + 1));
+            argumentsNodes.add(transformArgument(sourceSection, method, readArgumentNode, n + 1));
         }
 
         if (method.rest()) {
@@ -301,9 +301,9 @@ public class CoreMethodNodeManager {
         return method.constructor() || (!method.isModuleFunction() && !method.onSingleton() && method.needsSelf());
     }
 
-    private static RubyNode transformArgument(RubyContext context, Source source, SourceIndexLength sourceSection, CoreMethod method, RubyNode argument, int n) {
+    private static RubyNode transformArgument(SourceIndexLength sourceSection, CoreMethod method, RubyNode argument, int n) {
         if (ArrayUtils.contains(method.lowerFixnum(), n)) {
-            argument = FixnumLowerNodeGen.create(null, argument);
+            argument = FixnumLowerNodeGen.create(argument);
         }
 
         if (n == 0 && method.raiseIfFrozenSelf()) {

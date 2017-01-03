@@ -19,10 +19,6 @@ import org.jruby.truffle.language.control.RaiseException;
 @NodeChild("value")
 public abstract class AssertConstantNode extends RubyNode {
 
-    public AssertConstantNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @SuppressWarnings("unused")
     private static volatile boolean[] sideEffect;
 

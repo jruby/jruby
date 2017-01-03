@@ -20,10 +20,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value="child", type=RubyNode.class)
 public abstract class ToSymbolNode extends RubyNode {
 
-    public ToSymbolNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public abstract DynamicObject executeRubySymbol(VirtualFrame frame, Object object);
 
     // TODO(CS): cache the conversion to a symbol? Or should the user do that themselves?

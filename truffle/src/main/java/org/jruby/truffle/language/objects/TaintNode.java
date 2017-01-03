@@ -68,7 +68,7 @@ public abstract class TaintNode extends RubyNode {
         if (!isTaintedNode.executeIsTainted(object)) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(null, null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(null));
             }
 
             if (isFrozenNode.executeIsFrozen(object)) {

@@ -23,7 +23,7 @@ public class GetDefaultDefineeNode extends RubyNode {
 
     public GetDefaultDefineeNode(SourceIndexLength sourceSection) {
         super(sourceSection);
-        this.singletonClassNode = SingletonClassNodeGen.create(sourceSection, null);
+        this.singletonClassNode = SingletonClassNodeGen.create(null);
     }
 
     @Override

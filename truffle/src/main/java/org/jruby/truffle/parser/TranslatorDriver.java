@@ -243,7 +243,7 @@ public class TranslatorDriver {
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
             truffleNode = Translator.sequence(sourceIndexLength, Arrays.asList(
-                    new SetTopLevelBindingNode(sourceIndexLength),
+                    new SetTopLevelBindingNode(),
                     new LoadRequiredLibrariesNode(sourceIndexLength),
                     truffleNode));
 

@@ -385,7 +385,7 @@ public abstract class StringNodes {
 
                 if (cmpIntNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    cmpIntNode = insert(CmpIntNodeGen.create(null, null, null, null));
+                    cmpIntNode = insert(CmpIntNodeGen.create(null, null, null));
                 }
 
                 return -(cmpIntNode.executeCmpInt(frame, cmpResult, a, b));
@@ -1618,11 +1618,11 @@ public abstract class StringNodes {
         @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
-            return FixnumLowerNodeGen.create(null, ToIntNodeGen.create(index));
+            return FixnumLowerNodeGen.create(ToIntNodeGen.create(index));
         }
 
         @CreateCast("value") public RubyNode coerceValueToInt(RubyNode value) {
-            return FixnumLowerNodeGen.create(null, ToIntNodeGen.create(value));
+            return FixnumLowerNodeGen.create(ToIntNodeGen.create(value));
         }
 
         public abstract int executeSetByte(DynamicObject string, int index, Object value);
@@ -3433,7 +3433,7 @@ public abstract class StringNodes {
         }
 
         @CreateCast("characterIndex") public RubyNode coerceCharacterIndexToInt(RubyNode characterIndex) {
-            return FixnumLowerNodeGen.create(null, characterIndex);
+            return FixnumLowerNodeGen.create(characterIndex);
         }
 
         public abstract Object executeFindByteIndex(DynamicObject string, int characterIndex);

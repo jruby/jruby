@@ -409,7 +409,8 @@ public class LoadArgumentsTranslator extends Translator {
                     // Just consider the circular case for now as that's all that's speced
 
                     if (calledName.equals(name)) {
-                        defaultValue = new ReadLocalVariableNode(sourceSection, LocalVariableType.FRAME_LOCAL, slot);
+                        defaultValue = new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, slot);
+                        defaultValue.unsafeSetSourceSection(sourceSection);
                     } else {
                         defaultValue = valueNode.accept(this);
                     }
@@ -600,10 +601,10 @@ public class LoadArgumentsTranslator extends Translator {
         return sequence(sourceSection, Arrays.asList(WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection,
                 arraySlot, SplatCastNodeGen.create(sourceSection, SplatCastNode.NilBehavior.ARRAY_WITH_NIL, true,
                                 readArgument(sourceSection))), new IfElseNode(
-                        new IsNilNode(sourceSection, new ReadLocalVariableNode(sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
+                        new IsNilNode(sourceSection, new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, arraySlot)),
                         nil,
                         new IfElseNode(
-                                new ArrayIsAtLeastAsLargeAsNode(node.getPreCount() + node.getPostCount(), new ReadLocalVariableNode(sourceSection, LocalVariableType.FRAME_LOCAL, arraySlot)),
+                                new ArrayIsAtLeastAsLargeAsNode(node.getPreCount() + node.getPostCount(), new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, arraySlot)),
                                 notNilAtLeastAsLarge,
                                 notNilSmaller))));
     }
@@ -627,7 +628,9 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     protected RubyNode loadArray(SourceIndexLength sourceSection) {
-        return new ReadLocalVariableNode(sourceSection, LocalVariableType.FRAME_LOCAL, arraySlotStack.peek().getArraySlot());
+        final RubyNode node = new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, arraySlotStack.peek().getArraySlot());
+        node.unsafeSetSourceSection(sourceSection);
+        return node;
     }
 
 }

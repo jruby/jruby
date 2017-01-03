@@ -19,10 +19,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 
 public abstract class ThreadLocalObjectNode extends RubyNode {
 
-    public ThreadLocalObjectNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public abstract DynamicObject executeDynamicObject(VirtualFrame frame);
 

@@ -76,7 +76,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
             if (RubyGuards.isRubyArray(rest) && Layouts.ARRAY.getSize((DynamicObject) rest) > 0) {
                 if (arrayReadNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    arrayReadNode = insert(ArrayReadNormalizedNodeGen.create(null, null, null));
+                    arrayReadNode = insert(ArrayReadNormalizedNodeGen.create(null, null));
                 }
 
                 return arrayReadNode.executeRead((DynamicObject) rest, 0);

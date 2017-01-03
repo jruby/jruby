@@ -553,10 +553,12 @@ public class BodyTranslator extends Translator {
                 && ((ConstParseNode) ((Colon2ConstParseNode) receiver).getLeftNode()).getName().equals("Truffle")
                 && ((Colon2ConstParseNode) receiver).getName().equals("Graal")) {
             if (methodName.equals("assert_constant")) {
-                final RubyNode ret = AssertConstantNodeGen.create(sourceSection, ((ArrayParseNode) node.getArgsNode()).get(0).accept(this));
+                final RubyNode ret = AssertConstantNodeGen.create(((ArrayParseNode) node.getArgsNode()).get(0).accept(this));
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             } else if (methodName.equals("assert_not_compiled")) {
-                final RubyNode ret = AssertNotCompiledNodeGen.create(sourceSection);
+                final RubyNode ret = AssertNotCompiledNodeGen.create();
+                ret.unsafeSetSourceSection(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof VCallParseNode // undefined.equal?(obj)
@@ -692,7 +694,9 @@ public class BodyTranslator extends Translator {
     }
 
     public RubyNode translateSingleBlockArg(SourceIndexLength sourceSection, CallParseNode node) {
-        return new SingleBlockArgNode(sourceSection);
+        final RubyNode ret = new SingleBlockArgNode();
+        ret.unsafeSetSourceSection(sourceSection);
+        return ret;
     }
 
     private RubyNode translateCheckFrozen(SourceIndexLength sourceSection) {
@@ -825,7 +829,8 @@ public class BodyTranslator extends Translator {
         RubyNode blockTranslated;
 
         if (blockPassNode != null) {
-            blockTranslated = ToProcNodeGen.create(sourceSection, blockPassNode.accept(this));
+            blockTranslated = ToProcNodeGen.create(blockPassNode.accept(this));
+            blockTranslated.unsafeSetSourceSection(sourceSection);
             frameOnStackMarkerSlot = null;
         } else if (iterNode != null) {
             frameOnStackMarkerSlot = environment.declareVar(environment.allocateLocalTemp("frame_on_stack_marker"));
@@ -1133,10 +1138,11 @@ public class BodyTranslator extends Translator {
                 if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
                     Log.info("dynamic constant lookup at " + RubyLanguage.fileLine(fullSourceSection));
                 }
-                ret = new DynamicLexicalScopeNode(sourceSection);
+                ret = new DynamicLexicalScopeNode();
             } else {
-                ret = new LexicalScopeNode(sourceSection, environment.getLexicalScope());
+                ret = new LexicalScopeNode(null, environment.getLexicalScope());
             }
+            ret.unsafeSetSourceSection(sourceSection);
         } else if (node instanceof Colon2ConstParseNode) { // A::B
             ret = node.childNodes().get(0).accept(this);
         } else { // Colon3ParseNode: on top-level (Object)
@@ -1170,7 +1176,8 @@ public class BodyTranslator extends Translator {
                 if (context.getOptions().LOG_DYNAMIC_CONSTANT_LOOKUP) {
                     Log.info("set dynamic constant at " + RubyLanguage.fileLine(sourceSection.toSourceSection(source)));
                 }
-                moduleNode = new DynamicLexicalScopeNode(sourceSection);
+                moduleNode = new DynamicLexicalScopeNode();
+                moduleNode.unsafeSetSourceSection(sourceSection);
             } else {
                 moduleNode = new LexicalScopeNode(sourceSection, environment.getLexicalScope());
             }
@@ -1302,7 +1309,8 @@ public class BodyTranslator extends Translator {
 
         final RubyNode stringNode = translateInterpolatedString(sourceSection, node.children());
 
-        final RubyNode ret = StringToSymbolNodeGen.create(sourceSection, stringNode);
+        final RubyNode ret = StringToSymbolNodeGen.create(stringNode);
+        ret.unsafeSetSourceSection(sourceSection);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1377,11 +1385,11 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDefsNode(DefsParseNode node) {
         final SourceIndexLength sourceSection = node.getPosition();
-        final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode objectNode = node.getReceiverNode().accept(this);
 
-        final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(sourceSection, objectNode);
+        final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(objectNode);
+        singletonClassNode.unsafeSetSourceSection(sourceSection);
 
         final RubyNode ret = translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node.getArgsNode(), node, node.getBodyNode(), true);
 
@@ -1420,7 +1428,7 @@ public class BodyTranslator extends Translator {
         if (isDefs) {
             visibilityNode = new ObjectLiteralNode(Visibility.PUBLIC);
         } else {
-            visibilityNode = new GetCurrentVisibilityNode(sourceSection);
+            visibilityNode = new GetCurrentVisibilityNode();
         }
 
         return AddMethodNodeGen.create(sourceSection, isDefs, true, classNode, methodDefinitionNode, visibilityNode);
@@ -1691,7 +1699,8 @@ public class BodyTranslator extends Translator {
 
         if (name.equals("$~")) {
             rhs = new CheckMatchVariableTypeNode(sourceSection, rhs);
-            rhs = WrapInThreadLocalNodeGen.create(sourceSection, rhs);
+            rhs = WrapInThreadLocalNodeGen.create(rhs);
+            rhs.unsafeSetSourceSection(sourceSection);
 
             environment.declareVarInMethodScope("$~");
         } else if (name.equals("$0")) {
@@ -1702,10 +1711,11 @@ public class BodyTranslator extends Translator {
             rhs = new CheckOutputSeparatorVariableTypeNode(sourceSection, rhs);
         } else if (name.equals("$_")) {
             if (getSourcePath(sourceSection).endsWith(buildPartialPath("truffle", "rubysl", "rubysl-stringio", "lib", "rubysl", "stringio", "stringio.rb"))) {
-                rhs = RubiniusLastStringWriteNodeGen.create(sourceSection, rhs);
+                rhs = RubiniusLastStringWriteNodeGen.create(rhs);
             } else {
-                rhs = WrapInThreadLocalNodeGen.create(sourceSection, rhs);
+                rhs = WrapInThreadLocalNodeGen.create(rhs);
             }
+            rhs.unsafeSetSourceSection(sourceSection);
 
             environment.declareVar("$_");
         } else if (name.equals("$stdout")) {
@@ -1725,7 +1735,8 @@ public class BodyTranslator extends Translator {
         }
 
         if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-            final ThreadLocalObjectNode threadLocalVariablesObjectNode = ThreadLocalObjectNodeGen.create(sourceSection);
+            final ThreadLocalObjectNode threadLocalVariablesObjectNode = ThreadLocalObjectNodeGen.create();
+            threadLocalVariablesObjectNode.unsafeSetSourceSection(sourceSection);
             return addNewlineIfNeeded(node, new WriteInstanceVariableNode(sourceSection, name, threadLocalVariablesObjectNode, rhs));
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             if (environment.getNeverAssignInParentScope()) {
@@ -1803,7 +1814,8 @@ public class BodyTranslator extends Translator {
 
             if (name.equals("$_")) {
                 if (getSourcePath(sourceSection).equals(corePath() + "regexp.rb")) {
-                    readNode = new RubiniusLastStringReadNode(sourceSection);
+                    readNode = new RubiniusLastStringReadNode();
+                    readNode.unsafeSetSourceSection(sourceSection);
                 } else {
                     readNode = new GetFromThreadLocalNode(sourceSection, readNode);
                 }
@@ -1817,7 +1829,8 @@ public class BodyTranslator extends Translator {
         } else if (name.equals("$@")) {
             // $@ is a special-case and doesn't read directly from an ivar field in the globals object.
             // Instead, it reads the backtrace field of the thread-local $! value.
-            ret = new ReadLastBacktraceNode(sourceSection);
+            ret = new ReadLastBacktraceNode();
+            ret.unsafeSetSourceSection(sourceSection);
         } else {
             ret = ReadGlobalVariableNodeGen.create(name);
         }
@@ -1942,7 +1955,7 @@ public class BodyTranslator extends Translator {
             // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
             if (name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
                 // Cast int-fitting longs back to int
-                ret = new WriteInstanceVariableNode(sourceSection, name, self, IntegerCastNodeGen.create(sourceSection, rhs));
+                ret = new WriteInstanceVariableNode(sourceSection, name, self, IntegerCastNodeGen.create(rhs));
                 return addNewlineIfNeeded(node, ret);
             }
         }
@@ -3043,7 +3056,7 @@ public class BodyTranslator extends Translator {
         final SourceSection fullSourceSection = sourceSection.toSourceSection(source);
 
         final RubyNode receiverNode = node.getReceiverNode().accept(this);
-        final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(sourceSection, receiverNode);
+        final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(receiverNode);
 
         final boolean dynamicConstantLookup = environment.getParseEnvironment().isDynamicConstantLookup();
         if (!dynamicConstantLookup) {
@@ -3350,7 +3363,8 @@ public class BodyTranslator extends Translator {
     public RubyNode visitOther(ParseNode node) {
         if (node instanceof ReadLocalDummyParseNode) {
             final ReadLocalDummyParseNode readLocal = (ReadLocalDummyParseNode) node;
-            final RubyNode ret = new ReadLocalVariableNode(new SourceIndexLength(readLocal.getSourceSection()), LocalVariableType.FRAME_LOCAL, readLocal.getFrameSlot());
+            final RubyNode ret = new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, readLocal.getFrameSlot());
+            ret.unsafeSetSourceSection(readLocal.getPosition());
             return addNewlineIfNeeded(node, ret);
         } else {
             throw new UnsupportedOperationException();

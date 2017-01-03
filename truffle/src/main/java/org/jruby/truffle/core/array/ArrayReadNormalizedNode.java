@@ -25,10 +25,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayReadNormalizedNode extends RubyNode {
 
-    public ArrayReadNormalizedNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public abstract Object executeRead(DynamicObject array, int index);
 
     // Read within the bounds of an array with actual storage

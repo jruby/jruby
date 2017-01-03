@@ -22,10 +22,6 @@ import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 
 public class RubiniusLastStringReadNode extends RubyNode {
 
-    public RubiniusLastStringReadNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         return getLastString();

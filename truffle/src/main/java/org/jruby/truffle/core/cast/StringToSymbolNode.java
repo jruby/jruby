@@ -22,10 +22,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild("string")
 public abstract class StringToSymbolNode extends RubyNode {
 
-    public StringToSymbolNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Specialization(guards = "isRubyString(string)")
     public DynamicObject doString(DynamicObject string) {
         return getSymbol(Layouts.STRING.getRope(string));

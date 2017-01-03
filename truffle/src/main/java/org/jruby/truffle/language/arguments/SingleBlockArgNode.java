@@ -19,10 +19,6 @@ public class SingleBlockArgNode extends RubyNode {
     private final ConditionProfile emptyArgsProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile singleArgProfile = ConditionProfile.createBinaryProfile();
 
-    public SingleBlockArgNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         /**

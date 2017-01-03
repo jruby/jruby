@@ -67,7 +67,7 @@ public class TopLevelRaiseHandler extends RubyNode {
     private int castToInt(Object value) {
         if (integerCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            integerCastNode = insert(IntegerCastNodeGen.create(null, null));
+            integerCastNode = insert(IntegerCastNodeGen.create(null));
         }
 
         return integerCastNode.executeCastInt(value);

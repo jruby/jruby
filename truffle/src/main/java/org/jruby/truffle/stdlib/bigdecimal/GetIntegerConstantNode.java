@@ -47,7 +47,7 @@ public abstract class GetIntegerConstantNode extends RubyNode {
     }
 
     protected IntegerCastNode createIntegerCastNode() {
-        return IntegerCastNodeGen.create(null, null);
+        return IntegerCastNodeGen.create(null);
     }
 
 }

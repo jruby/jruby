@@ -124,7 +124,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class ContainsInstanceNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IsANode isANode = IsANodeGen.create(null, null, null);
+        @Child private IsANode isANode = IsANodeGen.create(null, null);
 
         @Specialization
         public boolean containsInstance(DynamicObject module, Object instance) {
@@ -490,7 +490,7 @@ public abstract class ModuleNodes {
         }
 
         @CreateCast("filename") public RubyNode coerceFilenameToPath(RubyNode filename) {
-            return ToPathNodeGen.create(null, filename);
+            return ToPathNodeGen.create(filename);
         }
 
         @TruffleBoundary
@@ -1051,7 +1051,7 @@ public abstract class ModuleNodes {
         }
 
         protected CanBindMethodToModuleNode createCanBindMethodToModuleNode() {
-            return CanBindMethodToModuleNodeGen.create(null, null, null);
+            return CanBindMethodToModuleNodeGen.create(null, null);
         }
 
     }
@@ -1059,7 +1059,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "extend_object", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class ExtendObjectNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null, null);
+        @Child private SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
 
         @Specialization
         public DynamicObject extendObject(DynamicObject module, DynamicObject object,
@@ -1141,7 +1141,7 @@ public abstract class ModuleNodes {
         protected DynamicObject getSingletonClass(DynamicObject object) {
             if (singletonClassNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                singletonClassNode = insert(SingletonClassNodeGen.create(null, null));
+                singletonClassNode = insert(SingletonClassNodeGen.create(null));
             }
 
             return singletonClassNode.executeSingletonClass(object);
@@ -1286,7 +1286,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_class_method", rest = true)
     public abstract static class PublicClassMethodNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null, null);
+        @Child SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
         @Child SetMethodVisibilityNode setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(null, Visibility.PUBLIC, null, null);
 
         @Specialization
@@ -1336,7 +1336,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_class_method", rest = true)
     public abstract static class PrivateClassMethodNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null, null);
+        @Child SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
         @Child SetMethodVisibilityNode setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(null, Visibility.PRIVATE, null, null);
 
         @Specialization
@@ -1648,7 +1648,7 @@ public abstract class ModuleNodes {
         private final BranchProfile errorProfile = BranchProfile.create();
 
         @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
-        @Child IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(null, null);
+        @Child IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(null);
         @Child CallDispatchHeadNode methodRemovedNode;
 
         public RemoveMethodNode() {

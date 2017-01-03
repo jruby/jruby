@@ -33,8 +33,8 @@ public abstract class CallBoundMethodNode extends RubyNode {
 
     public CallBoundMethodNode(SourceIndexLength sourceSection) {
         super(sourceSection);
-        callInternalMethodNode = CallInternalMethodNodeGen.create(null, null, null);
-        procOrNullNode = ProcOrNullNodeGen.create(null, null);
+        callInternalMethodNode = CallInternalMethodNodeGen.create(null, null);
+        procOrNullNode = ProcOrNullNodeGen.create(null);
     }
 
     public abstract Object executeCallBoundMethod(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block);

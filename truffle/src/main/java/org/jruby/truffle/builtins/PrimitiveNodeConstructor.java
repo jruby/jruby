@@ -54,7 +54,7 @@ public class PrimitiveNodeConstructor {
         }
 
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
-            return new UnsafeNode(sourceSection);
+            return new UnsafeNode();
         }
 
         final RubyNode primitiveNode = CoreMethodNodeManager.createNodeFromFactory(context, source, sourceSection, factory, arguments);
@@ -66,7 +66,7 @@ public class PrimitiveNodeConstructor {
         assert arguments.length == getPrimitiveArity();
 
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
-            return new UnsafeNode(sourceSection);
+            return new UnsafeNode();
         }
 
         for (int n = 0; n < arguments.length; n++) {
@@ -94,7 +94,7 @@ public class PrimitiveNodeConstructor {
 
     private RubyNode transformArgument(RubyNode argument, int n) {
         if (ArrayUtils.contains(annotation.lowerFixnum(), n)) {
-            return FixnumLowerNodeGen.create(null, argument);
+            return FixnumLowerNodeGen.create(argument);
         } else {
             return argument;
         }

@@ -386,7 +386,7 @@ public abstract class MathNodes {
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IsANode isANode = IsANodeGen.create(null, null, null);
+        @Child private IsANode isANode = IsANodeGen.create(null, null);
         @Child private ToFNode toFNode = ToFNode.create();
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
@@ -568,7 +568,7 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleMonadicMathNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IsANode isANode = IsANodeGen.create(null, null, null);
+        @Child private IsANode isANode = IsANodeGen.create(null, null);
         @Child private ToFNode toFNode = ToFNode.create();
 
         protected final BranchProfile exceptionProfile = BranchProfile.create();
@@ -613,7 +613,7 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleDyadicMathNode extends CoreMethodArrayArgumentsNode {
 
-        @Child protected IsANode isANode = IsANodeGen.create(null, null, null);
+        @Child protected IsANode isANode = IsANodeGen.create(null, null);
         @Child protected ToFNode floatANode = ToFNode.create();
         @Child protected ToFNode floatBNode = ToFNode.create();
 

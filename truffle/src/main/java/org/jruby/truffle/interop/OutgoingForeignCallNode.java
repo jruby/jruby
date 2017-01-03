@@ -75,7 +75,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
 
         if (megamorphicToForeignNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            megamorphicToForeignNode = insert(RubyToForeignNodeGen.create(null, null));
+            megamorphicToForeignNode = insert(RubyToForeignNodeGen.create(null));
         }
 
         final Object[] foreignArgs = new Object[args.length];
@@ -113,7 +113,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
         final RubyToForeignNode[] toForeignNodes = new RubyToForeignNode[argsLength];
 
         for (int n = 0; n < argsLength; n++) {
-            toForeignNodes[n] = RubyToForeignNodeGen.create(null, null);
+            toForeignNodes[n] = RubyToForeignNodeGen.create(null);
         }
 
         return toForeignNodes;

@@ -24,15 +24,8 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value="object", type=RubyNode.class)
 public abstract class MetaClassNode extends RubyNode {
 
-    public MetaClassNode() {
-    }
-
-    public MetaClassNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public static MetaClassNode create() {
-        return MetaClassNodeGen.create(null, null);
+        return MetaClassNodeGen.create(null);
     }
 
     public abstract DynamicObject executeMetaClass(Object value);

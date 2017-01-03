@@ -39,7 +39,7 @@ public abstract class NumericToFloatNode extends RubyNode {
 
     public NumericToFloatNode(SourceIndexLength sourceSection, String method) {
         super(sourceSection);
-        isANode = IsANodeGen.create(sourceSection, null, null);
+        isANode = IsANodeGen.create(null, null);
         this.method = method;
     }
 

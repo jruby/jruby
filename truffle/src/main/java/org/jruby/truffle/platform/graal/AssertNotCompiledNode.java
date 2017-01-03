@@ -18,10 +18,6 @@ import org.jruby.truffle.language.control.RaiseException;
 
 public abstract class AssertNotCompiledNode extends RubyNode {
 
-    public AssertNotCompiledNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @SuppressWarnings("unused")
     private static volatile boolean[] sideEffect;
 

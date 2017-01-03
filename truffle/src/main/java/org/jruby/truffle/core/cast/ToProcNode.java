@@ -29,10 +29,6 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 @NodeChild("child")
 public abstract class ToProcNode extends RubyNode {
 
-    public ToProcNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Specialization(guards = "isNil(nil)")
     public DynamicObject doNil(Object nil) {
         return nil();

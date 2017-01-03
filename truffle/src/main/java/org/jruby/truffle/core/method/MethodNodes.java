@@ -188,7 +188,7 @@ public abstract class MethodNodes {
     @CoreMethod(names = "unbind")
     public abstract static class UnbindNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null, null);
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null);
 
         @Specialization
         public DynamicObject unbind(VirtualFrame frame, DynamicObject method) {

@@ -41,7 +41,7 @@ public class UncachedDispatchNode extends DispatchNode {
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
         this.indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-        this.toSymbolNode = ToSymbolNodeGen.create(null, null);
+        this.toSymbolNode = ToSymbolNodeGen.create(null);
         this.toJavaStringNode = NameToJavaStringNode.create();
     }
 

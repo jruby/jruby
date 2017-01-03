@@ -228,7 +228,7 @@ public class TraceManager {
         private DynamicObject getLogicalClass(Object object) {
             if (logicalClassNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                logicalClassNode = insert(LogicalClassNodeGen.create(null, null));
+                logicalClassNode = insert(LogicalClassNodeGen.create(null));
             }
 
             return logicalClassNode.executeLogicalClass(object);

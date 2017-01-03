@@ -20,10 +20,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class SingleValueCastNode extends RubyNode {
 
-    public SingleValueCastNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public abstract Object executeSingleValue(VirtualFrame frame, Object[] args);
 
     @Specialization(guards = "noArguments(args)")

@@ -553,7 +553,7 @@ public abstract class BigDecimalNodes {
         }
 
         protected IntegerCastNode createIntegerCastNode() {
-            return IntegerCastNodeGen.create(null, null);
+            return IntegerCastNodeGen.create(null);
         }
 
     }

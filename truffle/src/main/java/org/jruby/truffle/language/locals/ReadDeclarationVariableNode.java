@@ -26,9 +26,8 @@ public class ReadDeclarationVariableNode extends ReadLocalNode {
 
     @Child private ReadFrameSlotNode readFrameSlotNode;
 
-    public ReadDeclarationVariableNode(SourceIndexLength sourceSection, LocalVariableType type,
+    public ReadDeclarationVariableNode(LocalVariableType type,
                                        int frameDepth, FrameSlot frameSlot) {
-        super(sourceSection);
         this.type = type;
         this.frameDepth = frameDepth;
         this.frameSlot = frameSlot;

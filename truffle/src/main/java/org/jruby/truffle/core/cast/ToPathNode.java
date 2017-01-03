@@ -21,10 +21,6 @@ import org.jruby.truffle.language.SourceIndexLength;
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToPathNode extends RubyNode {
 
-    public ToPathNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Specialization(guards = "isRubyString(path)")
     public DynamicObject coerceRubyString(DynamicObject path) {
         return path;

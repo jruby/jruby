@@ -16,10 +16,6 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 
 public class DynamicLexicalScopeNode extends RubyNode {
 
-    public DynamicLexicalScopeNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         return RubyArguments.getMethod(frame).getLexicalScope().getLiveModule();

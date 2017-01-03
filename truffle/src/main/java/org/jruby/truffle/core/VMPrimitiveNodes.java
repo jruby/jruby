@@ -203,7 +203,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_class", needsSelf = false)
     public static abstract class VMObjectClassPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null, null);
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null);
 
         @Specialization
         public DynamicObject vmObjectClass(VirtualFrame frame, Object object) {
@@ -226,7 +226,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_kind_of", needsSelf = false)
     public static abstract class VMObjectKindOfPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private IsANode isANode = IsANodeGen.create(null, null, null);
+        @Child private IsANode isANode = IsANodeGen.create(null, null);
 
         @Specialization
         public boolean vmObjectKindOf(Object object, DynamicObject rubyClass) {

@@ -29,10 +29,6 @@ import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayWriteNormalizedNode extends RubyNode {
 
-    public ArrayWriteNormalizedNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public abstract Object executeWrite(DynamicObject array, int index, Object value);
 
     // Writing within an existing array with a compatible type

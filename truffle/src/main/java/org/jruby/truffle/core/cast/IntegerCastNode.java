@@ -25,10 +25,6 @@ import org.jruby.truffle.language.control.RaiseException;
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class IntegerCastNode extends RubyNode {
 
-    public IntegerCastNode(SourceIndexLength sourceSection) {
-        super(sourceSection);
-    }
-
     public abstract int executeCastInt(Object value);
 
     @Override

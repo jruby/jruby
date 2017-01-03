@@ -23,8 +23,7 @@ public class ReadLocalVariableNode extends ReadLocalNode {
 
     @Child private ReadFrameSlotNode readFrameSlotNode;
 
-    public ReadLocalVariableNode(SourceIndexLength sourceSection, LocalVariableType type, FrameSlot frameSlot) {
-        super(sourceSection);
+    public ReadLocalVariableNode(LocalVariableType type, FrameSlot frameSlot) {
         this.type = type;
         this.frameSlot = frameSlot;
     }
