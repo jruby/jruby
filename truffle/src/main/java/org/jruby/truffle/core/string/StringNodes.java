@@ -1112,8 +1112,9 @@ public abstract class StringNodes {
     public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject encoding(DynamicObject string) {
-            return getContext().getEncodingManager().getRubyEncoding(StringOperations.encoding(string));
+        public DynamicObject encoding(DynamicObject string,
+                                      @Cached("create()") EncodingNodes.GetRubyEncodingNode getRubyEncodingNode) {
+            return getRubyEncodingNode.executeGetRubyEncoding(StringOperations.encoding(string));
         }
 
     }

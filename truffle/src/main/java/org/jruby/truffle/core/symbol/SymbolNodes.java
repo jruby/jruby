@@ -23,6 +23,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
+import org.jruby.truffle.core.encoding.EncodingNodes;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.language.RubyRootNode;
@@ -72,8 +73,9 @@ public abstract class SymbolNodes {
     public abstract static class EncodingNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject encoding(DynamicObject symbol) {
-            return getContext().getEncodingManager().getRubyEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
+        public DynamicObject encoding(DynamicObject symbol,
+                                      @Cached("create()")EncodingNodes.GetRubyEncodingNode getRubyEncodingNode) {
+            return getRubyEncodingNode.executeGetRubyEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
         }
 
     }

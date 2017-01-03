@@ -11,6 +11,7 @@ package org.jruby.truffle.core.encoding;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -82,12 +83,13 @@ public abstract class TruffleEncodingNodes {
     public abstract static class GetDefaultEncodingNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(name)")
-        public DynamicObject getDefaultEncoding(DynamicObject name) {
+        public DynamicObject getDefaultEncoding(DynamicObject name,
+                                                @Cached("create()")EncodingNodes.GetRubyEncodingNode getRubyEncodingNode) {
             final Encoding encoding = getEncoding(StringOperations.getString(name));
             if (encoding == null) {
                 return nil();
             } else {
-                return getContext().getEncodingManager().getRubyEncoding(encoding);
+                return getRubyEncodingNode.executeGetRubyEncoding(encoding);
             }
         }
 

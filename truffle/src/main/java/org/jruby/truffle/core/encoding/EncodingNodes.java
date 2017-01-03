@@ -379,8 +379,8 @@ public abstract class EncodingNodes {
     public abstract static class LocaleCharacterMapNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
-        public DynamicObject localeCharacterMap() {
-            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(getContext().getEncodingManager().getLocaleEncoding());
+        public DynamicObject localeCharacterMap(@Cached("create()") GetRubyEncodingNode getRubyEncodingNode) {
+            final DynamicObject rubyEncoding = getRubyEncodingNode.executeGetRubyEncoding(getContext().getEncodingManager().getLocaleEncoding());
 
             return Layouts.ENCODING.getName(rubyEncoding);
         }
@@ -436,14 +436,21 @@ public abstract class EncodingNodes {
     @Primitive(name = "encoding_get_object_encoding", needsSelf = false)
     public static abstract class EncodingGetObjectEncodingNode extends PrimitiveArrayArgumentsNode {
 
+        @Child private GetRubyEncodingNode getRubyEncodingNode;
+
+        public EncodingGetObjectEncodingNode() {
+            super();
+            getRubyEncodingNode = EncodingNodesFactory.GetRubyEncodingNodeGen.create();
+        }
+
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
-            return getContext().getEncodingManager().getRubyEncoding(Layouts.STRING.getRope(string).getEncoding());
+            return getRubyEncodingNode.executeGetRubyEncoding(Layouts.STRING.getRope(string).getEncoding());
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
         public DynamicObject encodingGetObjectEncodingSymbol(DynamicObject symbol) {
-            return getContext().getEncodingManager().getRubyEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
+            return getRubyEncodingNode.executeGetRubyEncoding(Layouts.SYMBOL.getRope(symbol).getEncoding());
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")
@@ -453,7 +460,7 @@ public abstract class EncodingNodes {
 
         @Specialization(guards = "isRubyRegexp(regexp)")
         public DynamicObject encodingGetObjectEncodingRegexp(DynamicObject regexp) {
-            return getContext().getEncodingManager().getRubyEncoding(Layouts.REGEXP.getSource(regexp).getEncoding());
+            return getRubyEncodingNode.executeGetRubyEncoding(Layouts.REGEXP.getSource(regexp).getEncoding());
         }
 
         @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)", "!isRubyRegexp(object)"})
