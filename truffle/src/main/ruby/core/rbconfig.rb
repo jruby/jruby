@@ -123,7 +123,7 @@ module RbConfig
   end
 
   def self.ruby
-    raise unless ruby_home
+    raise unless CONFIG['bindir']
     # TODO (eregon, 30 Sep 2016): should be the one used by the launcher!
     jruby_truffle = CONFIG['ruby_install_name'] + CONFIG['exeext']
     File.join CONFIG['bindir'], jruby_truffle
