@@ -592,14 +592,6 @@ public class ArgumentProcessor {
     private void runBinScript() {
         String scriptName = grabValue("jruby: provide a bin script to execute");
         config.setScriptFileName(resolveScript(scriptName));
-        // run as a command if we couldn't find a script
-        if (config.getScriptFileName() == null) {
-            config.setScriptFileName(scriptName);
-            config.getRequiredLibraries().add("jruby/commands");
-            config.getInlineScript().append("JRuby::Commands.").append(scriptName);
-            config.getInlineScript().append("\n");
-            config.setHasInlineScript(true);
-        }
         endOfArguments = true;
     }
 
