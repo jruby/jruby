@@ -124,9 +124,11 @@ public class RubyContext extends ExecutionContext {
             optionsBuilder.set(System.getProperties());
             options = optionsBuilder.build();
 
-            this.rubyHome = findRubyHome();
-            this.currentDirectory = System.getProperty("user.dir");
-            this.verbose = options.VERBOSITY.equals(Verbosity.TRUE);
+            rubyHome = findRubyHome();
+            Log.config("home: %s", rubyHome);
+
+            currentDirectory = System.getProperty("user.dir");
+            verbose = options.VERBOSITY.equals(Verbosity.TRUE);
 
             if (options.CALL_GRAPH) {
                 callGraph = new CallGraph();
