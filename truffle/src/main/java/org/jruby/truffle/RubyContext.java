@@ -125,7 +125,7 @@ public class RubyContext extends ExecutionContext {
             options = optionsBuilder.build();
 
             rubyHome = findRubyHome();
-            Log.config("home: %s", rubyHome);
+            Log.LOGGER.config(() -> String.format("ruby home: %s", rubyHome));
 
             currentDirectory = System.getProperty("user.dir");
             verbose = options.VERBOSITY.equals(Verbosity.TRUE);
