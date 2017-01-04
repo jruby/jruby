@@ -335,7 +335,6 @@ public class RubyInstanceConfig {
     /**
      * Indicates whether the script has a shebang line or not
      */
-    private InputStream input          = System.in;
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
 
@@ -350,7 +349,6 @@ public class RubyInstanceConfig {
 
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<>();
-    private Set<String> excludedMethods = new HashSet<>();
     private StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
@@ -364,7 +362,6 @@ public class RubyInstanceConfig {
     private Verbosity verbosity = Verbosity.FALSE;
     private boolean debug = false;
     private boolean showVersion = false;
-    private boolean showBytecode = false;
     private boolean showCopyright = false;
     private boolean shouldRunInterpreter = true;
     private boolean shouldPrintUsage = false;
@@ -375,7 +372,6 @@ public class RubyInstanceConfig {
     private boolean disableGems = false;
     private boolean hasScriptArgv = false;
     private boolean frozenStringLiteral = false;
-    private String jrubyHome;
     private KCode kcode;
     private String sourceEncoding;
 
