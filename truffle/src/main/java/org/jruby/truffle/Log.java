@@ -114,4 +114,14 @@ public class Log {
         info(String.format(format, args));
     }
 
+    @TruffleBoundary
+    public static void config(String message) {
+        LOGGER.config(message);
+    }
+
+    @TruffleBoundary
+    public static void config(String format, Object... args) {
+        config(String.format(format, args));
+    }
+
 }
