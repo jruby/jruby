@@ -96,6 +96,14 @@ public class Options {
     <% options.each do |o| %>    <%= o.constant %> = builder.getOrDefault(OptionsCatalog.<%= o.constant %><%= o.reference_default ? ', ' + o.default : '' %>);
     <% end %>}
 
+    public Object fromDescription(OptionDescription description) {
+        switch (description.getName()) {
+            <% options.each do |o| %>case "<%= o.name %>":
+                return <%= o.constant %>;
+            <% end %>default:
+                return null;
+        }
+    }
 }
 JAVA
 
@@ -127,6 +135,12 @@ public class OptionsCatalog {
             <% end %>default:
                 return null;
         }
+    }
+
+    public static OptionDescription[] allDescriptions() {
+        return new OptionDescription[] {<% options.each do |o| %>
+            <%= o.constant %>,<% end %>
+        };
     }
 
 }
