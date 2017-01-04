@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.options;
 
+import org.jruby.truffle.Log;
 import org.jruby.truffle.core.string.KCode;
 import org.jruby.truffle.core.string.StringSupport;
 
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 /**
@@ -396,6 +398,18 @@ public class ArgumentProcessor {
                         throw new UnsupportedOperationException();
                     } else if (extendedOption.endsWith("?")) {
                         throw new UnsupportedOperationException();
+                    } else if (extendedOption.startsWith("log=")) {
+                        final String levelString = extendedOption.substring("log=".length());
+
+                        final Level level;
+
+                        if (levelString.equals("PERFORMANCE")) {
+                            level = Log.PERFORMANCE;
+                        } else {
+                            level = Level.parse(levelString.toUpperCase());
+                        }
+
+                        Log.LOGGER.setLevel(level);
                     } else {
                         MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
                         mee.setUsageError(true);
