@@ -53,7 +53,7 @@ public class OptionsBuilder {
 
         if (options.OPTIONS_LOG && Log.LOGGER.isLoggable(Level.CONFIG)) {
             for (OptionDescription option : OptionsCatalog.allDescriptions()) {
-                Log.LOGGER.config("option " + option.getName() + "=" + options.fromDescription(option));
+                Log.LOGGER.config("option " + option.getName() + "=" + option.toString(options.fromDescription(option)));
             }
         }
 
