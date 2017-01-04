@@ -10,7 +10,6 @@
 package org.jruby.truffle.language.dispatch;
 
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class RubyCallNodeParameters {
 

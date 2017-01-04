@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.setSize;

@@ -14,7 +14,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeInfo(cost = NodeCost.NONE)
 public final class SequenceNode extends RubyNode {

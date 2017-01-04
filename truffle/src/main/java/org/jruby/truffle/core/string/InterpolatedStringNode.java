@@ -16,7 +16,6 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.IsTaintedNode;

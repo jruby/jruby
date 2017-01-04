@@ -53,7 +53,6 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeBuffer;
 import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.UnsafeGroup;

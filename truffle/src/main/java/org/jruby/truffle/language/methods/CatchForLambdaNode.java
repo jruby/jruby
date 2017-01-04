@@ -13,7 +13,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.NextException;
 import org.jruby.truffle.language.control.RaiseException;

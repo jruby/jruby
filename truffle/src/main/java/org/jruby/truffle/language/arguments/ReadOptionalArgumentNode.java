@@ -19,7 +19,6 @@ import org.jruby.truffle.core.array.ArrayReadNormalizedNode;
 import org.jruby.truffle.core.array.ArrayReadNormalizedNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class ReadOptionalArgumentNode extends RubyNode {
 

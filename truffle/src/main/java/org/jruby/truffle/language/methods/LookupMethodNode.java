@@ -23,7 +23,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.language.objects.MetaClassNodeGen;

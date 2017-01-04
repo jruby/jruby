@@ -17,7 +17,6 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 
 @CoreClass("main")

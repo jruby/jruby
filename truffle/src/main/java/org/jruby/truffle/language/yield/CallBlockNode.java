@@ -21,7 +21,6 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.methods.DeclarationContext;
 

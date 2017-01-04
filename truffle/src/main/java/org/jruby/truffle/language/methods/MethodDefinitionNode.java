@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 

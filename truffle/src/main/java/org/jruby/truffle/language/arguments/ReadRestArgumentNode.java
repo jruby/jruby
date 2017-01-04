@@ -17,7 +17,6 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class ReadRestArgumentNode extends RubyNode {
 

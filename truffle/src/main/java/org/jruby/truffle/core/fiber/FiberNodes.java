@@ -33,7 +33,6 @@ import org.jruby.truffle.core.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.BreakException;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;

@@ -20,7 +20,6 @@ import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 import java.util.ArrayList;
 import java.util.List;

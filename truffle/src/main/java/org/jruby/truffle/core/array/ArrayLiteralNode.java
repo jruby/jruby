@@ -18,7 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 

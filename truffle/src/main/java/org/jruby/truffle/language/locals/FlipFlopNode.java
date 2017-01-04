@@ -13,7 +13,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.core.cast.BooleanCastNode;
 import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class FlipFlopNode extends RubyNode {
 

@@ -58,7 +58,6 @@ import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.ToIntNodeGen;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.TaintNode;
 

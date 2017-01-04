@@ -46,7 +46,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.UnsafeGroup;

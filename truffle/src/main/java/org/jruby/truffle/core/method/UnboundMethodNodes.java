@@ -25,7 +25,6 @@ import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.control.RaiseException;

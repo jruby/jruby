@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.shared.WriteBarrierNode;
 
 @NodeChild(value = "value")

@@ -62,7 +62,6 @@ import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.TaintNode;
 

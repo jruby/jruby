@@ -12,7 +12,6 @@ package org.jruby.truffle.language.objects;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class LexicalScopeNode extends RubyNode {
 

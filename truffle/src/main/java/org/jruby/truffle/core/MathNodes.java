@@ -51,7 +51,6 @@ import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.cast.ToFNode;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.IsANode;
 import org.jruby.truffle.language.objects.IsANodeGen;

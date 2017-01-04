@@ -16,7 +16,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 /** Read a literal constant on a given module: MOD::CONST */

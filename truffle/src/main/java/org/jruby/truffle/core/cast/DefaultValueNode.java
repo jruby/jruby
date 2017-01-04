@@ -13,7 +13,6 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Return the given default value if the argument is not provided.

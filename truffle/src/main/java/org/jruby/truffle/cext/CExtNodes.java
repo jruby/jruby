@@ -35,7 +35,6 @@ import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;

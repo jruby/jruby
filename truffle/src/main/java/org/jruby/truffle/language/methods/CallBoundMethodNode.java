@@ -18,7 +18,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 @NodeChildren({

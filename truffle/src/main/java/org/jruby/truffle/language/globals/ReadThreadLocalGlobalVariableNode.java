@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObjectNode;

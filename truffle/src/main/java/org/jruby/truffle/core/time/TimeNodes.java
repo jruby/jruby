@@ -31,7 +31,6 @@ import org.jruby.truffle.core.time.RubyDateFormatter.Token;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;

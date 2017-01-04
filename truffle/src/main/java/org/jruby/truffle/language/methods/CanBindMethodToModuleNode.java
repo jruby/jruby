@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Caches {@link ModuleOperations#canBindMethodTo} for a method.

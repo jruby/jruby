@@ -26,7 +26,6 @@ import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;

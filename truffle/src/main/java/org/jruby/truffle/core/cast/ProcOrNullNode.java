@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ProcOrNullNode extends RubyNode {

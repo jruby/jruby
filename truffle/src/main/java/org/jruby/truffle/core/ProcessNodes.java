@@ -23,7 +23,6 @@ import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.cast.DefaultValueNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.platform.posix.ClockGetTime;
 import org.jruby.truffle.platform.posix.TimeSpec;

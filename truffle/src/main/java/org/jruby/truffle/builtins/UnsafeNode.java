@@ -11,7 +11,6 @@ package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class UnsafeNode extends RubyNode {

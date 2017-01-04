@@ -33,7 +33,6 @@ import org.jruby.truffle.core.array.ArrayHelpers;
 import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.locals.ReadFrameSlotNode;

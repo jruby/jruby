@@ -17,7 +17,6 @@ import org.jruby.truffle.core.cast.IntegerCastNode;
 import org.jruby.truffle.core.cast.IntegerCastNodeGen;
 import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
 

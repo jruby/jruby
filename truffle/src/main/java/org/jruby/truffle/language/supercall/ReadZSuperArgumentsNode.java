@@ -19,7 +19,6 @@ import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Get the arguments of a super call with implicit arguments (using the ones of the surrounding method).

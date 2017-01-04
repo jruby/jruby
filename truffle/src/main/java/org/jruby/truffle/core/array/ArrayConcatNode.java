@@ -16,7 +16,6 @@ import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  * Concatenate argument arrays (translating a org.jruby.ast.ArgsCatParseNode).
