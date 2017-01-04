@@ -682,7 +682,7 @@ public abstract class VMPrimitiveNodes {
     }
 
     @Primitive(name = "vm_exec", needsSelf = false)
-    public abstract static class VMSExecNode extends PrimitiveArrayArgumentsNode {
+    public abstract static class VMExecNode extends PrimitiveArrayArgumentsNode {
 
         @TruffleBoundary
         @Specialization(guards = { "isRubyString(path)", "isRubyArray(args)", "isRubyArray(env)" })
