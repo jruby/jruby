@@ -69,7 +69,7 @@ public class Main {
     public static void main(String[] args) {
         printTruffleTimeMetric("before-main");
 
-        final RubyInstanceConfig config = new RubyInstanceConfig(false);
+        final RubyInstanceConfig config = new RubyInstanceConfig();
 
         try {
             config.processArguments(args);

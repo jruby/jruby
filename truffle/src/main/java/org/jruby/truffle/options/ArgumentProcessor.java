@@ -450,17 +450,10 @@ public class ArgumentProcessor {
                         config.setShouldPrintUsage(true);
                         config.setShouldRunInterpreter(false);
                         break;
-                    } else if (argument.equals("--properties")) {
-                        config.setShouldPrintProperties(true);
-                        config.setShouldRunInterpreter(false);
-                        break;
                     } else if (argument.equals("--version")) {
                         disallowedInRubyOpts(argument);
                         config.setShowVersion(true);
                         config.setShouldRunInterpreter(false);
-                        break FOR;
-                    } else if (argument.equals("--bytecode")) {
-                        config.setShowBytecode(true);
                         break FOR;
                     } else if (argument.equals("--fast")) {
                         throw new UnsupportedOperationException();
@@ -513,8 +506,6 @@ public class ArgumentProcessor {
                             break FOR;
                         } else if (dumpArg.equals("syntax")) {
                             config.setShouldCheckSyntax(true);
-                        } else if (dumpArg.equals("insns")) {
-                            config.setShowBytecode(true);
                         } else {
                             MainExitException mee = new MainExitException(1, error);
                             mee.setUsageError(true);
@@ -612,24 +603,6 @@ public class ArgumentProcessor {
         endOfArguments = true;
     }
 
-    private String resolve(String path, String scriptName) {
-        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-            config.getError().println("Trying path: " + path);
-        }
-        try {
-            File fullName = new File(path, scriptName);
-            if (fullName.exists() && fullName.isFile()) {
-                if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-                    config.getError().println("Found: " + fullName.getAbsolutePath());
-                }
-                return fullName.getAbsolutePath();
-            }
-        } catch (Exception e) {
-            // keep going
-        }
-        return null;
-    }
-
     public String resolveScript(String scriptName) {
         // TODO CS 4-Jan-17 this never worked properly - it needs home before we've set up a context to determine it properly
         throw new UnsupportedOperationException();
@@ -662,14 +635,6 @@ public class ArgumentProcessor {
         }
         // fall back to JRuby::Commands
         return null;*/
-    }
-
-    @Deprecated
-    public String resolveScriptUsingClassLoader(String scriptName) {
-        if (RubyInstanceConfig.defaultClassLoader().getResourceAsStream("bin/" + scriptName) != null){
-            return "classpath:/bin/" + scriptName;
-        }
-        return null;
     }
 
     private String grabValue(String errorMessage) {
