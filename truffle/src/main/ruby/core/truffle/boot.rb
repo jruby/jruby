@@ -6,6 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
+TOPLEVEL_BINDING = binding
+
 module Truffle
   module Boot
 

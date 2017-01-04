@@ -48,7 +48,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.LoadRequiredLibrariesNode;
-import org.jruby.truffle.core.SetTopLevelBindingNode;
 import org.jruby.truffle.language.DataNode;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
@@ -243,7 +242,6 @@ public class TranslatorDriver {
 
         if (parserContext == ParserContext.TOP_LEVEL_FIRST) {
             truffleNode = Translator.sequence(sourceIndexLength, Arrays.asList(
-                    new SetTopLevelBindingNode(),
                     new LoadRequiredLibrariesNode(),
                     truffleNode));
 
