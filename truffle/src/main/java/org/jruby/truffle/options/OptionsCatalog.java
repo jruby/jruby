@@ -109,6 +109,7 @@ public class OptionsCatalog {
     public static final OptionDescription SHARED_OBJECTS_SHARE_ALL = new BooleanOptionDescription("shared.objects.share_all", "Consider all objects as shared", false);
     public static final OptionDescription CEXTS_LOG_LOAD = new BooleanOptionDescription("cexts.log.load", "Log loading of cexts", false);
     public static final OptionDescription LOG_DYNAMIC_CONSTANT_LOOKUP = new BooleanOptionDescription("constant.dynamic_lookup.log", "Log source code positions where dynamic constant lookup is performed", false);
+    public static final OptionDescription OPTIONS_LOG = new BooleanOptionDescription("options.log", "Log the final value of all options", false);
     
     public static OptionDescription fromName(String name) {
         switch (name) {
@@ -298,6 +299,8 @@ public class OptionsCatalog {
                 return CEXTS_LOG_LOAD;
             case "constant.dynamic_lookup.log":
                 return LOG_DYNAMIC_CONSTANT_LOOKUP;
+            case "options.log":
+                return OPTIONS_LOG;
             default:
                 return null;
         }
@@ -398,6 +401,7 @@ public class OptionsCatalog {
             SHARED_OBJECTS_SHARE_ALL,
             CEXTS_LOG_LOAD,
             LOG_DYNAMIC_CONSTANT_LOOKUP,
+            OPTIONS_LOG,
         };
     }
 
