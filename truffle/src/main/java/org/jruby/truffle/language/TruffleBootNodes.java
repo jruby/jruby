@@ -28,7 +28,6 @@ import org.jruby.truffle.collections.Memo;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.CodeLoader;
-import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
@@ -40,44 +39,17 @@ import java.io.InputStreamReader;
 @CoreClass("Truffle::Boot")
 public abstract class TruffleBootNodes {
 
-    @CoreMethod(names = "jruby_home_directory", onSingleton = true)
-    public abstract static class JRubyHomeDirectoryNode extends CoreMethodNode {
+    @CoreMethod(names = "ruby_home", onSingleton = true)
+    public abstract static class RubyHomeNode extends CoreMethodNode {
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject jrubyHomeDirectory() {
-            if (getContext().getJRubyHome() == null) {
+        public DynamicObject ruby_home() {
+            if (getContext().getRubyHome() == null) {
                 return nil();
             } else {
-                return createString(StringOperations.encodeRope(getContext().getJRubyHome(), UTF8Encoding.INSTANCE));
+                return createString(StringOperations.encodeRope(getContext().getRubyHome(), UTF8Encoding.INSTANCE));
             }
-        }
-
-    }
-
-    @CoreMethod(names = "jruby_home_directory_protocol", onSingleton = true)
-    public abstract static class JRubyHomeDirectoryProtocolNode extends CoreMethodNode {
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject jrubyHomeDirectoryProtocol() {
-            String home = getContext().getJRubyHome();
-
-            if (home == null) {
-                return nil();
-            }
-
-            if (home.startsWith("uri:classloader:")) {
-                home = home.substring("uri:classloader:".length());
-
-                while (home.startsWith("/")) {
-                    home = home.substring(1);
-                }
-
-                home = SourceLoader.JRUBY_SCHEME + "/" + home;
-            }
-
-            return createString(StringOperations.encodeRope(home, UTF8Encoding.INSTANCE));
         }
 
     }

@@ -70,7 +70,7 @@ public class RubyContext extends ExecutionContext {
 
     private final Options options;
 
-    private final String jrubyHome;
+    private final String rubyHome;
     private String originalInputFile;
 
     private InputStream syntaxCheckInputStream;
@@ -124,7 +124,7 @@ public class RubyContext extends ExecutionContext {
             optionsBuilder.set(System.getProperties());
             options = optionsBuilder.build();
 
-            this.jrubyHome = findJRubyHome();
+            this.rubyHome = findRubyHome();
             this.currentDirectory = System.getProperty("user.dir");
             this.verbose = options.VERBOSITY.equals(Verbosity.TRUE);
 
@@ -220,15 +220,7 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
-    private CodeSource getCodeSource() {
-        try {
-            return Class.forName("org.jruby.Ruby").getProtectionDomain().getCodeSource();
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting the classic code source", e);
-        }
-    }
-
-    private String findJRubyHome() {
+    private String findRubyHome() {
         if (options.HOME != null) {
             return options.HOME;
         }
@@ -245,7 +237,13 @@ public class RubyContext extends ExecutionContext {
 
         if (!TruffleOptions.AOT) {
             // Set JRuby home automatically for GraalVM and mx from the current jar path
-            final CodeSource codeSource = getCodeSource();
+            CodeSource result;
+            try {
+                result = Class.forName("org.jruby.Ruby").getProtectionDomain().getCodeSource();
+            } catch (Exception e1) {
+                throw new RuntimeException("Error getting the classic code source", e1);
+            }
+            final CodeSource codeSource = result;
             if (codeSource != null) {
                 final File currentJarFile;
                 try {
@@ -470,8 +468,8 @@ public class RubyContext extends ExecutionContext {
         return originalInputFile;
     }
 
-    public String getJRubyHome() {
-        return jrubyHome;
+    public String getRubyHome() {
+        return rubyHome;
     }
 
     public void setVerbose(boolean verbose) {

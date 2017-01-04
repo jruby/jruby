@@ -49,26 +49,26 @@ ARGV.push *Truffle::Boot.original_argv
 
 $LOAD_PATH.push *Truffle::Boot.original_load_path
 
-home = Truffle::Boot.jruby_home_directory_protocol
+ruby_home = Truffle::Boot.ruby_home
 
-if home
+if ruby_home
   # Does not exist but it's used by rubygems to determine index where to insert gem lib directories, as a result
   # paths supplied by -I will stay before gem lib directories.
-  $LOAD_PATH.push home + '/lib/ruby/2.3/site_ruby'
-
-  $LOAD_PATH.push home + '/lib/ruby/truffle/mri'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-strscan/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-stringio/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-complex/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-date/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-pathname/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-tempfile/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-socket/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-securerandom/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-timeout/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/rubysl/rubysl-webrick/lib'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/openssl'
-  $LOAD_PATH.push home + '/lib/ruby/truffle/truffle'
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/2.3/site_ruby"
+  
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/mri"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-strscan/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-stringio/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-complex/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-date/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-pathname/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-tempfile/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-socket/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-securerandom/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-timeout/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/rubysl/rubysl-webrick/lib"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/openssl"
+  $LOAD_PATH.push "#{ruby_home}/lib/ruby/truffle/truffle"
 end
 
 # We defined Psych at the top level because several things depend on its name.

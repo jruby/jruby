@@ -33,13 +33,13 @@
 #
 
 module RbConfig
-  jruby_home = Truffle::Boot.jruby_home_directory
+  ruby_home = Truffle::Boot.ruby_home
 
-  if jruby_home
-    bindir = if jruby_home.end_with?('/mxbuild/ruby-zip-extracted')
-               File.expand_path('../../bin', jruby_home)
+  if ruby_home
+    bindir = if ruby_home.end_with?('/mxbuild/ruby-zip-extracted')
+               File.expand_path('../../bin', ruby_home)
              else
-               "#{jruby_home}/bin"
+               "#{ruby_home}/bin"
            end
   end
 
@@ -50,9 +50,9 @@ module RbConfig
     'host_os' => Truffle::System.host_os,
     'host_cpu' => Truffle::System.host_cpu,
     'bindir' => bindir,
-    'libdir' => "#{jruby_home}/lib/ruby/truffle",
-    "sitelibdir"=>"#{jruby_home}/lib/ruby/2.3/site_ruby", # TODO BJF Oct 21, 2016 Need to review these values
-    "sitearchdir"=>"#{jruby_home}/lib/ruby/2.3/site_ruby",
+    'libdir' => "#{ruby_home}/lib/ruby/truffle",
+    "sitelibdir"=>"#{ruby_home}/lib/ruby/2.3/site_ruby", # TODO BJF Oct 21, 2016 Need to review these values
+    "sitearchdir"=>"#{ruby_home}/lib/ruby/2.3/site_ruby",
     'ruby_install_name' => 'jruby-truffle',
     'RUBY_INSTALL_NAME' => 'jruby-truffle',
     # 'ruby_install_name' => 'jruby',
@@ -60,9 +60,9 @@ module RbConfig
     'ruby_version' => '2.2.0',
     'OBJEXT' => 'll',
     'DLEXT' => 'su',
-    'rubyhdrdir' => "#{jruby_home}/lib/ruby/truffle/cext",
-    'topdir' => "#{jruby_home}/lib/ruby/stdlib",
-    "rubyarchhdrdir"=>"#{jruby_home}/lib/ruby/truffle/cext",
+    'rubyhdrdir' => "#{ruby_home}/lib/ruby/truffle/cext",
+    'topdir' => "#{ruby_home}/lib/ruby/stdlib",
+    "rubyarchhdrdir"=>"#{ruby_home}/lib/ruby/truffle/cext",
     'includedir' => '',
   }
 
@@ -87,7 +87,7 @@ module RbConfig
       'prefix' => '',
       'ruby_install_name' => 'jruby-truffle',
       'RUBY_SO_NAME' => '$(RUBY_BASE_NAME)',
-      'hdrdir' => "#{jruby_home}/lib/ruby/truffle/cext",
+      'hdrdir' => "#{ruby_home}/lib/ruby/truffle/cext",
       'bindir' => bindir
   }
 
