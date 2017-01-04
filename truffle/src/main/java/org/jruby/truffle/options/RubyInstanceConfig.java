@@ -90,7 +90,6 @@ public class RubyInstanceConfig {
             environment.putAll(System.getenv());
         }
         catch (SecurityException se) { /* ignore missing getenv permission */ }
-        setupEnvironment(getJRubyHome());
     }
 
     public void processArguments(String[] arguments) {
@@ -132,77 +131,6 @@ public class RubyInstanceConfig {
     private static final String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
     public static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
 
-    private String calculateJRubyHome() {
-        String newJRubyHome = null;
-
-        // try the normal property first
-        if (!isSecurityRestricted) {
-            newJRubyHome = System.getProperty("jruby.home", null);
-        }
-
-        if (!TruffleOptions.AOT && newJRubyHome == null && getLoader().getResource("META-INF/jruby.home/.jrubydir") != null) {
-            newJRubyHome = "uri:classloader://META-INF/jruby.home";
-        }
-        if (newJRubyHome != null) {
-            // verify it if it's there
-            newJRubyHome = verifyHome(newJRubyHome, error);
-        } else {
-            try {
-                newJRubyHome = System.getenv("JRUBY_HOME");
-            } catch (Exception e) {}
-
-            if (newJRubyHome != null) {
-                // verify it if it's there
-                newJRubyHome = verifyHome(newJRubyHome, error);
-            } else {
-                // otherwise fall back on system temp location
-                newJRubyHome = System.getProperty("java.io.tmpdir", null);
-            }
-        }
-
-        // RegularFileResource absolutePath will canonicalize resources so that will change c: paths to C:.
-        // We will cannonicalize on windows so that jruby.home is also C:.
-        // assume all those uri-like pathnames are already in absolute form
-        if (Platform.IS_WINDOWS && !PROTOCOL_PATTERN.matcher(newJRubyHome).matches()) {
-            try {
-                newJRubyHome = new File(newJRubyHome).getCanonicalPath();
-            }
-            catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
-        }
-
-        return newJRubyHome == null ? null : normalizeSeps(newJRubyHome);
-    }
-
-    // We require the home directory to be absolute
-    private static String verifyHome(String home, PrintStream error) {
-        if ("uri:classloader://META-INF/jruby.home".equals(home) || "uri:classloader:/META-INF/jruby.home".equals(home)) {
-            return home;
-        }
-        if (home.equals(".")) {
-            home = System.getProperty("user.dir", null);
-        }
-        else if (home.startsWith("cp:")) {
-            home = home.substring(3);
-        }
-        if (home.startsWith("jar:") || ( home.startsWith("file:") && home.contains(".jar!/") ) ||
-                home.startsWith("classpath:") || home.startsWith("uri:")) {
-            error.println("Warning: JRuby home with uri like paths may not have full functionality - use at your own risk");
-        }
-        // do not normalize on plain jar like pathes coming from jruby-rack
-        else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
-            File file = new File(home);
-            if (!file.exists()) {
-                final String tmpdir = System.getProperty("java.io.tmpdir", null);
-                error.println("Warning: JRuby home \"" + file + "\" does not exist, using " + tmpdir);
-                return tmpdir;
-            }
-            if (!file.isAbsolute()) {
-                home = file.getAbsolutePath();
-            }
-        }
-        return home;
-    }
-
     public byte[] inlineScript() {
         return inlineScript.toString().getBytes();
     }
@@ -242,13 +170,6 @@ public class RubyInstanceConfig {
     // Getters and setters for config settings.
     ////////////////////////////////////////////////////////////////////////////
 
-    public String getJRubyHome() {
-        if (jrubyHome == null) {
-            jrubyHome = calculateJRubyHome();
-        }
-        return jrubyHome;
-    }
-
     public void setOutput(PrintStream newOutput) {
         output = newOutput;
     }
@@ -277,16 +198,6 @@ public class RubyInstanceConfig {
         environment = new HashMap<>();
         if (newEnvironment != null) {
             environment.putAll(newEnvironment);
-        }
-        setupEnvironment(getJRubyHome());
-    }
-
-    private void setupEnvironment(String jrubyHome) {
-        if (PROTOCOL_PATTERN.matcher(jrubyHome).matches() && !environment.containsKey("RUBY")) {
-            // the assumption that if JRubyHome is not a regular file that jruby
-            // got launched in an embedded fashion
-            //environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
-            throw new UnsupportedOperationException();
         }
     }
 

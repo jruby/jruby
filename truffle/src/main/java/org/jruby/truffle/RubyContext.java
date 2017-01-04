@@ -223,56 +223,35 @@ public class RubyContext extends ExecutionContext {
     }
 
     private String findRubyHome() {
+        // Use the option if it was set
+
         if (options.HOME != null) {
-            return options.HOME;
+            return new File(options.HOME).getAbsolutePath();
         }
 
-        String fromENV = System.getenv("JRUBY_HOME");
-        if (fromENV != null) {
-            return fromENV;
-        }
-
-        String fromProperty = System.getProperty("jruby.home");
-        if (fromProperty != null) {
-            return fromProperty;
-        }
+        // Try to find it automatically from the location of the JAR, but this won't work from the JRuby launcher as it uses the boot classpath
 
         if (!TruffleOptions.AOT) {
-            // Set JRuby home automatically for GraalVM and mx from the current jar path
-            CodeSource result;
-            try {
-                result = Class.forName("org.jruby.Ruby").getProtectionDomain().getCodeSource();
-            } catch (Exception e1) {
-                throw new RuntimeException("Error getting the classic code source", e1);
-            }
-            final CodeSource codeSource = result;
-            if (codeSource != null) {
-                final File currentJarFile;
-                try {
-                    currentJarFile = new File(codeSource.getLocation().toURI());
-                } catch (URISyntaxException e) {
-                    throw new JavaException(e);
-                }
+            final CodeSource codeSource = getClass().getProtectionDomain().getCodeSource();
 
-                if (currentJarFile.getName().equals("ruby.jar")) {
-                    File jarDir = currentJarFile.getParentFile();
+            if (codeSource != null && codeSource.getLocation().getProtocol().equals("file")) {
+                final File jar = new File(codeSource.getLocation().getFile());
 
-                    // GraalVM
-                    if (new File(jarDir, "lib").isDirectory()) {
-                        return jarDir.getPath();
-                    }
-
-                    // mx: mxbuild/dists/ruby.jar
-                    if (jarDir.getName().equals("dists") && jarDir.getParentFile().getName().equals("mxbuild")) {
-                        String mxbuildDir = currentJarFile.getParentFile().getParent();
-                        File mxJRubyHome = new File(mxbuildDir, "ruby-zip-extracted");
-                        if (mxJRubyHome.isDirectory()) {
-                            return mxJRubyHome.getPath();
-                        }
-                    }
+                if (jar.getParentFile().getName().equals("lib")) {
+                    return jar.getParentFile().getParentFile().getAbsolutePath();
                 }
             }
         }
+
+        // Just for now, use jruby.home as the launcher sets that
+
+        final String jrubyHome = System.getProperty("jruby.home");
+
+        if (jrubyHome != null) {
+            return new File(jrubyHome).getAbsolutePath();
+        }
+
+        Log.LOGGER.config("home not explicitly set, and couldn't determine it from the source of the Java classfiles or the JRuby launcher");
 
         return null;
     }

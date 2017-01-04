@@ -95,7 +95,6 @@ public class Main {
             final RubyContext context;
 
             engine = PolyglotEngine.newBuilder()
-                    .config(RubyLanguage.MIME_TYPE, OptionsCatalog.HOME.getName(), config.getJRubyHome())
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.LOAD_PATHS.getName(), config.getLoadPaths().toArray(new String[]{}))
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.REQUIRED_LIBRARIES.getName(), config.getRequiredLibraries().toArray(new String[]{}))
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INLINE_SCRIPT.getName(), config.inlineScript())
