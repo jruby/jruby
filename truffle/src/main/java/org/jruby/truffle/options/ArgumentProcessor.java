@@ -631,7 +631,9 @@ public class ArgumentProcessor {
     }
 
     public String resolveScript(String scriptName) {
-        // These try/catches are to allow failing over to the "commands" logic
+        // TODO CS 4-Jan-17 this never worked properly - it needs home before we've set up a context to determine it properly
+        throw new UnsupportedOperationException();
+        /*// These try/catches are to allow failing over to the "commands" logic
         // when running from within a jruby-complete jar file, which has
         // jruby.home = a jar file URL that does not resolve correctly with
         // JRubyFile.create.
@@ -659,7 +661,7 @@ public class ArgumentProcessor {
             config.getError().println("warning: could not resolve -S script: " + scriptName);
         }
         // fall back to JRuby::Commands
-        return null;
+        return null;*/
     }
 
     @Deprecated
