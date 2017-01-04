@@ -117,6 +117,6 @@ public class OutputStrings {
     }
 
     public static String getCopyrightString() {
-        return "JRuby - Copyright (C) 2001-2016 The JRuby Community (and contribs)";
+        return "JRuby - Copyright (C) 2001-2017 The JRuby Community (and contribs)";
     }
 }
