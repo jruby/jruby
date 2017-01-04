@@ -442,8 +442,16 @@ public class RubyBigDecimal extends RubyNumeric {
     private static RubyBigDecimal getVpValueWithPrec19(ThreadContext context, IRubyObject value, long precision, boolean must) {
         if (value instanceof RubyFloat) {
             if (precision > Long.MAX_VALUE) return cannotBeCoerced(context, value, must);
+            double doubleValue = ((RubyFloat) value).getDoubleValue();
 
-            return new RubyBigDecimal(context.runtime, BigDecimal.valueOf(((RubyFloat) value).getDoubleValue()));
+            if (Double.isInfinite(doubleValue)) {
+                throw context.runtime.newFloatDomainError(doubleValue < 0 ? "-Infinity" : "Infinity");
+            }
+            if (Double.isNaN(doubleValue)) {
+                throw context.runtime.newFloatDomainError("NaN");
+            }
+
+            return new RubyBigDecimal(context.runtime, BigDecimal.valueOf(doubleValue));
         }
         else if (value instanceof RubyRational) {
             if (precision < 0) {
