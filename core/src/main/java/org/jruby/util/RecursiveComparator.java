@@ -31,7 +31,9 @@ public class RecursiveComparator {
                 RecursiveComparator.Pair pair = new RecursiveComparator.Pair(a, b);
 
                 if ((seen = context.getRecursiveSet()) == null) {
-                    context.setRecursiveSet(seen = new HashSet<Pair>());
+                    // 95+% of time set stays low - holding 1 object
+                    // NOTE: maybe its worth starting with a singletonSet?
+                    context.setRecursiveSet(seen = new HashSet<Pair>(4));
                     clear = true;
                 }
                 else if (seen.contains(pair)) { // are we recursing?
