@@ -122,7 +122,18 @@ public class Main {
                     // check syntax only and exit
                     exitCode = checkSyntax(engine, context, config.getScriptSource(), filename);
                 } else {
-                    exitCode = execute(engine, context, filename);
+                    if (!Graal.isGraal() && context.getOptions().GRAAL_WARNING_UNLESS) {
+                        Log.performanceOnce("This JVM does not have the Graal compiler - performance will be limited - " +
+                                "see https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
+                    }
+
+                    if (config.shouldUsePathScript()) {
+                        context.setOriginalInputFile(config.getScriptFileName());
+                        exitCode = engine.eval(loadSource("Truffle::Boot.main_s", "main")).as(Integer.class);
+                    } else {
+                        context.setOriginalInputFile(filename);
+                        exitCode = engine.eval(loadSource("Truffle::Boot.main", "main")).as(Integer.class);
+                    }
                 }
             } finally {
                 printTruffleTimeMetric("after-run");
@@ -180,19 +191,8 @@ public class Main {
         }
     }
 
-    public static int execute(PolyglotEngine engine, RubyContext context, String path) {
-        if (!Graal.isGraal() && context.getOptions().GRAAL_WARNING_UNLESS) {
-            Log.performanceOnce("This JVM does not have the Graal compiler - performance will be limited - " +
-                    "see https://github.com/jruby/jruby/wiki/Truffle-FAQ#how-do-i-get-jrubytruffle");
-        }
-
-        context.setOriginalInputFile(path);
-
-        return engine.eval(loadSource("Truffle::Boot.main", "main")).as(Integer.class);
-    }
-
     private static Source loadSource(String source, String name) {
-        return Source.newBuilder(source).name(name).mimeType(RubyLanguage.MIME_TYPE).build();
+        return Source.newBuilder(source).name(name).internal().mimeType(RubyLanguage.MIME_TYPE).build();
     }
 
     private static int checkSyntax(PolyglotEngine engine, RubyContext context, InputStream in, String filename) {

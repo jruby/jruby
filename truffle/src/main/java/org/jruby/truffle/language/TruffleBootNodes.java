@@ -119,6 +119,17 @@ public abstract class TruffleBootNodes {
 
     }
 
+    @CoreMethod(names = "original_input_file", onSingleton = true)
+    public abstract static class OriginalInputFileNode extends CoreMethodNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject originalInputFile() {
+            return createString(StringOperations.encodeRope(getContext().getOriginalInputFile(), UTF8Encoding.INSTANCE));
+        }
+
+    }
+
     @CoreMethod(names = "original_load_path", onSingleton = true)
     public abstract static class OriginalLoadPathNode extends CoreMethodNode {
 

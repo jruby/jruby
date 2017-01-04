@@ -591,42 +591,8 @@ public class ArgumentProcessor {
 
     private void runBinScript() {
         String scriptName = grabValue("jruby: provide a bin script to execute");
-        config.setScriptFileName(resolveScript(scriptName));
+        config.setUsePathScript(scriptName);
         endOfArguments = true;
-    }
-
-    public String resolveScript(String scriptName) {
-        // TODO CS 4-Jan-17 this never worked properly - it needs home before we've set up a context to determine it properly
-        throw new UnsupportedOperationException();
-        /*// These try/catches are to allow failing over to the "commands" logic
-        // when running from within a jruby-complete jar file, which has
-        // jruby.home = a jar file URL that does not resolve correctly with
-        // JRubyFile.create.
-        String result = resolve(config.getCurrentDirectory(), scriptName);
-        if (result != null) return scriptName;// use relative filename
-        result = resolve(config.getJRubyHome() + "/bin", scriptName);
-        if (result != null) return result;
-        // since the current directory is also on the classpath we
-        // want to find it on filesystem first
-        result = resolve(config.getCurrentDirectory() + "/bin", scriptName);
-        if (result != null) return result;
-        result = resolve("uri:classloader:/bin", scriptName);
-        if (result != null) return result;
-
-        Object maybePath = config.getEnvironment().get("PATH");
-        if (maybePath != null) {
-            String path = maybePath.toString();
-            String[] paths = path.split(System.getProperty("path.separator"));
-            for (int i = 0; i < paths.length; i++) {
-                result = resolve(new File(paths[i]).getAbsolutePath(), scriptName);
-                if (result != null) return result;
-            }
-        }
-        if (config.isDebug()) {
-            config.getError().println("warning: could not resolve -S script: " + scriptName);
-        }
-        // fall back to JRuby::Commands
-        return null;*/
     }
 
     private String grabValue(String errorMessage) {

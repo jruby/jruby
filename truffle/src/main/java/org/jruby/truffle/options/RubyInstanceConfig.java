@@ -66,8 +66,8 @@ public class RubyInstanceConfig {
         final ArgumentProcessor processor = new ArgumentProcessor(arguments, this);
         processor.processArguments();
         processArgumentsWithRubyopts();
-        if (!TruffleOptions.AOT && !hasScriptArgv && System.console() != null) {
-            setScriptFileName(processor.resolveScript("irb"));
+        if (!TruffleOptions.AOT && !hasScriptArgv && !usePathScript && System.console() != null) {
+            setUsePathScript("irb");
         }
     }
 
@@ -112,6 +112,8 @@ public class RubyInstanceConfig {
             } else {
                 return "-e";
             }
+        } else if (usePathScript) {
+            return "-S";
         } else if (isForceStdin() || getScriptFileName() == null) {
             return "-";
         } else {
@@ -351,6 +353,7 @@ public class RubyInstanceConfig {
     private List<String> loadPaths = new ArrayList<>();
     private StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
+    private boolean usePathScript = false;
     private String scriptFileName = null;
     private Collection<String> requiredLibraries = new LinkedHashSet<>();
     private boolean argvGlobalsOn = false;
@@ -392,4 +395,14 @@ public class RubyInstanceConfig {
     public void setSourceEncoding(String sourceEncoding) {
         this.sourceEncoding = sourceEncoding;
     }
+
+    public void setUsePathScript(String name) {
+        scriptFileName = name;
+        usePathScript = true;
+    }
+
+    public boolean shouldUsePathScript() {
+        return usePathScript;
+    }
+
 }
