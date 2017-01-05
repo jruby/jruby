@@ -1,4 +1,4 @@
-# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -32,21 +32,74 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Copyright (C) 1993-2017 Yukihiro Matsumoto. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
 module Rubinius
   class Mirror
     module Process
+      SHELL_META_CHARS = [
+          '*',  # Pathname Expansion
+          '?',  # Pathname Expansion
+          '{',  # Grouping Commands
+          '}',  # Grouping Commands
+          '[',  # Pathname Expansion
+          ']',  # Pathname Expansion
+          '<',  # Redirection
+          '>',  # Redirection
+          '(',  # Grouping Commands
+          ')',  # Grouping Commands
+          '~',  # Tilde Expansion
+          '&',  # AND Lists, Asynchronous Lists
+          '|',  # OR Lists, Pipelines
+          '\\', # Escape Character
+          '$',  # Parameter Expansion
+          ';',  # Sequential Lists
+          '\'', # Single-Quotes
+          '`',  # Command Substitution
+          '"',  # Double-Quotes
+          "\n", # Lists
+          '#',  # Comment
+          '=',  # Assignment preceding command name
+          '%'   # (used in Parameter Expansion)
+      ]
+      SHELL_META_CHAR_PATTERN = Regexp.new("[#{SHELL_META_CHARS.map(&Regexp.method(:escape)).join}]")
+
       def self.set_status_global(status)
         $? = status
       end
 
       def self.exec(*args)
         exe = Execute.new(*args)
-        exe.spawn_setup
+        exe.spawn_setup(true)
         exe.exec exe.command, exe.argv, exe.env_array
       end
 
       def self.spawn(*args)
         exe = Execute.new(*args)
+        exe.spawn_setup(false)
 
         begin
           pid = exe.spawn exe.options, exe.command, exe.argv
@@ -114,27 +167,31 @@ module Rubinius
           @command = Rubinius::Type.check_null_safe(StringValue(@command))
 
           if @argv.empty?
-            # If the command contains both the binary to run and the arguments, we need to split them apart. We have
-            # two basic cases here: 1) a fully qualified command; and 2) a simple name expected to be found on the PATH.
-            # Both cases require the split. In the event of a fully qualified command, we exec the command directly,
-            # but the signature for exec requires the command and arguments to all be split. In the other case, where
-            # we have a command to search on the PATH, we must split the command apart from the arguments in order to
-            # perform the search (a poor man's version of shell processing). If we can find it on the PATH, then we
-            # run the whole thing through a shell to get proper shell processing.
-
-            split_command, *split_args = @command.strip.split(' ')
-
-            if should_search_path?(split_command)
-              resolved_command = resolve_in_path(split_command)
-
-              if resolved_command
-                @command, @argv = '/bin/sh', ['sh', '-c', @command]
-              else
-                raise Errno::ENOENT.new("No such file or directory - #{@command}")
-              end
+            if should_use_shell?(@command)
+              @command, @argv = '/bin/sh', ['sh', '-c', @command]
             else
-              @command = split_command
-              @argv = [split_command] + split_args
+              # If the command contains both the binary to run and the arguments, we need to split them apart. We have
+              # two basic cases here: 1) a fully qualified command; and 2) a simple name expected to be found on the PATH.
+              # Both cases require the split. In the event of a fully qualified command, we exec the command directly,
+              # but the signature for exec requires the command and arguments to all be split. In the other case, where
+              # we have a command to search on the PATH, we must split the command apart from the arguments in order to
+              # perform the search (a poor man's version of shell processing). If we can find it on the PATH, then we
+              # run the whole thing through a shell to get proper shell processing.
+
+              split_command, *split_args = @command.strip.split(' ')
+
+              if should_search_path?(split_command)
+                resolved_command = resolve_in_path(split_command)
+
+                if resolved_command
+                  @command, @argv = '/bin/sh', ['sh', '-c', @command]
+                else
+                  raise Errno::ENOENT.new("No such file or directory - #{@command}")
+                end
+              else
+                @command = split_command
+                @argv = [split_command] + split_args
+              end
             end
           else
             # If arguments are explicitly passed, the semantics of this method (defined in Ruby) are to run the
@@ -308,9 +365,7 @@ module Rubinius
           "a+" => ::File::RDWR   | ::File::APPEND | ::File::CREAT
         }
 
-        def spawn_setup
-          require 'fcntl'
-
+        def spawn_setup(alter_process)
           env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
           if add_to_env = options.delete(:env)
             env.merge! Hash[add_to_env]
@@ -318,7 +373,9 @@ module Rubinius
 
           @env_array = env.map { |k, v| "#{k}=#{v}" }
 
-          if options
+          if alter_process
+            require 'fcntl'
+
             if pgroup = options[:pgroup]
               Truffle::POSIX.setpgid(0, pgroup)
             end
@@ -365,24 +422,16 @@ module Rubinius
         end
 
         def spawn(options, command, arguments)
-          options ||= {}
-          env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
-          if add_to_env = options.delete(:env)
-            env.merge! Hash[add_to_env]
-          end
-
-          env_array = env.map { |k, v| "#{k}=#{v}" }
-
-          if arguments.empty?
-            command, arguments = 'bash', ['bash', '-c', command]
-          end
-
           Truffle::Process.spawn command, arguments, env_array, options
         end
 
         def exec(command, args, env_array)
           Truffle.invoke_primitive :vm_exec, command, args, env_array
           raise PrimitiveFailure, "Rubinius::Mirror::Process::Execute#exec primitive failed"
+        end
+
+        def should_use_shell?(command)
+          command.match(SHELL_META_CHAR_PATTERN)
         end
 
         def should_search_path?(command)
