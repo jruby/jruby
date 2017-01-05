@@ -26,7 +26,7 @@ import org.jruby.truffle.language.RubyNode;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayEnsureCapacityNode extends RubyNode {
 
-    public static ArrayEnsureCapacityNode create(RubyContext context) {
+    public static ArrayEnsureCapacityNode create() {
         return ArrayEnsureCapacityNodeGen.create(null, null);
     }
 

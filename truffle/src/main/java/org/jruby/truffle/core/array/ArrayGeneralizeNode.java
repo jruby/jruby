@@ -26,7 +26,7 @@ import org.jruby.truffle.language.RubyNode;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayGeneralizeNode extends RubyNode {
 
-    public static ArrayGeneralizeNode create(RubyContext context) {
+    public static ArrayGeneralizeNode create() {
         return ArrayGeneralizeNodeGen.create(null, null);
     }
 
