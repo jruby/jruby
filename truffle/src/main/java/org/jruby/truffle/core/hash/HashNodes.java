@@ -720,7 +720,7 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = "isPackedHash(hash)")
         public DynamicObject mapPackedArray(VirtualFrame frame, DynamicObject hash, DynamicObject block,
-                        @Cached("create(getContext())") ArrayBuilderNode arrayBuilderNode) {
+                        @Cached("create()") ArrayBuilderNode arrayBuilderNode) {
             assert HashOperations.verifyStore(getContext(), hash);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
@@ -747,7 +747,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBucketHash(hash)")
         public DynamicObject mapBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block,
-                        @Cached("create(getContext())") ArrayBuilderNode arrayBuilderNode) {
+                        @Cached("create()") ArrayBuilderNode arrayBuilderNode) {
             assert HashOperations.verifyStore(getContext(), hash);
 
             final int length = Layouts.HASH.getSize(hash);

@@ -12,28 +12,22 @@ package org.jruby.truffle.core.array;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.RubyBaseNode;
 
 /*
  * TODO(CS): how does this work when when multithreaded? Could a node get replaced by someone else and
  * then suddenly you're passing it a store type it doesn't expect?
  */
 
-public abstract class ArrayBuilderNode extends Node {
+public abstract class ArrayBuilderNode extends RubyBaseNode {
 
-    private final RubyContext context;
-
-    public ArrayBuilderNode(RubyContext context) {
-        this.context = context;
-    }
-
-    public static ArrayBuilderNode create(RubyContext context) {
-        return new UninitializedArrayBuilderNode(context);
+    public static ArrayBuilderNode create() {
+        return new UninitializedArrayBuilderNode();
     }
 
     public abstract Object start();
@@ -43,18 +37,14 @@ public abstract class ArrayBuilderNode extends Node {
     public abstract Object appendValue(Object store, int index, Object value);
     public abstract Object finish(Object store, int length);
 
-    protected RubyContext getContext() {
-        return context;
-    }
-
     protected Object restart(int length, String reason) {
-        final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
+        final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode();
         replace(newNode, reason);
         return newNode.start(length);
     }
 
     protected Object appendValueFallback(Object store, int index, Object value, int expectedLength) {
-        replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
+        replace(new ObjectArrayBuilderNode(expectedLength));
 
         // The store type cannot be assumed if multiple threads use the same builder,
         // so just use the generic box() since anyway this is slow path.
@@ -71,7 +61,7 @@ public abstract class ArrayBuilderNode extends Node {
 
     protected Object ensureFallback(Object store, int length) {
         final Object[] newStore = ArrayUtils.box(store, length);
-        final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
+        final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode();
         replace(newNode);
         newNode.resume(newStore);
         return newNode.ensure(newStore, length);
@@ -83,10 +73,6 @@ public abstract class ArrayBuilderNode extends Node {
         private boolean couldUseLong = true;
         private boolean couldUseDouble = true;
         private final BranchProfile expandProfile = BranchProfile.create();
-
-        public UninitializedArrayBuilderNode(RubyContext context) {
-            super(context);
-        }
 
         public void resume(Object[] store) {
             for (Object value : store) {
@@ -141,16 +127,16 @@ public abstract class ArrayBuilderNode extends Node {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             Object[] storeArray = (Object[]) store;
             if (couldUseInteger) {
-                replace(new IntegerArrayBuilderNode(getContext(), storeArray.length));
+                replace(new IntegerArrayBuilderNode(storeArray.length));
                 return ArrayUtils.unboxInteger(storeArray, length);
             } else if (couldUseLong) {
-                replace(new LongArrayBuilderNode(getContext(), storeArray.length));
+                replace(new LongArrayBuilderNode(storeArray.length));
                 return ArrayUtils.unboxLong(storeArray, length);
             } else if (couldUseDouble) {
-                replace(new DoubleArrayBuilderNode(getContext(), storeArray.length));
+                replace(new DoubleArrayBuilderNode(storeArray.length));
                 return ArrayUtils.unboxDouble(storeArray, length);
             } else {
-                replace(new ObjectArrayBuilderNode(getContext(), storeArray.length));
+                replace(new ObjectArrayBuilderNode(storeArray.length));
                 return storeArray;
             }
         }
@@ -179,8 +165,7 @@ public abstract class ArrayBuilderNode extends Node {
 
         private final ConditionProfile hasAppendedIntegerArray = ConditionProfile.createBinaryProfile();
 
-        public IntegerArrayBuilderNode(RubyContext context, int expectedLength) {
-            super(context);
+        public IntegerArrayBuilderNode(int expectedLength) {
             this.expectedLength = expectedLength;
         }
 
@@ -222,7 +207,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
+            return replace(new ObjectArrayBuilderNode(expectedLength)).
                     appendArray(ArrayUtils.box((int[]) store), index, array);
         }
 
@@ -249,8 +234,7 @@ public abstract class ArrayBuilderNode extends Node {
         private final int expectedLength;
         private final ConditionProfile otherLongStoreProfile = ConditionProfile.createBinaryProfile();
 
-        public LongArrayBuilderNode(RubyContext context, int expectedLength) {
-            super(context);
+        public LongArrayBuilderNode(int expectedLength) {
             this.expectedLength = expectedLength;
         }
 
@@ -292,7 +276,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
+            return replace(new ObjectArrayBuilderNode(expectedLength)).
                     appendArray(ArrayUtils.box((long[]) store), index, array);
         }
 
@@ -323,8 +307,7 @@ public abstract class ArrayBuilderNode extends Node {
         private final int expectedLength;
         private final ConditionProfile otherDoubleStoreProfile = ConditionProfile.createBinaryProfile();
 
-        public DoubleArrayBuilderNode(RubyContext context, int expectedLength) {
-            super(context);
+        public DoubleArrayBuilderNode(int expectedLength) {
             this.expectedLength = expectedLength;
         }
 
@@ -366,7 +349,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
+            return replace(new ObjectArrayBuilderNode(expectedLength)).
                     appendArray(ArrayUtils.box((double[]) store), index, array);
         }
 
@@ -397,8 +380,7 @@ public abstract class ArrayBuilderNode extends Node {
         @CompilationFinal private boolean hasAppendedLongArray = false;
         @CompilationFinal private boolean hasAppendedDoubleArray = false;
 
-        public ObjectArrayBuilderNode(RubyContext context, int expectedLength) {
-            super(context);
+        public ObjectArrayBuilderNode(int expectedLength) {
             this.expectedLength = expectedLength;
         }
 
@@ -411,7 +393,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                final ArrayBuilderNode newNode = new ObjectArrayBuilderNode(getContext(), length);
+                final ArrayBuilderNode newNode = new ObjectArrayBuilderNode(length);
                 replace(newNode, length + " > " + expectedLength + " (expected)");
                 return newNode.start(length);
             }
@@ -423,7 +405,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object ensure(Object store, int length) {
             if (length > ((Object[]) store).length) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                final ArrayBuilderNode newNode = new ObjectArrayBuilderNode(getContext(), length);
+                final ArrayBuilderNode newNode = new ObjectArrayBuilderNode(length);
                 replace(newNode, length + " > " + expectedLength + " (expected)");
                 return newNode.ensure(ArrayUtils.copyOf((Object[]) store, length), length);
             }

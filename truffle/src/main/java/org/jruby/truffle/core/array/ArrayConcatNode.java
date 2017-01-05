@@ -24,14 +24,13 @@ public final class ArrayConcatNode extends RubyNode {
 
     @Children private final RubyNode[] children;
     // Use an arrayBuilderNode to stabilize the array type for a given location.
-    @Child private ArrayBuilderNode arrayBuilderNode;
+    @Child private ArrayBuilderNode arrayBuilderNode = ArrayBuilderNode.create();
 
     private final ConditionProfile isArrayProfile = ConditionProfile.createBinaryProfile();
 
     public ArrayConcatNode(RubyNode[] children) {
         assert children.length > 1;
         this.children = children;
-        arrayBuilderNode = ArrayBuilderNode.create(getContext());
     }
 
     @Override
