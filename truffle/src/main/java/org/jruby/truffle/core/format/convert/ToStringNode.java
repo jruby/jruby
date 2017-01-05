@@ -48,10 +48,9 @@ public abstract class ToStringNode extends FormatNode {
 
     private final ConditionProfile taintedProfile = ConditionProfile.createBinaryProfile();
 
-    public ToStringNode(RubyContext context, boolean convertNumbersToStrings,
+    public ToStringNode(boolean convertNumbersToStrings,
                         String conversionMethod, boolean inspectOnConversionFailure,
                         Object valueOnNil) {
-        super(context);
         this.convertNumbersToStrings = convertNumbersToStrings;
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;

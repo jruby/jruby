@@ -36,9 +36,8 @@ public abstract class FormatIntegerBinaryNode extends FormatNode {
     private final boolean hasSpaceFlag;
     private final boolean hasZeroFlag;
 
-    public FormatIntegerBinaryNode(RubyContext context, char format, boolean hasPlusFlag, boolean useAlternativeFormat,
+    public FormatIntegerBinaryNode(char format, boolean hasPlusFlag, boolean useAlternativeFormat,
                                    boolean hasMinusFlag, boolean hasSpaceFlag, boolean hasZeroFlag) {
-        super(context);
         this.format = format;
         this.hasPlusFlag = hasPlusFlag;
         this.useAlternativeFormat = useAlternativeFormat;

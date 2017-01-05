@@ -20,10 +20,6 @@ import org.jruby.truffle.core.format.FormatNode;
 })
 public abstract class ToFloatNode extends FormatNode {
 
-    public ToFloatNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public float toFloat(double object) {
         return (float) object;

@@ -62,10 +62,6 @@ import org.jruby.truffle.core.string.UTF8Operations;
 })
 public abstract class WriteUTF8CharacterNode extends FormatNode {
 
-    public WriteUTF8CharacterNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization(guards = {"value >= 0", "value <= 0x7f"})
     public Object writeSingleByte(VirtualFrame frame, long value,
                                   @Cached("createBinaryProfile()") ConditionProfile rangeProfile) {

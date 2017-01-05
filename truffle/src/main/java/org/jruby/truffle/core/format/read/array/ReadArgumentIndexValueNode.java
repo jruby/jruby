@@ -24,8 +24,7 @@ public abstract class ReadArgumentIndexValueNode extends FormatNode {
 
     private final int index;
 
-    public ReadArgumentIndexValueNode(RubyContext context, int index) {
-        super(context);
+    public ReadArgumentIndexValueNode(int index) {
         this.index = index - 1;
     }
 

@@ -35,8 +35,7 @@ public abstract class ReadHashValueNode extends FormatNode {
 
     private final ConditionProfile oneHashProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadHashValueNode(RubyContext context, Object key) {
-        super(context);
+    public ReadHashValueNode(Object key) {
         this.key = key;
     }
 

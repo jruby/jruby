@@ -21,8 +21,7 @@ public class SetSourcePositionNode extends FormatNode {
 
     private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
-    public SetSourcePositionNode(RubyContext context, int position) {
-        super(context);
+    public SetSourcePositionNode(int position) {
         this.position = position;
     }
 

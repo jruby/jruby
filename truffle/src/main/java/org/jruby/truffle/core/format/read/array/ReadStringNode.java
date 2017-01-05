@@ -34,10 +34,9 @@ public abstract class ReadStringNode extends FormatNode {
 
     @Child private ToStringNode toStringNode;
 
-    public ReadStringNode(RubyContext context, boolean convertNumbersToStrings,
+    public ReadStringNode(boolean convertNumbersToStrings,
                           String conversionMethod, boolean inspectOnConversionFailure,
                           Object valueOnNil) {
-        super(context);
         this.convertNumbersToStrings = convertNumbersToStrings;
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;
@@ -73,12 +72,12 @@ public abstract class ReadStringNode extends FormatNode {
     private Object readAndConvert(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toStringNode = insert(ToStringNodeGen.create(getContext(),
+            toStringNode = insert(ToStringNodeGen.create(
                     convertNumbersToStrings,
                     conversionMethod,
                     inspectOnConversionFailure,
                     valueOnNil,
-                    WriteByteNodeGen.create(getContext(), new LiteralFormatNode(getContext(), (byte) 0))));
+                    WriteByteNodeGen.create(new LiteralFormatNode((byte) 0))));
         }
 
         return toStringNode.executeToString(frame, value);

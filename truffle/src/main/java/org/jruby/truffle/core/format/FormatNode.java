@@ -20,24 +20,18 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.language.RubyBaseNode;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 @ImportStatic(FormatGuards.class)
-public abstract class FormatNode extends Node {
-
-    private final RubyContext context;
+public abstract class FormatNode extends RubyBaseNode {
 
     private final ConditionProfile writeMoreThanZeroBytes = ConditionProfile.createBinaryProfile();
     private final ConditionProfile tooFewArgumentsProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile sourceRangeProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile codeRangeIncreasedProfile = ConditionProfile.createBinaryProfile();
-
-    public FormatNode(RubyContext context) {
-        assert context != null;
-        this.context = context;
-    }
 
     public abstract Object execute(VirtualFrame frame);
 
@@ -201,12 +195,8 @@ public abstract class FormatNode extends Node {
         return output;
     }
 
-    protected RubyContext getContext() {
-        return context;
-    }
-
     protected boolean isNil(Object object) {
-        return object == context.getCoreLibrary().getNilObject();
+        return object == coreLibrary().getNilObject();
     }
 
     public static int safeGet(ByteBuffer encode) {

@@ -23,8 +23,7 @@ public abstract class ReinterpretByteAsIntegerNode extends FormatNode {
 
     public boolean signed;
 
-    public ReinterpretByteAsIntegerNode(RubyContext context, boolean signed) {
-        super(context);
+    public ReinterpretByteAsIntegerNode(boolean signed) {
         this.signed = signed;
     }
 

@@ -27,8 +27,7 @@ public abstract class WriteBase64StringNode extends FormatNode {
     private final int length;
     private final boolean ignoreStar;
 
-    public WriteBase64StringNode(RubyContext context, int length, boolean ignoreStar) {
-        super(context);
+    public WriteBase64StringNode(int length, boolean ignoreStar) {
         this.length = length;
         this.ignoreStar = ignoreStar;
     }

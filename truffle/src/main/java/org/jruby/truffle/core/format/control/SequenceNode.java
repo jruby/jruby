@@ -20,8 +20,7 @@ public class SequenceNode extends FormatNode {
 
     @Children private final FormatNode[] children;
 
-    public SequenceNode(RubyContext context, FormatNode[] children) {
-        super(context);
+    public SequenceNode(FormatNode[] children) {
         this.children = children;
     }
 

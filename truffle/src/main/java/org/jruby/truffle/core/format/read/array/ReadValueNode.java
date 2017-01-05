@@ -22,10 +22,6 @@ import org.jruby.truffle.core.format.read.SourceNode;
 })
 public abstract class ReadValueNode extends FormatNode {
 
-    public ReadValueNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization(guards = "isNull(source)")
     public void read(VirtualFrame frame, Object source) {
         advanceSourcePosition(frame);

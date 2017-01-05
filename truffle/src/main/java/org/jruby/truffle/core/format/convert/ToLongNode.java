@@ -34,8 +34,7 @@ public abstract class ToLongNode extends FormatNode {
     @Child private CallDispatchHeadNode toIntNode;
     @Child private ToLongNode redoNode;
 
-    public ToLongNode(RubyContext context, boolean errorIfNeedsConversion) {
-        super(context);
+    public ToLongNode(boolean errorIfNeedsConversion) {
         this.errorIfNeedsConversion = errorIfNeedsConversion;
     }
 
@@ -88,7 +87,7 @@ public abstract class ToLongNode extends FormatNode {
 
         if (redoNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            redoNode = insert(ToLongNodeGen.create(getContext(), true, null));
+            redoNode = insert(ToLongNodeGen.create(true, null));
         }
 
         return redoNode.executeToLong(frame, value);

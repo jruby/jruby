@@ -20,8 +20,7 @@ public class RepeatExplodedNode extends FormatNode {
 
     @Child private FormatNode child;
 
-    public RepeatExplodedNode(RubyContext context, int count, FormatNode child) {
-        super(context);
+    public RepeatExplodedNode(int count, FormatNode child) {
         this.count = count;
         this.child = child;
     }

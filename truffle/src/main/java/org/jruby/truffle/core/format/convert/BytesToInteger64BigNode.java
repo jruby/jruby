@@ -22,10 +22,6 @@ import org.jruby.truffle.core.format.MissingValue;
 })
 public abstract class BytesToInteger64BigNode extends FormatNode {
 
-    public BytesToInteger64BigNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public MissingValue decode(MissingValue missingValue) {
         return missingValue;

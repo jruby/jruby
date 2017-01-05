@@ -25,10 +25,6 @@ public abstract class ReadByteNode extends FormatNode {
 
     private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadByteNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization(guards = "isNull(source)")
     public void read(VirtualFrame frame, Object source) {
         advanceSourcePosition(frame, 1);

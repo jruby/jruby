@@ -64,10 +64,6 @@ import java.util.Arrays;
 })
 public abstract class ReadUUStringNode extends FormatNode {
 
-    public ReadUUStringNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     protected Object encode(VirtualFrame frame, byte[] source) {
         final int position = getSourcePosition(frame);

@@ -70,10 +70,6 @@ public abstract class WriteBERNode extends FormatNode {
 
     private final BigInteger BIG_128 = BigInteger.valueOf(128);
 
-    public WriteBERNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public Object doWrite(VirtualFrame frame, int value) {
         if (cantCompressProfile.profile(value < 0)) {

@@ -27,10 +27,6 @@ public abstract class ToIntegerNode extends FormatNode {
 
     @Child private CallDispatchHeadNode integerNode;
 
-    public ToIntegerNode(RubyContext context) {
-        super(context);
-    }
-
     public abstract Object executeToInteger(VirtualFrame frame, Object object);
 
     @Specialization

@@ -28,10 +28,6 @@ public abstract class ReinterpretAsUnsignedNode extends FormatNode {
 
     @Child private FixnumOrBignumNode fixnumOrBignumNode;
 
-    public ReinterpretAsUnsignedNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public MissingValue asUnsigned(MissingValue missingValue) {
         return missingValue;

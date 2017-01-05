@@ -58,8 +58,7 @@ public abstract class WriteMIMEStringNode extends FormatNode {
 
     private final int length;
 
-    public WriteMIMEStringNode(RubyContext context, int length) {
-        super(context);
+    public WriteMIMEStringNode(int length) {
         this.length = length;
     }
 

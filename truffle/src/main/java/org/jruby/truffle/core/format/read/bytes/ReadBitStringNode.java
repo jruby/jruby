@@ -68,8 +68,7 @@ public abstract class ReadBitStringNode extends FormatNode {
     private final boolean star;
     private final int length;
 
-    public ReadBitStringNode(RubyContext context, ByteOrder byteOrder, boolean star, int length) {
-        super(context);
+    public ReadBitStringNode(ByteOrder byteOrder, boolean star, int length) {
         this.byteOrder = byteOrder;
         this.star = star;
         this.length = length;

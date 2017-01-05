@@ -23,10 +23,6 @@ public abstract class ToDoubleWithCoercionNode extends FormatNode {
 
     @Child private CallDispatchHeadNode floatNode;
 
-    public ToDoubleWithCoercionNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public Object toDouble(VirtualFrame frame, Object value) {
         if (floatNode == null) {

@@ -19,10 +19,6 @@ public class ReverseOutputPositionNode extends FormatNode {
 
     private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
-    public ReverseOutputPositionNode(RubyContext context) {
-        super(context);
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         final int position = getOutputPosition(frame);
