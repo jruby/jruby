@@ -87,10 +87,6 @@ module Rubinius
       ]
       SHELL_META_CHAR_PATTERN = Regexp.new("[#{SHELL_META_CHARS.map(&Regexp.method(:escape)).join}]")
 
-      def self.set_status_global(status)
-        $? = status
-      end
-
       def self.exec(*args)
         exe = Execute.new(*args)
         exe.spawn_setup(true)
@@ -104,7 +100,7 @@ module Rubinius
         begin
           pid = exe.spawn exe.options, exe.command, exe.argv
         rescue SystemCallError => error
-          set_status_global ::Process::Status.new(pid, 127)
+          $? = ::Process::Status.new(pid, 127)
           raise error
         end
 

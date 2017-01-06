@@ -501,7 +501,7 @@ module Process
     status, termsig, stopsig, pid = value
 
     status = Process::Status.new(pid, status, termsig, stopsig)
-    Rubinius::Mirror::Process.set_status_global status
+    $? = status
 
     [pid, status]
   end
