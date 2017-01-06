@@ -14,7 +14,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class WriteClassVariableNode extends RubyNode {
 

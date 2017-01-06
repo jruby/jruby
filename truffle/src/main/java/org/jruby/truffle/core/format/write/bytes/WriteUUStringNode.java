@@ -31,8 +31,7 @@ public abstract class WriteUUStringNode extends FormatNode {
     private final int length;
     private final boolean ignoreStar;
 
-    public WriteUUStringNode(RubyContext context, int length, boolean ignoreStar) {
-        super(context);
+    public WriteUUStringNode(int length, boolean ignoreStar) {
         this.length = length;
         this.ignoreStar = ignoreStar;
     }

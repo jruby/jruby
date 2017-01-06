@@ -16,8 +16,7 @@ public class LiteralFormatNode extends FormatNode {
 
     private final Object value;
 
-    public LiteralFormatNode(RubyContext context, Object value) {
-        super(context);
+    public LiteralFormatNode(Object value) {
         this.value = value;
     }
 

@@ -31,10 +31,6 @@ public abstract class ReadLongOrBigIntegerNode extends FormatNode {
 
     private final ConditionProfile bignumProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadLongOrBigIntegerNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization(guards = "isNull(source)")
     public void read(VirtualFrame frame, Object source) {
         advanceSourcePosition(frame);
@@ -60,7 +56,7 @@ public abstract class ReadLongOrBigIntegerNode extends FormatNode {
         } else {
             if (toLongNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toLongNode = insert(ToLongNodeGen.create(getContext(), false, null));
+                toLongNode = insert(ToLongNodeGen.create(false, null));
             }
 
             return toLongNode.executeToLong(frame, value);

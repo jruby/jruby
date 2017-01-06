@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,16 +16,6 @@ public class SourceIndexLength {
 
     private final int charIndex;
     private final int length;
-
-    public SourceIndexLength(SourceSection sourceSection) {
-        if (sourceSection == null) {
-            charIndex = -1;
-            length = 0;
-        } else {
-            charIndex = sourceSection.getCharIndex();
-            length = sourceSection.getCharLength();
-        }
-    }
 
     public SourceIndexLength(int charIndex, int length) {
         this.charIndex = charIndex;

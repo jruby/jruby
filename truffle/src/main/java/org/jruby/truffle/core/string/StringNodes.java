@@ -134,7 +134,6 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -2715,7 +2714,7 @@ public abstract class StringNodes {
     @NodeChildren({ @NodeChild("first"), @NodeChild("second") })
     public static abstract class StringEqualNode extends RubyNode {
 
-        @Child StringAreComparableNode areComparableNode;
+        @Child private StringAreComparableNode areComparableNode;
 
         public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
 
@@ -3144,8 +3143,8 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringIndexPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child StringByteCharacterIndexNode byteIndexToCharIndexNode = StringNodesFactory.StringByteCharacterIndexNodeFactory.create(null);
-        @Child NormalizeIndexNode normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
+        @Child private StringByteCharacterIndexNode byteIndexToCharIndexNode = StringNodesFactory.StringByteCharacterIndexNodeFactory.create(null);
+        @Child private NormalizeIndexNode normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
 
         @Specialization(guards = { "isRubyString(pattern)", "isBrokenCodeRange(pattern)" })
         public DynamicObject stringIndexBrokenCodeRange(DynamicObject string, DynamicObject pattern, int start) {

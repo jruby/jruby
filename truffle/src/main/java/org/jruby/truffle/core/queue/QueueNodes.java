@@ -26,7 +26,6 @@ import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.core.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.core.thread.ThreadManager.BlockingAction;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
@@ -54,7 +53,7 @@ public abstract class QueueNodes {
     @CoreMethod(names = { "push", "<<", "enq" }, required = 1)
     public abstract static class PushNode extends CoreMethodArrayArgumentsNode {
 
-        @Child PropagateSharingNode propagateSharingNode = PropagateSharingNode.create();
+        @Child private PropagateSharingNode propagateSharingNode = PropagateSharingNode.create();
 
         @Specialization
         public DynamicObject push(DynamicObject self, final Object value) {

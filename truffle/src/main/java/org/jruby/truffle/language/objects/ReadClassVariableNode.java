@@ -15,7 +15,6 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 public class ReadClassVariableNode extends RubyNode {

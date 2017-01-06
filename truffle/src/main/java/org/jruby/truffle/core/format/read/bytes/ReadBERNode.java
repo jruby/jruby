@@ -64,17 +64,12 @@ import java.nio.ByteBuffer;
 })
 public abstract class ReadBERNode extends FormatNode {
 
-    @Child private FixnumOrBignumNode fixnumOrBignumNode;
+    @Child private FixnumOrBignumNode fixnumOrBignumNode = FixnumOrBignumNode.create(null);
 
     private static final long UL_MASK = 0xFE000000;
     private static final BigInteger BIG_128 = BigInteger.valueOf(128);
 
     private final ConditionProfile simpleProfile = ConditionProfile.createBinaryProfile();
-
-    public ReadBERNode(RubyContext context) {
-        super(context);
-        fixnumOrBignumNode = FixnumOrBignumNode.create(null);
-    }
 
     @Specialization
     protected Object encode(VirtualFrame frame, byte[] source) {

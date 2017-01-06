@@ -99,7 +99,7 @@ def extractArguments(cli_args):
                 classpath.append(cp)
             elif arg.startswith('-J-'):
                 vmArgs.append(arg[2:])
-            elif arg.startswith('-X+') or arg.startswith('-X-'):
+            elif arg.startswith('-X+') or arg.startswith('-X-') or arg.startswith('-Xlog='):
                 rubyArgs.append(arg)
             elif arg.startswith('-X'):
                 vmArgs.append('-Djruby.'+arg[2:])

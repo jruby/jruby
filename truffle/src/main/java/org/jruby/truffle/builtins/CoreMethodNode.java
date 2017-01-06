@@ -11,7 +11,6 @@ package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 @GenerateNodeFactory
 public abstract class CoreMethodNode extends RubyNode {

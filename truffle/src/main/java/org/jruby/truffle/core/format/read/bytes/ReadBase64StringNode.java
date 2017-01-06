@@ -67,10 +67,6 @@ import java.util.Arrays;
 })
 public abstract class ReadBase64StringNode extends FormatNode {
 
-    public ReadBase64StringNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public Object read(VirtualFrame frame, byte[] source) {
         final int position = getSourcePosition(frame);

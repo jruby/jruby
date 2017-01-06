@@ -57,8 +57,7 @@ public abstract class FormatIntegerNode extends FormatNode {
     private final boolean hasMinusFlag;
     private final boolean hasFSharp;
 
-    public FormatIntegerNode(RubyContext context, char format, boolean hasSpaceFlag, boolean hasZeroFlag, boolean hasPlusFlag, boolean hasMinusFlag, boolean hasFSharp) {
-        super(context);
+    public FormatIntegerNode(char format, boolean hasSpaceFlag, boolean hasZeroFlag, boolean hasPlusFlag, boolean hasMinusFlag, boolean hasFSharp) {
         this.format = format;
         this.hasSpaceFlag = hasSpaceFlag;
         this.hasZeroFlag = hasZeroFlag;

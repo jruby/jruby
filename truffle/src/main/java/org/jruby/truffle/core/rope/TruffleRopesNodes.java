@@ -20,7 +20,6 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 @CoreClass("Truffle::Ropes")

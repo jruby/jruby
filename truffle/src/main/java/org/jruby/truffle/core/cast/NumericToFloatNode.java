@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -33,7 +32,7 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 public abstract class NumericToFloatNode extends RubyNode {
 
     @Child private IsANode isANode = IsANodeGen.create(null, null);
-    @Child CallDispatchHeadNode toFloatCallNode;
+    @Child private CallDispatchHeadNode toFloatCallNode;
 
     private final String method;
 

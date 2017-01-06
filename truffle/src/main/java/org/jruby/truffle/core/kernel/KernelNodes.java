@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -65,15 +64,12 @@ import org.jruby.truffle.core.cast.NameToJavaStringNodeGen;
 import org.jruby.truffle.core.cast.NameToSymbolOrStringNodeGen;
 import org.jruby.truffle.core.cast.TaintResultNode;
 import org.jruby.truffle.core.cast.ToPathNodeGen;
-import org.jruby.truffle.core.cast.ToStrNode;
 import org.jruby.truffle.core.cast.ToStrNodeGen;
 import org.jruby.truffle.core.format.BytesResult;
 import org.jruby.truffle.core.format.FormatExceptionTranslator;
 import org.jruby.truffle.core.format.exceptions.FormatException;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.printf.PrintfCompiler;
-import org.jruby.truffle.core.hash.HashOperations;
-import org.jruby.truffle.core.hash.KeyValue;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.core.kernel.KernelNodesFactory.SingletonMethodsNodeFactory;
@@ -94,7 +90,6 @@ import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.SnippetNode;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
@@ -147,136 +142,15 @@ import org.jruby.truffle.parser.TranslatorDriver;
 import org.jruby.truffle.platform.UnsafeGroup;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.ProcessBuilder.Redirect;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
 
 @CoreClass("Kernel")
 public abstract class KernelNodes {
-
-    @CoreMethod(names = "`", isModuleFunction = true, required = 1, unsafe = { UnsafeGroup.IO, UnsafeGroup.PROCESSES })
-    public abstract static class BacktickNode extends CoreMethodArrayArgumentsNode {
-
-        private static class ExecuteResult {
-
-            private final DynamicObject output;
-            private final int pid;
-            private final int code;
-
-            public ExecuteResult(DynamicObject output, int pid, int code) {
-                this.output = output;
-                this.pid = pid;
-                this.code = code;
-            }
-
-            public DynamicObject getOutput() {
-                return output;
-            }
-
-            public int getPid() {
-                return pid;
-            }
-
-            public int getCode() {
-                return code;
-            }
-        }
-
-        @Child private CallDispatchHeadNode toHashNode;
-        @Child private ToStrNode toStrNode;
-        @Child private SnippetNode setStatusNode = new SnippetNode();
-
-        @Specialization(guards = "!isRubyString(command)")
-        public DynamicObject backtickCoerce(VirtualFrame frame, DynamicObject command) {
-            // TODO BJF Aug 4, 2016 Needs SafeStringValue here
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(null));
-            }
-            return backtick(frame, toStrNode.executeToStr(frame, command));
-        }
-
-        @Specialization(guards = "isRubyString(command)")
-        public DynamicObject backtick(VirtualFrame frame, DynamicObject command) {
-            // Command is lexically a string interoplation, so variables will already have been expanded
-
-            if (toHashNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall());
-            }
-
-            final DynamicObject env = getContext().getCoreLibrary().getENV();
-            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash");
-
-            final ExecuteResult result = spawnAndCaptureOutput(command, envAsHash);
-
-            setStatusNode.execute(frame,
-                    "Rubinius::Mirror::Process.set_status_global Process::Status.new(pid, code)",
-                    "pid", result.getPid(),
-                    "code", result.getCode());
-
-            return result.getOutput();
-        }
-
-        @TruffleBoundary
-        private ExecuteResult spawnAndCaptureOutput(DynamicObject command, final DynamicObject envAsHash) {
-            if (TruffleOptions.AOT) {
-                throw new UnsupportedOperationException("ProcessEnvironment.environment not supported with AOT");
-            }
-
-            // We need to run via bash to get the variable and other expansion we expect
-            String[] cmdArray = new String[] { "bash", "-c", command.toString() };
-
-            ProcessBuilder builder = new ProcessBuilder(cmdArray).redirectError(Redirect.INHERIT);
-
-            Map<String, String> env = builder.environment();
-            env.clear();
-            for (KeyValue keyValue : HashOperations.iterableKeyValues(envAsHash)) {
-                // TODO(CS): toString
-                env.put(keyValue.getKey().toString(), keyValue.getValue().toString());
-            }
-
-            final Process process;
-            try {
-                process = builder.start();
-            } catch (IOException e) {
-                throw new JavaException(e);
-            }
-
-            final InputStream stdout = process.getInputStream();
-
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            final int bufferSize = 1024;
-            final byte[] buffer = new byte[bufferSize];
-            int bytesRead = 0;
-            try {
-                while ((bytesRead = stdout.read(buffer, 0, bufferSize)) != -1) {
-                    baos.write(buffer, 0, bytesRead);
-                }
-            } catch (IOException e) {
-                throw new JavaException(e);
-            }
-
-            final int code = getContext().getThreadManager().runUntilResult(this, () -> process.waitFor());
-            final DynamicObject output = createString(baos.toByteArray(), getContext().getEncodingManager().getDefaultExternalEncoding());
-
-            // TODO CS 30-Oct-16 how to get the PID? JRuby does some gymnastics with reflection. I think we
-            // should probably reimplement this in Ruby using spawn, which starts processes with JNR and so
-            // has proper access to things like the PID.
-
-            final int pid = 0;
-
-            return new ExecuteResult(output, pid, code);
-        }
-
-    }
 
     /**
      * Check if operands are the same object or call #==.
@@ -1015,7 +889,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = { "is_a?", "kind_of?" }, required = 1)
     public abstract static class KernelIsANode extends CoreMethodArrayArgumentsNode {
 
-        @Child IsANode isANode = IsANodeGen.create(null, null);
+        @Child private IsANode isANode = IsANodeGen.create(null, null);
 
         @Specialization
         public boolean isA(Object self, DynamicObject module) {
@@ -1132,9 +1006,9 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodNode extends CoreMethodNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
-        @Child LookupMethodNode lookupMethodNode = LookupMethodNodeGen.create(true, false, null, null);
-        @Child CallDispatchHeadNode respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(true);
+        @Child private NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child private LookupMethodNode lookupMethodNode = LookupMethodNodeGen.create(true, false, null, null);
+        @Child private CallDispatchHeadNode respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(true);
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
@@ -1242,7 +1116,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "p", needsSelf = false, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintNode extends CoreMethodArrayArgumentsNode {
 
-        @Child CallDispatchHeadNode callInspectNode = CallDispatchHeadNode.createMethodCall();
+        @Child private CallDispatchHeadNode callInspectNode = CallDispatchHeadNode.createMethodCall();
 
         @Specialization
         public Object p(VirtualFrame frame, Object value) {
@@ -1285,7 +1159,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "proc", isModuleFunction = true, needsBlock = true)
     public abstract static class ProcNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ProcNewNode procNewNode = ProcNewNodeFactory.create(null);
+        @Child private ProcNewNode procNewNode = ProcNewNodeFactory.create(null);
 
         @Specialization
         public DynamicObject proc(VirtualFrame frame, Object maybeBlock) {

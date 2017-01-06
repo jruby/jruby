@@ -35,7 +35,6 @@ import org.jruby.truffle.core.module.ModuleNodesFactory;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.constants.GetConstantNode;
@@ -324,8 +323,8 @@ public class CExtNodes {
             return NameToJavaStringNodeGen.create(name);
         }
 
-        @Child LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, false);
-        @Child GetConstantNode getConstantNode = GetConstantNode.create();
+        @Child private LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, false);
+        @Child private GetConstantNode getConstantNode = GetConstantNode.create();
 
         @Specialization
         public Object constGetFrom(VirtualFrame frame, DynamicObject module, String name) {

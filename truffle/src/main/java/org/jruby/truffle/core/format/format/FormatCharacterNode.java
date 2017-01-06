@@ -41,8 +41,7 @@ public abstract class FormatCharacterNode extends FormatNode {
     @Child private ToIntegerNode toIntegerNode;
     @Child private ToStringNode toStringNode;
 
-    public FormatCharacterNode(RubyContext context, boolean hasMinusFlag) {
-        super(context);
+    public FormatCharacterNode(boolean hasMinusFlag) {
         this.hasMinusFlag = hasMinusFlag;
     }
 
@@ -68,12 +67,12 @@ public abstract class FormatCharacterNode extends FormatNode {
     protected String getCharString(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toStringNode = insert(ToStringNodeGen.create(getContext(),
+            toStringNode = insert(ToStringNodeGen.create(
                 false,
                 "to_str",
                 false,
                 null,
-                WriteByteNodeGen.create(getContext(), new LiteralFormatNode(getContext(), value))));
+                WriteByteNodeGen.create(new LiteralFormatNode(value))));
         }
         Object toStrResult;
         try {
@@ -86,7 +85,7 @@ public abstract class FormatCharacterNode extends FormatNode {
         if (toStrResult == null || isNil(toStrResult)) {
             if (toIntegerNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toIntegerNode = insert(ToIntegerNodeGen.create(getContext(),null));
+                toIntegerNode = insert(ToIntegerNodeGen.create(null));
             }
             final int charValue = (int) toIntegerNode.executeToInteger(frame, value);
             // TODO BJF check char length is > 0

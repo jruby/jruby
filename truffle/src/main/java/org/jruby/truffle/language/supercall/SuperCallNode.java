@@ -18,7 +18,6 @@ import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -33,11 +32,10 @@ public class SuperCallNode extends RubyNode {
 
     @Child private RubyNode arguments;
     @Child private RubyNode block;
-    @Child ProcOrNullNode procOrNullNode = ProcOrNullNodeGen.create(null);
-
-    @Child LookupSuperMethodNode lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null);
-    @Child CallInternalMethodNode callMethodNode = CallInternalMethodNodeGen.create(null, new RubyNode[] {});
-    @Child CallDispatchHeadNode callMethodMissingNode;
+    @Child private ProcOrNullNode procOrNullNode = ProcOrNullNodeGen.create(null);
+    @Child private LookupSuperMethodNode lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null);
+    @Child private CallInternalMethodNode callMethodNode = CallInternalMethodNodeGen.create(null, new RubyNode[] {});
+    @Child private CallDispatchHeadNode callMethodMissingNode;
 
     public SuperCallNode(RubyNode arguments, RubyNode block) {
         this.arguments = arguments;

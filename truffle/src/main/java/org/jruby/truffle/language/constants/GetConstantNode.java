@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -36,7 +36,7 @@ public abstract class GetConstantNode extends RubyNode {
         return GetConstantNodeGen.create(null, null, null, null);
     }
 
-    private @Child CallDispatchHeadNode constMissingNode;
+    @Child private CallDispatchHeadNode constMissingNode;
 
     public abstract Object executeGetConstant(
             VirtualFrame frame, Object module, String name, RubyConstant constant, LookupConstantInterface lookupConstantNode);

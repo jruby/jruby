@@ -18,7 +18,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.cast.ProcOrNullNode;
 import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 
 @NodeChildren({
@@ -28,8 +27,8 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 })
 public abstract class CallBoundMethodNode extends RubyNode {
 
-    @Child CallInternalMethodNode callInternalMethodNode = CallInternalMethodNodeGen.create(null, null);
-    @Child ProcOrNullNode procOrNullNode = ProcOrNullNodeGen.create(null);
+    @Child private CallInternalMethodNode callInternalMethodNode = CallInternalMethodNodeGen.create(null, null);
+    @Child private ProcOrNullNode procOrNullNode = ProcOrNullNodeGen.create(null);
 
     public abstract Object executeCallBoundMethod(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block);
 

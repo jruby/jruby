@@ -35,7 +35,7 @@ public class Log {
 
     public static final Level PERFORMANCE = new RubyLevel("PERFORMANCE", Level.WARNING);
 
-    private static final Logger LOGGER = createLogger();
+    public static final Logger LOGGER = createLogger();
 
     public static class RubyHandler extends Handler {
 
@@ -87,31 +87,13 @@ public class Log {
     @TruffleBoundary
     public static void performanceOnce(String message) {
         if (displayedWarnings.add(message)) {
-            performance(message);
+            LOGGER.log(PERFORMANCE, message);
         }
-    }
-
-    /**
-     * Warn about something that has lower performance than might be expected.
-     */
-    @TruffleBoundary
-    public static void performance(String message) {
-        LOGGER.log(PERFORMANCE, message);
-    }
-
-    @TruffleBoundary
-    public static void warning(String message) {
-        LOGGER.warning(message);
-    }
-
-    @TruffleBoundary
-    public static void info(String message) {
-        LOGGER.info(message);
     }
 
     @TruffleBoundary
     public static void info(String format, Object... args) {
-        info(String.format(format, args));
+        LOGGER.info(String.format(format, args));
     }
 
 }

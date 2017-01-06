@@ -5,7 +5,5 @@
 ["line", "/binding.rb", 14, nil, {:a=>14}, nil]
 ["call", "/binding.rb", 14, :"<main>", {:captured_in_scope=>2, :inside_trace=>4, :modified=>5, :outside_trace=>1, :result=>16}, Object]
 ["line", "/binding.rb", 27, nil, {:captured_in_scope=>2, :inside_trace=>4, :modified=>5, :outside_trace=>1, :result=>16}, nil]
-["call", "/binding.rb", 14, :+, {}, Fixnum]
 ["line", "/binding.rb", 30, nil, {:captured_in_scope=>2, :inside_trace=>4, :modified=>5, :outside_trace=>1, :result=>16}, nil]
 ["line", "/binding.rb", 32, nil, {:captured_in_scope=>2, :inside_trace=>4, :modified=>5, :outside_trace=>1, :result=>16}, nil]
-["call", "/binding.rb", 32, :set_trace_func, {}, Object]

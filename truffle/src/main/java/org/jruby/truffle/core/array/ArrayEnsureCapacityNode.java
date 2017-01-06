@@ -18,7 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChildren({
         @NodeChild(value = "array", type = RubyNode.class),
@@ -27,7 +26,7 @@ import org.jruby.truffle.language.SourceIndexLength;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayEnsureCapacityNode extends RubyNode {
 
-    public static ArrayEnsureCapacityNode create(RubyContext context) {
+    public static ArrayEnsureCapacityNode create() {
         return ArrayEnsureCapacityNodeGen.create(null, null);
     }
 

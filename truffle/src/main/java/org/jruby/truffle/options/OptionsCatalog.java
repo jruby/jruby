@@ -109,6 +109,7 @@ public class OptionsCatalog {
     public static final OptionDescription SHARED_OBJECTS_SHARE_ALL = new BooleanOptionDescription("shared.objects.share_all", "Consider all objects as shared", false);
     public static final OptionDescription CEXTS_LOG_LOAD = new BooleanOptionDescription("cexts.log.load", "Log loading of cexts", false);
     public static final OptionDescription LOG_DYNAMIC_CONSTANT_LOOKUP = new BooleanOptionDescription("constant.dynamic_lookup.log", "Log source code positions where dynamic constant lookup is performed", false);
+    public static final OptionDescription OPTIONS_LOG = new BooleanOptionDescription("options.log", "Log the final value of all options", false);
     
     public static OptionDescription fromName(String name) {
         switch (name) {
@@ -298,9 +299,110 @@ public class OptionsCatalog {
                 return CEXTS_LOG_LOAD;
             case "constant.dynamic_lookup.log":
                 return LOG_DYNAMIC_CONSTANT_LOOKUP;
+            case "options.log":
+                return OPTIONS_LOG;
             default:
                 return null;
         }
+    }
+
+    public static OptionDescription[] allDescriptions() {
+        return new OptionDescription[] {
+            HOME,
+            LOAD_PATHS,
+            REQUIRED_LIBRARIES,
+            INLINE_SCRIPT,
+            ARGUMENTS,
+            DISPLAYED_FILE_NAME,
+            DEBUG,
+            VERBOSITY,
+            FROZEN_STRING_LITERALS,
+            DISABLE_GEMS,
+            INTERNAL_ENCODING,
+            EXTERNAL_ENCODING,
+            PLATFORM_SAFE,
+            PLATFORM_SAFE_LOAD,
+            PLATFORM_SAFE_IO,
+            PLATFORM_SAFE_MEMORY,
+            PLATFORM_SAFE_THREADS,
+            PLATFORM_SAFE_PROCESSES,
+            PLATFORM_SAFE_SIGNALS,
+            PLATFORM_SAFE_EXIT,
+            PLATFORM_SAFE_AT_EXIT,
+            PLATFORM_SAFE_PUTS,
+            PLATFORM_USE_JAVA,
+            TRACE_CALLS,
+            COVERAGE_GLOBAL,
+            INLINE_JS,
+            CORE_LOAD_PATH,
+            CORE_PARALLEL_LOAD,
+            LAZY_TRANSLATION,
+            ARRAY_UNINITIALIZED_SIZE,
+            ARRAY_SMALL,
+            HASH_PACKED_ARRAY_MAX,
+            ROPE_LAZY_SUBSTRINGS,
+            ROPE_PRINT_INTERN_STATS,
+            ROPE_DEPTH_THRESHOLD,
+            GLOBAL_VARIABLE_MAX_INVALIDATIONS,
+            DEFAULT_CACHE,
+            METHOD_LOOKUP_CACHE,
+            DISPATCH_CACHE,
+            YIELD_CACHE,
+            METHOD_TO_PROC_CACHE,
+            IS_A_CACHE,
+            BIND_CACHE,
+            CONSTANT_CACHE,
+            INSTANCE_VARIABLE_CACHE,
+            BINDING_LOCAL_VARIABLE_CACHE,
+            SYMBOL_TO_PROC_CACHE,
+            ALLOCATE_CLASS_CACHE,
+            PACK_CACHE,
+            UNPACK_CACHE,
+            EVAL_CACHE,
+            CLASS_CACHE,
+            ENCODING_COMPATIBLE_QUERY_CACHE,
+            ENCODING_LOADED_CLASSES_CACHE,
+            THREAD_CACHE,
+            ROPE_CLASS_CACHE,
+            INTEROP_CONVERT_CACHE,
+            INTEROP_EXECUTE_CACHE,
+            INTEROP_READ_CACHE,
+            INTEROP_WRITE_CACHE,
+            INTEROP_INVOKE_CACHE,
+            CLONE_DEFAULT,
+            INLINE_DEFAULT,
+            CORE_ALWAYS_CLONE,
+            INLINE_NEEDS_CALLER_FRAME,
+            YIELD_ALWAYS_CLONE,
+            YIELD_ALWAYS_INLINE,
+            METHODMISSING_ALWAYS_CLONE,
+            METHODMISSING_ALWAYS_INLINE,
+            PACK_UNROLL_LIMIT,
+            PACK_RECOVER_LOOP_MIN,
+            INSTRUMENTATION_SERVER_PORT,
+            EXCEPTIONS_STORE_JAVA,
+            EXCEPTIONS_PRINT_JAVA,
+            EXCEPTIONS_PRINT_UNCAUGHT_JAVA,
+            EXCEPTIONS_TRANSLATE_ASSERT,
+            BACKTRACES_HIDE_CORE_FILES,
+            BACKTRACES_INTERLEAVE_JAVA,
+            BACKTRACES_LIMIT,
+            BACKTRACES_OMIT_UNUSED,
+            BASICOPS_INLINE,
+            METRICS_TIME,
+            METRICS_MEMORY_USED_ON_EXIT,
+            CALL_GRAPH,
+            CALL_GRAPH_WRITE,
+            CHAOS,
+            GRAAL_WARNING_UNLESS,
+            SHARED_OBJECTS_ENABLED,
+            SHARED_OBJECTS_DEBUG,
+            SHARED_OBJECTS_FORCE,
+            SHARED_OBJECTS_SHARE_ALL,
+            CEXTS_LOG_LOAD,
+            LOG_DYNAMIC_CONSTANT_LOOKUP,
+            OPTIONS_LOG,
+        };
     }
 
 }

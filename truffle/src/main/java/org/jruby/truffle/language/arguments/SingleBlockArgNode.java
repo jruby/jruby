@@ -13,7 +13,6 @@ package org.jruby.truffle.language.arguments;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class SingleBlockArgNode extends RubyNode {
     private final ConditionProfile emptyArgsProfile = ConditionProfile.createBinaryProfile();

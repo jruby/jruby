@@ -13,11 +13,17 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrumentation.EventBinding;
+import com.oracle.truffle.api.instrumentation.ExecutionEventNode;
+import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
+import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -27,6 +33,7 @@ import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
+import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 
@@ -35,6 +42,50 @@ import java.util.List;
 
 @CoreClass("Truffle::Debug")
 public abstract class TruffleDebugNodes {
+
+    @CoreMethod(names = "break_handle", onSingleton = true, required = 2, needsBlock = true, lowerFixnum = 2)
+    public abstract static class BreakNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(file)")
+        public DynamicObject setBreak(DynamicObject file, int line, final DynamicObject block) {
+            final String fileString = StringOperations.decodeUTF8(file);
+
+            final SourceSectionFilter filter = SourceSectionFilter.newBuilder()
+                    .mimeTypeIs(RubyLanguage.MIME_TYPE)
+                    .sourceIs(source -> source != null && source.getPath() != null && source.getPath().equals(fileString))
+                    .lineIs(line)
+                    .tagIs(StandardTags.StatementTag.class)
+                    .build();
+
+            final EventBinding<?> breakpoint = getContext().getInstrumenter().attachFactory(filter,
+                    eventContext -> new ExecutionEventNode() {
+
+                        @Child private YieldNode yieldNode = new YieldNode();
+
+                        @Override
+                        protected void onEnter(VirtualFrame frame) {
+                            yieldNode.dispatch(frame, block, Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), frame.materialize()));
+                        }
+
+                    });
+
+            return Layouts.HANDLE.createHandle(coreLibrary().getHandleFactory(), breakpoint);
+        }
+
+    }
+
+    @CoreMethod(names = "remove_handle", onSingleton = true, required = 1)
+    public abstract static class RemoveNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = "isHandle(handle)")
+        public DynamicObject remove(DynamicObject handle) {
+            EventBinding.class.cast(Layouts.HANDLE.getObject(handle)).dispose();
+            return nil();
+        }
+
+    }
 
     @CoreMethod(names = "java_class_of", onSingleton = true, required = 1)
     public abstract static class JavaClassOfNode extends CoreMethodArrayArgumentsNode {

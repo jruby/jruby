@@ -16,7 +16,6 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 /** Read a constant using the current lexical scope: CONST */
@@ -25,7 +24,7 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode {
     private final LexicalScope lexicalScope;
     private final String name;
 
-    @Child protected LookupConstantWithLexicalScopeNode lookupConstantNode;
+    @Child private LookupConstantWithLexicalScopeNode lookupConstantNode;
     @Child private GetConstantNode getConstantNode = GetConstantNode.create();
 
     public ReadConstantWithLexicalScopeNode(LexicalScope lexicalScope, String name) {

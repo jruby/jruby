@@ -11,7 +11,6 @@ package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChild(value = "operand", type = RubyNode.class)
 public abstract class UnaryCoreMethodNode extends CoreMethodNode {

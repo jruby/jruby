@@ -23,10 +23,6 @@ import java.nio.charset.StandardCharsets;
 })
 public abstract class FormatFloatHumanReadableNode extends FormatNode {
 
-    public FormatFloatHumanReadableNode(RubyContext context) {
-        super(context);
-    }
-
     @TruffleBoundary
     @Specialization(guards = "isInteger(value)")
     public byte[] formatInteger(double value) {

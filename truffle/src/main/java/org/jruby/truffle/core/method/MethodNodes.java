@@ -34,7 +34,6 @@ import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.ArgumentDescriptorUtils;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
@@ -79,7 +78,7 @@ public abstract class MethodNodes {
     @CoreMethod(names = { "call", "[]" }, needsBlock = true, rest = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
-        @Child CallBoundMethodNode callBoundMethodNode = CallBoundMethodNodeGen.create(null, null, null);
+        @Child private CallBoundMethodNode callBoundMethodNode = CallBoundMethodNodeGen.create(null, null, null);
 
         @Specialization
         protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object maybeBlock) {
@@ -168,7 +167,7 @@ public abstract class MethodNodes {
     @CoreMethod(names = "super_method")
     public abstract static class SuperMethodNode extends CoreMethodArrayArgumentsNode {
 
-        @Child MetaClassNode metaClassNode = MetaClassNode.create();
+        @Child private MetaClassNode metaClassNode = MetaClassNode.create();
 
         @Specialization
         public DynamicObject superMethod(DynamicObject method) {

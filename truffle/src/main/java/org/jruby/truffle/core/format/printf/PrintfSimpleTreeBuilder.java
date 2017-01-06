@@ -54,35 +54,35 @@ public class PrintfSimpleTreeBuilder {
         for (SprintfConfig config : configs) {
             final FormatNode node;
             if (config.isLiteral()) {
-                node = WriteBytesNodeGen.create(context, new LiteralFormatNode(context, config.getLiteralBytes()));
+                node = WriteBytesNodeGen.create(new LiteralFormatNode(config.getLiteralBytes()));
             } else {
                 final FormatNode valueNode;
 
                 if (config.getNamesBytes() != null) {
                     final DynamicObject key = context.getSymbolTable().getSymbol(context.getRopeTable().getRope(config.getNamesBytes(), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
-                    valueNode = ReadHashValueNodeGen.create(context, key, new SourceNode());
+                    valueNode = ReadHashValueNodeGen.create(key, new SourceNode());
                 } else if (config.getAbsoluteArgumentIndex() != null) {
-                    valueNode = ReadArgumentIndexValueNodeGen.create(context, config.getAbsoluteArgumentIndex(), new SourceNode());
+                    valueNode = ReadArgumentIndexValueNodeGen.create(config.getAbsoluteArgumentIndex(), new SourceNode());
                 } else {
-                    valueNode = ReadValueNodeGen.create(context, new SourceNode());
+                    valueNode = ReadValueNodeGen.create(new SourceNode());
                 }
 
                 final FormatNode widthNode;
                 if (config.isWidthStar()) {
-                    widthNode = ReadIntegerNodeGen.create(context, new SourceNode());
+                    widthNode = ReadIntegerNodeGen.create(new SourceNode());
                 } else if (config.isArgWidth()){
-                    widthNode = ReadArgumentIndexValueNodeGen.create(context, config.getWidth(), new SourceNode());
+                    widthNode = ReadArgumentIndexValueNodeGen.create(config.getWidth(), new SourceNode());
                 } else {
-                    widthNode = new LiteralFormatNode(context, config.getWidth() == null ? -1 : config.getWidth());
+                    widthNode = new LiteralFormatNode(config.getWidth() == null ? -1 : config.getWidth());
                 }
 
                 final FormatNode precisionNode;
                 if(config.isPrecisionStar()){
-                    precisionNode = ReadIntegerNodeGen.create(context, new SourceNode());
+                    precisionNode = ReadIntegerNodeGen.create(new SourceNode());
                 }  else if(config.isPrecisionArg()){
-                    precisionNode = ReadArgumentIndexValueNodeGen.create(context, config.getPrecision(), new SourceNode());
+                    precisionNode = ReadArgumentIndexValueNodeGen.create(config.getPrecision(), new SourceNode());
                 } else {
-                    precisionNode = new LiteralFormatNode(context, config.getPrecision() == null ? -1 : config.getPrecision());
+                    precisionNode = new LiteralFormatNode(config.getPrecision() == null ? -1 : config.getPrecision());
                 }
 
 
@@ -111,21 +111,21 @@ public class PrintfSimpleTreeBuilder {
                         }
 
                         if(config.getFormat() == 'b' || config.getFormat() == 'B'){
-                            node = WriteBytesNodeGen.create(context,
-                                FormatIntegerBinaryNodeGen.create(context, format,
+                            node = WriteBytesNodeGen.create(
+                                FormatIntegerBinaryNodeGen.create(format,
                                     config.isPlus(), config.isFsharp(),
                                     config.isMinus(),
                                     config.isHasSpace(),
                                     config.isZero(),
                                     widthNode,
                                     precisionNode,
-                                    ToIntegerNodeGen.create(context, valueNode)));
+                                    ToIntegerNodeGen.create(valueNode)));
                         } else {
-                            node = WriteBytesNodeGen.create(context,
-                                FormatIntegerNodeGen.create(context, format, config.isHasSpace(), config.isZero(), config.isPlus(), config.isMinus(), config.isFsharp(),
+                            node = WriteBytesNodeGen.create(
+                                FormatIntegerNodeGen.create(format, config.isHasSpace(), config.isZero(), config.isPlus(), config.isMinus(), config.isFsharp(),
                                     widthNode,
                                     precisionNode,
-                                    ToIntegerNodeGen.create(context, valueNode)));
+                                    ToIntegerNodeGen.create(valueNode)));
                         }
                         break;
                     case FLOAT:
@@ -135,12 +135,12 @@ public class PrintfSimpleTreeBuilder {
                             case 'E':
                             case 'g':
                             case 'G':
-                                node = WriteBytesNodeGen.create(context,
-                                    FormatFloatNodeGen.create(context,
+                                node = WriteBytesNodeGen.create(
+                                    FormatFloatNodeGen.create(
                                         config.getFormat(), config.isHasSpace(), config.isZero(), config.isPlus(), config.isMinus(), config.isFsharp(),
                                         widthNode,
                                         precisionNode,
-                                        ToDoubleWithCoercionNodeGen.create(context,
+                                        ToDoubleWithCoercionNodeGen.create(
                                             valueNode)));
                                 break;
                             default:
@@ -150,8 +150,8 @@ public class PrintfSimpleTreeBuilder {
                     case OTHER:
                         switch (config.getFormat()){
                             case 'c':
-                                node = WriteBytesNodeGen.create(context,
-                                    FormatCharacterNodeGen.create(context, config.isMinus(), widthNode,
+                                node = WriteBytesNodeGen.create(
+                                    FormatCharacterNodeGen.create(config.isMinus(), widthNode,
                                         valueNode));
                                 break;
                             case 's':
@@ -160,15 +160,15 @@ public class PrintfSimpleTreeBuilder {
                                 final FormatNode conversionNode;
 
                                 if(config.getAbsoluteArgumentIndex() == null && config.getNamesBytes() == null) {
-                                    conversionNode = ReadStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, new SourceNode());
+                                    conversionNode = ReadStringNodeGen.create(true, conversionMethodName, false, EMPTY_BYTES, new SourceNode());
                                 } else {
-                                    conversionNode = ToStringNodeGen.create(context, true, conversionMethodName, false, EMPTY_BYTES, valueNode);
+                                    conversionNode = ToStringNodeGen.create(true, conversionMethodName, false, EMPTY_BYTES, valueNode);
                                 }
 
                                 if (config.getWidth() != null || config.isWidthStar()) {
-                                    node = WritePaddedBytesNodeGen.create(context, config.isMinus(), widthNode, conversionNode);
+                                    node = WritePaddedBytesNodeGen.create(config.isMinus(), widthNode, conversionNode);
                                 } else {
-                                    node = WriteBytesNodeGen.create(context, conversionNode);
+                                    node = WriteBytesNodeGen.create(conversionNode);
                                 }
                                 break;
                             default:
@@ -190,7 +190,7 @@ public class PrintfSimpleTreeBuilder {
 
     public FormatNode getNode() {
         buildTree();
-        return new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()]));
+        return new SequenceNode(sequence.toArray(new FormatNode[sequence.size()]));
     }
 
 }

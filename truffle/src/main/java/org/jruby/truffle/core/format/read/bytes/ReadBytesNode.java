@@ -31,8 +31,7 @@ public abstract class ReadBytesNode extends FormatNode {
 
     private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadBytesNode(RubyContext context, int count, boolean consumePartial) {
-        super(context);
+    public ReadBytesNode(int count, boolean consumePartial) {
         this.count = count;
         this.consumePartial = consumePartial;
     }

@@ -35,10 +35,10 @@ public class InlinedCoreMethodNode extends RubyNode {
     private final InternalMethod method;
     private final Assumption tracingUnused;
 
-    @Child InlinableBuiltin builtin;
-    @Child LookupMethodNode lookupMethodNode;
-    @Child RubyNode receiverNode;
-    @Children final RubyNode[] argumentNodes;
+    @Child private InlinableBuiltin builtin;
+    @Child private LookupMethodNode lookupMethodNode;
+    @Child private RubyNode receiverNode;
+    @Children private final RubyNode[] argumentNodes;
 
     private RubyCallNode replacedBy = null;
 

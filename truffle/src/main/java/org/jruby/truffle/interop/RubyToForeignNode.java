@@ -18,7 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.string.StringCachingGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 @ImportStatic(StringCachingGuards.class)
 @NodeChild(value = "value", type = RubyNode.class)

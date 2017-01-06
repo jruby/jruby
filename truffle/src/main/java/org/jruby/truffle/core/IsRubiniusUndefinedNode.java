@@ -12,7 +12,6 @@ package org.jruby.truffle.core;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class IsRubiniusUndefinedNode extends RubyNode {
 

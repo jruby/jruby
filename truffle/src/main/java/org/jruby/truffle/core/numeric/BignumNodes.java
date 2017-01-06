@@ -184,8 +184,8 @@ public abstract class BignumNodes {
     @CoreMethod(names = "div", required = 1)
     public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
 
-        @Child DivNode divNode = DivNodeFactory.create(null);
-        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null);
+        @Child private DivNode divNode = DivNodeFactory.create(null);
+        @Child private FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null);
 
         @Specialization
         public Object idiv(VirtualFrame frame, Object a, Object b,

@@ -151,10 +151,10 @@ public class FeatureLoader {
 
     @TruffleBoundary
     private CallTarget getCExtLibRuby(String feature) {
-        final String path = context.getJRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
+        final String path = context.getRubyHome() + "/lib/ruby/truffle/cext/ruby.su";
 
         if (context.getOptions().CEXTS_LOG_LOAD) {
-            Log.info("loading cext implementation %s", path);
+            Log.LOGGER.info(() -> String.format("loading cext implementation %s", path));
         }
 
         if (!new File(path).exists()) {

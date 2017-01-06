@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.getSize;
 import static org.jruby.truffle.core.array.ArrayHelpers.setSize;
@@ -77,7 +76,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     }, limit = "ARRAY_STRATEGIES")
     public Object writeBeyondPrimitive(DynamicObject array, int index, Object value,
             @Cached("of(array)") ArrayStrategy strategy,
-            @Cached("create(getContext())") ArrayGeneralizeNode generalizeNode) {
+            @Cached("create()") ArrayGeneralizeNode generalizeNode) {
         final int newSize = index + 1;
         final Object[] objectStore = generalizeNode.executeGeneralize(array, newSize);
         for (int n = strategy.getSize(array); n < index; n++) {
@@ -93,7 +92,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     })
     public Object writeBeyondObject(DynamicObject array, int index, Object value,
             @Cached("of(array)") ArrayStrategy strategy,
-            @Cached("create(getContext())") ArrayEnsureCapacityNode ensureCapacityNode) {
+            @Cached("create()") ArrayEnsureCapacityNode ensureCapacityNode) {
         ensureCapacityNode.executeEnsureCapacity(array, index + 1);
         final ArrayMirror store = strategy.newMirror(array);
         for (int n = strategy.getSize(array); n < index; n++) {

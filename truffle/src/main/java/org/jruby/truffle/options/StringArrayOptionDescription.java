@@ -107,4 +107,9 @@ public class StringArrayOptionDescription extends OptionDescription {
         return values.toArray(new String[values.size()]);
     }
 
+    @Override
+    public String toString(Object value) {
+        return String.join(",", (String[]) value);
+    }
+
 }

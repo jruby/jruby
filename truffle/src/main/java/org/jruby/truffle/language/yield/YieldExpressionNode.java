@@ -17,7 +17,6 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNode;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 

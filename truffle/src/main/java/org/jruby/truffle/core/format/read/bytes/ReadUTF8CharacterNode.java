@@ -31,10 +31,6 @@ public abstract class ReadUTF8CharacterNode extends FormatNode {
 
     private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadUTF8CharacterNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization(guards = "isNull(source)")
     public void read(VirtualFrame frame, Object source) {
         advanceSourcePosition(frame, 1);

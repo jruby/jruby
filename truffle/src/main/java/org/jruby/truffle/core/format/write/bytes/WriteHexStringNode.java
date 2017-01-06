@@ -62,8 +62,7 @@ public abstract class WriteHexStringNode extends FormatNode {
     private final ByteOrder byteOrder;
     private final int length;
 
-    public WriteHexStringNode(RubyContext context, ByteOrder byteOrder, int length) {
-        super(context);
+    public WriteHexStringNode(ByteOrder byteOrder, int length) {
         this.byteOrder = byteOrder;
         this.length = length;
     }

@@ -29,13 +29,10 @@
 package org.jruby.truffle.options;
 
 import com.oracle.truffle.api.TruffleOptions;
-import jnr.posix.util.Platform;
 import org.jruby.truffle.core.string.KCode;
-import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.control.JavaException;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,54 +56,18 @@ import java.util.regex.Pattern;
 @SuppressWarnings("unused")
 public class RubyInstanceConfig {
 
-    public RubyInstanceConfig(boolean isSecurityRestricted) {
-        this.isSecurityRestricted = isSecurityRestricted;
-        currentDirectory = isSecurityRestricted ? "/" : getFileProperty("user.dir");
-
-        if (isSecurityRestricted) {
-            //
-        } else {
-            if (COMPILE_EXCLUDE != null) {
-                excludedMethods.addAll(StringSupport.split(COMPILE_EXCLUDE, ','));
-            }
-        }
-        initEnvironment();
-    }
-
-    public static String getFileProperty(String property) {
-        return normalizeSeps(System.getProperty(property, "/"));
-    }
-
-    public static String normalizeSeps(String path) {
-        if (Platform.IS_WINDOWS) {
-            return path.replace(File.separatorChar, '/');
-        }
-        return path;
-    }
-
-    private void initEnvironment() {
+    public RubyInstanceConfig() {
+        currentDirectory = System.getProperty("user.dir", "/");
         environment = new HashMap<>();
-        try {
-            environment.putAll(System.getenv());
-        }
-        catch (SecurityException se) { /* ignore missing getenv permission */ }
-        setupEnvironment(getJRubyHome());
+        environment.putAll(System.getenv());
     }
 
     public void processArguments(String[] arguments) {
         final ArgumentProcessor processor = new ArgumentProcessor(arguments, this);
         processor.processArguments();
-        tryProcessArgumentsWithRubyopts();
-        if (!TruffleOptions.AOT && !hasScriptArgv && System.console() != null) {
-            setScriptFileName(processor.resolveScript("irb"));
-        }
-    }
-
-    public void tryProcessArgumentsWithRubyopts() {
-        try {
-            processArgumentsWithRubyopts();
-        } catch (SecurityException se) {
-            // ignore and do nothing
+        processArgumentsWithRubyopts();
+        if (!TruffleOptions.AOT && !hasScriptArgv && !usePathScript && System.console() != null) {
+            setUsePathScript("irb");
         }
     }
 
@@ -121,86 +82,6 @@ public class RubyInstanceConfig {
         if (rubyoptArgs.length != 0) {
             new ArgumentProcessor(rubyoptArgs, false, true, true, this).processArguments();
         }
-    }
-
-    private static final Pattern RUBY_SHEBANG = Pattern.compile("#!.*ruby.*");
-
-    protected static boolean isRubyShebangLine(String line) {
-        return RUBY_SHEBANG.matcher(line).matches();
-    }
-
-    private static final String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
-    public static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
-
-    private String calculateJRubyHome() {
-        String newJRubyHome = null;
-
-        // try the normal property first
-        if (!isSecurityRestricted) {
-            newJRubyHome = System.getProperty("jruby.home", null);
-        }
-
-        if (!TruffleOptions.AOT && newJRubyHome == null && getLoader().getResource("META-INF/jruby.home/.jrubydir") != null) {
-            newJRubyHome = "uri:classloader://META-INF/jruby.home";
-        }
-        if (newJRubyHome != null) {
-            // verify it if it's there
-            newJRubyHome = verifyHome(newJRubyHome, error);
-        } else {
-            try {
-                newJRubyHome = System.getenv("JRUBY_HOME");
-            } catch (Exception e) {}
-
-            if (newJRubyHome != null) {
-                // verify it if it's there
-                newJRubyHome = verifyHome(newJRubyHome, error);
-            } else {
-                // otherwise fall back on system temp location
-                newJRubyHome = System.getProperty("java.io.tmpdir", null);
-            }
-        }
-
-        // RegularFileResource absolutePath will canonicalize resources so that will change c: paths to C:.
-        // We will cannonicalize on windows so that jruby.home is also C:.
-        // assume all those uri-like pathnames are already in absolute form
-        if (Platform.IS_WINDOWS && !PROTOCOL_PATTERN.matcher(newJRubyHome).matches()) {
-            try {
-                newJRubyHome = new File(newJRubyHome).getCanonicalPath();
-            }
-            catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
-        }
-
-        return newJRubyHome == null ? null : normalizeSeps(newJRubyHome);
-    }
-
-    // We require the home directory to be absolute
-    private static String verifyHome(String home, PrintStream error) {
-        if ("uri:classloader://META-INF/jruby.home".equals(home) || "uri:classloader:/META-INF/jruby.home".equals(home)) {
-            return home;
-        }
-        if (home.equals(".")) {
-            home = System.getProperty("user.dir", null);
-        }
-        else if (home.startsWith("cp:")) {
-            home = home.substring(3);
-        }
-        if (home.startsWith("jar:") || ( home.startsWith("file:") && home.contains(".jar!/") ) ||
-                home.startsWith("classpath:") || home.startsWith("uri:")) {
-            error.println("Warning: JRuby home with uri like paths may not have full functionality - use at your own risk");
-        }
-        // do not normalize on plain jar like pathes coming from jruby-rack
-        else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
-            File file = new File(home);
-            if (!file.exists()) {
-                final String tmpdir = System.getProperty("java.io.tmpdir", null);
-                error.println("Warning: JRuby home \"" + file + "\" does not exist, using " + tmpdir);
-                return tmpdir;
-            }
-            if (!file.isAbsolute()) {
-                home = file.getAbsolutePath();
-            }
-        }
-        return home;
     }
 
     public byte[] inlineScript() {
@@ -231,6 +112,8 @@ public class RubyInstanceConfig {
             } else {
                 return "-e";
             }
+        } else if (usePathScript) {
+            return "-S";
         } else if (isForceStdin() || getScriptFileName() == null) {
             return "-";
         } else {
@@ -238,27 +121,8 @@ public class RubyInstanceConfig {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    // Getters and setters for config settings.
-    ////////////////////////////////////////////////////////////////////////////
-
-    public String getJRubyHome() {
-        if (jrubyHome == null) {
-            jrubyHome = calculateJRubyHome();
-        }
-        return jrubyHome;
-    }
-
-    public void setOutput(PrintStream newOutput) {
-        output = newOutput;
-    }
-
     public PrintStream getOutput() {
         return output;
-    }
-
-    public void setError(PrintStream newError) {
-        error = newError;
     }
 
     public PrintStream getError() {
@@ -272,36 +136,6 @@ public class RubyInstanceConfig {
     public String getCurrentDirectory() {
         return currentDirectory;
     }
-
-    public void setEnvironment(Map<String, String> newEnvironment) {
-        environment = new HashMap<>();
-        if (newEnvironment != null) {
-            environment.putAll(newEnvironment);
-        }
-        setupEnvironment(getJRubyHome());
-    }
-
-    private void setupEnvironment(String jrubyHome) {
-        if (PROTOCOL_PATTERN.matcher(jrubyHome).matches() && !environment.containsKey("RUBY")) {
-            // the assumption that if JRubyHome is not a regular file that jruby
-            // got launched in an embedded fashion
-            //environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    public Map<String, String> getEnvironment() {
-        return environment;
-    }
-
-    public ClassLoader getLoader() {
-        return loader;
-    }
-
-    public void setLoader(ClassLoader loader) {
-        this.loader = loader;
-    }
-
 
     public String[] getArgv() {
         return argv;
@@ -334,14 +168,6 @@ public class RubyInstanceConfig {
 
     public boolean getShouldPrintUsage() {
         return shouldPrintUsage;
-    }
-
-    public void setShouldPrintProperties(boolean shouldPrintProperties) {
-        this.shouldPrintProperties = shouldPrintProperties;
-    }
-
-    public boolean getShouldPrintProperties() {
-        return shouldPrintProperties;
     }
 
     public boolean isInlineScript() {
@@ -413,10 +239,6 @@ public class RubyInstanceConfig {
 
     public boolean isShowVersion() {
         return showVersion;
-    }
-
-    public void setShowBytecode(boolean showBytecode) {
-        this.showBytecode = showBytecode;
     }
 
     public void setShowCopyright(boolean showCopyright) {
@@ -507,29 +329,6 @@ public class RubyInstanceConfig {
         this.frozenStringLiteral = frozenStringLiteral;
     }
 
-
-    public static ClassLoader defaultClassLoader() {
-        if (TruffleOptions.AOT) {
-            return null;
-        }
-
-        ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
-
-        // loader can be null for example when jruby comes from the boot-classLoader
-
-        if (loader == null) {
-            loader = Thread.currentThread().getContextClassLoader();
-        }
-
-        return loader;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Configuration fields.
-    ////////////////////////////////////////////////////////////////////////////
-
-    private final boolean isSecurityRestricted;
-
     /**
      * Indicates whether the script must be extracted from script source
      */
@@ -538,7 +337,6 @@ public class RubyInstanceConfig {
     /**
      * Indicates whether the script has a shebang line or not
      */
-    private InputStream input          = System.in;
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
 
@@ -551,13 +349,11 @@ public class RubyInstanceConfig {
     private String internalEncoding = null;
     private String externalEncoding = null;
 
-    private ClassLoader loader = defaultClassLoader();
-
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<>();
-    private Set<String> excludedMethods = new HashSet<>();
     private StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
+    private boolean usePathScript = false;
     private String scriptFileName = null;
     private Collection<String> requiredLibraries = new LinkedHashSet<>();
     private boolean argvGlobalsOn = false;
@@ -569,7 +365,6 @@ public class RubyInstanceConfig {
     private Verbosity verbosity = Verbosity.FALSE;
     private boolean debug = false;
     private boolean showVersion = false;
-    private boolean showBytecode = false;
     private boolean showCopyright = false;
     private boolean shouldRunInterpreter = true;
     private boolean shouldPrintUsage = false;
@@ -580,140 +375,14 @@ public class RubyInstanceConfig {
     private boolean disableGems = false;
     private boolean hasScriptArgv = false;
     private boolean frozenStringLiteral = false;
-    private String jrubyHome;
     private KCode kcode;
     private String sourceEncoding;
 
     private boolean forceStdin = false;
 
-    ////////////////////////////////////////////////////////////////////////////
-    // Static configuration fields, used as defaults for new JRuby instances.
-    ////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Comma-separated list of methods to exclude from JIT compilation.
-     * Specify as "Module", "Module#method" or "method".
-     *
-     * Set with the <tt>jruby.jit.exclude</tt> system property.
-     */
-    public static final String COMPILE_EXCLUDE = "";
-
-    /**
-     * Indicates the global default for whether native code is enabled. Default
-     * is true. This value is used to default new runtime configurations.
-     *
-     * Set with the <tt>jruby.native.enabled</tt> system property.
-     */
-    public static final boolean NATIVE_ENABLED = false;
-
-    @Deprecated
-    public final static boolean CEXT_ENABLED = false;
-
-    /**
-     * Turn on debugging of script resolution with "-S".
-     *
-     * Set with the <tt>jruby.debug.scriptResolution</tt> system property.
-     */
-    public static final boolean DEBUG_SCRIPT_RESOLUTION = false;
-
-    @Deprecated
-    public static final boolean JIT_CACHE_ENABLED = false;
-
-    @Deprecated
-    public void setSafeLevel(int safeLevel) {
-    }
-
-    @Deprecated
-    public String getInPlaceBackupExtention() {
-        return inPlaceBackupExtension;
-    }
-
-    @Deprecated
-    public String getBasicUsageHelp() {
-        return OutputStrings.getBasicUsageHelp();
-    }
-
-    @Deprecated
-    public String getVersionString() {
-        return OutputStrings.getVersionString();
-    }
-
-    @Deprecated
-    public String getCopyrightString() {
-        return OutputStrings.getCopyrightString();
-    }
-
-    @Deprecated
-    public Collection<String> requiredLibraries() {
-        return requiredLibraries;
-    }
-
-    @Deprecated
-    public List<String> loadPaths() {
-        return loadPaths;
-    }
-
-    @Deprecated
-    public boolean shouldPrintUsage() {
-        return shouldPrintUsage;
-    }
-
-    @Deprecated
-    public boolean shouldPrintProperties() {
-        return shouldPrintProperties;
-    }
-
-    @Deprecated
-    public Boolean getVerbose() {
-        return isVerbose();
-    }
-
     public Verbosity getVerbosity() {
         return verbosity;
     }
-
-    @Deprecated
-    public boolean shouldRunInterpreter() {
-        return isShouldRunInterpreter();
-    }
-
-    @Deprecated
-    public boolean isShouldRunInterpreter() {
-        return shouldRunInterpreter;
-    }
-
-    @Deprecated
-    public boolean isxFlag() {
-        return xFlag;
-    }
-
-    @Deprecated
-    public static final boolean nativeEnabled = NATIVE_ENABLED;
-
-    @Deprecated
-    public boolean isSamplingEnabled() {
-        return false;
-    }
-
-    @Deprecated
-    public void setBenchmarking(boolean benchmarking) {
-    }
-
-    @Deprecated
-    public boolean isBenchmarking() {
-        return false;
-    }
-
-    @Deprecated
-    public void setCextEnabled(boolean b) {
-    }
-
-    @Deprecated
-    public boolean isCextEnabled() {
-        return false;
-    }
-
-    @Deprecated public static final String JIT_CODE_CACHE = "";
 
     public void setKCode(KCode kcode) {
         this.kcode = kcode;
@@ -726,4 +395,14 @@ public class RubyInstanceConfig {
     public void setSourceEncoding(String sourceEncoding) {
         this.sourceEncoding = sourceEncoding;
     }
+
+    public void setUsePathScript(String name) {
+        scriptFileName = name;
+        usePathScript = true;
+    }
+
+    public boolean shouldUsePathScript() {
+        return usePathScript;
+    }
+
 }

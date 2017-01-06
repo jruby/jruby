@@ -15,7 +15,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.objects.shared.WriteBarrierNode;
 
 @NodeChild(value = "value")
@@ -23,8 +22,8 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
 
     private final String name;
 
-    @Child ReferenceEqualNode referenceEqualNode = ReferenceEqualNode.create();
-    @Child WriteBarrierNode writeBarrierNode = WriteBarrierNode.create();
+    @Child protected ReferenceEqualNode referenceEqualNode = ReferenceEqualNode.create();
+    @Child protected WriteBarrierNode writeBarrierNode = WriteBarrierNode.create();
 
     public WriteGlobalVariableNode(String name) {
         this.name = name;

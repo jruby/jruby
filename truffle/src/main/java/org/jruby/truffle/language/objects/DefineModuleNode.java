@@ -20,7 +20,6 @@ import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 @NodeChild(value = "lexicalParentModule", type = RubyNode.class)

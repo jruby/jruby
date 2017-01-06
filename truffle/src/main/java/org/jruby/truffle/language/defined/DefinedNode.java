@@ -11,7 +11,6 @@ package org.jruby.truffle.language.defined;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class DefinedNode extends RubyNode {
 

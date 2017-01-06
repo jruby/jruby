@@ -584,7 +584,7 @@ public abstract class RegexpNodes {
     @CoreMethod(names = { "quote", "escape" }, onSingleton = true, required = 1)
     public abstract static class QuoteNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ToStrNode toStrNode;
+        @Child private ToStrNode toStrNode;
 
         abstract public DynamicObject executeQuote(VirtualFrame frame, Object raw);
 

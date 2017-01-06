@@ -21,8 +21,7 @@ public class ReverseSourcePositionNode extends FormatNode {
 
     private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
-    public ReverseSourcePositionNode(RubyContext context, boolean star) {
-        super(context);
+    public ReverseSourcePositionNode(boolean star) {
         this.star = star;
     }
 

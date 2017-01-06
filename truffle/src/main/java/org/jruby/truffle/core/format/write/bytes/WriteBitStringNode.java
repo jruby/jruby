@@ -63,8 +63,7 @@ public abstract class WriteBitStringNode extends FormatNode {
     private final boolean star;
     private final int length;
 
-    public WriteBitStringNode(RubyContext context, ByteOrder byteOrder, boolean star, int length) {
-        super(context);
+    public WriteBitStringNode(ByteOrder byteOrder, boolean star, int length) {
         this.byteOrder = byteOrder;
         this.star = star;
         this.length = length;

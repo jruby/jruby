@@ -13,7 +13,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -21,7 +20,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 /** Load libraries required from the command line (-r LIBRARY) */
 public class LoadRequiredLibrariesNode extends RubyNode {
 
-    @Child CallDispatchHeadNode requireNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
+    @Child private CallDispatchHeadNode requireNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
     @Override
     public Object execute(VirtualFrame frame) {

@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public class InstrumentedWriteLocalVariableNode extends WriteLocalVariableNode {
 

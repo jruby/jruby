@@ -10,7 +10,6 @@
 package org.jruby.truffle.parser;
 
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 public abstract class ReadLocalNode extends RubyNode {
 

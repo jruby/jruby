@@ -12,7 +12,6 @@ package org.jruby.truffle.language.threadlocal;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class WrapInThreadLocalNode extends RubyNode {

@@ -20,10 +20,6 @@ import org.jruby.truffle.core.format.FormatNode;
 })
 public abstract class ReinterpretAsLongNode extends FormatNode {
 
-    public ReinterpretAsLongNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public long asLong(float object) {
         return Float.floatToIntBits(object);

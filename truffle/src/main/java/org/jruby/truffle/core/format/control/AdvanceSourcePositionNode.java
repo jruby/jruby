@@ -21,8 +21,7 @@ public class AdvanceSourcePositionNode extends FormatNode {
 
     private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
 
-    public AdvanceSourcePositionNode(RubyContext context, boolean toEnd) {
-        super(context);
+    public AdvanceSourcePositionNode(boolean toEnd) {
         this.toEnd = toEnd;
     }
 

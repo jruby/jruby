@@ -33,7 +33,6 @@ import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 
 import java.util.ArrayDeque;

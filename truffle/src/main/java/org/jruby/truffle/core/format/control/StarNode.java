@@ -22,8 +22,7 @@ public class StarNode extends FormatNode {
 
     @Child private LoopNode loopNode;
 
-    public StarNode(RubyContext context, FormatNode child) {
-        super(context);
+    public StarNode(FormatNode child) {
         loopNode = Truffle.getRuntime().createLoopNode(new StarRepeatingNode(child));
     }
 

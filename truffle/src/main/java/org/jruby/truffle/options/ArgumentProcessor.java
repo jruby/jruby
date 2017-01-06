@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.options;
 
+import org.jruby.truffle.Log;
 import org.jruby.truffle.core.string.KCode;
 import org.jruby.truffle.core.string.StringSupport;
 
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 /**
@@ -396,6 +398,18 @@ public class ArgumentProcessor {
                         throw new UnsupportedOperationException();
                     } else if (extendedOption.endsWith("?")) {
                         throw new UnsupportedOperationException();
+                    } else if (extendedOption.startsWith("log=")) {
+                        final String levelString = extendedOption.substring("log=".length());
+
+                        final Level level;
+
+                        if (levelString.equals("PERFORMANCE")) {
+                            level = Log.PERFORMANCE;
+                        } else {
+                            level = Level.parse(levelString.toUpperCase());
+                        }
+
+                        Log.LOGGER.setLevel(level);
                     } else {
                         MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
                         mee.setUsageError(true);
@@ -436,17 +450,10 @@ public class ArgumentProcessor {
                         config.setShouldPrintUsage(true);
                         config.setShouldRunInterpreter(false);
                         break;
-                    } else if (argument.equals("--properties")) {
-                        config.setShouldPrintProperties(true);
-                        config.setShouldRunInterpreter(false);
-                        break;
                     } else if (argument.equals("--version")) {
                         disallowedInRubyOpts(argument);
                         config.setShowVersion(true);
                         config.setShouldRunInterpreter(false);
-                        break FOR;
-                    } else if (argument.equals("--bytecode")) {
-                        config.setShowBytecode(true);
                         break FOR;
                     } else if (argument.equals("--fast")) {
                         throw new UnsupportedOperationException();
@@ -499,8 +506,6 @@ public class ArgumentProcessor {
                             break FOR;
                         } else if (dumpArg.equals("syntax")) {
                             config.setShouldCheckSyntax(true);
-                        } else if (dumpArg.equals("insns")) {
-                            config.setShowBytecode(true);
                         } else {
                             MainExitException mee = new MainExitException(1, error);
                             mee.setUsageError(true);
@@ -586,74 +591,8 @@ public class ArgumentProcessor {
 
     private void runBinScript() {
         String scriptName = grabValue("jruby: provide a bin script to execute");
-        config.setScriptFileName(resolveScript(scriptName));
-        // run as a command if we couldn't find a script
-        if (config.getScriptFileName() == null) {
-            config.setScriptFileName(scriptName);
-            config.getRequiredLibraries().add("jruby/commands");
-            config.getInlineScript().append("JRuby::Commands.").append(scriptName);
-            config.getInlineScript().append("\n");
-            config.setHasInlineScript(true);
-        }
+        config.setUsePathScript(scriptName);
         endOfArguments = true;
-    }
-
-    private String resolve(String path, String scriptName) {
-        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-            config.getError().println("Trying path: " + path);
-        }
-        try {
-            File fullName = new File(path, scriptName);
-            if (fullName.exists() && fullName.isFile()) {
-                if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-                    config.getError().println("Found: " + fullName.getAbsolutePath());
-                }
-                return fullName.getAbsolutePath();
-            }
-        } catch (Exception e) {
-            // keep going
-        }
-        return null;
-    }
-
-    public String resolveScript(String scriptName) {
-        // These try/catches are to allow failing over to the "commands" logic
-        // when running from within a jruby-complete jar file, which has
-        // jruby.home = a jar file URL that does not resolve correctly with
-        // JRubyFile.create.
-        String result = resolve(config.getCurrentDirectory(), scriptName);
-        if (result != null) return scriptName;// use relative filename
-        result = resolve(config.getJRubyHome() + "/bin", scriptName);
-        if (result != null) return result;
-        // since the current directory is also on the classpath we
-        // want to find it on filesystem first
-        result = resolve(config.getCurrentDirectory() + "/bin", scriptName);
-        if (result != null) return result;
-        result = resolve("uri:classloader:/bin", scriptName);
-        if (result != null) return result;
-
-        Object maybePath = config.getEnvironment().get("PATH");
-        if (maybePath != null) {
-            String path = maybePath.toString();
-            String[] paths = path.split(System.getProperty("path.separator"));
-            for (int i = 0; i < paths.length; i++) {
-                result = resolve(new File(paths[i]).getAbsolutePath(), scriptName);
-                if (result != null) return result;
-            }
-        }
-        if (config.isDebug()) {
-            config.getError().println("warning: could not resolve -S script: " + scriptName);
-        }
-        // fall back to JRuby::Commands
-        return null;
-    }
-
-    @Deprecated
-    public String resolveScriptUsingClassLoader(String scriptName) {
-        if (RubyInstanceConfig.defaultClassLoader().getResourceAsStream("bin/" + scriptName) != null){
-            return "classpath:/bin/" + scriptName;
-        }
-        return null;
     }
 
     private String grabValue(String errorMessage) {

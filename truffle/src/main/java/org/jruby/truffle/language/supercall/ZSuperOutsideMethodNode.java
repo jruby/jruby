@@ -12,7 +12,6 @@ package org.jruby.truffle.language.supercall;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -23,7 +22,8 @@ import org.jruby.truffle.language.methods.InternalMethod;
 public class ZSuperOutsideMethodNode extends RubyNode {
 
     final boolean insideDefineMethod;
-    @Child LookupSuperMethodNode lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null);
+    
+    @Child private LookupSuperMethodNode lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null);
 
     public ZSuperOutsideMethodNode(boolean insideDefineMethod) {
         this.insideDefineMethod = insideDefineMethod;

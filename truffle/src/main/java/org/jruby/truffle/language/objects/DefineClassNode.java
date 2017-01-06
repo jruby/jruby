@@ -19,7 +19,6 @@ import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
@@ -30,9 +29,8 @@ public class DefineClassNode extends RubyNode {
 
     @Child private RubyNode superClassNode;
     @Child private RubyNode lexicalParentModule;
-
-    @Child LookupForExistingModuleNode lookupForExistingModuleNode;
-    @Child CallDispatchHeadNode inheritedNode;
+    @Child private LookupForExistingModuleNode lookupForExistingModuleNode;
+    @Child private CallDispatchHeadNode inheritedNode;
 
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile noSuperClassSupplied = ConditionProfile.createBinaryProfile();

@@ -177,10 +177,10 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class IndexNode extends PrimitiveArrayArgumentsNode {
 
-        @Child protected ArrayReadDenormalizedNode readNode;
-        @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
-        @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
-        @Child protected AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
+        @Child private ArrayReadDenormalizedNode readNode;
+        @Child private ArrayReadSliceDenormalizedNode readSliceNode;
+        @Child private ArrayReadSliceNormalizedNode readNormalizedSliceNode;
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public Object index(DynamicObject array, int index, NotProvided length) {
@@ -250,7 +250,7 @@ public abstract class ArrayNodes {
 
         @Child private ArrayReadNormalizedNode readNode;
         @Child private ArrayWriteNormalizedNode writeNode;
-        @Child protected ArrayReadSliceNormalizedNode readSliceNode;
+        @Child private ArrayReadSliceNormalizedNode readSliceNode;
         @Child private ToIntNode toIntNode;
 
         private final BranchProfile negativeIndexProfile = BranchProfile.create();
@@ -922,7 +922,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "size >= 0")
         public Object initializeBlock(VirtualFrame frame, DynamicObject array, int size, Object unusedValue, DynamicObject block,
-                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
+                @Cached("create()") ArrayBuilderNode arrayBuilder) {
             Object store = arrayBuilder.start(size);
 
             int n = 0;
@@ -1123,7 +1123,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object map(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy,
-                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
+                @Cached("create()") ArrayBuilderNode arrayBuilder) {
             final ArrayMirror store = strategy.newMirror(array);
             final int size = strategy.getSize(array);
             Object mappedStore = arrayBuilder.start(size);
@@ -1400,7 +1400,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object rejectOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy,
-                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
+                @Cached("create()") ArrayBuilderNode arrayBuilder) {
             final ArrayMirror store = strategy.newMirror(array);
 
             Object selectedStore = arrayBuilder.start(strategy.getSize(array));
@@ -1524,7 +1524,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "strategy.matches(array)", limit = "ARRAY_STRATEGIES")
         public Object selectOther(VirtualFrame frame, DynamicObject array, DynamicObject block,
                 @Cached("of(array)") ArrayStrategy strategy,
-                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
+                @Cached("create()") ArrayBuilderNode arrayBuilder) {
             final ArrayMirror store = strategy.newMirror(array);
 
             Object selectedStore = arrayBuilder.start(strategy.getSize(array));
