@@ -43,7 +43,7 @@ import java.util.List;
 @CoreClass("Truffle::Debug")
 public abstract class TruffleDebugNodes {
 
-    @CoreMethod(names = "break_handle", onSingleton = true, required = 2, needsBlock = true)
+    @CoreMethod(names = "break_handle", onSingleton = true, required = 2, needsBlock = true, lowerFixnum = 2)
     public abstract static class BreakNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
