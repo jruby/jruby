@@ -431,7 +431,14 @@ module Process
   end
 
   def self.groups
-    Truffle::POSIX.getgroups
+    g = []
+    count = Truffle::POSIX.getgroups(0, nil)
+    FFI::MemoryPointer.new(:int, count) do |p|
+      num_groups = Truffle::POSIX.getgroups(count, p)
+      Errno.handle if num_groups == -1
+      g = p.read_array_of_int(num_groups)
+    end
+    g
   end
 
   def self.groups=(g)
