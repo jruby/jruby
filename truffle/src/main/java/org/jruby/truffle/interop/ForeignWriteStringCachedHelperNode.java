@@ -32,9 +32,9 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 })
 abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
 
-    private @Child DoesRespondDispatchHeadNode definedNode;
-    private @Child DoesRespondDispatchHeadNode indexDefinedNode;
-    private @Child CallDispatchHeadNode callNode;
+    @Child private DoesRespondDispatchHeadNode definedNode;
+    @Child private DoesRespondDispatchHeadNode indexDefinedNode;
+    @Child private CallDispatchHeadNode callNode;
 
     protected final static String INDEX_SET_METHOD_NAME = "[]=";
 

@@ -32,7 +32,7 @@ import org.jruby.truffle.language.objects.IsANodeGen;
 public abstract class NumericToFloatNode extends RubyNode {
 
     @Child private IsANode isANode = IsANodeGen.create(null, null);
-    @Child CallDispatchHeadNode toFloatCallNode;
+    @Child private CallDispatchHeadNode toFloatCallNode;
 
     private final String method;
 

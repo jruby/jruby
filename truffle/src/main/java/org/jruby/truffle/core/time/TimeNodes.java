@@ -374,8 +374,8 @@ public abstract class TimeNodes {
     @Primitive(name = "time_s_from_array", needsSelf = true, lowerFixnum = { 1 /*sec*/, 2 /* min */, 3 /* hour */, 4 /* mday */, 5 /* month */, 6 /* year */, 7 /*nsec*/, 8 /*isdst*/})
     public static abstract class TimeSFromArrayPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child GetTimeZoneNode getTimeZoneNode = GetTimeZoneNodeGen.create();
-        @Child AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
+        @Child private GetTimeZoneNode getTimeZoneNode = GetTimeZoneNodeGen.create();
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization(guards = {"!fromutc", "!isNil(utcoffset)"})
         public DynamicObject timeSFromArray(VirtualFrame frame, DynamicObject timeClass, int sec, int min, int hour, int mday, int month, int year,

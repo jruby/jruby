@@ -27,8 +27,8 @@ import org.jruby.truffle.language.arguments.RubyArguments;
 })
 public abstract class CallBoundMethodNode extends RubyNode {
 
-    @Child CallInternalMethodNode callInternalMethodNode = CallInternalMethodNodeGen.create(null, null);
-    @Child ProcOrNullNode procOrNullNode = ProcOrNullNodeGen.create(null);
+    @Child private CallInternalMethodNode callInternalMethodNode = CallInternalMethodNodeGen.create(null, null);
+    @Child private ProcOrNullNode procOrNullNode = ProcOrNullNodeGen.create(null);
 
     public abstract Object executeCallBoundMethod(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block);
 

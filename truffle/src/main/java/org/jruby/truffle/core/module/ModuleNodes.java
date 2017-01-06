@@ -325,7 +325,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "append_features", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class AppendFeaturesNode extends CoreMethodArrayArgumentsNode {
 
-        @Child TaintResultNode taintResultNode = new TaintResultNode();
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         @Specialization(guards = "isRubyModule(target)")
         public DynamicObject appendFeatures(DynamicObject features, DynamicObject target,
@@ -344,7 +344,7 @@ public abstract class ModuleNodes {
     public abstract static class GenerateAccessorNode extends RubyNode {
 
         final boolean isGetter;
-        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child private NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
 
         public GenerateAccessorNode(boolean isGetter) {
             this.isGetter = isGetter;
@@ -404,8 +404,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "attr", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class AttrNode extends CoreMethodArrayArgumentsNode {
 
-        @Child GenerateAccessorNode generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(true, null, null);
-        @Child GenerateAccessorNode generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(false, null, null);
+        @Child private GenerateAccessorNode generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(true, null, null);
+        @Child private GenerateAccessorNode generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(false, null, null);
 
         @Specialization
         public DynamicObject attr(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -431,8 +431,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "attr_accessor", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class AttrAccessorNode extends CoreMethodArrayArgumentsNode {
 
-        @Child GenerateAccessorNode generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(true, null, null);
-        @Child GenerateAccessorNode generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(false, null, null);
+        @Child private GenerateAccessorNode generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(true, null, null);
+        @Child private GenerateAccessorNode generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(false, null, null);
 
         @Specialization
         public DynamicObject attrAccessor(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -448,7 +448,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "attr_reader", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class AttrReaderNode extends CoreMethodArrayArgumentsNode {
 
-        @Child GenerateAccessorNode generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(true, null, null);
+        @Child private GenerateAccessorNode generateGetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(true, null, null);
 
         @Specialization
         public DynamicObject attrReader(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -463,7 +463,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "attr_writer", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class AttrWriterNode extends CoreMethodArrayArgumentsNode {
 
-        @Child GenerateAccessorNode generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(false, null, null);
+        @Child private GenerateAccessorNode generateSetterNode = ModuleNodesFactory.GenerateAccessorNodeGen.create(false, null, null);
 
         @Specialization
         public DynamicObject attrWriter(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -801,9 +801,8 @@ public abstract class ModuleNodes {
     public abstract static class ConstGetNode extends CoreMethodNode {
 
         @Child private RequireNode requireNode;
-
-        @Child LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, true);
-        @Child GetConstantNode getConstantNode = GetConstantNode.create();
+        @Child private LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, true);
+        @Child private GetConstantNode getConstantNode = GetConstantNode.create();
 
         @CreateCast("name")
         public RubyNode coerceToSymbolOrString(RubyNode name) {
@@ -946,7 +945,7 @@ public abstract class ModuleNodes {
     })
     public abstract static class DefineMethodNode extends CoreMethodNode {
 
-        @Child AddMethodNode addMethodNode = AddMethodNodeGen.create(false, false, null, null, null);
+        @Child private AddMethodNode addMethodNode = AddMethodNodeGen.create(false, false, null, null, null);
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
@@ -1210,7 +1209,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "module_function", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class ModuleFunctionNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(Visibility.MODULE_FUNCTION, null, null);
+        @Child private SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(Visibility.MODULE_FUNCTION, null, null);
 
         @Specialization
         public DynamicObject moduleFunction(VirtualFrame frame, DynamicObject module, Object[] names,
@@ -1269,7 +1268,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class PublicNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(Visibility.PUBLIC, null, null);
+        @Child private SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(Visibility.PUBLIC, null, null);
 
         public abstract DynamicObject executePublic(VirtualFrame frame, DynamicObject module, Object[] args);
 
@@ -1283,8 +1282,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_class_method", rest = true)
     public abstract static class PublicClassMethodNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
-        @Child SetMethodVisibilityNode setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(Visibility.PUBLIC, null, null);
+        @Child private SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
+        @Child private SetMethodVisibilityNode setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(Visibility.PUBLIC, null, null);
 
         @Specialization
         public DynamicObject publicClassMethod(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -1301,7 +1300,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class PrivateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(Visibility.PRIVATE, null, null);
+        @Child private SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(Visibility.PRIVATE, null, null);
 
         public abstract DynamicObject executePrivate(VirtualFrame frame, DynamicObject module, Object[] args);
 
@@ -1315,7 +1314,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "prepend_features", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class PrependFeaturesNode extends CoreMethodArrayArgumentsNode {
 
-        @Child TaintResultNode taintResultNode = new TaintResultNode();
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         @Specialization(guards = "isRubyModule(target)")
         public DynamicObject prependFeatures(DynamicObject features, DynamicObject target,
@@ -1333,8 +1332,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_class_method", rest = true)
     public abstract static class PrivateClassMethodNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
-        @Child SetMethodVisibilityNode setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(Visibility.PRIVATE, null, null);
+        @Child private SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(null);
+        @Child private SetMethodVisibilityNode setMethodVisibilityNode = ModuleNodesFactory.SetMethodVisibilityNodeGen.create(Visibility.PRIVATE, null, null);
 
         @Specialization
         public DynamicObject privateClassMethod(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -1535,7 +1534,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_constant", rest = true)
     public abstract static class PrivateConstantNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child private NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
 
         @Specialization
         public DynamicObject privateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
@@ -1550,7 +1549,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "deprecate_constant", rest = true, raiseIfFrozenSelf = true)
     public abstract static class DeprecateConstantNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child private NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
 
         @Specialization
         public DynamicObject deprecateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
@@ -1565,7 +1564,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_constant", rest = true)
     public abstract static class PublicConstantNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child private NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
 
         @Specialization
         public DynamicObject publicConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
@@ -1580,7 +1579,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "protected", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class ProtectedNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(Visibility.PROTECTED, null, null);
+        @Child private SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(Visibility.PROTECTED, null, null);
 
         @Specialization
         public DynamicObject doProtected(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -1644,9 +1643,9 @@ public abstract class ModuleNodes {
 
         private final BranchProfile errorProfile = BranchProfile.create();
 
-        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
-        @Child IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(null);
-        @Child CallDispatchHeadNode methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
+        @Child private NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child private IsFrozenNode isFrozenNode = IsFrozenNodeGen.create(null);
+        @Child private CallDispatchHeadNode methodRemovedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
         @Specialization
         public DynamicObject removeMethods(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -1713,9 +1712,9 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "undef_method", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class UndefMethodNode extends CoreMethodArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
-        @Child RaiseIfFrozenNode raiseIfFrozenNode = new RaiseIfFrozenNode(new ProfileArgumentNode(new ReadSelfNode()));
-        @Child CallDispatchHeadNode methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
+        @Child private NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child private RaiseIfFrozenNode raiseIfFrozenNode = new RaiseIfFrozenNode(new ProfileArgumentNode(new ReadSelfNode()));
+        @Child private CallDispatchHeadNode methodUndefinedNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
         @Specialization
         public DynamicObject undefMethods(VirtualFrame frame, DynamicObject module, Object[] names) {
@@ -1744,7 +1743,7 @@ public abstract class ModuleNodes {
 
         private final Visibility visibility;
 
-        @Child SetMethodVisibilityNode setMethodVisibilityNode;
+        @Child private SetMethodVisibilityNode setMethodVisibilityNode;
 
         public SetVisibilityNode(Visibility visibility) {
             this.visibility = visibility;
@@ -1778,8 +1777,8 @@ public abstract class ModuleNodes {
 
         private final Visibility visibility;
 
-        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
-        @Child AddMethodNode addMethodNode = AddMethodNodeGen.create(true, false, null, null, null);;
+        @Child private NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child private AddMethodNode addMethodNode = AddMethodNodeGen.create(true, false, null, null, null);;
 
         public SetMethodVisibilityNode(Visibility visibility) {
             this.visibility = visibility;

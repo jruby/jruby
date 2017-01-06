@@ -37,7 +37,7 @@ public abstract class LookupMethodNode extends RubyNode {
     private final boolean ignoreVisibility;
     private final boolean onlyLookupPublic;
 
-    @Child MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
+    @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
 
     public LookupMethodNode(boolean ignoreVisibility, boolean onlyLookupPublic) {
         this.ignoreVisibility = ignoreVisibility;

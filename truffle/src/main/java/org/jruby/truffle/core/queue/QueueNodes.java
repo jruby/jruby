@@ -53,7 +53,7 @@ public abstract class QueueNodes {
     @CoreMethod(names = { "push", "<<", "enq" }, required = 1)
     public abstract static class PushNode extends CoreMethodArrayArgumentsNode {
 
-        @Child PropagateSharingNode propagateSharingNode = PropagateSharingNode.create();
+        @Child private PropagateSharingNode propagateSharingNode = PropagateSharingNode.create();
 
         @Specialization
         public DynamicObject push(DynamicObject self, final Object value) {

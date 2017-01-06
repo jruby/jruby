@@ -28,7 +28,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
     }
 
     @Children protected final RubyNode[] values;
-    @Child protected AllocateObjectNode allocateObjectNode = AllocateObjectNodeGen.create(false, null, null);
+    @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNodeGen.create(false, null, null);
 
     public ArrayLiteralNode(RubyNode[] values) {
         this.values = values;

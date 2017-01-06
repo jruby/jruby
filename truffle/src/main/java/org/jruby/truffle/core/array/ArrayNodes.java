@@ -177,10 +177,10 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class IndexNode extends PrimitiveArrayArgumentsNode {
 
-        @Child protected ArrayReadDenormalizedNode readNode;
-        @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
-        @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
-        @Child protected AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
+        @Child private ArrayReadDenormalizedNode readNode;
+        @Child private ArrayReadSliceDenormalizedNode readSliceNode;
+        @Child private ArrayReadSliceNormalizedNode readNormalizedSliceNode;
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public Object index(DynamicObject array, int index, NotProvided length) {
@@ -250,7 +250,7 @@ public abstract class ArrayNodes {
 
         @Child private ArrayReadNormalizedNode readNode;
         @Child private ArrayWriteNormalizedNode writeNode;
-        @Child protected ArrayReadSliceNormalizedNode readSliceNode;
+        @Child private ArrayReadSliceNormalizedNode readSliceNode;
         @Child private ToIntNode toIntNode;
 
         private final BranchProfile negativeIndexProfile = BranchProfile.create();

@@ -22,7 +22,7 @@ public class ReadConstantWithDynamicScopeNode extends RubyNode {
 
     private final String name;
 
-    @Child protected LookupConstantWithDynamicScopeNode lookupConstantNode;
+    @Child private LookupConstantWithDynamicScopeNode lookupConstantNode;
     @Child private GetConstantNode getConstantNode = GetConstantNode.create();
 
     public ReadConstantWithDynamicScopeNode(String name) {

@@ -36,7 +36,7 @@ public abstract class GetConstantNode extends RubyNode {
         return GetConstantNodeGen.create(null, null, null, null);
     }
 
-    private @Child CallDispatchHeadNode constMissingNode;
+    @Child private CallDispatchHeadNode constMissingNode;
 
     public abstract Object executeGetConstant(
             VirtualFrame frame, Object module, String name, RubyConstant constant, LookupConstantInterface lookupConstantNode);

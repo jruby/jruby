@@ -889,7 +889,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = { "is_a?", "kind_of?" }, required = 1)
     public abstract static class KernelIsANode extends CoreMethodArrayArgumentsNode {
 
-        @Child IsANode isANode = IsANodeGen.create(null, null);
+        @Child private IsANode isANode = IsANodeGen.create(null, null);
 
         @Specialization
         public boolean isA(Object self, DynamicObject module) {
@@ -1006,9 +1006,9 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodNode extends CoreMethodNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
-        @Child LookupMethodNode lookupMethodNode = LookupMethodNodeGen.create(true, false, null, null);
-        @Child CallDispatchHeadNode respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(true);
+        @Child private NameToJavaStringNode nameToJavaStringNode = NameToJavaStringNode.create();
+        @Child private LookupMethodNode lookupMethodNode = LookupMethodNodeGen.create(true, false, null, null);
+        @Child private CallDispatchHeadNode respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(true);
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
@@ -1116,7 +1116,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "p", needsSelf = false, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintNode extends CoreMethodArrayArgumentsNode {
 
-        @Child CallDispatchHeadNode callInspectNode = CallDispatchHeadNode.createMethodCall();
+        @Child private CallDispatchHeadNode callInspectNode = CallDispatchHeadNode.createMethodCall();
 
         @Specialization
         public Object p(VirtualFrame frame, Object value) {
@@ -1159,7 +1159,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "proc", isModuleFunction = true, needsBlock = true)
     public abstract static class ProcNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ProcNewNode procNewNode = ProcNewNodeFactory.create(null);
+        @Child private ProcNewNode procNewNode = ProcNewNodeFactory.create(null);
 
         @Specialization
         public DynamicObject proc(VirtualFrame frame, Object maybeBlock) {

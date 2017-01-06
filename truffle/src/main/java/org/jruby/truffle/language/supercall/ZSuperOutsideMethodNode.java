@@ -22,7 +22,8 @@ import org.jruby.truffle.language.methods.InternalMethod;
 public class ZSuperOutsideMethodNode extends RubyNode {
 
     final boolean insideDefineMethod;
-    @Child LookupSuperMethodNode lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null);
+    
+    @Child private LookupSuperMethodNode lookupSuperMethodNode = LookupSuperMethodNodeGen.create(null);
 
     public ZSuperOutsideMethodNode(boolean insideDefineMethod) {
         this.insideDefineMethod = insideDefineMethod;

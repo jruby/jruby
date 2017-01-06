@@ -323,8 +323,8 @@ public class CExtNodes {
             return NameToJavaStringNodeGen.create(name);
         }
 
-        @Child LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, false);
-        @Child GetConstantNode getConstantNode = GetConstantNode.create();
+        @Child private LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, false);
+        @Child private GetConstantNode getConstantNode = GetConstantNode.create();
 
         @Specialization
         public Object constGetFrom(VirtualFrame frame, DynamicObject module, String name) {

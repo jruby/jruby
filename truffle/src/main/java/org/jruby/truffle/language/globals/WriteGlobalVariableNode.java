@@ -22,8 +22,8 @@ public abstract class WriteGlobalVariableNode extends RubyNode {
 
     private final String name;
 
-    @Child ReferenceEqualNode referenceEqualNode = ReferenceEqualNode.create();
-    @Child WriteBarrierNode writeBarrierNode = WriteBarrierNode.create();
+    @Child protected ReferenceEqualNode referenceEqualNode = ReferenceEqualNode.create();
+    @Child protected WriteBarrierNode writeBarrierNode = WriteBarrierNode.create();
 
     public WriteGlobalVariableNode(String name) {
         this.name = name;

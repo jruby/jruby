@@ -29,9 +29,8 @@ public class DefineClassNode extends RubyNode {
 
     @Child private RubyNode superClassNode;
     @Child private RubyNode lexicalParentModule;
-
-    @Child LookupForExistingModuleNode lookupForExistingModuleNode;
-    @Child CallDispatchHeadNode inheritedNode;
+    @Child private LookupForExistingModuleNode lookupForExistingModuleNode;
+    @Child private CallDispatchHeadNode inheritedNode;
 
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile noSuperClassSupplied = ConditionProfile.createBinaryProfile();

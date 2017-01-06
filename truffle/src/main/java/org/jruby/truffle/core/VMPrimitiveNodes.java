@@ -242,8 +242,8 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_method_lookup", needsSelf = false)
     public static abstract class VMMethodLookupNode extends PrimitiveArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode;
-        @Child LookupMethodNode lookupMethodNode;
+        @Child private NameToJavaStringNode nameToJavaStringNode;
+        @Child private LookupMethodNode lookupMethodNode;
 
         public VMMethodLookupNode() {
             nameToJavaStringNode = NameToJavaStringNode.create();

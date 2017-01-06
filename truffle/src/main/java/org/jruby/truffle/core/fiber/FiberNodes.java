@@ -201,7 +201,7 @@ public abstract class FiberNodes {
 
     public abstract static class FiberTransferNode extends CoreMethodArrayArgumentsNode {
 
-        @Child SingleValueCastNode singleValueCastNode;
+        @Child private SingleValueCastNode singleValueCastNode;
 
         protected Object singleValue(VirtualFrame frame, Object[] args) {
             if (singleValueCastNode == null) {
@@ -249,7 +249,7 @@ public abstract class FiberNodes {
     @CoreMethod(names = "resume", rest = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class ResumeNode extends CoreMethodArrayArgumentsNode {
 
-        @Child FiberTransferNode fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
+        @Child private FiberTransferNode fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
 
         @Specialization
         public Object resume(VirtualFrame frame, DynamicObject fiberBeingResumed, Object[] args) {
@@ -261,7 +261,7 @@ public abstract class FiberNodes {
     @CoreMethod(names = "yield", onSingleton = true, rest = true, unsafe = UnsafeGroup.THREADS)
     public abstract static class YieldNode extends CoreMethodArrayArgumentsNode {
 
-        @Child FiberTransferNode fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
+        @Child private FiberTransferNode fiberTransferNode = FiberNodesFactory.FiberTransferNodeFactory.create(null);
 
         @Specialization
         public Object yield(VirtualFrame frame, Object[] args,
