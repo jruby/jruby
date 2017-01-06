@@ -81,6 +81,13 @@ public class RubySortedSet extends RubySet implements SortedSet {
         order = new TreeSet<>(new OrderComparator(runtime));
     }
 
+    @Override
+    void unmarshal() {
+        super.unmarshal();
+        IRubyObject[] elems = hash.keys().toJavaArrayMaybeUnsafe();
+        for ( int i=0; i<elems.length; i++ ) order.add( elems[i] );
+    }
+
     @JRubyMethod(name = "[]", rest = true, meta = true) // re-def Set[] for SortedSet
     public static RubySortedSet create(final ThreadContext context, IRubyObject self, IRubyObject... ary) {
         final Ruby runtime = context.runtime;

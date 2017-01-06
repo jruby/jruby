@@ -35,8 +35,11 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ArraySupport;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -61,9 +64,36 @@ public class RubySet extends RubyObject implements Set {
         Set.includeModule(runtime.getEnumerable());
         Set.defineAnnotatedMethods(RubySet.class);
 
+        Set.setMarshal(new SetMarshal(Set.getMarshal()));
+
         runtime.getLoadService().require("jruby/set.rb");
 
         return Set;
+    }
+
+    // custom Set marshaling without _marshal_dump and _marshal_load for maximum compatibility
+    private static final class SetMarshal implements ObjectMarshal {
+
+        protected final ObjectMarshal defaultMarshal;
+
+        SetMarshal(ObjectMarshal defaultMarshal) {
+            this.defaultMarshal = defaultMarshal;
+        }
+
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) throws IOException {
+            defaultMarshal.marshalTo(runtime, obj, type, marshalStream);
+        }
+
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) throws IOException {
+            Object result = defaultMarshal.unmarshalFrom(runtime, type, unmarshalStream);
+            ((RubySet) result).unmarshal();
+            return result;
+        }
+
+    }
+
+    void unmarshal() {
+        this.hash = (RubyHash) getInstanceVariable("@hash");
     }
 
     private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
