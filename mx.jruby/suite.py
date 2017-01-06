@@ -99,9 +99,9 @@ suite = {
           "BSD-new"),
 
         "JNR_POSIX": mavenLib(
-          "com.github.jnr:jnr-posix:3.0.32",
-          "a6fbbc386acbae4fd3d892f13e2141655ed6e9c0",
-          "7501075537354d9d9fa99f8b753c1f7844db0a45",
+          "com.github.jnr:jnr-posix:3.0.33",
+          "86dd65d4c33c4a6c8c260ee256bfcfecd8c45bee",
+          "79b1c4d62dd5ffd138d0771111fec86afb1d19b5",
           "EPL-1.0"),
 
         "JNR_CONSTANTS": mavenLib(

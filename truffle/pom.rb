@@ -23,7 +23,7 @@ project 'JRuby Truffle' do
   jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
   jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
   
-  jar 'com.github.jnr:jnr-posix:3.0.32'
+  jar 'com.github.jnr:jnr-posix:3.0.33'
   jar 'com.github.jnr:jnr-constants:0.9.6'
   jar 'com.github.jnr:jnr-ffi:2.1.1'
   jar 'com.github.jnr:jffi:1.2.13'
