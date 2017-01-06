@@ -182,6 +182,17 @@ module Kernel
   end
   module_function :StringValue
 
+  def `(str) #`
+    str = StringValue(str) unless str.kind_of?(String)
+
+    io = IO.popen(str)
+    output = io.read
+    io.close
+
+    Rubinius::Type.external_string output
+  end
+  module_function :` # `
+
   def =~(other)
     nil
   end
