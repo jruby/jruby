@@ -12,14 +12,13 @@ package org.jruby.truffle.extra;
 import com.kenai.jffi.Platform;
 import com.kenai.jffi.Platform.OS;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.sun.security.auth.module.UnixSystem;
 import jnr.constants.platform.Fcntl;
+import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
@@ -183,23 +182,31 @@ public abstract class TrufflePosixNodes {
 
     }
 
-    @CoreMethod(names = "getgroups", isModuleFunction = true, unsafe = {UnsafeGroup.MEMORY, UnsafeGroup.PROCESSES})
+    @CoreMethod(names = "getgroups", isModuleFunction = true, required = 2, lowerFixnum = 1, unsafe = {UnsafeGroup.MEMORY, UnsafeGroup.PROCESSES})
     public abstract static class GetGroupsNode extends CoreMethodArrayArgumentsNode {
 
-        @Specialization
-        public DynamicObject getgroups() {
-            final long[] groups = getGroups();
-            return createArray(groups, groups.length);
+        @TruffleBoundary
+        @Specialization(guards = "isNil(pointer)")
+        public int getGroupsNil(int max, DynamicObject pointer) {
+            return getContext().getNativePlatform().getPosix().getgroups().length;
         }
 
         @TruffleBoundary
-        private static long[] getGroups() {
-            if (TruffleOptions.AOT) {
-                throw new UnsupportedOperationException("UnixSystem is not supported with AOT.");
+        @Specialization(guards = "isRubyPointer(pointer)")
+        public int getGroups(int max, DynamicObject pointer) {
+            final long[] groups = getContext().getNativePlatform().getPosix().getgroups();
+
+            final Pointer pointerValue = Layouts.POINTER.getPointer(pointer);
+
+            for (int n = 0; n < groups.length && n < max; n++) {
+                // TODO CS 16-May-15 this is platform dependent
+                pointerValue.putInt(4 * n, (int) groups[n]);
+
             }
 
-            return new UnixSystem().getGroups();
+            return groups.length;
         }
+
     }
 
     @CoreMethod(names = "getrlimit", isModuleFunction = true, required = 2, lowerFixnum = 1, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.MEMORY})

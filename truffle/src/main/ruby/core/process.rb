@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -431,7 +431,14 @@ module Process
   end
 
   def self.groups
-    Truffle::POSIX.getgroups
+    g = []
+    count = Truffle::POSIX.getgroups(0, nil)
+    FFI::MemoryPointer.new(:int, count) do |p|
+      num_groups = Truffle::POSIX.getgroups(count, p)
+      Errno.handle if num_groups == -1
+      g = p.read_array_of_int(num_groups)
+    end
+    g
   end
 
   def self.groups=(g)
