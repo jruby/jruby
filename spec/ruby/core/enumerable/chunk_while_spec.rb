@@ -34,5 +34,11 @@ ruby_version_is "2.3" do
         lambda { @enum.chunk_while }.should raise_error(ArgumentError)
       end
     end
+
+    context "on a single-element array" do
+      it "ignores the block and returns an enumerator that yields [element]" do
+        [1].chunk_while {|x| x.even?}.to_a.should == [[1]]
+      end
+    end
   end
 end
