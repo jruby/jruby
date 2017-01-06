@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2016 Karol Bucek
+ * Copyright (C) 2016-2017 Karol Bucek
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -81,25 +81,25 @@ public class RubySet extends RubyObject implements Set {
     /*
     private RubySet(Ruby runtime, RubyHash hash) {
         super(runtime, runtime.getClass("Set"));
-        initHash(hash);
+        allocHash(hash);
     } */
 
-    final void initHash(final Ruby runtime) {
-        initHash(new RubyHash(runtime));
+    final void allocHash(final Ruby runtime) {
+        setHash(new RubyHash(runtime));
     }
 
-    final void initHash(final Ruby runtime, final int size) {
-        initHash(new RubyHash(runtime, size));
+    final void allocHash(final Ruby runtime, final int size) {
+        setHash(new RubyHash(runtime, size));
     }
 
-    final void initHash(final RubyHash hash) {
+    final void setHash(final RubyHash hash) {
         this.hash = hash;
         setInstanceVariable("@hash", hash); // MRI compat with set.rb
     }
 
     RubySet newSet(final Ruby runtime) {
         RubySet set = new RubySet(runtime, getMetaClass());
-        set.initHash(runtime);
+        set.allocHash(runtime);
         return set;
     }
 
@@ -109,7 +109,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     final RubySet initSet(final ThreadContext context, final IRubyObject[] elements, final int off, final int len) {
-        initHash(context.runtime, Math.max(4, len));
+        allocHash(context.runtime, Math.max(4, len));
         for ( int i = off; i < len; i++ ) {
             invokeAdd(context, elements[i]);
         }
@@ -135,7 +135,7 @@ public class RubySet extends RubyObject implements Set {
         if ( block.isGiven() && context.runtime.isVerbose() ) {
             context.runtime.getWarnings().warning(IRubyWarnings.ID.BLOCK_UNUSED, "given block not used");
         }
-        initHash(context.runtime);
+        allocHash(context.runtime);
         return this;
     }
 
@@ -150,7 +150,7 @@ public class RubySet extends RubyObject implements Set {
             return initWithEnum(context, enume, block);
         }
 
-        initHash(context.runtime);
+        allocHash(context.runtime);
         return callMethod(context, "merge", enume); // TODO site-cache
     }
 
@@ -165,7 +165,7 @@ public class RubySet extends RubyObject implements Set {
     private IRubyObject initWithEnum(final ThreadContext context, final IRubyObject enume, final Block block) {
         if ( enume instanceof RubyArray ) {
             RubyArray ary = (RubyArray) enume;
-            initHash(context.runtime, ary.size());
+            allocHash(context.runtime, ary.size());
             for ( int i = 0; i < ary.size(); i++ ) {
                 invokeAdd(context, block.yield(context, ary.eltInternal(i)));
             }
@@ -174,7 +174,7 @@ public class RubySet extends RubyObject implements Set {
 
         if ( enume instanceof RubySet ) {
             RubySet set = (RubySet) enume;
-            initHash(context.runtime, set.size());
+            allocHash(context.runtime, set.size());
             for ( IRubyObject elem : set.elementsOrdered() ) {
                 invokeAdd(context, block.yield(context, elem));
             }
@@ -183,7 +183,7 @@ public class RubySet extends RubyObject implements Set {
 
         final Ruby runtime = context.runtime;
 
-        initHash(runtime);
+        allocHash(runtime);
 
         // set.rb do_with_enum :
         return doWithEnum(context, enume, new EachBody(runtime) {
@@ -237,14 +237,14 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod
     public IRubyObject initialize_dup(ThreadContext context, IRubyObject orig) {
         super.initialize_copy(orig);
-        initHash((RubyHash) (((RubySet) orig).hash).dup(context));
+        setHash((RubyHash) (((RubySet) orig).hash).dup(context));
         return this;
     }
 
     @JRubyMethod
     public IRubyObject initialize_clone(ThreadContext context, IRubyObject orig) {
         super.initialize_copy(orig);
-        initHash((RubyHash) (((RubySet) orig).hash).rbClone(context));
+        setHash((RubyHash) (((RubySet) orig).hash).rbClone(context));
         return this;
     }
 
@@ -767,21 +767,21 @@ public class RubySet extends RubyObject implements Set {
 
         final RubySet newSet = new RubySet(runtime, getMetaClass());
         if ( enume instanceof RubySet ) {
-            newSet.initHash(runtime, ((RubySet) enume).size());
+            newSet.allocHash(runtime, ((RubySet) enume).size());
             for ( IRubyObject obj : ((RubySet) enume).elementsOrdered() ) {
                 if ( containsImpl(obj) ) newSet.addImpl(runtime, obj);
             }
         }
         else if ( enume instanceof RubyArray ) {
             RubyArray ary = (RubyArray) enume;
-            newSet.initHash(runtime, ary.size());
+            newSet.allocHash(runtime, ary.size());
             for ( int i = 0; i < ary.size(); i++ ) {
                 final IRubyObject obj = ary.eltInternal(i);
                 if ( containsImpl(obj) ) newSet.addImpl(runtime, obj);
             }
         }
         else {
-            newSet.initHash(runtime);
+            newSet.allocHash(runtime);
             // do_with_enum(enum) { |o| newSet.add(o) if include?(o) }
             doWithEnum(context, enume, new EachBody(runtime) {
                 IRubyObject yieldImpl(ThreadContext context, IRubyObject obj) {
@@ -916,7 +916,7 @@ public class RubySet extends RubyObject implements Set {
 
         RubyHash vals = (RubyHash) classify(context, block);
         final RubySet set = new RubySet(runtime, runtime.getClass("Set"));
-        set.initHash(runtime, vals.size());
+        set.allocHash(runtime, vals.size());
         for ( IRubyObject val : (Collection<IRubyObject>) vals.directValues() ) {
             set.invokeAdd(context, val);
         }
@@ -952,7 +952,7 @@ public class RubySet extends RubyObject implements Set {
          */
         final RubyClass Set = runtime.getClass("Set");
         final RubySet set = new RubySet(runtime, Set);
-        set.initHash(runtime, dig.size());
+        set.allocHash(runtime, dig.size());
         dig.callMethod(context, "each_strongly_connected_component", IRubyObject.NULL_ARRAY, new Block(
             new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
                 @Override
