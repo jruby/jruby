@@ -12,14 +12,13 @@ package org.jruby.truffle.extra;
 import com.kenai.jffi.Platform;
 import com.kenai.jffi.Platform.OS;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.sun.security.auth.module.UnixSystem;
 import jnr.constants.platform.Fcntl;
+import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.builtins.CoreClass;
@@ -189,28 +188,25 @@ public abstract class TrufflePosixNodes {
         @TruffleBoundary
         @Specialization(guards = "isNil(pointer)")
         public int getGroupsNil(int max, DynamicObject pointer) {
-            return getGroups().length;
+            return getContext().getNativePlatform().getPosix().getgroups().length;
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getGroups(int max, DynamicObject pointer) {
+            final long[] groups = getContext().getNativePlatform().getPosix().getgroups();
+
             final Pointer pointerValue = Layouts.POINTER.getPointer(pointer);
-            final long[] groups = getGroups();
-            for (int n = 0; n < groups.length; n++) {
+
+            for (int n = 0; n < groups.length && n < max; n++) {
+                // TODO CS 16-May-15 this is platform dependent
                 pointerValue.putInt(4 * n, (int) groups[n]);
+
             }
+
             return groups.length;
         }
 
-        @TruffleBoundary
-        private static long[] getGroups() {
-            if (TruffleOptions.AOT) {
-                throw new UnsupportedOperationException("UnixSystem is not supported with AOT.");
-            }
-
-            return new UnixSystem().getGroups();
-        }
     }
 
     @CoreMethod(names = "getrlimit", isModuleFunction = true, required = 2, lowerFixnum = 1, unsafe = {UnsafeGroup.PROCESSES, UnsafeGroup.MEMORY})
