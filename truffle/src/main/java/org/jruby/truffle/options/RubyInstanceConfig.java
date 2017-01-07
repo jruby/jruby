@@ -28,97 +28,50 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.options;
 
-import com.oracle.truffle.api.TruffleOptions;
 import org.jruby.truffle.core.string.KCode;
-import org.jruby.truffle.language.control.JavaException;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
 
-/**
- * A structure used to configure new JRuby instances. All publicly-tweakable
- * aspects of Ruby can be modified here, including those settable by command-
- * line options, those available through JVM properties, and those suitable for
- * embedding.
- */
-@SuppressWarnings("unused")
 public class RubyInstanceConfig {
 
-    public RubyInstanceConfig() {
-        currentDirectory = System.getProperty("user.dir", "/");
-        environment = new HashMap<>();
-        environment.putAll(System.getenv());
-    }
-
-    public void processArguments(String[] arguments) {
-        final ArgumentProcessor processor = new ArgumentProcessor(arguments, this);
-        processor.processArguments();
-        processArgumentsWithRubyopts();
-        if (!TruffleOptions.AOT && !hasScriptArgv && !usePathScript && System.console() != null) {
-            setUsePathScript("irb");
-        }
-    }
-
-    public void processArgumentsWithRubyopts() {
-        // environment defaults to System.getenv normally
-        Object rubyoptObj = environment.get("RUBYOPT");
-        String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
-
-        if (rubyopt == null || rubyopt.length() == 0) return;
-
-        String[] rubyoptArgs = rubyopt.split("\\s+");
-        if (rubyoptArgs.length != 0) {
-            new ArgumentProcessor(rubyoptArgs, false, true, true, this).processArguments();
-        }
-    }
+    private boolean xFlag = false;
+    private PrintStream output         = System.out;
+    private PrintStream error          = System.err;
+    private String currentDirectory = System.getProperty("user.dir", "/");
+    private String[] argv = {};
+    private String internalEncoding = null;
+    private String externalEncoding = null;
+    private List<String> loadPaths = new ArrayList<>();
+    private StringBuffer inlineScript = new StringBuffer();
+    private boolean hasInlineScript = false;
+    private boolean usePathScript = false;
+    private String scriptFileName = null;
+    private Collection<String> requiredLibraries = new LinkedHashSet<>();
+    private boolean argvGlobalsOn = false;
+    private Map<String, String> optionGlobals = new HashMap<>();
+    private boolean split = false;
+    private Verbosity verbosity = Verbosity.FALSE;
+    private boolean debug = false;
+    private boolean showVersion = false;
+    private boolean showCopyright = false;
+    private boolean shouldRunInterpreter = true;
+    private boolean shouldPrintUsage = false;
+    private boolean shouldCheckSyntax = false;
+    private String inPlaceBackupExtension = null;
+    private boolean disableGems = false;
+    private boolean hasScriptArgv = false;
+    private boolean frozenStringLiteral = false;
+    private KCode kcode;
+    private boolean forceStdin = false;
 
     public byte[] inlineScript() {
         return inlineScript.toString().getBytes();
-    }
-
-    public InputStream getScriptSource() {
-        try {
-            // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
-            // if Ruby 2.0 encoding pragmas are implemented, this will need to change
-            if (hasInlineScript) {
-                return new ByteArrayInputStream(inlineScript());
-            } else if (isForceStdin() || getScriptFileName() == null) {
-                return System.in;
-            } else {
-                final String script = getScriptFileName();
-                return new FileInputStream(script);
-            }
-        } catch (IOException e) {
-            throw new JavaException(e);
-        }
-    }
-
-    public String displayedFileName() {
-        if (hasInlineScript) {
-            if (scriptFileName != null) {
-                return scriptFileName;
-            } else {
-                return "-e";
-            }
-        } else if (usePathScript) {
-            return "-S";
-        } else if (isForceStdin() || getScriptFileName() == null) {
-            return "-";
-        } else {
-            return getScriptFileName();
-        }
     }
 
     public PrintStream getOutput() {
@@ -197,18 +150,6 @@ public class RubyInstanceConfig {
         return scriptFileName;
     }
 
-    public void setAssumeLoop(boolean assumeLoop) {
-        this.assumeLoop = assumeLoop;
-    }
-
-    public void setAssumePrinting(boolean assumePrinting) {
-        this.assumePrinting = assumePrinting;
-    }
-
-    public void setProcessLineEnds(boolean processLineEnds) {
-        this.processLineEnds = processLineEnds;
-    }
-
     public void setSplit(boolean split) {
         this.split = split;
     }
@@ -263,10 +204,6 @@ public class RubyInstanceConfig {
 
     public boolean getShouldCheckSyntax() {
         return shouldCheckSyntax;
-    }
-
-    public void setInputFieldSeparator(String inputFieldSeparator) {
-        this.inputFieldSeparator = inputFieldSeparator;
     }
 
     public void setInternalEncoding(String internalEncoding) {
@@ -329,56 +266,9 @@ public class RubyInstanceConfig {
         this.frozenStringLiteral = frozenStringLiteral;
     }
 
-    /**
-     * Indicates whether the script must be extracted from script source
-     */
-    private boolean xFlag = false;
-
-    /**
-     * Indicates whether the script has a shebang line or not
-     */
-    private PrintStream output         = System.out;
-    private PrintStream error          = System.err;
-
-    private String currentDirectory;
-
-    /** Environment variables; defaults to System.getenv() in constructor */
-    private Map<String, String> environment;
-    private String[] argv = {};
-
-    private String internalEncoding = null;
-    private String externalEncoding = null;
-
-    // from CommandlineParser
-    private List<String> loadPaths = new ArrayList<>();
-    private StringBuffer inlineScript = new StringBuffer();
-    private boolean hasInlineScript = false;
-    private boolean usePathScript = false;
-    private String scriptFileName = null;
-    private Collection<String> requiredLibraries = new LinkedHashSet<>();
-    private boolean argvGlobalsOn = false;
-    private boolean assumeLoop = false;
-    private boolean assumePrinting = false;
-    private Map<String, String> optionGlobals = new HashMap<>();
-    private boolean processLineEnds = false;
-    private boolean split = false;
-    private Verbosity verbosity = Verbosity.FALSE;
-    private boolean debug = false;
-    private boolean showVersion = false;
-    private boolean showCopyright = false;
-    private boolean shouldRunInterpreter = true;
-    private boolean shouldPrintUsage = false;
-    private boolean shouldPrintProperties=false;
-    private boolean shouldCheckSyntax = false;
-    private String inputFieldSeparator = null;
-    private String inPlaceBackupExtension = null;
-    private boolean disableGems = false;
-    private boolean hasScriptArgv = false;
-    private boolean frozenStringLiteral = false;
-    private KCode kcode;
-    private String sourceEncoding;
-
-    private boolean forceStdin = false;
+    public boolean doesHaveScriptArgv() {
+        return hasScriptArgv;
+    }
 
     public Verbosity getVerbosity() {
         return verbosity;
@@ -390,10 +280,6 @@ public class RubyInstanceConfig {
 
     public KCode getKCode() {
         return kcode;
-    }
-
-    public void setSourceEncoding(String sourceEncoding) {
-        this.sourceEncoding = sourceEncoding;
     }
 
     public void setUsePathScript(String name) {

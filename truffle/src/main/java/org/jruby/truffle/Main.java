@@ -44,10 +44,11 @@
  */
 package org.jruby.truffle;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
+import org.jruby.truffle.language.control.JavaException;
+import org.jruby.truffle.options.ArgumentProcessor;
 import org.jruby.truffle.options.MainExitException;
 import org.jruby.truffle.options.OptionsBuilder;
 import org.jruby.truffle.options.OptionsCatalog;
@@ -55,9 +56,11 @@ import org.jruby.truffle.options.OutputStrings;
 import org.jruby.truffle.options.RubyInstanceConfig;
 import org.jruby.truffle.platform.graal.Graal;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 
@@ -72,7 +75,7 @@ public class Main {
         final RubyInstanceConfig config = new RubyInstanceConfig();
 
         try {
-            config.processArguments(args);
+            processArguments(config, args);
         } catch (MainExitException mee) {
             if (!mee.isAborted()) {
                 config.getError().println(mee.getMessage());
@@ -89,7 +92,7 @@ public class Main {
         final int exitCode;
 
         if (config.getShouldRunInterpreter()) {
-            final String filename = config.displayedFileName();
+            final String filename = displayedFileName(config);
 
             final PolyglotEngine engine;
             final RubyContext context;
@@ -99,7 +102,7 @@ public class Main {
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.REQUIRED_LIBRARIES.getName(), config.getRequiredLibraries().toArray(new String[]{}))
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INLINE_SCRIPT.getName(), config.inlineScript())
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.ARGUMENTS.getName(), config.getArgv())
-                    .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISPLAYED_FILE_NAME.getName(), config.displayedFileName())
+                    .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DISPLAYED_FILE_NAME.getName(), filename)
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.DEBUG.getName(), config.isDebug())
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.VERBOSITY.getName(), config.getVerbosity().ordinal())
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.FROZEN_STRING_LITERALS.getName(), config.isFrozenStringLiteral())
@@ -120,7 +123,7 @@ public class Main {
                     exitCode = 1;
                 } else if (config.getShouldCheckSyntax()) {
                     // check syntax only and exit
-                    exitCode = checkSyntax(engine, context, config.getScriptSource(), filename);
+                    exitCode = checkSyntax(engine, context, getScriptSource(config), filename);
                 } else {
                     if (!Graal.isGraal() && context.getOptions().GRAAL_WARNING_UNLESS) {
                         Log.performanceOnce("This JVM does not have the Graal compiler - performance will be limited - " +
@@ -147,6 +150,57 @@ public class Main {
         printTruffleTimeMetric("after-main");
         printTruffleMemoryMetric();
         System.exit(exitCode);
+    }
+
+    public static void processArguments(RubyInstanceConfig config, String[] arguments) {
+        new ArgumentProcessor(arguments, config).processArguments();
+
+        Object rubyoptObj = System.getenv("RUBYOPT");
+        String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
+
+        if (rubyopt != null && rubyopt.length() != 0) {
+            String[] rubyoptArgs = rubyopt.split("\\s+");
+            if (rubyoptArgs.length != 0) {
+                new ArgumentProcessor(rubyoptArgs, false, true, true, config).processArguments();
+            }
+        }
+
+        if (!TruffleOptions.AOT && !config.doesHaveScriptArgv() && !config.shouldUsePathScript() && System.console() != null) {
+            config.setUsePathScript("irb");
+        }
+    }
+
+    public static InputStream getScriptSource(RubyInstanceConfig config) {
+        try {
+            // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
+            // if Ruby 2.0 encoding pragmas are implemented, this will need to change
+            if (config.isInlineScript()) {
+                return new ByteArrayInputStream(config.inlineScript());
+            } else if (config.isForceStdin() || config.getScriptFileName() == null) {
+                return System.in;
+            } else {
+                final String script = config.getScriptFileName();
+                return new FileInputStream(script);
+            }
+        } catch (IOException e) {
+            throw new JavaException(e);
+        }
+    }
+
+    public static String displayedFileName(RubyInstanceConfig config) {
+        if (config.isInlineScript()) {
+            if (config.getScriptFileName() != null) {
+                return config.getScriptFileName();
+            } else {
+                return "-e";
+            }
+        } else if (config.shouldUsePathScript()) {
+            return "-S";
+        } else if (config.isForceStdin() || config.getScriptFileName() == null) {
+            return "-";
+        } else {
+            return config.getScriptFileName();
+        }
     }
 
     private static void printUsage(RubyInstanceConfig config, boolean force) {

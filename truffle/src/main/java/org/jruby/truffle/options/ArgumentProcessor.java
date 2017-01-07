@@ -250,8 +250,7 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'F':
                     disallowedInRubyOpts(argument);
-                    config.setInputFieldSeparator(grabValue(getArgumentError(" -F must be followed by a pattern for input field separation")));
-                    break FOR;
+                    throw new UnsupportedOperationException();
                 case 'h':
                     disallowedInRubyOpts(argument);
                     config.setShouldPrintUsage(true);
@@ -281,13 +280,13 @@ public class ArgumentProcessor {
                         grabValue(getArgumentError(" -J-cp must be followed by a path expression"));
                     }
                     break FOR;
-                case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
+                case 'K':
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
                     config.setKCode(KCode.create(eArg));
 
-                    // source encoding
-                    config.setSourceEncoding(config.getKCode().getEncoding().toString());
+                    // TODO CS 6-Jan-17
+                    //config.setSourceEncoding(config.getKCode().getEncoding().toString());
 
                     // set external encoding if not already specified
                     if (config.getExternalEncoding() == null) {
@@ -295,21 +294,16 @@ public class ArgumentProcessor {
                     }
 
                     break;
+
                 case 'l':
                     disallowedInRubyOpts(argument);
-                    config.setProcessLineEnds(true);
-                    break;
+                    throw new UnsupportedOperationException();
                 case 'n':
                     disallowedInRubyOpts(argument);
-                    config.setAssumeLoop(true);
-                    //config.setKernelGsubDefined(true);
-                    break;
+                    throw new UnsupportedOperationException();
                 case 'p':
                     disallowedInRubyOpts(argument);
-                    config.setAssumePrinting(true);
-                    config.setAssumeLoop(true);
-                    //config.setKernelGsubDefined(true);
-                    break;
+                    throw new UnsupportedOperationException();
                 case 'r':
                     config.getRequiredLibraries().add(grabValue(getArgumentError("-r must be followed by a package to require")));
                     break FOR;
