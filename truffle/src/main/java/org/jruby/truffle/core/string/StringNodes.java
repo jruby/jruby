@@ -1378,7 +1378,7 @@ public abstract class StringNodes {
 
         @Child private IsTaintedNode isTaintedNode = IsTaintedNode.create();
         @Child private TaintNode taintNode = TaintNode.create();
-        @Child private CallDispatchHeadNode strCompatAndValidNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private CallDispatchHeadNode strCompatAndValidNode = DispatchHeadNodeFactory.createMethodCall(true);
         @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
 
         @Specialization
