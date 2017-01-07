@@ -681,9 +681,9 @@ public class Dir {
         final int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         int status = 0;
 
-        int p = sub != -1 ? sub : begin;
+        int ptr = sub != -1 ? sub : begin;
 
-        if ( ! has_magic(path, p, end, flags) ) {
+        if ( ! has_magic(path, ptr, end, flags) ) {
             if ( DOSISH || (flags & FNM_NOESCAPE) == 0 ) {
                 if ( sub != -1 ) { // can modify path (our internal buf[])
                     end = remove_backslashes(path, sub, end);
@@ -712,41 +712,41 @@ public class Dir {
 
         ByteList buf = new ByteList(20); FileResource resource;
 
-        mainLoop: while(p != -1 && status == 0) {
-            if ( path[p] == '/' ) p++;
+        mainLoop: while(ptr != -1 && status == 0) {
+            if ( path[ptr] == '/' ) ptr++;
 
-            final int s = indexOf(path, p, end, (byte) '/');
-            if ( has_magic(path, p, s == -1 ? end : s, flags) ) {
+            final int SLASH_INDEX = indexOf(path, ptr, end, (byte) '/');
+            if ( has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags) ) {
                 finalize: do {
-                    byte[] base = extract_path(path, begin, p);
-                    byte[] dir = begin == p ? new byte[] { '.' } : base;
-                    byte[] magic = extract_elem(path, p, end);
+                    byte[] base = extract_path(path, begin, ptr);
+                    byte[] dir = begin == ptr ? new byte[] { '.' } : base;
+                    byte[] magic = extract_elem(path, ptr, end);
                     boolean recursive = false;
 
                     resource = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(dir, 0, dir.length));
                     if ( resource.isDirectory() ) {
-                        if ( s != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
-                            final int n = base.length;
+                        if ( SLASH_INDEX != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
+                            final int lengthOfBase = base.length;
                             recursive = true;
                             buf.length(0);
                             buf.append(base);
-                            int nextBegin;
-                            int indexOfSlash = s;
+                            int nextStartIndex;
+                            int indexOfSlash = SLASH_INDEX;
                             do {
-                                nextBegin = indexOfSlash + 1;
-                                indexOfSlash = indexOf(path, nextBegin, end, (byte) '/');
-                                magic = extract_elem(path, nextBegin, end);
+                                nextStartIndex = indexOfSlash + 1;
+                                indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
+                                magic = extract_elem(path, nextStartIndex, end);
                             } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
 
-                            int start;
+                            int remainingPathStartIndex;
                             if(Arrays.equals(magic, DOUBLE_STAR)) {
-                                start = nextBegin;
+                                remainingPathStartIndex = nextStartIndex;
                             } else {
-                                start = nextBegin - 1;
+                                remainingPathStartIndex = nextStartIndex - 1;
                             }
-                            start = n > 0 ? start : start + 1;
-                            buf.append(path, start, end - start);
-                            status = glob_helper(runtime, cwd, buf, n, flags, func, arg);
+                            remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
+                            buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
+                            status = glob_helper(runtime, cwd, buf, lengthOfBase, flags, func, arg);
                             if ( status != 0 ) break finalize;
                         }
                     } else {
@@ -771,7 +771,7 @@ public class Dir {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
-                                buf.append(path, s, end - s);
+                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
                                 status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
                                 if ( status != 0 ) break;
                             }
@@ -782,7 +782,7 @@ public class Dir {
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            if ( s == -1 ) {
+                            if ( SLASH_INDEX == -1 ) {
                                 status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), arg);
                                 if ( status != 0 ) break;
                                 continue;
@@ -802,7 +802,7 @@ public class Dir {
                                 final int len = link.getRealSize();
                                 buf.length(0);
                                 buf.append(link);
-                                buf.append(path, s, end - s);
+                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
                                 status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
                             }
                         }
@@ -810,7 +810,7 @@ public class Dir {
                     break mainLoop;
                 }
             }
-            p = s;
+            ptr = SLASH_INDEX;
         }
 
         return status;
