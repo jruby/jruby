@@ -1434,10 +1434,9 @@ public abstract class StringNodes {
                 }
                 else if (repl != nil()) {
                     final Rope replRope = rope((DynamicObject) repl);
-                    final ByteList replValue = RopeOperations.getByteListReadOnly(replRope);
-                    repBytes = replValue.unsafeBytes();
-                    rep = replValue.begin();
-                    replen = replValue.getRealSize();
+                    repBytes = replRope.getBytesCopy();
+                    rep = 0;
+                    replen = repBytes.length;
                     rep7bit_p = (replRope.getCodeRange() == CodeRange.CR_7BIT);
                 }
                 else if (encidx == UTF8Encoding.INSTANCE) {
@@ -1556,10 +1555,9 @@ public abstract class StringNodes {
                 int mbminlen = enc.minLength();
                 if (repl != nil()) {
                     final Rope replRope = rope((DynamicObject) repl);
-                    final ByteList replValue = RopeOperations.getByteListReadOnly(replRope);
-                    repBytes = replValue.unsafeBytes();
-                    rep = replValue.begin();
-                    replen = replValue.getRealSize();
+                    repBytes = replRope.getBytesCopy();
+                    rep = 0;
+                    replen = repBytes.length;
                 }
                 else if (encidx == UTF16BEEncoding.INSTANCE) {
                     repBytes = SCRUB_REPL_UTF16BE;
