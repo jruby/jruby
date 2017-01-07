@@ -40,35 +40,35 @@ import java.util.Map;
 
 public class RubyInstanceConfig {
 
-    private boolean xFlag = false;
-    private PrintStream output         = System.out;
-    private PrintStream error          = System.err;
+    private boolean xFlag;
+    private PrintStream output = System.out;
+    private PrintStream error = System.err;
     private String currentDirectory = System.getProperty("user.dir", "/");
     private String[] argv = {};
-    private String internalEncoding = null;
-    private String externalEncoding = null;
+    private String internalEncoding;
+    private String externalEncoding;
     private List<String> loadPaths = new ArrayList<>();
     private StringBuffer inlineScript = new StringBuffer();
-    private boolean hasInlineScript = false;
-    private boolean usePathScript = false;
-    private String scriptFileName = null;
+    private boolean hasInlineScript;
+    private boolean usePathScript;
+    private String scriptFileName;
     private Collection<String> requiredLibraries = new LinkedHashSet<>();
-    private boolean argvGlobalsOn = false;
+    private boolean argvGlobalsOn;
     private Map<String, String> optionGlobals = new HashMap<>();
-    private boolean split = false;
+    private boolean split;
     private Verbosity verbosity = Verbosity.FALSE;
-    private boolean debug = false;
-    private boolean showVersion = false;
-    private boolean showCopyright = false;
+    private boolean debug;
+    private boolean showVersion;
+    private boolean showCopyright;
     private boolean shouldRunInterpreter = true;
-    private boolean shouldPrintUsage = false;
-    private boolean shouldCheckSyntax = false;
-    private String inPlaceBackupExtension = null;
-    private boolean disableGems = false;
-    private boolean hasScriptArgv = false;
-    private boolean frozenStringLiteral = false;
+    private boolean shouldPrintUsage;
+    private boolean shouldCheckSyntax;
+    private String inPlaceBackupExtension;
+    private boolean disableGems;
+    private boolean hasScriptArgv;
+    private boolean frozenStringLiteral;
     private KCode kcode;
-    private boolean forceStdin = false;
+    private boolean forceStdin;
 
     public byte[] inlineScript() {
         return inlineScript.toString().getBytes();
