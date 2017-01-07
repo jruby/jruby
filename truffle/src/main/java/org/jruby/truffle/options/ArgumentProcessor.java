@@ -117,8 +117,6 @@ public class ArgumentProcessor {
     }
 
     public void processArguments(boolean inline) {
-        checkProperties();
-
         while (argumentIndex < arguments.size() && isInterpreterArgument(arguments.get(argumentIndex).originalValue)) {
             processArgument();
             argumentIndex++;
@@ -614,53 +612,6 @@ public class ArgumentProcessor {
             return argValue.substring(characterIndex);
         }
         return null;
-    }
-
-    private static final Set<String> KNOWN_PROPERTIES = new HashSet<>(16, 1);
-
-    static {
-        //Options.addPropertyNames(KNOWN_PROPERTIES);
-        KNOWN_PROPERTIES.add("jruby.home");
-        KNOWN_PROPERTIES.add("jruby.script");
-        KNOWN_PROPERTIES.add("jruby.shell");
-        KNOWN_PROPERTIES.add("jruby.lib");
-        KNOWN_PROPERTIES.add("jruby.bindir");
-        KNOWN_PROPERTIES.add("jruby.jar");
-        KNOWN_PROPERTIES.add("jruby.compat.version");
-        KNOWN_PROPERTIES.add("jruby.reflection");
-        KNOWN_PROPERTIES.add("jruby.thread.pool.enabled");
-        KNOWN_PROPERTIES.add("jruby.memory.max");
-        KNOWN_PROPERTIES.add("jruby.stack.max");
-    }
-
-    private static final List<String> KNOWN_PROPERTY_PREFIXES = new ArrayList<>(4);
-
-    static {
-        KNOWN_PROPERTY_PREFIXES.add("jruby.openssl.");
-    }
-
-    private static void checkProperties() {
-        for (String propertyName : System.getProperties().stringPropertyNames()) {
-            if (propertyName.startsWith("jruby.") && !propertyName.startsWith("jruby.truffle.")) {
-                if (!isPropertySupported(propertyName)) {
-                    System.err.println("jruby: warning: unknown property " + propertyName);
-                }
-            }
-        }
-    }
-
-    private static boolean isPropertySupported(String propertyName) {
-        if (KNOWN_PROPERTIES.contains(propertyName)) {
-            return true;
-        }
-
-        for (String prefix : KNOWN_PROPERTY_PREFIXES) {
-            if (propertyName.startsWith(prefix)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static final Map<String, BiFunction<ArgumentProcessor, Boolean, Boolean>> FEATURES;
