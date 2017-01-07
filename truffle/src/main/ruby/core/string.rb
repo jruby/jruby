@@ -1224,6 +1224,7 @@ class String
     end
     res
   end
+  private :str_compat_and_valid
 
   def []=(index, count_or_replacement, replacement=undefined)
     Truffle.check_frozen
