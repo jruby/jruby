@@ -974,9 +974,10 @@ public class Helpers {
         if (klass == null) {
             if (name != null) {
                 throw context.runtime.newNameError("superclass method '" + name + "' disabled", name);
-            } else {
-                throw context.runtime.newNoMethodError("super called outside of method", null, context.nil);
             }
+        }
+        if (name == null) {
+            throw context.runtime.newNoMethodError("super called outside of method", null, context.nil);
         }
     }
 
