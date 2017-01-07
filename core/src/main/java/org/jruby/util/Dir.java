@@ -662,37 +662,8 @@ public class Dir {
             if (cwd == null) cwd = "C:";
             cwd = cwd + "/";
         }
-
         FileResource file = JRubyFile.createResource(runtime, cwd, fileName);
-
         if (file.exists()) {
-            boolean trailingSlash = bytes[end - 1] == '/';
-
-            // On case-insenstive file systems any case string will 'exists',
-            // but what does it display as if you ls/dir it?
-            /* No idea what this is doing =/
-
-              if ((flags & FNM_CASEFOLD) != 0 && !isSpecialFile(fileName)) {
-                try {
-                    String realName = file.getCanonicalFile().getName();
-
-                    // TODO: This is only being done to the name of the file,
-                    // but it should do for all parent directories too...
-                    // TODO: OMGZ is this ugly
-                    int fileNameLength = fileName.length();
-                    int newEnd = fileNameLength <= 1 ? -1 : fileName.lastIndexOf('/', fileNameLength - 2);
-                    if (newEnd != -1) {
-                        realName = fileName.substring(0, newEnd + 1) + realName;
-                    }
-                    // It came in with a trailing slash preserve that in new name.
-                    if (trailingSlash) realName = realName + "/";
-
-                    bytes = realName.getBytes();
-                    begin = 0;
-                    end = bytes.length;
-                } catch (Exception e) {} // Failure will just use what we pass in
-            }*/
-
             return func.call(bytes, begin, end - begin, arg);
         }
 
@@ -726,7 +697,7 @@ public class Dir {
                 }
             }
 
-            if ( (end - begin) > 0 ) {
+            if (end > begin) {
                 if ( isAbsolutePath(path, begin, end) ) {
                     status = addToResultIfExists(runtime, null, path, begin, end, flags, func, arg);
                 } else {
@@ -740,6 +711,7 @@ public class Dir {
         final ArrayList<DirGlobber> links = new ArrayList<DirGlobber>();
 
         ByteList buf = new ByteList(20); FileResource resource;
+
         mainLoop: while(p != -1 && status == 0) {
             if ( path[p] == '/' ) p++;
 
@@ -752,14 +724,28 @@ public class Dir {
                     boolean recursive = false;
 
                     resource = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(dir, 0, dir.length));
-
                     if ( resource.isDirectory() ) {
                         if ( s != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
                             final int n = base.length;
                             recursive = true;
                             buf.length(0);
                             buf.append(base);
-                            buf.append(path, (n > 0 ? s : s + 1), end - (n > 0 ? s : s + 1));
+                            int nextBegin;
+                            int indexOfSlash = s;
+                            do {
+                                nextBegin = indexOfSlash + 1;
+                                indexOfSlash = indexOf(path, nextBegin, end, (byte) '/');
+                                magic = extract_elem(path, nextBegin, end);
+                            } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
+
+                            int start;
+                            if(Arrays.equals(magic, DOUBLE_STAR)) {
+                                start = nextBegin;
+                            } else {
+                                start = nextBegin - 1;
+                            }
+                            start = n > 0 ? start : start + 1;
+                            buf.append(path, start, end - start);
                             status = glob_helper(runtime, cwd, buf, n, flags, func, arg);
                             if ( status != 0 ) break finalize;
                         }
@@ -826,6 +812,7 @@ public class Dir {
             }
             p = s;
         }
+
         return status;
     }
 
