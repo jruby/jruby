@@ -80,24 +80,26 @@ public class Main {
             if (!mee.isAborted()) {
                 config.getError().println(mee.getMessage());
                 if (mee.isUsageError()) {
-                    printUsage(config, true);
+                    config.getOutput().print(OutputStrings.getBasicUsageHelp());
                 }
             }
             System.exit(mee.getStatus());
         }
 
-        showVersion(config);
-        showCopyright(config);
+        if (config.isShowVersion()) {
+            config.getOutput().println(OutputStrings.getVersionString());
+        }
+
+        if (config.isShowCopyright()) {
+            config.getOutput().println(OutputStrings.getCopyrightString());
+        }
 
         final int exitCode;
 
         if (config.getShouldRunInterpreter()) {
             final String filename = displayedFileName(config);
 
-            final PolyglotEngine engine;
-            final RubyContext context;
-
-            engine = PolyglotEngine.newBuilder()
+            final PolyglotEngine engine = PolyglotEngine.newBuilder()
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.LOAD_PATHS.getName(), config.getLoadPaths().toArray(new String[]{}))
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.REQUIRED_LIBRARIES.getName(), config.getRequiredLibraries().toArray(new String[]{}))
                     .config(RubyLanguage.MIME_TYPE, OptionsCatalog.INLINE_SCRIPT.getName(), config.inlineScript())
@@ -112,7 +114,7 @@ public class Main {
                     .build();
 
             Main.printTruffleTimeMetric("before-load-context");
-            context = engine.eval(loadSource("Truffle::Boot.context", "context")).as(RubyContext.class);
+            final RubyContext context = engine.eval(loadSource("Truffle::Boot.context", "context")).as(RubyContext.class);
             Main.printTruffleTimeMetric("after-load-context");
 
             printTruffleTimeMetric("before-run");
@@ -143,7 +145,9 @@ public class Main {
                 engine.dispose();
             }
         } else {
-            printUsage(config, false);
+            if (config.getShouldPrintUsage()) {
+                config.getOutput().print(OutputStrings.getBasicUsageHelp());
+            }
             exitCode = 1;
         }
 
@@ -198,24 +202,6 @@ public class Main {
             return "-";
         } else {
             return config.getScriptFileName();
-        }
-    }
-
-    private static void printUsage(RubyInstanceConfig config, boolean force) {
-        if (config.getShouldPrintUsage() || force) {
-            config.getOutput().print(OutputStrings.getBasicUsageHelp());
-        }
-    }
-
-    private static void showCopyright(RubyInstanceConfig config) {
-        if (config.isShowCopyright()) {
-            config.getOutput().println(OutputStrings.getCopyrightString());
-        }
-    }
-
-    private static void showVersion(RubyInstanceConfig config) {
-        if (config.isShowVersion()) {
-            config.getOutput().println(OutputStrings.getVersionString());
         }
     }
 
