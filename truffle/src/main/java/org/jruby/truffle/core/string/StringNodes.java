@@ -1394,7 +1394,6 @@ public abstract class StringNodes {
                                           @Cached("createBinaryProfile()") ConditionProfile asciiCompatibleProfile) {
             final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(StringOperations.encoding(string));
             final Rope rope = rope(string);
-            final ByteList value = RopeOperations.getByteListReadOnly(rope);
             Rope buf = null;
             CodeRange cr = rope.getCodeRange();
             final Encoding enc;
@@ -1416,12 +1415,12 @@ public abstract class StringNodes {
             }
             encidx = enc;
 
-            if (asciiCompatibleProfile.profile(enc.isAsciiCompatible())) {
-                final byte[] pBytes = value.unsafeBytes();
-                int p = value.begin();
-                final int e = p + value.getRealSize();
-                int p1 = p;
+            final byte[] pBytes = rope.getBytes();
+            final int e = pBytes.length;
 
+            if (asciiCompatibleProfile.profile(enc.isAsciiCompatible())) {
+                int p = 0;
+                int p1 = 0;
                 final byte[] repBytes;
                 final int replen;
                 final boolean rep7bit_p;
@@ -1540,10 +1539,8 @@ public abstract class StringNodes {
             }
             else {
 	        /* ASCII incompatible */
-                final byte[] pBytes = value.unsafeBytes();
-                int p = value.begin();
-                final int e = p + value.getRealSize();
-                int p1 = p;
+                int p = 0;
+                int p1 = 0;
                 final int mbminlen = enc.minLength();
 
                 final byte[] repBytes;
