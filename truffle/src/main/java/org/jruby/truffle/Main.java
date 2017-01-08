@@ -172,8 +172,6 @@ public class Main {
 
     public static InputStream getScriptSource(RubyInstanceConfig config) {
         try {
-            // KCode.NONE is used because KCODE does not affect parse in Ruby 1.8
-            // if Ruby 2.0 encoding pragmas are implemented, this will need to change
             if (config.isInlineScript()) {
                 return new ByteArrayInputStream(config.inlineScript());
             } else if (config.isForceStdin() || config.getScriptFileName() == null) {
