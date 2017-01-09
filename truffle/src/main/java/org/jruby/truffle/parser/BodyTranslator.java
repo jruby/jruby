@@ -3416,7 +3416,6 @@ public class BodyTranslator extends Translator {
 
             if (context.getCoverageManager().isEnabled()) {
                 node.unsafeSetIsCoverageLine();
-                context.getCoverageManager().setLineHasCode(source, current.toSourceSection(source).getStartLine());
             }
 
             node.unsafeSetIsNewLine();

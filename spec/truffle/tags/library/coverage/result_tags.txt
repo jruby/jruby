@@ -1,0 +1,1 @@
+fails:Coverage.result gives the covered files as a hash with arrays of count or nil
