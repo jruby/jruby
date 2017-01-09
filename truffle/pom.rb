@@ -84,6 +84,11 @@ project 'JRuby Truffle' do
     end
 
     resource do
+      directory 'src/main/java'
+      includes 'META-INF/**/*'
+    end
+
+    resource do
       directory '${project.basedir}/..'
       includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
       target_path '${project.build.outputDirectory}/META-INF/'

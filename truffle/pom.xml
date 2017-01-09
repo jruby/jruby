@@ -110,6 +110,12 @@ DO NOT MODIFIY - GENERATED CODE
         </includes>
       </resource>
       <resource>
+        <directory>src/main/java</directory>
+        <includes>
+          <include>META-INF/**/*</include>
+        </includes>
+      </resource>
+      <resource>
         <targetPath>${project.build.outputDirectory}/META-INF/</targetPath>
         <directory>${project.basedir}/..</directory>
         <includes>
