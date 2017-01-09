@@ -368,16 +368,16 @@ public class CoreLibrary {
 
         // Create the cyclic classes and modules
 
-        classClass = ClassNodes.createClassClass(context);
+        classClass = ClassNodes.createClassClass(context, null);
 
-        basicObjectClass = ClassNodes.createBootClass(context, classClass, null, "BasicObject");
+        basicObjectClass = ClassNodes.createBootClass(context, null, classClass, null, "BasicObject");
         Layouts.CLASS.setInstanceFactoryUnsafe(basicObjectClass, Layouts.BASIC_OBJECT.createBasicObjectShape(basicObjectClass, basicObjectClass));
 
-        objectClass = ClassNodes.createBootClass(context, classClass, basicObjectClass, "Object");
+        objectClass = ClassNodes.createBootClass(context, null, classClass, basicObjectClass, "Object");
         objectFactory = Layouts.BASIC_OBJECT.createBasicObjectShape(objectClass, objectClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(objectClass, objectFactory);
 
-        moduleClass = ClassNodes.createBootClass(context, classClass, objectClass, "Module");
+        moduleClass = ClassNodes.createBootClass(context, null, classClass, objectClass, "Module");
         Layouts.CLASS.setInstanceFactoryUnsafe(moduleClass, Layouts.MODULE.createModuleShape(moduleClass, moduleClass));
 
         // Close the cycles
@@ -987,22 +987,30 @@ public class CoreLibrary {
 
     private DynamicObject defineClass(DynamicObject superclass, String name) {
         assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createInitializedRubyClass(context, objectClass, superclass, name);
+        return ClassNodes.createInitializedRubyClass(context, null, objectClass, superclass, name);
     }
 
     private DynamicObject defineClass(DynamicObject lexicalParent, DynamicObject superclass, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
         assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createInitializedRubyClass(context, lexicalParent, superclass, name);
+        return ClassNodes.createInitializedRubyClass(context, null, lexicalParent, superclass, name);
     }
 
     private DynamicObject defineModule(String name) {
-        return defineModule(objectClass, name);
+        return defineModule(null, objectClass, name);
     }
 
     private DynamicObject defineModule(DynamicObject lexicalParent, String name) {
+        return defineModule(null, lexicalParent, name);
+    }
+
+    private DynamicObject defineModule(SourceSection sourceSection, String name) {
+        return defineModule(sourceSection, objectClass, name);
+    }
+
+    private DynamicObject defineModule(SourceSection sourceSection, DynamicObject lexicalParent, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
-        return ModuleNodes.createModule(context, moduleClass, lexicalParent, name, node);
+        return ModuleNodes.createModule(context, sourceSection, moduleClass, lexicalParent, name, node);
     }
 
     public void loadRubyCore() {

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.Log;
@@ -66,6 +67,8 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
 
+    private final SourceSection sourceSection;
+
     public final ModuleChain start;
     @CompilationFinal public ModuleChain parentModule;
 
@@ -91,9 +94,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
      */
     private final Set<DynamicObject> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<DynamicObject, Boolean>());
 
-    public ModuleFields(RubyContext context, DynamicObject lexicalParent, String givenBaseName) {
+    public ModuleFields(RubyContext context, SourceSection sourceSection, DynamicObject lexicalParent, String givenBaseName) {
         assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
         this.context = context;
+        this.sourceSection = sourceSection;
         this.lexicalParent = lexicalParent;
         this.givenBaseName = givenBaseName;
         this.unmodifiedAssumption = new CyclicAssumption(String.valueOf(givenBaseName) + " is unmodified");
@@ -727,4 +731,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         return adjacent;
     }
 
+    public SourceSection getSourceSection() {
+        return sourceSection;
+    }
 }

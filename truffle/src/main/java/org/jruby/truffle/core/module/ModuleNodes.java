@@ -108,8 +108,8 @@ import java.util.Map.Entry;
 public abstract class ModuleNodes {
 
     @TruffleBoundary
-    public static DynamicObject createModule(RubyContext context, DynamicObject selfClass, DynamicObject lexicalParent, String name, Node currentNode) {
-        final ModuleFields model = new ModuleFields(context, lexicalParent, name);
+    public static DynamicObject createModule(RubyContext context, SourceSection sourceSection, DynamicObject selfClass, DynamicObject lexicalParent, String name, Node currentNode) {
+        final ModuleFields model = new ModuleFields(context, sourceSection, lexicalParent, name);
         final DynamicObject module = Layouts.MODULE.createModule(Layouts.CLASS.getInstanceFactory(selfClass), model);
         model.rubyModuleObject = module;
 
@@ -1814,7 +1814,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createModule(getContext(), rubyClass, null, null, this);
+            return createModule(getContext(), getEncapsulatingSourceSection(), rubyClass, null, null, this);
         }
 
     }

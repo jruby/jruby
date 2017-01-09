@@ -9,10 +9,12 @@
  */
 package org.jruby.truffle.language;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.Instrumentable;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 
 @Instrumentable(factory = RubyNodeWrapper.class)
 public abstract class RubyNode extends RubyBaseNode {
@@ -99,6 +101,13 @@ public abstract class RubyNode extends RubyBaseNode {
         } else {
             throw new UnexpectedResultException(value);
         }
+    }
+
+    // Boundaries
+
+    @CompilerDirectives.TruffleBoundary
+    public SourceSection getEncapsulatingSourceSection() {
+        return super.getEncapsulatingSourceSection();
     }
 
 }

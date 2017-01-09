@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.language.RubyConstant;
@@ -66,7 +67,7 @@ public class DefineClassNode extends RubyNode {
             } else {
                 superClass = suppliedSuperClass;
             }
-            definedClass = ClassNodes.createInitializedRubyClass(getContext(), lexicalParentModule, superClass, name);
+            definedClass = ClassNodes.createInitializedRubyClass(getContext(), getEncapsulatingSourceSection(), lexicalParentModule, superClass, name);
             callInherited(frame, superClass, definedClass);
         } else {
             if (!RubyGuards.isRubyClass(constant.getValue())) {

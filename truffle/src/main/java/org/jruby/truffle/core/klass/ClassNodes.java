@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.profiles.BranchProfile;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -42,8 +43,8 @@ public abstract class ClassNodes {
      * Special constructor for class Class
      */
     @TruffleBoundary
-    public static DynamicObject createClassClass(RubyContext context) {
-        final ModuleFields model = new ModuleFields(context, null, "Class");
+    public static DynamicObject createClassClass(RubyContext context, SourceSection sourceSection) {
+        final ModuleFields model = new ModuleFields(context, sourceSection,null, "Class");
         model.setFullName(model.givenBaseName);
 
         final DynamicObjectFactory tempFactory = Layouts.CLASS.createClassShape(null, null);
@@ -76,10 +77,10 @@ public abstract class ClassNodes {
      * normally be used from outside this class.
      */
     @TruffleBoundary
-    public static DynamicObject createBootClass(RubyContext context, DynamicObject classClass, DynamicObject superclass, String name) {
+    public static DynamicObject createBootClass(RubyContext context, SourceSection sourceSection, DynamicObject classClass, DynamicObject superclass, String name) {
         assert RubyGuards.isRubyClass(classClass);
         assert superclass == null || RubyGuards.isRubyClass(superclass);
-        final ModuleFields model = new ModuleFields(context, null, name);
+        final ModuleFields model = new ModuleFields(context, sourceSection, null, name);
 
         final DynamicObject rubyClass = Layouts.CLASS.createClass(Layouts.CLASS.getInstanceFactory(classClass), model, false, null, null, null);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
@@ -109,24 +110,25 @@ public abstract class ClassNodes {
     }
 
     @TruffleBoundary
-    public static DynamicObject createSingletonClassOfObject(RubyContext context, DynamicObject superclass, DynamicObject attached, String name) {
+    public static DynamicObject createSingletonClassOfObject(RubyContext context, SourceSection sourceSection, DynamicObject superclass, DynamicObject attached, String name) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
         // Allocator is null here, we cannot create instances of singleton classes.
         assert RubyGuards.isRubyClass(superclass);
         assert attached != null;
-        return ensureItHasSingletonClassCreated(context, createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached, true));
+        return ensureItHasSingletonClassCreated(context, createRubyClass(context, sourceSection, Layouts.BASIC_OBJECT.getLogicalClass(superclass), null, superclass, name, true, attached, true));
     }
 
     @TruffleBoundary
-    public static DynamicObject createInitializedRubyClass(RubyContext context, DynamicObject lexicalParent, DynamicObject superclass, String name) {
-        final DynamicObject rubyClass = createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, true);
+    public static DynamicObject createInitializedRubyClass(RubyContext context, SourceSection sourceSection, DynamicObject lexicalParent, DynamicObject superclass, String name) {
+        final DynamicObject rubyClass = createRubyClass(context, sourceSection, Layouts.BASIC_OBJECT.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, true);
         ensureItHasSingletonClassCreated(context, rubyClass);
         return rubyClass;
     }
 
     @TruffleBoundary
     public static DynamicObject createRubyClass(RubyContext context,
+                                                SourceSection sourceSection,
                                                 DynamicObject classClass,
                                                 DynamicObject lexicalParent,
                                                 DynamicObject superclass,
@@ -136,7 +138,7 @@ public abstract class ClassNodes {
                                                 boolean initialized) {
         assert superclass == null || RubyGuards.isRubyClass(superclass);
 
-        final ModuleFields model = new ModuleFields(context, lexicalParent, name);
+        final ModuleFields model = new ModuleFields(context, sourceSection, lexicalParent, name);
 
         final DynamicObject rubyClass = Layouts.CLASS.createClass(
                 Layouts.CLASS.getInstanceFactory(classClass),
@@ -238,7 +240,7 @@ public abstract class ClassNodes {
         }
 
         String name = StringUtils.format("#<Class:%s>", Layouts.MODULE.getFields(rubyClass).getName());
-        DynamicObject metaClass = ClassNodes.createRubyClass(context, Layouts.BASIC_OBJECT.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass, true);
+        DynamicObject metaClass = ClassNodes.createRubyClass(context, Layouts.MODULE.getFields(rubyClass).getSourceSection(), Layouts.BASIC_OBJECT.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass, true);
         SharedObjects.propagate(rubyClass, metaClass);
         Layouts.BASIC_OBJECT.setMetaClass(rubyClass, metaClass);
 
@@ -429,7 +431,7 @@ public abstract class ClassNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject classClass) {
             assert classClass == coreLibrary().getClassClass() : "Subclasses of class Class are forbidden in Ruby";
-            return createRubyClass(getContext(), coreLibrary().getClassClass(), null, coreLibrary().getObjectClass(), null, false, null, false);
+            return createRubyClass(getContext(), getEncapsulatingSourceSection(), coreLibrary().getClassClass(), null, coreLibrary().getObjectClass(), null, false, null, false);
         }
 
     }

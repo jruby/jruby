@@ -146,7 +146,7 @@ public abstract class SingletonClassNode extends RubyNode {
                     ObjectIDOperations.verySlowGetObjectID(getContext(), object));
 
             final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(
-                    getContext(), logicalClass, object, name);
+                    getContext(), getEncapsulatingSourceSection(), logicalClass, object, name);
 
             if (isFrozen(object)) {
                 freeze(singletonClass);
