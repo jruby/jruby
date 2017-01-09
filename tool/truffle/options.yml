@@ -111,3 +111,5 @@ CEXTS_LOG_LOAD: [cexts.log.load, boolean, false, Log loading of cexts]
 LOG_DYNAMIC_CONSTANT_LOOKUP: [constant.dynamic_lookup.log, boolean, false, Log source code positions where dynamic constant lookup is performed]
 
 OPTIONS_LOG: [options.log, boolean, false, Log the final value of all options]
+
+LOG_FEATURE_LOCATION: [log.feature_location, boolean, false, Log the process of finding features]

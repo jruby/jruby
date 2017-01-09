@@ -13,11 +13,15 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayOperations;
+import org.jruby.truffle.language.CallStackManager;
+import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -43,32 +47,73 @@ public class FeatureLoader {
 
     @TruffleBoundary
     public String findFeature(String feature) {
+        if (context.getOptions().LOG_FEATURE_LOCATION) {
+            final String originalFeature = feature;
+
+            Log.LOGGER.info(() -> {
+                final Node callerNode = context.getCallStack().getTopMostUserCallNode();
+
+                final SourceSection sourceSection;
+
+                if (callerNode == null) {
+                    sourceSection = null;
+                } else {
+                    sourceSection = callerNode.getEncapsulatingSourceSection();
+                }
+
+                return String.format("starting search from %s for feature %s...", RubyLanguage.fileLine(sourceSection), originalFeature);
+            });
+        }
+
         final String currentDirectory = context.getNativePlatform().getPosix().getcwd();
+
+        if (context.getOptions().LOG_FEATURE_LOCATION) {
+            Log.LOGGER.info(String.format("current directory: %s", currentDirectory));
+        }
 
         if (feature.startsWith("./")) {
             feature = currentDirectory + "/" + feature.substring(2);
+
+            Log.LOGGER.info(String.format("feature adjusted to %s", feature));
         } else if (feature.startsWith("../")) {
             feature = currentDirectory.substring(
                     0,
                     currentDirectory.lastIndexOf('/')) + "/" + feature.substring(3);
+
+            Log.LOGGER.info(String.format("feature adjusted to %s", feature));
         }
+
+        String found = null;
 
         if (feature.startsWith(SourceLoader.TRUFFLE_SCHEME)
                 || feature.startsWith(SourceLoader.JRUBY_SCHEME)
                 || new File(feature).isAbsolute()) {
-            return findFeatureWithAndWithoutExtension(feature);
-        }
+            found = findFeatureWithAndWithoutExtension(feature);
+        } else {
+            for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
+                if (context.getOptions().LOG_FEATURE_LOCATION) {
+                    Log.LOGGER.info(String.format("from load path %s...", pathObject.toString()));
+                }
 
-        for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
-            final String fileWithinPath = new File(pathObject.toString(), feature).getPath();
-            final String result = findFeatureWithAndWithoutExtension(fileWithinPath);
+                final String fileWithinPath = new File(pathObject.toString(), feature).getPath();
+                final String result = findFeatureWithAndWithoutExtension(fileWithinPath);
 
-            if (result != null) {
-                return result;
+                if (result != null) {
+                    found = result;
+                    break;
+                }
             }
         }
 
-        return null;
+        if (context.getOptions().LOG_FEATURE_LOCATION) {
+            if (found == null) {
+                Log.LOGGER.info("not found");
+            } else {
+                Log.LOGGER.info(String.format("found in %s", found));
+            }
+        }
+
+        return found;
     }
 
     private String findFeatureWithAndWithoutExtension(String path) {
@@ -104,6 +149,10 @@ public class FeatureLoader {
     }
 
     private String findFeatureWithExactPath(String path) {
+        if (context.getOptions().LOG_FEATURE_LOCATION) {
+            Log.LOGGER.info(String.format("trying %s...", path));
+        }
+
         if (path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME)) {
             return path;
         }

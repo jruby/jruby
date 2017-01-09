@@ -62,11 +62,16 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @CompilerDirectives.TruffleBoundary
     public static String fileLine(SourceSection section) {
-        Source source = section.getSource();
-        if (section.isAvailable()) {
-            return String.format("%s:%d", source.getName(), section.getStartLine());
+        if (section == null) {
+            return "unknown";
         } else {
-            return source.getName();
+            final Source source = section.getSource();
+
+            if (section.isAvailable()) {
+                return String.format("%s:%d", source.getName(), section.getStartLine());
+            } else {
+                return source.getName();
+            }
         }
     }
 

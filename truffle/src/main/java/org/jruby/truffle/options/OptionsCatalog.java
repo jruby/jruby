@@ -110,6 +110,7 @@ public class OptionsCatalog {
     public static final OptionDescription CEXTS_LOG_LOAD = new BooleanOptionDescription("cexts.log.load", "Log loading of cexts", false);
     public static final OptionDescription LOG_DYNAMIC_CONSTANT_LOOKUP = new BooleanOptionDescription("constant.dynamic_lookup.log", "Log source code positions where dynamic constant lookup is performed", false);
     public static final OptionDescription OPTIONS_LOG = new BooleanOptionDescription("options.log", "Log the final value of all options", false);
+    public static final OptionDescription LOG_FEATURE_LOCATION = new BooleanOptionDescription("log.feature_location", "Log the process of finding features", false);
     
     public static OptionDescription fromName(String name) {
         switch (name) {
@@ -301,6 +302,8 @@ public class OptionsCatalog {
                 return LOG_DYNAMIC_CONSTANT_LOOKUP;
             case "options.log":
                 return OPTIONS_LOG;
+            case "log.feature_location":
+                return LOG_FEATURE_LOCATION;
             default:
                 return null;
         }
@@ -402,6 +405,7 @@ public class OptionsCatalog {
             CEXTS_LOG_LOAD,
             LOG_DYNAMIC_CONSTANT_LOOKUP,
             OPTIONS_LOG,
+            LOG_FEATURE_LOCATION,
         };
     }
 

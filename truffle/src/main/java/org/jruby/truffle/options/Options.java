@@ -112,6 +112,7 @@ public class Options {
     public final boolean CEXTS_LOG_LOAD;
     public final boolean LOG_DYNAMIC_CONSTANT_LOOKUP;
     public final boolean OPTIONS_LOG;
+    public final boolean LOG_FEATURE_LOCATION;
     
     Options(OptionsBuilder builder) {
         HOME = builder.getOrDefault(OptionsCatalog.HOME);
@@ -208,6 +209,7 @@ public class Options {
         CEXTS_LOG_LOAD = builder.getOrDefault(OptionsCatalog.CEXTS_LOG_LOAD);
         LOG_DYNAMIC_CONSTANT_LOOKUP = builder.getOrDefault(OptionsCatalog.LOG_DYNAMIC_CONSTANT_LOOKUP);
         OPTIONS_LOG = builder.getOrDefault(OptionsCatalog.OPTIONS_LOG);
+        LOG_FEATURE_LOCATION = builder.getOrDefault(OptionsCatalog.LOG_FEATURE_LOCATION);
     }
 
     public Object fromDescription(OptionDescription description) {
@@ -400,6 +402,8 @@ public class Options {
                 return LOG_DYNAMIC_CONSTANT_LOOKUP;
             case "options.log":
                 return OPTIONS_LOG;
+            case "log.feature_location":
+                return LOG_FEATURE_LOCATION;
             default:
                 return null;
         }
