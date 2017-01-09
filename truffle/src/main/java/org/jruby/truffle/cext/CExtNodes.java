@@ -24,6 +24,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -404,7 +405,7 @@ public class CExtNodes {
                 return toNative.computeIfAbsent(object, (k) -> {
                     final long handle = getContext().getNativePlatform().getMallocFree().malloc(Long.BYTES);
                     memoryManager().newPointer(handle).putLong(0, 0xdeadbeef);
-                    System.err.printf("native handle 0x%x -> %s%n", handle, object);
+                    Log.LOGGER.info(String.format("native handle 0x%x -> %s", handle, object));
                     toManaged.put(handle, object);
                     return handle;
                 });

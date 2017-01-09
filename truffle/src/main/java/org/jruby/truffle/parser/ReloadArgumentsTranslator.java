@@ -12,6 +12,7 @@ package org.jruby.truffle.parser;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.hash.ConcatHashLiteralNode;
 import org.jruby.truffle.core.hash.HashLiteralNode;
@@ -90,7 +91,7 @@ public class ReloadArgumentsTranslator extends Translator {
         final SourceSection sourceSectionX = sourceSection.toSourceSection(source);
 
         if (node.getPostCount() > 0) {
-            System.err.printf("WARNING: post args in zsuper not yet implemented at %s:%d%n", sourceSectionX.getSource().getName(), sourceSectionX.getStartLine());
+            Log.LOGGER.warning(String.format("post args in zsuper not yet implemented at %s:%d%n", sourceSectionX.getSource().getName(), sourceSectionX.getStartLine()));
         }
 
         RubyNode kwArgsNode = null;

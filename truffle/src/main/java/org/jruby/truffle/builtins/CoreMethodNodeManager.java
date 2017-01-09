@@ -17,6 +17,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.RaiseIfFrozenNode;
 import org.jruby.truffle.core.array.ArrayUtils;
@@ -124,20 +125,20 @@ public class CoreMethodNodeManager {
 
         if (method.isModuleFunction()) {
             if (visibility != Visibility.PUBLIC) {
-                System.err.println("WARNING: visibility ignored when isModuleFunction in " + methodDetails.getIndicativeName());
+                Log.LOGGER.warning("visibility ignored when isModuleFunction in " + methodDetails.getIndicativeName());
             }
             if (method.onSingleton()) {
-                System.err.println("WARNING: Either onSingleton or isModuleFunction for " + methodDetails.getIndicativeName());
+                Log.LOGGER.warning("either onSingleton or isModuleFunction for " + methodDetails.getIndicativeName());
             }
             if (method.constructor()) {
-                System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
+                Log.LOGGER.warning("either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
             }
             if (RubyGuards.isRubyClass(module)) {
-                System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
+                Log.LOGGER.warning("using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
         }
         if (method.onSingleton() && method.constructor()) {
-            System.err.println("WARNING: Either onSingleton or constructor for " + methodDetails.getIndicativeName());
+            Log.LOGGER.warning("either onSingleton or constructor for " + methodDetails.getIndicativeName());
         }
 
         final SharedMethodInfo sharedMethodInfo = makeSharedMethodInfo(context, module, methodDetails);

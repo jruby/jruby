@@ -78,7 +78,7 @@ public class BacktraceFormatter {
 
     @TruffleBoundary
     public void printBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
-        printBacktrace(context, exception, backtrace, new PrintWriter(System.err, true));
+        printBacktrace(context, exception, backtrace, new PrintWriter(context.getEnv().err(), true));
     }
 
     @TruffleBoundary

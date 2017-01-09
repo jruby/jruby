@@ -78,20 +78,20 @@ public class Main {
             processArguments(config, args);
         } catch (MainExitException mee) {
             if (!mee.isAborted()) {
-                config.getError().println(mee.getMessage());
+                System.err.println(mee.getMessage());
                 if (mee.isUsageError()) {
-                    config.getOutput().print(OutputStrings.getBasicUsageHelp());
+                   System.out.print(OutputStrings.getBasicUsageHelp());
                 }
             }
             System.exit(mee.getStatus());
         }
 
         if (config.isShowVersion()) {
-            config.getOutput().println(OutputStrings.getVersionString());
+            System.out.println(OutputStrings.getVersionString());
         }
 
         if (config.isShowCopyright()) {
-            config.getOutput().println(OutputStrings.getCopyrightString());
+            System.out.println(OutputStrings.getCopyrightString());
         }
 
         final int exitCode;
@@ -121,7 +121,7 @@ public class Main {
             try {
                 if (config.isXFlag()) {
                     // no shebang was found and x option is set
-                    config.getError().println("jruby: no Ruby script found in input (LoadError)");
+                    System.err.println("jruby: no Ruby script found in input (LoadError)");
                     exitCode = 1;
                 } else if (config.getShouldCheckSyntax()) {
                     // check syntax only and exit
@@ -146,7 +146,7 @@ public class Main {
             }
         } else {
             if (config.getShouldPrintUsage()) {
-                config.getOutput().print(OutputStrings.getBasicUsageHelp());
+                System.out.print(OutputStrings.getBasicUsageHelp());
             }
             exitCode = 1;
         }

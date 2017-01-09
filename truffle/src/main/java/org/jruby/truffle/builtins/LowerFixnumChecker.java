@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.language.RubyNode;
 
@@ -68,7 +69,7 @@ public class LowerFixnumChecker {
             boolean shouldLower = lowerArgs[i] == 0b01; // int without long
             if (shouldLower && !ArrayUtils.contains(lowerFixnum, i + 1)) {
                 SUCCESS = false;
-                System.err.println("Node " + nodeFactory.getNodeClass().getCanonicalName() + " should use lowerFixnum for argument " + (i + 1));
+                Log.LOGGER.warning("Node " + nodeFactory.getNodeClass().getCanonicalName() + " should use lowerFixnum for argument " + (i + 1));
             }
         }
     }

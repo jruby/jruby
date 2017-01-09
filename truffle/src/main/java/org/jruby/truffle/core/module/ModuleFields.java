@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.core.method.MethodFilter;
@@ -47,15 +48,17 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     public static void debugModuleChain(DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
         ModuleChain chain = Layouts.MODULE.getFields(module);
+        final StringBuilder builder = new StringBuilder();
         while (chain != null) {
-            System.err.print(chain.getClass());
+            builder.append(chain.getClass());
             if (!(chain instanceof PrependMarker)) {
                 DynamicObject real = chain.getActualModule();
-                System.err.print(" " + Layouts.MODULE.getFields(real).getName());
+                builder.append(" " + Layouts.MODULE.getFields(real).getName());
             }
-            System.err.println();
+            builder.append(System.lineSeparator());
             chain = chain.getParentModule();
         }
+        Log.LOGGER.info(builder.toString());
     }
 
     public DynamicObject rubyModuleObject;

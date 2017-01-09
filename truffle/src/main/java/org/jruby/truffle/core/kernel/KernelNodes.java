@@ -44,6 +44,7 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
@@ -146,6 +147,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -1113,6 +1115,7 @@ public abstract class KernelNodes {
     }
 
     // A basic Kernel#p for debugging core, overridden later in kernel.rb
+    @NonStandard
     @CoreMethod(names = "p", needsSelf = false, required = 1, unsafe = UnsafeGroup.IO)
     public abstract static class DebugPrintNode extends CoreMethodArrayArgumentsNode {
 
@@ -1127,7 +1130,8 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private void print(Object inspected) {
-            System.out.println(inspected.toString());
+            final PrintStream stream = new PrintStream(getContext().getEnv().out(), true);
+            stream.println(inspected.toString());
         }
     }
 

@@ -10,6 +10,7 @@
 package org.jruby.truffle.builtins;
 
 import com.oracle.truffle.api.dsl.Specialization;
+import org.jruby.truffle.Log;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -59,7 +60,7 @@ public class AmbiguousOptionalArgumentChecker {
                         boolean isNamePresent = parameter.isNamePresent();
                         if (!isNamePresent) {
                             AVAILABLE = SUCCESS = false;
-                            System.err.println("Method parameters names are not available for " + method);
+                            Log.LOGGER.warning("Method parameters names are not available for " + method);
                             return;
                         }
                         String name = parameter.getName();
@@ -76,8 +77,7 @@ public class AmbiguousOptionalArgumentChecker {
 
                 if (unguardedObjectArgument) {
                     SUCCESS = false;
-                    System.err.println("Ambiguous optional argument in " + node.getCanonicalName() + ":");
-                    System.err.println(errors);
+                    Log.LOGGER.warning("Ambiguous optional argument in " + node.getCanonicalName() + ":\n" + errors);
                 }
             }
         }

@@ -665,11 +665,6 @@ public abstract class IOPrimitiveNodes {
 
             final Rope rope = rope(string);
 
-            if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                getContext().getDebugStandardOut().write(rope.getBytes(), 0, rope.byteLength());
-                return rope.byteLength();
-            }
-
             RopeOperations.visitBytes(rope, (bytes, offset, length) -> {
                 final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
 
@@ -706,12 +701,6 @@ public abstract class IOPrimitiveNodes {
 
             final int fd = Layouts.IO.getDescriptor(io);
             final Rope rope = rope(string);
-
-            if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
-                // TODO (eregon, 13 May 2015): this looks like it would block
-                getContext().getDebugStandardOut().write(rope.getBytes(), 0, rope.byteLength());
-                return rope.byteLength();
-            }
 
             final IOWriteNonBlockPrimitiveNode currentNode = this;
 

@@ -272,7 +272,7 @@ public class ArgumentProcessor {
                     break FOR;
                 case 'J':
                     String js = grabOptionalValue();
-                    config.getError().println("warning: " + argument + " argument ignored (launched in same VM?)");
+                    System.err.println("warning: " + argument + " argument ignored (launched in same VM?)");
                     if (js.equals("-cp") || js.equals("-classpath")) {
                         for(;grabOptionalValue() != null;) {}
                         grabValue(getArgumentError(" -J-cp must be followed by a path expression"));
@@ -422,7 +422,7 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--compat")) {
                         characterIndex = argument.length();
                         grabValue(getArgumentError("--compat takes an argument, but will be ignored"));
-                        config.getError().println("warning: " + argument + " ignored");
+                        System.err.println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--copyright")) {
                         disallowedInRubyOpts(argument);
@@ -452,7 +452,7 @@ public class ArgumentProcessor {
                     } else if (argument.startsWith("--profile")) {
                         throw new UnsupportedOperationException();
                     } else if (VERSION_FLAG.matcher(argument).matches()) {
-                        config.getError().println("warning: " + argument + " ignored");
+                        System.err.println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--debug-frozen-string-literal")) {
                         throw new UnsupportedOperationException();
@@ -539,7 +539,7 @@ public class ArgumentProcessor {
         BiFunction<ArgumentProcessor, Boolean, Boolean> feature = FEATURES.get(name);
 
         if (feature == null) {
-            config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": `" + name + "'");
+            System.err.println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": `" + name + "'");
         } else {
             feature.apply(this, enable);
         }

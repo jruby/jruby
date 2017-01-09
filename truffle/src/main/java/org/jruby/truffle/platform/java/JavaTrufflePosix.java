@@ -15,10 +15,13 @@ import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
+import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.platform.posix.JNRTrufflePosix;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -51,11 +54,14 @@ public class JavaTrufflePosix extends JNRTrufflePosix {
     private static final int STDOUT = 1;
     private static final int STDERR = 2;
 
+    private final RubyContext context;
+
     private final AtomicInteger nextFileHandle = new AtomicInteger(3);
     private final Map<Integer, OpenFile> fileHandles = new ConcurrentHashMap<>();
 
-    public JavaTrufflePosix(POSIX delegateTo) {
+    public JavaTrufflePosix(RubyContext context, POSIX delegateTo) {
         super(delegateTo);
+        this.context = context;
     }
 
     @TruffleBoundary
@@ -195,20 +201,24 @@ public class JavaTrufflePosix extends JNRTrufflePosix {
     @TruffleBoundary
     private int pwrite(int fd, byte[] buf, int n, int offset) {
         if (fd == STDOUT || fd == STDERR) {
-            final PrintStream stream;
+            final OutputStream stream;
 
             switch (fd) {
                 case STDOUT:
-                    stream = System.out;
+                    stream = context.getEnv().out();
                     break;
                 case STDERR:
-                    stream = System.err;
+                    stream = context.getEnv().err();
                     break;
                 default:
                     throw new UnsupportedOperationException();
             }
 
-            stream.write(buf, offset, n);
+            try {
+                stream.write(buf, offset, n);
+            } catch (IOException e) {
+                throw new JavaException(e);
+            }
 
             return n;
         }
@@ -220,7 +230,7 @@ public class JavaTrufflePosix extends JNRTrufflePosix {
     private int pread(int fd, byte[] buf, int n, int offset) {
         if (fd == STDIN) {
             try {
-                System.in.read(buf, offset, n);
+                context.getEnv().in().read(buf, offset, n);
             } catch (IOException e) {
                 return -1;
             }

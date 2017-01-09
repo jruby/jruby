@@ -17,6 +17,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.jruby.truffle.Layouts;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.SafepointAction;
@@ -48,8 +49,7 @@ public class InstrumentationServerManager {
         try {
             server = HttpServer.create(new InetSocketAddress(host, port), 0);
         } catch (BindException e) {
-            System.err.println("Port " + port + " was already in use: " + e);
-            throw new JavaException(e);
+            Log.LOGGER.warning("instrumentation server not started as port " + port + " was already in use: " + e);
         } catch (IOException e) {
             throw new JavaException(e);
         }

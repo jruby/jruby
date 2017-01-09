@@ -30,6 +30,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
@@ -37,6 +38,7 @@ import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -115,13 +117,9 @@ public abstract class TruffleDebugNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject printBacktrace() {
-            final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
-                    .formatBacktrace(getContext(), null, getContext().getCallStack().getBacktrace(this));
-
-            for (String line : rubyBacktrace) {
-                System.err.println(line);
-            }
-
+            final Backtrace backtrace = getContext().getCallStack().getBacktrace(this);
+            final BacktraceFormatter formatter = BacktraceFormatter.createDefaultFormatter(getContext());
+            formatter.printBacktrace(getContext(), null, backtrace);
             return nil();
         }
 

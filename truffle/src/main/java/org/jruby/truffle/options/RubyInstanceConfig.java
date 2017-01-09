@@ -41,8 +41,6 @@ import java.util.Map;
 public class RubyInstanceConfig {
 
     private boolean xFlag;
-    private PrintStream output = System.out;
-    private PrintStream error = System.err;
     private String currentDirectory = System.getProperty("user.dir", "/");
     private String[] argv = {};
     private String internalEncoding;
@@ -72,14 +70,6 @@ public class RubyInstanceConfig {
 
     public byte[] inlineScript() {
         return inlineScript.toString().getBytes();
-    }
-
-    public PrintStream getOutput() {
-        return output;
-    }
-
-    public PrintStream getError() {
-        return error;
     }
 
     public void setCurrentDirectory(String newCurrentDirectory) {

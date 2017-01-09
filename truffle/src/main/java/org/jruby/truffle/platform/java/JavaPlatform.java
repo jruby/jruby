@@ -42,7 +42,7 @@ public class JavaPlatform implements NativePlatform {
     private final RubiniusConfiguration rubiniusConfiguration;
 
     public JavaPlatform(RubyContext context) {
-        posix = new JavaTrufflePosix(POSIXFactory.getJavaPOSIX(new TrufflePosixHandler(context)));
+        posix = new JavaTrufflePosix(context, POSIXFactory.getJavaPOSIX(new TrufflePosixHandler(context)));
         memoryManager = new JavaMemoryManager();
         signalManager = new SunMiscSignalManager();
         processName = new JavaProcessName();

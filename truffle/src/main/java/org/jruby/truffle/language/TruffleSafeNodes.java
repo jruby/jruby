@@ -18,6 +18,8 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.platform.UnsafeGroup;
 
+import java.io.PrintStream;
+
 @CoreClass("Truffle::Safe")
 public abstract class TruffleSafeNodes {
 
@@ -27,15 +29,19 @@ public abstract class TruffleSafeNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject puts(DynamicObject string) {
+            final StringBuilder builder = new StringBuilder();
+
             for (char c : string.toString().toCharArray()) {
                 if (isAsciiPrintable(c)) {
-                    System.out.print(c);
+                    builder.append(c);
                 } else {
-                    System.out.print('?');
+                    builder.append('?');
                 }
             }
 
-            System.out.println();
+            builder.append(System.lineSeparator());
+
+            new PrintStream(getContext().getEnv().out(), true).print(builder.toString());
 
             return nil();
         }

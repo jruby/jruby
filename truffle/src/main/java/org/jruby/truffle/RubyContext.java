@@ -103,7 +103,6 @@ public class RubyContext extends ExecutionContext {
     private final LexicalScope rootLexicalScope;
     private final InstrumentationServerManager instrumentationServerManager;
     private final CallGraph callGraph;
-    private final PrintStream debugStandardOut;
     private final CoverageManager coverageManager;
     private final ConsoleHolder consoleHolder;
 
@@ -198,9 +197,6 @@ public class RubyContext extends ExecutionContext {
 
             // Load other subsystems
 
-            final PrintStream configStandardOut = System.out;
-            debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
-
             // The instrumentation server can't be run with AOT because com.sun.net.httpserver.spi.HttpServerProvider uses runtime class loading.
             if (!TruffleOptions.AOT && options.INSTRUMENTATION_SERVER_PORT != 0) {
                 instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
@@ -280,10 +276,10 @@ public class RubyContext extends ExecutionContext {
 
     public void shutdown() {
         if (options.ROPE_PRINT_INTERN_STATS) {
-            System.out.println("Ropes re-used: " + getRopeTable().getRopesReusedCount());
-            System.out.println("Rope byte arrays re-used: " + getRopeTable().getByteArrayReusedCount());
-            System.out.println("Rope bytes saved: " + getRopeTable().getRopeBytesSaved());
-            System.out.println("Total ropes interned: " + getRopeTable().totalRopes());
+            Log.LOGGER.info("ropes re-used: " + getRopeTable().getRopesReusedCount());
+            Log.LOGGER.info("rope byte arrays re-used: " + getRopeTable().getByteArrayReusedCount());
+            Log.LOGGER.info("rope bytes saved: " + getRopeTable().getRopeBytesSaved());
+            Log.LOGGER.info("total ropes interned: " + getRopeTable().totalRopes());
         }
 
         atExitManager.runSystemExitHooks();
@@ -329,10 +325,6 @@ public class RubyContext extends ExecutionContext {
 
     public CoreMethods getCoreMethods() {
         return coreMethods;
-    }
-
-    public PrintStream getDebugStandardOut() {
-        return debugStandardOut;
     }
 
     public FeatureLoader getFeatureLoader() {
