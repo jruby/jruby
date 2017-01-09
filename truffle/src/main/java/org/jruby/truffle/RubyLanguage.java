@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.instrumentation.ProvidedTags;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.core.kernel.TraceManager;
@@ -115,6 +116,26 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
             return (String) value;
         } else {
             return "<foreign>";
+        }
+    }
+
+    // @Override in Truffle 0.22
+    protected Object findMetaObject(RubyContext context, Object value) {
+        return context.getCoreLibrary().getMetaClass(value);
+    }
+
+    // @Override in Truffle 0.22
+    protected SourceSection findSourceLocation(RubyContext context, Object value) {
+        if (RubyGuards.isRubyModule(value)) {
+            return Layouts.CLASS.getFields((DynamicObject) value).getSourceSection();
+        } else if (RubyGuards.isRubyMethod(value)) {
+            return Layouts.METHOD.getMethod((DynamicObject) value).getSharedMethodInfo().getSourceSection();
+        } else if (RubyGuards.isRubyUnboundMethod(value)) {
+            return Layouts.UNBOUND_METHOD.getMethod((DynamicObject) value).getSharedMethodInfo().getSourceSection();
+        } else if (RubyGuards.isRubyProc(value)) {
+            return Layouts.PROC.getMethod((DynamicObject) value).getSharedMethodInfo().getSourceSection();
+        } else {
+            return null;
         }
     }
 
