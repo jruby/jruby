@@ -1371,7 +1371,8 @@ public abstract class StringNodes {
         public DynamicObject scrubAsciiCompat(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block) {
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
-            Rope buf = null;
+            boolean foundInvalidChar = false;
+            Rope buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 
             final byte[] pBytes = rope.getBytes();
             final int e = pBytes.length;
@@ -1393,9 +1394,7 @@ public abstract class StringNodes {
                     // p1~p: valid ascii/multibyte chars
                     // p ~e: invalid bytes + unknown bytes
                     int clen = enc.maxLength();
-                    if (buf == null) {
-                        buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-                    }
+                    foundInvalidChar = true;
                     if (p1 < p) {
                         buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
                     }
@@ -1429,11 +1428,8 @@ public abstract class StringNodes {
                     }
                 }
             }
-            if (buf == null) {
-                if (p == e) {
-                    return nil();
-                }
-                buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+            if (!foundInvalidChar && p == e) {
+                return nil();
             }
             if (p1 < p) {
                 buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
@@ -1451,7 +1447,8 @@ public abstract class StringNodes {
         public DynamicObject scrubAscciIncompatible(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block) {
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
-            Rope buf = null;
+            boolean foundInvalidChar = false;
+            Rope buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 
             final byte[] pBytes = rope.getBytes();
             final int e = pBytes.length;
@@ -1467,11 +1464,9 @@ public abstract class StringNodes {
                 } else if (MBCLEN_CHARFOUND_P(ret)) {
                     p += MBCLEN_CHARFOUND_LEN(ret);
                 } else if (MBCLEN_INVALID_P(ret)) {
+                    foundInvalidChar = true;
                     final int q = p;
                     int clen = enc.maxLength();
-                    if (buf == null) {
-                        buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-                    }
 
                     if (p1 < p) {
                         buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
@@ -1501,11 +1496,8 @@ public abstract class StringNodes {
                     p1 = p;
                 }
             }
-            if (buf == null) {
-                if (p == e) {
-                    return nil();
-                }
-                buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+            if (!foundInvalidChar && p == e) {
+                return nil();
             }
             if (p1 < p) {
                 buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
