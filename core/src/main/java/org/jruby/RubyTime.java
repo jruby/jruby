@@ -37,6 +37,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.posix.POSIX;
+import jnr.posix.Timespec;
 import org.jcodings.specific.USASCIIEncoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -390,9 +392,23 @@ public class RubyTime extends RubyObject {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             DateTimeZone dtz = getLocalTimeZone(runtime);
-            DateTime dt = new DateTime(dtz);
+            POSIX posix = runtime.getPosix();
+            long millis;
+            long nanos;
+            if (posix.isNative()) {
+                Timespec ts = posix.allocateTimespec();
+                posix.clock_gettime(0, ts);
+                long sec = ts.sec();
+                long nsec = ts.nsec();
+                millis = sec * 1000 + nsec / 1_000_000;
+                nanos = nsec % 1_000_000;
+            } else {
+                millis = System.currentTimeMillis();
+                nanos = 0;
+            }
+            DateTime dt = new DateTime(millis, dtz);
             RubyTime rt =  new RubyTime(runtime, klass, dt);
-            rt.setNSec(0);
+            rt.setNSec(nanos);
 
             return rt;
         }
