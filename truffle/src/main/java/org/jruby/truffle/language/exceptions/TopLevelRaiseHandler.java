@@ -35,7 +35,11 @@ public class TopLevelRaiseHandler extends RubyNode {
         int exitCode = 0;
 
         try {
-            body.execute(frame);
+            final Object result = body.execute(frame);
+
+            if (result instanceof Integer) {
+                exitCode = (int) result;
+            }
         } catch (RaiseException e) {
             DynamicObject rubyException = AtExitManager.handleAtExitException(getContext(), e);
             getSetExceptionVariableNode().setLastException(frame, rubyException);
