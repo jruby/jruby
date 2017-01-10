@@ -298,12 +298,14 @@ public abstract class Initializer {
             if ( loader == null ) return; //this is a core class, bail
 
             // scan annotations for "scala" packages; if none present, it's not scala
-            Annotation[] annotations = javaClass.getAnnotations();
-            boolean foundScala = false;
-            for (int i = 0; i < annotations.length; i++) {
-                if (annotations[i].annotationType().getPackage().getName().startsWith("scala.")) foundScala = true;
+            boolean scalaAnno = false;
+            for ( Annotation anno : javaClass.getAnnotations() ) {
+                Package pkg = anno.annotationType().getPackage();
+                if ( pkg != null && pkg.getName() != null && pkg.getName().startsWith("scala.") ) {
+                    scalaAnno = true; break;
+                }
             }
-            if (!foundScala) return;
+            if ( ! scalaAnno ) return;
 
             Class<?> companionClass = loader.loadClass(javaClass.getName() + '$');
             final Field field = companionClass.getField("MODULE$");
