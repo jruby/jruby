@@ -186,7 +186,7 @@ public abstract class Initializer {
     }
 
     protected static void assignAliases(MethodInstaller installer, Map<String, AssignedName> assignedNames) {
-        String name = installer.name;
+        final String name = installer.name;
         String rubyCasedName = JavaUtil.getRubyCasedName(name);
         addUnassignedAlias(rubyCasedName, assignedNames, installer);
 
@@ -199,10 +199,10 @@ public abstract class Initializer {
             int argCount = argTypes.length;
 
             // Add scala aliases for apply/update to roughly equivalent Ruby names
-            if (rubyCasedName.equals("apply")) {
+            if (name.equals("apply")) {
                 addUnassignedAlias("[]", assignedNames, installer);
             }
-            if (rubyCasedName.equals("update") && argCount == 2) {
+            if (name.equals("update") && argCount == 2) {
                 addUnassignedAlias("[]=", assignedNames, installer);
             }
 
