@@ -1367,7 +1367,7 @@ public abstract class StringNodes {
         @Child private YieldNode yieldNode = new YieldNode();
         @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
 
-        @Specialization(guards = { "!is7Bit(string)", "!isValidCodeRange(string)", "isAsciiCompatible(string)" })
+        @Specialization(guards = { "isBrokenCodeRange(string)", "isAsciiCompatible(string)" })
         public DynamicObject scrubAsciiCompat(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
@@ -1438,7 +1438,7 @@ public abstract class StringNodes {
             return createString(buf);
         }
 
-        @Specialization(guards = { "!is7Bit(string)", "!isValidCodeRange(string)", "!isAsciiCompatible(string)" })
+        @Specialization(guards = { "isBrokenCodeRange(string)", "!isAsciiCompatible(string)" })
         public DynamicObject scrubAscciIncompatible(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
