@@ -536,6 +536,10 @@ class String
 
     # TODO: replace this hack with transcoders
     if options.kind_of? Hash
+      case invalid = options[:invalid]
+        when :replace
+          self.scrub!
+      end
       case xml = options[:xml]
         when :text
           gsub!(/[&><]/, '&' => '&amp;', '>' => '&gt;', '<' => '&lt;')
@@ -1195,65 +1199,41 @@ class String
     result
   end
 
-  # Removes invalid byte sequences from a String, available since Ruby 2.1.
-  def scrub(replace = nil)
-    output = ''
-    input  = dup
+  def scrub(replace = nil, &block)
+    return dup if valid_encoding?
 
-    # The default replacement character is the "Unicode replacement" character.
-    # (U+FFFD).
-    if !replace and !block_given?
-      replace = "\xEF\xBF\xBD".force_encoding("UTF-8")
-                    .encode(self.encoding, :undef => :replace, :replace => '?')
+    if !replace and !block
+      # The unicode replacement character or '?''
+      replace = "\xEF\xBF\xBD".encode(self.encoding, :undef => :replace, :replace => '?')
     end
 
-    if replace
-      unless replace.is_a?(String)
-        raise(
-            TypeError,
-            "no implicit conversion of #{replace.class} into String"
-        )
+    taint = tainted?
+
+    validate = -> str {
+      str = StringValue(str)
+      unless str.valid_encoding?
+        raise ArgumentError, "replacement must be valid byte sequence"
       end
-
-      unless replace.valid_encoding?
-        raise(
-            ArgumentError,
-            "replacement must be a valid byte sequence '#{replace.inspect}'"
-        )
+      # Special encoding check for #scrub
+      if str.ascii_only? ? !encoding.ascii_compatible? : encoding != str.encoding
+        raise Encoding::CompatibilityError, "incompatible character encodings"
       end
+      taint = true if str.tainted?
+      str
+    }
 
-      replace = replace.force_encoding(Encoding::BINARY)
+    replace_block = if replace
+      replace = validate.call(replace)
+      Proc.new { |broken| replace }
+    else
+      Proc.new { |broken|
+        validate.call(block.call(broken))
+      }
     end
 
-    # MRI appears to just return a copy of self when the input encoding is
-    # BINARY/ASCII_8BIT.
-    if input.encoding == Encoding::BINARY
-      return input
-    end
-
-    converter = Encoding::Converter.new(input.encoding, Encoding::BINARY)
-
-    while input.length > 0
-      result = converter.primitive_convert(input, output, output.length)
-
-      if result == :finished
-        break
-      elsif result == :undefined_conversion
-        output << converter.primitive_errinfo[3]
-      else
-        # Blocks can return strings in any encoding so we'll make sure it's the
-        # same as our buffer for the mean time.
-        if block_given?
-          block_output = yield(converter.primitive_errinfo[3])
-
-          output << block_output.force_encoding(output.encoding)
-        else
-          output << replace
-        end
-      end
-    end
-
-    return output.force_encoding(encoding)
+    val = Truffle.invoke_primitive(:string_scrub, self, replace_block)
+    val.taint if taint
+    val
   end
 
   def scrub!(replace = nil, &block)

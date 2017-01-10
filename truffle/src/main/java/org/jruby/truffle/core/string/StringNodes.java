@@ -140,6 +140,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 
 import java.io.UnsupportedEncodingException;
@@ -151,6 +152,10 @@ import java.util.List;
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
+import static org.jruby.truffle.core.string.StringSupport.MBCLEN_CHARFOUND_LEN;
+import static org.jruby.truffle.core.string.StringSupport.MBCLEN_CHARFOUND_P;
+import static org.jruby.truffle.core.string.StringSupport.MBCLEN_INVALID_P;
+import static org.jruby.truffle.core.string.StringSupport.MBCLEN_NEEDMORE_P;
 
 @CoreClass("String")
 public abstract class StringNodes {
@@ -1353,6 +1358,150 @@ public abstract class StringNodes {
         private int prevCharHead(Encoding enc, byte[]bytes, int p, int s, int end) {
             return enc.prevCharHead(bytes, p, s, end);
         }
+    }
+
+    @Primitive(name = "string_scrub")
+    @ImportStatic(StringGuards.class)
+    public abstract static class ScrubNode extends PrimitiveArrayArgumentsNode {
+
+        @Child private YieldNode yieldNode = new YieldNode();
+        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+
+        @Specialization(guards = { "isBrokenCodeRange(string)", "isAsciiCompatible(string)" })
+        public DynamicObject scrubAsciiCompat(VirtualFrame frame, DynamicObject string, DynamicObject block) {
+            final Rope rope = rope(string);
+            final Encoding enc = rope.getEncoding();
+            Rope buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+
+            final byte[] pBytes = rope.getBytes();
+            final int e = pBytes.length;
+
+            int p = 0;
+            int p1 = 0;
+
+            p = StringSupport.searchNonAscii(pBytes, p, e);
+            if (p == -1) {
+                p = e;
+            }
+            while (p < e) {
+                int ret = enc.length(pBytes, p, e);
+                if (MBCLEN_NEEDMORE_P(ret)) {
+                    break;
+                } else if (MBCLEN_CHARFOUND_P(ret)) {
+                    p += MBCLEN_CHARFOUND_LEN(ret);
+                } else if (MBCLEN_INVALID_P(ret)) {
+                    // p1~p: valid ascii/multibyte chars
+                    // p ~e: invalid bytes + unknown bytes
+                    int clen = enc.maxLength();
+                    if (p1 < p) {
+                        buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
+                    }
+
+                    if (e - p < clen) {
+                        clen = e - p;
+                    }
+                    if (clen <= 2) {
+                        clen = 1;
+                    } else {
+                        final int q = p;
+                        clen--;
+                        for (; clen > 1; clen--) {
+                            ret = enc.length(pBytes, q, q + clen);
+                            if (MBCLEN_NEEDMORE_P(ret)) {
+                                break;
+                            } else if (MBCLEN_INVALID_P(ret)) {
+                                continue;
+                            }
+                        }
+                    }
+                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, clen)));
+                    buf = makeConcatNode.executeMake(buf, rope(repl), enc);
+                    p += clen;
+                    p1 = p;
+                    p = StringSupport.searchNonAscii(pBytes, p, e);
+                    if (p == -1) {
+                        p = e;
+                        break;
+                    }
+                }
+            }
+            if (p1 < p) {
+                buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
+            }
+            if (p < e) {
+                DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, e - p)));
+                buf = makeConcatNode.executeMake(buf, rope(repl), enc);
+            }
+
+            return createString(buf);
+        }
+
+        @Specialization(guards = { "isBrokenCodeRange(string)", "!isAsciiCompatible(string)" })
+        public DynamicObject scrubAscciIncompatible(VirtualFrame frame, DynamicObject string, DynamicObject block) {
+            final Rope rope = rope(string);
+            final Encoding enc = rope.getEncoding();
+            Rope buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+
+            final byte[] pBytes = rope.getBytes();
+            final int e = pBytes.length;
+
+            int p = 0;
+            int p1 = 0;
+            final int mbminlen = enc.minLength();
+
+            while (p < e) {
+                int ret = StringSupport.preciseLength(enc, pBytes, p, e);
+                if (MBCLEN_NEEDMORE_P(ret)) {
+                    break;
+                } else if (MBCLEN_CHARFOUND_P(ret)) {
+                    p += MBCLEN_CHARFOUND_LEN(ret);
+                } else if (MBCLEN_INVALID_P(ret)) {
+                    final int q = p;
+                    int clen = enc.maxLength();
+
+                    if (p1 < p) {
+                        buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
+                    }
+
+                    if (e - p < clen) {
+                        clen = e - p;
+                    }
+                    if (clen <= mbminlen * 2) {
+                        clen = mbminlen;
+                    } else {
+                        clen -= mbminlen;
+                        for (; clen > mbminlen; clen -= mbminlen) {
+                            ret = enc.length(pBytes, q, q + clen);
+                            if (MBCLEN_NEEDMORE_P(ret)) {
+                                break;
+                            } else if (MBCLEN_INVALID_P(ret)) {
+                                continue;
+                            }
+                        }
+                    }
+
+                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, clen)));
+                    buf = makeConcatNode.executeMake(buf, rope(repl), enc);
+                    p += clen;
+                    p1 = p;
+                }
+            }
+            if (p1 < p) {
+                buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
+            }
+            if (p < e) {
+                DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, e - p)));
+                buf = makeConcatNode.executeMake(buf, rope(repl), enc);
+            }
+
+            return createString(buf);
+        }
+
+        public Object yield(VirtualFrame frame, DynamicObject block, Object... arguments) {
+            return yieldNode.dispatch(frame, block, arguments);
+        }
+
     }
 
     @CoreMethod(names = "swapcase!", raiseIfFrozenSelf = true)

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.numeric.FixnumLowerNodeGen;
 import org.jruby.truffle.language.RubyNode;
@@ -64,7 +65,9 @@ public class PrimitiveNodeConstructor {
     }
 
     public RubyNode createInvokePrimitiveNode(RubyContext context, Source source, SourceIndexLength sourceSection, RubyNode[] arguments) {
-        assert arguments.length == getPrimitiveArity();
+        if (arguments.length != getPrimitiveArity()) {
+            throw new AssertionError("Incorrect number of arguments at " + RubyLanguage.fileLine(sourceSection.toSourceSection(source)));
+        }
 
         if (!CoreMethodNodeManager.isSafe(context, annotation.unsafe())) {
             return new UnsafeNode();
