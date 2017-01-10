@@ -11,6 +11,7 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyLanguage;
 
@@ -26,11 +27,22 @@ public class LazyRubyNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreterAndInvalidate();
         return resolve().execute(frame);
     }
 
+    @Override
+    public SourceSection getSourceSection() {
+        return resolve().getSourceSection();
+    }
+
+    @Override
+    protected boolean isTaggedWith(Class<?> tag) {
+        return resolve().isTaggedWith(tag);
+    }
+
     public RubyNode resolve() {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
         return atomic(() -> {
             if (getContext().getOptions().LAZY_TRANSLATION_LOG) {
                 Log.LOGGER.info(() -> "lazy translating " + RubyLanguage.fileLine(getParent().getEncapsulatingSourceSection()));
