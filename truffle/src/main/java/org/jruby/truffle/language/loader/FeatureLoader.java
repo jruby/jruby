@@ -74,13 +74,17 @@ public class FeatureLoader {
         if (feature.startsWith("./")) {
             feature = currentDirectory + "/" + feature.substring(2);
 
-            Log.LOGGER.info(String.format("feature adjusted to %s", feature));
+            if (context.getOptions().LOG_FEATURE_LOCATION) {
+                Log.LOGGER.info(String.format("feature adjusted to %s", feature));
+            }
         } else if (feature.startsWith("../")) {
             feature = currentDirectory.substring(
                     0,
                     currentDirectory.lastIndexOf('/')) + "/" + feature.substring(3);
 
-            Log.LOGGER.info(String.format("feature adjusted to %s", feature));
+            if (context.getOptions().LOG_FEATURE_LOCATION) {
+                Log.LOGGER.info(String.format("feature adjusted to %s", feature));
+            }
         }
 
         String found = null;
