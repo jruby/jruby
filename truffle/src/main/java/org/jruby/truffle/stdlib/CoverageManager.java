@@ -23,10 +23,10 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 
 import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 
@@ -38,6 +38,7 @@ public class CoverageManager {
     private final Instrumenter instrumenter;
     private EventBinding<?> binding;
     private final Map<Source, AtomicLongArray> counters = new ConcurrentHashMap<>();
+    private final Set<Source> coveredSources = new HashSet<>();
 
     private boolean enabled;
 
@@ -49,6 +50,12 @@ public class CoverageManager {
         }
     }
 
+    public void loadingSource(Source source) {
+        if (enabled) {
+            coveredSources.add(source);
+        }
+    }
+
     @TruffleBoundary
     public synchronized void enable() {
         if (enabled) {
@@ -57,6 +64,7 @@ public class CoverageManager {
 
         binding = instrumenter.attachFactory(SourceSectionFilter.newBuilder()
                 .mimeTypeIs(RubyLanguage.MIME_TYPE)
+                .sourceIs((source) -> coveredSources.contains(source))
                 .tagIs(LineTag.class)
                 .build(), eventContext -> new ExecutionEventNode() {
 
@@ -92,6 +100,7 @@ public class CoverageManager {
 
         binding.dispose();
         counters.clear();
+        coveredSources.clear();
 
         enabled = false;
     }
