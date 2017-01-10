@@ -759,9 +759,8 @@ public abstract class RegexpNodes {
         }
 
         @Specialization(guards = { "isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)" })
-        public Object searchRegion(VirtualFrame frame, DynamicObject regexp, DynamicObject string,
-                int start, int end, boolean forward,
-                @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode,
+        public Object searchRegion(VirtualFrame frame, DynamicObject regexp, DynamicObject string, int start, int end, boolean forward,
+                @Cached("create()") RopeNodes.MakeSubstringNode makeSubstringNode,
                 @Cached("createMethodCall()") CallDispatchHeadNode dupNode) {
             final DynamicObject dupedString = (DynamicObject) dupNode.call(frame, string, "dup");
             final Matcher matcher = RegexpNodes.createMatcher(getContext(), regexp, dupedString);

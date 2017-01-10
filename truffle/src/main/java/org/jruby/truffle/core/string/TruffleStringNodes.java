@@ -46,7 +46,7 @@ public class TruffleStringNodes {
 
         @Specialization(guards = { "newByteLength >= 0", "isRubyString(string)", "!isNewLengthTooLarge(string, newByteLength)" })
         public DynamicObject stealStorage(DynamicObject string, int newByteLength,
-                                          @Cached("createX()") RopeNodes.MakeSubstringNode makeSubstringNode) {
+                @Cached("create()") RopeNodes.MakeSubstringNode makeSubstringNode) {
 
             StringOperations.setRope(string, makeSubstringNode.executeMake(rope(string), 0, newByteLength));
 
