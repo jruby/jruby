@@ -253,7 +253,8 @@ public abstract class Initializer {
         if (Priority.ALIAS.moreImportantThan(assignedName)) {
             installer.addAlias(name);
             assignedNames.put(name, new AssignedName(name, Priority.ALIAS));
-        } else if (Priority.ALIAS.asImportantAs(assignedName)) {
+        }
+        else if (Priority.ALIAS.asImportantAs(assignedName)) {
             installer.addAlias(name);
         }
     }
@@ -309,7 +310,8 @@ public abstract class Initializer {
             if ( singleton == null ) return;
 
             final Map<String, List<Method>> scalaMethods = getMethods(companionClass);
-            for (List<Method> methods : scalaMethods.values()) {
+            for (Map.Entry<String, List<Method>> entry : scalaMethods.entrySet()) {
+                final List<Method> methods = entry.getValue();
                 for (int j = 0; j < methods.size(); j++) {
                     final Method method = methods.get(j);
                     String name = method.getName();
@@ -426,19 +428,19 @@ public abstract class Initializer {
 
         final Map<String, AssignedName> staticNames;
         final Map<String, AssignedName> instanceNames;
-        final Map<String, NamedInstaller> staticInstallers = new HashMap<String, NamedInstaller>();
-        final Map<String, NamedInstaller> instanceInstallers = new HashMap<String, NamedInstaller>();
-        final List<ConstantField> constantFields = new ArrayList<ConstantField>();
+        final Map<String, NamedInstaller> staticInstallers = new HashMap<>();
+        final Map<String, NamedInstaller> instanceInstallers = new HashMap<>();
+        final List<ConstantField> constantFields = new ArrayList<>();
 
         ConstructorInvokerInstaller constructorInstaller;
 
         State(final Ruby runtime, final Class superClass) {
             if (superClass == null) {
-                staticNames = new HashMap<String, AssignedName>();
-                instanceNames = new HashMap<String, AssignedName>();
+                staticNames = new HashMap<>(8);
+                instanceNames = new HashMap<>(26);
             } else {
-                staticNames = new HashMap<String, AssignedName>(runtime.getJavaSupport().getStaticAssignedNames().get(superClass));
-                instanceNames = new HashMap<String, AssignedName>(runtime.getJavaSupport().getInstanceAssignedNames().get(superClass));
+                staticNames = new HashMap<>(runtime.getJavaSupport().getStaticAssignedNames().get(superClass));
+                instanceNames = new HashMap<>(runtime.getJavaSupport().getInstanceAssignedNames().get(superClass));
             }
             staticNames.putAll(STATIC_RESERVED_NAMES);
             instanceNames.putAll(INSTANCE_RESERVED_NAMES);
@@ -470,9 +472,6 @@ public abstract class Initializer {
     static Map<String, List<Method>> getMethods(final Class<?> javaClass) {
         HashMap<String, List<Method>> nameMethods = new HashMap<>(32);
 
-        // to better size the final ArrayList below
-        int totalMethods = 0;
-
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
@@ -483,7 +482,7 @@ public abstract class Initializer {
                 try {
                     // add methods, including static if this is the actual class,
                     // and replacing child methods with equivalent parent methods
-                    totalMethods += addNewMethods(nameMethods, DECLARED_METHODS.get(klass), klass == javaClass, true);
+                    addNewMethods(nameMethods, DECLARED_METHODS.get(klass), klass == javaClass, true);
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
@@ -494,7 +493,7 @@ public abstract class Initializer {
                     // add methods, not including static (should be none on
                     // interfaces anyway) and not replacing child methods with
                     // parent methods
-                    totalMethods += addNewMethods(nameMethods, METHODS.get(iface), false, false);
+                    addNewMethods(nameMethods, METHODS.get(iface), false, false);
                 }
                 catch (SecurityException e) { /* ignored */ }
             }

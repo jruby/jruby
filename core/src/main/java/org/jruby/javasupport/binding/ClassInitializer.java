@@ -115,7 +115,8 @@ final class ClassInitializer extends Initializer {
         // TODO: protected methods.  this is going to require a rework of some of the mechanism.
         final Map<String, List<Method>> nameMethods = getMethods(javaClass);
 
-        for (List<Method> methods : nameMethods.values()) {
+        for (Map.Entry<String, List<Method>> entry : nameMethods.entrySet()) {
+            final List<Method> methods = entry.getValue();
             for (int i = methods.size(); --i >= 0; ) {
                 // we need to collect all methods, though we'll only
                 // install the ones that are named in this class
