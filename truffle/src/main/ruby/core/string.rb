@@ -1200,9 +1200,34 @@ class String
   end
 
   def scrub(replace = nil, &block)
-    val = Truffle.invoke_primitive(:string_scrub, self, replace, block)
-    return val unless val.nil?
-    self.dup
+    return dup if valid_encoding?
+
+    if !replace and !block
+      # The unicode replacement character or '?''
+      replace = "\xEF\xBF\xBD".encode(self.encoding, :undef => :replace, :replace => '?')
+    end
+
+    taint = tainted?
+    replace_block = if replace
+      replace = str_compat_and_valid(replace, encoding)
+      taint = true if replace.tainted?
+      -> broken { replace }
+    else
+      -> broken {
+        replacement = block.call(broken)
+        replacement = str_compat_and_valid(replacement, encoding)
+        taint = true if replacement.tainted?
+        replacement
+      }
+    end
+
+    val = Truffle.invoke_primitive(:string_scrub, self, nil, replace_block)
+    if val.nil?
+      dup
+    else
+      val.taint if taint
+      val
+    end
   end
 
   def scrub!(replace = nil, &block)
