@@ -269,7 +269,7 @@ bench: {
   cmd: [mx, --dynamicimport, ruby-benchmarks, benchmark]
   setup: [
     ${mx_sclone} ["https://github.com/jruby/benchmark-interface.git", ../benchmark-interface],
-    ${mx_sclone} [--revision, mx-config, "https://github.com/jruby/all-ruby-benchmarks.git", ../ruby-benchmarks]
+    ${mx_sclone} ["https://github.com/jruby/all-ruby-benchmarks.git", ../ruby-benchmarks]
   ]
 }
 
