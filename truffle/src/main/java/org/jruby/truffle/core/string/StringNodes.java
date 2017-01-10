@@ -1481,7 +1481,7 @@ public abstract class StringNodes {
                         }
                     }
 
-                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, e - p)));
+                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, clen)));
                     buf = makeConcatNode.executeMake(buf, rope(repl), enc);
                     p += clen;
                     p1 = p;
