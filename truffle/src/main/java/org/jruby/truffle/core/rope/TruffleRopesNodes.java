@@ -31,7 +31,7 @@ public abstract class TruffleRopesNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject debugPrint(DynamicObject string) {
-            System.err.println(string.toString());
+            System.err.println(StringOperations.getString(string));
             return nil();
         }
 
