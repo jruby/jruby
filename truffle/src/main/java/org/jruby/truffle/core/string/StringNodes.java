@@ -2347,7 +2347,7 @@ public abstract class StringNodes {
     @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.createX();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.create();
 
         @Specialization
         public DynamicObject clear(DynamicObject string) {

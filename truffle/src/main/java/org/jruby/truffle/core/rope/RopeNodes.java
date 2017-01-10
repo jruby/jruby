@@ -55,7 +55,7 @@ public abstract class RopeNodes {
 
         @Child private MakeLeafRopeNode makeLeafRopeNode;
 
-        public static MakeSubstringNode createX() {
+        public static MakeSubstringNode create() {
             return RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
         }
 
