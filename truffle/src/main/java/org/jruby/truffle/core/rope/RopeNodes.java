@@ -497,16 +497,16 @@ public abstract class RopeNodes {
             return new ValidLeafRope(bytes, encoding, characterLength);
         }
 
-        @Specialization(guards = { "isValid(codeRange)", "isFixedWidth(encoding)", "wasNotProvided(characterLength)" })
-        public LeafRope makeValidLeafRopeFixedWidthEncoding(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength) {
+        @Specialization(guards = { "isValid(codeRange)", "isFixedWidth(encoding)" })
+        public LeafRope makeValidLeafRopeFixedWidthEncoding(byte[] bytes, Encoding encoding, CodeRange codeRange, NotProvided characterLength) {
             final int calculatedCharacterLength = bytes.length / encoding.minLength();
 
             return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
         }
 
         @TruffleBoundary
-        @Specialization(guards = { "isValid(codeRange)", "!isFixedWidth(encoding)", "wasNotProvided(characterLength)" })
-        public LeafRope makeValidLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength) {
+        @Specialization(guards = { "isValid(codeRange)", "!isFixedWidth(encoding)" })
+        public LeafRope makeValidLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, NotProvided characterLength) {
             // Exctracted from StringSupport.strLength.
 
             int calculatedCharacterLength = 0;
