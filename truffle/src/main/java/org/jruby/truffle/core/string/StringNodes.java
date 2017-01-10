@@ -1383,23 +1383,21 @@ public abstract class StringNodes {
         @Child private CallDispatchHeadNode strCompatAndValidNode = DispatchHeadNodeFactory.createMethodCall(true);
         @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
 
-        @Specialization
+        @Specialization(guards = "isValid(string)")
+        public DynamicObject scrubValid(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block) {
+            return nil();
+        }
+
+        @Specialization(guards = "!isValid(string)")
         public DynamicObject scrubDefault(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block,
-                                          @Cached("createBinaryProfile()") ConditionProfile validRangeProfile,
                                           @Cached("createBinaryProfile()") ConditionProfile asciiCompatibleProfile) {
-            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(StringOperations.encoding(string));
             final Rope rope = rope(string);
-            Rope buf = null;
             CodeRange cr = rope.getCodeRange();
-            final Encoding enc;
-            final Encoding encidx;
+            final Encoding enc = rope.getEncoding();
+            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(enc);
+            Rope buf = null;
             boolean tainted = false;
 
-            if (validRangeProfile.profile(cr == CR_7BIT || cr == CR_VALID)) {
-                return nil();
-            }
-
-            enc = rope.getEncoding();
             if (repl != nil()) {
                 repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
                 tainted |= isTaintedNode.executeIsTainted(repl);
@@ -1408,7 +1406,6 @@ public abstract class StringNodes {
             if (enc.isDummy()) {
                 return nil();
             }
-            encidx = enc;
 
             final byte[] pBytes = rope.getBytes();
             final int e = pBytes.length;
@@ -1428,7 +1425,7 @@ public abstract class StringNodes {
                     repBytes = replRope.getBytesCopy();
                     replen = repBytes.length;
                     rep7bit_p = (replRope.getCodeRange() == CodeRange.CR_7BIT);
-                } else if (encidx == UTF8Encoding.INSTANCE) {
+                } else if (enc == UTF8Encoding.INSTANCE) {
                     repBytes = SCRUB_REPL_UTF8;
                     replen = repBytes.length;
                     rep7bit_p = false;
@@ -1542,13 +1539,13 @@ public abstract class StringNodes {
                 if (repl != nil()) {
                     final Rope replRope = rope((DynamicObject) repl);
                     repBytes = replRope.getBytesCopy();
-                } else if (encidx == UTF16BEEncoding.INSTANCE) {
+                } else if (enc == UTF16BEEncoding.INSTANCE) {
                     repBytes = SCRUB_REPL_UTF16BE;
-                } else if (encidx == UTF16LEEncoding.INSTANCE) {
+                } else if (enc == UTF16LEEncoding.INSTANCE) {
                     repBytes = SCRUB_REPL_UTF16LE;
-                } else if (encidx == UTF32BEEncoding.INSTANCE) {
+                } else if (enc == UTF32BEEncoding.INSTANCE) {
                     repBytes = SCRUB_REPL_UTF32BE;
-                } else if (encidx == UTF32LEEncoding.INSTANCE) {
+                } else if (enc == UTF32LEEncoding.INSTANCE) {
                     repBytes = SCRUB_REPL_UTF32LE;
                 } else {
                     repBytes = SCRUB_REPL_ASCII;
@@ -1632,6 +1629,11 @@ public abstract class StringNodes {
 //            ((RubyString)buf).setEncodingAndCodeRange(enc, cr);
 
             return resultString;
+        }
+
+        protected boolean isValid(DynamicObject string) {
+            CodeRange cr = rope(string).getCodeRange();
+            return cr == CR_7BIT || cr == CR_VALID;
         }
 
         public Object yield(VirtualFrame frame, DynamicObject block, Object... arguments) {
