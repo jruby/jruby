@@ -80,7 +80,7 @@ public class RopeOperations {
 
             codeRange = CodeRange.fromInt(StringSupport.unpackArg(packedLengthAndCodeRange));
             characterLength = StringSupport.unpackResult(packedLengthAndCodeRange);
-        } else if (codeRange == CR_VALID) {
+        } else if (codeRange == CR_VALID || codeRange == CR_BROKEN) {
             characterLength = strLength(encoding, bytes, 0, bytes.length);
         }
 
