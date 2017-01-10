@@ -34,6 +34,7 @@
 package org.jruby.truffle.core.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -47,6 +48,7 @@ import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.RopeOperations;
 
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -278,7 +280,15 @@ public abstract class RandomizerPrimitiveNodes {
     public static abstract class RandomizerGenSeedPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         // Single instance of Random per host VM
-        private static final Random RANDOM = new SecureRandom();
+        private static final Random RANDOM;
+
+        static {
+            try {
+                RANDOM = TruffleOptions.AOT ? SecureRandom.getInstance("SHA1PRNG") : new SecureRandom();
+            } catch (NoSuchAlgorithmException e) {
+                throw new UnsupportedOperationException(e);
+            }
+        };
 
         @TruffleBoundary
         @Specialization
