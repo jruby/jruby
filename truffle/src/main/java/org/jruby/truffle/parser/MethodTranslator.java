@@ -73,8 +73,8 @@ public class MethodTranslator extends BodyTranslator {
     private final ArgsParseNode argsNode;
     private boolean isBlock;
 
-    public MethodTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source, ArgsParseNode argsNode) {
-        super(currentNode, context, parent, environment, source, false);
+    public MethodTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source, ParserContext parserContext, ArgsParseNode argsNode) {
+        super(currentNode, context, parent, environment, source, parserContext, false);
         this.isBlock = isBlock;
         this.argsNode = argsNode;
     }
@@ -100,7 +100,7 @@ public class MethodTranslator extends BodyTranslator {
         }
 
         final boolean isProc = type == ProcType.PROC;
-        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isProc, this);
+        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, parserContext, isProc, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
         final RubyNode preludeProc;
@@ -111,7 +111,7 @@ public class MethodTranslator extends BodyTranslator {
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
             final RubyNode writeArrayNode = WriteLocalVariableNode.createWriteLocalVariableNode(context, arraySlot, castArrayNode);
 
-            final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isProc, this);
+            final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, parserContext, isProc, this);
             destructureArgumentsTranslator.pushArraySlot(arraySlot);
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
@@ -229,7 +229,7 @@ public class MethodTranslator extends BodyTranslator {
         declareArguments();
         final Arity arity = getArity(argsNode);
 
-        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, false, this);
+        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, parserContext, false, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
         
         boolean isPrimitive = false;
@@ -287,7 +287,7 @@ public class MethodTranslator extends BodyTranslator {
 
         final RubyNode body;
 
-        if (context.getOptions().LAZY_TRANSLATION) {
+        if (context.getOptions().LAZY_TRANSLATION && parserContext != ParserContext.EVAL) {
             final TranslatorState state = getCurrentState();
 
             body = new LazyRubyNode(() -> {
@@ -398,7 +398,7 @@ public class MethodTranslator extends BodyTranslator {
             methodArgumentsTranslator = (MethodTranslator) methodArgumentsTranslator.parent;
         }
 
-        final ReloadArgumentsTranslator reloadTranslator = new ReloadArgumentsTranslator(currentNode, context, source, this);
+        final ReloadArgumentsTranslator reloadTranslator = new ReloadArgumentsTranslator(currentNode, context, source, parserContext, this);
 
         final ArgsParseNode argsNode = methodArgumentsTranslator.argsNode;
         final SequenceNode reloadSequence = (SequenceNode) reloadTranslator.visitArgsNode(argsNode);

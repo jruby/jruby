@@ -300,8 +300,8 @@ public class BodyTranslator extends Translator {
 
     private boolean privately = false;
 
-    public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
-        super(currentNode, context, source);
+    public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, ParserContext parserContext, boolean topLevel) {
+        super(currentNode, context, source, parserContext);
         parserSupport = new ParserSupport(context, source.getName());
         this.parent = parent;
         this.environment = environment;
@@ -1015,7 +1015,7 @@ public class BodyTranslator extends Translator {
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
                             returnId, true, true, true, sharedMethodInfo, name, 0, null);
 
-            final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, false);
+            final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, parserContext, false);
 
             final ModuleBodyDefinitionNode definition = moduleTranslator.compileClassNode(sourceSection, name, bodyNode, sclass);
 
@@ -1428,7 +1428,7 @@ public class BodyTranslator extends Translator {
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, parserContext, argsNode);
 
         final MethodDefinitionNode methodDefinitionNode = methodCompiler.compileMethodNode(sourceSection, methodName, defNode, bodyNode, sharedMethodInfo);
 
@@ -2052,7 +2052,7 @@ public class BodyTranslator extends Translator {
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, parseEnvironment, returnID, hasOwnScope, false,
                         false, sharedMethodInfo, namedMethodName, environment.getBlockDepth() + 1, parseEnvironment.allocateBreakID());
-        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, parserContext, argsNode);
 
         if (isProc) {
             methodCompiler.translatingForStatement = translatingForStatement;

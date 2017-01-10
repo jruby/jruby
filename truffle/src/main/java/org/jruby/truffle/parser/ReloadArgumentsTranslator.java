@@ -50,8 +50,8 @@ public class ReloadArgumentsTranslator extends Translator {
     private int index = 0;
     private int restParameterIndex = -1;
 
-    public ReloadArgumentsTranslator(Node currentNode, RubyContext context, Source source, BodyTranslator methodBodyTranslator) {
-        super(currentNode, context, source);
+    public ReloadArgumentsTranslator(Node currentNode, RubyContext context, Source source, ParserContext parserContext, BodyTranslator methodBodyTranslator) {
+        super(currentNode, context, source, parserContext);
         this.methodBodyTranslator = methodBodyTranslator;
     }
 

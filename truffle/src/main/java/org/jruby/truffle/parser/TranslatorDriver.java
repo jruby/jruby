@@ -197,7 +197,7 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, topLevel);
+        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext, topLevel);
 
         RubyNode truffleNode = translator.translateNodeOrNil(sourceIndexLength, node.getBodyNode());
 

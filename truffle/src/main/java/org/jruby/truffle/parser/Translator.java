@@ -63,11 +63,13 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
     protected final Node currentNode;
     protected final RubyContext context;
     protected final Source source;
+    protected final ParserContext parserContext;
 
-    public Translator(Node currentNode, RubyContext context, Source source) {
+    public Translator(Node currentNode, RubyContext context, Source source, ParserContext parserContext) {
         this.currentNode = currentNode;
         this.context = context;
         this.source = source;
+        this.parserContext = parserContext;
     }
 
     public static RubyNode sequence(SourceIndexLength sourceSection, List<RubyNode> sequence) {

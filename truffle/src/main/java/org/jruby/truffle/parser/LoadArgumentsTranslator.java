@@ -107,8 +107,8 @@ public class LoadArgumentsTranslator extends Translator {
 
     private ArgsParseNode argsNode;
 
-    public LoadArgumentsTranslator(Node currentNode, RubyContext context, Source source, boolean isProc, BodyTranslator methodBodyTranslator) {
-        super(currentNode, context, source);
+    public LoadArgumentsTranslator(Node currentNode, RubyContext context, Source source, ParserContext parserContext, boolean isProc, BodyTranslator methodBodyTranslator) {
+        super(currentNode, context, source, parserContext);
         this.isProc = isProc;
         this.methodBodyTranslator = methodBodyTranslator;
     }
