@@ -1222,12 +1222,8 @@ class String
     end
 
     val = Truffle.invoke_primitive(:string_scrub, self, nil, replace_block)
-    if val.nil?
-      dup
-    else
-      val.taint if taint
-      val
-    end
+    val.taint if taint
+    val
   end
 
   def scrub!(replace = nil, &block)
