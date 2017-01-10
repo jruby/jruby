@@ -75,7 +75,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -83,10 +82,6 @@ import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF16BEEncoding;
-import org.jcodings.specific.UTF16LEEncoding;
-import org.jcodings.specific.UTF32BEEncoding;
-import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -154,8 +149,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
-import static org.jruby.truffle.core.rope.CodeRange.CR_VALID;
 import static org.jruby.truffle.core.rope.RopeConstants.EMPTY_ASCII_8BIT_ROPE;
 import static org.jruby.truffle.core.string.StringOperations.encoding;
 import static org.jruby.truffle.core.string.StringOperations.rope;
@@ -1368,17 +1361,13 @@ public abstract class StringNodes {
     }
 
     @Primitive(name = "string_scrub")
+    @ImportStatic(StringGuards.class)
     public abstract static class ScrubNode extends PrimitiveArrayArgumentsNode {
 
         @Child private YieldNode yieldNode = new YieldNode();
         @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
 
-        @Specialization(guards = "isValid(string)")
-        public DynamicObject scrubValid(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block) {
-            return nil();
-        }
-
-        @Specialization(guards = "!isValid(string)")
+        @Specialization(guards = { "!is7Bit(string)", "!isValidCodeRange(string)" })
         public DynamicObject scrubDefault(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block,
                                           @Cached("createBinaryProfile()") ConditionProfile asciiCompatibleProfile) {
             final Rope rope = rope(string);
@@ -1521,11 +1510,6 @@ public abstract class StringNodes {
             }
 
             return createString(buf);
-        }
-
-        protected boolean isValid(DynamicObject string) {
-            CodeRange cr = rope(string).getCodeRange();
-            return cr == CR_7BIT || cr == CR_VALID;
         }
 
         public Object yield(VirtualFrame frame, DynamicObject block, Object... arguments) {
