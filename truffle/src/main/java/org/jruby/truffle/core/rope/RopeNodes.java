@@ -219,7 +219,7 @@ public abstract class RopeNodes {
             } else {
                 if (makeLeafRopeNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
-                    makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null));
+                    makeLeafRopeNode = insert(RopeNodes.MakeLeafRopeNode.create());
                 }
 
                 final byte[] bytes = RopeOperations.extractRange(base, offset, byteLength);

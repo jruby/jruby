@@ -888,7 +888,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class DowncaseBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
 
         @Specialization(guards = { "isEmpty(string)", "isSingleByteOptimizable(string)" })
         public DynamicObject downcaseSingleByteEmpty(DynamicObject string) {
@@ -978,7 +978,7 @@ public abstract class StringNodes {
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 
         @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.create();
         @Child private TaintResultNode taintResultNode;
 
         @Specialization(guards = "!isBrokenCodeRange(string)")
@@ -1187,7 +1187,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class LstripBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.create();
 
         @Specialization(guards = "isEmpty(string)")
         public DynamicObject lstripBangEmptyString(DynamicObject string) {
@@ -1297,7 +1297,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class RstripBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.create();
 
         @Specialization(guards = "isEmpty(string)")
         public DynamicObject rstripBangEmptyString(DynamicObject string) {
@@ -1508,7 +1508,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SwapcaseBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
 
         @TruffleBoundary(throwsControlFlowException = true)
         @Specialization
@@ -1756,11 +1756,11 @@ public abstract class StringNodes {
     public abstract static class SetByteNode extends CoreMethodNode {
 
         @Child private CheckIndexNode checkIndexNode = StringNodesFactory.CheckIndexNodeGen.create(null, null);
-        @Child private RopeNodes.MakeConcatNode composedMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
-        @Child private RopeNodes.MakeConcatNode middleMakeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
-        @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeConcatNode composedMakeConcatNode = RopeNodes.MakeConcatNode.create();
+        @Child private RopeNodes.MakeConcatNode middleMakeConcatNode = RopeNodes.MakeConcatNode.create();
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
+        @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode = RopeNodes.MakeSubstringNode.create();
+        @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode = RopeNodes.MakeSubstringNode.create();
 
         @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
             return FixnumLowerNodeGen.create(ToIntNodeGen.create(index));
@@ -2114,7 +2114,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class ReverseBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
 
         @Specialization(guards = "reverseIsEqualToSelf(string)")
         public DynamicObject reverseNoOp(DynamicObject string) {
@@ -2364,7 +2364,7 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class UpcaseBangNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public DynamicObject upcaseSingleByte(DynamicObject string,
@@ -2445,7 +2445,7 @@ public abstract class StringNodes {
     public abstract static class CapitalizeBangNode extends CoreMethodArrayArgumentsNode {
 
         @Child private RopeNodes.GetCodePointNode getCodePointNode = RopeNodes.GetCodePointNode.create();
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
 
         @Specialization
         @TruffleBoundary(throwsControlFlowException = true)
@@ -2572,7 +2572,7 @@ public abstract class StringNodes {
     public static abstract class StringAwkSplitPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
         @Child private RopeNodes.GetCodePointNode getCodePointNode = RopeNodes.GetCodePointNode.create();
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.create();
         @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         @TruffleBoundary
@@ -2652,7 +2652,7 @@ public abstract class StringNodes {
 
         @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
         @Child private NormalizeIndexNode normalizeIndexNode = StringNodesFactory.NormalizeIndexNodeGen.create(null, null);
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.create();
         @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         public static StringByteSubstringPrimitiveNode create() {
@@ -3115,7 +3115,7 @@ public abstract class StringNodes {
     public static abstract class StringFindCharacterNode extends PrimitiveArrayArgumentsNode {
 
         @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.create();
         @Child private TaintResultNode taintResultNode;
 
         @Specialization(guards = "offset < 0")
@@ -3891,25 +3891,10 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringSplicePrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeConcatNode appendMakeConcatNode;
-        @Child private RopeNodes.MakeConcatNode prependMakeConcatNode;
-        @Child private RopeNodes.MakeConcatNode leftMakeConcatNode;
-        @Child private RopeNodes.MakeConcatNode rightMakeConcatNode;
-        @Child private RopeNodes.MakeSubstringNode prependMakeSubstringNode;
-        @Child private RopeNodes.MakeSubstringNode leftMakeSubstringNode;
-        @Child private RopeNodes.MakeSubstringNode rightMakeSubstringNode;
-
         @Specialization(guards = { "indexAtStartBound(spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)" })
-        public Object splicePrepend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding) {
-            if (prependMakeSubstringNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                prependMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null));
-            }
-
-            if (prependMakeConcatNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                prependMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(null, null, null));
-            }
+        public Object splicePrepend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding,
+                @Cached("create()") RopeNodes.MakeSubstringNode prependMakeSubstringNode,
+                @Cached("create()") RopeNodes.MakeConcatNode prependMakeConcatNode) {
 
             final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final Rope original = rope(string);
@@ -3922,15 +3907,11 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "indexAtEndBound(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)" })
-        public Object spliceAppend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding) {
+        public Object spliceAppend(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding,
+                @Cached("create()") RopeNodes.MakeConcatNode appendMakeConcatNode) {
             final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final Rope left = rope(string);
             final Rope right = rope(other);
-
-            if (appendMakeConcatNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                appendMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(null, null, null));
-            }
 
             StringOperations.setRope(string, appendMakeConcatNode.executeMake(left, right, encoding));
 
@@ -3939,27 +3920,12 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!indexAtEitherBounds(string, spliceByteIndex)", "isRubyString(other)", "isRubyEncoding(rubyEncoding)", "!isRopeBuffer(string)" })
         public DynamicObject splice(DynamicObject string, DynamicObject other, int spliceByteIndex, int byteCountToReplace, DynamicObject rubyEncoding,
-                                    @Cached("createBinaryProfile()") ConditionProfile insertStringIsEmptyProfile,
-                                    @Cached("createBinaryProfile()") ConditionProfile splitRightIsEmptyProfile) {
-            if (leftMakeSubstringNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                leftMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null));
-            }
-
-            if (rightMakeSubstringNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                rightMakeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null));
-            }
-
-            if (leftMakeConcatNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                leftMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(null, null, null));
-            }
-
-            if (rightMakeConcatNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                rightMakeConcatNode = insert(RopeNodesFactory.MakeConcatNodeGen.create(null, null, null));
-            }
+                @Cached("createBinaryProfile()") ConditionProfile insertStringIsEmptyProfile,
+                @Cached("createBinaryProfile()") ConditionProfile splitRightIsEmptyProfile,
+                @Cached("create()") RopeNodes.MakeSubstringNode leftMakeSubstringNode,
+                @Cached("create()") RopeNodes.MakeSubstringNode rightMakeSubstringNode,
+                @Cached("create()") RopeNodes.MakeConcatNode leftMakeConcatNode,
+                @Cached("create()") RopeNodes.MakeConcatNode rightMakeConcatNode) {
 
             final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
             final Rope source = rope(string);
@@ -4057,8 +4023,8 @@ public abstract class StringNodes {
     @Primitive(name = "string_byte_append")
     public static abstract class StringByteAppendPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
-        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null);
+        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodes.MakeConcatNode.create();
+        @Child private RopeNodes.MakeLeafRopeNode makeLeafRopeNode = RopeNodes.MakeLeafRopeNode.create();
 
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject stringByteAppend(DynamicObject string, DynamicObject other) {
@@ -4262,7 +4228,7 @@ public abstract class StringNodes {
 
             if (makeSubstringNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                makeSubstringNode = insert(RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null));
+                makeSubstringNode = insert(RopeNodes.MakeSubstringNode.create());
             }
 
             if (taintResultNode == null) {
@@ -4331,7 +4297,7 @@ public abstract class StringNodes {
     public static abstract class StringAppendNode extends RubyNode {
 
         @Child private EncodingNodes.CheckEncodingNode checkEncodingNode = EncodingNodesFactory.CheckEncodingNodeGen.create(null, null);
-        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodes.MakeConcatNode.create();
 
         public static StringAppendNode create() {
             return StringNodesFactory.StringAppendNodeGen.create(null, null);

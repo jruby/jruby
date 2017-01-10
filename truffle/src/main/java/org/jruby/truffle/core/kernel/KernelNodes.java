@@ -1594,7 +1594,7 @@ public abstract class KernelNodes {
 
             if (makeLeafRopeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                makeLeafRopeNode = insert(RopeNodesFactory.MakeLeafRopeNodeGen.create(null, null, null, null));
+                makeLeafRopeNode = insert(RopeNodes.MakeLeafRopeNode.create());
             }
 
             final DynamicObject string = createString(makeLeafRopeNode.executeMake(
