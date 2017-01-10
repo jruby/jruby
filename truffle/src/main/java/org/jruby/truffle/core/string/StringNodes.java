@@ -1366,6 +1366,7 @@ public abstract class StringNodes {
 
         @Child private YieldNode yieldNode = new YieldNode();
         @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @Specialization(guards = { "isBrokenCodeRange(string)", "isAsciiCompatible(string)" })
         public DynamicObject scrubAsciiCompat(VirtualFrame frame, DynamicObject string, DynamicObject block) {
@@ -1394,7 +1395,7 @@ public abstract class StringNodes {
                     // p ~e: invalid bytes + unknown bytes
                     int clen = enc.maxLength();
                     if (p1 < p) {
-                        buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
+                        buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
                     }
 
                     if (e - p < clen) {
@@ -1427,7 +1428,7 @@ public abstract class StringNodes {
                 }
             }
             if (p1 < p) {
-                buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
+                buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
             }
             if (p < e) {
                 Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
@@ -1462,7 +1463,7 @@ public abstract class StringNodes {
                     int clen = enc.maxLength();
 
                     if (p1 < p) {
-                        buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
+                        buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
                     }
 
                     if (e - p < clen) {
@@ -1490,7 +1491,7 @@ public abstract class StringNodes {
                 }
             }
             if (p1 < p) {
-                buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
+                buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
             }
             if (p < e) {
                 Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
