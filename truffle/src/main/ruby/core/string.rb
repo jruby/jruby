@@ -1208,16 +1208,26 @@ class String
     end
 
     taint = tainted?
+
+    validate = -> str {
+      str = StringValue(str)
+      unless str.valid_encoding?
+        raise ArgumentError, "replacement must be valid byte sequence"
+      end
+      # Special encoding check for #scrub
+      if str.ascii_only? ? !encoding.ascii_compatible? : encoding != str.encoding
+        raise Encoding::CompatibilityError, "incompatible character encodings"
+      end
+      taint = true if str.tainted?
+      str
+    }
+
     replace_block = if replace
-      replace = str_compat_and_valid(replace, encoding)
-      taint = true if replace.tainted?
+      replace = validate.call(replace)
       Proc.new { |broken| replace }
     else
       Proc.new { |broken|
-        replacement = block.call(broken)
-        replacement = str_compat_and_valid(replacement, encoding)
-        taint = true if replacement.tainted?
-        replacement
+        validate.call(block.call(broken))
       }
     end
 
@@ -1230,19 +1240,6 @@ class String
     replace(scrub(replace, &block))
     return self
   end
-
-  def str_compat_and_valid(str, enc)
-    res = StringValue(str)
-    if !res.valid_encoding?
-      raise ArgumentError, "replacement must be valid byte sequence"
-    else
-      if res.ascii_only? ? !enc.ascii_compatible? : enc != res.encoding
-        raise Encoding::CompatibilityError, "incompatible character encodings"
-      end
-    end
-    res
-  end
-  private :str_compat_and_valid
 
   def []=(index, count_or_replacement, replacement=undefined)
     Truffle.check_frozen
