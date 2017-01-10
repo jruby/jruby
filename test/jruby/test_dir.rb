@@ -101,6 +101,13 @@ class TestDir < Test::Unit::TestCase
     Dir.glob('./testDir_2/**/testDir_tmp1').each {|f| assert File.exist?(f) }
   end
 
+  def test_glob_consecutive_double_star_returns_uniq_results
+    Dir.mkdir("testDir_bug4353")
+    Dir.mkdir("testDir_bug4353/level2")
+    open("testDir_bug4353/level2/testDir_tmp1", "w").close
+    assert_equal(Dir.glob('./testDir_bug4353/**/**/testDir_tmp1'), ['./testDir_bug4353/level2/testDir_tmp1'])
+  end
+
   def test_glob_with_blocks
     Dir.mkdir("testDir_3")
     open("testDir_3/testDir_tmp1", "w").close
