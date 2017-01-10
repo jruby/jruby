@@ -193,7 +193,7 @@ final class ClassInitializer extends Initializer {
                 MethodInstaller methodInstaller = (MethodInstaller)entry.getValue();
 
                 // no aliases for __method methods
-                if (entry.getKey().endsWith("__method")) continue;
+                if (entry.getKey().endsWith(METHOD_MANGLE)) continue;
 
                 if (methodInstaller.hasLocalMethod()) {
                     assignAliases(methodInstaller, state.instanceNames);

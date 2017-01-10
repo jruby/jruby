@@ -37,15 +37,16 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 * Created by headius on 2/26/15.
 */
 public abstract class Initializer {
+
+    static final Logger LOG = LoggerFactory.getLogger(Initializer.class);
+
+    public static final boolean DEBUG_SCALA = false;
+
     protected final Ruby runtime;
     protected final JavaSupport javaSupport;
     protected final Class javaClass;
 
-    private static final Logger LOG = LoggerFactory.getLogger(Initializer.class);
-
-    private static final int ACC_BRIDGE    = 0x00000040;
-
-    public static final boolean DEBUG_SCALA = false;
+    private static final int ACC_BRIDGE = 0x00000040;
 
     public static final String METHOD_MANGLE = "__method";
 
@@ -176,7 +177,7 @@ public abstract class Initializer {
     protected static void assignStaticAliases(final State state) {
         for (Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet()) {
             // no aliases for __method methods
-            if (entry.getKey().endsWith("__method")) continue;
+            if (entry.getKey().endsWith(METHOD_MANGLE)) continue;
 
             if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
                 assignAliases((MethodInstaller) entry.getValue(), state.staticNames);
