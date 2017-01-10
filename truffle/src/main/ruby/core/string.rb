@@ -1199,10 +1199,7 @@ class String
     result
   end
 
-  def scrub(replace=undefined, &block)
-    if undefined.equal?(replace)
-      replace = nil
-    end
+  def scrub(replace = nil, &block)
     val = scrub_internal(replace, &block)
     return val unless val.nil?
     self.dup
