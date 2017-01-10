@@ -1415,8 +1415,7 @@ public abstract class StringNodes {
                             }
                         }
                     }
-                    Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, p + clen), enc, CodeRange.CR_BROKEN);
-                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(invalid));
+                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, clen)));
                     buf = makeConcatNode.executeMake(buf, rope(repl), enc);
                     p += clen;
                     p1 = p;
@@ -1431,8 +1430,7 @@ public abstract class StringNodes {
                 buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
             }
             if (p < e) {
-                Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
-                DynamicObject repl = (DynamicObject) yield(frame, block, createString(invalid));
+                DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, e - p)));
                 buf = makeConcatNode.executeMake(buf, rope(repl), enc);
             }
 
@@ -1483,8 +1481,7 @@ public abstract class StringNodes {
                         }
                     }
 
-                    Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
-                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(invalid));
+                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, e - p)));
                     buf = makeConcatNode.executeMake(buf, rope(repl), enc);
                     p += clen;
                     p1 = p;
@@ -1494,8 +1491,7 @@ public abstract class StringNodes {
                 buf = makeConcatNode.executeMake(buf, makeSubstringNode.executeMake(rope, p1, p - p1), enc);
             }
             if (p < e) {
-                Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
-                DynamicObject repl = (DynamicObject) yield(frame, block, createString(invalid));
+                DynamicObject repl = (DynamicObject) yield(frame, block, createString(makeSubstringNode.executeMake(rope, p, e - p)));
                 buf = makeConcatNode.executeMake(buf, rope(repl), enc);
             }
 
