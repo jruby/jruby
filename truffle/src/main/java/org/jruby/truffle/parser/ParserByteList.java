@@ -37,11 +37,16 @@
  */
 package org.jruby.truffle.parser;
 
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.language.RubyNode;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -50,7 +55,33 @@ import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 
 public class ParserByteList {
 
+    private static class ParserByteListNode extends RubyNode {
+
+        @Child RopeNodes.MakeSubstringNode makeSubstringNode;
+        @Child RopeNodes.WithEncodingNode withEncodingNode;
+
+        public ParserByteListNode() {
+            makeSubstringNode = RopeNodes.MakeSubstringNode.create();
+            withEncodingNode = RopeNodes.WithEncodingNode.create();
+            adoptChildren();
+        }
+
+        public RopeNodes.MakeSubstringNode getMakeSubstringNode() {
+            return makeSubstringNode;
+        }
+
+        public RopeNodes.WithEncodingNode getWithEncodingNode() {
+            return withEncodingNode;
+        }
+
+        @Override
+        public Object execute(VirtualFrame frame) {
+            return nil();
+        }
+    }
+
     private final Rope rope;
+    private ParserByteListNode parserByteListNode;
 
     public ParserByteList(Rope rope) {
         this.rope = rope;
@@ -77,13 +108,23 @@ public class ParserByteList {
     }
 
     public ParserByteList withEncoding(Encoding encoding) {
-        // TODO CS 27-Dec-16 what is the best way tomodify the encoding of a rope?
-        return new ParserByteList(RopeOperations.create(getBytes(), encoding, CR_UNKNOWN));
+        final Rope newRope = getParseByteListNode().getWithEncodingNode().executeWithEncoding(rope, encoding, CR_UNKNOWN);
+
+        if (newRope == rope) {
+            return this;
+        }
+
+        return new ParserByteList(newRope);
     }
 
     public ParserByteList makeShared(int sharedStart, int sharedLength) {
-        // TODO CS 27-Dec-16 what is the correct way to create a SubstringRope?
-        return new ParserByteList(getBytes(), sharedStart, sharedLength, getEncoding());
+        final Rope newRope = getParseByteListNode().getMakeSubstringNode().executeMake(rope, sharedStart, sharedLength);
+
+        if (newRope == rope) {
+            return this;
+        }
+
+        return new ParserByteList(newRope);
     }
 
     public int caseInsensitiveCmp(ParserByteList other) {
@@ -116,17 +157,27 @@ public class ParserByteList {
     }
 
     public int getStringLength() {
-        // TODO CS 27-Dec-16 what is the correct way to do encoding.strLength on a rope?
-        return rope.getEncoding().strLength(getBytes(), 0, getLength());
+        return rope.characterLength();
     }
 
     public int getEncodingLength(Encoding encoding) {
-        // TODO CS 27-Dec-16 what is the correct way to do encoding.length on a rope?
-        return encoding.length(getBytes(), 0, getLength());
+        if ((encoding == rope.getEncoding() && rope.isSingleByteOptimizable()) || encoding.isSingleByte()) {
+            return 1;
+        }
+
+        return StringSupport.encFastMBCLen(rope.getBytes(), 0, rope.byteLength(), encoding);
     }
 
     public String toEncodedString() {
         return RopeOperations.decodeRope(rope);
+    }
+
+    private ParserByteListNode getParseByteListNode() {
+        if (parserByteListNode == null) {
+            parserByteListNode = new ParserByteListNode();
+        }
+
+        return parserByteListNode;
     }
 
 }
