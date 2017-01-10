@@ -137,7 +137,7 @@ public class Main {
                         exitCode = engine.eval(loadSource("Truffle::Boot.main_s", "main")).as(Integer.class);
                     } else {
                         context.setOriginalInputFile(filename);
-                        exitCode = engine.eval(loadSource("Truffle::Boot.main", "main")).as(Integer.class);
+                        exitCode = engine.eval(loadSource("exit Truffle::Boot.main", "main")).as(Integer.class);
                     }
                 }
             } finally {
