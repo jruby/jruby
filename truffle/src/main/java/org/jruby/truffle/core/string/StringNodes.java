@@ -75,6 +75,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
@@ -144,6 +145,7 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.IsTaintedNode;
 import org.jruby.truffle.language.objects.TaintNode;
+import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.platform.posix.TrufflePosix;
 
 import java.io.UnsupportedEncodingException;
@@ -1365,8 +1367,8 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "scrub_internal", required = 1, needsBlock = true)
-    public abstract static class ScrubNode extends YieldingCoreMethodNode {
+    @Primitive(name = "string_scrub")
+    public abstract static class ScrubNode extends PrimitiveArrayArgumentsNode {
 
         private static final byte[] SCRUB_REPL_UTF8 = new byte[]{(byte)0xEF, (byte)0xBF, (byte)0xBD};
         private static final byte[] SCRUB_REPL_ASCII = new byte[]{(byte)'?'};
@@ -1375,18 +1377,11 @@ public abstract class StringNodes {
         private static final byte[] SCRUB_REPL_UTF32BE = new byte[]{(byte)0x00, (byte)0x00, (byte)0xFF, (byte)0xFD};
         private static final byte[] SCRUB_REPL_UTF32LE = new byte[]{(byte)0xFD, (byte)0xFF, (byte)0x00, (byte)0x00};
 
-
+        @Child private YieldNode yieldNode = new YieldNode();
         @Child private IsTaintedNode isTaintedNode = IsTaintedNode.create();
         @Child private TaintNode taintNode = TaintNode.create();
         @Child private CallDispatchHeadNode strCompatAndValidNode = DispatchHeadNodeFactory.createMethodCall(true);
         @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
-
-        @Specialization
-        public DynamicObject scrubNoBlock(VirtualFrame frame, DynamicObject string, Object repl, NotProvided block,
-                                          @Cached("createBinaryProfile()") ConditionProfile validRangeProfile,
-                                          @Cached("createBinaryProfile()") ConditionProfile asciiCompatibleProfile) {
-            return scrubDefault(frame, string, repl, nil(), validRangeProfile, asciiCompatibleProfile);
-        }
 
         @Specialization
         public DynamicObject scrubDefault(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block,
@@ -1637,6 +1632,10 @@ public abstract class StringNodes {
 //            ((RubyString)buf).setEncodingAndCodeRange(enc, cr);
 
             return resultString;
+        }
+
+        public Object yield(VirtualFrame frame, DynamicObject block, Object... arguments) {
+            return yieldNode.dispatch(frame, block, arguments);
         }
 
     }

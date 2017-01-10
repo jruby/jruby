@@ -1200,7 +1200,7 @@ class String
   end
 
   def scrub(replace = nil, &block)
-    val = scrub_internal(replace, &block)
+    val = Truffle.invoke_primitive(:string_scrub, self, replace, block)
     return val unless val.nil?
     self.dup
   end
