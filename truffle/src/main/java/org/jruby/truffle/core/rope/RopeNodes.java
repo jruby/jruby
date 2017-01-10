@@ -243,6 +243,10 @@ public abstract class RopeNodes {
     })
     public abstract static class MakeConcatNode extends RubyNode {
 
+        public static MakeConcatNode create() {
+            return RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
+        }
+
         @Child private FlattenNode flattenNode;
 
         public abstract Rope executeMake(Rope left, Rope right, Encoding encoding);

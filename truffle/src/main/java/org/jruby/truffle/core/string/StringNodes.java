@@ -1365,8 +1365,8 @@ public abstract class StringNodes {
     public abstract static class ScrubNode extends PrimitiveArrayArgumentsNode {
 
         @Child private YieldNode yieldNode = new YieldNode();
-        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodes.MakeConcatNode.create();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodes.MakeSubstringNode.create();
 
         @Specialization(guards = { "isBrokenCodeRange(string)", "isAsciiCompatible(string)" })
         public DynamicObject scrubAsciiCompat(VirtualFrame frame, DynamicObject string, DynamicObject block) {
