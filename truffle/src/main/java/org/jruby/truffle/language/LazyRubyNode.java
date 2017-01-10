@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 public class LazyRubyNode extends RubyNode {
 
     private final Supplier<RubyNode> resolver;
+    private RubyNode resolved = null;
 
     public LazyRubyNode(Supplier<RubyNode> resolver) {
         this.resolver = resolver;
@@ -42,13 +43,16 @@ public class LazyRubyNode extends RubyNode {
 
     public RubyNode resolve() {
         CompilerDirectives.transferToInterpreterAndInvalidate();
-
         return atomic(() -> {
+            if (resolved != null) {
+                return resolved;
+            }
+
             if (getContext().getOptions().LAZY_TRANSLATION_LOG) {
                 Log.LOGGER.info(() -> "lazy translating " + RubyLanguage.fileLine(getParent().getEncapsulatingSourceSection()));
             }
 
-            final RubyNode resolved = resolver.get();
+            resolved = resolver.get();
             replace(resolved, "lazy node resolved");
             return resolved;
         });
