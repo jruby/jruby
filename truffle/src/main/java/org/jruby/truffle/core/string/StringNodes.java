@@ -1367,9 +1367,8 @@ public abstract class StringNodes {
         @Child private YieldNode yieldNode = new YieldNode();
         @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
 
-        @Specialization(guards = { "!is7Bit(string)", "!isValidCodeRange(string)" })
-        public DynamicObject scrubDefault(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block,
-                                          @Cached("createBinaryProfile()") ConditionProfile asciiCompatibleProfile) {
+        @Specialization(guards = { "!is7Bit(string)", "!isValidCodeRange(string)", "isAsciiCompatible(string)" })
+        public DynamicObject scrubAsciiCompat(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block) {
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
             Rope buf = null;
@@ -1377,136 +1376,144 @@ public abstract class StringNodes {
             final byte[] pBytes = rope.getBytes();
             final int e = pBytes.length;
 
-            if (asciiCompatibleProfile.profile(enc.isAsciiCompatible())) {
-                int p = 0;
-                int p1 = 0;
+            int p = 0;
+            int p1 = 0;
 
-                p = StringSupport.searchNonAscii(pBytes, p, e);
-                if (p == -1) {
-                    p = e;
-                }
-                while (p < e) {
-                    int ret = enc.length(pBytes, p, e);
-                    if (MBCLEN_NEEDMORE_P(ret)) {
-                        break;
-                    } else if (MBCLEN_CHARFOUND_P(ret)) {
-                        p += MBCLEN_CHARFOUND_LEN(ret);
-                    } else if (MBCLEN_INVALID_P(ret)) {
-                        // p1~p: valid ascii/multibyte chars
-                        // p ~e: invalid bytes + unknown bytes
-                        int clen = enc.maxLength();
-                        if (buf == null) {
-                            buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-                        }
-                        if (p > p1) {
-                            buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
-                        }
+            p = StringSupport.searchNonAscii(pBytes, p, e);
+            if (p == -1) {
+                p = e;
+            }
+            while (p < e) {
+                int ret = enc.length(pBytes, p, e);
+                if (MBCLEN_NEEDMORE_P(ret)) {
+                    break;
+                } else if (MBCLEN_CHARFOUND_P(ret)) {
+                    p += MBCLEN_CHARFOUND_LEN(ret);
+                } else if (MBCLEN_INVALID_P(ret)) {
+                    // p1~p: valid ascii/multibyte chars
+                    // p ~e: invalid bytes + unknown bytes
+                    int clen = enc.maxLength();
+                    if (buf == null) {
+                        buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+                    }
+                    if (p > p1) {
+                        buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
+                    }
 
-                        if (e - p < clen){
-                            clen = e - p;
-                        }
-                        if (clen <= 2) {
-                            clen = 1;
-                        } else {
-                            final int q = p;
-                            clen--;
-                            for (; clen > 1; clen--) {
-                                ret = enc.length(pBytes, q, q + clen);
-                                if (MBCLEN_NEEDMORE_P(ret)) {
-                                    break;
-                                } else if (MBCLEN_INVALID_P(ret)) {
-                                    continue;
-                                }
+                    if (e - p < clen) {
+                        clen = e - p;
+                    }
+                    if (clen <= 2) {
+                        clen = 1;
+                    } else {
+                        final int q = p;
+                        clen--;
+                        for (; clen > 1; clen--) {
+                            ret = enc.length(pBytes, q, q + clen);
+                            if (MBCLEN_NEEDMORE_P(ret)) {
+                                break;
+                            } else if (MBCLEN_INVALID_P(ret)) {
+                                continue;
                             }
                         }
-                        Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, p + clen), enc, CodeRange.CR_BROKEN);
-                        repl = yield(frame, block, createString(invalid));
-                        buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
-                        p += clen;
-                        p1 = p;
-                        p = StringSupport.searchNonAscii(pBytes, p, e);
-                        if (p == -1) {
-                            p = e;
-                            break;
-                        }
                     }
-                }
-                if (buf == null) {
-                    if (p == e) {
-                        return nil();
-                    }
-                    buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-                }
-                if (p1 < p) {
-                    buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
-                }
-                if (p < e) {
-                    Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
+                    Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, p + clen), enc, CodeRange.CR_BROKEN);
                     repl = yield(frame, block, createString(invalid));
                     buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
+                    p += clen;
+                    p1 = p;
+                    p = StringSupport.searchNonAscii(pBytes, p, e);
+                    if (p == -1) {
+                        p = e;
+                        break;
+                    }
                 }
             }
-            else {
-                /* ASCII incompatible */
-                int p = 0;
-                int p1 = 0;
-                final int mbminlen = enc.minLength();
+            if (buf == null) {
+                if (p == e) {
+                    return nil();
+                }
+                buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+            }
+            if (p1 < p) {
+                buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
+            }
+            if (p < e) {
+                Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
+                repl = yield(frame, block, createString(invalid));
+                buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
+            }
 
-                while (p < e) {
-                    int ret = StringSupport.preciseLength(enc, pBytes, p, e);
-                    if (MBCLEN_NEEDMORE_P(ret)) {
-                        break;
-                    } else if (MBCLEN_CHARFOUND_P(ret)) {
-                        p += MBCLEN_CHARFOUND_LEN(ret);
-                    } else if (MBCLEN_INVALID_P(ret)) {
-                        final int q = p;
-                        int clen = enc.maxLength();
-                        if (buf == null) {
-                            buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-                        }
+            return createString(buf);
+        }
 
-                        if (p > p1) {
-                            buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
-                        }
+        @Specialization(guards = { "!is7Bit(string)", "!isValidCodeRange(string)", "!isAsciiCompatible(string)" })
+        public DynamicObject scrubAscciIncompatible(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block) {
+            final Rope rope = rope(string);
+            final Encoding enc = rope.getEncoding();
+            Rope buf = null;
 
-                        if (e - p < clen) {
-                            clen = e - p;
-                        }
-                        if (clen <= mbminlen * 2) {
-                            clen = mbminlen;
-                        } else {
-                            clen -= mbminlen;
-                            for (; clen > mbminlen; clen-=mbminlen) {
-                                ret = enc.length(pBytes, q, q + clen);
-                                if (MBCLEN_NEEDMORE_P(ret)) {
-                                    break;
-                                } else if (MBCLEN_INVALID_P(ret)) {
-                                    continue;
-                                }
+            final byte[] pBytes = rope.getBytes();
+            final int e = pBytes.length;
+
+            int p = 0;
+            int p1 = 0;
+            final int mbminlen = enc.minLength();
+
+            while (p < e) {
+                int ret = StringSupport.preciseLength(enc, pBytes, p, e);
+                if (MBCLEN_NEEDMORE_P(ret)) {
+                    break;
+                } else if (MBCLEN_CHARFOUND_P(ret)) {
+                    p += MBCLEN_CHARFOUND_LEN(ret);
+                } else if (MBCLEN_INVALID_P(ret)) {
+                    final int q = p;
+                    int clen = enc.maxLength();
+                    if (buf == null) {
+                        buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+                    }
+
+                    if (p > p1) {
+                        buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
+                    }
+
+                    if (e - p < clen) {
+                        clen = e - p;
+                    }
+                    if (clen <= mbminlen * 2) {
+                        clen = mbminlen;
+                    } else {
+                        clen -= mbminlen;
+                        for (; clen > mbminlen; clen -= mbminlen) {
+                            ret = enc.length(pBytes, q, q + clen);
+                            if (MBCLEN_NEEDMORE_P(ret)) {
+                                break;
+                            } else if (MBCLEN_INVALID_P(ret)) {
+                                continue;
                             }
                         }
+                    }
 
-                        Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
-                        repl = yield(frame, block, createString(invalid));
-                        buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
-                        p += clen;
-                        p1 = p;
-                    }
-                }
-                if (buf == null) {
-                    if (p == e) {
-                        return nil();
-                    }
-                    buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-                }
-                if (p1 < p) {
-                    buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
-                }
-                if (p < e) {
                     Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
                     repl = yield(frame, block, createString(invalid));
                     buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
+                    p += clen;
+                    p1 = p;
                 }
+            }
+            if (buf == null) {
+                if (p == e) {
+                    return nil();
+                }
+                buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
+            }
+            if (p1 < p) {
+                buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
+            }
+            if (p < e) {
+                Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
+                repl = yield(frame, block, createString(invalid));
+                buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
             }
 
             return createString(buf);
