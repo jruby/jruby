@@ -267,7 +267,7 @@ public abstract class Initializer {
     }
 
     static {
-        HashMap<String, String> scalaOperators = new HashMap<String, String>();
+        HashMap<String, String> scalaOperators = new HashMap<>(24, 1);
         scalaOperators.put("\\$plus", "+");
         scalaOperators.put("\\$minus", "-");
         scalaOperators.put("\\$colon", ":");
