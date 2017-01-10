@@ -1204,7 +1204,11 @@ class String
 
     if !replace and !block
       # The unicode replacement character or '?''
-      replace = "\xEF\xBF\xBD".encode(self.encoding, :undef => :replace, :replace => '?')
+      begin
+        replace = "\xEF\xBF\xBD".encode(self.encoding, :undef => :replace, :replace => '?')
+      rescue Encoding::ConverterNotFoundError
+        replace = '?'.force_encoding(encoding)
+      end
     end
 
     taint = tainted?
