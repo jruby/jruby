@@ -27,6 +27,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
@@ -84,14 +85,23 @@ public class TraceManager {
 
         instruments = new ArrayList<>();
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(LineTag.class).build(),
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder()
+                        .mimeTypeIs(RubyLanguage.MIME_TYPE)
+                        .tagIs(LineTag.class)
+                        .build(),
                 eventContext -> new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().LINE.createInstance())));
 
-        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(ClassTag.class).build(),
+        instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder()
+                        .mimeTypeIs(RubyLanguage.MIME_TYPE)
+                        .tagIs(ClassTag.class)
+                        .build(),
                 eventContext -> new BaseEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CLASS.createInstance())));
 
         if (context.getOptions().TRACE_CALLS) {
-            instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder().tagIs(CallTag.class).build(),
+            instruments.add(instrumenter.attachFactory(SourceSectionFilter.newBuilder()
+                            .mimeTypeIs(RubyLanguage.MIME_TYPE)
+                            .tagIs(CallTag.class)
+                            .build(),
                     eventContext -> new CallEventEventNode(context, eventContext, traceFunc, context.getCoreStrings().CALL.createInstance())));
         }
     }

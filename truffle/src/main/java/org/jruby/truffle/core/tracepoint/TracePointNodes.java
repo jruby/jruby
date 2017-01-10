@@ -17,6 +17,7 @@ import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -87,7 +88,10 @@ public abstract class TracePointNodes {
 
         @TruffleBoundary
         public static EventBinding<?> createEventBinding(final RubyContext context, final DynamicObject tracePoint) {
-            return context.getInstrumenter().attachFactory(SourceSectionFilter.newBuilder().tagIs((Class<?>[]) Layouts.TRACE_POINT.getTags(tracePoint)).build(), eventContext -> new TracePointEventNode(context, tracePoint));
+            return context.getInstrumenter().attachFactory(SourceSectionFilter.newBuilder()
+                    .mimeTypeIs(RubyLanguage.MIME_TYPE)
+                    .tagIs((Class<?>[]) Layouts.TRACE_POINT.getTags(tracePoint))
+                    .build(), eventContext -> new TracePointEventNode(context, tracePoint));
         }
 
         @TruffleBoundary

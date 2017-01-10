@@ -20,6 +20,7 @@ import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -55,6 +56,7 @@ public class CoverageManager {
         }
 
         binding = instrumenter.attachFactory(SourceSectionFilter.newBuilder()
+                .mimeTypeIs(RubyLanguage.MIME_TYPE)
                 .tagIs(LineTag.class)
                 .build(), eventContext -> new ExecutionEventNode() {
 
