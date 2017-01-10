@@ -23,7 +23,7 @@
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  *
- * Some of the code in this class is transposed from org.jruby.util.ByteList and org.jruby.RubyString,
+ * Some of the code in this class is transposed from org.jruby.util.ByteList,
  * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  *
  * Copyright (C) 2007-2010 JRuby Community
