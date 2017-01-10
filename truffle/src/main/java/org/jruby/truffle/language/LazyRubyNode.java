@@ -11,6 +11,8 @@ package org.jruby.truffle.language;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.Log;
+import org.jruby.truffle.RubyLanguage;
 
 import java.util.function.Supplier;
 
@@ -30,6 +32,10 @@ public class LazyRubyNode extends RubyNode {
 
     public RubyNode resolve() {
         return atomic(() -> {
+            if (getContext().getOptions().LAZY_TRANSLATION_LOG) {
+                Log.LOGGER.info(() -> "lazy translating " + RubyLanguage.fileLine(getParent().getEncapsulatingSourceSection()));
+            }
+
             final RubyNode resolved = resolver.get();
             replace(resolved, "lazy node resolved");
             return resolved;

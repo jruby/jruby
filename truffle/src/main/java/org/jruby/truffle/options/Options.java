@@ -47,6 +47,7 @@ public class Options {
     public final String CORE_LOAD_PATH;
     public final boolean CORE_PARALLEL_LOAD;
     public final boolean LAZY_TRANSLATION;
+    public final boolean LAZY_TRANSLATION_LOG;
     public final int ARRAY_UNINITIALIZED_SIZE;
     public final int ARRAY_SMALL;
     public final int HASH_PACKED_ARRAY_MAX;
@@ -144,6 +145,7 @@ public class Options {
         CORE_LOAD_PATH = builder.getOrDefault(OptionsCatalog.CORE_LOAD_PATH);
         CORE_PARALLEL_LOAD = builder.getOrDefault(OptionsCatalog.CORE_PARALLEL_LOAD);
         LAZY_TRANSLATION = builder.getOrDefault(OptionsCatalog.LAZY_TRANSLATION);
+        LAZY_TRANSLATION_LOG = builder.getOrDefault(OptionsCatalog.LAZY_TRANSLATION_LOG);
         ARRAY_UNINITIALIZED_SIZE = builder.getOrDefault(OptionsCatalog.ARRAY_UNINITIALIZED_SIZE);
         ARRAY_SMALL = builder.getOrDefault(OptionsCatalog.ARRAY_SMALL);
         HASH_PACKED_ARRAY_MAX = builder.getOrDefault(OptionsCatalog.HASH_PACKED_ARRAY_MAX);
@@ -272,6 +274,8 @@ public class Options {
                 return CORE_PARALLEL_LOAD;
             case "lazy_translation":
                 return LAZY_TRANSLATION;
+            case "lazy_translation.log":
+                return LAZY_TRANSLATION_LOG;
             case "array.uninitialized_size":
                 return ARRAY_UNINITIALIZED_SIZE;
             case "array.small":
