@@ -37,6 +37,7 @@
  */
 package org.jruby.truffle.parser;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
@@ -54,32 +55,6 @@ import java.util.Arrays;
 import static org.jruby.truffle.core.rope.CodeRange.CR_UNKNOWN;
 
 public class ParserByteList {
-
-    private static class ParserByteListNode extends RubyNode {
-
-        @Child RopeNodes.MakeSubstringNode makeSubstringNode;
-        @Child RopeNodes.WithEncodingNode withEncodingNode;
-
-        public ParserByteListNode() {
-            makeSubstringNode = RopeNodes.MakeSubstringNode.create();
-            withEncodingNode = RopeNodes.WithEncodingNode.create();
-            adoptChildren();
-        }
-
-        public RopeNodes.MakeSubstringNode getMakeSubstringNode() {
-            return makeSubstringNode;
-        }
-
-        public RopeNodes.WithEncodingNode getWithEncodingNode() {
-            return withEncodingNode;
-        }
-
-        @Override
-        public Object execute(VirtualFrame frame) {
-            return nil();
-        }
-    }
-
     private final Rope rope;
     private ParserByteListNode parserByteListNode;
 
@@ -180,4 +155,33 @@ public class ParserByteList {
         return parserByteListNode;
     }
 
+    private static class ParserByteListNode extends RubyNode {
+
+        @Child RopeNodes.MakeSubstringNode makeSubstringNode;
+        @Child RopeNodes.WithEncodingNode withEncodingNode;
+
+        public RopeNodes.MakeSubstringNode getMakeSubstringNode() {
+            if (makeSubstringNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                makeSubstringNode = insert(RopeNodes.MakeSubstringNode.create());
+            }
+
+            return makeSubstringNode;
+        }
+
+        public RopeNodes.WithEncodingNode getWithEncodingNode() {
+            if (withEncodingNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                withEncodingNode = insert(RopeNodes.WithEncodingNode.create());
+            }
+
+            return withEncodingNode;
+        }
+
+        @Override
+        public Object execute(VirtualFrame frame) {
+            return nil();
+        }
+
+    }
 }
