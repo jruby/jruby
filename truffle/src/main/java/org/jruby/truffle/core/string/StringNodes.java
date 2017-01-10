@@ -1396,7 +1396,7 @@ public abstract class StringNodes {
                     if (buf == null) {
                         buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
                     }
-                    if (p > p1) {
+                    if (p1 < p) {
                         buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
                     }
 
@@ -1473,7 +1473,7 @@ public abstract class StringNodes {
                         buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
                     }
 
-                    if (p > p1) {
+                    if (p1 < p) {
                         buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), enc, CodeRange.CR_VALID), enc);
                     }
 
