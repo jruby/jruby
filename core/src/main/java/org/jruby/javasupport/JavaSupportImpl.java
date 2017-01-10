@@ -129,19 +129,15 @@ public class JavaSupportImpl extends JavaSupport {
 
         this.staticAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
             @Override
-            public Map<String, AssignedName> computeValue(Class<?> cls) {
-                return new HashMap<String, AssignedName>();
-            }
+            public Map<String, AssignedName> computeValue(Class<?> cls) { return new HashMap<>(); }
         });
         this.instanceAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
             @Override
-            public Map<String, AssignedName> computeValue(Class<?> cls) {
-                return new HashMap<String, AssignedName>();
-            }
+            public Map<String, AssignedName> computeValue(Class<?> cls) { return new HashMap<>(); }
         });
 
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
-        this.unfinishedProxies = new ConcurrentHashMap<Class, UnfinishedProxy>(8, 0.75f, 1);
+        this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
     }
 
     public Class loadJavaClass(String className) throws ClassNotFoundException {
