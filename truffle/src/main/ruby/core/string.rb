@@ -1211,9 +1211,9 @@ class String
     replace_block = if replace
       replace = str_compat_and_valid(replace, encoding)
       taint = true if replace.tainted?
-      -> broken { replace }
+      Proc.new { |broken| replace }
     else
-      -> broken {
+      Proc.new { |broken|
         replacement = block.call(broken)
         replacement = str_compat_and_valid(replacement, encoding)
         taint = true if replacement.tainted?
