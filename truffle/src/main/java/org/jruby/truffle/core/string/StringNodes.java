@@ -1487,7 +1487,7 @@ public abstract class StringNodes {
                             }
                         }
                         else {
-                            repl = yield(frame, (DynamicObject)block, createString(ArrayUtils.extractRange(pBytes, p, p + clen), enc));
+                            repl = yield(frame, block, createString(ArrayUtils.extractRange(pBytes, p, p + clen), enc));
                             repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
                             tainted |= isTaintedNode.executeIsTainted(repl);
                             buf = makeConcatNode.executeMake(buf, rope((DynamicObject)repl), enc);
@@ -1522,7 +1522,7 @@ public abstract class StringNodes {
                         }
                     }
                     else {
-                        repl = yield(frame, (DynamicObject)block, createString(ArrayUtils.extractRange(pBytes, p, e), enc));
+                        repl = yield(frame, block, createString(ArrayUtils.extractRange(pBytes, p, e), enc));
                         repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
                         tainted |= isTaintedNode.executeIsTainted(repl);
                         buf = makeConcatNode.executeMake(buf, rope((DynamicObject)repl), enc);
@@ -1533,7 +1533,7 @@ public abstract class StringNodes {
                 }
             }
             else {
-	        /* ASCII incompatible */
+                /* ASCII incompatible */
                 int p = 0;
                 int p1 = 0;
                 final int mbminlen = enc.minLength();
@@ -1567,7 +1567,7 @@ public abstract class StringNodes {
                         int clen = enc.maxLength();
                         if (buf == null) {
                             buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
-                        };
+                        }
 
                         if (p > p1) {
                             buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(pBytes, p1, p), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
@@ -1588,7 +1588,7 @@ public abstract class StringNodes {
                         if (repBytes != null) {
                             buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(repBytes, 0, repBytes.length), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
                         } else {
-                            repl = yield(frame, (DynamicObject) block, createString(ArrayUtils.extractRange(pBytes, p, e), enc));
+                            repl = yield(frame, block, createString(ArrayUtils.extractRange(pBytes, p, e), enc));
                             repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
                             tainted |= isTaintedNode.executeIsTainted(repl);
                             buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
@@ -1612,7 +1612,7 @@ public abstract class StringNodes {
                         buf = makeConcatNode.executeMake(buf, RopeOperations.create(ArrayUtils.extractRange(repBytes, 0, repBytes.length), ASCIIEncoding.INSTANCE, CodeRange.CR_VALID), enc);
                     }
                     else {
-                        repl = yield(frame, (DynamicObject)block, createString(ArrayUtils.extractRange(pBytes, p, e), enc));
+                        repl = yield(frame, block, createString(ArrayUtils.extractRange(pBytes, p, e), enc));
                         repl = strCompatAndValidNode.call(frame, string, "str_compat_and_valid", repl, rubyEncoding);
                         tainted |= isTaintedNode.executeIsTainted(repl);
                         buf = makeConcatNode.executeMake(buf, rope((DynamicObject)repl), enc);
