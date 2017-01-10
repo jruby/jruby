@@ -1221,7 +1221,7 @@ class String
       }
     end
 
-    val = Truffle.invoke_primitive(:string_scrub, self, nil, replace_block)
+    val = Truffle.invoke_primitive(:string_scrub, self, replace_block)
     val.taint if taint
     val
   end

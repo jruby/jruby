@@ -1368,7 +1368,7 @@ public abstract class StringNodes {
         @Child private RopeNodes.MakeConcatNode makeConcatNode = RopeNodesFactory.MakeConcatNodeGen.create(null, null, null);
 
         @Specialization(guards = { "!is7Bit(string)", "!isValidCodeRange(string)", "isAsciiCompatible(string)" })
-        public DynamicObject scrubAsciiCompat(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block) {
+        public DynamicObject scrubAsciiCompat(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
             Rope buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
@@ -1415,8 +1415,8 @@ public abstract class StringNodes {
                         }
                     }
                     Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, p + clen), enc, CodeRange.CR_BROKEN);
-                    repl = yield(frame, block, createString(invalid));
-                    buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
+                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(invalid));
+                    buf = makeConcatNode.executeMake(buf, rope(repl), enc);
                     p += clen;
                     p1 = p;
                     p = StringSupport.searchNonAscii(pBytes, p, e);
@@ -1431,15 +1431,15 @@ public abstract class StringNodes {
             }
             if (p < e) {
                 Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
-                repl = yield(frame, block, createString(invalid));
-                buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
+                DynamicObject repl = (DynamicObject) yield(frame, block, createString(invalid));
+                buf = makeConcatNode.executeMake(buf, rope(repl), enc);
             }
 
             return createString(buf);
         }
 
         @Specialization(guards = { "!is7Bit(string)", "!isValidCodeRange(string)", "!isAsciiCompatible(string)" })
-        public DynamicObject scrubAscciIncompatible(VirtualFrame frame, DynamicObject string, Object repl, DynamicObject block) {
+        public DynamicObject scrubAscciIncompatible(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final Rope rope = rope(string);
             final Encoding enc = rope.getEncoding();
             Rope buf = RopeConstants.EMPTY_ASCII_8BIT_ROPE;
@@ -1483,8 +1483,8 @@ public abstract class StringNodes {
                     }
 
                     Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
-                    repl = yield(frame, block, createString(invalid));
-                    buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
+                    DynamicObject repl = (DynamicObject) yield(frame, block, createString(invalid));
+                    buf = makeConcatNode.executeMake(buf, rope(repl), enc);
                     p += clen;
                     p1 = p;
                 }
@@ -1494,8 +1494,8 @@ public abstract class StringNodes {
             }
             if (p < e) {
                 Rope invalid = RopeOperations.create(ArrayUtils.extractRange(pBytes, p, e), enc, CodeRange.CR_BROKEN);
-                repl = yield(frame, block, createString(invalid));
-                buf = makeConcatNode.executeMake(buf, rope((DynamicObject) repl), enc);
+                DynamicObject repl = (DynamicObject) yield(frame, block, createString(invalid));
+                buf = makeConcatNode.executeMake(buf, rope(repl), enc);
             }
 
             return createString(buf);
