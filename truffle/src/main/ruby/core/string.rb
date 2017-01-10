@@ -1218,6 +1218,7 @@ class String
       if str.ascii_only? ? !encoding.ascii_compatible? : encoding != str.encoding
         raise Encoding::CompatibilityError, "incompatible character encodings"
       end
+      # Modifies the outer taint variable
       taint = true if str.tainted?
       str
     }
