@@ -283,4 +283,18 @@ public class Signature {
             }
         }
     }
+
+    public boolean equals(Object other) {
+        if (!(other instanceof Signature)) return false;
+
+        Signature otherSig = (Signature) other;
+
+        return pre == otherSig.pre &&
+                opt == otherSig.opt &&
+                post == otherSig.post &&
+                rest == otherSig.rest &&
+                kwargs == otherSig.kwargs &&
+                requiredKwargs == otherSig.requiredKwargs &&
+                keyRest == otherSig.keyRest;
+    }
 }
