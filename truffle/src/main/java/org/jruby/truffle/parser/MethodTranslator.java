@@ -287,7 +287,7 @@ public class MethodTranslator extends BodyTranslator {
 
         final RubyNode body;
 
-        if (context.getOptions().LAZY_TRANSLATION && parserContext != ParserContext.EVAL) {
+        if (context.getOptions().LAZY_TRANSLATION && parserContext != ParserContext.EVAL && !context.getCoverageManager().isEnabled()) {
             final TranslatorState state = getCurrentState();
 
             body = new LazyRubyNode(() -> {
