@@ -21,7 +21,6 @@ end
 
 def main
   res = fac(2)
-  puts res
   res
 end
 Truffle::Interop.export_method(:main)
