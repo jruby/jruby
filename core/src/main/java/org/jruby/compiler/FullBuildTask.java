@@ -16,6 +16,8 @@ class FullBuildTask implements Runnable {
 
     public void run() {
         try {
+            method.getIRScope().getTopLevelScope().prepareFullBuild();
+
             method.completeBuild(method.getIRScope().prepareFullBuild());
 
             if (jitCompiler.config.isJitLogging()) {
