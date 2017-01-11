@@ -30,6 +30,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.LazyRubyNode;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.methods.InternalMethod;
@@ -206,6 +207,18 @@ public abstract class TruffleDebugNodes {
         @Specialization
         public boolean isShared(DynamicObject object) {
             return SharedObjects.isShared(object);
+        }
+
+    }
+
+    @CoreMethod(names = "resolve_lazy_nodes", onSingleton = true)
+    public abstract static class ResolveLazyNodesNode extends CoreMethodArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject resolveLazyNodes() {
+            LazyRubyNode.resolveAll(getContext());
+            return nil();
         }
 
     }
