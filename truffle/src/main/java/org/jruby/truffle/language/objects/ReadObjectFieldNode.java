@@ -43,11 +43,7 @@ public abstract class ReadObjectFieldNode extends RubyBaseNode {
     protected Object readObjectFieldCached(DynamicObject receiver,
             @Cached("receiver.getShape()") Shape cachedShape,
             @Cached("getProperty(cachedShape, name)") Property property) {
-        if (property != null) {
-            return property.get(receiver, cachedShape);
-        } else {
-            return defaultValue;
-        }
+        return readOrDefault(receiver, cachedShape, property, defaultValue);
     }
 
     @Specialization(guards = "updateShape(object)")
@@ -58,15 +54,30 @@ public abstract class ReadObjectFieldNode extends RubyBaseNode {
     @TruffleBoundary
     @Specialization(contains = { "readObjectFieldCached", "updateShapeAndRead" })
     protected Object readObjectFieldUncached(DynamicObject receiver) {
-        return receiver.get(name, defaultValue);
+        return read(receiver, name, defaultValue);
     }
 
-    protected Property getProperty(Shape shape, Object name) {
+    @TruffleBoundary
+    public static Property getProperty(Shape shape, Object name) {
         Property property = shape.getProperty(name);
         if (!PropertyFlags.isDefined(property)) {
             return null;
         }
         return property;
+    }
+
+    private static Object readOrDefault(DynamicObject object, Shape shape, Property property, Object defaultValue) {
+        if (property != null) {
+            return property.get(object, shape);
+        } else {
+            return defaultValue;
+        }
+    }
+
+    public static Object read(DynamicObject object, Object name, Object defaultValue) {
+        final Shape shape = object.getShape();
+        final Property property = getProperty(shape, name);
+        return readOrDefault(object, shape, property, defaultValue);
     }
 
     protected int getCacheLimit() {

@@ -29,6 +29,7 @@ import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
 
 import java.util.ArrayList;
@@ -82,7 +83,7 @@ public class ThreadManager {
 
     public static boolean getGlobalAbortOnException(RubyContext context) {
         final DynamicObject threadClass = context.getCoreLibrary().getThreadClass();
-        return (boolean) threadClass.get("@abort_on_exception");
+        return (boolean) ReadObjectFieldNode.read(threadClass, "@abort_on_exception", null);
     }
 
     public static DynamicObject createThreadLocals(RubyContext context) {

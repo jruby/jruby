@@ -19,6 +19,7 @@ import org.jruby.truffle.core.kernel.AtExitManager;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.ExitException;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 
 public class TopLevelRaiseHandler extends RubyNode {
 
@@ -56,7 +57,7 @@ public class TopLevelRaiseHandler extends RubyNode {
 
     private int statusFromException(DynamicObject exception) {
         if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == coreLibrary().getSystemExitClass()) {
-            return castToInt(exception.get("@status", null));
+            return castToInt(ReadObjectFieldNode.read(exception, "@status", null));
         } else {
             return 1;
         }

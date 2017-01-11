@@ -131,6 +131,7 @@ import org.jruby.truffle.language.objects.ObjectIVarSetNode;
 import org.jruby.truffle.language.objects.ObjectIVarSetNodeGen;
 import org.jruby.truffle.language.objects.PropagateTaintNode;
 import org.jruby.truffle.language.objects.PropertyFlags;
+import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
@@ -851,7 +852,7 @@ public abstract class KernelNodes {
         @Specialization
         public Object removeInstanceVariable(DynamicObject object, String name) {
             final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, object, this);
-            final Object value = object.get(ivar, nil());
+            final Object value = ReadObjectFieldNode.read(object, ivar, nil());
 
             if (SharedObjects.isShared(object)) {
                 synchronized (object) {

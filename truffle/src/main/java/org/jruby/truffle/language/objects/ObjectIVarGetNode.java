@@ -39,7 +39,7 @@ public abstract class ObjectIVarGetNode extends RubyNode {
     @TruffleBoundary
     @Specialization(contains = "ivarGetCached")
     public Object ivarGetUncached(DynamicObject object, String name) {
-        return object.get(checkName(name, object), nil());
+        return ReadObjectFieldNode.read(object, checkName(name, object), nil());
     }
 
     protected String checkName(String name, DynamicObject object) {
