@@ -43,13 +43,14 @@ public class LazyRubyNode extends RubyNode {
 
     public RubyNode resolve() {
         CompilerDirectives.transferToInterpreterAndInvalidate();
+
         return atomic(() -> {
             if (resolved != null) {
                 return resolved;
             }
 
             if (getContext().getOptions().LAZY_TRANSLATION_LOG) {
-                Log.LOGGER.info(() -> "lazy translating " + RubyLanguage.fileLine(getParent().getEncapsulatingSourceSection()));
+                Log.LOGGER.info(() -> "lazy translating " + RubyLanguage.fileLine(getParent().getEncapsulatingSourceSection()) + " in " + getRootNode());
             }
 
             resolved = resolver.get();
