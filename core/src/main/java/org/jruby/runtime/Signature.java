@@ -256,7 +256,7 @@ public class Signature {
                 (int)(l >>> ENCODE_KWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK,
                 (int)(l >>> ENCODE_REQKWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK,
                 Rest.fromOrdinal((int)((l >>> ENCODE_REST_SHIFT) & MAX_ENCODED_ARGS_MASK)),
-                (byte)(l >>> ENCODE_RESTKWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK
+                (byte)((l >>> ENCODE_RESTKWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK)
 
         );
     }
