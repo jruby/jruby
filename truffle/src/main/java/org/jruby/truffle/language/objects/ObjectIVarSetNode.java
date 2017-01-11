@@ -44,10 +44,10 @@ public abstract class ObjectIVarSetNode extends RubyNode {
         if (SharedObjects.isShared(object)) {
             SharedObjects.writeBarrier(value);
             synchronized (object) {
-                object.define(checkName(name, object), value, 0);
+                object.define(checkName(name, object), value);
             }
         } else {
-            object.define(checkName(name, object), value, 0);
+            object.define(checkName(name, object), value);
         }
         return value;
     }

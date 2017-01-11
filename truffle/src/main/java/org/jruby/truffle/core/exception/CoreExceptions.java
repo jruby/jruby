@@ -611,7 +611,7 @@ public class CoreExceptions {
             // This is a workaround for the rubygems/security.rb file expecting the error path to be openssl
             path = "openssl";
         }
-        loadError.define("@path", StringOperations.createString(context, StringOperations.encodeRope(path, UTF8Encoding.INSTANCE)), 0);
+        loadError.define("@path", StringOperations.createString(context, StringOperations.encodeRope(path, UTF8Encoding.INSTANCE)));
         return loadError;
     }
 
@@ -890,7 +890,7 @@ public class CoreExceptions {
     public DynamicObject systemExit(int exitStatus, Node currentNode) {
         final DynamicObject message = StringOperations.createString(context, StringOperations.encodeRope("exit", UTF8Encoding.INSTANCE));
         final DynamicObject systemExit = ExceptionOperations.createRubyException(context.getCoreLibrary().getSystemExitClass(), message, context.getCallStack().getBacktrace(currentNode));
-        systemExit.define("@status", exitStatus, 0);
+        systemExit.define("@status", exitStatus);
         return systemExit;
     }
 

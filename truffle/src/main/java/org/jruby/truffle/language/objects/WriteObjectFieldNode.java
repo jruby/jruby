@@ -134,7 +134,7 @@ public abstract class WriteObjectFieldNode extends RubyBaseNode {
                 newShape.getProperty(name).setSafe(object, value, shape, newShape);
             }
         } else {
-            object.define(name, value, 0);
+            object.define(name, value);
         }
     }
 
