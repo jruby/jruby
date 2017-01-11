@@ -21,6 +21,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.core.kernel.TraceManager;
+import org.jruby.truffle.language.LazyRubyNode;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.stdlib.CoverageManager;
@@ -36,6 +37,7 @@ import java.io.IOException;
         TraceManager.CallTag.class,
         TraceManager.ClassTag.class,
         TraceManager.LineTag.class,
+        LazyRubyNode.LazyTag.class,
         StandardTags.RootTag.class,
         StandardTags.StatementTag.class,
         StandardTags.CallTag.class
