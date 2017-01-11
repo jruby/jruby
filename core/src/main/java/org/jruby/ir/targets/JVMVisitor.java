@@ -862,11 +862,12 @@ public class JVMVisitor extends IRVisitor {
         for (int i = 0; i < targets.length; i++) jvmTargets[i] = getJVMLabel(targets[i]);
 
         // if jump table is all contiguous values, use a tableswitch
-        int[] jumps = bswitchinstr.getJumps();
-        int low = jumps[0];
-        int high = jumps[jumps.length - 1];
-        int span = high - low;
-        if (span == jumps.length) {
+        int[] jumps = bswitchinstr.getJumps(); // always ordered e.g. [2, 3, 4]
+
+        int low = jumps[0]; // 2
+        int high = jumps[jumps.length - 1]; // 4
+        int span = high - low + 1;
+        if (span == jumps.length) { // perfectly compact - no "holes"
             jvmAdapter().tableswitch(low, high, getJVMLabel(bswitchinstr.getElseTarget()), jvmTargets);
         } else {
             jvmAdapter().lookupswitch(getJVMLabel(bswitchinstr.getElseTarget()), bswitchinstr.getJumps(), jvmTargets);

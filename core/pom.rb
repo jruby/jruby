@@ -59,7 +59,7 @@ project 'JRuby Core' do
 
   jar 'com.headius:invokebinder:1.7'
   jar 'com.headius:options:1.4'
-  jar 'com.headius:unsafe-fences:1.0-SNAPSHOT'
+  jar 'com.headius:unsafe-fences:1.0'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'

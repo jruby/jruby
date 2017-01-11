@@ -127,9 +127,14 @@ public class BSwitchInstr extends MultiBranchInstr {
         return jumpTargets;
     }
 
-    private static boolean jumpsAreSorted(int[] jumps) {
-        int[] jumps2 = jumps.clone();
-        Arrays.sort(jumps2);
-        return Arrays.equals(jumps, jumps2);
+    private static boolean jumpsAreSorted(final int[] jumps) {
+        if ( jumps.length == 0 ) return true;
+        int prev = jumps[0];
+        for ( int i = 1; i < jumps.length; i++ ) {
+            int curr = jumps[i];
+            if ( prev > curr ) return false; // not sorted
+            prev = curr;
+        }
+        return true;
     }
 }
