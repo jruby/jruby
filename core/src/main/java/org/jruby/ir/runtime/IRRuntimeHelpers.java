@@ -202,10 +202,6 @@ public class IRRuntimeHelpers {
             // that ensures are run, frames/scopes are popped
             // from runtime stacks, etc.
             return ((IRWrappedLambdaReturnValue)exc).returnValue;
-        } else if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
-            // We just unwound all the way up because of a non-local break
-            context.setSavedExceptionInLambda(IRException.BREAK_LocalJumpError.getException(context.runtime));
-            return null;
         } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
             try {
                 // Ignore non-local return processing in non-lambda blocks.
