@@ -58,6 +58,9 @@ public abstract class ReadObjectFieldNode extends RubyBaseNode {
     @TruffleBoundary
     @Specialization(contains = { "readObjectFieldCached", "updateShapeAndRead" })
     protected Object readObjectFieldUncached(DynamicObject receiver) {
+        if(getProperty(receiver.getShape(), name) == null){
+            return defaultValue;
+        }
         return receiver.get(name, defaultValue);
     }
 
