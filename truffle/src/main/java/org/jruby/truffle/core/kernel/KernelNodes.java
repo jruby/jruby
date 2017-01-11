@@ -337,9 +337,10 @@ public abstract class KernelNodes {
         @TruffleBoundary
         private void copyInstanceVariables(DynamicObject from, DynamicObject to) {
             // Concurrency: OK if callers create the object and publish it after copy
+            // Only copy user-level instance variables, hidden ones are initialized later with #initialize_copy.
             for (Property property : from.getShape().getProperties()) {
                 if (property.getKey() instanceof String) {
-                    to.define(property.getKey(), property.get(from, from.getShape()), 0);
+                    to.define(property.getKey(), property.get(from, from.getShape()), property.getFlags());
                 }
             }
         }
