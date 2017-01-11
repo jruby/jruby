@@ -106,6 +106,8 @@ class TestDir < Test::Unit::TestCase
     Dir.mkdir("testDir_bug4353/level2")
     open("testDir_bug4353/level2/testDir_tmp1", "w").close
     assert_equal(Dir.glob('./testDir_bug4353/**/**/testDir_tmp1'), ['./testDir_bug4353/level2/testDir_tmp1'])
+
+    FileUtils.rm_r 'testDir_bug4353'
   end
 
   def test_glob_with_blocks
