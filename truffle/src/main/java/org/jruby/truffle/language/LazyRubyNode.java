@@ -64,6 +64,8 @@ public class LazyRubyNode extends RubyNode {
             }
 
             resolved = resolver.get();
+            transferFlagsTo(resolved);
+
             replace(resolved, "lazy node resolved");
             return resolved;
         });

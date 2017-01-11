@@ -55,7 +55,7 @@ public abstract class RubyBaseNode extends Node {
     private int sourceCharIndex = -1;
     private int sourceLength;
 
-    private int flags;
+    protected int flags;
 
     // Guards which use the context and so can't be static
 
@@ -255,6 +255,10 @@ public abstract class RubyBaseNode extends Node {
 
     private boolean isRoot() {
         return ((flags >> FLAG_ROOT) & 1) == 1;
+    }
+
+    protected void transferFlagsTo(RubyBaseNode to) {
+        to.flags = flags;
     }
 
     @Override
