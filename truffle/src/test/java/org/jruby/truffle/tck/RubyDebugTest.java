@@ -99,6 +99,7 @@ public class RubyDebugTest {
         // Init before eval:
         performWork();
         engine.eval(factorial);
+        engine.eval(Source.newBuilder("Truffle::Debug.resolve_lazy_nodes").mimeType(RubyLanguage.MIME_TYPE).name("resolve_lazy_nodes").build());
 
         assertExecutedOK("Algorithm loaded");
 
@@ -123,6 +124,7 @@ public class RubyDebugTest {
     public void stepInStepOver() throws Throwable {
         final Source factorial = createFactorial();
         engine.eval(factorial);
+        engine.eval(Source.newBuilder("Truffle::Debug.resolve_lazy_nodes").mimeType(RubyLanguage.MIME_TYPE).name("resolve_lazy_nodes").build());
         run.addLast(() -> {
             assertNull(suspendedEvent);
             assertNotNull(debuggerSession);

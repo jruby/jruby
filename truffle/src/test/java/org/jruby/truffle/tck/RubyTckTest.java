@@ -58,6 +58,7 @@ public class RubyTckTest extends TruffleTCK {
     protected PolyglotEngine prepareVM(PolyglotEngine.Builder preparedBuilder) throws Exception {
         final PolyglotEngine engine = preparedBuilder.build();
         engine.eval(getSource("src/test/ruby/tck.rb"));
+        engine.eval(Source.newBuilder("Truffle::Debug.resolve_lazy_nodes").mimeType(RubyLanguage.MIME_TYPE).name("resolve_lazy_nodes").build());
         return engine;
     }
 
