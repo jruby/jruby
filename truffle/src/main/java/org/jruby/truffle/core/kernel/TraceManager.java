@@ -29,6 +29,7 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.language.LazyRubyNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.objects.LogicalClassNode;
@@ -79,6 +80,10 @@ public class TraceManager {
             instruments = null;
             return;
         }
+
+        // TODO CS 11-Jan-17 race conditions here?
+
+        LazyRubyNode.resolveAll(context);
 
         // Invalidate current assumption
         unusedAssumption.getAssumption().invalidate();
