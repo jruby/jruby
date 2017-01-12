@@ -27,5 +27,6 @@ public interface ByteArrayLayout extends BasicObjectLayout {
     boolean isByteArray(DynamicObject object);
 
     ByteList getBytes(DynamicObject object);
+    void setBytes(DynamicObject object, ByteList value);
 
 }
