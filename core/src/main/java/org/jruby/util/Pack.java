@@ -1196,12 +1196,13 @@ public class Pack {
                             lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                             lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                             lElem[index++] = (byte)((c << 6 | d) & 255);
+                            a = -1;
                         }
 
                         if (a != -1 && b != -1) {
-                            if (c == -1 && s == '=') {
+                            if (c == -1) {
                                 lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                            } else if(c != -1 && s == '=') {
+                            } else {
                                 lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                                 lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                             }
