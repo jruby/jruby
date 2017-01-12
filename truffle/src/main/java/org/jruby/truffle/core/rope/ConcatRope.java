@@ -48,11 +48,18 @@ public class ConcatRope extends Rope {
     @Override
     @TruffleBoundary
     public byte getByteSlow(int index) {
-        if (index < left.byteLength()) {
-            return left.getByteSlow(index);
+        Rope nextLeft = left;
+        Rope nextRight = right;
+        while (index < nextLeft.byteLength()) {
+            if (nextLeft instanceof ConcatRope) {
+                nextRight = ((ConcatRope) nextLeft).getRight();
+                nextLeft = ((ConcatRope) nextLeft).getLeft();
+            } else {
+                return nextLeft.getByteSlow(index);
+            }
         }
 
-        return right.getByteSlow(index - left.byteLength());
+        return nextRight.getByteSlow(index - nextLeft.byteLength());
     }
 
     public Rope getLeft() {
