@@ -59,6 +59,10 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         }
     }
 
+    public void setInterpreterContext(InterpreterContext interpreterContext) {
+        this.interpreterContext = interpreterContext;
+    }
+
     public IRScope getIRScope() {
         return method;
     }

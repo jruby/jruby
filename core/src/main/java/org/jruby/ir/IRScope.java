@@ -587,7 +587,7 @@ public abstract class IRScope implements ParseResult {
         if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext;
 
         for (IRScope scope: getClosures()) {
-            scope.prepareFullBuild();
+            scope.prepareFullBuild(null);
         }
 
         prepareFullBuildCommon();
