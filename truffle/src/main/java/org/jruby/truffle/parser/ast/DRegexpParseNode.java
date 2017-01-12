@@ -34,9 +34,9 @@ package org.jruby.truffle.parser.ast;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 /**
  * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
@@ -46,7 +46,7 @@ public class DRegexpParseNode extends DParseNode implements ILiteralNode {
     private final RegexpOptions options;
 
     // 1.9 constructor
-    public DRegexpParseNode(ISourcePosition position, RegexpOptions options, Encoding encoding) {
+    public DRegexpParseNode(SourceIndexLength position, RegexpOptions options, Encoding encoding) {
         super(position, encoding);
         this.options = options;
     }

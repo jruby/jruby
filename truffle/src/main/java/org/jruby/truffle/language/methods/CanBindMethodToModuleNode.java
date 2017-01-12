@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,8 +14,6 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
 
@@ -27,10 +25,6 @@ import org.jruby.truffle.language.RubyNode;
         @NodeChild("module")
 })
 public abstract class CanBindMethodToModuleNode extends RubyNode {
-
-    public CanBindMethodToModuleNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     public abstract boolean executeCanBindMethodToModule(InternalMethod method, DynamicObject module);
 

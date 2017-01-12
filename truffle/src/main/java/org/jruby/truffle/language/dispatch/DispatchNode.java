@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,9 +10,9 @@
 package org.jruby.truffle.language.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.LookupMethodNode;
@@ -26,8 +26,7 @@ public abstract class DispatchNode extends RubyNode {
 
     public static final Object MISSING = new Missing();
 
-    public DispatchNode(RubyContext context, DispatchAction dispatchAction) {
-        super(context);
+    public DispatchNode(DispatchAction dispatchAction) {
         this.dispatchAction = dispatchAction;
         assert dispatchAction != null;
     }
@@ -73,6 +72,16 @@ public abstract class DispatchNode extends RubyNode {
 
     protected DispatchHeadNode getHeadNode() {
         return NodeUtil.findParent(this, DispatchHeadNode.class);
+    }
+
+    public RubyCallNode findRubyCallNode() {
+        DispatchHeadNode headNode = getHeadNode();
+        Node parent = headNode.getParent();
+        if (parent instanceof RubyCallNode) {
+            return (RubyCallNode) parent;
+        } else {
+            return null;
+        }
     }
 
     @Override

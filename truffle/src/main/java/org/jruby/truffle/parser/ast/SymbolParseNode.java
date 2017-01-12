@@ -34,12 +34,12 @@ package org.jruby.truffle.parser.ast;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.language.SourceIndexLength;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.util.ByteList;
 
 import java.util.List;
 
@@ -51,11 +51,11 @@ public class SymbolParseNode extends ParseNode implements ILiteralNode, INameNod
     private final Encoding encoding;
 
     // Interned ident path (e.g. [':', ident]).
-    public SymbolParseNode(ISourcePosition position, String name, Encoding encoding, int cr) {
+    public SymbolParseNode(SourceIndexLength position, String name, Encoding encoding, CodeRange cr) {
         super(position, false);
         this.name = name;  // Assumed all names are already intern'd by lexer.
 
-        if (encoding == USASCIIEncoding.INSTANCE || cr == StringSupport.CR_7BIT) {
+        if (encoding == USASCIIEncoding.INSTANCE || cr == CodeRange.CR_7BIT) {
             this.encoding = USASCIIEncoding.INSTANCE;
         } else {
             this.encoding = encoding;
@@ -63,13 +63,13 @@ public class SymbolParseNode extends ParseNode implements ILiteralNode, INameNod
     }
 
     // String path (e.g. [':', str_beg, str_content, str_end])
-    public SymbolParseNode(ISourcePosition position, ByteList value) {
+    public SymbolParseNode(SourceIndexLength position, ParserByteList value) {
         super(position, false);
         this.name = value.toString().intern();
 
         if (value.getEncoding() != USASCIIEncoding.INSTANCE) {
-            int size = value.realSize();
-            this.encoding = value.getEncoding().strLength(value.unsafeBytes(), value.begin(), size) == size ?
+            int size = value.getLength();
+            this.encoding = value.getStringLength() == size ?
                     USASCIIEncoding.INSTANCE : value.getEncoding();
         } else {
             this.encoding = USASCIIEncoding.INSTANCE;

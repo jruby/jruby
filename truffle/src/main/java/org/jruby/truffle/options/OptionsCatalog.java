@@ -39,15 +39,18 @@ public class OptionsCatalog {
     public static final OptionDescription PLATFORM_SAFE_AT_EXIT = new BooleanOptionDescription("platform.safe.at_exit", "Treat #at_exit as safe", false);
     public static final OptionDescription PLATFORM_SAFE_PUTS = new BooleanOptionDescription("platform.safe_puts", "Treat safe_puts as safe", true);
     public static final OptionDescription PLATFORM_USE_JAVA = new BooleanOptionDescription("platform.use_java", "Use a pure-Java platform", false);
+    public static final OptionDescription TRACE_CALLS = new BooleanOptionDescription("trace.calls", "Support tracing (set_trace_func", true);
     public static final OptionDescription COVERAGE_GLOBAL = new BooleanOptionDescription("coverage.global", "Run coverage for all code and print results on exit", false);
     public static final OptionDescription INLINE_JS = new BooleanOptionDescription("inline_js", "Allow inline JavaScript", false);
     public static final OptionDescription CORE_LOAD_PATH = new StringOptionDescription("core.load_path", "Location to load the Truffle core library from", "truffle:/jruby-truffle");
     public static final OptionDescription CORE_PARALLEL_LOAD = new BooleanOptionDescription("core.parallel_load", "Load the Truffle core library in parallel", false);
+    public static final OptionDescription LAZY_TRANSLATION = new BooleanOptionDescription("lazy_translation", "Lazily translate from the parser AST to the Truffle AST", false);
     public static final OptionDescription ARRAY_UNINITIALIZED_SIZE = new IntegerOptionDescription("array.uninitialized_size", "How large an Array to allocate when we have no other information to go on", 32);
     public static final OptionDescription ARRAY_SMALL = new IntegerOptionDescription("array.small", "Maximum size of an Array to consider small for optimisations", 3);
     public static final OptionDescription HASH_PACKED_ARRAY_MAX = new IntegerOptionDescription("hash.packed_array.max", "Maximum size of a Hash to consider using the packed array storage strategy for", 3);
     public static final OptionDescription ROPE_LAZY_SUBSTRINGS = new BooleanOptionDescription("rope.lazy_substrings", "Indicates whether a substring operation on a rope should be performed lazily", true);
     public static final OptionDescription ROPE_PRINT_INTERN_STATS = new BooleanOptionDescription("rope.print_intern_stats", "Print interned rope stats at application exit", false);
+    public static final OptionDescription ROPE_DEPTH_THRESHOLD = new IntegerOptionDescription("rope.depth_threshold", "Threshold value at which ropes will be rebalanced (indirectly controls flattening as well)", 128);
     public static final OptionDescription GLOBAL_VARIABLE_MAX_INVALIDATIONS = new IntegerOptionDescription("global_variable.max_invalidations", "Maximum number of times a global variable can be changed to be considered constant", 10);
     public static final OptionDescription DEFAULT_CACHE = new IntegerOptionDescription("default_cache", "Default size for caches", 8);
     public static final OptionDescription METHOD_LOOKUP_CACHE = new IntegerOptionDescription("method_lookup.cache", "Method lookup cache size", 0);
@@ -88,6 +91,7 @@ public class OptionsCatalog {
     public static final OptionDescription EXCEPTIONS_STORE_JAVA = new BooleanOptionDescription("exceptions.store_java", "Store the Java exception with the Ruby backtrace", false);
     public static final OptionDescription EXCEPTIONS_PRINT_JAVA = new BooleanOptionDescription("exceptions.print_java", "Print Java exceptions at the point of translating them to Ruby exceptions", false);
     public static final OptionDescription EXCEPTIONS_PRINT_UNCAUGHT_JAVA = new BooleanOptionDescription("exceptions.print_uncaught_java", "Print uncaught Java exceptions at the point of translating them to Ruby exceptions", false);
+    public static final OptionDescription EXCEPTIONS_TRANSLATE_ASSERT = new BooleanOptionDescription("exceptions.translate_assert", "Translate failed Java assertions to Ruby exceptions", true);
     public static final OptionDescription BACKTRACES_HIDE_CORE_FILES = new BooleanOptionDescription("backtraces.hide_core_files", "Hide core source files in backtraces", true);
     public static final OptionDescription BACKTRACES_INTERLEAVE_JAVA = new BooleanOptionDescription("backtraces.interleave_java", "Interleave Java stacktraces into the Ruby backtrace", false);
     public static final OptionDescription BACKTRACES_LIMIT = new IntegerOptionDescription("backtraces.limit", "Limit the size of Ruby backtraces", 9999);
@@ -99,13 +103,13 @@ public class OptionsCatalog {
     public static final OptionDescription CALL_GRAPH_WRITE = new StringOptionDescription("callgraph.write", "File to write the call graph to on exit", null);
     public static final OptionDescription CHAOS = new BooleanOptionDescription("chaos", "Randomly modify the representation of objects", false);
     public static final OptionDescription GRAAL_WARNING_UNLESS = new BooleanOptionDescription("graal.warn_unless", "Warn unless the JVM has the Graal compiler", true);
-    public static final OptionDescription PERF_WARNING = new BooleanOptionDescription("perf.warn", "Warn when using a fature which is not optimized yet", false);
     public static final OptionDescription SHARED_OBJECTS_ENABLED = new BooleanOptionDescription("shared.objects", "Enable shared objects", true);
     public static final OptionDescription SHARED_OBJECTS_DEBUG = new BooleanOptionDescription("shared.objects.debug", "Print information about shared objects", false);
     public static final OptionDescription SHARED_OBJECTS_FORCE = new BooleanOptionDescription("shared.objects.force", "Force sharing of objects roots at startup", false);
     public static final OptionDescription SHARED_OBJECTS_SHARE_ALL = new BooleanOptionDescription("shared.objects.share_all", "Consider all objects as shared", false);
     public static final OptionDescription CEXTS_LOG_LOAD = new BooleanOptionDescription("cexts.log.load", "Log loading of cexts", false);
     public static final OptionDescription LOG_DYNAMIC_CONSTANT_LOOKUP = new BooleanOptionDescription("constant.dynamic_lookup.log", "Log source code positions where dynamic constant lookup is performed", false);
+    public static final OptionDescription OPTIONS_LOG = new BooleanOptionDescription("options.log", "Log the final value of all options", false);
     
     public static OptionDescription fromName(String name) {
         switch (name) {
@@ -155,6 +159,8 @@ public class OptionsCatalog {
                 return PLATFORM_SAFE_PUTS;
             case "platform.use_java":
                 return PLATFORM_USE_JAVA;
+            case "trace.calls":
+                return TRACE_CALLS;
             case "coverage.global":
                 return COVERAGE_GLOBAL;
             case "inline_js":
@@ -163,6 +169,8 @@ public class OptionsCatalog {
                 return CORE_LOAD_PATH;
             case "core.parallel_load":
                 return CORE_PARALLEL_LOAD;
+            case "lazy_translation":
+                return LAZY_TRANSLATION;
             case "array.uninitialized_size":
                 return ARRAY_UNINITIALIZED_SIZE;
             case "array.small":
@@ -173,6 +181,8 @@ public class OptionsCatalog {
                 return ROPE_LAZY_SUBSTRINGS;
             case "rope.print_intern_stats":
                 return ROPE_PRINT_INTERN_STATS;
+            case "rope.depth_threshold":
+                return ROPE_DEPTH_THRESHOLD;
             case "global_variable.max_invalidations":
                 return GLOBAL_VARIABLE_MAX_INVALIDATIONS;
             case "default_cache":
@@ -253,6 +263,8 @@ public class OptionsCatalog {
                 return EXCEPTIONS_PRINT_JAVA;
             case "exceptions.print_uncaught_java":
                 return EXCEPTIONS_PRINT_UNCAUGHT_JAVA;
+            case "exceptions.translate_assert":
+                return EXCEPTIONS_TRANSLATE_ASSERT;
             case "backtraces.hide_core_files":
                 return BACKTRACES_HIDE_CORE_FILES;
             case "backtraces.interleave_java":
@@ -275,8 +287,6 @@ public class OptionsCatalog {
                 return CHAOS;
             case "graal.warn_unless":
                 return GRAAL_WARNING_UNLESS;
-            case "perf.warn":
-                return PERF_WARNING;
             case "shared.objects":
                 return SHARED_OBJECTS_ENABLED;
             case "shared.objects.debug":
@@ -289,9 +299,110 @@ public class OptionsCatalog {
                 return CEXTS_LOG_LOAD;
             case "constant.dynamic_lookup.log":
                 return LOG_DYNAMIC_CONSTANT_LOOKUP;
+            case "options.log":
+                return OPTIONS_LOG;
             default:
                 return null;
         }
+    }
+
+    public static OptionDescription[] allDescriptions() {
+        return new OptionDescription[] {
+            HOME,
+            LOAD_PATHS,
+            REQUIRED_LIBRARIES,
+            INLINE_SCRIPT,
+            ARGUMENTS,
+            DISPLAYED_FILE_NAME,
+            DEBUG,
+            VERBOSITY,
+            FROZEN_STRING_LITERALS,
+            DISABLE_GEMS,
+            INTERNAL_ENCODING,
+            EXTERNAL_ENCODING,
+            PLATFORM_SAFE,
+            PLATFORM_SAFE_LOAD,
+            PLATFORM_SAFE_IO,
+            PLATFORM_SAFE_MEMORY,
+            PLATFORM_SAFE_THREADS,
+            PLATFORM_SAFE_PROCESSES,
+            PLATFORM_SAFE_SIGNALS,
+            PLATFORM_SAFE_EXIT,
+            PLATFORM_SAFE_AT_EXIT,
+            PLATFORM_SAFE_PUTS,
+            PLATFORM_USE_JAVA,
+            TRACE_CALLS,
+            COVERAGE_GLOBAL,
+            INLINE_JS,
+            CORE_LOAD_PATH,
+            CORE_PARALLEL_LOAD,
+            LAZY_TRANSLATION,
+            ARRAY_UNINITIALIZED_SIZE,
+            ARRAY_SMALL,
+            HASH_PACKED_ARRAY_MAX,
+            ROPE_LAZY_SUBSTRINGS,
+            ROPE_PRINT_INTERN_STATS,
+            ROPE_DEPTH_THRESHOLD,
+            GLOBAL_VARIABLE_MAX_INVALIDATIONS,
+            DEFAULT_CACHE,
+            METHOD_LOOKUP_CACHE,
+            DISPATCH_CACHE,
+            YIELD_CACHE,
+            METHOD_TO_PROC_CACHE,
+            IS_A_CACHE,
+            BIND_CACHE,
+            CONSTANT_CACHE,
+            INSTANCE_VARIABLE_CACHE,
+            BINDING_LOCAL_VARIABLE_CACHE,
+            SYMBOL_TO_PROC_CACHE,
+            ALLOCATE_CLASS_CACHE,
+            PACK_CACHE,
+            UNPACK_CACHE,
+            EVAL_CACHE,
+            CLASS_CACHE,
+            ENCODING_COMPATIBLE_QUERY_CACHE,
+            ENCODING_LOADED_CLASSES_CACHE,
+            THREAD_CACHE,
+            ROPE_CLASS_CACHE,
+            INTEROP_CONVERT_CACHE,
+            INTEROP_EXECUTE_CACHE,
+            INTEROP_READ_CACHE,
+            INTEROP_WRITE_CACHE,
+            INTEROP_INVOKE_CACHE,
+            CLONE_DEFAULT,
+            INLINE_DEFAULT,
+            CORE_ALWAYS_CLONE,
+            INLINE_NEEDS_CALLER_FRAME,
+            YIELD_ALWAYS_CLONE,
+            YIELD_ALWAYS_INLINE,
+            METHODMISSING_ALWAYS_CLONE,
+            METHODMISSING_ALWAYS_INLINE,
+            PACK_UNROLL_LIMIT,
+            PACK_RECOVER_LOOP_MIN,
+            INSTRUMENTATION_SERVER_PORT,
+            EXCEPTIONS_STORE_JAVA,
+            EXCEPTIONS_PRINT_JAVA,
+            EXCEPTIONS_PRINT_UNCAUGHT_JAVA,
+            EXCEPTIONS_TRANSLATE_ASSERT,
+            BACKTRACES_HIDE_CORE_FILES,
+            BACKTRACES_INTERLEAVE_JAVA,
+            BACKTRACES_LIMIT,
+            BACKTRACES_OMIT_UNUSED,
+            BASICOPS_INLINE,
+            METRICS_TIME,
+            METRICS_MEMORY_USED_ON_EXIT,
+            CALL_GRAPH,
+            CALL_GRAPH_WRITE,
+            CHAOS,
+            GRAAL_WARNING_UNLESS,
+            SHARED_OBJECTS_ENABLED,
+            SHARED_OBJECTS_DEBUG,
+            SHARED_OBJECTS_FORCE,
+            SHARED_OBJECTS_SHARE_ALL,
+            CEXTS_LOG_LOAD,
+            LOG_DYNAMIC_CONSTANT_LOOKUP,
+            OPTIONS_LOG,
+        };
     }
 
 }

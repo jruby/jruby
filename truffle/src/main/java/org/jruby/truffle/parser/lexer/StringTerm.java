@@ -29,21 +29,22 @@ package org.jruby.truffle.parser.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.core.string.KCode;
+import org.jruby.truffle.parser.ParserByteList;
+import org.jruby.truffle.parser.ParserByteListBuilder;
 import org.jruby.truffle.parser.ast.RegexpParseNode;
 import org.jruby.truffle.parser.parser.Tokens;
-import org.jruby.truffle.util.KCode;
-import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 
-import static org.jruby.truffle.parser.lexer.LexingCommon.EOF;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_ESCAPE;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_EXPAND;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_QWORDS;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_REGEXP;
-import static org.jruby.truffle.parser.lexer.LexingCommon.STR_FUNC_SYMBOL;
-import static org.jruby.truffle.parser.lexer.LexingCommon.isHexChar;
-import static org.jruby.truffle.parser.lexer.LexingCommon.isOctChar;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EOF;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_ESCAPE;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_EXPAND;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_QWORDS;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_REGEXP;
+import static org.jruby.truffle.parser.lexer.RubyLexer.STR_FUNC_SYMBOL;
+import static org.jruby.truffle.parser.lexer.RubyLexer.isHexChar;
+import static org.jruby.truffle.parser.lexer.RubyLexer.isOctChar;
 
 public class StringTerm extends StrTerm {
     // Expand variables, Indentation of final marker
@@ -65,17 +66,18 @@ public class StringTerm extends StrTerm {
         this.nest  = 0;
     }
 
+    @Override
     public int getFlags() {
         return flags;
     }
 
-    protected ByteList createByteList(RubyLexer lexer) {
-        ByteList bytelist = new ByteList(15);
+    protected ParserByteListBuilder createByteList(RubyLexer lexer) {
+        ParserByteListBuilder bytelist = new ParserByteListBuilder();
         bytelist.setEncoding(lexer.getEncoding());
         return bytelist;
     }
 
-    private int endFound(RubyLexer lexer) throws IOException {
+    private int endFound(RubyLexer lexer) {
             if ((flags & STR_FUNC_QWORDS) != 0) {
                 flags = -1;
                 lexer.getPosition();
@@ -84,7 +86,7 @@ public class StringTerm extends StrTerm {
 
             if ((flags & STR_FUNC_REGEXP) != 0) {
                 RegexpOptions options = parseRegexpFlags(lexer);
-                ByteList regexpBytelist = ByteList.create("");
+                ParserByteList regexpBytelist = new ParserByteList(new byte[]{});
 
                 lexer.setValue(new RegexpParseNode(lexer.getPosition(), regexpBytelist, options));
                 return Tokens.tREGEXP_END;
@@ -95,7 +97,7 @@ public class StringTerm extends StrTerm {
     }
 
     // Return of 0 means failed to find anything.  Non-zero means return that from lexer.
-    private int parsePeekVariableName(RubyLexer lexer) throws IOException {
+    private int parsePeekVariableName(RubyLexer lexer) {
         int c = lexer.nextc(); // byte right after #
         int significant = -1;
         switch (c) {
@@ -165,6 +167,7 @@ public class StringTerm extends StrTerm {
         return 0;
     }
 
+    @Override
     public int parseString(RubyLexer lexer) throws IOException {
         boolean spaceSeen = false;
         int c;
@@ -189,8 +192,8 @@ public class StringTerm extends StrTerm {
             lexer.getPosition();
             return ' ';
         }
-        
-        ByteList buffer = createByteList(lexer);
+
+        ParserByteListBuilder buffer = createByteList(lexer);
         lexer.newtok(true);
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
             int token = parsePeekVariableName(lexer);
@@ -210,7 +213,7 @@ public class StringTerm extends StrTerm {
         return Tokens.tSTRING_CONTENT;
     }
 
-    private RegexpOptions parseRegexpFlags(RubyLexer lexer) throws IOException {
+    private RegexpOptions parseRegexpFlags(RubyLexer lexer) {
         RegexpOptions options = new RegexpOptions();
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);
@@ -264,7 +267,7 @@ public class StringTerm extends StrTerm {
     }
 
     // mri: parser_tokadd_string
-    public int parseStringIntoBuffer(RubyLexer lexer, ByteList buffer, Encoding enc[]) throws IOException {
+    public int parseStringIntoBuffer(RubyLexer lexer, ParserByteListBuilder buffer, Encoding enc[]) throws IOException {
         boolean qwords = (flags & STR_FUNC_QWORDS) != 0;
         boolean expand = (flags & STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
@@ -374,7 +377,7 @@ public class StringTerm extends StrTerm {
                     }
                 }
             } else if (!lexer.isASCII(c)) {
-nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
+                hasNonAscii = true; // nonascii:
 
                 if (buffer.getEncoding() != enc[0]) {
                     mixedEscape(lexer, buffer.getEncoding(), enc[0]);
@@ -418,7 +421,7 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
 
     // Was a goto in original ruby lexer
     @SuppressWarnings("fallthrough")
-    private void escaped(RubyLexer lexer, ByteList buffer) throws IOException {
+    private void escaped(RubyLexer lexer, ParserByteListBuilder buffer) throws IOException {
         int c;
 
         switch (c = lexer.nextc()) {
@@ -433,7 +436,7 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
     }
 
     @SuppressWarnings("fallthrough")
-    private void parseEscapeIntoBuffer(RubyLexer lexer, ByteList buffer) throws IOException {
+    private void parseEscapeIntoBuffer(RubyLexer lexer, ParserByteListBuilder buffer) throws IOException {
         int c;
 
         switch (c = lexer.nextc()) {

@@ -17,8 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.util.Pack;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
 
 /**
  * Read a string that contains UU-encoded data and write as actual binary
@@ -32,8 +31,7 @@ public abstract class WriteUUStringNode extends FormatNode {
     private final int length;
     private final boolean ignoreStar;
 
-    public WriteUUStringNode(RubyContext context, int length, boolean ignoreStar) {
-        super(context);
+    public WriteUUStringNode(int length, boolean ignoreStar) {
         this.length = length;
         this.ignoreStar = ignoreStar;
     }
@@ -59,7 +57,7 @@ public abstract class WriteUUStringNode extends FormatNode {
         // TODO CS 30-Mar-15 should write our own optimizable version of UU
 
         final ByteList output = new ByteList();
-        Pack.encodeUM(null, new ByteList(bytes, false), length, ignoreStar, 'u', output);
+        EncodeUM.encodeUM(null, new ByteList(bytes, false), length, ignoreStar, 'u', output);
         return output.bytes();
     }
 

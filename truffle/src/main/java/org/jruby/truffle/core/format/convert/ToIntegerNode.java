@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -26,10 +26,6 @@ import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 public abstract class ToIntegerNode extends FormatNode {
 
     @Child private CallDispatchHeadNode integerNode;
-
-    public ToIntegerNode(RubyContext context) {
-        super(context);
-    }
 
     public abstract Object executeToInteger(VirtualFrame frame, Object object);
 
@@ -60,7 +56,7 @@ public abstract class ToIntegerNode extends FormatNode {
     public Object toInteger(VirtualFrame frame, Object value) {
         if (integerNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            integerNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            integerNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
         return integerNode.call(frame, getContext().getCoreLibrary().getKernelModule(), "Integer", value);

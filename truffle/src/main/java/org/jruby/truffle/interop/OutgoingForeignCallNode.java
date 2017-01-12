@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -26,9 +26,7 @@ import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.language.PerformanceWarnings;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.JavaException;
 
@@ -42,8 +40,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
 
     private final String name;
 
-    public OutgoingForeignCallNode(RubyContext context, SourceSection sourceSection, String name) {
-        super(context, sourceSection);
+    public OutgoingForeignCallNode(String name) {
         this.name = name;
     }
 
@@ -72,11 +69,11 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
             TruffleObject receiver,
             Object[] args,
             @Cached("create()") ForeignToRubyNode toRubyNode) {
-        PerformanceWarnings.warn("megamorphic outgoing foreign call");
+        Log.notOptimizedOnce("megamorphic outgoing foreign call");
 
         if (megamorphicToForeignNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            megamorphicToForeignNode = insert(RubyToForeignNodeGen.create(getContext(), null, null));
+            megamorphicToForeignNode = insert(RubyToForeignNodeGen.create(null));
         }
 
         final Object[] foreignArgs = new Object[args.length];
@@ -114,7 +111,7 @@ public abstract class OutgoingForeignCallNode extends RubyNode {
         final RubyToForeignNode[] toForeignNodes = new RubyToForeignNode[argsLength];
 
         for (int n = 0; n < argsLength; n++) {
-            toForeignNodes[n] = RubyToForeignNodeGen.create(getContext(), null, null);
+            toForeignNodes[n] = RubyToForeignNodeGen.create(null);
         }
 
         return toForeignNodes;

@@ -22,9 +22,9 @@ import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.CoreStrings;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.Visibility;
-import org.jruby.truffle.util.StringUtils;
 
 import static org.jruby.truffle.core.array.ArrayHelpers.createArray;
 
@@ -40,6 +40,10 @@ public class CoreExceptions {
 
     public DynamicObject argumentErrorOneHashRequired(Node currentNode) {
         return argumentError(coreStrings().ONE_HASH_REQUIRED.getRope(), currentNode, null);
+    }
+
+    public DynamicObject argumentError(Rope message, Node currentNode) {
+        return argumentError(message, currentNode, null);
     }
 
     public DynamicObject argumentError(String message, Node currentNode) {
@@ -280,6 +284,11 @@ public class CoreExceptions {
         return indexError(StringUtils.format("negative length (%d)", length), currentNode);
     }
 
+    @TruffleBoundary
+    public DynamicObject indexErrorInvalidIndex(Node currentNode) {
+        return indexError("invalid index", currentNode);
+    }
+
     // LocalJumpError
 
     @TruffleBoundary
@@ -423,6 +432,11 @@ public class CoreExceptions {
     @TruffleBoundary
     public DynamicObject typeErrorInheritUninitializedClass(Node currentNode) {
         return typeError("can't inherit uninitialized class", currentNode);
+    }
+
+    @TruffleBoundary
+    public DynamicObject typeErrorRescueInvalidClause(Node currentNode) {
+        return typeError("class or module required for rescue clause", currentNode);
     }
 
     @TruffleBoundary

@@ -9,6 +9,19 @@ describe "Kernel.proc" do
     Kernel.should have_private_instance_method(:proc)
   end
 
+  it "creates a proc-style Proc if given a literal block" do
+    l = proc { 42 }
+    l.lambda?.should be_false
+  end
+
+  it "returned the passed Proc if given an existing Proc" do
+    some_lambda = lambda {}
+    some_lambda.lambda?.should be_true
+    l = proc(&some_lambda)
+    l.should equal(some_lambda)
+    l.lambda?.should be_true
+  end
+
   it_behaves_like(:kernel_lambda, :proc)
 
   it "returns from the creation site of the proc, not just the proc itself" do

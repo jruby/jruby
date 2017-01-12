@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
@@ -27,12 +26,8 @@ import org.jruby.truffle.language.RubyNode;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayGeneralizeNode extends RubyNode {
 
-    public ArrayGeneralizeNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
-
-    public static ArrayGeneralizeNode create(RubyContext context) {
-        return ArrayGeneralizeNodeGen.create(context, null, null, null);
+    public static ArrayGeneralizeNode create() {
+        return ArrayGeneralizeNodeGen.create(null, null);
     }
 
     public abstract Object[] executeGeneralize(DynamicObject array, int requiredCapacity);

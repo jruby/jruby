@@ -10,6 +10,7 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.frame.MaterializedFrame;
@@ -17,17 +18,17 @@ import com.oracle.truffle.api.instrumentation.ProvidedTags;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.core.kernel.TraceManager;
 import org.jruby.truffle.language.LazyRubyRootNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.stdlib.CoverageManager;
-import org.jruby.truffle.util.Constants;
 
 import java.io.IOException;
 
 @TruffleLanguage.Registration(
         name = "Ruby",
-        version = Constants.RUBY_VERSION,
+        version = RubyLanguage.RUBY_VERSION,
         mimeType = RubyLanguage.MIME_TYPE)
 @ProvidedTags({
         CoverageManager.LineTag.class,
@@ -40,6 +41,13 @@ import java.io.IOException;
 })
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
+    public static final String PLATFORM = "java";
+    public static final String RUBY_VERSION = "2.3.1";
+    public static final int    RUBY_REVISION = 54768;
+    public static final String COMPILE_DATE = "2016-12-03";
+    public static final String VERSION = "9.1.7.0-SNAPSHOT";
+    public static final String ENGINE = "jruby+truffle";
+
     public static final String MIME_TYPE = "application/x-ruby";
     public static final String EXTENSION = ".rb";
 
@@ -50,6 +58,16 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
     }
 
     public static final RubyLanguage INSTANCE = new RubyLanguage();
+
+    @CompilerDirectives.TruffleBoundary
+    public static String fileLine(SourceSection section) {
+        Source source = section.getSource();
+        if (section.isAvailable()) {
+            return String.format("%s:%d", source.getName(), section.getStartLine());
+        } else {
+            return source.getName();
+        }
+    }
 
     @Override
     public RubyContext createContext(Env env) {

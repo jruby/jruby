@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.arguments.CheckArityNode;
 import org.jruby.truffle.language.arguments.CheckKeywordArityNode;
 import org.jruby.truffle.language.arguments.ProfileArgumentNode;
@@ -25,14 +25,11 @@ import org.jruby.truffle.language.literal.NilLiteralNode;
 import org.jruby.truffle.language.locals.WriteLocalVariableNode;
 import org.jruby.truffle.language.methods.Arity;
 import org.jruby.truffle.language.objects.SelfNode;
+import org.jruby.truffle.parser.ast.NilImplicitParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.parser.lexer.InvalidSourcePosition;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,12 +40,12 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
 
     public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(
             Arrays.asList("$_", "$~", "$+", "$&", "$`", "$'", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9"));
-    static final Set<String> READ_ONLY_GLOBAL_VARIABLES = new HashSet<String>(
+    static final Set<String> READ_ONLY_GLOBAL_VARIABLES = new HashSet<>(
             Arrays.asList("$:", "$LOAD_PATH", "$-I", "$\"", "$LOADED_FEATURES", "$<", "$FILENAME", "$?", "$-a", "$-l", "$-p", "$!"));
     static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$!", "$~"));
     static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$!", "$?")); // "$_"
 
-    static final Map<String, String> GLOBAL_VARIABLE_ALIASES = new HashMap<String, String>();
+    static final Map<String, String> GLOBAL_VARIABLE_ALIASES = new HashMap<>();
     static {
         Map<String, String> m = GLOBAL_VARIABLE_ALIASES;
         m.put("$-I", "$LOAD_PATH");
@@ -67,56 +64,47 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
     protected final RubyContext context;
     protected final Source source;
 
-    protected Deque<RubySourceSection> parentSourceSection = new ArrayDeque<>();
-
     public Translator(Node currentNode, RubyContext context, Source source) {
         this.currentNode = currentNode;
         this.context = context;
         this.source = source;
     }
 
-    public static RubyNode sequence(RubyContext context, Source source, RubySourceSection sourceSection, List<RubyNode> sequence) {
+    public static RubyNode sequence(SourceIndexLength sourceSection, List<RubyNode> sequence) {
         final List<RubyNode> flattened = flatten(sequence, true);
 
         if (flattened.isEmpty()) {
-            return new NilLiteralNode(context, sourceSection.toSourceSection(source), true);
+            final RubyNode literal = new NilLiteralNode(true);
+            literal.unsafeSetSourceSection(sourceSection);
+            return literal;
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
             final RubyNode[] flatSequence = flattened.toArray(new RubyNode[flattened.size()]);
 
-            final RubySourceSection enclosingSourceSection = enclosing(sourceSection, flatSequence);
-
-            final SourceSection sequenceSourceSection;
-
-            if (enclosingSourceSection == null) {
-                sequenceSourceSection = null;
-            } else {
-                sequenceSourceSection = enclosingSourceSection.toSourceSection(source);
-            }
-
-            return new SequenceNode(sequenceSourceSection, flatSequence);
+            final SourceIndexLength enclosingSourceSection = enclosing(sourceSection, flatSequence);
+            return withSourceSection(enclosingSourceSection, new SequenceNode(flatSequence));
         }
     }
 
-    public static RubySourceSection enclosing(RubySourceSection base, RubyNode... sequence) {
+    public static SourceIndexLength enclosing(SourceIndexLength base, RubyNode... sequence) {
         if (base == null) {
             return base;
         }
 
-        int startLine = base.getStartLine();
-        int endLine = base.getEndLine();
+        int start = base.getCharIndex();
+        int end = base.getCharEnd();
 
         for (RubyNode node : sequence) {
-            final RubySourceSection sourceSection = node.getRubySourceSection();
+            final SourceIndexLength sourceSection = node.getSourceIndexLength();
 
             if (sourceSection != null) {
-                startLine = Integer.min(startLine, sourceSection.getStartLine());
-                endLine = Integer.max(endLine, sourceSection.getEndLine());
+                start = Integer.min(start, sourceSection.getCharIndex());
+                end = Integer.max(end, sourceSection.getCharEnd());
             }
         }
 
-        return new RubySourceSection(startLine, endLine);
+        return new SourceIndexLength(start, end - start);
     }
 
     private static List<RubyNode> flatten(List<RubyNode> sequence, boolean allowTrailingNil) {
@@ -140,45 +128,31 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
         return flattened;
     }
 
-    protected RubySourceSection translate(ISourcePosition sourcePosition) {
-        return translate(source, sourcePosition);
+    protected RubyNode nilNode(Source source, SourceIndexLength sourceSection) {
+        final RubyNode literal = new NilLiteralNode(false);
+        literal.unsafeSetSourceSection(sourceSection);
+        return literal;
     }
 
-    private RubySourceSection translate(Source source, ISourcePosition sourcePosition) {
-        if (sourcePosition == InvalidSourcePosition.INSTANCE) {
-            if (parentSourceSection.peek() == null) {
-                throw new UnsupportedOperationException("Truffle doesn't want invalid positions - find a way to give me a real position!");
-            } else {
-                return parentSourceSection.peek();
-            }
-        } else {
-            return new RubySourceSection(sourcePosition.getLine() + 1);
-        }
-    }
-
-    protected RubyNode nilNode(Source source, RubySourceSection sourceSection) {
-        return new NilLiteralNode(context, sourceSection.toSourceSection(source), false);
-    }
-
-    protected RubyNode translateNodeOrNil(RubySourceSection sourceSection, ParseNode node) {
+    protected RubyNode translateNodeOrNil(SourceIndexLength sourceSection, ParseNode node) {
         final RubyNode rubyNode;
-        if (node != null) {
-            rubyNode = node.accept(this);
-        } else {
+        if (node == null || node instanceof NilImplicitParseNode) {
             rubyNode = nilNode(source, sourceSection);
+        } else {
+            rubyNode = node.accept(this);
         }
         return rubyNode;
     }
 
-    public static RubyNode createCheckArityNode(RubyContext context, Source source, RubySourceSection sourceSection, Arity arity) {
+    public static RubyNode createCheckArityNode(Arity arity) {
         if (!arity.acceptsKeywords()) {
             return new CheckArityNode(arity);
         } else {
-            return new CheckKeywordArityNode(context, sourceSection.toSourceSection(source), arity);
+            return new CheckKeywordArityNode(arity);
         }
     }
 
-    public SourceSection translateSourceSection(Source source, RubySourceSection sourceSection) {
+    public SourceSection translateSourceSection(Source source, SourceIndexLength sourceSection) {
         if (sourceSection == null) {
             return null;
         } else {
@@ -188,8 +162,15 @@ public abstract class Translator extends org.jruby.truffle.parser.ast.visitor.Ab
 
     public static RubyNode loadSelf(RubyContext context, TranslatorEnvironment environment) {
         final FrameSlot slot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        RubySourceSection sourceSection = null;
-        return WriteLocalVariableNode.createWriteLocalVariableNode(context, sourceSection, slot, new ProfileArgumentNode(new ReadSelfNode()));
+        SourceIndexLength sourceSection = null;
+        return WriteLocalVariableNode.createWriteLocalVariableNode(context, slot, new ProfileArgumentNode(new ReadSelfNode()));
+    }
+
+    public static <T extends RubyNode> T withSourceSection(SourceIndexLength sourceSection, T node) {
+        if (sourceSection != null) {
+            node.unsafeSetSourceSection(sourceSection);
+        }
+        return node;
     }
 
 }

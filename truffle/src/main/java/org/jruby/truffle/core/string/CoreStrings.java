@@ -18,12 +18,15 @@ public class CoreStrings {
     public final CoreString BACKTRACE_OMITTED_UNUSED;
     public final CoreString CALL;
     public final CoreString CANT_COMPRESS_NEGATIVE;
+    public final CoreString CHARACTER_INDEX_NEGATIVE;
     public final CoreString CLASS;
     public final CoreString CLASS_VARIABLE;
+    public final CoreString EMPTY_STRING;
     public final CoreString EXPRESSION;
     public final CoreString FALSE;
     public final CoreString GLOBAL_VARIABLE;
     public final CoreString INSTANCE_VARIABLE;
+    public final CoreString INVALID_VALUE_FOR_FLOAT;
     public final CoreString LINE;
     public final CoreString LOCAL_VARIABLE;
     public final CoreString METHOD;
@@ -45,15 +48,18 @@ public class CoreStrings {
     public CoreStrings(RubyContext context) {
         ASSIGNMENT = new CoreString(context, "assignment");
         BACKTRACE_OMITTED_LIMIT = new CoreString(context, "(omitted due to -Xtruffle.backtraces.limit)");
-        BACKTRACE_OMITTED_UNUSED = new CoreString(context, "(omitted as the rescue expression was pure; use -Xtruffle.backtraces.omit_for_unused=false to disable)");
+        BACKTRACE_OMITTED_UNUSED = new CoreString(context, "(omitted as the rescue expression was pure; use -Xtruffle.backtraces.omit_unused=false to disable)");
         CALL = new CoreString(context, "call");
         CANT_COMPRESS_NEGATIVE = new CoreString(context, "can't compress negative numbers");
+        CHARACTER_INDEX_NEGATIVE = new CoreString(context, "character index is negative");
         CLASS = new CoreString(context, "class");
         CLASS_VARIABLE = new CoreString(context, "class variable");
+        EMPTY_STRING = new CoreString(context, "");
         EXPRESSION = new CoreString(context, "expression");
         FALSE = new CoreString(context, "false");
         GLOBAL_VARIABLE = new CoreString(context, "global-variable");
         INSTANCE_VARIABLE = new CoreString(context, "instance-variable");
+        INVALID_VALUE_FOR_FLOAT = new CoreString(context, "invalid value for Float()");
         LINE = new CoreString(context, "line");
         LOCAL_VARIABLE = new CoreString(context, "local-variable");
         METHOD = new CoreString(context, "method");

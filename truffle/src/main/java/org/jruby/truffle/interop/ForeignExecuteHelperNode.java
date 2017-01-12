@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.methods.CallBoundMethodNode;
 import org.jruby.truffle.language.methods.CallBoundMethodNodeGen;
@@ -30,10 +29,6 @@ import org.jruby.truffle.language.yield.CallBlockNodeGen;
 })
 abstract class ForeignExecuteHelperNode extends RubyNode {
 
-    public ForeignExecuteHelperNode(RubyContext context) {
-        super(context);
-    }
-
     public abstract Object executeCall(VirtualFrame frame, Object receiver, Object[] arguments);
 
     @Specialization(guards = "isRubyProc(proc)")
@@ -44,7 +39,7 @@ abstract class ForeignExecuteHelperNode extends RubyNode {
     }
 
     protected CallBlockNode createCallBlockNode() {
-        return CallBlockNodeGen.create(getContext(), null, DeclarationContext.BLOCK, null, null, null, null);
+        return CallBlockNodeGen.create(DeclarationContext.BLOCK, null, null, null, null);
     }
 
     @Specialization(guards = "isRubyMethod(method)")
@@ -54,7 +49,7 @@ abstract class ForeignExecuteHelperNode extends RubyNode {
     }
 
     protected CallBoundMethodNode createCallBoundMethodNode() {
-        return CallBoundMethodNodeGen.create(getContext(), null, null, null, null);
+        return CallBoundMethodNodeGen.create(null, null, null);
     }
 
 }

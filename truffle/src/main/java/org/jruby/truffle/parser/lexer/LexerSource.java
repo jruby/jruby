@@ -16,6 +16,11 @@
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Zach Dennis <zdennis@mktec.com>
+ * Copyright (C) 2007-2010 JRuby Community
+ * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -31,57 +36,78 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.lexer;
 
+import com.oracle.truffle.api.source.Source;
 import org.jcodings.Encoding;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.parser.ParserByteList;
 
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 
-/**
- * Simple source capable of providing the next line in Ruby source file being lex'd.
- */
-public abstract class LexerSource {
-    // The name of this source (e.g. a filename: foo.rb)
-    private final String name; // mri: parser_ruby_sourcefile
+public class LexerSource {
 
-    // Offset specified where to add to actual offset
-    private int lineOffset;
+    private final Source source;
+    private final int lineStartOffset;
 
-    protected List<ByteList> scriptLines;
+    private ParserByteList sourceBytes;
 
-    public LexerSource(String sourceName, int lineOffset, List<ByteList> scriptLines) {
-        this.name = sourceName;
-        this.lineOffset = lineOffset;
-        this.scriptLines = scriptLines;
+    private int byteOffset;
+
+    public LexerSource(Source source, int lineStartOffset, Encoding encoding) {
+        this.source = source;
+        this.lineStartOffset = lineStartOffset;
+        this.sourceBytes = new ParserByteList(source.getCode().getBytes(StandardCharsets.UTF_8), encoding);
     }
 
-    /**
-     * What file are we lexing?
-     * @return the files name
-     */
-    public String getFilename() {
-        return name;
+    public Source getSource() {
+        return source;
     }
 
-    public int getLineOffset() {
-        return lineOffset;
+    public Encoding getEncoding() {
+        return sourceBytes.getEncoding();
     }
 
-    public void encodeExistingScriptLines(Encoding encoding) {
-        if (scriptLines == null) return;
+    public void setEncoding(Encoding encoding) {
+        sourceBytes = sourceBytes.withEncoding(encoding);
+    }
 
-        int length = scriptLines.size();
-        for (int i = 0; i < length; i++) {
-            ByteList line = scriptLines.get(0);
+    public int getOffset() {
+        return byteOffset;
+    }
 
-            line.setEncoding(encoding);
+    public int getLineStartOffset() {
+        return lineStartOffset;
+    }
+
+    public ParserByteList gets() {
+        if (byteOffset >= sourceBytes.getLength()) {
+            return null;
         }
+
+        int lineEnd = nextNewLine() + 1;
+
+        if (lineEnd == 0) {
+            lineEnd = sourceBytes.getLength();
+        }
+
+        final int start = byteOffset;
+        final int length = lineEnd - byteOffset;
+
+        byteOffset = lineEnd;
+
+        return sourceBytes.makeShared(start, length);
     }
 
-    public abstract Encoding getEncoding();
+    private int nextNewLine() {
+        int n = byteOffset;
 
-    public abstract void setEncoding(Encoding encoding);
+        while (n < sourceBytes.getLength()) {
+            if (sourceBytes.charAt(n) == '\n') {
+                return n;
+            }
 
-    public abstract ByteList gets();
+            n++;
+        }
 
-    public abstract int getOffset();
+        return -1;
+    }
+
 }

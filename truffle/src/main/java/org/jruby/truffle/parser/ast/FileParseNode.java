@@ -28,14 +28,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.language.SourceIndexLength;
+import org.jruby.truffle.parser.ParserByteList;
 
 /**
  * Represents __FILE__ nodes
  */
 public class FileParseNode extends StrParseNode implements SideEffectFree {
-    public FileParseNode(ISourcePosition position, ByteList value) {
+    public FileParseNode(SourceIndexLength position, ParserByteList value) {
         super(position, value);
     }
 }

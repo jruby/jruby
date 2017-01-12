@@ -17,8 +17,12 @@ import java.lang.reflect.Parameter;
 public class AmbiguousOptionalArgumentChecker {
 
     public static boolean SUCCESS = true;
+    private static boolean AVAILABLE = true;
 
     public static void verifyNoAmbiguousOptionalArguments(CoreMethodNodeManager.MethodDetails methodDetails) {
+        if (!AVAILABLE) {
+            return;
+        }
         try {
             verifyNoAmbiguousOptionalArgumentsWithReflection(methodDetails);
         } catch (Exception e) {
@@ -27,7 +31,7 @@ public class AmbiguousOptionalArgumentChecker {
         }
     }
 
-    private static void verifyNoAmbiguousOptionalArgumentsWithReflection(CoreMethodNodeManager.MethodDetails methodDetails) throws ReflectiveOperationException {
+    private static void verifyNoAmbiguousOptionalArgumentsWithReflection(CoreMethodNodeManager.MethodDetails methodDetails) {
         final CoreMethod methodAnnotation = methodDetails.getMethodAnnotation();
         if (methodAnnotation.optional() > 0 || methodAnnotation.needsBlock()) {
             int opt = methodAnnotation.optional();
@@ -54,8 +58,9 @@ public class AmbiguousOptionalArgumentChecker {
                         Parameter parameter = parameters[n];
                         boolean isNamePresent = parameter.isNamePresent();
                         if (!isNamePresent) {
+                            AVAILABLE = SUCCESS = false;
                             System.err.println("Method parameters names are not available for " + method);
-                            System.exit(1);
+                            return;
                         }
                         String name = parameter.getName();
 
@@ -90,7 +95,7 @@ public class AmbiguousOptionalArgumentChecker {
         return false;
     }
 
-    private static String methodToString(Method method, Class<?>[] parameterTypes, Parameter[] parameters) throws ReflectiveOperationException {
+    private static String methodToString(Method method, Class<?>[] parameterTypes, Parameter[] parameters) {
         StringBuilder str = new StringBuilder();
         str.append(method.getName()).append("(");
         for (int i = 0; i < parameters.length; i++) {

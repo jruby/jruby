@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,13 +13,11 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.core.hash.BucketsStrategy;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.hash.KeyValue;
-import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -34,9 +32,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
 
     private final ConditionProfile noHash = ConditionProfile.createBinaryProfile();
 
-    public ReadKeywordRestArgumentNode(RubyContext context, SourceSection sourceSection,
-                                       int minimum, String[] excludedKeywords) {
-        super(context, sourceSection);
+    public ReadKeywordRestArgumentNode(int minimum, String[] excludedKeywords) {
         this.excludedKeywords = excludedKeywords;
         readUserKeywordsHashNode = new ReadUserKeywordsHashNode(minimum);
     }
@@ -53,13 +49,13 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             return Layouts.HASH.createHash(coreLibrary().getHashFactory(), null, 0, null, null, null, null, false);
         }
 
+        Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
+
         return extractKeywordHash(hash);
     }
 
     @TruffleBoundary
     private Object extractKeywordHash(final Object hash) {
-        PerformanceWarnings.warn(PerformanceWarnings.KWARGS_NOT_OPTIMIZED_YET);
-
         final DynamicObject hashObject = (DynamicObject) hash;
 
         final List<KeyValue> entries = new ArrayList<>();

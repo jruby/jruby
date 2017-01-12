@@ -29,7 +29,7 @@ public class SharedTreeBuilder {
 
     public FormatNode finishSubSequence(Deque<List<FormatNode>> sequenceStack, int count) {
         final List<FormatNode> sequence = sequenceStack.pop();
-        final SequenceNode sequenceNode = new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()]));
+        final SequenceNode sequenceNode = new SequenceNode(sequence.toArray(new FormatNode[sequence.size()]));
 
         if (count == SimplePackParser.COUNT_NONE) {
             return sequenceNode;
@@ -44,7 +44,7 @@ public class SharedTreeBuilder {
                 return node;
 
             case SimplePackParser.COUNT_STAR:
-                return new StarNode(context, node);
+                return new StarNode(node);
 
             default:
                 return createRepeatNode(count, node);
@@ -53,9 +53,9 @@ public class SharedTreeBuilder {
 
     private FormatNode createRepeatNode(int count, FormatNode node) {
         if (count > context.getOptions().PACK_UNROLL_LIMIT) {
-            return new RepeatLoopNode(context, count, node);
+            return new RepeatLoopNode(count, node);
         } else {
-            return new RepeatExplodedNode(context, count, node);
+            return new RepeatExplodedNode(count, node);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.joni.Region;
 import org.joni.exception.ValueException;
@@ -37,12 +36,11 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringGuards;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.StringUtils;
-import org.jruby.truffle.util.ByteList;
 
 import java.util.Arrays;
 
@@ -86,13 +84,13 @@ public abstract class MatchDataNodes {
         return e;
     }
 
-    private static void updatePairs(ByteList source, Encoding encoding, Pair[] pairs) {
+    private static void updatePairs(Rope source, Encoding encoding, Pair[] pairs) {
         // Taken from org.jruby.RubyMatchData
         Arrays.sort(pairs);
 
         int length = pairs.length;
-        byte[]bytes = source.getUnsafeBytes();
-        int p = source.getBegin();
+        byte[]bytes = source.getBytes();
+        int p = 0;
         int s = p;
         int c = 0;
 
@@ -104,7 +102,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    private static Region getCharOffsetsManyRegs(DynamicObject matchData, ByteList source, Encoding encoding) {
+    private static Region getCharOffsetsManyRegs(DynamicObject matchData, Rope source, Encoding encoding) {
         // Taken from org.jruby.RubyMatchData
         final Region regs = Layouts.MATCH_DATA.getRegion(matchData);
         int numRegs = regs.numRegs;
@@ -162,14 +160,14 @@ public abstract class MatchDataNodes {
 
     @TruffleBoundary
     private static Region createCharOffsets(DynamicObject matchData) {
-        final ByteList source = StringOperations.getByteListReadOnly(Layouts.MATCH_DATA.getSource(matchData));
+        final Rope source = StringOperations.rope(Layouts.MATCH_DATA.getSource(matchData));
         final Encoding enc = source.getEncoding();
         final Region charOffsets = getCharOffsetsManyRegs(matchData, source, enc);
         Layouts.MATCH_DATA.setCharOffsets(matchData, charOffsets);
         return charOffsets;
     }
 
-    @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnum = 1, taintFrom = 0)
+    @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnum = { 1, 2 }, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToIntNode toIntNode;
@@ -362,12 +360,7 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "pre_match")
     public abstract static class PreMatchNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private TaintResultNode taintResultNode;
-
-        public PreMatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            taintResultNode = new TaintResultNode(getContext(), null);
-        }
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         @Specialization
         public Object preMatch(DynamicObject matchData) {
@@ -379,12 +372,7 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "post_match")
     public abstract static class PostMatchNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private TaintResultNode taintResultNode;
-
-        public PostMatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            taintResultNode = new TaintResultNode(getContext(), null);
-        }
+        @Child private TaintResultNode taintResultNode = new TaintResultNode();
 
         @Specialization
         public Object postMatch(DynamicObject matchData) {

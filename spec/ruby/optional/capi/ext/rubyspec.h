@@ -602,6 +602,7 @@
 #define HAVE_RB_TIME_TIMEVAL               1
 #define HAVE_RB_TIME_TIMESPEC              1
 #ifdef RUBY_VERSION_IS_2_3
+#define HAVE_RB_TIMESPEC_NOW               1
 #define HAVE_RB_TIME_TIMESPEC_NEW          1
 #endif
 

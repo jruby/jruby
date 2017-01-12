@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,9 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 
@@ -26,15 +24,13 @@ public final class ArrayConcatNode extends RubyNode {
 
     @Children private final RubyNode[] children;
     // Use an arrayBuilderNode to stabilize the array type for a given location.
-    @Child private ArrayBuilderNode arrayBuilderNode;
+    @Child private ArrayBuilderNode arrayBuilderNode = ArrayBuilderNode.create();
 
     private final ConditionProfile isArrayProfile = ConditionProfile.createBinaryProfile();
 
-    public ArrayConcatNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
-        super(context, sourceSection);
+    public ArrayConcatNode(RubyNode[] children) {
         assert children.length > 1;
         this.children = children;
-        arrayBuilderNode = ArrayBuilderNode.create(context);
     }
 
     @Override

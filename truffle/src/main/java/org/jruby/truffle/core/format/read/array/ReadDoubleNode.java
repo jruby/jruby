@@ -27,10 +27,6 @@ public abstract class ReadDoubleNode extends FormatNode {
 
     @Child private ToDoubleNode toDoubleNode;
 
-    public ReadDoubleNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization(guards = "isNull(source)")
     public double read(VirtualFrame frame, Object source) {
         advanceSourcePosition(frame);
@@ -56,7 +52,7 @@ public abstract class ReadDoubleNode extends FormatNode {
     public double read(VirtualFrame frame, Object[] source) {
         if (toDoubleNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toDoubleNode = insert(ToDoubleNodeGen.create(getContext(), null));
+            toDoubleNode = insert(ToDoubleNodeGen.create(null));
         }
 
         return toDoubleNode.executeToDouble(frame, source[advanceSourcePosition(frame)]);

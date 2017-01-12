@@ -586,6 +586,10 @@ public abstract class IRScope implements ParseResult {
         // or generated instructions.
         if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext;
 
+        for (IRScope scope: getClosures()) {
+            scope.prepareFullBuild();
+        }
+
         prepareFullBuildCommon();
         runCompilerPasses(getManager().getCompilerPasses(this));
         getManager().optimizeIfSimpleScope(this);
@@ -610,6 +614,10 @@ public abstract class IRScope implements ParseResult {
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
         if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext.getLinearizedBBList();
+
+        for (IRScope scope: getClosures()) {
+            scope.prepareForCompilation();
+        }
 
         prepareFullBuildCommon();
 

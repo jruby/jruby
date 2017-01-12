@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,8 +10,8 @@
 package org.jruby.truffle.core.encoding;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -24,11 +24,12 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
-import org.jruby.truffle.core.cast.ToStrNode;
-import org.jruby.truffle.core.cast.ToStrNodeGen;
+import org.jruby.truffle.core.array.ArrayUtils;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.rope.RopeOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.ByteList;
 
 @CoreClass("Truffle::Encoding")
 public abstract class TruffleEncodingNodes {
@@ -36,21 +37,10 @@ public abstract class TruffleEncodingNodes {
     @CoreMethod(names = "default_external=", onSingleton = true, required = 1)
     public abstract static class SetDefaultExternalNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ToStrNode toStrNode;
-
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
             getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
-
             return encoding;
-        }
-
-        @Specialization(guards = "isRubyString(encodingString)")
-        public DynamicObject defaultExternal(DynamicObject encodingString) {
-            final DynamicObject rubyEncoding = getContext().getEncodingManager().getRubyEncoding(StringOperations.getString(encodingString));
-            getContext().getEncodingManager().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
-
-            return rubyEncoding;
         }
 
         @Specialization(guards = "isNil(nil)")
@@ -58,45 +48,21 @@ public abstract class TruffleEncodingNodes {
             throw new RaiseException(coreExceptions().argumentError("default external can not be nil", this));
         }
 
-        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyString(encoding)", "!isNil(encoding)" })
-        public DynamicObject defaultExternal(VirtualFrame frame, Object encoding) {
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
-            }
-
-            return defaultExternal(toStrNode.executeToStr(frame, encoding));
-        }
-
     }
 
     @CoreMethod(names = "default_internal=", onSingleton = true, required = 1)
     public abstract static class SetDefaultInternalNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private ToStrNode toStrNode;
-
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject defaultInternal(DynamicObject encoding) {
             getContext().getEncodingManager().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
-
             return encoding;
         }
 
         @Specialization(guards = "isNil(encoding)")
         public DynamicObject defaultInternal(Object encoding) {
             getContext().getEncodingManager().setDefaultInternalEncoding(null);
-
             return nil();
-        }
-
-        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isNil(encoding)" })
-        public DynamicObject defaultInternal(VirtualFrame frame, Object encoding) {
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
-            }
-
-            return toStrNode.executeToStr(frame, encoding);
         }
 
     }
@@ -109,7 +75,7 @@ public abstract class TruffleEncodingNodes {
             CompilerAsserts.neverPartOfCompilation();
             for (Hash.HashEntry<EncodingDB.Entry> entry : EncodingDB.getAliases().entryIterator()) {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e = (CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) entry;
-                final ByteList aliasName = new ByteList(e.bytes, e.p, e.end - e.p, USASCIIEncoding.INSTANCE, false);
+                final Rope aliasName = RopeOperations.create(ArrayUtils.extractRange(e.bytes, e.p, e.end), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT);
                 yield(frame, block, createString(aliasName), entry.value.getIndex());
             }
             return nil();
@@ -120,12 +86,13 @@ public abstract class TruffleEncodingNodes {
     public abstract static class GetDefaultEncodingNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization(guards = "isRubyString(name)")
-        public DynamicObject getDefaultEncoding(DynamicObject name) {
+        public DynamicObject getDefaultEncoding(DynamicObject name,
+                                                @Cached("create()")EncodingNodes.GetRubyEncodingNode getRubyEncodingNode) {
             final Encoding encoding = getEncoding(StringOperations.getString(name));
             if (encoding == null) {
                 return nil();
             } else {
-                return getContext().getEncodingManager().getRubyEncoding(encoding);
+                return getRubyEncodingNode.executeGetRubyEncoding(encoding);
             }
         }
 

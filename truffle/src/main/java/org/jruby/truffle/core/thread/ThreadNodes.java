@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -49,7 +49,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
@@ -60,6 +59,7 @@ import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
+import org.jruby.truffle.collections.Memo;
 import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.exception.ExceptionOperations;
 import org.jruby.truffle.core.fiber.FiberManager;
@@ -72,7 +72,6 @@ import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNode;
 import org.jruby.truffle.language.objects.ReadObjectFieldNodeGen;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.util.Memo;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -239,7 +238,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "join", optional = 1, unsafe = UnsafeGroup.THREADS)
+    @CoreMethod(names = "join", optional = 1, lowerFixnum = 1, unsafe = UnsafeGroup.THREADS)
     public abstract static class JoinNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -492,9 +491,6 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_get_name")
     public static abstract class ThreadGetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadGetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyThread(thread)")
         public DynamicObject getName(DynamicObject thread) {
@@ -504,9 +500,6 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_set_name")
     public static abstract class ThreadSetNamePrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadSetNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyThread(thread)")
         public DynamicObject setName(DynamicObject thread, DynamicObject name) {
@@ -517,9 +510,6 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_get_priority", unsafe = UnsafeGroup.THREADS)
     public static abstract class ThreadGetPriorityPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadGetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyThread(thread)")
         public int getPriority(DynamicObject thread) {
@@ -549,10 +539,6 @@ public abstract class ThreadNodes {
         static final int RUBY_MIN_THREAD_PRIORITY = -3;
         static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
-        public ThreadSetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization(guards = "isRubyThread(thread)")
         public int getPriority(DynamicObject thread, int rubyPriority) {
             if (rubyPriority < RUBY_MIN_THREAD_PRIORITY) {
@@ -579,9 +565,6 @@ public abstract class ThreadNodes {
 
     @Primitive(name = "thread_set_group")
     public static abstract class ThreadSetGroupPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public ThreadSetGroupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyThread(thread)")
         public DynamicObject setGroup(DynamicObject thread, DynamicObject threadGroup) {

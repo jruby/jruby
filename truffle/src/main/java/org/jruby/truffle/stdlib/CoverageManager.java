@@ -52,10 +52,6 @@ public class CoverageManager {
     }
 
     public synchronized void setLineHasCode(Source source, int line) {
-        if (!enabled) {
-            return;
-        }
-
         BitSet bitmap = linesHaveCode.get(source);
 
         if (bitmap == null) {
@@ -213,6 +209,10 @@ public class CoverageManager {
         }
 
         return max;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 
 }

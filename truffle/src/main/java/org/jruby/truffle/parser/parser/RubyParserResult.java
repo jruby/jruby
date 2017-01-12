@@ -41,7 +41,7 @@ import java.util.List;
 /**
  */
 public class RubyParserResult {
-    final public static List<ParseNode> EMPTY_BEGIN_LIST = new ArrayList<ParseNode>();
+    final public static List<ParseNode> EMPTY_BEGIN_LIST = new ArrayList<>();
 
     private List<ParseNode> beginNodes;
     private ParseNode ast;
@@ -70,7 +70,7 @@ public class RubyParserResult {
     }
     
     public void addBeginNode(PreExeParseNode node) {
-        if (beginNodes == null) beginNodes = new ArrayList<ParseNode>();
+        if (beginNodes == null) beginNodes = new ArrayList<>();
     	beginNodes.add(node);
     }
     

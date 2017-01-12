@@ -31,6 +31,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Log;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
 import org.jruby.truffle.language.control.JavaException;
@@ -38,7 +39,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
-import org.jruby.truffle.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,12 +47,12 @@ import java.util.concurrent.locks.ReentrantLock;
 @NodeChild("feature")
 public abstract class RequireNode extends RubyNode {
 
-    @Child IndirectCallNode callNode = IndirectCallNode.create();
-    @Child CallDispatchHeadNode isInLoadedFeatures = CallDispatchHeadNode.createMethodCall();
-    @Child CallDispatchHeadNode addToLoadedFeatures = CallDispatchHeadNode.createMethodCall();
+    @Child private IndirectCallNode callNode = IndirectCallNode.create();
+    @Child private CallDispatchHeadNode isInLoadedFeatures = CallDispatchHeadNode.createMethodCall();
+    @Child private CallDispatchHeadNode addToLoadedFeatures = CallDispatchHeadNode.createMethodCall();
 
-    @Child Node isExecutableNode = Message.IS_EXECUTABLE.createNode();
-    @Child Node executeNode = Message.createExecute(0).createNode();
+    @Child private Node isExecutableNode = Message.IS_EXECUTABLE.createNode();
+    @Child private Node executeNode = Message.createExecute(0).createNode();
 
     public static RequireNode create() {
         return RequireNodeGen.create(null);

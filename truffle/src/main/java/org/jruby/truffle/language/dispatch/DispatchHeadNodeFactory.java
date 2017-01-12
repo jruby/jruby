@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,38 +9,30 @@
  */
 package org.jruby.truffle.language.dispatch;
 
-import org.jruby.truffle.RubyContext;
-
 public class DispatchHeadNodeFactory {
 
-    public static CallDispatchHeadNode createMethodCall(RubyContext context) {
-        return new CallDispatchHeadNode(
-                context,
-                false,
-                MissingBehavior.CALL_METHOD_MISSING);
+    public static CallDispatchHeadNode createMethodCall() {
+        return createMethodCall(false);
     }
 
-    public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
-        return createMethodCall(context, true);
+    public static CallDispatchHeadNode createMethodCallOnSelf() {
+        return createMethodCall(true);
     }
 
-    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility) {
-        return new CallDispatchHeadNode(
-                context,
+    public static CallDispatchHeadNode createMethodCall(boolean ignoreVisibility) {
+        return createMethodCall(
                 ignoreVisibility,
                 MissingBehavior.CALL_METHOD_MISSING);
     }
 
-    public static CallDispatchHeadNode createMethodCall(RubyContext context, MissingBehavior missingBehavior) {
-        return new CallDispatchHeadNode(
-                context,
+    public static CallDispatchHeadNode createMethodCall(MissingBehavior missingBehavior) {
+        return createMethodCall(
                 false,
                 missingBehavior);
     }
 
-    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
+    public static CallDispatchHeadNode createMethodCall(boolean ignoreVisibility, MissingBehavior missingBehavior) {
         return new CallDispatchHeadNode(
-                context,
                 ignoreVisibility,
                 missingBehavior);
     }

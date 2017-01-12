@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -46,15 +46,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.core.array.ArrayOperations;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.kernel.KernelNodes;
@@ -76,11 +75,11 @@ import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.language.yield.YieldNode;
+import org.jruby.truffle.platform.Platform;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.platform.signal.Signal;
 import org.jruby.truffle.platform.signal.SignalHandler;
 import org.jruby.truffle.platform.signal.SignalManager;
-import org.jruby.truffle.util.Platform;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -96,12 +95,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_catch", needsSelf = false)
     public abstract static class CatchNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private YieldNode dispatchNode;
-
-        public CatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dispatchNode = new YieldNode(context);
-        }
+        @Child private YieldNode dispatchNode = new YieldNode();
 
         @Specialization
         public Object doCatch(VirtualFrame frame, Object tag, DynamicObject block,
@@ -152,14 +146,8 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_extended_modules", needsSelf = false)
     public static abstract class VMExtendedModulesNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode newArrayNode;
-        @Child private CallDispatchHeadNode arrayAppendNode;
-
-        public VMExtendedModulesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            newArrayNode = DispatchHeadNodeFactory.createMethodCall(context);
-            arrayAppendNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+        @Child private CallDispatchHeadNode newArrayNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private CallDispatchHeadNode arrayAppendNode = DispatchHeadNodeFactory.createMethodCall();
 
         @Specialization
         public Object vmExtendedModules(VirtualFrame frame, Object object) {
@@ -209,12 +197,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_class", needsSelf = false)
     public static abstract class VMObjectClassPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-
-        public VMObjectClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null);
 
         @Specialization
         public DynamicObject vmObjectClass(VirtualFrame frame, Object object) {
@@ -237,12 +220,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_kind_of", needsSelf = false)
     public static abstract class VMObjectKindOfPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private IsANode isANode;
-
-        public VMObjectKindOfPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
-        }
+        @Child private IsANode isANode = IsANodeGen.create(null, null);
 
         @Specialization
         public boolean vmObjectKindOf(Object object, DynamicObject rubyClass) {
@@ -254,10 +232,6 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_method_is_basic", needsSelf = false)
     public static abstract class VMMethodIsBasicNode extends PrimitiveArrayArgumentsNode {
 
-        public VMMethodIsBasicNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
         @Specialization
         public boolean vmMethodIsBasic(VirtualFrame frame, DynamicObject method) {
             return Layouts.METHOD.getMethod(method).isBuiltIn();
@@ -268,13 +242,12 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_method_lookup", needsSelf = false)
     public static abstract class VMMethodLookupNode extends PrimitiveArrayArgumentsNode {
 
-        @Child NameToJavaStringNode nameToJavaStringNode;
-        @Child LookupMethodNode lookupMethodNode;
+        @Child private NameToJavaStringNode nameToJavaStringNode;
+        @Child private LookupMethodNode lookupMethodNode;
 
-        public VMMethodLookupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
+        public VMMethodLookupNode() {
             nameToJavaStringNode = NameToJavaStringNode.create();
-            lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, true, false, null, null);
+            lookupMethodNode = LookupMethodNodeGen.create(true, false, null, null);
         }
 
         @Specialization
@@ -293,12 +266,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_respond_to", needsSelf = false)
     public static abstract class VMObjectRespondToPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private KernelNodes.RespondToNode respondToNode;
-
-        public VMObjectRespondToPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            respondToNode = KernelNodesFactory.RespondToNodeFactory.create(context, sourceSection, null, null, null);
-        }
+        @Child private KernelNodes.RespondToNode respondToNode = KernelNodesFactory.RespondToNodeFactory.create(null, null, null);
 
         @Specialization
         public boolean vmObjectRespondTo(VirtualFrame frame, Object object, Object name, boolean includePrivate) {
@@ -311,12 +279,7 @@ public abstract class VMPrimitiveNodes {
     @Primitive(name = "vm_object_singleton_class", needsSelf = false)
     public static abstract class VMObjectSingletonClassPrimitiveNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private KernelNodes.SingletonClassMethodNode singletonClassNode;
-
-        public VMObjectSingletonClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(context, sourceSection, null);
-        }
+        @Child private KernelNodes.SingletonClassMethodNode singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(null);
 
         @Specialization
         public Object vmObjectClass(Object object) {
@@ -327,9 +290,6 @@ public abstract class VMPrimitiveNodes {
 
     @Primitive(name = "vm_raise_exception", needsSelf = false)
     public static abstract class VMRaiseExceptionPrimitiveNode extends PrimitiveArrayArgumentsNode {
-        public VMRaiseExceptionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         @Specialization(guards = "isRubyException(exception)")
         public DynamicObject vmRaiseException(DynamicObject exception) {
@@ -394,10 +354,10 @@ public abstract class VMPrimitiveNodes {
                     cstime = stime = bean.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime();
                 }
             } else {
-                utime = (double) tms.utime();
-                stime = (double) tms.stime();
-                cutime = (double) tms.cutime();
-                cstime = (double) tms.cstime();
+                utime = tms.utime();
+                stime = tms.stime();
+                cutime = tms.cutime();
+                cstime = tms.cstime();
             }
 
             long hz = posix().sysconf(Sysconf._SC_CLK_TCK);
@@ -644,9 +604,6 @@ public abstract class VMPrimitiveNodes {
         public static class LinuxWaitMacros implements WaitMacros {
             private int __WAIT_INT(long status) { return (int)status; }
 
-            private int __W_EXITCODE(int ret, int sig) { return (ret << 8) | sig; }
-            private int __W_STOPCODE(int sig) { return (sig << 8) | 0x7f; }
-            private static int __W_CONTINUED = 0xffff;
             private static int __WCOREFLAG = 0x80;
 
             /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */
@@ -720,6 +677,38 @@ public abstract class VMPrimitiveNodes {
             }
 
             return name;
+        }
+
+    }
+
+    @Primitive(name = "vm_exec", needsSelf = false)
+    public abstract static class VMExecNode extends PrimitiveArrayArgumentsNode {
+
+        @TruffleBoundary
+        @Specialization(guards = { "isRubyString(path)", "isRubyArray(args)", "isRubyArray(env)" })
+        protected Object vmExec(DynamicObject path, DynamicObject args, DynamicObject env) {
+            final String convertedCommand = StringOperations.decodeUTF8(path).trim();
+            final String[] convertedCommandLine = convertToJava(args);
+            final String[] convertedEnv = convertToJava(env);
+
+            final int ret = posix().exec(convertedCommand, convertedCommandLine, convertedEnv);
+
+            if (ret == -1) {
+                throw new RaiseException(coreExceptions().errnoError(posix().errno(), this));
+            }
+
+            return null;
+        }
+
+        private String[] convertToJava(DynamicObject array) {
+            final Object[] javaArray = ArrayOperations.toObjectArray(array);
+            final String[] ret = new String[javaArray.length];
+
+            for (int i = 0; i < javaArray.length; i++) {
+                ret[i] = StringOperations.decodeUTF8((DynamicObject) javaArray[i]);
+            }
+
+            return ret;
         }
 
     }

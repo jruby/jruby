@@ -42,12 +42,12 @@ import com.oracle.truffle.api.nodes.Node;
 import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.joda.time.DateTime;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.encoding.EncodingManager;
+import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.debug.DebugHelpers;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.ByteList;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -248,7 +248,7 @@ public class RubyDateFormatter {
         }
     }
 
-    public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
+    public List<Token> compilePattern(Rope pattern, boolean dateLibrary) {
         List<Token> compiledPattern = new LinkedList<>();
 
         Encoding enc = pattern.getEncoding();
@@ -259,7 +259,7 @@ public class RubyDateFormatter {
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
         }
 
-        ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
+        ByteArrayInputStream in = new ByteArrayInputStream(pattern.getBytes(), 0, pattern.byteLength());
         Reader reader = new InputStreamReader(in, EncodingManager.charsetForEncoding(pattern.getEncoding()));
         lexer.yyreset(reader);
 
@@ -450,11 +450,11 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_WEEK_YEAR_M:
                     type = NUMERIC2;
-                    value = formatWeekYear(dt, Calendar.MONDAY);
+                    value = formatWeekOfYear(dt, Calendar.MONDAY);
                     break;
                 case FORMAT_WEEK_YEAR_S:
                     type = NUMERIC2;
-                    value = formatWeekYear(dt, Calendar.SUNDAY);
+                    value = formatWeekOfYear(dt, Calendar.SUNDAY);
                     break;
                 case FORMAT_DAY_WEEK:
                     type = NUMERIC;
@@ -510,12 +510,12 @@ public class RubyDateFormatter {
                     formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER; // no more formatting
                     break;
                 case FORMAT_WEEKYEAR:
-                    value = new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear();
+                    value = GregorianCalendar.from(dt).getWeekYear();
                     type = (value >= 0) ? NUMERIC4 : NUMERIC5;
                     break;
                 case FORMAT_WEEKYEAR_SHORT:
+                    value = GregorianCalendar.from(dt).getWeekYear() % 100;
                     type = NUMERIC2;
-                    value = new DateTime(dt.toInstant().getEpochSecond() * 1_000).getWeekyear() % 100;
                     break;
                 case FORMAT_MICROSEC_EPOCH:
                     // only available for Date
@@ -542,13 +542,13 @@ public class RubyDateFormatter {
         return toAppendTo;
     }
 
-    private int formatWeekYear(ZonedDateTime dt, int firstDayOfWeek) {
+    private int formatWeekOfYear(ZonedDateTime dt, int firstDayOfWeek) {
         Calendar dtCalendar = GregorianCalendar.from(dt);
         dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
         dtCalendar.setMinimalDaysInFirstWeek(7);
         int value = dtCalendar.get(Calendar.WEEK_OF_YEAR);
         if ((value == 52 || value == 53) &&
-                (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
+                (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY)) {
             // MRI behavior: Week values are monotonous.
             // So, weeks that effectively belong to previous year,
             // will get the value of 0, not 52 or 53, as in Java.
@@ -618,16 +618,6 @@ public class RubyDateFormatter {
     private Object getEnvTimeZone() {
         return DebugHelpers.eval(context, "Time.now.zone");
     }
-
-    /* JRUBY-3560
-     * joda-time disallows use of three-letter time zone IDs.
-     * Since MRI accepts these values, we need to translate them.
-     */
-    private static final Map<String, String> LONG_TZNAME = map(
-            "MET", "CET", // JRUBY-2759
-            "ROC", "Asia/Taipei", // Republic of China
-            "WET", "Europe/Lisbon" // Western European Time
-    );
 
     /* Some TZ values need to be overriden for Time#zone
      */

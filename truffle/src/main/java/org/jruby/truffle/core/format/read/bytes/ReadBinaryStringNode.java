@@ -35,9 +35,9 @@ public abstract class ReadBinaryStringNode extends FormatNode {
     final boolean trimTrailingNulls;
     final boolean trimToFirstNull;
 
-    public ReadBinaryStringNode(RubyContext context, boolean readToEnd, boolean readToNull, int count,
+    public ReadBinaryStringNode(boolean readToEnd, boolean readToNull, int count,
                                 boolean trimTrailingSpaces, boolean trimTrailingNulls, boolean trimToFirstNull) {
-        super(context);
+
         this.readToEnd = readToEnd;
         this.readToNull = readToNull;
         this.count = count;

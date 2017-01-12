@@ -20,10 +20,6 @@ import org.jruby.truffle.core.format.FormatNode;
 })
 public abstract class Integer16BigToBytesNode extends FormatNode {
 
-    public Integer16BigToBytesNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public byte[] encode(long value) {
         return new byte[]{

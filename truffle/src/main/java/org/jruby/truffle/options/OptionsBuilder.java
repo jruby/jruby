@@ -9,9 +9,12 @@
  */
 package org.jruby.truffle.options;
 
+import org.jruby.truffle.Log;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
 
 public class OptionsBuilder {
 
@@ -46,9 +49,18 @@ public class OptionsBuilder {
     }
 
     public Options build() {
-        return new Options(this);
+        final Options options = new Options(this);
+
+        if (options.OPTIONS_LOG && Log.LOGGER.isLoggable(Level.CONFIG)) {
+            for (OptionDescription option : OptionsCatalog.allDescriptions()) {
+                Log.LOGGER.config("option " + option.getName() + "=" + option.toString(options.fromDescription(option)));
+            }
+        }
+
+        return options;
     }
 
+    @SuppressWarnings("unchecked")
     <T> T getOrDefault(OptionDescription description) {
         final Object value = options.get(description);
 
@@ -59,6 +71,7 @@ public class OptionsBuilder {
         }
     }
 
+    @SuppressWarnings("unchecked")
     <T> T getOrDefault(OptionDescription description, T defaultValue) {
         final Object value = options.get(description);
 
@@ -69,6 +82,7 @@ public class OptionsBuilder {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T readSystemProperty(OptionDescription description) {
         final Object value = System.getProperty(LEGACY_PREFIX + description.getName());
 

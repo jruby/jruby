@@ -30,10 +30,6 @@ public abstract class ReadIntegerNode extends FormatNode {
 
     private final ConditionProfile convertedTypeProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadIntegerNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization(guards = "isNull(source)")
     public double read(VirtualFrame frame, Object source) {
         advanceSourcePosition(frame);
@@ -59,7 +55,7 @@ public abstract class ReadIntegerNode extends FormatNode {
     public int read(VirtualFrame frame, Object[] source) {
         if (toIntegerNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toIntegerNode = insert(ToIntegerNodeGen.create(getContext(), null));
+            toIntegerNode = insert(ToIntegerNodeGen.create(null));
         }
 
         final Object value = toIntegerNode.executeToInteger(frame, source[advanceSourcePosition(frame)]);

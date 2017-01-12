@@ -26,6 +26,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.unsafe;
 
+import com.headius.unsafe.fences.UnsafeFences;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
@@ -37,8 +39,7 @@ public final class UnsafeHolder {
      * Holds a reference to Unsafe if available, null otherwise.    
      */
     public static final sun.misc.Unsafe U = loadUnsafe();
-    
-    public static final boolean SUPPORTS_FENCES = supportsFences();
+
     public static final long    ARRAY_OBJECT_BASE_OFFSET = arrayObjectBaseOffset();
     public static final long    ARRAY_OBJECT_INDEX_SCALE = arrayObjectIndexScale();
     
@@ -89,20 +90,7 @@ public final class UnsafeHolder {
             return sun.misc.Unsafe.INVALID_FIELD_OFFSET;
         }
     }
-    
-    //// The following methods are Java8 only. They will throw undefined method errors if invoked without checking for fence support 
-    
-    public static void fullFence() {
-        U.fullFence();
-    }
-    
-    public static void loadFence() {
-        U.loadFence();
-    }
-    
-    public static void storeFence() {
-        U.storeFence();
-    }
 
-
+    @Deprecated
+    public static final boolean SUPPORTS_FENCES = UnsafeFences.SUPPORTS_FENCES;
 }

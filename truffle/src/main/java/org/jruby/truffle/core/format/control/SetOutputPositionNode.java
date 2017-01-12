@@ -17,8 +17,7 @@ public class SetOutputPositionNode extends FormatNode {
 
     private final int position;
 
-    public SetOutputPositionNode(RubyContext context, int position) {
-        super(context);
+    public SetOutputPositionNode(int position) {
         this.position = position;
     }
 

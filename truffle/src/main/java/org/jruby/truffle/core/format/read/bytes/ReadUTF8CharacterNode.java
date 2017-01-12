@@ -22,7 +22,7 @@ import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.MissingValue;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.read.SourceNode;
-import org.jruby.truffle.util.StringUtils;
+import org.jruby.truffle.core.string.StringUtils;
 
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
@@ -30,10 +30,6 @@ import org.jruby.truffle.util.StringUtils;
 public abstract class ReadUTF8CharacterNode extends FormatNode {
 
     private final ConditionProfile rangeProfile = ConditionProfile.createBinaryProfile();
-
-    public ReadUTF8CharacterNode(RubyContext context) {
-        super(context);
-    }
 
     @Specialization(guards = "isNull(source)")
     public void read(VirtualFrame frame, Object source) {

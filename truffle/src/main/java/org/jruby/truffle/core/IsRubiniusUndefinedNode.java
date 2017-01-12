@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,22 +10,20 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 
 public class IsRubiniusUndefinedNode extends RubyNode {
 
     @Child private RubyNode child;
 
-    public IsRubiniusUndefinedNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
-        super(context, sourceSection);
+    public IsRubiniusUndefinedNode(RubyNode child) {
         this.child = child;
     }
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        return isRubiniusUndefined(child.execute(frame));
+        return child.execute(frame) == NotProvided.INSTANCE;
     }
 
     @Override

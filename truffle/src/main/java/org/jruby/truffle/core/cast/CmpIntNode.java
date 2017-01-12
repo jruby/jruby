@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -27,14 +27,12 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.util.StringUtils;
 
 /**
  * This is a port of MRI's rb_cmpint, as taken from RubyComparable and broken out into specialized nodes.
@@ -49,10 +47,6 @@ public abstract class CmpIntNode extends RubyNode {
 
     @Child private CallDispatchHeadNode gtNode;
     @Child private CallDispatchHeadNode ltNode;
-
-    public CmpIntNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     public abstract int executeCmpInt(VirtualFrame frame, Object cmpResult, Object a, Object b);
 
@@ -107,7 +101,7 @@ public abstract class CmpIntNode extends RubyNode {
     public int cmpObject(VirtualFrame frame, Object value, Object receiver, Object other) {
         if (gtNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            gtNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            gtNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         if (gtNode.callBoolean(frame, value, ">", null, 0)) {
@@ -116,7 +110,7 @@ public abstract class CmpIntNode extends RubyNode {
 
         if (ltNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            ltNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            ltNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         if (ltNode.callBoolean(frame, value, "<", null, 0)) {

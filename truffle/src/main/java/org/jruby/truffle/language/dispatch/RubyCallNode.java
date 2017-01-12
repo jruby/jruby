@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -24,6 +24,7 @@ import org.jruby.truffle.core.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
+import org.jruby.truffle.language.methods.BlockDefinitionNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 
 public class RubyCallNode extends RubyNode {
@@ -48,8 +49,6 @@ public class RubyCallNode extends RubyNode {
     private final ConditionProfile nilProfile;
 
     public RubyCallNode(RubyCallNodeParameters parameters) {
-        super(parameters.getContext(), parameters.getSection());
-
         this.methodName = parameters.getMethodName();
         this.receiver = parameters.getReceiver();
         this.arguments = parameters.getArguments();
@@ -57,7 +56,7 @@ public class RubyCallNode extends RubyNode {
         if (parameters.getBlock() == null) {
             this.block = null;
         } else {
-            this.block = ProcOrNullNodeGen.create(parameters.getContext(), parameters.getSection(), parameters.getBlock());
+            this.block = ProcOrNullNodeGen.create(parameters.getBlock());
         }
 
         this.isSplatted = parameters.isSplatted();
@@ -93,7 +92,7 @@ public class RubyCallNode extends RubyNode {
 
         if (dispatchHead == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            dispatchHead = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), ignoreVisibility));
+            dispatchHead = insert(DispatchHeadNodeFactory.createMethodCall(ignoreVisibility));
         }
 
         final Object returnValue = dispatchHead.dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
@@ -164,7 +163,7 @@ public class RubyCallNode extends RubyNode {
 
         if (method == null) {
             final Object r = respondToMissing(frame, receiverObject);
-            if (r != DispatchNode.MISSING && !castRespondToMissingToBoolean(frame, r)) {
+            if (r != DispatchNode.MISSING && !castRespondToMissingToBoolean(r)) {
                 return nil();
             }
         } else if (method.isUndefined()) {
@@ -179,18 +178,18 @@ public class RubyCallNode extends RubyNode {
     private Object respondToMissing(VirtualFrame frame, Object receiverObject) {
         if (respondToMissing == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            respondToMissing = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
+            respondToMissing = insert(DispatchHeadNodeFactory.createMethodCall(true, MissingBehavior.RETURN_MISSING));
         }
         final DynamicObject method = getContext().getSymbolTable().getSymbol(methodName);
         return respondToMissing.call(frame, receiverObject, "respond_to_missing?", method, false);
     }
 
-    private boolean castRespondToMissingToBoolean(VirtualFrame frame, final Object r) {
+    private boolean castRespondToMissingToBoolean(Object r) {
         if (respondToMissingCast == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             respondToMissingCast = insert(BooleanCastNodeGen.create(null));
         }
-        return respondToMissingCast.executeBoolean(frame, r);
+        return respondToMissingCast.executeToBoolean(r);
     }
 
     public String getName() {
@@ -199,6 +198,11 @@ public class RubyCallNode extends RubyNode {
 
     public boolean isVCall() {
         return isVCall;
+    }
+
+    public boolean hasLiteralBlock() {
+        assert block != null;
+        return block.getChild() instanceof BlockDefinitionNode;
     }
 
 }

@@ -37,52 +37,60 @@ end
 
 class Encoding
   class Transcoding
-    attr_accessor :source
-    attr_accessor :target
+    attr_reader :source, :target
+
+    def initialize(source, target)
+      @source = source
+      @target = target
+    end
 
     def inspect
       "#<#{super} #{source} to #{target}"
-    end
-
-    def self.create(source, target)
-      ret = new
-
-      ret.source = source
-      ret.target = target
-
-      ret
     end
   end
 
   class << self
     def build_encoding_map
-      map = Rubinius::LookupTable.new
-      Encoding.list.each_with_index { |encoding, index|
+      map = {}
+      Encoding.list.each_with_index do |encoding, index|
         key = encoding.name.upcase.to_sym
         map[key] = [nil, index]
-      }
+      end
 
-      Truffle::Encoding.each_alias { |alias_name, index|
+      Truffle::Encoding.each_alias do |alias_name, index|
         key = alias_name.upcase.to_sym
         map[key] = [alias_name, index]
-      }
+      end
 
-      %w[internal external locale filesystem].each { |name|
+      %w[internal external locale filesystem].each do |name|
         key = name.upcase.to_sym
         enc = Truffle::Encoding.get_default_encoding(name)
         index = enc ? map[enc.name.upcase.to_sym].last : nil
         map[key] = [name, index]
-      }
+      end
       map
     end
     private :build_encoding_map
+
+    def build_transcoding_map
+      map = {}
+      Encoding::Converter.each_transcoder do |source, destinations|
+        h = {}
+        destinations.each do |dest|
+          h[dest] = Transcoding.new(source, dest)
+        end
+        map[source] = h
+      end
+      map
+    end
+    private :build_transcoding_map
   end
 
-  TranscodingMap = Encoding::Converter.transcoding_map
+  TranscodingMap = build_transcoding_map
   EncodingMap = build_encoding_map
 
-  @default_external = undefined
-  @default_internal = undefined
+  @default_external = Truffle::Encoding.get_default_encoding('external')
+  @default_internal = Truffle::Encoding.get_default_encoding('internal')
 
   class UndefinedConversionError < EncodingError
     attr_accessor :source_encoding_name
@@ -141,26 +149,26 @@ class Encoding
     def self.asciicompat_encoding(string_or_encoding)
       encoding = Rubinius::Type.try_convert_to_encoding string_or_encoding
 
-      return if not encoding or undefined.equal? encoding
+      return unless encoding
       return if encoding.ascii_compatible?
 
-      transcoding = TranscodingMap[encoding.name.upcase]
+      transcoding = TranscodingMap[encoding.name.upcase.to_sym]
       return unless transcoding and transcoding.size == 1
 
       Encoding.find transcoding.keys.first.to_s
     end
 
-    def self.search_convpath(from, to, options=undefined)
+    def self.search_convpath(from, to, options=0)
       new(from, to, options).convpath
     end
 
-    def initialize(from, to, options=undefined)
+    def initialize(from, to, options=0)
       @source_encoding = Rubinius::Type.coerce_to_encoding from
       @destination_encoding = Rubinius::Type.coerce_to_encoding to
 
       if options.kind_of? Fixnum
         @options = options
-      elsif !undefined.equal? options
+      else
         options = Rubinius::Type.coerce_to options, Hash, :to_hash
 
         @options = 0
@@ -188,8 +196,6 @@ class Encoding
 
           replacement = options[:replace]
         end
-      else
-        @options = 0
       end
 
       source_name = @source_encoding.name.upcase.to_sym
@@ -223,7 +229,7 @@ class Encoding
           name = enc.to_s.upcase
           next if name == replacement_encoding_name
 
-          _, converters = TranscodingPath[replacement_encoding_name, enc]
+          _, converters = TranscodingPath[replacement_encoding_name.to_sym, enc]
           @replacement_converters << name << converters
         end
       end
@@ -324,15 +330,13 @@ class Encoding
       error = Truffle.invoke_primitive :encoding_converter_last_error, self
       return if error.nil?
 
-      result = error[:result]
-      error_bytes = error[:error_bytes]
+      result, source_encoding_name, destination_encoding_name, error_bytes, read_again_bytes = error
+      read_again_string = nil
+      codepoint = nil
       error_bytes_msg = error_bytes.dump
-      source_encoding_name = error[:source_encoding_name]
-      destination_encoding_name = error[:destination_encoding_name]
 
       case result
       when :invalid_byte_sequence
-        read_again_string = error[:read_again_string]
         if read_again_string
           msg = "#{error_bytes_msg} followed by #{read_again_string.dump} on #{source_encoding_name}"
         else
@@ -346,7 +350,7 @@ class Encoding
         exc = InvalidByteSequenceError.new msg
       when :undefined_conversion
         error_char = error_bytes
-        if codepoint = error[:codepoint]
+        if codepoint
           error_bytes_msg = "U+%04X" % codepoint
         end
 
@@ -365,21 +369,21 @@ class Encoding
       Truffle.privately do
         exc.source_encoding_name = source_encoding_name
         src = Rubinius::Type.try_convert_to_encoding source_encoding_name
-        exc.source_encoding = src unless undefined.equal? src
+        exc.source_encoding = src unless false == src
 
         exc.destination_encoding_name = destination_encoding_name
         dst = Rubinius::Type.try_convert_to_encoding destination_encoding_name
-        exc.destination_encoding = dst unless undefined.equal? dst
+        exc.destination_encoding = dst unless false == dst
 
         if error_char
-          error_char.force_encoding src unless undefined.equal? src
+          error_char.force_encoding src unless false == src
           exc.error_char = error_char
         end
 
         if result == :invalid_byte_sequence or result == :incomplete_input
           exc.error_bytes = error_bytes.force_encoding Encoding::ASCII_8BIT
 
-          if bytes = error[:read_again_bytes]
+          if bytes = read_again_bytes
             exc.readagain_bytes = bytes.force_encoding Encoding::ASCII_8BIT
           end
         end
@@ -431,59 +435,20 @@ class Encoding
 
     class TranscodingPath
       @paths = {}
-      @load_cache = true
-      @cache_valid = false
-      @transcoders_count = TranscodingMap.size
-
-      def self.paths
-        if load_cache? and cache_threshold?
-          begin
-            path = "#{Rubinius::RUNTIME_PATH}/delta/converter_paths"
-            Rubinius::CodeLoader.require_compiled path
-            cache_loaded
-          rescue Object
-            disable_cache
-          end
-        end
-
-        @paths
-      end
-
-      def self.disable_cache
-        @cache_valid = false
-        @load_cache = false
-      end
-
-      def self.load_cache?
-        @load_cache
-      end
-
-      def self.cache_loaded?
-        @load_cache == false and @cache_valid
-      end
-
-      def self.cache_threshold?
-        @paths.size > 5
-      end
-
-      def self.cache_valid?
-        cache_loaded? and default_transcoders?
-      end
 
       def self.[](source, target)
         key = "[#{source}, #{target}]"
 
-        path, converters = paths[key]
+        path, converters = @paths[key]
 
         unless path
-          return if cache_valid?
           return unless path = search(source, target)
-          paths[key] = [path]
+          @paths[key] = [path]
         end
 
         unless converters
           converters = get_converters path
-          paths[key][1] = converters
+          @paths[key][1] = converters
         end
 
         return path, converters
@@ -523,16 +488,7 @@ class Encoding
 
         while i < total
           entry = TranscodingMap[path[i]][path[i + 1]]
-
-          if entry.kind_of? String
-            lib = "#{Rubinius::ENC_PATH}/#{entry}"
-            Rubinius::NativeMethod.load_extension lib, entry
-
-            entry = TranscodingMap[path[i]][path[i + 1]]
-          end
-
           converters << entry
-
           i += 1
         end
 
@@ -576,37 +532,33 @@ class Encoding
   private_class_method :set_alias_index
 
   def self.default_external
-    if undefined.equal? @default_external
-      @default_external = find "external"
-    end
     @default_external
   end
 
   def self.default_external=(enc)
     raise ArgumentError, "default external encoding cannot be nil" if enc.nil?
 
+    enc = find(enc)
     set_alias_index "external", enc
     set_alias_index "filesystem", enc
-    @default_external = undefined
+    @default_external = enc
     Truffle::Encoding.default_external = enc
   end
 
   def self.default_internal
-    if undefined.equal? @default_internal
-      @default_internal = find "internal"
-    end
     @default_internal
   end
 
   def self.default_internal=(enc)
+    enc = find(enc) unless enc.nil?
     set_alias_index "internal", enc
-    @default_internal = undefined
+    @default_internal = enc
     Truffle::Encoding.default_internal = enc
   end
 
   def self.find(name)
     enc = Rubinius::Type.try_convert_to_encoding name
-    return enc unless undefined.equal? enc
+    return enc unless false == enc
 
     raise ArgumentError, "unknown encoding name - #{name}"
   end
@@ -646,17 +598,17 @@ class Encoding
 
 end
 
-Encoding::TranscodingMap[:'UTF-16BE'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'UTF-16BE'] = {}
 Encoding::TranscodingMap[:'UTF-16BE'][:'UTF-8'] = nil
 
-Encoding::TranscodingMap[:'UTF-16LE'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'UTF-16LE'] = {}
 Encoding::TranscodingMap[:'UTF-16LE'][:'UTF-8'] = nil
 
-Encoding::TranscodingMap[:'UTF-32BE'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'UTF-32BE'] = {}
 Encoding::TranscodingMap[:'UTF-32BE'][:'UTF-8'] = nil
 
-Encoding::TranscodingMap[:'UTF-32LE'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'UTF-32LE'] = {}
 Encoding::TranscodingMap[:'UTF-32LE'][:'UTF-8'] = nil
 
-Encoding::TranscodingMap[:'ISO-2022-JP'] = Rubinius::LookupTable.new
+Encoding::TranscodingMap[:'ISO-2022-JP'] = {}
 Encoding::TranscodingMap[:'ISO-2022-JP'][:'STATELESS-ISO-2022-JP'] = nil

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -23,9 +23,8 @@ import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -35,8 +34,8 @@ import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.array.ArrayBuilderNode;
 import org.jruby.truffle.core.hash.HashNodesFactory.DefaultValueNodeFactory;
 import org.jruby.truffle.core.hash.HashNodesFactory.GetIndexNodeFactory;
+import org.jruby.truffle.core.hash.HashNodesFactory.InternalRehashNodeGen;
 import org.jruby.truffle.language.NotProvided;
-import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.SnippetNode;
@@ -161,17 +160,12 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class GetIndexNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode callDefaultNode;
+        @Child private CallDispatchHeadNode callDefaultNode = DispatchHeadNodeFactory.createMethodCall();
         @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
         @Child private HashNode hashNode = new HashNode();
         @Child private CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
 
         @CompilationFinal private Object undefinedValue;
-
-        public GetIndexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
 
         public abstract Object executeGet(VirtualFrame frame, DynamicObject hash, Object key);
 
@@ -300,10 +294,9 @@ public abstract class HashNodes {
 
         @Child private GetIndexNode getIndexNode;
 
-        public GetOrUndefinedNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            getIndexNode = GetIndexNodeFactory.create(context, sourceSection, null);
-            getIndexNode.setUndefinedValue(context.getCoreLibrary().getRubiniusUndefined());
+        public GetOrUndefinedNode() {
+            getIndexNode = GetIndexNodeFactory.create(null);
+            getIndexNode.setUndefinedValue(NotProvided.INSTANCE);
         }
 
         @Specialization
@@ -351,11 +344,18 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = "compare_by_identity", raiseIfFrozenSelf = true)
+    @ImportStatic(HashGuards.class)
     public abstract static class CompareByIdentityNode extends CoreMethodArrayArgumentsNode {
 
-        @Specialization
-        public DynamicObject compareByIdentity(DynamicObject hash) {
+        @Specialization(guards = "!isCompareByIdentity(hash)")
+        DynamicObject compareByIdentity(VirtualFrame frame, DynamicObject hash,
+                @Cached("create()") InternalRehashNode internalRehashNode) {
             Layouts.HASH.setCompareByIdentity(hash, true);
+            return internalRehashNode.executeRehash(frame, hash);
+        }
+
+        @Specialization(guards = "isCompareByIdentity(hash)")
+        DynamicObject alreadyCompareByIdentity(DynamicObject hash) {
             return hash;
         }
 
@@ -395,12 +395,7 @@ public abstract class HashNodes {
         @Child private CompareHashKeysNode compareHashKeysNode = new CompareHashKeysNode();
         @Child private HashNode hashNode = new HashNode();
         @Child private LookupEntryNode lookupEntryNode = new LookupEntryNode();
-        @Child private YieldNode yieldNode;
-
-        public DeleteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            yieldNode = new YieldNode(context);
-        }
+        @Child private YieldNode yieldNode = new YieldNode();
 
         @Specialization(guards = "isNullHash(hash)")
         public Object deleteNull(VirtualFrame frame, DynamicObject hash, Object key, NotProvided block) {
@@ -557,7 +552,7 @@ public abstract class HashNodes {
         public Object each(VirtualFrame frame, DynamicObject hash, NotProvided block) {
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
 
             InternalMethod method = RubyArguments.getMethod(frame);
@@ -725,7 +720,7 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = "isPackedHash(hash)")
         public DynamicObject mapPackedArray(VirtualFrame frame, DynamicObject hash, DynamicObject block,
-                        @Cached("create(getContext())") ArrayBuilderNode arrayBuilderNode) {
+                        @Cached("create()") ArrayBuilderNode arrayBuilderNode) {
             assert HashOperations.verifyStore(getContext(), hash);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
@@ -752,7 +747,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBucketHash(hash)")
         public DynamicObject mapBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block,
-                        @Cached("create(getContext())") ArrayBuilderNode arrayBuilderNode) {
+                        @Cached("create()") ArrayBuilderNode arrayBuilderNode) {
             assert HashOperations.verifyStore(getContext(), hash);
 
             final int length = Layouts.HASH.getSize(hash);
@@ -996,7 +991,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isRubyHash(other)")
         public DynamicObject merge(VirtualFrame frame, DynamicObject hash, DynamicObject other, DynamicObject block) {
-            PerformanceWarnings.warn("Hash#merge with a block is not yet optimized");
+            Log.notOptimizedOnce("Hash#merge with a block is not yet optimized");
             final boolean compareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
 
             final int capacity = BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other));
@@ -1097,7 +1092,7 @@ public abstract class HashNodes {
         public Object shiftEmptyDefaultProc(VirtualFrame frame, DynamicObject hash) {
             if (yieldNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                yieldNode = insert(new YieldNode(getContext()));
+                yieldNode = insert(new YieldNode());
             }
 
             return yieldNode.dispatch(frame, Layouts.HASH.getDefaultBlock(hash), hash, nil());
@@ -1198,33 +1193,35 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "rehash", raiseIfFrozenSelf = true)
     @ImportStatic(HashGuards.class)
-    public abstract static class RehashNode extends CoreMethodArrayArgumentsNode {
+    @NodeChild("hash")
+    public abstract static class InternalRehashNode extends RubyNode {
 
         @Child private HashNode hashNode = new HashNode();
 
+        public static InternalRehashNode create() {
+            return InternalRehashNodeGen.create(null);
+        }
+
+        public abstract DynamicObject executeRehash(VirtualFrame frame, DynamicObject hash);
+
         @Specialization(guards = "isNullHash(hash)")
-        public DynamicObject rehashNull(DynamicObject hash) {
+        DynamicObject rehashNull(DynamicObject hash) {
             return hash;
         }
 
-        @Specialization(guards = "isCompareByIdentity(hash)")
-        public DynamicObject rehashIdentity(DynamicObject hash) {
-            // the identity hash of objects never change.
-            return hash;
-        }
-
-        @Specialization(guards = {"!isCompareByIdentity(hash)", "isPackedHash(hash)"})
-        public DynamicObject rehashPackedArray(VirtualFrame frame, DynamicObject hash) {
+        @Specialization(guards = "isPackedHash(hash)")
+        DynamicObject rehashPackedArray(VirtualFrame frame, DynamicObject hash,
+                @Cached("createBinaryProfile()") ConditionProfile byIdentityProfile) {
             assert HashOperations.verifyStore(getContext(), hash);
 
+            final boolean compareByIdentity = byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash));
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
 
             for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
-                    PackedArrayStrategy.setHashed(store, n, hashNode.hash(frame, PackedArrayStrategy.getKey(store, n), false));
+                    PackedArrayStrategy.setHashed(store, n, hashNode.hash(frame, PackedArrayStrategy.getKey(store, n), compareByIdentity));
                 }
             }
 
@@ -1233,17 +1230,21 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @TruffleBoundary
-        @Specialization(guards = {"!isCompareByIdentity(hash)", "isBucketHash(hash)"})
-        public DynamicObject rehashBuckets(DynamicObject hash) {
+        @Specialization(guards = "isBucketHash(hash)")
+        DynamicObject rehashBuckets(VirtualFrame frame, DynamicObject hash,
+                @Cached("createBinaryProfile()") ConditionProfile byIdentityProfile) {
             assert HashOperations.verifyStore(getContext(), hash);
 
+            final boolean compareByIdentity = byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash));
             final Entry[] entries = (Entry[]) Layouts.HASH.getStore(hash);
             Arrays.fill(entries, null);
 
             Entry entry = Layouts.HASH.getFirstInSequence(hash);
 
             while (entry != null) {
+                final int newHash = hashNode.hash(frame, entry.getKey(), compareByIdentity);
+                entry.setHashed(newHash);
+                entry.setNextInLookup(null);
                 final int index = BucketsStrategy.getBucketIndex(entry.getHashed(), entries.length);
                 Entry bucketEntry = entries[index];
 
@@ -1261,8 +1262,25 @@ public abstract class HashNodes {
             }
 
             assert HashOperations.verifyStore(getContext(), hash);
-
             return hash;
+        }
+
+    }
+
+    @CoreMethod(names = "rehash", raiseIfFrozenSelf = true)
+    @ImportStatic(HashGuards.class)
+    public abstract static class RehashNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization(guards = "isCompareByIdentity(hash)")
+        public DynamicObject rehashIdentity(DynamicObject hash) {
+            // the identity hash of objects never change.
+            return hash;
+        }
+
+        @Specialization(guards = "!isCompareByIdentity(hash)")
+        public DynamicObject rehashNotIdentity(VirtualFrame frame, DynamicObject hash,
+                @Cached("create()") InternalRehashNode internalRehashNode) {
+            return internalRehashNode.executeRehash(frame, hash);
         }
 
     }

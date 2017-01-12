@@ -74,7 +74,7 @@ public class SimplePackTreeBuilder implements SimplePackListener {
 
     public void exitSequence() {
         final List<FormatNode> sequence = sequenceStack.pop();
-        appendNode(new SequenceNode(context, sequence.toArray(new FormatNode[sequence.size()])));
+        appendNode(new SequenceNode(sequence.toArray(new FormatNode[sequence.size()])));
     }
 
     @Override
@@ -92,16 +92,16 @@ public class SimplePackTreeBuilder implements SimplePackListener {
         unify(FormatEncoding.UTF_8);
 
         appendNode(sharedTreeBuilder.applyCount(count,
-                WriteUTF8CharacterNodeGen.create(context,
-                        ToLongNodeGen.create(context, false,
-                                ReadValueNodeGen.create(context, new SourceNode())))));
+                WriteUTF8CharacterNodeGen.create(
+                        ToLongNodeGen.create(false,
+                                ReadValueNodeGen.create(new SourceNode())))));
     }
 
     @Override
     public void berInteger(int count) {
         appendNode(sharedTreeBuilder.applyCount(count,
-                WriteBERNodeGen.create(context,
-                        ReadLongOrBigIntegerNodeGen.create(context, new SourceNode()))));
+                WriteBERNodeGen.create(
+                        ReadLongOrBigIntegerNodeGen.create(new SourceNode()))));
     }
 
     @Override
@@ -145,8 +145,8 @@ public class SimplePackTreeBuilder implements SimplePackListener {
 
         final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(count);
 
-        appendNode(WriteUUStringNodeGen.create(context, starLength.getLength(), starLength.isStar(),
-                ReadStringNodeGen.create(context, false, "to_str",
+        appendNode(WriteUUStringNodeGen.create(starLength.getLength(), starLength.isStar(),
+                ReadStringNodeGen.create(false, "to_str",
                         false, context.getCoreLibrary().getNilObject(),
                         new SourceNode())));
     }
@@ -167,8 +167,8 @@ public class SimplePackTreeBuilder implements SimplePackListener {
             }
         }
 
-        appendNode(WriteMIMEStringNodeGen.create(context, length,
-                ReadStringNodeGen.create(context, true, "to_s",
+        appendNode(WriteMIMEStringNodeGen.create(length,
+                ReadStringNodeGen.create(true, "to_s",
                         true, context.getCoreLibrary().getNilObject(),
                         new SourceNode())));
     }
@@ -179,8 +179,8 @@ public class SimplePackTreeBuilder implements SimplePackListener {
 
         final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(count);
 
-        appendNode(WriteBase64StringNodeGen.create(context, starLength.getLength(), starLength.isStar(),
-                ReadStringNodeGen.create(context, false, "to_str",
+        appendNode(WriteBase64StringNodeGen.create(starLength.getLength(), starLength.isStar(),
+                ReadStringNodeGen.create(false, "to_str",
                         false, context.getCoreLibrary().getNilObject(),
                         new SourceNode())));
     }
@@ -193,10 +193,10 @@ public class SimplePackTreeBuilder implements SimplePackListener {
          * least it should page fault if anyone tries to read it.
          */
 
-        appendNode(new SequenceNode(context, new FormatNode[]{
-                new AdvanceSourcePositionNode(context, false),
+        appendNode(new SequenceNode(new FormatNode[]{
+                new AdvanceSourcePositionNode(false),
                 writeInteger(64, ByteOrder.nativeOrder(),
-                        new LiteralFormatNode(context, (long) 0))
+                        new LiteralFormatNode((long) 0))
         }));
     }
 
@@ -208,21 +208,21 @@ public class SimplePackTreeBuilder implements SimplePackListener {
             throw new UnsupportedOperationException();
         }
 
-        appendNode(new SetOutputPositionNode(context, position));
+        appendNode(new SetOutputPositionNode(position));
     }
 
     @Override
     public void back(int count) {
         if (count == SimplePackParser.COUNT_NONE || count >= 0) {
-            appendNode(sharedTreeBuilder.applyCount(count, new ReverseOutputPositionNode(context)));
+            appendNode(sharedTreeBuilder.applyCount(count, new ReverseOutputPositionNode()));
         }
     }
 
     @Override
     public void nullByte(int count) {
         appendNode((sharedTreeBuilder.applyCount(count,
-                WriteByteNodeGen.create(context,
-                        new LiteralFormatNode(context, (byte) 0)))));
+                WriteByteNodeGen.create(
+                        new LiteralFormatNode((byte) 0)))));
     }
 
     @Override
@@ -250,7 +250,7 @@ public class SimplePackTreeBuilder implements SimplePackListener {
     }
 
     private void pushSequence() {
-        sequenceStack.push(new ArrayList<FormatNode>());
+        sequenceStack.push(new ArrayList<>());
     }
 
     private void appendNode(FormatNode node) {
@@ -262,13 +262,13 @@ public class SimplePackTreeBuilder implements SimplePackListener {
     }
 
     private void appendFloatNode(int size, ByteOrder byteOrder, int count) {
-        final FormatNode readNode = ReadDoubleNodeGen.create(context, new SourceNode());
+        final FormatNode readNode = ReadDoubleNodeGen.create(new SourceNode());
 
         final FormatNode typeNode;
 
         switch (size) {
             case 32:
-                typeNode = ToFloatNodeGen.create(context, readNode);
+                typeNode = ToFloatNodeGen.create(readNode);
                 break;
             case 64:
                 typeNode = readNode;
@@ -279,13 +279,13 @@ public class SimplePackTreeBuilder implements SimplePackListener {
 
         appendNode(sharedTreeBuilder.applyCount(count,
                 writeInteger(size, byteOrder,
-                        ReinterpretAsLongNodeGen.create(context,
+                        ReinterpretAsLongNodeGen.create(
                                 typeNode))));
     }
 
     private FormatNode writeInteger(int size, ByteOrder byteOrder) {
-        final FormatNode readNode = ToLongNodeGen.create(context, false,
-                ReadValueNodeGen.create(context, new SourceNode()));
+        final FormatNode readNode = ToLongNodeGen.create(false,
+                ReadValueNodeGen.create(new SourceNode()));
 
         return writeInteger(size, byteOrder, readNode);
     }
@@ -295,33 +295,33 @@ public class SimplePackTreeBuilder implements SimplePackListener {
 
         switch (size) {
             case 8:
-                return WriteByteNodeGen.create(context, readNode);
+                return WriteByteNodeGen.create(readNode);
             case 16:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    convertNode = Integer16LittleToBytesNodeGen.create(context, readNode);
+                    convertNode = Integer16LittleToBytesNodeGen.create(readNode);
                 } else {
-                    convertNode = Integer16BigToBytesNodeGen.create(context, readNode);
+                    convertNode = Integer16BigToBytesNodeGen.create(readNode);
                 }
                 break;
             case 32:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    convertNode = Integer32LittleToBytesNodeGen.create(context, readNode);
+                    convertNode = Integer32LittleToBytesNodeGen.create(readNode);
                 } else {
-                    convertNode = Integer32BigToBytesNodeGen.create(context, readNode);
+                    convertNode = Integer32BigToBytesNodeGen.create(readNode);
                 }
                 break;
             case 64:
                 if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
-                    convertNode = Integer64LittleToBytesNodeGen.create(context, readNode);
+                    convertNode = Integer64LittleToBytesNodeGen.create(readNode);
                 } else {
-                    convertNode = Integer64BigToBytesNodeGen.create(context, readNode);
+                    convertNode = Integer64BigToBytesNodeGen.create(readNode);
                 }
                 break;
             default:
                 throw new IllegalArgumentException(Integer.toString(size));
         }
 
-        return WriteBytesNodeGen.create(context, convertNode);
+        return WriteBytesNodeGen.create(convertNode);
     }
 
     private void binaryString(byte padding, boolean padOnNull, boolean appendNull, int count) {
@@ -351,9 +351,9 @@ public class SimplePackTreeBuilder implements SimplePackListener {
             takeAll = false;
         }
 
-        appendNode(WriteBinaryStringNodeGen.create(context, pad, padOnNull,
+        appendNode(WriteBinaryStringNodeGen.create(pad, padOnNull,
                 width, padding, takeAll, appendNull,
-                ReadStringNodeGen.create(context, true, "to_str",
+                ReadStringNodeGen.create(true, "to_str",
                         false, context.getCoreLibrary().getNilObject(),
                         new SourceNode())));
 
@@ -362,8 +362,8 @@ public class SimplePackTreeBuilder implements SimplePackListener {
     private void bitString(ByteOrder byteOrder, int count) {
         final SharedTreeBuilder.StarLength starLength = sharedTreeBuilder.parseCountContext(count);
 
-        appendNode(WriteBitStringNodeGen.create(context, byteOrder, starLength.isStar(), starLength.getLength(),
-                ReadStringNodeGen.create(context, true, "to_str",
+        appendNode(WriteBitStringNodeGen.create(byteOrder, starLength.isStar(), starLength.getLength(),
+                ReadStringNodeGen.create(true, "to_str",
                         false, context.getCoreLibrary().getNilObject(),
                         new SourceNode())));
     }
@@ -379,8 +379,8 @@ public class SimplePackTreeBuilder implements SimplePackListener {
             length = count;
         }
 
-        appendNode(WriteHexStringNodeGen.create(context, byteOrder, length,
-                ReadStringNodeGen.create(context, true, "to_str",
+        appendNode(WriteHexStringNodeGen.create(byteOrder, length,
+                ReadStringNodeGen.create(true, "to_str",
                         false, context.getCoreLibrary().getNilObject(),
                         new SourceNode())));
 

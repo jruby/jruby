@@ -39,6 +39,7 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -49,8 +50,9 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodNode;
 import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.string.StringOperations;
-import org.jruby.truffle.util.UnsafeHolder;
+import org.jruby.truffle.platform.Platform;
 
+import java.lang.reflect.Field;
 import java.util.Set;
 
 @CoreClass("Truffle::System")
@@ -80,7 +82,7 @@ public abstract class TruffleSystemNodes {
 
         @Specialization
         public DynamicObject hostCPU() {
-            return createString(StringOperations.encodeRope(org.jruby.truffle.util.Platform.getArchitecture(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(Platform.getArchitecture(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -91,7 +93,7 @@ public abstract class TruffleSystemNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject hostOS() {
-            return createString(StringOperations.encodeRope(org.jruby.truffle.util.Platform.getOSName(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeRope(Platform.getOSName(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -108,18 +110,38 @@ public abstract class TruffleSystemNodes {
         }
     }
 
+    // Used by concurrent-ruby
     @CoreMethod(names = "full_memory_barrier", isModuleFunction = true)
     public abstract static class FullMemoryBarrierPrimitiveNode extends CoreMethodNode {
 
         @Specialization
         public Object fullMemoryBarrier() {
-            if (UnsafeHolder.SUPPORTS_FENCES) {
-                UnsafeHolder.fullFence();
-            } else {
+            if (TruffleOptions.AOT) {
                 throw new UnsupportedOperationException();
+            } else {
+                U.fullFence();
             }
+
             return nil();
         }
+
+        private static final sun.misc.Unsafe U = loadUnsafe();
+
+        private static sun.misc.Unsafe loadUnsafe() {
+            if (TruffleOptions.AOT) {
+                return null;
+            } else {
+                try {
+                    Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                    Field f = unsafeClass.getDeclaredField("theUnsafe");
+                    f.setAccessible(true);
+                    return (sun.misc.Unsafe) f.get(null);
+                } catch (Throwable e) {
+                    throw new UnsupportedOperationException(e);
+                }
+            }
+        }
+
     }
 
 }

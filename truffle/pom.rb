@@ -10,7 +10,7 @@ project 'JRuby Truffle' do
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
               # Must be the same as in mx.jruby/suite.py (except for the -SNAPSHOT part only in this file, and here we can use a release name)
-              'truffle.version' => '0.20',
+              'truffle.version' => '0.21',
               'jruby.basedir' => '${basedir}/..',
               'maven.test.skip' => 'true'
   )
@@ -32,7 +32,6 @@ project 'JRuby Truffle' do
   jar 'org.yaml:snakeyaml:1.14'
   jar 'org.jruby.joni:joni:2.1.11'
   jar 'org.jruby.jcodings:jcodings:1.0.18'
-  jar 'joda-time:joda-time:2.8.2'
   
   jar 'junit:junit', :scope => 'test'
 

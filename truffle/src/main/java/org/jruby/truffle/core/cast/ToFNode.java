@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -77,7 +77,7 @@ public abstract class ToFNode extends RubyNode {
     private double coerceObject(VirtualFrame frame, Object object, BranchProfile errorProfile) {
         if (toFNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toFNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            toFNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
         final Object coerced;

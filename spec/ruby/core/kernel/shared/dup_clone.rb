@@ -100,4 +100,26 @@ describe :kernel_dup_clone, shared: true do
       lambda { :my_symbol.send(@method) }.should raise_error(TypeError)
     end
   end
+
+  ruby_version_is '2.4' do
+    it "returns nil for NilClass" do
+      nil.send(@method).should == nil
+    end
+
+    it "returns true for TrueClass" do
+      true.send(@method).should == true
+    end
+
+    it "returns false for FalseClass" do
+      false.send(@method).should == false
+    end
+
+    it "returns the same Integer for Integer" do
+      1.send(@method).should == 1
+    end
+
+    it "returns the same Symbol for Symbol" do
+      :my_symbol.send(@method).should == :my_symbol
+    end
+  end
 end

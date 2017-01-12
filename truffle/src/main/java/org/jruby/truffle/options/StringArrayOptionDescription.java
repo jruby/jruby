@@ -31,8 +31,8 @@ public class StringArrayOptionDescription extends OptionDescription {
     public Object checkValue(Object value) {
         if (value instanceof String[]) {
             return value;
-        } else if (value instanceof Collection) {
-            final Collection collection = (Collection) value;
+        } else if (value instanceof Collection<?>) {
+            final Collection<?> collection = (Collection<?>) value;
             final String[] strings = new String[collection.size()];
             int n = 0;
             for (Object item : collection) {
@@ -105,6 +105,11 @@ public class StringArrayOptionDescription extends OptionDescription {
         }
 
         return values.toArray(new String[values.size()]);
+    }
+
+    @Override
+    public String toString(Object value) {
+        return String.join(",", (String[]) value);
     }
 
 }

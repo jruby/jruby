@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -23,7 +23,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.ImportStatic;
-import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -34,7 +33,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -63,18 +61,17 @@ import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
-import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
-import org.jruby.truffle.util.StringUtils;
-import org.jruby.truffle.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -91,8 +88,8 @@ public abstract class RegexpNodes {
 
         if (regex.getEncoding() != enc) {
             final Encoding[] fixedEnc = new Encoding[] { null };
-            final ByteList sourceByteList = RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp));
-            final ByteList preprocessed = ClassicRegexp.preprocess(context, sourceByteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            final Rope sourceRope = Layouts.REGEXP.getSource(regexp);
+            final ByteList preprocessed = ClassicRegexp.preprocess(context, sourceRope, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             final RegexpOptions options = Layouts.REGEXP.getOptions(regexp);
             final Encoding newEnc = checkEncoding(regexp, stringRope, true);
             regex = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(),
@@ -253,10 +250,9 @@ public abstract class RegexpNodes {
         bytes = shimModifiers(bytes);
 
         try {
-            final ByteList byteList = RopeOperations.getByteListReadOnly(bytes);
             Encoding enc = bytes.getEncoding();
             Encoding[] fixedEnc = new Encoding[]{null};
-            ByteList unescaped = ClassicRegexp.preprocess(context, byteList, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
+            ByteList unescaped = ClassicRegexp.preprocess(context, bytes, enc, fixedEnc, RegexpSupport.ErrorMode.RAISE);
             if (fixedEnc[0] != null) {
                 if ((fixedEnc[0] != enc && options.isFixed()) ||
                         (fixedEnc[0] != ASCIIEncoding.INSTANCE && options.isEncodingNone())) {
@@ -282,14 +278,6 @@ public abstract class RegexpNodes {
         } catch (SyntaxException e) {
             throw new RaiseException(context.getCoreExceptions().regexpError(e.getMessage(), currentNode));
         }
-    }
-
-    public static Object getCachedNames(DynamicObject regexp) {
-        return Layouts.REGEXP.getCachedNames(regexp);
-    }
-
-    public static void setCachedNames(DynamicObject regexp, Object cachedNames) {
-        Layouts.REGEXP.setCachedNames(regexp, cachedNames);
     }
 
     public static void setRegex(DynamicObject regexp, Regex regex) {
@@ -386,18 +374,11 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "=~", required = 1)
     public abstract static class MatchOperatorNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dupNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-        @Child private RegexpSetLastMatchPrimitiveNode setLastMatchNode;
+        @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
+        @Child private RegexpSetLastMatchPrimitiveNode setLastMatchNode = RegexpSetLastMatchPrimitiveNodeFactory.create(null);
         @Child private CallDispatchHeadNode toSNode;
         @Child private ToStrNode toStrNode;
-
-        public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-            setLastMatchNode = RegexpSetLastMatchPrimitiveNodeFactory.create(null);
-        }
 
         @Specialization(guards = "isRubyString(string)")
         public Object matchString(VirtualFrame frame, DynamicObject regexp, DynamicObject string) {
@@ -410,7 +391,7 @@ public abstract class RegexpNodes {
         public Object matchSymbol(VirtualFrame frame, DynamicObject regexp, DynamicObject symbol) {
             if (toSNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                toSNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return matchWithStringCopy(regexp, (DynamicObject) toSNode.call(frame, symbol, "to_s"));
@@ -425,7 +406,7 @@ public abstract class RegexpNodes {
         public Object matchGeneric(VirtualFrame frame, DynamicObject regexp, DynamicObject other) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
 
             return matchWithStringCopy(regexp, toStrNode.executeToStr(frame, other));
@@ -470,17 +451,11 @@ public abstract class RegexpNodes {
     }
 
     @NonStandard
-    @CoreMethod(names = "match_start", required = 2)
+    @CoreMethod(names = "match_start", required = 2, lowerFixnum = 2)
     public abstract static class MatchStartNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dupNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public MatchStartNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
+        @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(VirtualFrame frame, DynamicObject regexp, DynamicObject string, int startPos) {
@@ -609,7 +584,7 @@ public abstract class RegexpNodes {
     @CoreMethod(names = { "quote", "escape" }, onSingleton = true, required = 1)
     public abstract static class QuoteNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ToStrNode toStrNode;
+        @Child private ToStrNode toStrNode;
 
         abstract public DynamicObject executeQuote(VirtualFrame frame, Object raw);
 
@@ -618,7 +593,7 @@ public abstract class RegexpNodes {
         public DynamicObject quoteString(DynamicObject raw) {
             final Rope rope = StringOperations.rope(raw);
             boolean isAsciiOnly = rope.getEncoding().isAsciiCompatible() && rope.getCodeRange() == CodeRange.CR_7BIT;
-            return createString(ClassicRegexp.quote19(StringOperations.getByteListReadOnly(raw), isAsciiOnly));
+            return createString(ClassicRegexp.quote19(rope, isAsciiOnly));
         }
 
         @Specialization(guards = "isRubySymbol(raw)")
@@ -630,7 +605,7 @@ public abstract class RegexpNodes {
         public DynamicObject quote(VirtualFrame frame, Object raw) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toStrNode = insert(ToStrNodeGen.create(getContext(), null, null));
+                toStrNode = insert(ToStrNodeGen.create(null));
             }
 
             return executeQuote(frame, toStrNode.executeToStr(frame, raw));
@@ -639,17 +614,11 @@ public abstract class RegexpNodes {
     }
 
     @NonStandard
-    @CoreMethod(names = "search_from", required = 2)
+    @CoreMethod(names = "search_from", required = 2, lowerFixnum = 2)
     public abstract static class SearchFromNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode dupNode;
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public SearchFromNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
+        @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @Specialization(guards = "isRubyString(string)")
         public Object searchFrom(VirtualFrame frame, DynamicObject regexp, DynamicObject string, int startPos) {
@@ -675,71 +644,45 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            final ClassicRegexp classicRegexp = ClassicRegexp.newRegexp(getContext(), RopeOperations.getByteListReadOnly(Layouts.REGEXP.getSource(regexp)), Layouts.REGEXP.getRegex(regexp).getOptions());
+            final ClassicRegexp classicRegexp = ClassicRegexp.newRegexp(getContext(), Layouts.REGEXP.getSource(regexp), Layouts.REGEXP.getRegex(regexp).getOptions());
             return createString(classicRegexp.toByteList());
         }
 
     }
 
-    @NonStandard
-    @NodeChild(value = "self")
-    public abstract static class RubiniusNamesNode extends RubyNode {
+    @Primitive(name = "regexp_names")
+    public abstract static class RubiniusNamesNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode newLookupTableNode;
-        @Child private CallDispatchHeadNode lookupTableWriteNode;
-
-        @Specialization(guards = "!anyNames(regexp)")
-        public DynamicObject rubiniusNamesNoCaptures(DynamicObject regexp) {
-            return nil();
-        }
-
-        @Specialization(guards = "anyNames(regexp)")
-        public Object rubiniusNames(VirtualFrame frame, DynamicObject regexp) {
-            if (getCachedNames(regexp) != null) {
-                return getCachedNames(regexp);
+        @TruffleBoundary
+        @Specialization
+        public Object rubiniusNames(DynamicObject regexp) {
+            final int size = Layouts.REGEXP.getRegex(regexp).numberOfNames();
+            if (size == 0) {
+                return createArray(null, size);
             }
 
-            if (newLookupTableNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                newLookupTableNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            if (lookupTableWriteNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                lookupTableWriteNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object namesLookupTable = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
-
-            for (final Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
-                final NameEntry e = i.next();
-                final DynamicObject name = getContext().getSymbolTable().getSymbol(getContext().getRopeTable().getRope(Arrays.copyOfRange(e.name, e.nameP, e.nameEnd), USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT));
+            final Object[] names = new Object[size];
+            int i = 0;
+            for (final Iterator<NameEntry> iter = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); iter.hasNext();) {
+                final NameEntry e = iter.next();
+                final byte[] bytes = Arrays.copyOfRange(e.name, e.nameP, e.nameEnd);
+                final Rope rope = getContext().getRopeTable().getRope(bytes, USASCIIEncoding.INSTANCE, CodeRange.CR_7BIT);
+                final DynamicObject name = getContext().getFrozenStrings().getFrozenString(rope);
 
                 final int[] backrefs = e.getBackRefs();
                 final DynamicObject backrefsRubyArray = createArray(backrefs, backrefs.length);
-
-                lookupTableWriteNode.call(frame, namesLookupTable, "[]=", name, backrefsRubyArray);
+                names[i++] = createArray(new Object[]{ name, backrefsRubyArray }, 2);
             }
 
-            setCachedNames(regexp, namesLookupTable);
-
-            return namesLookupTable;
+            return createArray(names, size);
         }
 
-        public static boolean anyNames(DynamicObject regexp) {
-            return Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0;
-        }
     }
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {

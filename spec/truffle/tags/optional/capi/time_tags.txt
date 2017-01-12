@@ -30,3 +30,4 @@ fails:CApiTimeSpecs rb_time_timespec_new returns time object in localtime if off
 fails:CApiTimeSpecs rb_time_timespec_new raises an ArgumentError if offset passed is not within range of -86400 and 86400 (exclusive)
 fails:CApiTimeSpecs rb_time_timespec_new when offset given is within range of -86400 and 86400 (exclusive) sets time's is_gmt to false
 fails:CApiTimeSpecs rb_time_timespec_new when offset given is within range of -86400 and 86400 (exclusive) sets time's offset to the offset given
+fails:CApiTimeSpecs rb_timespec_now fills a struct timespec with the current time

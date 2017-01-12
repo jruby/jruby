@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,9 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
@@ -31,18 +29,16 @@ public class DefineClassNode extends RubyNode {
 
     @Child private RubyNode superClassNode;
     @Child private RubyNode lexicalParentModule;
-
-    @Child LookupForExistingModuleNode lookupForExistingModuleNode;
-    @Child CallDispatchHeadNode inheritedNode;
+    @Child private LookupForExistingModuleNode lookupForExistingModuleNode;
+    @Child private CallDispatchHeadNode inheritedNode;
 
     private final ConditionProfile needToDefineProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile noSuperClassSupplied = ConditionProfile.createBinaryProfile();
     private final BranchProfile errorProfile = BranchProfile.create();
 
     public DefineClassNode(
-            RubyContext context, SourceSection sourceSection, String name,
+            String name,
             RubyNode lexicalParent, RubyNode superClass) {
-        super(context, sourceSection);
         this.name = name;
         this.lexicalParentModule = lexicalParent;
         this.superClassNode = superClass;
@@ -116,7 +112,7 @@ public class DefineClassNode extends RubyNode {
     private void callInherited(VirtualFrame frame, DynamicObject superClass, DynamicObject childClass) {
         if (inheritedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+            inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
         }
         inheritedNode.call(frame, superClass, "inherited", childClass);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,14 +20,14 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.loader.RequireNode;
-import org.jruby.truffle.util.IdUtil;
-import org.jruby.truffle.util.StringUtils;
+import org.jruby.truffle.parser.Identifiers;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant"), @NodeChild("lookupConstantNode") })
 public abstract class GetConstantNode extends RubyNode {
@@ -36,7 +36,7 @@ public abstract class GetConstantNode extends RubyNode {
         return GetConstantNodeGen.create(null, null, null, null);
     }
 
-    private @Child CallDispatchHeadNode constMissingNode;
+    @Child private CallDispatchHeadNode constMissingNode;
 
     public abstract Object executeGetConstant(
             VirtualFrame frame, Object module, String name, RubyConstant constant, LookupConstantInterface lookupConstantNode);
@@ -100,7 +100,7 @@ public abstract class GetConstantNode extends RubyNode {
 
         if (constMissingNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            constMissingNode = insert(createConstMissingNode());
+            constMissingNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         return constMissingNode.call(frame, module, "const_missing", symbolName);
@@ -112,11 +112,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     protected boolean isValidConstantName(String name) {
-        return IdUtil.isValidConstantName19(name);
-    }
-
-    protected CallDispatchHeadNode createConstMissingNode() {
-        return DispatchHeadNodeFactory.createMethodCall(getContext());
+        return Identifiers.isValidConstantName19(name);
     }
 
     protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {

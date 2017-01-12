@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -66,7 +66,7 @@ public class ReadUserKeywordsHashNode extends RubyNode {
     private boolean respondToToHash(VirtualFrame frame, final Object lastArgument) {
         if (respondToToHashNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            respondToToHashNode = insert(new DoesRespondDispatchHeadNode(getContext(), false));
+            respondToToHashNode = insert(new DoesRespondDispatchHeadNode(false));
         }
         return respondToToHashNode.doesRespondTo(frame, "to_hash", lastArgument);
     }

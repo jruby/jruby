@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,7 +20,22 @@ public abstract class ArrayUtils {
     public static final Object[] EMPTY_ARRAY = new Object[0];
 
     /**
-     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * Extracts part of an array into a newly allocated byte[] array. Does not perform safety checks on parameters.
+     * @param source the source array whose values should be extracted
+     * @param start the start index, must be >= 0 and <= source.length
+     * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
+     * @return a newly allocated array with the extracted elements and length (end - start)
+     */
+    public static byte[] extractRange(byte[] source, int start, int end) {
+        assert assertExtractRangeArgs(source, start, end);
+        int length = end - start;
+        byte[] result = new byte[length];
+        System.arraycopy(source, start, result, 0, length);
+        return result;
+    }
+
+    /**
+     * Extracts part of an array into a newly allocated int[] array. Does not perform safety checks on parameters.
      * @param source the source array whose values should be extracted
      * @param start the start index, must be >= 0 and <= source.length
      * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
@@ -35,7 +50,7 @@ public abstract class ArrayUtils {
     }
 
     /**
-     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * Extracts part of an array into a newly allocated long[] array. Does not perform safety checks on parameters.
      * @param source the source array whose values should be extracted
      * @param start the start index, must be >= 0 and <= source.length
      * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
@@ -50,7 +65,7 @@ public abstract class ArrayUtils {
     }
 
     /**
-     * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
+     * Extracts part of an array into a newly allocated double[] array. Does not perform safety checks on parameters.
      * @param source the source array whose values should be extracted
      * @param start the start index, must be >= 0 and <= source.length
      * @param end the end index (exclusive), must be >= 0 and <= source.length and >= start
@@ -154,6 +169,10 @@ public abstract class ArrayUtils {
         }
 
         return boxed;
+    }
+
+    public static Object[] box(Object array, int newLength) {
+        return boxExtra(array, newLength - Array.getLength(array));
     }
 
     public static Object[] box(double[] unboxed, int newLength) {
@@ -290,7 +309,7 @@ public abstract class ArrayUtils {
             final Object value = unboxed[n];
 
             if (value instanceof Integer) {
-                boxed[n] = (long) (int) unboxed[n];
+                boxed[n] = (int) unboxed[n];
             } else if (value instanceof Long) {
                 boxed[n] = (long) unboxed[n];
             }
@@ -414,4 +433,18 @@ public abstract class ArrayUtils {
         return newArray;
     }
 
+    public static int memcmp(final byte[] first, final int firstStart, final byte[] second, final int secondStart, int size) {
+        assert firstStart + size <= first.length;
+        assert secondStart + size <= second.length;
+
+        int cmp;
+
+        for (int i = 0; i < size; i++) {
+            if ((cmp = (first[firstStart + i] & 0xff) - (second[secondStart + i] & 0xff)) != 0) {
+                return cmp;
+            }
+        }
+
+        return 0;
+    }
 }

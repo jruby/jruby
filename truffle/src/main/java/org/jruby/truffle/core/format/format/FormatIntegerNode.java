@@ -25,8 +25,8 @@ import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.printf.PrintfSimpleTreeBuilder;
-import org.jruby.truffle.util.ConvertBytes;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
+import org.jruby.truffle.core.string.ConvertBytes;
 
 import java.math.BigInteger;
 
@@ -45,7 +45,7 @@ public abstract class FormatIntegerNode extends FormatNode {
 
     private static final byte[] PREFIX_NEGATIVE = {'.', '.'};
 
-    private static final BigInteger BIG_32 = BigInteger.valueOf(((long)Integer.MAX_VALUE + 1L) << 1);
+    private static final BigInteger BIG_32 = BigInteger.valueOf((Integer.MAX_VALUE + 1L) << 1);
     private static final BigInteger BIG_64 = BIG_32.shiftLeft(32);
     private static final BigInteger BIG_MINUS_32 = BigInteger.valueOf((long)Integer.MIN_VALUE << 1);
     private static final BigInteger BIG_MINUS_64 = BIG_MINUS_32.shiftLeft(32);
@@ -57,8 +57,7 @@ public abstract class FormatIntegerNode extends FormatNode {
     private final boolean hasMinusFlag;
     private final boolean hasFSharp;
 
-    public FormatIntegerNode(RubyContext context, char format, boolean hasSpaceFlag, boolean hasZeroFlag, boolean hasPlusFlag, boolean hasMinusFlag, boolean hasFSharp) {
-        super(context);
+    public FormatIntegerNode(char format, boolean hasSpaceFlag, boolean hasZeroFlag, boolean hasPlusFlag, boolean hasMinusFlag, boolean hasFSharp) {
         this.format = format;
         this.hasSpaceFlag = hasSpaceFlag;
         this.hasZeroFlag = hasZeroFlag;
@@ -170,7 +169,7 @@ public abstract class FormatIntegerNode extends FormatNode {
             }
         } else if (negative) {
             if (base == 10) {
-//                warning(ID.NEGATIVE_NUMBER_FOR_U, args, "negative number for %u specifier");
+                // warning(ID.NEGATIVE_NUMBER_FOR_U, args, "negative number for %u specifier");
                 leadChar = '.';
                 len += 2;
             } else {
@@ -401,7 +400,7 @@ public abstract class FormatIntegerNode extends FormatNode {
         byte[] bytes = new byte[len];
         if (upper) {
             for (int i = len; --i >= 0; ) {
-                int b = (byte) ((int) s.charAt(i) & 0xff);
+                int b = (byte) (s.charAt(i) & 0xff);
                 if (b >= 'a' && b <= 'z') {
                     bytes[i] = (byte) (b & ~0x20);
                 } else {
@@ -410,7 +409,7 @@ public abstract class FormatIntegerNode extends FormatNode {
             }
         } else {
             for (int i = len; --i >= 0; ) {
-                bytes[i] = (byte) ((int) s.charAt(i) & 0xff);
+                bytes[i] = (byte) (s.charAt(i) & 0xff);
             }
         }
         return bytes;

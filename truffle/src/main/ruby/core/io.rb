@@ -588,12 +588,11 @@ class IO
 
     name = Rubinius::Type.coerce_to_path name
 
+    separator = $/ if undefined.equal?(separator)
     case separator
     when Fixnum
       options = limit
       limit = separator
-      separator = $/
-    when undefined
       separator = $/
     when Hash
       options = separator
@@ -604,11 +603,10 @@ class IO
       separator = StringValue(separator)
     end
 
+    limit = nil if undefined.equal?(limit)
     case limit
     when Fixnum, nil
       # do nothing
-    when undefined
-      limit = nil
     when Hash
       if undefined.equal? options
         options = limit
@@ -625,11 +623,12 @@ class IO
       end
     end
 
+    options = {} if undefined.equal?(options)
     case options
     when Hash
       # do nothing
-    when undefined, nil
-      options = { }
+    when nil
+      options = {}
     else
       options = Rubinius::Type.coerce_to options, Hash, :to_hash
     end
@@ -701,7 +700,7 @@ class IO
     end
   end
 
-  def self.for_fd(fd, mode=undefined, options=undefined)
+  def self.for_fd(fd, mode=nil, options=undefined)
     new fd, mode, options
   end
 
@@ -759,7 +758,6 @@ class IO
   end
 
   def self.normalize_options(mode, options)
-    mode = nil if undefined.equal?(mode)
     autoclose = true
 
     if undefined.equal?(options)
@@ -1209,7 +1207,7 @@ class IO
   #
   # Create a new IO associated with the given fd.
   #
-  def initialize(fd, mode=undefined, options=undefined)
+  def initialize(fd, mode=nil, options=undefined)
     initialize_allocated
     if block_given?
       warn 'IO::new() does not take block; use IO::open() instead'
@@ -1282,7 +1280,8 @@ class IO
     offset = Rubinius::Type.coerce_to offset, Integer, :to_int
     len = Rubinius::Type.coerce_to len, Integer, :to_int
 
-    Truffle.primitive :io_advise
+    # Truffle.invoke_primitive :io_advise, self, advice, offset, len
+    raise "IO#advise not implemented"
     nil
   end
 

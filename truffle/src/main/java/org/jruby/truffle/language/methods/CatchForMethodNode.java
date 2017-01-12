@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,8 +12,6 @@ package org.jruby.truffle.language.methods;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.RetryException;
@@ -29,8 +27,7 @@ public class CatchForMethodNode extends RubyNode {
     private final ConditionProfile matchingReturnProfile = ConditionProfile.createBinaryProfile();
     private final BranchProfile retryProfile = BranchProfile.create();
 
-    public CatchForMethodNode(RubyContext context, SourceSection sourceSection, ReturnID returnID, RubyNode body) {
-        super(context, sourceSection);
+    public CatchForMethodNode(ReturnID returnID, RubyNode body) {
         this.returnID = returnID;
         this.body = body;
     }

@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ import java.util.List;
 public class ReturnParseNode extends ParseNode implements NonLocalControlFlowParseNode {
     private final ParseNode valueNode;
 
-    public ReturnParseNode(ISourcePosition position, ParseNode valueNode) {
+    public ReturnParseNode(SourceIndexLength position, ParseNode valueNode) {
         super(position, valueNode.containsVariableAssignment());
 
         assert valueNode != null : "valueNode is not null";

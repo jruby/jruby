@@ -22,9 +22,9 @@ import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.rope.Rope;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.ByteList;
 
 @CoreClass("Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
@@ -105,7 +105,8 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(pattern)")
         public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
-            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteListReadOnly(pattern));
+            final Rope patternRope = StringOperations.rope(pattern);
+            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(patternRope);
 
             if (index == -1) {
                 return nil();

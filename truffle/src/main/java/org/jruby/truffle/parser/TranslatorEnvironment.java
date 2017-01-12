@@ -14,7 +14,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
-import org.jruby.truffle.language.RubySourceSection;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.BreakID;
 import org.jruby.truffle.language.control.ReturnID;
 import org.jruby.truffle.language.locals.LocalVariableType;
@@ -122,7 +122,7 @@ public class TranslatorEnvironment {
         }
     }
 
-    public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, Source source, RubySourceSection sourceSection) {
+    public ReadLocalNode findOrAddLocalVarNodeDangerous(String name, Source source, SourceIndexLength sourceSection) {
         ReadLocalNode localVar = findLocalVarNode(name, source, sourceSection);
 
         if (localVar == null) {
@@ -133,7 +133,7 @@ public class TranslatorEnvironment {
         return localVar;
     }
 
-    public ReadLocalNode findLocalVarNode(String name, Source source, RubySourceSection sourceSection) {
+    public ReadLocalNode findLocalVarNode(String name, Source source, SourceIndexLength sourceSection) {
         TranslatorEnvironment current = this;
         int level = -1;
         try {
@@ -153,11 +153,17 @@ public class TranslatorEnvironment {
                         type = LocalVariableType.FRAME_LOCAL;
                     }
 
+                    final ReadLocalNode node;
+
                     if (level == 0) {
-                        return new ReadLocalVariableNode(context, sourceSection.toSourceSection(source), type, slot);
+                        node = new ReadLocalVariableNode(type, slot);
                     } else {
-                        return new ReadDeclarationVariableNode(context, sourceSection.toSourceSection(source), type, level, slot);
+                        node = new ReadDeclarationVariableNode(type, level, slot);
                     }
+
+                    node.unsafeSetSourceSection(sourceSection);
+
+                    return node;
                 }
 
                 current = current.parent;
@@ -241,4 +247,7 @@ public class TranslatorEnvironment {
         this.breakID = breakID;
     }
 
+    public LexicalScope unsafeGetLexicalScope() {
+        return parseEnvironment.getLexicalScope();
+    }
 }

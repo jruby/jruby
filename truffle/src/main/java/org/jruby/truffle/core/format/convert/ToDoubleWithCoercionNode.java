@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,26 +14,23 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.cast.ToFNode;
 import org.jruby.truffle.core.format.FormatNode;
+import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 
 @NodeChild(value = "value", type = FormatNode.class)
 public abstract class ToDoubleWithCoercionNode extends FormatNode {
 
-    @Child private ToFNode toFNode;
-
-    public ToDoubleWithCoercionNode(RubyContext context) {
-        super(context);
-    }
+    @Child private CallDispatchHeadNode floatNode;
 
     @Specialization
     public Object toDouble(VirtualFrame frame, Object value) {
-        if (toFNode == null) {
+        if (floatNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toFNode = insert(ToFNode.create());
+            floatNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
-        return toFNode.doDouble(frame, value);
+        return floatNode.call(frame, getContext().getCoreLibrary().getKernelModule(), "Float", value);
     }
 
 }

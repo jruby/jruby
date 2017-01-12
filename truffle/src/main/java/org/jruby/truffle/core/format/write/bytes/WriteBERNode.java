@@ -57,7 +57,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatGuards;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.CantCompressNegativeException;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
 
 import java.math.BigInteger;
 
@@ -69,10 +69,6 @@ public abstract class WriteBERNode extends FormatNode {
     private final ConditionProfile cantCompressProfile = ConditionProfile.createBinaryProfile();
 
     private final BigInteger BIG_128 = BigInteger.valueOf(128);
-
-    public WriteBERNode(RubyContext context) {
-        super(context);
-    }
 
     @Specialization
     public Object doWrite(VirtualFrame frame, int value) {

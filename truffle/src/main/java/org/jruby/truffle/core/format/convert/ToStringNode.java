@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -28,8 +28,6 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.dispatch.MissingBehavior;
 import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
-import org.jruby.truffle.util.DoubleUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -50,15 +48,14 @@ public abstract class ToStringNode extends FormatNode {
 
     private final ConditionProfile taintedProfile = ConditionProfile.createBinaryProfile();
 
-    public ToStringNode(RubyContext context, boolean convertNumbersToStrings,
+    public ToStringNode(boolean convertNumbersToStrings,
                         String conversionMethod, boolean inspectOnConversionFailure,
                         Object valueOnNil) {
-        super(context);
         this.convertNumbersToStrings = convertNumbersToStrings;
         this.conversionMethod = conversionMethod;
         this.inspectOnConversionFailure = inspectOnConversionFailure;
         this.valueOnNil = valueOnNil;
-        isTaintedNode = IsTaintedNodeGen.create(context, null, null);
+        this.isTaintedNode = IsTaintedNode.create();
     }
 
     public abstract Object executeToString(VirtualFrame frame, Object object);
@@ -83,7 +80,7 @@ public abstract class ToStringNode extends FormatNode {
     @TruffleBoundary
     @Specialization(guards = "convertNumbersToStrings")
     public byte[] toString(double value) {
-        return DoubleUtils.toString(value).getBytes(StandardCharsets.US_ASCII);
+        return Double.toString(value).getBytes(StandardCharsets.US_ASCII);
     }
 
     @Specialization(guards = "isRubyString(string)")
@@ -99,7 +96,7 @@ public abstract class ToStringNode extends FormatNode {
     public byte[] toString(VirtualFrame frame, DynamicObject array) {
         if (toSNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
+            toSNode = insert(DispatchHeadNodeFactory.createMethodCall(true,
                     MissingBehavior.RETURN_MISSING));
         }
 
@@ -120,7 +117,7 @@ public abstract class ToStringNode extends FormatNode {
     public byte[] toString(VirtualFrame frame, Object object) {
         if (toStrNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true,
+            toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(true,
                     MissingBehavior.RETURN_MISSING));
         }
 
@@ -137,7 +134,7 @@ public abstract class ToStringNode extends FormatNode {
         if (inspectOnConversionFailure) {
             if (inspectNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(), null, null));
+                inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(null));
             }
 
             return Layouts.STRING.getRope(inspectNode.toS(object)).getBytes();

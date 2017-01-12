@@ -14,8 +14,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 
 public class PropagateSharingNode extends Node {
 
-    @Child IsSharedNode isSharedNode;
-    @Child WriteBarrierNode writeBarrierNode;
+    @Child private IsSharedNode isSharedNode;
+    @Child private WriteBarrierNode writeBarrierNode;
 
     public static PropagateSharingNode create() {
         return new PropagateSharingNode();

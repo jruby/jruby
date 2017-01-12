@@ -27,10 +27,6 @@ import org.jruby.truffle.core.format.write.OutputNode;
 })
 public abstract class WriteValueNode extends FormatNode {
 
-    public WriteValueNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public Object doWrite(Object output, MissingValue value) {
         return null;

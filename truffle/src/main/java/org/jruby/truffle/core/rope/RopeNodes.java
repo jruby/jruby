@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -24,20 +24,20 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.StringUtils;
-import org.jruby.truffle.util.ByteList;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 
 import static org.jruby.truffle.core.rope.CodeRange.CR_7BIT;
 import static org.jruby.truffle.core.rope.CodeRange.CR_BROKEN;
@@ -150,7 +150,8 @@ public abstract class RopeNodes {
         @Specialization(guards = { "byteLength > 1", "!sameAsBase(base, byteLength)" })
         public Rope substringConcatRope(ConcatRope base, int offset, int byteLength,
                                       @Cached("createBinaryProfile()") ConditionProfile is7BitProfile,
-                                      @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile) {
+                                      @Cached("createBinaryProfile()") ConditionProfile isBinaryStringProfile,
+                                      @Cached("createBinaryProfile()") ConditionProfile matchesChildProfile) {
             Rope root = base;
 
             while (root instanceof ConcatRope) {
@@ -177,6 +178,12 @@ public abstract class RopeNodes {
                 } else {
                     return makeSubstring(root, offset, byteLength, is7BitProfile, isBinaryStringProfile);
                 }
+            }
+
+            if (root instanceof SubstringRope) {
+                return substringSubstringRope((SubstringRope) root, offset, byteLength, is7BitProfile, isBinaryStringProfile);
+            } else if (root instanceof RepeatingRope) {
+                return substringRepeatingRope((RepeatingRope) root, offset, byteLength, is7BitProfile, isBinaryStringProfile, matchesChildProfile);
             }
 
             return makeSubstring(root, offset, byteLength, is7BitProfile, isBinaryStringProfile);
@@ -236,6 +243,8 @@ public abstract class RopeNodes {
     })
     public abstract static class MakeConcatNode extends RubyNode {
 
+        @Child private FlattenNode flattenNode;
+
         public abstract Rope executeMake(Rope left, Rope right, Encoding encoding);
 
         @Specialization(guards = "isMutableRope(left)")
@@ -262,11 +271,34 @@ public abstract class RopeNodes {
         public Rope concat(Rope left, Rope right, Encoding encoding,
                            @Cached("createBinaryProfile()") ConditionProfile sameCodeRangeProfile,
                            @Cached("createBinaryProfile()") ConditionProfile brokenCodeRangeProfile,
-                           @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile) {
+                           @Cached("createBinaryProfile()") ConditionProfile isLeftSingleByteOptimizableProfile,
+                           @Cached("createBinaryProfile()") ConditionProfile shouldRebalanceProfile) {
             try {
                 Math.addExact(left.byteLength(), right.byteLength());
             } catch (ArithmeticException e) {
                 throw new RaiseException(getContext().getCoreExceptions().argumentError("Result of string concatenation exceeds the system maximum string length", this));
+            }
+
+            if (shouldRebalanceProfile.profile(left.depth() >= getContext().getOptions().ROPE_DEPTH_THRESHOLD)) {
+                if (flattenNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    flattenNode = insert(FlattenNode.create());
+                }
+
+                if (left instanceof ConcatRope) {
+                    left = rebalance((ConcatRope) left, getContext().getOptions().ROPE_DEPTH_THRESHOLD, flattenNode);
+                }
+            }
+
+            if (shouldRebalanceProfile.profile(right.depth() >= getContext().getOptions().ROPE_DEPTH_THRESHOLD)) {
+                if (flattenNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    flattenNode = insert(FlattenNode.create());
+                }
+
+                if (right instanceof ConcatRope) {
+                    right = rebalance((ConcatRope) right, getContext().getOptions().ROPE_DEPTH_THRESHOLD, flattenNode);
+                }
             }
 
             int depth = depth(left, right);
@@ -277,7 +309,99 @@ public abstract class RopeNodes {
             return new ConcatRope(left, right, encoding,
                     commonCodeRange(left.getCodeRange(), right.getCodeRange(), sameCodeRangeProfile, brokenCodeRangeProfile),
                     isSingleByteOptimizable(left, right, isLeftSingleByteOptimizableProfile),
-                    depth);
+                    depth, isBalanced(left, right));
+        }
+
+        private boolean isBalanced(Rope left, Rope right) {
+            // Our definition of balanced is centered around the notion of rebalancing. We could have a simple structure
+            // such as ConcatRope(ConcatRope(LeafRope, LeafRope), LeafRope) that is balanced on its own but may contribute
+            // to an unbalanced rope when combined with another rope of similar structure. To keep things simple, we only
+            // consider ConcatRopes that consist of two non-ConcatRopes balanced as the base case and ConcatRopes that
+            // have balanced ConcatRopes for both children are balanced by induction.
+            if (left instanceof ConcatRope) {
+                if (right instanceof ConcatRope) {
+                    return ((ConcatRope) left).isBalanced() && ((ConcatRope) right).isBalanced();
+                }
+
+                return false;
+            } else {
+                // We treat the concatenation of two non-ConcatRopes as balanced, even if their children not balanced.
+                // E.g., a SubstringRope whose child is an unbalanced ConcatRope arguable isn't balanced. However,
+                // the code is much simpler by handling it this way. Balanced ConcatRopes will never rebalance, but
+                // if they become part of a larger subtree that exceeds the depth threshold, they may be flattened.
+                return !(right instanceof ConcatRope);
+            }
+        }
+
+        @TruffleBoundary
+        private Rope rebalance(ConcatRope rope, int depthThreshold, FlattenNode flattenNode) {
+            Deque<Rope> currentRopeQueue = new ArrayDeque<>();
+            Deque<Rope> nextLevelQueue = new ArrayDeque<>();
+
+            linearizeTree(rope.getLeft(), currentRopeQueue);
+            linearizeTree(rope.getRight(), currentRopeQueue);
+
+            final int flattenThreshold = depthThreshold / 2;
+
+            Rope root = null;
+            while (! currentRopeQueue.isEmpty()) {
+                Rope left = currentRopeQueue.pop();
+
+                if (left.depth() >= flattenThreshold) {
+                    left = flattenNode.executeFlatten(left);
+                }
+
+                if (currentRopeQueue.isEmpty()) {
+                    if (nextLevelQueue.isEmpty()) {
+                        root = left;
+                    } else {
+                        // If a rope can't be paired with another rope at the current level (i.e., odd numbers of ropes),
+                        // it needs to be promoted to the next level where it be tried again. Since by definition every
+                        // rope already present in the next level must have occurred before this rope in the current
+                        // level, this rope must be added to the end of the list in the next level to maintain proper
+                        // position.
+                        nextLevelQueue.add(left);
+                    }
+                } else {
+                    Rope right = currentRopeQueue.pop();
+
+                    if (right.depth() >= flattenThreshold) {
+                        right = flattenNode.executeFlatten(right);
+                    }
+
+                    final Rope child = new ConcatRope(left, right, rope.getEncoding(),
+                                                      commonCodeRange(left.getCodeRange(), right.getCodeRange()),
+                                    left.isSingleByteOptimizable() && right.isSingleByteOptimizable(),
+                                                      depth(left, right), isBalanced(left, right));
+
+                    nextLevelQueue.add(child);
+                }
+
+                if (currentRopeQueue.isEmpty() && !nextLevelQueue.isEmpty()) {
+                    currentRopeQueue = nextLevelQueue;
+                    nextLevelQueue = new ArrayDeque<>();
+                }
+            }
+
+            return root;
+        }
+
+        @TruffleBoundary
+        private void linearizeTree(Rope rope, Deque<Rope> ropeQueue) {
+            if (rope instanceof ConcatRope) {
+                final ConcatRope concatRope = (ConcatRope) rope;
+
+                // If a rope is known to be balanced, there's no need to rebalance it.
+                if (concatRope.isBalanced()) {
+                    ropeQueue.add(concatRope);
+                } else {
+                    linearizeTree(concatRope.getLeft(), ropeQueue);
+                    linearizeTree(concatRope.getRight(), ropeQueue);
+                }
+            } else {
+                // We never rebalance non-ConcatRopes since that requires per-rope type logic with likely minimal benefit.
+                ropeQueue.add(rope);
+            }
         }
 
         @Specialization(guards = {"!isMutableRope(left)", "isCodeRangeBroken(left, right)"})
@@ -307,6 +431,19 @@ public abstract class RopeNodes {
             }
 
             if (brokenCodeRangeProfile.profile((first == CR_BROKEN) || (second == CR_BROKEN))) {
+                return CR_BROKEN;
+            }
+
+            // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
+            return CR_VALID;
+        }
+
+        public static CodeRange commonCodeRange(CodeRange first, CodeRange second) {
+            if (first == second) {
+                return first;
+            }
+
+            if ((first == CR_BROKEN) || (second == CR_BROKEN)) {
                 return CR_BROKEN;
             }
 
@@ -401,7 +538,7 @@ public abstract class RopeNodes {
 
         @Specialization(guards = "isBroken(codeRange)")
         public LeafRope makeInvalidLeafRope(byte[] bytes, Encoding encoding, CodeRange codeRange, Object characterLength) {
-            return new InvalidLeafRope(bytes, encoding);
+            return new InvalidLeafRope(bytes, encoding, RopeOperations.strLength(encoding, bytes, 0, bytes.length));
         }
 
         @Specialization(guards = { "isUnknown(codeRange)", "isEmpty(bytes)" })
@@ -464,7 +601,7 @@ public abstract class RopeNodes {
                 return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
             }
 
-            return new InvalidLeafRope(bytes, encoding);
+            return new InvalidLeafRope(bytes, encoding, calculatedCharacterLength);
         }
 
         @Specialization(guards = { "isUnknown(codeRange)", "!isEmpty(bytes)", "!isBinaryString(encoding)", "!isAsciiCompatible(encoding)" })
@@ -483,7 +620,7 @@ public abstract class RopeNodes {
                 return new ValidLeafRope(bytes, encoding, calculatedCharacterLength);
             }
 
-            return new InvalidLeafRope(bytes, encoding);
+            return new InvalidLeafRope(bytes, encoding, calculatedCharacterLength);
         }
 
         protected static boolean is7Bit(CodeRange codeRange) {
@@ -909,15 +1046,10 @@ public abstract class RopeNodes {
     @ImportStatic(RopeGuards.class)
     public abstract static class FlattenNode extends RubyNode {
 
-        @Child private MakeLeafRopeNode makeLeafRopeNode;
+        @Child private MakeLeafRopeNode makeLeafRopeNode = MakeLeafRopeNode.create();
 
         public static FlattenNode create() {
-            return RopeNodesFactory.FlattenNodeGen.create(null, null, null);
-        }
-
-        public FlattenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeLeafRopeNode = MakeLeafRopeNode.create();
+            return RopeNodesFactory.FlattenNodeGen.create(null);
         }
 
         public abstract LeafRope executeFlatten(Rope rope);

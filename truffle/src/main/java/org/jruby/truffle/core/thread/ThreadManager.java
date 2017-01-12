@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,6 +17,7 @@ import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.InterruptMode;
 import org.jruby.truffle.core.fiber.FiberManager;
 import org.jruby.truffle.core.fiber.FiberNodes;
@@ -29,7 +30,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.control.ReturnException;
 import org.jruby.truffle.language.control.ThreadExitException;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
-import org.jruby.truffle.util.SourceSectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -98,7 +98,7 @@ public class ThreadManager {
         }
 
         final SourceSection sourceSection = Layouts.PROC.getSharedMethodInfo(block).getSourceSection();
-        final String info = SourceSectionUtils.fileLine(sourceSection);
+        final String info = RubyLanguage.fileLine(sourceSection);
         initialize(thread, context, currentNode, info, () -> {
             final Object value = ProcOperations.rootCall(block, arguments);
             Layouts.THREAD.setValue(thread, value);
@@ -372,7 +372,7 @@ public class ThreadManager {
             try {
                 context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
                     @Override
-                    public synchronized void run(DynamicObject thread, Node currentNode) {
+                    public synchronized void accept(DynamicObject thread, Node currentNode) {
                         if (thread != rootThread && Thread.currentThread() == Layouts.THREAD.getThread(thread)) {
                             shutdown(context, thread, currentNode);
                         }

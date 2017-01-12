@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -22,13 +22,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.Hashing;
 import org.jruby.truffle.core.basicobject.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.proc.ProcOperations;
 import org.jruby.truffle.core.proc.ProcType;
 import org.jruby.truffle.core.string.StringOperations;
@@ -42,6 +42,7 @@ import org.jruby.truffle.language.methods.CallBoundMethodNodeGen;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.LogicalClassNode;
 import org.jruby.truffle.language.objects.LogicalClassNodeGen;
+import org.jruby.truffle.language.objects.MetaClassNode;
 import org.jruby.truffle.parser.ArgumentDescriptor;
 
 @CoreClass("Method")
@@ -77,12 +78,7 @@ public abstract class MethodNodes {
     @CoreMethod(names = { "call", "[]" }, needsBlock = true, rest = true)
     public abstract static class CallNode extends CoreMethodArrayArgumentsNode {
 
-        @Child CallBoundMethodNode callBoundMethodNode;
-
-        public CallNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            callBoundMethodNode = CallBoundMethodNodeGen.create(context, sourceSection, null, null, null);
-        }
+        @Child private CallBoundMethodNode callBoundMethodNode = CallBoundMethodNodeGen.create(null, null, null);
 
         @Specialization
         protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object maybeBlock) {
@@ -168,15 +164,30 @@ public abstract class MethodNodes {
 
     }
 
+    @CoreMethod(names = "super_method")
+    public abstract static class SuperMethodNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private MetaClassNode metaClassNode = MetaClassNode.create();
+
+        @Specialization
+        public DynamicObject superMethod(DynamicObject method) {
+            Object receiver = Layouts.METHOD.getReceiver(method);
+            InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
+            DynamicObject selfMetaClass = metaClassNode.executeMetaClass(receiver);
+            InternalMethod superMethod = ModuleOperations.lookupSuperMethod(internalMethod, selfMetaClass);
+            if (superMethod == null || superMethod.isUndefined()) {
+                return nil();
+            } else {
+                return Layouts.METHOD.createMethod(coreLibrary().getMethodFactory(), receiver, superMethod);
+            }
+        }
+
+    }
+
     @CoreMethod(names = "unbind")
     public abstract static class UnbindNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private LogicalClassNode classNode;
-
-        public UnbindNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            classNode = LogicalClassNodeGen.create(context, sourceSection, null);
-        }
+        @Child private LogicalClassNode classNode = LogicalClassNodeGen.create(null);
 
         @Specialization
         public DynamicObject unbind(VirtualFrame frame, DynamicObject method) {
@@ -223,7 +234,7 @@ public abstract class MethodNodes {
             final SourceSection sourceSection = method.getSharedMethodInfo().getSourceSection();
             final RootNode oldRootNode = ((RootCallTarget) method.getCallTarget()).getRootNode();
 
-            final SetReceiverNode setReceiverNode = new SetReceiverNode(getContext(), sourceSection, Layouts.METHOD.getReceiver(methodObject), method.getCallTarget());
+            final SetReceiverNode setReceiverNode = new SetReceiverNode(Layouts.METHOD.getReceiver(methodObject), method.getCallTarget());
             final RootNode newRootNode = new RubyRootNode(getContext(), sourceSection, oldRootNode.getFrameDescriptor(), method.getSharedMethodInfo(), setReceiverNode, false);
             return Truffle.getRuntime().createCallTarget(newRootNode);
         }
@@ -239,8 +250,7 @@ public abstract class MethodNodes {
         private final Object receiver;
         @Child private DirectCallNode methodCallNode;
 
-        public SetReceiverNode(RubyContext context, SourceSection sourceSection, Object receiver, CallTarget methodCallTarget) {
-            super(context, sourceSection);
+        public SetReceiverNode(Object receiver, CallTarget methodCallTarget) {
             this.receiver = receiver;
             this.methodCallNode = DirectCallNode.create(methodCallTarget);
         }

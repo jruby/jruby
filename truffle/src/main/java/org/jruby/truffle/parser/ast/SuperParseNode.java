@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -43,11 +43,11 @@ public class SuperParseNode extends ParseNode implements BlockAcceptingParseNode
     private final ParseNode argsNode;
     private ParseNode iterNode;
 
-    public SuperParseNode(ISourcePosition position, ParseNode argsNode) {
+    public SuperParseNode(SourceIndexLength position, ParseNode argsNode) {
         this(position, argsNode, null);
     }
     
-    public SuperParseNode(ISourcePosition position, ParseNode argsNode, ParseNode iterNode) {
+    public SuperParseNode(SourceIndexLength position, ParseNode argsNode, ParseNode iterNode) {
         super(position, argsNode != null && argsNode.containsVariableAssignment() ||
                 iterNode != null && iterNode.containsVariableAssignment());
         this.argsNode = argsNode;

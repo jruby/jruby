@@ -10,6 +10,7 @@
 package org.jruby.truffle.options;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 public class ByteStringOptionDescription extends OptionDescription {
 
@@ -36,6 +37,11 @@ public class ByteStringOptionDescription extends OptionDescription {
         } else {
             throw new OptionTypeException(getName(), value.toString());
         }
+    }
+
+    @Override
+    public String toString(Object value) {
+        return new String((byte[]) value, StandardCharsets.US_ASCII);
     }
 
 }

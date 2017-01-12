@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,8 +16,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeChildren({ @NodeChild(value = "array", type = RubyNode.class) })
@@ -26,8 +24,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     final int index;
 
-    public ArrayDropTailNode(RubyContext context, SourceSection sourceSection, int index) {
-        super(context, sourceSection);
+    public ArrayDropTailNode(int index) {
         this.index = index;
     }
 

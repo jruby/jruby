@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleOptions;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -87,6 +88,7 @@ import org.jruby.truffle.core.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.core.rubinius.StatPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.UndefinedPrimitiveNodesFactory;
 import org.jruby.truffle.core.rubinius.WeakRefPrimitiveNodesFactory;
+import org.jruby.truffle.core.string.EncodingUtils;
 import org.jruby.truffle.core.string.StringNodesFactory;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.string.TruffleStringNodesFactory;
@@ -102,6 +104,7 @@ import org.jruby.truffle.extra.TrufflePosixNodesFactory;
 import org.jruby.truffle.extra.ffi.PointerPrimitiveNodesFactory;
 import org.jruby.truffle.gem.bcrypt.BCryptNodesFactory;
 import org.jruby.truffle.interop.InteropNodesFactory;
+import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -124,6 +127,7 @@ import org.jruby.truffle.language.objects.SingletonClassNode;
 import org.jruby.truffle.language.objects.SingletonClassNodeGen;
 import org.jruby.truffle.options.OutputStrings;
 import org.jruby.truffle.parser.ParserContext;
+import org.jruby.truffle.platform.Platform;
 import org.jruby.truffle.platform.RubiniusTypes;
 import org.jruby.truffle.platform.signal.SignalManager;
 import org.jruby.truffle.stdlib.CoverageNodesFactory;
@@ -134,9 +138,8 @@ import org.jruby.truffle.stdlib.digest.DigestNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychEmitterNodesFactory;
 import org.jruby.truffle.stdlib.psych.PsychParserNodesFactory;
 import org.jruby.truffle.stdlib.psych.YAMLEncoding;
-import org.jruby.truffle.util.Constants;
-import org.jruby.truffle.util.EncodingUtils;
-import org.jruby.truffle.util.Platform;
+import org.jruby.truffle.stdlib.readline.ReadlineHistoryNodesFactory;
+import org.jruby.truffle.stdlib.readline.ReadlineNodesFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -190,7 +193,6 @@ public class CoreLibrary {
     private final DynamicObject ioErrorClass;
     private final DynamicObject loadErrorClass;
     private final DynamicObject localJumpErrorClass;
-    private final DynamicObject lookupTableClass;
     private final DynamicObject matchDataClass;
     private final DynamicObjectFactory matchDataFactory;
     private final DynamicObject moduleClass;
@@ -276,7 +278,7 @@ public class CoreLibrary {
     private final GlobalVariables globalVariables;
     private final DynamicObject mainObject;
     private final DynamicObject nilObject;
-    private final DynamicObject rubiniusUndefined;
+    private final Object rubiniusUndefined;
     private final DynamicObject digestClass;
     private final DynamicObjectFactory digestFactory;
 
@@ -286,6 +288,7 @@ public class CoreLibrary {
 
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
+    @CompilationFinal private boolean cloningEnabled;
     @CompilationFinal private InternalMethod basicObjectSendMethod;
     @CompilationFinal private InternalMethod truffleBootMainMethod;
 
@@ -332,10 +335,9 @@ public class CoreLibrary {
         @Child SingletonClassNode singletonClassNode;
         @Child FreezeNode freezeNode;
 
-        public CoreLibraryNode(RubyContext context) {
-            super(context);
-            this.singletonClassNode = SingletonClassNodeGen.create(context, null, null);
-            this.freezeNode = FreezeNodeGen.create(context, null, null);
+        public CoreLibraryNode() {
+            this.singletonClassNode = SingletonClassNodeGen.create(null);
+            this.freezeNode = FreezeNodeGen.create(null);
             adoptChildren();
         }
 
@@ -359,7 +361,7 @@ public class CoreLibrary {
     public CoreLibrary(RubyContext context) {
         this.context = context;
         this.coreLoadPath = buildCoreLoadPath();
-        this.node = new CoreLibraryNode(context);
+        this.node = new CoreLibraryNode();
 
         // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
         // Therefore, only initialize the core classes and modules here.
@@ -601,6 +603,8 @@ public class CoreLibrary {
         defineModule(truffleModule, "Process");
         defineModule(truffleModule, "Binding");
         defineModule(truffleModule, "POSIX");
+        defineModule(truffleModule, "Readline");
+        defineModule(truffleModule, "ReadlineHistory");
         psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
@@ -634,7 +638,6 @@ public class CoreLibrary {
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         byteArrayFactory = Layouts.BYTE_ARRAY.createByteArrayShape(byteArrayClass, byteArrayClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(byteArrayClass, byteArrayFactory);
-        lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
         randomizerClass = defineClass(rubiniusModule, objectClass, "Randomizer");
@@ -659,7 +662,7 @@ public class CoreLibrary {
         mainObject = objectFactory.newInstance();
         nilObject = nilFactory.newInstance();
         argv = Layouts.ARRAY.createArray(arrayFactory, null, 0);
-        rubiniusUndefined = objectFactory.newInstance();
+        rubiniusUndefined = NotProvided.INSTANCE;
 
         globalVariables = new GlobalVariables(nilObject);
 
@@ -745,6 +748,8 @@ public class CoreLibrary {
                 QueueNodesFactory.getFactories(),
                 RandomizerPrimitiveNodesFactory.getFactories(),
                 RangeNodesFactory.getFactories(),
+                ReadlineNodesFactory.getFactories(),
+                ReadlineHistoryNodesFactory.getFactories(),
                 RegexpNodesFactory.getFactories(),
                 RubiniusTypeNodesFactory.getFactories(),
                 SizedQueueNodesFactory.getFactories(),
@@ -815,6 +820,8 @@ public class CoreLibrary {
 
         basicObjectSendMethod = getMethod(basicObjectClass, "__send__");
         truffleBootMainMethod = getMethod(node.getSingletonClass(truffleBootModule), "main");
+
+        cloningEnabled = Truffle.getRuntime().createDirectCallNode(getMethod(kernelModule, "lambda").getCallTarget()).isCallTargetCloningAllowed();
     }
 
     private InternalMethod getMethod(DynamicObject module, String name) {
@@ -898,13 +905,13 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(context, node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
 
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_VERSION", StringOperations.createString(context, StringOperations.encodeRope(Constants.RUBY_VERSION, UTF8Encoding.INSTANCE)));
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "JRUBY_VERSION", StringOperations.createString(context, StringOperations.encodeRope(Constants.VERSION, UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_VERSION", StringOperations.createString(context, StringOperations.encodeRope(RubyLanguage.RUBY_VERSION, UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "JRUBY_VERSION", StringOperations.createString(context, StringOperations.encodeRope(RubyLanguage.VERSION, UTF8Encoding.INSTANCE)));
         Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_PATCHLEVEL", 0);
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_REVISION", Constants.RUBY_REVISION);
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_ENGINE", StringOperations.createString(context, StringOperations.encodeRope(Constants.ENGINE + "+truffle", UTF8Encoding.INSTANCE)));
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_PLATFORM", StringOperations.createString(context, StringOperations.encodeRope(Constants.PLATFORM, UTF8Encoding.INSTANCE)));
-        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_RELEASE_DATE", StringOperations.createString(context, StringOperations.encodeRope(Constants.COMPILE_DATE, UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_REVISION", RubyLanguage.RUBY_REVISION);
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_ENGINE", StringOperations.createString(context, StringOperations.encodeRope(RubyLanguage.ENGINE, UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_PLATFORM", StringOperations.createString(context, StringOperations.encodeRope(RubyLanguage.PLATFORM, UTF8Encoding.INSTANCE)));
+        Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_RELEASE_DATE", StringOperations.createString(context, StringOperations.encodeRope(RubyLanguage.COMPILE_DATE, UTF8Encoding.INSTANCE)));
         Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_DESCRIPTION", StringOperations.createString(context, StringOperations.encodeRope(OutputStrings.getVersionString(), UTF8Encoding.INSTANCE)));
         Layouts.MODULE.getFields(objectClass).setConstant(context, node, "RUBY_COPYRIGHT", StringOperations.createString(context, StringOperations.encodeRope(OutputStrings.getCopyrightString(), UTF8Encoding.INSTANCE)));
 
@@ -1100,6 +1107,7 @@ public class CoreLibrary {
                 throw new TruffleFatalException("couldn't load the post-boot code", e);
             }
         }
+
     }
 
     private void initializeEncodings() {
@@ -1465,10 +1473,6 @@ public class CoreLibrary {
         return statFactory;
     }
 
-    public DynamicObject getLookupTableClass() {
-        return lookupTableClass;
-    }
-
     public DynamicObject getTranscodingClass() {
         return transcodingClass;
     }
@@ -1477,7 +1481,7 @@ public class CoreLibrary {
         return rubiniusFFIPointerClass;
     }
 
-    public DynamicObject getRubiniusUndefined() {
+    public Object getRubiniusUndefined() {
         return rubiniusUndefined;
     }
 
@@ -1525,6 +1529,10 @@ public class CoreLibrary {
 
     public boolean isTruffleBootMainMethod(SharedMethodInfo info) {
         return info == truffleBootMainMethod.getSharedMethodInfo();
+    }
+
+    public boolean isCloningEnabled() {
+        return cloningEnabled;
     }
 
     public DynamicObjectFactory getIntRangeFactory() {
@@ -1677,8 +1685,8 @@ public class CoreLibrary {
 
     private static final String[] coreFiles = {
             "/core/pre.rb",
-            "/core/lookuptable.rb",
             "/core/basic_object.rb",
+            "/core/array.rb",
             "/core/mirror.rb",
             "/core/bignum.rb",
             "/core/channel.rb",
@@ -1701,6 +1709,7 @@ public class CoreLibrary {
             "/core/truffle/ffi/ffi_struct.rb",
             "/core/truffle/support.rb",
             "/core/truffle/boot.rb",
+            "/core/truffle/debug.rb",
             "/core/io.rb",
             "/core/immediate.rb",
             "/core/string_mirror.rb",
@@ -1711,11 +1720,8 @@ public class CoreLibrary {
             "/core/enumerator.rb",
             "/core/argf.rb",
             "/core/exception.rb",
-            "/core/undefined.rb",
             "/core/hash.rb",
-            "/core/array.rb",
             "/core/kernel.rb",
-            "/core/identity_map.rb",
             "/core/comparable.rb",
             "/core/numeric_mirror.rb",
             "/core/numeric.rb",

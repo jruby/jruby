@@ -662,37 +662,8 @@ public class Dir {
             if (cwd == null) cwd = "C:";
             cwd = cwd + "/";
         }
-
         FileResource file = JRubyFile.createResource(runtime, cwd, fileName);
-
         if (file.exists()) {
-            boolean trailingSlash = bytes[end - 1] == '/';
-
-            // On case-insenstive file systems any case string will 'exists',
-            // but what does it display as if you ls/dir it?
-            /* No idea what this is doing =/
-
-              if ((flags & FNM_CASEFOLD) != 0 && !isSpecialFile(fileName)) {
-                try {
-                    String realName = file.getCanonicalFile().getName();
-
-                    // TODO: This is only being done to the name of the file,
-                    // but it should do for all parent directories too...
-                    // TODO: OMGZ is this ugly
-                    int fileNameLength = fileName.length();
-                    int newEnd = fileNameLength <= 1 ? -1 : fileName.lastIndexOf('/', fileNameLength - 2);
-                    if (newEnd != -1) {
-                        realName = fileName.substring(0, newEnd + 1) + realName;
-                    }
-                    // It came in with a trailing slash preserve that in new name.
-                    if (trailingSlash) realName = realName + "/";
-
-                    bytes = realName.getBytes();
-                    begin = 0;
-                    end = bytes.length;
-                } catch (Exception e) {} // Failure will just use what we pass in
-            }*/
-
             return func.call(bytes, begin, end - begin, arg);
         }
 
@@ -710,9 +681,9 @@ public class Dir {
         final int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         int status = 0;
 
-        int p = sub != -1 ? sub : begin;
+        int ptr = sub != -1 ? sub : begin;
 
-        if ( ! has_magic(path, p, end, flags) ) {
+        if ( ! has_magic(path, ptr, end, flags) ) {
             if ( DOSISH || (flags & FNM_NOESCAPE) == 0 ) {
                 if ( sub != -1 ) { // can modify path (our internal buf[])
                     end = remove_backslashes(path, sub, end);
@@ -726,7 +697,7 @@ public class Dir {
                 }
             }
 
-            if ( (end - begin) > 0 ) {
+            if (end > begin) {
                 if ( isAbsolutePath(path, begin, end) ) {
                     status = addToResultIfExists(runtime, null, path, begin, end, flags, func, arg);
                 } else {
@@ -740,27 +711,42 @@ public class Dir {
         final ArrayList<DirGlobber> links = new ArrayList<DirGlobber>();
 
         ByteList buf = new ByteList(20); FileResource resource;
-        mainLoop: while(p != -1 && status == 0) {
-            if ( path[p] == '/' ) p++;
 
-            final int s = indexOf(path, p, end, (byte) '/');
-            if ( has_magic(path, p, s == -1 ? end : s, flags) ) {
+        mainLoop: while(ptr != -1 && status == 0) {
+            if ( path[ptr] == '/' ) ptr++;
+
+            final int SLASH_INDEX = indexOf(path, ptr, end, (byte) '/');
+            if ( has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags) ) {
                 finalize: do {
-                    byte[] base = extract_path(path, begin, p);
-                    byte[] dir = begin == p ? new byte[] { '.' } : base;
-                    byte[] magic = extract_elem(path, p, end);
+                    byte[] base = extract_path(path, begin, ptr);
+                    byte[] dir = begin == ptr ? new byte[] { '.' } : base;
+                    byte[] magic = extract_elem(path, ptr, end);
                     boolean recursive = false;
 
                     resource = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(dir, 0, dir.length));
-
                     if ( resource.isDirectory() ) {
-                        if ( s != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
-                            final int n = base.length;
+                        if ( SLASH_INDEX != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
+                            final int lengthOfBase = base.length;
                             recursive = true;
                             buf.length(0);
                             buf.append(base);
-                            buf.append(path, (n > 0 ? s : s + 1), end - (n > 0 ? s : s + 1));
-                            status = glob_helper(runtime, cwd, buf, n, flags, func, arg);
+                            int nextStartIndex;
+                            int indexOfSlash = SLASH_INDEX;
+                            do {
+                                nextStartIndex = indexOfSlash + 1;
+                                indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
+                                magic = extract_elem(path, nextStartIndex, end);
+                            } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
+
+                            int remainingPathStartIndex;
+                            if(Arrays.equals(magic, DOUBLE_STAR)) {
+                                remainingPathStartIndex = nextStartIndex;
+                            } else {
+                                remainingPathStartIndex = nextStartIndex - 1;
+                            }
+                            remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
+                            buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
+                            status = glob_helper(runtime, cwd, buf, lengthOfBase, flags, func, arg);
                             if ( status != 0 ) break finalize;
                         }
                     } else {
@@ -785,7 +771,7 @@ public class Dir {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
-                                buf.append(path, s, end - s);
+                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
                                 status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
                                 if ( status != 0 ) break;
                             }
@@ -796,7 +782,7 @@ public class Dir {
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            if ( s == -1 ) {
+                            if ( SLASH_INDEX == -1 ) {
                                 status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), arg);
                                 if ( status != 0 ) break;
                                 continue;
@@ -816,7 +802,7 @@ public class Dir {
                                 final int len = link.getRealSize();
                                 buf.length(0);
                                 buf.append(link);
-                                buf.append(path, s, end - s);
+                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
                                 status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
                             }
                         }
@@ -824,8 +810,9 @@ public class Dir {
                     break mainLoop;
                 }
             }
-            p = s;
+            ptr = SLASH_INDEX;
         }
+
         return status;
     }
 

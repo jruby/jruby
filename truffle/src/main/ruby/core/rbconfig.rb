@@ -29,29 +29,20 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-#  RbConfig::expand method imported from Ruby sources
+#  RbConfig.expand method imported from MRI sources
 #
 
 module RbConfig
-  jruby_home = Truffle::Boot.jruby_home_directory
-
-  if jruby_home
-    bindir = if jruby_home.end_with?('/mxbuild/ruby-zip-extracted')
-               File.expand_path('../../bin', jruby_home)
-             else
-               "#{jruby_home}/bin"
-           end
-  end
+  
+  host_os = Truffle::System.host_os
+  host_cpu = Truffle::System.host_cpu
 
   CONFIG = {
+    'arch' => "#{host_cpu}-#{host_os}",
     'exeext' => '',
     'EXEEXT' => '',
-    'host_os' => Truffle::System.host_os,
-    'host_cpu' => Truffle::System.host_cpu,
-    'bindir' => bindir,
-    'libdir' => "#{jruby_home}/lib/ruby/truffle",
-    "sitelibdir"=>"#{jruby_home}/lib/ruby/2.3/site_ruby", # TODO BJF Oct 21, 2016 Need to review these values
-    "sitearchdir"=>"#{jruby_home}/lib/ruby/2.3/site_ruby",
+    'host_os' => host_os,
+    'host_cpu' => host_cpu,
     'ruby_install_name' => 'jruby-truffle',
     'RUBY_INSTALL_NAME' => 'jruby-truffle',
     # 'ruby_install_name' => 'jruby',
@@ -59,9 +50,6 @@ module RbConfig
     'ruby_version' => '2.2.0',
     'OBJEXT' => 'll',
     'DLEXT' => 'su',
-    'rubyhdrdir' => "#{jruby_home}/lib/ruby/truffle/cext",
-    'topdir' => "#{jruby_home}/lib/ruby/stdlib",
-    "rubyarchhdrdir"=>"#{jruby_home}/lib/ruby/truffle/cext",
     'includedir' => '',
   }
 
@@ -85,10 +73,33 @@ module RbConfig
       'LIBRUBYARG' => '',
       'prefix' => '',
       'ruby_install_name' => 'jruby-truffle',
-      'RUBY_SO_NAME' => '$(RUBY_BASE_NAME)',
-      'hdrdir' => "#{jruby_home}/lib/ruby/truffle/cext",
-      'bindir' => bindir
+      'RUBY_SO_NAME' => '$(RUBY_BASE_NAME)'
   }
+  
+  ruby_home = Truffle::Boot.ruby_home
+
+  if ruby_home
+    bindir = if ruby_home.end_with?('/mxbuild/ruby-zip-extracted')
+               File.expand_path('../../bin', ruby_home)
+             else
+               "#{ruby_home}/bin"
+             end
+    
+    CONFIG.merge!({
+      'bindir' => bindir,
+      'libdir' => "#{ruby_home}/lib/ruby/truffle",
+      "sitelibdir"=>"#{ruby_home}/lib/ruby/2.3/site_ruby", # TODO BJF Oct 21, 2016 Need to review these values
+      "sitearchdir"=>"#{ruby_home}/lib/ruby/2.3/site_ruby",
+      'rubyhdrdir' => "#{ruby_home}/lib/ruby/truffle/cext",
+      'topdir' => "#{ruby_home}/lib/ruby/stdlib",
+      "rubyarchhdrdir"=>"#{ruby_home}/lib/ruby/truffle/cext",
+    })
+    
+    MAKEFILE_CONFIG.merge!({
+      'hdrdir' => "#{ruby_home}/lib/ruby/truffle/cext",
+      'bindir' => bindir
+    })
+  end
 
   if Truffle::Safe.memory_safe? && Truffle::Safe.processes_safe?
     clang = ENV['JT_CLANG'] || 'clang'
@@ -112,12 +123,13 @@ module RbConfig
   end
 
   def self.ruby
+    raise unless CONFIG['bindir']
     # TODO (eregon, 30 Sep 2016): should be the one used by the launcher!
     jruby_truffle = CONFIG['ruby_install_name'] + CONFIG['exeext']
     File.join CONFIG['bindir'], jruby_truffle
   end
 
-  def RbConfig::expand(val, config = CONFIG)
+  def RbConfig.expand(val, config = CONFIG)
     newval = val.gsub(/\$\$|\$\(([^()]+)\)|\$\{([^{}]+)\}/) {
       var = $&
       if !(v = $1 || $2)
@@ -125,7 +137,7 @@ module RbConfig
       elsif key = config[v = v[/\A[^:]+(?=(?::(.*?)=(.*))?\z)/]]
         pat, sub = $1, $2
         config[v] = false
-        config[v] = RbConfig::expand(key, config)
+        config[v] = RbConfig.expand(key, config)
         key = key.gsub(/#{Regexp.quote(pat)}(?=\s|\z)/n) {sub} if pat
         key
       else

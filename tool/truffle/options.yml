@@ -26,11 +26,13 @@ PLATFORM_SAFE_AT_EXIT: [platform.safe.at_exit, boolean, PLATFORM_SAFE, 'Treat #a
 PLATFORM_SAFE_PUTS: [platform.safe_puts, boolean, true, Treat safe_puts as safe]
 PLATFORM_USE_JAVA: [platform.use_java, boolean, false, Use a pure-Java platform, so no native POSIX]
 
+TRACE_CALLS: [trace.calls, boolean, true, Support tracing (set_trace_func, TracePoint) of method calls]
 COVERAGE_GLOBAL: [coverage.global, boolean, false, Run coverage for all code and print results on exit]
 INLINE_JS: [inline_js, boolean, false, Allow inline JavaScript]
 
 CORE_LOAD_PATH: [core.load_path, string, 'truffle:/jruby-truffle', Location to load the Truffle core library from]
 CORE_PARALLEL_LOAD: [core.parallel_load, boolean, false, Load the Truffle core library in parallel]
+LAZY_TRANSLATION: [lazy_translation, boolean, false, Lazily translate from the parser AST to the Truffle AST]
 
 ARRAY_UNINITIALIZED_SIZE: [array.uninitialized_size, integer, 32, How large an Array to allocate when we have no other information to go on]
 ARRAY_SMALL: [array.small, integer, 3, Maximum size of an Array to consider small for optimisations]
@@ -38,6 +40,7 @@ HASH_PACKED_ARRAY_MAX: [hash.packed_array.max, integer, 3, Maximum size of a Has
 
 ROPE_LAZY_SUBSTRINGS: [rope.lazy_substrings, boolean, true, Indicates whether a substring operation on a rope should be performed lazily]
 ROPE_PRINT_INTERN_STATS: [rope.print_intern_stats, boolean, false, Print interned rope stats at application exit]
+ROPE_DEPTH_THRESHOLD: [rope.depth_threshold, integer, 128, Threshold value at which ropes will be rebalanced (indirectly controls flattening as well)]
 
 GLOBAL_VARIABLE_MAX_INVALIDATIONS: [global_variable.max_invalidations, integer, 10, Maximum number of times a global variable can be changed to be considered constant]
 
@@ -84,6 +87,7 @@ INSTRUMENTATION_SERVER_PORT: [instrumentation_server_port, integer, 0, Port numb
 EXCEPTIONS_STORE_JAVA: [exceptions.store_java, boolean, false, Store the Java exception with the Ruby backtrace]
 EXCEPTIONS_PRINT_JAVA: [exceptions.print_java, boolean, false, Print Java exceptions at the point of translating them to Ruby exceptions]
 EXCEPTIONS_PRINT_UNCAUGHT_JAVA: [exceptions.print_uncaught_java, boolean, false, Print uncaught Java exceptions at the point of translating them to Ruby exceptions]
+EXCEPTIONS_TRANSLATE_ASSERT: [exceptions.translate_assert, boolean, true, Translate failed Java assertions to Ruby exceptions]
 BACKTRACES_HIDE_CORE_FILES: [backtraces.hide_core_files, boolean, true, Hide core source files in backtraces, like MRI does]
 BACKTRACES_INTERLEAVE_JAVA: [backtraces.interleave_java, boolean, false, Interleave Java stacktraces into the Ruby backtrace]
 BACKTRACES_LIMIT: [backtraces.limit, integer, 9999, Limit the size of Ruby backtraces]
@@ -97,7 +101,6 @@ CALL_GRAPH_WRITE: [callgraph.write, string, null, File to write the call graph t
 CHAOS: [chaos, boolean, false, Randomly modify the representation of objects]
 
 GRAAL_WARNING_UNLESS: [graal.warn_unless, boolean, true, Warn unless the JVM has the Graal compiler]
-PERF_WARNING: [perf.warn, boolean, false, Warn when using a fature which is not optimized yet]
 
 SHARED_OBJECTS_ENABLED: [shared.objects, boolean, true, Enable shared objects]
 SHARED_OBJECTS_DEBUG: [shared.objects.debug, boolean, false, Print information about shared objects]
@@ -106,3 +109,5 @@ SHARED_OBJECTS_SHARE_ALL: [shared.objects.share_all, boolean, false, Consider al
 
 CEXTS_LOG_LOAD: [cexts.log.load, boolean, false, Log loading of cexts]
 LOG_DYNAMIC_CONSTANT_LOOKUP: [constant.dynamic_lookup.log, boolean, false, Log source code positions where dynamic constant lookup is performed]
+
+OPTIONS_LOG: [options.log, boolean, false, Log the final value of all options]

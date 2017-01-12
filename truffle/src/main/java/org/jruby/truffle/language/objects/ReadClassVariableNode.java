@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,8 +12,6 @@ package org.jruby.truffle.language.objects;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
@@ -26,9 +24,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     private final BranchProfile missingProfile = BranchProfile.create();
 
-    public ReadClassVariableNode(RubyContext context, SourceSection sourceSection,
-                                 LexicalScope lexicalScope, String name) {
-        super(context, sourceSection);
+    public ReadClassVariableNode(LexicalScope lexicalScope, String name) {
         this.lexicalScope = lexicalScope;
         this.name = name;
     }

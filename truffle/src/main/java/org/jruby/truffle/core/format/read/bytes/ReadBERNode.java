@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -64,17 +64,12 @@ import java.nio.ByteBuffer;
 })
 public abstract class ReadBERNode extends FormatNode {
 
-    @Child private FixnumOrBignumNode fixnumOrBignumNode;
+    @Child private FixnumOrBignumNode fixnumOrBignumNode = FixnumOrBignumNode.create(null);
 
     private static final long UL_MASK = 0xFE000000;
     private static final BigInteger BIG_128 = BigInteger.valueOf(128);
 
     private final ConditionProfile simpleProfile = ConditionProfile.createBinaryProfile();
-
-    public ReadBERNode(RubyContext context) {
-        super(context);
-        fixnumOrBignumNode = FixnumOrBignumNode.create(context, null);
-    }
 
     @Specialization
     protected Object encode(VirtualFrame frame, byte[] source) {

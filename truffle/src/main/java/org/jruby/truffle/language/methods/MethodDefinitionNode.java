@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,8 +13,6 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.LexicalScope;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.Visibility;
@@ -33,8 +31,7 @@ public class MethodDefinitionNode extends RubyNode {
 
     @Child private GetDefaultDefineeNode getDefaultDefineeNode;
 
-    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo, CallTarget callTarget) {
-        super(context, sourceSection);
+    public MethodDefinitionNode(String name, SharedMethodInfo sharedMethodInfo, CallTarget callTarget) {
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
@@ -48,7 +45,7 @@ public class MethodDefinitionNode extends RubyNode {
         if (RubyArguments.getDeclarationContext(frame) == DeclarationContext.INSTANCE_EVAL) {
             if (getDefaultDefineeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                getDefaultDefineeNode = insert(new GetDefaultDefineeNode(getContext(), null));
+                getDefaultDefineeNode = insert(new GetDefaultDefineeNode());
             }
             capturedDefaultDefinee = getDefaultDefineeNode.execute(frame);
         } else {

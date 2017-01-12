@@ -84,10 +84,6 @@ class Module
     super
   end
 
-  # Not sure what this does - but we seem better off not doing it
-  def attr_reader_specific(a, b)
-  end
-
   def prepended(mod); end
   private :prepended
 

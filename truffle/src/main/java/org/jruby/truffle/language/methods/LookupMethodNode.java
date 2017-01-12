@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -19,7 +19,6 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.module.ModuleOperations;
@@ -38,14 +37,11 @@ public abstract class LookupMethodNode extends RubyNode {
     private final boolean ignoreVisibility;
     private final boolean onlyLookupPublic;
 
-    @Child MetaClassNode metaClassNode;
+    @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
 
-    public LookupMethodNode(RubyContext context, SourceSection sourceSection,
-            boolean ignoreVisibility, boolean onlyLookupPublic) {
-        super(context, sourceSection);
+    public LookupMethodNode(boolean ignoreVisibility, boolean onlyLookupPublic) {
         this.ignoreVisibility = ignoreVisibility;
         this.onlyLookupPublic = onlyLookupPublic;
-        this.metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
     }
 
     public abstract InternalMethod executeLookupMethod(VirtualFrame frame, Object self, String name);

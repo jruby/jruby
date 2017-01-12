@@ -12,7 +12,7 @@ DO NOT MODIFIY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.1.7.0-SNAPSHOT</version>
+    <version>9.1.8.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
@@ -22,7 +22,6 @@ DO NOT MODIFIY - GENERATED CODE
     <spec.tags.dir>${spec.dir}/tags</spec.tags.dir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <pkg.dir>${build.dir}/pkg</pkg.dir>
-    <unsafe.jar>${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar</unsafe.jar>
     <spec.dir>spec</spec.dir>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
@@ -41,7 +40,6 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby.launch.memory>1024M</jruby.launch.memory>
     <jruby.compile.memory>2G</jruby.compile.memory>
     <version.ruby.major>2.3</version.ruby.major>
-    <unsafe.version>8.92.1</unsafe.version>
     <release.dir>release</release.dir>
     <create.sources.jar>false</create.sources.jar>
     <lib.dir>lib</lib.dir>
@@ -137,7 +135,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.33</version>
+      <version>3.0.34-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -204,15 +202,8 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
-      <artifactId>coro-mock</artifactId>
+      <artifactId>unsafe-fences</artifactId>
       <version>1.0</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.headius</groupId>
-      <artifactId>unsafe-mock</artifactId>
-      <version>${unsafe.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>bsf</groupId>
@@ -496,8 +487,6 @@ DO NOT MODIFIY - GENERATED CODE
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
                 <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
-                <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
-                <compilerArg>-Xbootclasspath/p:${unsafe.jar}</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
             </configuration>
@@ -513,8 +502,6 @@ DO NOT MODIFIY - GENERATED CODE
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
                 <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
-                <compilerArg>-J-Xbootclasspath/p:${unsafe.jar}</compilerArg>
-                <compilerArg>-Xbootclasspath/p:${unsafe.jar}</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
               <includes>

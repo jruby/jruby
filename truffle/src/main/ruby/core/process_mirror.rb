@@ -1,4 +1,4 @@
-# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -32,21 +32,74 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Copyright (C) 1993-2017 Yukihiro Matsumoto. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
 module Rubinius
   class Mirror
     module Process
+      SHELL_META_CHARS = [
+          '*',  # Pathname Expansion
+          '?',  # Pathname Expansion
+          '{',  # Grouping Commands
+          '}',  # Grouping Commands
+          '[',  # Pathname Expansion
+          ']',  # Pathname Expansion
+          '<',  # Redirection
+          '>',  # Redirection
+          '(',  # Grouping Commands
+          ')',  # Grouping Commands
+          '~',  # Tilde Expansion
+          '&',  # AND Lists, Asynchronous Lists
+          '|',  # OR Lists, Pipelines
+          '\\', # Escape Character
+          '$',  # Parameter Expansion
+          ';',  # Sequential Lists
+          '\'', # Single-Quotes
+          '`',  # Command Substitution
+          '"',  # Double-Quotes
+          "\n", # Lists
+          '#',  # Comment
+          '=',  # Assignment preceding command name
+          '%'   # (used in Parameter Expansion)
+      ]
+      SHELL_META_CHAR_PATTERN = Regexp.new("[#{SHELL_META_CHARS.map(&Regexp.method(:escape)).join}]")
+
       def self.set_status_global(status)
         $? = status
       end
 
       def self.exec(*args)
         exe = Execute.new(*args)
-        exe.spawn_setup
-        exe.exec exe.command, exe.argv
+        exe.spawn_setup(true)
+        exe.exec exe.command, exe.argv, exe.env_array
       end
 
       def self.spawn(*args)
-        exe = Execute.new(*args) 
+        exe = Execute.new(*args)
+        exe.spawn_setup(false)
 
         begin
           pid = exe.spawn exe.options, exe.command, exe.argv
@@ -62,6 +115,7 @@ module Rubinius
         attr_reader :command
         attr_reader :argv
         attr_reader :options
+        attr_reader :env_array
 
         # Turns the various varargs incantations supported by Process.spawn into a
         # [env, prog, argv, redirects, options] tuple.
@@ -89,8 +143,7 @@ module Rubinius
             command = env_or_cmd
           end
 
-          if args.empty? and
-              cmd = Rubinius::Type.try_convert(command, ::String, :to_str)
+          if args.empty? and cmd = Rubinius::Type.try_convert(command, ::String, :to_str)
             raise Errno::ENOENT if cmd.empty?
 
             @command = cmd
@@ -111,7 +164,52 @@ module Rubinius
             @argv = argv
           end
 
-          @options = Rubinius::LookupTable.new if options or env
+          @command = Rubinius::Type.check_null_safe(StringValue(@command))
+
+          if @argv.empty?
+            if should_use_shell?(@command)
+              @command, @argv = '/bin/sh', ['sh', '-c', @command]
+            else
+              # If the command contains both the binary to run and the arguments, we need to split them apart. We have
+              # two basic cases here: 1) a fully qualified command; and 2) a simple name expected to be found on the PATH.
+              # Both cases require the split. In the event of a fully qualified command, we exec the command directly,
+              # but the signature for exec requires the command and arguments to all be split. In the other case, where
+              # we have a command to search on the PATH, we must split the command apart from the arguments in order to
+              # perform the search (a poor man's version of shell processing). If we can find it on the PATH, then we
+              # run the whole thing through a shell to get proper shell processing.
+
+              split_command, *split_args = @command.strip.split(' ')
+
+              if should_search_path?(split_command)
+                resolved_command = resolve_in_path(split_command)
+
+                if resolved_command
+                  @command, @argv = '/bin/sh', ['sh', '-c', @command]
+                else
+                  raise Errno::ENOENT.new("No such file or directory - #{@command}")
+                end
+              else
+                @command = split_command
+                @argv = [split_command] + split_args
+              end
+            end
+          else
+            # If arguments are explicitly passed, the semantics of this method (defined in Ruby) are to run the
+            # command directly. Thus, we must find the full path to the command, if not specified, because we can't
+            # allow the shell to do it for us.
+
+            if should_search_path?(@command)
+              resolved_command = resolve_in_path(@command)
+
+              if resolved_command
+                @command = resolved_command
+              else
+                raise Errno::ENOENT.new("No such file or directory - #{@command}")
+              end
+            end
+          end
+
+          @options = {}
 
           if options
             options.each do |key, value|
@@ -267,26 +365,90 @@ module Rubinius
           "a+" => ::File::RDWR   | ::File::APPEND | ::File::CREAT
         }
 
-        def spawn(options, command, arguments)
-          options ||= {}
+        def spawn_setup(alter_process)
           env = options.delete(:unsetenv_others) ? {} : ENV.to_hash
           if add_to_env = options.delete(:env)
             env.merge! Hash[add_to_env]
           end
 
-          env_array = env.map { |k, v| "#{k}=#{v}" }
+          @env_array = env.map { |k, v| "#{k}=#{v}" }
 
-          if arguments.empty?
-            command, arguments = 'bash', ['bash', '-c', command]
+          if alter_process
+            require 'fcntl'
+
+            if pgroup = options[:pgroup]
+              Truffle::POSIX.setpgid(0, pgroup)
+            end
+
+            if mask = options[:mask]
+              Truffle::POSIX.umask(mask)
+            end
+
+            if chdir = options[:chdir]
+              Truffle::POSIX.chdir(chdir)
+            end
+
+            if close_others = options[:close_others]
+              warn 'spawn_setup: close_others not yet implemented'
+            end
+
+            if assign_fd = options[:assign_fd]
+              assign_fd.each_slice(4) do |from, name, mode, perm|
+                to = IO.open_with_mode(name, mode | Fcntl::FD_CLOEXEC, perm)
+                redirect_file_descriptor(from, to)
+              end
+            end
+
+            if redirect_fd = options[:redirect_fd]
+              redirect_fd.each_slice(2) do |from, to|
+                redirect_file_descriptor(from, to)
+              end
+            end
           end
 
+          nil
+        end
+
+        def redirect_file_descriptor(from, to)
+          to = (-to + 1) if to < 0
+
+          result = Truffle::POSIX.dup2(to, from)
+          Errno.handle if result < 0
+
+          flags = Truffle::POSIX.fcntl(from, Fcntl::F_GETFD, nil)
+          Errno.handle if flags < 0
+
+          Truffle::POSIX.fcntl(from, Fcntl::F_SETFD, flags & ~Fcntl::FD_CLOEXEC)
+        end
+
+        def spawn(options, command, arguments)
           Truffle::Process.spawn command, arguments, env_array, options
         end
 
-        def exec(command, args)
-          Truffle.primitive :vm_exec
-          raise PrimitiveFailure,
-            "Rubinius::Mirror::Process::Execute#exec primitive failed"
+        def exec(command, args, env_array)
+          Truffle.invoke_primitive :vm_exec, command, args, env_array
+          raise PrimitiveFailure, "Rubinius::Mirror::Process::Execute#exec primitive failed"
+        end
+
+        def should_use_shell?(command)
+          command.match(SHELL_META_CHAR_PATTERN)
+        end
+
+        def should_search_path?(command)
+          ['/', './', '../'].each { |prefix| return false if command.start_with?(prefix) }
+          true
+        end
+
+        def resolve_in_path(command)
+          ENV['PATH'].split(File::PATH_SEPARATOR).each do |dir|
+            f = File.join(dir, command)
+
+            if File.file?(f) && File.executable?(f)
+              return f
+            end
+          end
+
+          nil
         end
       end
     end

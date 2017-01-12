@@ -21,8 +21,7 @@ public class RepeatLoopNode extends FormatNode {
 
     @Child private FormatNode child;
 
-    public RepeatLoopNode(RubyContext context, int count, FormatNode child) {
-        super(context);
+    public RepeatLoopNode(int count, FormatNode child) {
         this.count = count;
         this.child = child;
     }

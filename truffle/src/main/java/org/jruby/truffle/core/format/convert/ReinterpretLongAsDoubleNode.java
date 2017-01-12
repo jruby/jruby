@@ -22,10 +22,6 @@ import org.jruby.truffle.core.format.MissingValue;
 })
 public abstract class ReinterpretLongAsDoubleNode extends FormatNode {
 
-    public ReinterpretLongAsDoubleNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public MissingValue decode(MissingValue missingValue) {
         return missingValue;

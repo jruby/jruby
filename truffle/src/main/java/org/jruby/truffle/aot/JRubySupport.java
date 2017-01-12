@@ -17,9 +17,6 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.util.ArrayReader;
 import org.jcodings.util.CaseInsensitiveBytesHash;
-import org.joda.time.DateTimeZone;
-import org.joda.time.tz.DateTimeZoneBuilder;
-import org.joda.time.tz.ZoneInfoProvider;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -35,43 +32,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class JRubySupport {
-    public static final Map<String, DateTimeZone> allTimeZones = getTimeZones();
     public static final Map<String, EncodingInstance> allEncodings = getEncodings();
     public static final Map<String, byte[]> allJCodingsTables = getJcodingsTables();
-
-    private static Map<String, DateTimeZone> getTimeZones() {
-        Map<String, DateTimeZone> timeZones = new HashMap<>();
-
-        // read in ZoneInfoMap to determine available timezones
-        Map<String, Object> zoneInfoMap = new HashMap<>();
-        try {
-            String resourcePath = "org/joda/time/tz/data/";
-            java.lang.reflect.Method readZoneInfoMap = ZoneInfoProvider.class.getDeclaredMethod("readZoneInfoMap", DataInputStream.class, Map.class);
-            readZoneInfoMap.setAccessible(true);
-            try (DataInputStream mapIn = new DataInputStream(ClassLoader.getSystemResourceAsStream(resourcePath + "ZoneInfoMap"))) {
-                readZoneInfoMap.invoke(null, mapIn, zoneInfoMap);
-            }
-            // preload all DateTimeZone objects
-            for (Map.Entry<String, Object> e : zoneInfoMap.entrySet()) {
-                Object value = e.getValue();
-                if (value instanceof String) {
-                    String id = (String) value;
-                    String path = resourcePath + id;
-                    try (InputStream zoneIn = ClassLoader.getSystemResourceAsStream(path)) {
-                        if (zoneIn != null) {
-                            timeZones.put(e.getKey(), DateTimeZoneBuilder.readFrom(zoneIn, id));
-                        } else {
-                            throw new Error("Unable to load timezone " + id);
-                        }
-                    } catch (IOException ex) {
-                    }
-                }
-            }
-        } catch (Exception e) {
-        }
-        timeZones.put("UTC", DateTimeZone.UTC);
-        return timeZones;
-    }
 
     private static Map<String, EncodingInstance> getEncodings() {
         final Map<String, EncodingInstance> encodings = new HashMap<>();

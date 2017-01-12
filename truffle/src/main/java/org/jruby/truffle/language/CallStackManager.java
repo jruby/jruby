@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,6 +20,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.collections.Memo;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.backtrace.Activation;
@@ -29,7 +30,6 @@ import org.jruby.truffle.language.backtrace.InternalRootNode;
 import org.jruby.truffle.language.exceptions.DisablingBacktracesNode;
 import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.methods.SharedMethodInfo;
-import org.jruby.truffle.util.Memo;
 
 import java.util.ArrayList;
 
@@ -43,28 +43,36 @@ public class CallStackManager {
 
     private static final Object STOP_ITERATING = new Object();
 
-    @TruffleBoundary
     public FrameInstance getCallerFrameIgnoringSend() {
-        FrameInstance callerFrame = Truffle.getRuntime().getCallerFrame();
-        if (callerFrame == null) {
-            return null;
-        }
-        InternalMethod method = getMethod(callerFrame);
+        return getCallerFrameIgnoringSend(0);
+    }
 
-        if (method == null) { // Not a Ruby frame
-            return null;
-        } else if (!context.getCoreLibrary().isSend(method)) {
-            return callerFrame;
+    @TruffleBoundary
+    public FrameInstance getCallerFrameIgnoringSend(int skip) {
+        // Try first using getCallerFrame() as it's the common case
+        if (skip == 0) {
+            FrameInstance callerFrame = Truffle.getRuntime().getCallerFrame();
+            if (callerFrame == null) {
+                return null;
+            }
+            InternalMethod method = getMethod(callerFrame);
+
+            if (method == null) { // Not a Ruby frame
+                return null;
+            } else if (!context.getCoreLibrary().isSend(method)) {
+                return callerFrame;
+            }
         }
 
         // Need to iterate further
         final Object frame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
             int depth = 0;
+            int skipped = 0;
 
             @Override
             public Object visitFrame(FrameInstance frameInstance) {
                 depth++;
-                if (depth < 2) {
+                if (depth == 1) { // Skip top frame
                     return null;
                 }
 
@@ -72,7 +80,12 @@ public class CallStackManager {
                 if (method == null) {
                     return STOP_ITERATING;
                 } else if (!context.getCoreLibrary().isSend(method)) {
-                    return frameInstance;
+                    if (skipped >= skip) {
+                        return frameInstance;
+                    } else {
+                        skipped++;
+                        return null;
+                    }
                 } else {
                     return null;
                 }

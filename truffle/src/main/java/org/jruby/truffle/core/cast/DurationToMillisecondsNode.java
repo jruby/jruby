@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -53,11 +53,6 @@ public abstract class DurationToMillisecondsNode extends RubyNode {
         return validate((long) (duration * 1000));
     }
 
-    @Specialization(guards = "isRubiniusUndefined(duration)")
-    public long duration(DynamicObject duration) {
-        return noDuration(NotProvided.INSTANCE);
-    }
-
     @Specialization(guards = "isNil(duration)")
     public long durationNil(DynamicObject duration) {
         if (acceptsNil) {
@@ -67,11 +62,11 @@ public abstract class DurationToMillisecondsNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = { "!isRubiniusUndefined(duration)", "!isNil(duration)" })
+    @Specialization(guards = "!isNil(duration)")
     public long duration(VirtualFrame frame, DynamicObject duration) {
         if (floatCastNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            floatCastNode = insert(NumericToFloatNodeGen.create(getContext(), null, "to_f", null));
+            floatCastNode = insert(NumericToFloatNodeGen.create("to_f", null));
         }
         return duration(floatCastNode.executeDouble(frame, duration));
     }

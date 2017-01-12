@@ -39,7 +39,7 @@ public class AndNode extends RubyNode {
             leftCast = insert(BooleanCastNodeGen.create(null));
         }
 
-        final boolean leftBoolean = leftCast.executeBoolean(frame, leftValue);
+        final boolean leftBoolean = leftCast.executeToBoolean(leftValue);
 
         if (conditionProfile.profile(leftBoolean)) {
             return right.execute(frame);

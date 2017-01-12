@@ -55,7 +55,6 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.read.SourceNode;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
-import org.jruby.truffle.util.Pack;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -64,10 +63,6 @@ import java.util.Arrays;
         @NodeChild(value = "value", type = SourceNode.class),
 })
 public abstract class ReadMIMEStringNode extends FormatNode {
-
-    public ReadMIMEStringNode(RubyContext context) {
-        super(context);
-    }
 
     @Specialization
     public Object read(VirtualFrame frame, byte[] source) {
@@ -81,7 +76,7 @@ public abstract class ReadMIMEStringNode extends FormatNode {
         int index = 0;
 
         while (encode.hasRemaining()) {
-            int c = Pack.safeGet(encode);
+            int c = safeGet(encode);
 
             if (c != '=') {
                 lElem[index++] = (byte)c;
@@ -92,7 +87,7 @@ public abstract class ReadMIMEStringNode extends FormatNode {
 
                 encode.mark();
 
-                final int c1 = Pack.safeGet(encode);
+                final int c1 = safeGet(encode);
 
                 if (c1 == '\n' || c1 == '\r') {
                     continue;
@@ -111,7 +106,7 @@ public abstract class ReadMIMEStringNode extends FormatNode {
                     break;
                 }
 
-                final int c2 = Pack.safeGet(encode);
+                final int c2 = safeGet(encode);
                 final int d2 = Character.digit(c2, 16);
 
                 if (d2 == -1) {

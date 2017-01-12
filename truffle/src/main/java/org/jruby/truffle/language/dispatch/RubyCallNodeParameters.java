@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,14 +9,10 @@
  */
 package org.jruby.truffle.language.dispatch;
 
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public class RubyCallNodeParameters {
 
-    private final RubyContext context;
-    private final SourceSection section;
     private final RubyNode receiver;
     private final String methodName;
     private final RubyNode block;
@@ -27,18 +23,16 @@ public class RubyCallNodeParameters {
     private final boolean isSafeNavigation;
     private final boolean isAttrAssign;
 
-    public RubyCallNodeParameters(RubyContext context, SourceSection section,
+    public RubyCallNodeParameters(
             RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
             boolean isSplatted, boolean ignoreVisibility) {
-        this(context, section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
+        this(receiver, methodName, block, arguments, isSplatted, ignoreVisibility, false, false, false);
     }
 
-    public RubyCallNodeParameters(RubyContext context, SourceSection section,
+    public RubyCallNodeParameters(
             RubyNode receiver, String methodName, RubyNode block, RubyNode[] arguments,
             boolean isSplatted, boolean ignoreVisibility,
             boolean isVCall, boolean isSafeNavigation, boolean isAttrAssign) {
-        this.context = context;
-        this.section = section;
         this.receiver = receiver;
         this.methodName = methodName;
         this.block = block;
@@ -51,15 +45,7 @@ public class RubyCallNodeParameters {
     }
 
     public RubyCallNodeParameters withReceiverAndArguments(RubyNode receiver, RubyNode[] arguments, RubyNode block) {
-        return new RubyCallNodeParameters(context, section, receiver, methodName, block, arguments, isSplatted, ignoreVisibility, isVCall, isSafeNavigation, isAttrAssign);
-    }
-
-    public RubyContext getContext() {
-        return context;
-    }
-
-    public SourceSection getSection() {
-        return section;
+        return new RubyCallNodeParameters(receiver, methodName, block, arguments, isSplatted, ignoreVisibility, isVCall, isSafeNavigation, isAttrAssign);
     }
 
     public RubyNode getReceiver() {

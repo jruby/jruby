@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class AliasParseNode extends ParseNode {
     private ParseNode oldName;
     private ParseNode newName;
 
-    public AliasParseNode(ISourcePosition position, ParseNode newName, ParseNode oldName) {
+    public AliasParseNode(SourceIndexLength position, ParseNode newName, ParseNode oldName) {
         super(position, newName.containsVariableAssignment() || oldName.containsVariableAssignment());
         this.oldName = oldName;
         this.newName = newName;

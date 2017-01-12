@@ -14,30 +14,28 @@
 
 package org.jruby.truffle.core.rope;
 
-import org.jruby.truffle.core.string.StringSupport;
-
 public enum CodeRange {
-    CR_UNKNOWN(StringSupport.CR_UNKNOWN),
-    CR_7BIT(StringSupport.CR_7BIT),
-    CR_VALID(StringSupport.CR_VALID),
-    CR_BROKEN(StringSupport.CR_BROKEN);
+    CR_UNKNOWN(0),
+    CR_7BIT(1),
+    CR_VALID(2),
+    CR_BROKEN(3);
 
-    private final int jrubyValue;
+    private final int value;
 
-    CodeRange(int jrubyValue) {
-        this.jrubyValue = jrubyValue;
+    CodeRange(int value) {
+        this.value = value;
     }
 
     public int toInt() {
-        return jrubyValue;
+        return value;
     }
 
     public static CodeRange fromInt(int codeRange) {
         switch(codeRange) {
-            case StringSupport.CR_UNKNOWN: return CR_UNKNOWN;
-            case StringSupport.CR_7BIT: return CR_7BIT;
-            case StringSupport.CR_VALID: return CR_VALID;
-            case StringSupport.CR_BROKEN: return CR_BROKEN;
+            case 0: return CR_UNKNOWN;
+            case 1: return CR_7BIT;
+            case 2: return CR_VALID;
+            case 3: return CR_BROKEN;
             default: throw new UnsupportedOperationException("Don't know how to convert code range: " + codeRange);
         }
     }

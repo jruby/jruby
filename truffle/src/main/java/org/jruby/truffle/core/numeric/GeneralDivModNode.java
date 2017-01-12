@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,8 +12,6 @@ package org.jruby.truffle.core.numeric;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyBaseNode;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -21,8 +19,8 @@ import java.math.BigInteger;
 
 public class GeneralDivModNode extends RubyBaseNode {
 
-    @Child private FixnumOrBignumNode fixnumOrBignumQuotient;
-    @Child private FixnumOrBignumNode fixnumOrBignumRemainder;
+    @Child private FixnumOrBignumNode fixnumOrBignumQuotient = new FixnumOrBignumNode();
+    @Child private FixnumOrBignumNode fixnumOrBignumRemainder = new FixnumOrBignumNode();
 
     private final BranchProfile bZeroProfile = BranchProfile.create();
     private final BranchProfile bMinusOneProfile = BranchProfile.create();
@@ -30,12 +28,6 @@ public class GeneralDivModNode extends RubyBaseNode {
     private final BranchProfile bigIntegerFixnumProfile = BranchProfile.create();
     private final BranchProfile useFixnumPairProfile = BranchProfile.create();
     private final BranchProfile useObjectPairProfile = BranchProfile.create();
-
-    public GeneralDivModNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        fixnumOrBignumQuotient = new FixnumOrBignumNode(context, sourceSection);
-        fixnumOrBignumRemainder = new FixnumOrBignumNode(context, sourceSection);
-    }
 
     public DynamicObject execute(long a, long b) {
         return divMod(a, b);

@@ -31,4 +31,12 @@ public abstract class OptionDescription {
 
     public abstract Object checkValue(Object value);
 
+    public String toString(Object value) {
+        if (value == null) {
+            return "null";
+        } else {
+            return value.toString();
+        }
+    }
+
 }

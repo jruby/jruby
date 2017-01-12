@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,9 +14,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 
@@ -26,8 +24,8 @@ public abstract class TaintNode extends RubyNode {
     @Child private IsFrozenNode isFrozenNode;
     @Child private IsTaintedNode isTaintedNode;
 
-    public TaintNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public static TaintNode create() {
+        return TaintNodeGen.create(null);
     }
 
     public abstract Object executeTaint(Object object);
@@ -64,13 +62,13 @@ public abstract class TaintNode extends RubyNode {
 
         if (isTaintedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            isTaintedNode = insert(IsTaintedNodeGen.create(getContext(), null, null));
+            isTaintedNode = insert(IsTaintedNode.create());
         }
 
         if (!isTaintedNode.executeIsTainted(object)) {
             if (isFrozenNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
+                isFrozenNode = insert(IsFrozenNodeGen.create(null));
             }
 
             if (isFrozenNode.executeIsFrozen(object)) {

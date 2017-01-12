@@ -31,8 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ import java.util.List;
  * Represents a 'redo'
  */
 public class RedoParseNode extends ParseNode implements NonLocalControlFlowParseNode {
-    public RedoParseNode(ISourcePosition position) {
+    public RedoParseNode(SourceIndexLength position) {
         super(position, false);
     }
 

@@ -229,6 +229,7 @@ public class Signature {
         );
     }
 
+    @Override
     public String toString() {
         return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ",kwreq=" + requiredKwargs + ",kwrest=" + restKwargs + ")";
     }

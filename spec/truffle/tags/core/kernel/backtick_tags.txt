@@ -1,3 +1,1 @@
-fails:Kernel#` produces a String in the default external encoding
-fails:Kernel#` raises an Errno::ENOENT if the command is not executable
 slow:Kernel#` lets the standard error stream pass through to the inherited stderr

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,32 +16,30 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.CoreLibrary;
 import org.jruby.truffle.language.RubyNode;
-import org.jruby.truffle.language.RubySourceSection;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.language.objects.AllocateObjectNodeGen;
 
 public abstract class ArrayLiteralNode extends RubyNode {
 
-    public static ArrayLiteralNode create(RubyContext context, RubySourceSection sourceSection, RubyNode[] values) {
-        return new UninitialisedArrayLiteralNode(context, sourceSection, values);
+    public static ArrayLiteralNode create(RubyNode[] values) {
+        return new UninitialisedArrayLiteralNode(values);
     }
 
     @Children protected final RubyNode[] values;
-    @Child protected AllocateObjectNode allocateObjectNode;
+    @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNodeGen.create(false, null, null);
 
-    public ArrayLiteralNode(RubyContext context, RubySourceSection sourceSection, RubyNode[] values) {
-        super(context, sourceSection);
+    public ArrayLiteralNode(RubyNode[] values) {
         this.values = values;
-        this.allocateObjectNode = AllocateObjectNodeGen.create(context, (RubySourceSection) null, false, null, null);
     }
 
     protected DynamicObject makeGeneric(VirtualFrame frame, Object[] alreadyExecuted) {
         CompilerAsserts.neverPartOfCompilation();
 
-        replace(new ObjectArrayLiteralNode(getContext(), getRubySourceSection(), values));
+        final ArrayLiteralNode newNode = new ObjectArrayLiteralNode(values);
+        newNode.unsafeSetSourceSection(getSourceIndexLength());
+        replace(newNode);
 
         final Object[] executedValues = new Object[values.length];
 
@@ -56,6 +54,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
         return createArray(executedValues, executedValues.length);
     }
 
+    @Override
     protected DynamicObject createArray(Object store, int size) {
         return allocateObjectNode.allocate(coreLibrary().getArrayClass(), store, size);
     }
@@ -96,8 +95,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class EmptyArrayLiteralNode extends ArrayLiteralNode {
 
-        public EmptyArrayLiteralNode(RubyContext context, RubySourceSection sourceSection, RubyNode[] values) {
-            super(context, sourceSection, values);
+        public EmptyArrayLiteralNode(RubyNode[] values) {
+            super(values);
         }
 
         @Override
@@ -109,8 +108,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class FloatArrayLiteralNode extends ArrayLiteralNode {
 
-        public FloatArrayLiteralNode(RubyContext context, RubySourceSection sourceSection, RubyNode[] values) {
-            super(context, sourceSection, values);
+        public FloatArrayLiteralNode(RubyNode[] values) {
+            super(values);
         }
 
         @ExplodeLoop
@@ -143,8 +142,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class IntegerArrayLiteralNode extends ArrayLiteralNode {
 
-        public IntegerArrayLiteralNode(RubyContext context, RubySourceSection sourceSection, RubyNode[] values) {
-            super(context, sourceSection, values);
+        public IntegerArrayLiteralNode(RubyNode[] values) {
+            super(values);
         }
 
         @ExplodeLoop
@@ -177,8 +176,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class LongArrayLiteralNode extends ArrayLiteralNode {
 
-        public LongArrayLiteralNode(RubyContext context, RubySourceSection sourceSection, RubyNode[] values) {
-            super(context, sourceSection, values);
+        public LongArrayLiteralNode(RubyNode[] values) {
+            super(values);
         }
 
         @ExplodeLoop
@@ -211,8 +210,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class ObjectArrayLiteralNode extends ArrayLiteralNode {
 
-        public ObjectArrayLiteralNode(RubyContext context, RubySourceSection sourceSection, RubyNode[] values) {
-            super(context, sourceSection, values);
+        public ObjectArrayLiteralNode(RubyNode[] values) {
+            super(values);
         }
 
         @ExplodeLoop
@@ -231,8 +230,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     private static class UninitialisedArrayLiteralNode extends ArrayLiteralNode {
 
-        public UninitialisedArrayLiteralNode(RubyContext context, RubySourceSection sourceSection, RubyNode[] values) {
-            super(context, sourceSection, values);
+        public UninitialisedArrayLiteralNode(RubyNode[] values) {
+            super(values);
         }
 
         @Override
@@ -248,17 +247,22 @@ public abstract class ArrayLiteralNode extends RubyNode {
             final DynamicObject array = createArray(storeSpecialisedFromObjects(executedValues), executedValues.length);
             final Object store = Layouts.ARRAY.getStore(array);
 
+            final RubyNode newNode;
+
             if (store == null) {
-                replace(new EmptyArrayLiteralNode(getContext(), getRubySourceSection(), values));
-            } if (store instanceof int[]) {
-                replace(new IntegerArrayLiteralNode(getContext(), getRubySourceSection(), values));
+                newNode = new EmptyArrayLiteralNode(values);
+            } else if (store instanceof int[]) {
+                newNode = new IntegerArrayLiteralNode(values);
             } else if (store instanceof long[]) {
-                replace(new LongArrayLiteralNode(getContext(), getRubySourceSection(), values));
+                newNode = new LongArrayLiteralNode(values);
             } else if (store instanceof double[]) {
-                replace(new FloatArrayLiteralNode(getContext(), getRubySourceSection(), values));
+                newNode = new FloatArrayLiteralNode(values);
             } else {
-                replace(new ObjectArrayLiteralNode(getContext(), getRubySourceSection(), values));
+                newNode = new ObjectArrayLiteralNode(values);
             }
+
+            newNode.unsafeSetSourceSection(getSourceIndexLength());
+            replace(newNode);
 
             return array;
         }
@@ -309,7 +313,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 for (int n = 0; n < objects.length; n++) {
                     final Object object = objects[n];
                     if (object instanceof Integer) {
-                        store[n] = (long) (int) object;
+                        store[n] = (int) object;
                     } else if (object instanceof Long) {
                         store[n] = (long) object;
                     } else {

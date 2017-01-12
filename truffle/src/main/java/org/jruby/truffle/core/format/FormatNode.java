@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,22 +20,18 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.format.exceptions.TooFewArgumentsException;
 import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.language.RubyBaseNode;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 @ImportStatic(FormatGuards.class)
-public abstract class FormatNode extends Node {
-
-    private final RubyContext context;
+public abstract class FormatNode extends RubyBaseNode {
 
     private final ConditionProfile writeMoreThanZeroBytes = ConditionProfile.createBinaryProfile();
     private final ConditionProfile tooFewArgumentsProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile sourceRangeProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile codeRangeIncreasedProfile = ConditionProfile.createBinaryProfile();
-
-    public FormatNode(RubyContext context) {
-        this.context = context;
-    }
 
     public abstract Object execute(VirtualFrame frame);
 
@@ -199,12 +195,18 @@ public abstract class FormatNode extends Node {
         return output;
     }
 
-    protected RubyContext getContext() {
-        return context;
+    protected boolean isNil(Object object) {
+        return object == coreLibrary().getNilObject();
     }
 
-    protected boolean isNil(Object object) {
-        return object == context.getCoreLibrary().getNilObject();
+    public static int safeGet(ByteBuffer encode) {
+        while (encode.hasRemaining()) {
+            int got = encode.get() & 0xff;
+
+            if (got != 0) return got;
+        }
+
+        return 0;
     }
 
 }

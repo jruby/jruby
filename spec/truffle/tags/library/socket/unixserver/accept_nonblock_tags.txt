@@ -1,2 +1,3 @@
 fails:UNIXServer#accept_nonblock accepts a connection in a non-blocking way
 fails:UNIXServer#accept_nonblock returns a UNIXSocket
+fails:UNIXServer#accept_nonblock returns :wait_readable in exceptionless mode

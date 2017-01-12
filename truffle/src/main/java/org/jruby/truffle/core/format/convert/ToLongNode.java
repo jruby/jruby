@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -34,8 +34,7 @@ public abstract class ToLongNode extends FormatNode {
     @Child private CallDispatchHeadNode toIntNode;
     @Child private ToLongNode redoNode;
 
-    public ToLongNode(RubyContext context, boolean errorIfNeedsConversion) {
-        super(context);
+    public ToLongNode(boolean errorIfNeedsConversion) {
         this.errorIfNeedsConversion = errorIfNeedsConversion;
     }
 
@@ -81,14 +80,14 @@ public abstract class ToLongNode extends FormatNode {
 
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
+            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(true, MissingBehavior.RETURN_MISSING));
         }
 
         final Object value = toIntNode.call(frame, object, "to_int");
 
         if (redoNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            redoNode = insert(ToLongNodeGen.create(getContext(), true, null));
+            redoNode = insert(ToLongNodeGen.create(true, null));
         }
 
         return redoNode.executeToLong(frame, value);

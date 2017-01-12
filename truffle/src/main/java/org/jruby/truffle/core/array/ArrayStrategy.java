@@ -61,6 +61,11 @@ public abstract class ArrayStrategy {
         Layouts.ARRAY.setStore(array, store);
     }
 
+    public void setStoreAndSize(DynamicObject array, Object store, int size) {
+        setStore(array, store);
+        ArrayHelpers.setSize(array, size);
+    }
+
     @Override
     public abstract String toString();
 
@@ -80,6 +85,14 @@ public abstract class ArrayStrategy {
             }
         }
         throw unsupported();
+    }
+
+    public ArrayStrategy generalizeNew(ArrayStrategy other) {
+        return generalize(other);
+    }
+
+    public ArrayStrategy generalizeFor(Object value) {
+        return generalize(ArrayStrategy.forValue(value));
     }
 
     // Helpers

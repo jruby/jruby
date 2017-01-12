@@ -121,7 +121,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 implementationClass,
                 desc1.anno.visibility(),
                 (min == max) ?
-                        org.jruby.runtime.Signature.from(min, 0, 0, 0, 0, org.jruby.runtime.Signature.Rest.NONE, false).encode() :
+                        org.jruby.runtime.Signature.from(min, 0, 0, 0, 0, org.jruby.runtime.Signature.Rest.NONE, -1).encode() :
                         org.jruby.runtime.Signature.OPTIONAL.encode(),
                 true,
                 notImplemented,

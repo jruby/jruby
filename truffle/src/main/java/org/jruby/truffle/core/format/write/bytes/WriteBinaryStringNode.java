@@ -28,9 +28,8 @@ public abstract class WriteBinaryStringNode extends FormatNode {
     private final boolean takeAll;
     private final boolean appendNull;
 
-    public WriteBinaryStringNode(RubyContext context, boolean pad, boolean padOnNil,
+    public WriteBinaryStringNode(boolean pad, boolean padOnNil,
                                  int width, byte padding, boolean takeAll, boolean appendNull) {
-        super(context);
         this.pad = pad;
         this.padOnNil = padOnNil;
         this.width = width;

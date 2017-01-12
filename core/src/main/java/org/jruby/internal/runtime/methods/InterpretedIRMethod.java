@@ -95,7 +95,15 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, args, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (callCount >= 0) promoteToFullBuild(context);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, args, Block.NULL_BLOCK);
+    }
+
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                          IRubyObject self, String name, IRubyObject[] args, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
@@ -124,7 +132,16 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (callCount >= 0) promoteToFullBuild(context);
+
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, Block.NULL_BLOCK);
+    }
+
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                          IRubyObject self, String name, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
@@ -152,7 +169,15 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, arg0, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (callCount >= 0) promoteToFullBuild(context);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, Block.NULL_BLOCK);
+    }
+
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                          IRubyObject self, String name, IRubyObject arg1, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
@@ -180,7 +205,15 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, arg0, arg1, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (callCount >= 0) promoteToFullBuild(context);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, Block.NULL_BLOCK);
+    }
+
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                          IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2,  Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
@@ -208,7 +241,15 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, arg0, arg1, arg2, block);
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        if (callCount >= 0) promoteToFullBuild(context);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, arg2, Block.NULL_BLOCK);
+    }
+
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                          IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -25,8 +25,8 @@ import org.jruby.truffle.core.format.convert.ToStringNode;
 import org.jruby.truffle.core.format.convert.ToStringNodeGen;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.core.format.write.bytes.WriteByteNodeGen;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -41,8 +41,7 @@ public abstract class FormatCharacterNode extends FormatNode {
     @Child private ToIntegerNode toIntegerNode;
     @Child private ToStringNode toStringNode;
 
-    public FormatCharacterNode(RubyContext context, boolean hasMinusFlag) {
-        super(context);
+    public FormatCharacterNode(boolean hasMinusFlag) {
         this.hasMinusFlag = hasMinusFlag;
     }
 
@@ -68,12 +67,12 @@ public abstract class FormatCharacterNode extends FormatNode {
     protected String getCharString(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toStringNode = insert(ToStringNodeGen.create(getContext(),
+            toStringNode = insert(ToStringNodeGen.create(
                 false,
                 "to_str",
                 false,
                 null,
-                WriteByteNodeGen.create(getContext(), new LiteralFormatNode(getContext(), value))));
+                WriteByteNodeGen.create(new LiteralFormatNode(value))));
         }
         Object toStrResult;
         try {
@@ -86,7 +85,7 @@ public abstract class FormatCharacterNode extends FormatNode {
         if (toStrResult == null || isNil(toStrResult)) {
             if (toIntegerNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                toIntegerNode = insert(ToIntegerNodeGen.create(getContext(), null));
+                toIntegerNode = insert(ToIntegerNodeGen.create(null));
             }
             final int charValue = (int) toIntegerNode.executeToInteger(frame, value);
             // TODO BJF check char length is > 0

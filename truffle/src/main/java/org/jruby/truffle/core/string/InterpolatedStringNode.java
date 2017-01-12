@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,17 +13,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.cast.ToSNode;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 
 /**
  * A list of expressions to build up into a string.
@@ -32,20 +28,15 @@ public final class InterpolatedStringNode extends RubyNode {
 
     @Children private final ToSNode[] children;
 
-    @Child private StringNodes.StringAppendPrimitiveNode appendNode;
-    @Child private CallDispatchHeadNode dupNode;
-    @Child private IsTaintedNode isTaintedNode;
-    @Child private TaintNode taintNode;
+    @Child private StringNodes.StringAppendPrimitiveNode appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(new RubyNode[] {});
+    @Child private CallDispatchHeadNode dupNode = DispatchHeadNodeFactory.createMethodCall();
+    @Child private IsTaintedNode isTaintedNode = IsTaintedNode.create();
+    @Child private TaintNode taintNode = TaintNode.create();
 
     private final ConditionProfile taintProfile = ConditionProfile.createCountingProfile();
 
-    public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, ToSNode[] children) {
-        super(context, sourceSection);
+    public InterpolatedStringNode(ToSNode[] children) {
         this.children = children;
-        appendNode = StringNodesFactory.StringAppendPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[] {});
-        dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-        isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-        taintNode = TaintNodeGen.create(context, sourceSection, null);
     }
 
     @ExplodeLoop

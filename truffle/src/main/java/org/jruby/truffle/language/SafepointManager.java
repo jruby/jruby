@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -99,7 +99,7 @@ public class SafepointManager {
 
         // We're now running again normally and can run deferred actions
         if (deferredAction != null) {
-            deferredAction.run(thread, currentNode);
+            deferredAction.accept(thread, currentNode);
         }
     }
 
@@ -122,7 +122,7 @@ public class SafepointManager {
 
         try {
             if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != ThreadStatus.ABORTING) {
-                action.run(thread, currentNode);
+                action.accept(thread, currentNode);
             }
         } finally {
             // Wait for other threads to finish their action
@@ -151,7 +151,7 @@ public class SafepointManager {
 
         // Run deferred actions after leaving the SafepointManager lock.
         if (deferred) {
-            action.run(context.getThreadManager().getCurrentThread(), currentNode);
+            action.accept(context.getThreadManager().getCurrentThread(), currentNode);
         }
     }
 
@@ -186,11 +186,11 @@ public class SafepointManager {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread
             final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
-            action.run(rubyThread, currentNode);
+            action.accept(rubyThread, currentNode);
         } else {
             pauseAllThreadsAndExecute(currentNode, false, (rubyThread, currentNode1) -> {
                 if (Thread.currentThread() == thread) {
-                    action.run(rubyThread, currentNode1);
+                    action.accept(rubyThread, currentNode1);
                 }
             });
         }
@@ -201,11 +201,11 @@ public class SafepointManager {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread
             final DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
-            action.run(rubyThread, currentNode);
+            action.accept(rubyThread, currentNode);
         } else {
             pauseAllThreadsAndExecute(currentNode, true, (rubyThread, currentNode1) -> {
                 if (Thread.currentThread() == thread) {
-                    action.run(rubyThread, currentNode1);
+                    action.accept(rubyThread, currentNode1);
                 }
             });
         }
@@ -215,7 +215,7 @@ public class SafepointManager {
     public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
         pauseAllThreadsAndExecuteFromNonRubyThread(true, (rubyThread, currentNode) -> {
             if (Thread.currentThread() == thread) {
-                action.run(rubyThread, currentNode);
+                action.accept(rubyThread, currentNode);
             }
         });
     }

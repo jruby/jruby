@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayUtils;
 import org.jruby.truffle.core.cast.NameToJavaStringNode;
 import org.jruby.truffle.core.cast.ToSymbolNode;
@@ -37,13 +36,12 @@ public class UncachedDispatchNode extends DispatchNode {
     private final BranchProfile methodMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingNotFoundProfile = BranchProfile.create();
 
-    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, MissingBehavior missingBehavior) {
-        super(context, dispatchAction);
-
+    public UncachedDispatchNode(boolean ignoreVisibility, DispatchAction dispatchAction, MissingBehavior missingBehavior) {
+        super(dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
         this.indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-        this.toSymbolNode = ToSymbolNodeGen.create(context, null, null);
+        this.toSymbolNode = ToSymbolNodeGen.create(null);
         this.toJavaStringNode = NameToJavaStringNode.create();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -93,7 +93,7 @@ public abstract class IntegerNodes {
         public Object downto(VirtualFrame frame, Object from, Object to, DynamicObject block) {
             if (downtoInternalCall == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                downtoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                downtoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return downtoInternalCall.callWithBlock(frame, from, "downto_internal", block, to);
@@ -156,7 +156,7 @@ public abstract class IntegerNodes {
 
         @Specialization(guards = "isRubyBignum(n)")
         public Object times(VirtualFrame frame, DynamicObject n, DynamicObject block,
-                            @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
+                            @Cached("create(getSourceIndexLength())") FixnumOrBignumNode fixnumOrBignumNode) {
 
             for (BigInteger i = BigInteger.ZERO; i.compareTo(Layouts.BIGNUM.getValue(n)) < 0; i = i.add(BigInteger.ONE)) {
                 yield(frame, block, fixnumOrBignumNode.fixnumOrBignum(i));
@@ -248,7 +248,7 @@ public abstract class IntegerNodes {
         public Object upto(VirtualFrame frame, Object from, Object to, DynamicObject block) {
             if (uptoInternalCall == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                uptoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                uptoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             return uptoInternalCall.callWithBlock(frame, from, "upto_internal", block, to);

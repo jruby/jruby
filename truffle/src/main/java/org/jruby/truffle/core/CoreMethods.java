@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,6 +10,7 @@
 package org.jruby.truffle.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.numeric.FixnumNodesFactory;
@@ -41,7 +42,7 @@ public class CoreMethods {
         return method;
     }
 
-    public RubyNode createCallNode(RubyCallNodeParameters callParameters) {
+    public RubyNode createCallNode(Source source, RubyCallNodeParameters callParameters) {
         if (!context.getOptions().BASICOPS_INLINE || callParameters.getBlock() != null || callParameters.isSplatted() || callParameters.isSafeNavigation()) {
             return new RubyCallNode(callParameters);
         }
@@ -51,11 +52,11 @@ public class CoreMethods {
         if (n == 2) {
             switch (callParameters.getMethodName()) {
             case "+":
-                return InlinedCoreMethodNode.inlineBuiltin(callParameters, fixnumPlus, FixnumNodesFactory.AddNodeFactory.getInstance());
+                return InlinedCoreMethodNode.inlineBuiltin(context, source, callParameters, fixnumPlus, FixnumNodesFactory.AddNodeFactory.getInstance());
             case "-":
-                return InlinedCoreMethodNode.inlineBuiltin(callParameters, fixnumMinus, FixnumNodesFactory.SubNodeFactory.getInstance());
+                return InlinedCoreMethodNode.inlineBuiltin(context, source, callParameters, fixnumMinus, FixnumNodesFactory.SubNodeFactory.getInstance());
             case "*":
-                return InlinedCoreMethodNode.inlineBuiltin(callParameters, fixnumMul, FixnumNodesFactory.MulNodeFactory.getInstance());
+                return InlinedCoreMethodNode.inlineBuiltin(context, source, callParameters, fixnumMul, FixnumNodesFactory.MulNodeFactory.getInstance());
             default:
             }
         }

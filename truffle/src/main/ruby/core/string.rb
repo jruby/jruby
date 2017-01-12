@@ -1,4 +1,4 @@
-# Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -469,17 +469,18 @@ class String
   def encode!(to=undefined, from=undefined, options=undefined)
     Truffle.check_frozen
 
-    case to
+    if undefined.equal?(to)
+      to_enc = Encoding.default_internal
+      return self unless to_enc
+    else
+      case to
       when Encoding
         to_enc = to
       when Hash
         options = to
         to_enc = Encoding.default_internal
-      when undefined
-        to_enc = Encoding.default_internal
-        return self unless to_enc
       else
-        opts = Rubinius::Type::check_convert_type to, Hash, :to_hash
+        opts = Rubinius::Type.check_convert_type to, Hash, :to_hash
 
         if opts
           options = opts
@@ -487,38 +488,40 @@ class String
         else
           to_enc = Rubinius::Type.try_convert_to_encoding to
         end
+      end
     end
 
+    from = encoding if undefined.equal?(from)
     case from
-      when undefined
-        from_enc = encoding
-      when Encoding
-        from_enc = from
-      when Hash
-        options = from
+    when Encoding
+      from_enc = from
+    when Hash
+      options = from
+      from_enc = encoding
+    else
+      opts = Rubinius::Type.check_convert_type from, Hash, :to_hash
+
+      if opts
+        options = opts
         from_enc = encoding
       else
-        opts = Rubinius::Type::check_convert_type from, Hash, :to_hash
-
-        if opts
-          options = opts
-          from_enc = encoding
-        else
-          from_enc = Rubinius::Type.coerce_to_encoding from
-        end
+        from_enc = Rubinius::Type.coerce_to_encoding from
+      end
     end
 
-    if undefined.equal? from_enc or undefined.equal? to_enc
+    if false == to_enc
       raise Encoding::ConverterNotFoundError, "undefined code converter (#{from} to #{to})"
     end
 
-    case options
-      when undefined
-        options = 0
+    if undefined.equal?(options)
+      options = 0
+    else
+      case options
       when Hash
         # do nothing
       else
         options = Rubinius::Type.coerce_to options, Hash, :to_hash
+      end
     end
 
     if ascii_only? and from_enc.ascii_compatible? and to_enc and to_enc.ascii_compatible?
@@ -710,8 +713,7 @@ class String
   end
 
   def prepend(other)
-    self[0, 0] = other
-    self
+    replace(StringValue(other) + self)
   end
 
   def upto(stop, exclusive=false)
@@ -1632,6 +1634,32 @@ class String
     false
   end
 
+  def insert(index, other)
+    other = StringValue(other)
+
+    index = Rubinius::Type.coerce_to index, Fixnum, :to_int
+    index = length + 1 + index if index < 0
+
+    if index > length or index < 0 then
+      raise IndexError, "index #{index} out of string"
+    end
+
+    Truffle.check_frozen
+
+    if index == 0
+      replace(other + self)
+    elsif index == length
+      self << other
+    else
+      left = self[0...index]
+      right = self[index..-1]
+      replace(left + other + right)
+    end
+
+    Rubinius::Type.infect self, other
+    self
+  end
+
   def %(args)
     if args.is_a? Hash
       sprintf(self, args)
@@ -1669,6 +1697,10 @@ class String
 
   def -@
     frozen? ? self : dup.freeze
+  end
+
+  def encoding
+    Truffle.invoke_primitive :encoding_get_object_encoding, self
   end
 
 end

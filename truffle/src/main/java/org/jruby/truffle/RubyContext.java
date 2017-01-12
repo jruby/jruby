@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -46,9 +46,11 @@ import org.jruby.truffle.language.methods.InternalMethod;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.options.Options;
 import org.jruby.truffle.options.OptionsBuilder;
+import org.jruby.truffle.options.Verbosity;
 import org.jruby.truffle.platform.NativePlatform;
 import org.jruby.truffle.platform.NativePlatformFactory;
 import org.jruby.truffle.stdlib.CoverageManager;
+import org.jruby.truffle.stdlib.readline.ConsoleHolder;
 import org.jruby.truffle.tools.InstrumentationServerManager;
 import org.jruby.truffle.tools.callgraph.CallGraph;
 import org.jruby.truffle.tools.callgraph.SimpleWriter;
@@ -68,7 +70,7 @@ public class RubyContext extends ExecutionContext {
 
     private final Options options;
 
-    private final String jrubyHome;
+    private final String rubyHome;
     private String originalInputFile;
 
     private InputStream syntaxCheckInputStream;
@@ -103,29 +105,38 @@ public class RubyContext extends ExecutionContext {
     private final CallGraph callGraph;
     private final PrintStream debugStandardOut;
     private final CoverageManager coverageManager;
+    private final ConsoleHolder consoleHolder;
 
     private final Object classVariableDefinitionLock = new Object();
 
     private String currentDirectory;
 
+    public static ThreadLocal<RubyContext> contextsBeingCreated = new ThreadLocal<>();
+
     public RubyContext(TruffleLanguage.Env env) {
-        this.env = env;
+        contextsBeingCreated.set(this);
 
-        final OptionsBuilder optionsBuilder = new OptionsBuilder();
-        optionsBuilder.set(env.getConfig());
-        optionsBuilder.set(System.getProperties());
-        options = optionsBuilder.build();
+        try {
+            this.env = env;
 
-        this.jrubyHome = setupJRubyHome();
-        this.currentDirectory = System.getProperty("user.dir");
+            final OptionsBuilder optionsBuilder = new OptionsBuilder();
+            optionsBuilder.set(env.getConfig());
+            optionsBuilder.set(System.getProperties());
+            options = optionsBuilder.build();
 
-        if (options.CALL_GRAPH) {
-            callGraph = new CallGraph();
-        } else {
-            callGraph = null;
-        }
+            rubyHome = findRubyHome();
+            Log.LOGGER.config(() -> String.format("ruby home: %s", rubyHome));
 
-        // Stuff that needs to be loaded before we load any code
+            currentDirectory = System.getProperty("user.dir");
+            verbose = options.VERBOSITY.equals(Verbosity.TRUE);
+
+            if (options.CALL_GRAPH) {
+                callGraph = new CallGraph();
+            } else {
+                callGraph = null;
+            }
+
+            // Stuff that needs to be loaded before we load any code
 
         /*
          * The Graal option TimeThreshold sets how long a method has to become hot after it has started running, in ms.
@@ -134,9 +145,9 @@ public class RubyContext extends ExecutionContext {
          * produces poor benchmark results. Here we just set it to a very high value, to effectively disable it.
          */
 
-        if (compilerOptions.supportsOption("MinTimeThreshold")) {
-            compilerOptions.setOption("MinTimeThreshold", 100000000);
-        }
+            if (compilerOptions.supportsOption("MinTimeThreshold")) {
+                compilerOptions.setOption("MinTimeThreshold", 100000000);
+            }
 
         /*
          * The Graal option InliningMaxCallerSize sets the maximum size of a method for where we consider to inline
@@ -145,114 +156,111 @@ public class RubyContext extends ExecutionContext {
          * key methods from the core library from inlining other methods.
          */
 
-        if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
-            compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
-        }
+            if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
+                compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
+            }
 
-        // Load the core library classes
+            // Load the core library classes
 
-        coreLibrary = new CoreLibrary(this);
-        coreLibrary.initialize();
+            coreLibrary = new CoreLibrary(this);
+            coreLibrary.initialize();
 
-        symbolTable = new SymbolTable(coreLibrary.getSymbolFactory());
+            symbolTable = new SymbolTable(coreLibrary.getSymbolFactory());
 
-        // Create objects that need core classes
+            // Create objects that need core classes
 
-        nativePlatform = NativePlatformFactory.createPlatform(this);
-        rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
+            nativePlatform = NativePlatformFactory.createPlatform(this);
+            rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
-        // The encoding manager relies on POSIX having been initialized, so we can't process it during
-        // normal core library initialization.
-        coreLibrary.initializeEncodingManager();
+            // The encoding manager relies on POSIX having been initialized, so we can't process it during
+            // normal core library initialization.
+            coreLibrary.initializeEncodingManager();
 
-        threadManager = new ThreadManager(this);
-        threadManager.initialize();
+            threadManager = new ThreadManager(this);
+            threadManager.initialize();
 
-        // Load the nodes
+            // Load the nodes
 
-        Main.printTruffleTimeMetric("before-load-nodes");
-        coreLibrary.addCoreMethods(primitiveManager);
-        Main.printTruffleTimeMetric("after-load-nodes");
+            Main.printTruffleTimeMetric("before-load-nodes");
+            coreLibrary.addCoreMethods(primitiveManager);
+            Main.printTruffleTimeMetric("after-load-nodes");
 
-        // Capture known builtin methods
+            // Capture known builtin methods
 
-        final Instrumenter instrumenter = env.lookup(Instrumenter.class);
-        traceManager = new TraceManager(this, instrumenter);
-        coreMethods = new CoreMethods(this);
+            final Instrumenter instrumenter = env.lookup(Instrumenter.class);
+            traceManager = new TraceManager(this, instrumenter);
+            coreMethods = new CoreMethods(this);
+            coverageManager = new CoverageManager(this, instrumenter);
 
-        // Load the reset of the core library
+            // Load the reset of the core library
 
-        coreLibrary.loadRubyCore();
+            coreLibrary.loadRubyCore();
 
-        // Load other subsystems
+            // Load other subsystems
 
-        final PrintStream configStandardOut = System.out;
-        debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
+            final PrintStream configStandardOut = System.out;
+            debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
 
-        // The instrumentation server can't be run with AOT because com.sun.net.httpserver.spi.HttpServerProvider uses runtime class loading.
-        if (!TruffleOptions.AOT && options.INSTRUMENTATION_SERVER_PORT != 0) {
-            instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
-            instrumentationServerManager.start();
-        } else {
-            instrumentationServerManager = null;
-        }
+            // The instrumentation server can't be run with AOT because com.sun.net.httpserver.spi.HttpServerProvider uses runtime class loading.
+            if (!TruffleOptions.AOT && options.INSTRUMENTATION_SERVER_PORT != 0) {
+                instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
+                instrumentationServerManager.start();
+            } else {
+                instrumentationServerManager = null;
+            }
 
-        coverageManager = new CoverageManager(this, instrumenter);
+            coreLibrary.initializePostBoot();
 
-        coreLibrary.initializePostBoot();
+            consoleHolder = new ConsoleHolder();
 
-        // Share once everything is loaded
-        if (options.SHARED_OBJECTS_ENABLED && options.SHARED_OBJECTS_FORCE) {
-            sharedObjects.startSharing();
-        }
-    }
-
-    private String setupJRubyHome() {
-        String jrubyHome = findJRubyHome();
-        return jrubyHome;
-    }
-
-    private CodeSource getCodeSource() {
-        try {
-            return Class.forName("org.jruby.Ruby").getProtectionDomain().getCodeSource();
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting the classic code source", e);
+            // Share once everything is loaded
+            if (options.SHARED_OBJECTS_ENABLED && options.SHARED_OBJECTS_FORCE) {
+                sharedObjects.startSharing();
+            }
+        } finally {
+            contextsBeingCreated.remove();
         }
     }
 
-    private String findJRubyHome() {
-        if (!TruffleOptions.AOT && System.getenv("JRUBY_HOME") == null && System.getProperty("jruby.home") == null) {
-            // Set JRuby home automatically for GraalVM
-            final CodeSource codeSource = getCodeSource();
-            if (codeSource != null) {
-                final File currentJarFile;
-                try {
-                    currentJarFile = new File(codeSource.getLocation().toURI());
-                } catch (URISyntaxException e) {
-                    throw new JavaException(e);
-                }
+    private String findRubyHome() {
+        // Use the option if it was set
 
-                if (currentJarFile.getName().equals("ruby.jar")) {
-                    File jarDir = currentJarFile.getParentFile();
+        if (options.HOME != null) {
+            return new File(options.HOME).getAbsolutePath();
+        }
 
-                    // GraalVM
-                    if (new File(jarDir, "lib").isDirectory()) {
-                        return jarDir.getPath();
-                    }
+        // Try to find it automatically from the location of the JAR, but this won't work from the JRuby launcher as it uses the boot classpath
 
-                    // mx: mxbuild/dists/ruby.jar
-                    if (jarDir.getName().equals("dists") && jarDir.getParentFile().getName().equals("mxbuild")) {
-                        String mxbuildDir = currentJarFile.getParentFile().getParent();
-                        File mxJRubyHome = new File(mxbuildDir, "ruby-zip-extracted");
-                        if (mxJRubyHome.isDirectory()) {
-                            return mxJRubyHome.getPath();
-                        }
-                    }
+        if (!TruffleOptions.AOT) {
+            final CodeSource codeSource = getClass().getProtectionDomain().getCodeSource();
+
+            if (codeSource != null && codeSource.getLocation().getProtocol().equals("file")) {
+                final File jar = new File(codeSource.getLocation().getFile());
+
+                if (jar.getParentFile().getName().equals("lib")) {
+                    // Conventional build or distribution
+                    return jar.getParentFile().getParentFile().getAbsolutePath();
+                } else if (jar.getParentFile().getName().equals("ruby") && new File(jar.getParentFile(), "lib").exists()) {
+                    // GraalVM build or distribution
+                    return jar.getParentFile().getAbsolutePath();
+                } else if (jar.getParentFile().getName().equals("dists") && jar.getParentFile().getParentFile().getName().equals("mxbuild")) {
+                    // mx build
+                    return new File(jar.getParentFile().getParentFile(), "ruby-zip-extracted").getAbsolutePath();
                 }
             }
         }
 
-        return options.HOME;
+        // Just for now, use jruby.home as the launcher sets that
+
+        final String jrubyHome = System.getProperty("jruby.home");
+
+        if (jrubyHome != null) {
+            return new File(jrubyHome).getAbsolutePath();
+        }
+
+        Log.LOGGER.config("home not explicitly set, and couldn't determine it from the source of the Java classfiles or the JRuby launcher");
+
+        return null;
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -373,7 +381,11 @@ public class RubyContext extends ExecutionContext {
     }
 
     public static RubyContext getInstance() {
-        return RubyLanguage.INSTANCE.unprotectedFindContext(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
+        try {
+            return RubyLanguage.INSTANCE.unprotectedFindContext(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
+        } catch (IllegalStateException e) {
+            return contextsBeingCreated.get();
+        }
     }
 
     public SourceLoader getSourceLoader() {
@@ -444,8 +456,8 @@ public class RubyContext extends ExecutionContext {
         return originalInputFile;
     }
 
-    public String getJRubyHome() {
-        return jrubyHome;
+    public String getRubyHome() {
+        return rubyHome;
     }
 
     public void setVerbose(boolean verbose) {
@@ -470,6 +482,10 @@ public class RubyContext extends ExecutionContext {
 
     public void setSyntaxCheckInputStream(InputStream syntaxCheckInputStream) {
         this.syntaxCheckInputStream = syntaxCheckInputStream;
+    }
+
+    public ConsoleHolder getConsoleHolder() {
+        return consoleHolder;
     }
 
 }

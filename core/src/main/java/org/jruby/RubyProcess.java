@@ -36,6 +36,7 @@ import jnr.constants.platform.Sysconf;
 import jnr.ffi.byref.IntByReference;
 import jnr.posix.RLimit;
 import jnr.posix.Times;
+import jnr.posix.Timeval;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -1449,7 +1450,14 @@ public class RubyProcess {
             if (_clock_id.toString().equals(CLOCK_MONOTONIC)) {
                 nanos = System.nanoTime();
             } else if (_clock_id.toString().equals(CLOCK_REALTIME)) {
-                nanos = System.currentTimeMillis() * 1000000;
+                POSIX posix = runtime.getPosix();
+                if (posix.isNative()) {
+                    Timeval tv = posix.allocateTimeval();
+                    posix.gettimeofday(tv);
+                    nanos = tv.sec() * 1_000_000_000 + tv.usec() * 1000;
+                } else {
+                    nanos = System.currentTimeMillis() * 1000000;
+                }
             } else {
                 throw runtime.newErrnoEINVALError("clock_gettime");
             }

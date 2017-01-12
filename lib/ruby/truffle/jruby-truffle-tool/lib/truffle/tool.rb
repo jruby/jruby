@@ -364,6 +364,8 @@ module Truffle
       @called_from_dir                = Dir.pwd
       @options[:global][:dir]         = File.expand_path(@options[:global][:dir] || @called_from_dir)
 
+      log({ argv: argv, options: options }.pretty_inspect) if verbose?
+
       Dir.chdir @options[:global][:dir] do
         log "pwd is #{Dir.pwd}" if verbose?
 

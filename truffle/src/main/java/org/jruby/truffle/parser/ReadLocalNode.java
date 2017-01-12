@@ -9,15 +9,9 @@
  */
 package org.jruby.truffle.parser;
 
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 public abstract class ReadLocalNode extends RubyNode {
-
-    public ReadLocalNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     public abstract RubyNode makeWriteNode(RubyNode rhs);
 

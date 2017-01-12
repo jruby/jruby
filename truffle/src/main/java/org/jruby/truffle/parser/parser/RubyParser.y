@@ -37,10 +37,12 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jruby.truffle.RubyContext;
-import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.core.rope.CodeRange;
 import org.jruby.truffle.interop.ForeignCodeNode;
-import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.collections.Tuple;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.RubyWarnings;
+import org.jruby.truffle.parser.TempSourceSection;
 import org.jruby.truffle.parser.ast.ArgsParseNode;
 import org.jruby.truffle.parser.ast.ArgumentParseNode;
 import org.jruby.truffle.parser.ast.ArrayParseNode;
@@ -120,22 +122,19 @@ import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.ZArrayParseNode;
 import org.jruby.truffle.parser.ast.ZSuperParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 import org.jruby.truffle.parser.lexer.LexerSource;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.StrTerm;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
-import org.jruby.truffle.util.ByteList;
 
 import java.io.IOException;
 
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_BEG;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_END;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDARG;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_ENDFN;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_FNAME;
-import static org.jruby.truffle.parser.lexer.LexingCommon.EXPR_LABEL;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_BEG;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_END;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_ENDARG;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_ENDFN;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_FNAME;
+import static org.jruby.truffle.parser.lexer.RubyLexer.EXPR_LABEL;
 
 @SuppressWarnings({"unchecked", "fallthrough"})
 public class RubyParser {
@@ -143,7 +142,7 @@ public class RubyParser {
     protected final RubyLexer lexer;
 
     public RubyParser(RubyContext context, LexerSource source, RubyWarnings warnings) {
-        this.support = new ParserSupport(context);
+        this.support = new ParserSupport(context, source.getSource().getName());
         this.lexer = new RubyLexer(support, source, warnings);
         support.setLexer(lexer);
         support.setWarnings(warnings);
@@ -155,7 +154,7 @@ public class RubyParser {
     }
 %}
 
-%token <ISourcePosition> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
+%token <TempSourceSection> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
   kUNLESS kTHEN kELSIF kELSE kCASE kWHEN kWHILE kUNTIL kFOR kBREAK kNEXT
   kREDO kRETRY kIN kDO kDO_COND kDO_BLOCK kRETURN kYIELD kSUPER kSELF kNIL
   kTRUE kFALSE kAND kOR kNOT kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD
@@ -187,14 +186,14 @@ public class RubyParser {
 %token <String> tCOLON3        /* :: at EXPR_BEG */
 %token <String> tOP_ASGN       /* +=, -=  etc. */
 %token <String> tASSOC         /* => */
-%token <ISourcePosition> tLPAREN       /* ( */
-%token <ISourcePosition> tLPAREN2      /* ( Is just '(' in ruby and not a token */
+%token <TempSourceSection> tLPAREN       /* ( */
+%token <TempSourceSection> tLPAREN2      /* ( Is just '(' in ruby and not a token */
 %token <String> tRPAREN        /* ) */
-%token <ISourcePosition> tLPAREN_ARG    /* ( */
+%token <TempSourceSection> tLPAREN_ARG    /* ( */
 %token <String> tLBRACK        /* [ */
 %token <String> tRBRACK        /* ] */
-%token <ISourcePosition> tLBRACE        /* { */
-%token <ISourcePosition> tLBRACE_ARG    /* { */
+%token <TempSourceSection> tLBRACE        /* { */
+%token <TempSourceSection> tLBRACE_ARG    /* { */
 %token <String> tSTAR          /* * */
 %token <String> tSTAR2         /* *  Is just '*' in ruby and not a token */
 %token <String> tAMPER         /* & */
@@ -209,7 +208,7 @@ public class RubyParser {
 %token <String> tPIPE          /* | is just '|' in ruby and not a token */
 %token <String> tBANG          /* ! is just '!' in ruby and not a token */
 %token <String> tCARET         /* ^ is just '^' in ruby and not a token */
-%token <ISourcePosition> tLCURLY        /* { is just '{' in ruby and not a token */
+%token <TempSourceSection> tLCURLY        /* { is just '{' in ruby and not a token */
 %token <String> tRCURLY        /* } is just '}' in ruby and not a token */
 %token <String> tBACK_REF2     /* { is just '`' in ruby and not a token */
 %token <String> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
@@ -254,7 +253,7 @@ public class RubyParser {
    // ENEBO: missing when_args
 %type <HashParseNode> assoc_list
 %type <HashParseNode> assocs
-%type <KeyValuePair> assoc
+%type <Tuple> assoc
 %type <ListParseNode> mlhs_head mlhs_post
 %type <ListParseNode> f_block_optarg
 %type <BlockPassParseNode> opt_block_arg block_arg none_block_pass
@@ -466,7 +465,7 @@ stmt            : kALIAS fitem {
                 | var_lhs tOP_ASGN command_call {
                     support.checkExpression($3);
 
-                    ISourcePosition pos = $1.getPosition();
+                    TempSourceSection pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode($3);
@@ -491,7 +490,7 @@ stmt            : kALIAS fitem {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    ISourcePosition pos = $1.getPosition();
+                    TempSourceSection pos = $1.getPosition();
                     $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $2), $4, $5);
                 }
 
@@ -731,7 +730,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    ISourcePosition position = support.getPosition($1);
+                    TempSourceSection position = support.getPosition($1);
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon2(position, $1, $3), NilImplicitParseNode.NIL);
                 }
@@ -740,7 +739,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    ISourcePosition position = lexer.getPosition();
+                    TempSourceSection position = lexer.getPosition();
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon3(position, $2), NilImplicitParseNode.NIL);
                 }
@@ -810,7 +809,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    ISourcePosition position = support.getPosition($1);
+                    TempSourceSection position = support.getPosition($1);
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon2(position, $1, $3), NilImplicitParseNode.NIL);
                 }
@@ -819,7 +818,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    ISourcePosition position = lexer.getPosition();
+                    TempSourceSection position = lexer.getPosition();
 
                     $$ = new ConstDeclParseNode(position, null, support.new_colon3(position, $2), NilImplicitParseNode.NIL);
                 }
@@ -1024,7 +1023,7 @@ arg             : lhs '=' arg {
                 | var_lhs tOP_ASGN arg {
                     support.checkExpression($3);
 
-                    ISourcePosition pos = $1.getPosition();
+                    TempSourceSection pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode($3);
@@ -1042,7 +1041,7 @@ arg             : lhs '=' arg {
                     support.checkExpression($3);
                     ParseNode rescue = support.newRescueModNode($3, $5);
 
-                    ISourcePosition pos = $1.getPosition();
+                    TempSourceSection pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode(rescue);
@@ -1070,11 +1069,11 @@ arg             : lhs '=' arg {
                     $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
-                    ISourcePosition pos = support.getPosition($1);
+                    TempSourceSection pos = support.getPosition($1);
                     $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), $4, $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg {
-                    ISourcePosition pos = lexer.getPosition();
+                    TempSourceSection pos = lexer.getPosition();
                     $$ = support.newOpConstAsgn(pos, new Colon3ParseNode(pos, $1), $3, $4);
                 }
                 | backref tOP_ASGN arg {
@@ -1249,7 +1248,7 @@ call_args       : command {
                 }
 
 command_args    : /* none */ {
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
+                    $$ = lexer.getCmdArgumentState().getStack();
                     lexer.getCmdArgumentState().begin();
                 } call_args {
                     lexer.getCmdArgumentState().reset($<Long>1.longValue());
@@ -1267,7 +1266,7 @@ opt_block_arg   : ',' block_arg {
 
 // [!null]
 args            : arg_value { // ArrayParseNode
-                    ISourcePosition pos = $1 == null ? lexer.getPosition() : $1.getPosition();
+                    TempSourceSection pos = $1 == null ? lexer.getPosition() : $1.getPosition();
                     $$ = support.newArrayNode(pos, $1);
                 }
                 | tSTAR arg_value { // SplatNode
@@ -1366,7 +1365,7 @@ primary         : literal
                 | tLPAREN compstmt tRPAREN {
                     if ($2 != null) {
                         // compstmt position includes both parens around it
-                        ((ISourcePositionHolder) $2).setPosition($1);
+                        ((ParseNode) $2).setPosition($1);
                         $$ = $2;
                     } else {
                         $$ = new NilParseNode($1);
@@ -1379,7 +1378,7 @@ primary         : literal
                     $$ = support.new_colon3(lexer.getPosition(), $2);
                 }
                 | tLBRACK aref_args tRBRACK {
-                    ISourcePosition position = support.getPosition($2);
+                    TempSourceSection position = support.getPosition($2);
                     if ($2 == null) {
                         $$ = new ZArrayParseNode(position); /* zero length array */
                     } else {
@@ -1508,7 +1507,7 @@ primary         : literal
                     ParseNode body = $5;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefnParseNode($1, $2, (ArgsParseNode) $4, support.getCurrentScope(), body, $6.getLine());
+                    $$ = new DefnParseNode(support.extendedUntil($1, $6), $2, (ArgsParseNode) $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
                     lexer.setCurrentArg($<String>3);
@@ -1525,7 +1524,7 @@ primary         : literal
                     ParseNode body = $8;
                     if (body == null) body = NilImplicitParseNode.NIL;
 
-                    $$ = new DefsParseNode($1, $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body, $9.getLine());
+                    $$ = new DefsParseNode(support.extendedUntil($1, $9), $2, $5, (ArgsParseNode) $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                     lexer.setCurrentArg($<String>6);
@@ -1915,15 +1914,15 @@ string1         : tSTRING_BEG string_contents tSTRING_END {
                 }
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
-                    ISourcePosition position = support.getPosition($2);
+                    TempSourceSection position = support.getPosition($2);
 
                     lexer.heredoc_dedent($2);
 		    lexer.setHeredocIndent(0);
 
                     if ($2 == null) {
-                        $$ = new XStrParseNode(position, null, StringSupport.CR_7BIT);
+                        $$ = new XStrParseNode(position, null, CodeRange.CR_7BIT);
                     } else if ($2 instanceof StrParseNode) {
-                        $$ = new XStrParseNode(position, $<StrParseNode>2.getValue().dup(), $<StrParseNode>2.getCodeRange());
+                        $$ = new XStrParseNode(position, $<StrParseNode>2.getValue(), $<StrParseNode>2.getCodeRange());
                     } else if ($2 instanceof DStrParseNode) {
                         $$ = new DXStrParseNode(position, $<DStrParseNode>2);
 
@@ -2002,9 +2001,7 @@ qsym_list      : /* none */ {
                 }
 
 string_contents : /* none */ {
-                    ByteList aChar = ByteList.create("");
-                    aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStr(aChar, 0);
+                    $$ = lexer.createStr(new ParserByteList(new byte[]{}, 0, 0, lexer.getEncoding()), 0);
                 }
                 | string_contents string_content {
                     $$ = support.literal_concat($1.getPosition(), $1, $<ParseNode>2);
@@ -2152,11 +2149,11 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new FalseParseNode(lexer.getPosition());
                 }
                 | k__FILE__ {
-                    $$ = new FileParseNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
+                    $$ = new FileParseNode(lexer.getPosition(), new ParserByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getContext().getEncodingManager().getLocaleEncoding()));
                 }
                 | k__LINE__ {
-                    $$ = new FixnumParseNode(lexer.getPosition(), lexer.tokline.getLine()+1);
+                    $$ = new FixnumParseNode(lexer.getPosition(), lexer.tokline.toSourceSection(lexer.getSource()).getStartLine());
                 }
                 | k__ENCODING__ {
                     $$ = new EncodingParseNode(lexer.getPosition(), lexer.getEncoding());

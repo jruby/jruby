@@ -71,6 +71,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -2457,20 +2458,17 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_collect
      *
      */
-    public IRubyObject collect(ThreadContext context, Block block) {
-        final Ruby runtime = context.runtime;
+    public RubyArray collect(ThreadContext context, Block block) {
         if (!block.isGiven()) return makeShared();
 
+        final Ruby runtime = context.runtime;
         IRubyObject[] arr = new IRubyObject[realLength];
 
-        return collectFrom(context, arr, 0, block);
-    }
-
-    protected IRubyObject collectFrom(ThreadContext context, IRubyObject[] arr, int i, Block block) {
-        for (i = 0; i < realLength; i++) {
+        int i = 0;
+        for (; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
-            arr[i] = block.yield(context, eltOk(i));
+            safeArraySet(runtime, arr, i, block.yield(context, eltOk(i))); // arr[i] = ...
         }
 
         // use iteration count as new size in case something was deleted along the way
@@ -2664,7 +2662,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         modify();
 
         IRubyObject nil = getRuntime().getNil();
-        IRubyObject obj = null; // should never return null below
+        IRubyObject obj;
 
         try {
             obj = values[begin + pos];
@@ -2681,7 +2679,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             }
 
             System.arraycopy(values, begin + pos + 1, values, begin + pos, len - (pos + 1));
-            values[begin + len - 1] = getRuntime().getNil();
+            values[begin + len - 1] = nil;
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(getRuntime(), e);
         }
@@ -3024,46 +3022,46 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         // TODO: (CON) We can flatten packed versions efficiently if length does not change (e.g. [[1,2],[]])
         unpack();
         final Ruby runtime = context.runtime;
-        RubyArray stack = newArrayLight(runtime, ARRAY_DEFAULT_SIZE);
-        IdentityHashMap<Object, Object> memo = new IdentityHashMap<Object, Object>();
-        RubyArray ary = this;
-        memo.put(ary, NEVER);
-        boolean modified = false;
 
+        ArrayList<Object> stack = null;
+        IdentityHashMap<RubyArray, IRubyObject> memo = null; // used as an IdentityHashSet
+
+        RubyArray ary = this;
         int i = 0;
 
         try {
             while (true) {
-                IRubyObject tmp;
                 while (i < ary.realLength) {
                     IRubyObject elt = ary.eltOk(i++);
-                    if (level >= 0 && stack.size() / 2 >= level) {
+                    if (level >= 0 && (stack == null ? 0 : stack.size()) / 2 >= level) {
                         result.append(elt);
                         continue;
                     }
-                    tmp = TypeConverter.checkArrayType(elt);
-                    if (tmp.isNil()) {
-                        result.append(elt);
-                    } else {
-                        modified = true;
+                    IRubyObject tmp = TypeConverter.checkArrayType(elt);
+                    if (tmp.isNil()) result.append(elt);
+                    else { // nested array element
+                        if (memo == null) {
+                            memo = new IdentityHashMap<>(4 + 1);
+                            memo.put(this, NEVER);
+                        }
                         if (memo.get(tmp) != null) throw runtime.newArgumentError("tried to flatten recursive array");
-                        memo.put(tmp, NEVER);
-                        stack.append(ary);
-                        stack.append(RubyFixnum.newFixnum(runtime, i));
-                        ary = (RubyArray)tmp;
+                        if (stack == null) stack = new ArrayList<>(8); // fine hold 4-level deep nesting
+                        stack.add(ary); stack.add(i); // add (ary, i) pair
+                        ary = (RubyArray) tmp;
+                        memo.put(ary, NEVER);
                         i = 0;
                     }
                 }
-                if (stack.realLength == 0) break;
-                memo.remove(ary);
-                tmp = stack.pop(context);
-                i = (int) ((RubyFixnum) tmp).getLongValue();
-                ary = (RubyArray) stack.pop(context);
+                if (stack == null || stack.size() == 0) break;
+                memo.remove(ary); // memo != null since stack != null
+                final int s = stack.size(); // pop (ary, i)
+                i = (Integer) stack.remove(s - 1);
+                ary = (RubyArray) stack.remove(s - 2);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(context.runtime, ex);
         }
-        return modified;
+        return stack != null;
     }
 
     @JRubyMethod(name = "flatten!")

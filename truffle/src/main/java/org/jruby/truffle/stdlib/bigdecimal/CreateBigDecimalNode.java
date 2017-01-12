@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -58,7 +58,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
     public final DynamicObject executeCreate(VirtualFrame frame, Object value) {
         if (allocateNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            allocateNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            allocateNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
         return executeInitialize(
@@ -119,8 +119,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
         final int exceptionConstant = getIntegerConstantNode
                 .executeGetIntegerConstant(frame, getBigDecimalClass(), "EXCEPTION_INFINITY");
 
-        final boolean raise = booleanCastNode.executeBoolean(
-                frame,
+        final boolean raise = booleanCastNode.executeToBoolean(
                 modeCallNode.call(frame, getBigDecimalClass(), "boolean_mode", exceptionConstant));
 
         if (raiseProfile.profile(raise)) {
@@ -146,8 +145,7 @@ public abstract class CreateBigDecimalNode extends BigDecimalCoreMethodNode {
         final int exceptionConstant = getIntegerConstantNode.executeGetIntegerConstant
                 (frame, getBigDecimalClass(), "EXCEPTION_NaN");
 
-        final boolean raise = booleanCastNode.executeBoolean(
-                frame,
+        final boolean raise = booleanCastNode.executeToBoolean(
                 modeCallNode.call(frame, getBigDecimalClass(), "boolean_mode", exceptionConstant));
 
         if (raiseProfile.profile(raise)) {

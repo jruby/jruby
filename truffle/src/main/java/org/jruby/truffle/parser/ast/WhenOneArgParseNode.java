@@ -5,14 +5,14 @@
 
 package org.jruby.truffle.parser.ast;
 
-import org.jruby.truffle.parser.lexer.ISourcePosition;
+import org.jruby.truffle.language.SourceIndexLength;
 
 /**
  *
  * @author enebo
  */
 public class WhenOneArgParseNode extends WhenParseNode {
-    public WhenOneArgParseNode(ISourcePosition position, ParseNode expressionNode, ParseNode bodyNode, ParseNode nextCase) {
+    public WhenOneArgParseNode(SourceIndexLength position, ParseNode expressionNode, ParseNode bodyNode, ParseNode nextCase) {
         super(position, expressionNode, bodyNode, nextCase);
     }
 }

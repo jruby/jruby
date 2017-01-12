@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,8 +16,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
@@ -27,8 +25,7 @@ public abstract class ArraySliceNode extends RubyNode {
     final int from; // positive
     final int to; // negative, exclusive
 
-    public ArraySliceNode(RubyContext context, SourceSection sourceSection, int from, int to) {
-        super(context, sourceSection);
+    public ArraySliceNode(int from, int to) {
         assert from >= 0;
         assert to <= 0;
         this.from = from;

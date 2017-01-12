@@ -101,6 +101,15 @@ class TestDir < Test::Unit::TestCase
     Dir.glob('./testDir_2/**/testDir_tmp1').each {|f| assert File.exist?(f) }
   end
 
+  def test_glob_consecutive_double_star_returns_uniq_results
+    Dir.mkdir("testDir_bug4353")
+    Dir.mkdir("testDir_bug4353/level2")
+    open("testDir_bug4353/level2/testDir_tmp1", "w").close
+    assert_equal(Dir.glob('./testDir_bug4353/**/**/testDir_tmp1'), ['./testDir_bug4353/level2/testDir_tmp1'])
+
+    FileUtils.rm_r 'testDir_bug4353'
+  end
+
   def test_glob_with_blocks
     Dir.mkdir("testDir_3")
     open("testDir_3/testDir_tmp1", "w").close
@@ -241,6 +250,23 @@ class TestDir < Test::Unit::TestCase
     assert_raise(Errno::EACCES) do
       FileUtils.mkdir_p 'uri:classloader://new_dir'
     end
+  end
+
+  def test_stat_directory_in_jar_with_trailing_slash
+    jar_file = File.expand_path('../jar_with_relative_require1.jar', __FILE__)
+    $CLASSPATH << jar_file
+    source_file = "jar:file:#{jar_file}!/test/require_relative1.rb"
+    assert File.exist?(source_file), "test is wrong, #{source_file} doesn't even exist"
+    assert_equal false, File.directory?(source_file)
+    assert_equal false, File.directory?(source_file + "/")
+    assert_raise(Errno::ENOENT) do
+      File.stat(source_file + "/")
+    end
+    source_dir = File.dirname(source_file)
+    assert File.directory?(source_dir), "#{source_dir} not found"
+    source_dir += "/"
+    assert File.directory?(source_dir), "#{source_dir} claims to not be a directory"
+    assert_equal true, File.stat(source_dir).directory?
   end
 
   # JRUBY-4983

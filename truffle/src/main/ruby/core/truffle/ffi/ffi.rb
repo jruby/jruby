@@ -51,7 +51,7 @@ module FFI
   #
   CURRENT_PROCESS = nil
 
-  TypeDefs = Rubinius::LookupTable.new
+  TypeDefs = {}
 
   class << self
     def add_typedef(current, add)
@@ -195,7 +195,7 @@ module FFI
     add_typedef TYPE_ULL,   :uint64
   end
 
-  TypeSizes = Rubinius::LookupTable.new
+  TypeSizes = {}
   TypeSizes[1] = :char
   TypeSizes[2] = :short
   TypeSizes[4] = :int

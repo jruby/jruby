@@ -21,10 +21,6 @@ import org.jruby.truffle.core.format.FormatNode;
 })
 public abstract class ToDoubleNode extends FormatNode {
 
-    public ToDoubleNode(RubyContext context) {
-        super(context);
-    }
-
     public abstract double executeToDouble(VirtualFrame frame, Object object);
 
     @Specialization

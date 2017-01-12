@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -28,10 +28,6 @@ public abstract class ReinterpretAsUnsignedNode extends FormatNode {
 
     @Child private FixnumOrBignumNode fixnumOrBignumNode;
 
-    public ReinterpretAsUnsignedNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public MissingValue asUnsigned(MissingValue missingValue) {
         return missingValue;
@@ -56,7 +52,7 @@ public abstract class ReinterpretAsUnsignedNode extends FormatNode {
     public Object asUnsigned(long value) {
         if (fixnumOrBignumNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            fixnumOrBignumNode = insert(FixnumOrBignumNode.create(getContext(), null));
+            fixnumOrBignumNode = insert(FixnumOrBignumNode.create(null));
         }
 
         return fixnumOrBignumNode.fixnumOrBignum(asUnsignedBigInteger(value));

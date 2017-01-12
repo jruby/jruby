@@ -33,9 +33,9 @@
 package org.jruby.truffle.parser.ast;
 
 import org.jcodings.Encoding;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 /**
  * A string which contains some dynamic elements which needs to be evaluated (introduced by #).
@@ -43,7 +43,7 @@ import org.jruby.truffle.parser.lexer.ISourcePosition;
 public class DStrParseNode extends DParseNode implements ILiteralNode {
     private boolean frozen;
 
-    public DStrParseNode(ISourcePosition position, Encoding encoding) {
+    public DStrParseNode(SourceIndexLength position, Encoding encoding) {
         super(position, encoding);
     }
 

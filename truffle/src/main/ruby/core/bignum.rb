@@ -25,6 +25,17 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Bignum < Integer
+
+  def coerce(other)
+    # NOTE (eregon, 16 Feb. 2015): In other implementations, other is converted to a Bignum here,
+    # even if it fits in a Fixnum. We avoid it for implementation sanity
+    # and to keep the representations strictly distinct over the range of values.
+    # This is assumed for instance in Fixnum#/ and other places.
+    # Note 2.4 solves this problem with Integer unification.
+    raise TypeError unless other.is_a?(Integer)
+    [other, self]
+  end
+
   def <=>(other)
     Truffle.primitive :bignum_compare
 

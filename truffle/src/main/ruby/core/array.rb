@@ -58,30 +58,26 @@ class Array
   def &(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
-    array = []
-    im = Rubinius::IdentityMap.from other
-
-    each { |x| array << x if im.delete x }
-
-    array
+    h = {}
+    other.each { |e| h[e] = true }
+    select { |x| h.delete x }
   end
 
   def |(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
-    im = Rubinius::IdentityMap.from self, other
-    im.to_array
+    h = {}
+    each { |e| h[e] = true }
+    other.each { |e| h[e] = true }
+    h.keys
   end
 
   def -(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
-    array = []
-    im = Rubinius::IdentityMap.from other
-
-    each { |x| array << x unless im.include? x }
-
-    array
+    h = {}
+    other.each { |e| h[e] = true }
+    reject { |x| h.include? x }
   end
 
   def <=>(other)
@@ -109,6 +105,15 @@ class Array
     size <=> total
   end
 
+  def *(count)
+    Truffle.primitive :array_mul
+    if str = Rubinius::Type.check_convert_type(count, String, :to_str)
+      join(str)
+    else
+      self * Rubinius::Type.coerce_to(count, Integer, :to_int)
+    end
+  end
+
   def ==(other)
     return true if equal?(other)
     unless other.kind_of? Array
@@ -130,6 +135,50 @@ class Array
 
     true
   end
+
+  def [](start, length = undefined)
+    Truffle.primitive :array_aref
+    element_reference_fallback __callee__, start, length
+  end
+  alias :slice :[]
+
+  def element_reference_fallback(method_name, start, length)
+    if undefined.equal?(length)
+      arg = start
+      case arg
+      when Range
+        unless arg.begin.respond_to?(:to_int)
+          raise TypeError, "no implicit conversion of #{arg.begin.class} into Integer"
+        end
+        unless arg.end.respond_to?(:to_int)
+          raise TypeError, "no implicit conversion of #{arg.end.class} into Integer"
+        end
+        start_index = arg.begin.to_int
+        end_index = arg.end.to_int
+        if start_index.is_a?(Bignum) || end_index.is_a?(Bignum)
+          raise RangeError, "bignum too big to convert into `long'"
+        end
+        if arg.exclude_end?
+          range = start_index...end_index
+        else
+          range = start_index..end_index
+        end
+        send(method_name, range)
+      when Bignum
+        raise RangeError, "bignum too big to convert into `long'"
+      else
+        send(method_name, arg.to_int)
+      end
+    else
+      start_index = start.to_int
+      end_index = length.to_int
+      if start_index.is_a?(Bignum) || end_index.is_a?(Bignum)
+        raise RangeError, "bignum too big to convert into `long'"
+      end
+      send(method_name, start_index, end_index)
+    end
+  end
+  private :element_reference_fallback
 
   def assoc(obj)
     each do |x|
@@ -347,7 +396,10 @@ class Array
       two = c
     end
 
-    if one.kind_of? Range
+    if undefined.equal?(one) || !one
+      left = 0
+      right = size
+    elsif one.kind_of? Range
       raise TypeError, "length invalid with range" unless undefined.equal?(two)
 
       left = Rubinius::Type.coerce_to_collection_length one.begin
@@ -359,12 +411,12 @@ class Array
       right += 1 unless one.exclude_end?
       return self if right <= left           # Nothing to modify
 
-    elsif one and !undefined.equal?(one)
+    elsif one
       left = Rubinius::Type.coerce_to_collection_length one
       left += size if left < 0
       left = 0 if left < 0
 
-      if two and !undefined.equal?(two)
+      if !undefined.equal?(two) and two
         begin
           right = Rubinius::Type.coerce_to_collection_length two
         rescue ArgumentError
@@ -378,9 +430,6 @@ class Array
       else
         right = size
       end
-    else
-      left = 0
-      right = size
     end
 
     if left >= Fixnum::MAX || right > Fixnum::MAX
@@ -416,7 +465,7 @@ class Array
     level = Rubinius::Type.coerce_to_collection_index level
     return self.dup if level == 0
 
-    out = new_reserved size
+    out = self.class.allocate # new_reserved size
     recursively_flatten(self, out, level)
     Rubinius::Type.infect(out, self)
     out
@@ -428,7 +477,7 @@ class Array
     level = Rubinius::Type.coerce_to_collection_index level
     return nil if level == 0
 
-    out = new_reserved size
+    out = self.class.allocate # new_reserved size
     if recursively_flatten(self, out, level)
       Truffle::Array.steal_storage(self, out)
       return self
@@ -491,7 +540,6 @@ class Array
   def find_index(obj=undefined)
     super
   end
-
   alias_method :index, :find_index
 
   def insert(idx, *items)
@@ -526,7 +574,6 @@ class Array
     result << "]"
     result
   end
-
   alias_method :to_s, :inspect
 
   def join(sep=nil)
@@ -813,7 +860,6 @@ class Array
   end
   private :combination_size
 
-
   def compile_repeated_permutations(combination_size, place, index, &block)
     length.times do |i|
       place[index] = i
@@ -824,7 +870,6 @@ class Array
       end
     end
   end
-
   private :compile_repeated_permutations
 
   def reverse
@@ -999,9 +1044,9 @@ class Array
 
       result = Array.new(self)
 
-      count.times { |i|
+      count.times do |i|
         result.swap i, rng.rand(size)
-      }
+      end
 
       return count == size ? result : result[0, count]
     end
@@ -1043,12 +1088,10 @@ class Array
     n = Rubinius::Type.coerce_to_collection_index n
     raise ArgumentError, "attempt to drop negative size" if n < 0
 
-    return [] if size == 0
-
     new_size = size - n
     return [] if new_size <= 0
 
-    new_range n, new_size
+    self[n..-1]
   end
 
   def sort_by!(&block)
@@ -1404,21 +1447,6 @@ class Array
   end
   private :isort_block!
 
-  # Truffle: what follows is our changes
-
-  def new_range(start, count)
-    ret = Array.new(count)
-
-    self[start..-1].each_with_index { |x, index| ret[index] = x }
-
-    ret
-  end
-
-  def new_reserved(count)
-    # TODO CS 6-Feb-15 do we want to reserve space or allow the runtime to optimise for us?
-    self.class.new(0 , nil)
-  end
-
   def reverse!
     Truffle.check_frozen
     return self unless size > 1
@@ -1518,52 +1546,29 @@ class Array
   def uniq!(&block)
     Truffle.check_frozen
 
+    result = []
     if block_given?
-      im = Rubinius::IdentityMap.from(self, &block)
+      h = {}
+      each do |e|
+        v = yield(e)
+        unless h.key?(v)
+          h[v] = true
+          result << e
+        end
+      end
     else
-      im = Rubinius::IdentityMap.from(self)
+      h = {}
+      each do |e|
+        unless h.key?(e)
+          h[e] = true
+          result << e
+        end
+      end
     end
-    return if im.size == size
+    return if result.size == size
 
-    Truffle::Array.steal_storage(self, im.to_array)
+    Truffle::Array.steal_storage(self, result)
     self
-  end
-
-  def element_reference_fallback(method_name, args)
-    if args.length == 1
-      arg = args.first
-      case arg
-        when Range
-          unless arg.begin.respond_to?(:to_int)
-            raise TypeError, "no implicit conversion of #{arg.begin.class} into Integer"
-          end
-          unless arg.end.respond_to?(:to_int)
-            raise TypeError, "no implicit conversion of #{arg.end.class} into Integer"
-          end
-          start_index = arg.begin.to_int
-          end_index = arg.end.to_int
-          if start_index.is_a?(Bignum) || end_index.is_a?(Bignum)
-            raise RangeError, "bignum too big to convert into `long'"
-          end
-          if arg.exclude_end?
-            range = start_index...end_index
-          else
-            range = start_index..end_index
-          end
-          send(method_name, range)
-        when Bignum
-          raise RangeError, "bignum too big to convert into `long'"
-        else
-          send(method_name, arg.to_int)
-      end
-    else
-      start_index = args[0].to_int
-      end_index = args[1].to_int
-      if start_index.is_a?(Bignum) || end_index.is_a?(Bignum)
-        raise RangeError, "bignum too big to convert into `long'"
-      end
-      send(method_name, start_index, end_index)
-    end
   end
 
   def sort!(&block)
@@ -1571,7 +1576,6 @@ class Array
 
     Truffle::Array.steal_storage(self, sort(&block))
   end
-  public :sort!
 
   def swap(a, b)
     temp = at(a)

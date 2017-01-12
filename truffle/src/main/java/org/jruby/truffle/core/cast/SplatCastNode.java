@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,9 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayDupNode;
 import org.jruby.truffle.core.array.ArrayDupNodeGen;
 import org.jruby.truffle.language.RubyGuards;
@@ -44,17 +42,14 @@ public abstract class SplatCastNode extends RubyNode {
     private final NilBehavior nilBehavior;
     private final DynamicObject conversionMethod;
 
-    @Child private ArrayDupNode dup;
-    @Child private CallDispatchHeadNode toA;
+    @Child private ArrayDupNode dup = ArrayDupNodeGen.create(null);
+    @Child private CallDispatchHeadNode toA = DispatchHeadNodeFactory.createMethodCall(true, MissingBehavior.RETURN_MISSING);
 
-    public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior, boolean useToAry) {
-        super(context, sourceSection);
+    public SplatCastNode(NilBehavior nilBehavior, boolean useToAry) {
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
-        dup = ArrayDupNodeGen.create(null);
-        toA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         String name = useToAry ? "to_ary" : "to_a";
-        conversionMethod = context.getSymbolTable().getSymbol(name);
+        conversionMethod = getContext().getSymbolTable().getSymbol(name);
     }
 
     public abstract RubyNode getChild();

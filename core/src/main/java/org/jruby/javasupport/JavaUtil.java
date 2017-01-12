@@ -36,10 +36,10 @@ package org.jruby.javasupport;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ReflectPermission;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
@@ -48,7 +48,6 @@ import static java.lang.Character.toLowerCase;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.AccessController;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -99,9 +98,13 @@ public class JavaUtil {
 
         if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
             try {
-                AccessController.checkPermission(new ReflectPermission("suppressAccessChecks"));
-                canSetAccessible = true;
-            } catch (Throwable t) {
+                // We want to check if we can access a commonly-existing private field through reflection.
+                // If so, we're probably able to access some other fields too later on.
+                Field f = Java.class.getDeclaredField("_");
+                f.setAccessible(true);
+                canSetAccessible = f.getByte(null) == 72;
+            }
+            catch (Exception t) {
                 // added this so if things are weird in the future we can debug without
                 // spinning a new binary
                 if (Options.JI_LOGCANSETACCESSIBLE.load()) {
@@ -128,20 +131,20 @@ public class JavaUtil {
 
     public static RubyArray convertJavaArrayToRubyWithNesting(final ThreadContext context, final Object array) {
         final int length = Array.getLength(array);
-        final RubyArray outer = context.runtime.newArray(length);
+        final IRubyObject[] rubyElements = new IRubyObject[length];
         for ( int i = 0; i < length; i++ ) {
             final Object element = Array.get(array, i);
             if ( element instanceof ArrayJavaProxy ) {
-                outer.append( convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy) element).getObject()) );
+                rubyElements[i] = convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy) element).getObject());
             }
             else if ( element != null && element.getClass().isArray() ) {
-                outer.append( convertJavaArrayToRubyWithNesting(context, element) );
+                rubyElements[i] = convertJavaArrayToRubyWithNesting(context, element);
             }
             else {
-                outer.append( convertJavaToUsableRubyObject(context.runtime, element) );
+                rubyElements[i] = convertJavaToUsableRubyObject(context.runtime, element);
             }
         }
-        return outer;
+        return context.runtime.newArrayNoCopy(rubyElements);
     }
 
     public static JavaConverter getJavaConverter(Class clazz) {

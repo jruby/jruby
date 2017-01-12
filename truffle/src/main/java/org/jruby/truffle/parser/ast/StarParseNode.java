@@ -32,8 +32,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class StarParseNode extends ParseNode {
     /**
      * Constructor for StarParseNode.
      */
-    public StarParseNode(ISourcePosition position) {
+    public StarParseNode(SourceIndexLength position) {
         super(position, false);
     }
 

@@ -33,10 +33,10 @@ package org.jruby.truffle.parser.ast;
 
 import org.jcodings.Encoding;
 import org.jruby.truffle.core.regexp.RegexpOptions;
+import org.jruby.truffle.language.SourceIndexLength;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.util.ByteList;
 
 import java.util.List;
 
@@ -44,10 +44,10 @@ import java.util.List;
  * Represents a simple regular expression literal.
  */
 public class RegexpParseNode extends ParseNode implements ILiteralNode {
-    private final ByteList value;
+    private final ParserByteList value;
     private final RegexpOptions options;
 
-    public RegexpParseNode(ISourcePosition position, ByteList value, RegexpOptions options) {
+    public RegexpParseNode(SourceIndexLength position, ParserByteList value, RegexpOptions options) {
         super(position, false);
 
         this.value = value;
@@ -75,9 +75,9 @@ public class RegexpParseNode extends ParseNode implements ILiteralNode {
 
     /**
      * Gets the value.
-     * @return Returns a ByteList
+     * @return Returns a ParserByteList
      */
-    public ByteList getValue() {
+    public ParserByteList getValue() {
         return value;
     }
 

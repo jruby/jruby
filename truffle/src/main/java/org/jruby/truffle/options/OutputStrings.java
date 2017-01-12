@@ -25,9 +25,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.options;
 
-import org.jruby.truffle.util.Constants;
-import org.jruby.truffle.util.Platform;
-import org.jruby.truffle.util.SafePropertyAccessor;
+import org.jruby.truffle.RubyLanguage;
+import org.jruby.truffle.platform.Platform;
 
 /**
  * Utility methods to generate the command-line output strings for help,
@@ -103,13 +102,13 @@ public class OutputStrings {
         return String.format(
             "jruby%s %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
                 "+truffle",
-                Constants.VERSION,
-                Constants.RUBY_VERSION,
-                Constants.COMPILE_DATE,
-                Constants.REVISION,
-                SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
-                SafePropertyAccessor.getProperty("java.vm.version", "Unknown JVM version"),
-                SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
+                RubyLanguage.VERSION,
+                RubyLanguage.RUBY_VERSION,
+                RubyLanguage.COMPILE_DATE,
+                "unknown",
+                System.getProperty("java.vm.name", "Unknown JVM"),
+                System.getProperty("java.vm.version", "Unknown JVM version"),
+                System.getProperty("java.runtime.version", System.getProperty("java.version", "Unknown version")),
                 "",
                 "",
                 Platform.getOSName(),
@@ -118,6 +117,6 @@ public class OutputStrings {
     }
 
     public static String getCopyrightString() {
-        return "JRuby - Copyright (C) 2001-2016 The JRuby Community (and contribs)";
+        return "JRuby - Copyright (C) 2001-2017 The JRuby Community (and contribs)";
     }
 }

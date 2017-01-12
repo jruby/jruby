@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,12 +17,10 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.util.StringUtils;
 
 /**
  * Array indices and lengths must be in 32-bit ranges. This class handle various data types and lowers to a 32-bit int
@@ -34,8 +32,7 @@ public abstract class ArrayAttributeCastNode extends RubyNode {
 
     final String indexName;
 
-    public ArrayAttributeCastNode(RubyContext context, SourceSection sourceSection, String indexName) {
-        super(context, sourceSection);
+    public ArrayAttributeCastNode(String indexName) {
         this.indexName = indexName;
     }
 

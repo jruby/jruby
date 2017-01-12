@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,14 +16,10 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.arguments.RubyArguments;
 import org.jruby.truffle.language.objects.IsTaintedNode;
-import org.jruby.truffle.language.objects.IsTaintedNodeGen;
 import org.jruby.truffle.language.objects.TaintNode;
-import org.jruby.truffle.language.objects.TaintNodeGen;
 
 public class TaintResultNode extends RubyNode {
 
@@ -39,21 +35,20 @@ public class TaintResultNode extends RubyNode {
         this.taintFromSelf = taintFromSelf;
         this.taintFromParameter = taintFromParameter;
         this.method = method;
-        this.isTaintedNode = IsTaintedNodeGen.create(null, null, null);
+        this.isTaintedNode = IsTaintedNode.create();
     }
 
-    public TaintResultNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public TaintResultNode() {
         this.taintFromSelf = false;
         this.taintFromParameter = -1;
-        this.isTaintedNode = IsTaintedNodeGen.create(null, null, null);
+        this.isTaintedNode = IsTaintedNode.create();
     }
 
     public Object maybeTaint(Object source, Object result) {
         if (taintProfile.profile(isTaintedNode.executeIsTainted(source))) {
             if (taintNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                taintNode = insert(TaintNodeGen.create(null, null, null));
+                taintNode = insert(TaintNode.create());
             }
 
             taintNode.executeTaint(result);
@@ -76,7 +71,7 @@ public class TaintResultNode extends RubyNode {
 
         if (result != nil()) {
             if (taintFromSelf) {
-                maybeTaint((DynamicObject) RubyArguments.getSelf(frame), result);
+                maybeTaint(RubyArguments.getSelf(frame), result);
             }
 
             if (taintFromParameter != -1) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -89,7 +89,7 @@ public abstract class ToIntNode extends RubyNode {
     public Object coerceDouble(VirtualFrame frame, double value) {
         if (floatToIntNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            floatToIntNode = insert(FloatNodesFactory.ToINodeFactory.create(getContext(), null, null));
+            floatToIntNode = insert(FloatNodesFactory.ToINodeFactory.create(null));
         }
         return floatToIntNode.executeToI(frame, value);
     }
@@ -109,7 +109,7 @@ public abstract class ToIntNode extends RubyNode {
     private Object coerceObject(VirtualFrame frame, Object object, BranchProfile errorProfile) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall());
         }
 
         final Object coerced;

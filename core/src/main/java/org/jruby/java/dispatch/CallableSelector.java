@@ -189,7 +189,7 @@ public class CallableSelector {
 
                     final boolean lastArgProc = procArity != Integer.MIN_VALUE;
                     final Boolean moreSpecific = moreSpecificTypes(msTypes, cTypes, lastArgProc);
-                    if ( (Object) moreSpecific == Boolean.TRUE ) {
+                    if ( moreSpecific == Boolean.TRUE ) {
                         mostSpecific = candidate; msTypes = cTypes;
                         ambiguous = false; continue /* OUTER */;
                     }

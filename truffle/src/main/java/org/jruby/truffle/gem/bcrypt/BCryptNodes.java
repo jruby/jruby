@@ -36,7 +36,7 @@ public abstract class BCryptNodes {
         }
     }
 
-    @CoreMethod(names = "gensalt", required = 1, onSingleton = true)
+    @CoreMethod(names = "gensalt", required = 1, onSingleton = true, lowerFixnum = 1)
     public abstract static class GenerateSalt extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary

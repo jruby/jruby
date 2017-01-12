@@ -33,10 +33,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,11 +44,12 @@ import java.util.List;
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class ParseNode implements ISourcePositionHolder {
+public abstract class ParseNode {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<ParseNode> EMPTY_LIST = new ArrayList<>();
-    
-    private ISourcePosition position;
+
+    private int sourceCharIndex;
+    private int sourceLength;
 
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
@@ -59,8 +59,14 @@ public abstract class ParseNode implements ISourcePositionHolder {
     protected boolean containsVariableAssignment;
     protected boolean newline;
 
-    public ParseNode(ISourcePosition position, boolean containsAssignment) {
-        this.position = position;
+    public ParseNode(SourceIndexLength position, boolean containsAssignment) {
+        if (position == null) {
+            sourceCharIndex = -1;
+            sourceLength = -1;
+        } else {
+            sourceCharIndex = position.getCharIndex();
+            sourceLength = position.getLength();
+        }
         this.containsVariableAssignment = containsAssignment;
     }
 
@@ -75,16 +81,13 @@ public abstract class ParseNode implements ISourcePositionHolder {
     /**
      * Location of this node within the source
      */
-    public ISourcePosition getPosition() {
-        return position;
+    public SourceIndexLength getPosition() {
+        return new SourceIndexLength(sourceCharIndex, sourceLength);
     }
 
-    public int getLine() {
-        return position.getLine();
-    }
-
-    public void setPosition(ISourcePosition position) {
-        this.position = position;
+    public void setPosition(SourceIndexLength position) {
+        sourceCharIndex = position.getCharIndex();
+        sourceLength = position.getLength();
     }
     
     public abstract <T> T accept(NodeVisitor<T> visitor);
@@ -142,8 +145,6 @@ public abstract class ParseNode implements ISourcePositionHolder {
         if (moreState != null) builder.append("[").append(moreState).append("]");
 
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
-
-        builder.append(" ").append(getPosition().getLine());
 
         if (!childNodes().isEmpty() && indent) builder.append("\n");
 

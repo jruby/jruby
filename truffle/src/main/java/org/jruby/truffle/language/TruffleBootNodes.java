@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -24,14 +24,13 @@ import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.CoreMethodNode;
+import org.jruby.truffle.collections.Memo;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.language.loader.CodeLoader;
-import org.jruby.truffle.language.loader.SourceLoader;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
-import org.jruby.truffle.util.Memo;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,44 +39,17 @@ import java.io.InputStreamReader;
 @CoreClass("Truffle::Boot")
 public abstract class TruffleBootNodes {
 
-    @CoreMethod(names = "jruby_home_directory", onSingleton = true)
-    public abstract static class JRubyHomeDirectoryNode extends CoreMethodNode {
+    @CoreMethod(names = "ruby_home", onSingleton = true)
+    public abstract static class RubyHomeNode extends CoreMethodNode {
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject jrubyHomeDirectory() {
-            if (getContext().getJRubyHome() == null) {
+        public DynamicObject ruby_home() {
+            if (getContext().getRubyHome() == null) {
                 return nil();
             } else {
-                return createString(StringOperations.encodeRope(getContext().getJRubyHome(), UTF8Encoding.INSTANCE));
+                return createString(StringOperations.encodeRope(getContext().getRubyHome(), UTF8Encoding.INSTANCE));
             }
-        }
-
-    }
-
-    @CoreMethod(names = "jruby_home_directory_protocol", onSingleton = true)
-    public abstract static class JRubyHomeDirectoryProtocolNode extends CoreMethodNode {
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject jrubyHomeDirectoryProtocol() {
-            String home = getContext().getJRubyHome();
-
-            if (home == null) {
-                return nil();
-            }
-
-            if (home.startsWith("uri:classloader:")) {
-                home = home.substring("uri:classloader:".length());
-
-                while (home.startsWith("/")) {
-                    home = home.substring(1);
-                }
-
-                home = SourceLoader.JRUBY_SCHEME + "/" + home;
-            }
-
-            return createString(StringOperations.encodeRope(home, UTF8Encoding.INSTANCE));
         }
 
     }
@@ -143,6 +115,17 @@ public abstract class TruffleBootNodes {
             }
 
             return createArray(array, array.length);
+        }
+
+    }
+
+    @CoreMethod(names = "original_input_file", onSingleton = true)
+    public abstract static class OriginalInputFileNode extends CoreMethodNode {
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject originalInputFile() {
+            return createString(StringOperations.encodeRope(getContext().getOriginalInputFile(), UTF8Encoding.INSTANCE));
         }
 
     }

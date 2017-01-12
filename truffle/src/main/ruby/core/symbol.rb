@@ -94,6 +94,10 @@ class Symbol
 
   alias_method :=~, :match
 
+  def encoding
+    Truffle.invoke_primitive :encoding_get_object_encoding, self
+  end
+
   def swapcase
     to_s.swapcase.to_sym
   end

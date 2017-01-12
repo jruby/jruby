@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -43,9 +43,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -387,16 +385,10 @@ public abstract class MathNodes {
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
     public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IsANode isANode;
-        @Child private ToFNode toFNode;
+        @Child private IsANode isANode = IsANodeGen.create(null, null);
+        @Child private ToFNode toFNode = ToFNode.create();
 
         private final BranchProfile exceptionProfile = BranchProfile.create();
-
-        public LGammaNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
-            toFNode = ToFNode.create();
-        }
 
         @Specialization
         public DynamicObject lgamma(int a) {
@@ -575,20 +567,10 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleMonadicMathNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private IsANode isANode;
-        @Child private ToFNode toFNode;
+        @Child private IsANode isANode = IsANodeGen.create(null, null);
+        @Child private ToFNode toFNode = ToFNode.create();
 
         protected final BranchProfile exceptionProfile = BranchProfile.create();
-
-        protected SimpleMonadicMathNode() {
-            this(null, null);
-        }
-
-        protected SimpleMonadicMathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
-            toFNode = ToFNode.create();
-        }
 
         // TODO: why can't we leave this abstract?
 
@@ -630,22 +612,11 @@ public abstract class MathNodes {
 
     protected abstract static class SimpleDyadicMathNode extends CoreMethodArrayArgumentsNode {
 
-        @Child protected IsANode isANode;
-        @Child protected ToFNode floatANode;
-        @Child protected ToFNode floatBNode;
+        @Child protected IsANode isANode = IsANodeGen.create(null, null);
+        @Child protected ToFNode floatANode = ToFNode.create();
+        @Child protected ToFNode floatBNode = ToFNode.create();
 
         protected final BranchProfile exceptionProfile = BranchProfile.create();
-
-        protected SimpleDyadicMathNode() {
-            this(null, null);
-        }
-
-        protected SimpleDyadicMathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            isANode = IsANodeGen.create(context, sourceSection, null, null);
-            floatANode = ToFNode.create();
-            floatBNode = ToFNode.create();
-        }
 
         // TODO: why can't we leave this abstract?
 

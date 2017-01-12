@@ -1,7 +1,7 @@
 # Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
-# 
+#
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
@@ -71,20 +71,6 @@ module Digest
     StringValue(message).unpack('H*').first
   end
 
-  class Class
-    def self.digest(message)
-      digest = new
-      digest.update message
-      digest.digest
-    end
-
-    def self.hexdigest(message)
-      digest = new
-      digest.update message
-      digest.hexdigest
-    end
-  end
-
   module Instance
     def update(message)
       Truffle::Digest.update @digest, message
@@ -140,9 +126,24 @@ module Digest
 
   class Class
     include Instance
+
+    def self.digest(message)
+      digest = new
+      digest.update message
+      digest.digest
+    end
+
+    def self.hexdigest(message)
+      digest = new
+      digest.update message
+      digest.hexdigest
+    end
   end
 
-  class MD5 < Class
+  class Base < Class
+  end
+
+  class MD5 < Base
     def initialize
       @digest = Truffle::Digest.md5
     end
@@ -152,7 +153,7 @@ module Digest
     end
   end
 
-  class SHA1 < Class
+  class SHA1 < Base
     def initialize
       @digest = Truffle::Digest.sha1
     end
@@ -162,7 +163,7 @@ module Digest
     end
   end
 
-  class SHA256 < Class
+  class SHA256 < Base
     def initialize
       @digest = Truffle::Digest.sha256
     end
@@ -172,7 +173,7 @@ module Digest
     end
   end
 
-  class SHA384 < Class
+  class SHA384 < Base
     def initialize
       @digest = Truffle::Digest.sha384
     end
@@ -182,7 +183,7 @@ module Digest
     end
   end
 
-  class SHA512 < Class
+  class SHA512 < Base
     def initialize
       @digest = Truffle::Digest.sha512
     end

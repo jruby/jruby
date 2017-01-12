@@ -29,8 +29,7 @@ public abstract class WritePaddedBytesNode extends FormatNode {
     private final ConditionProfile leftJustifiedProfile = ConditionProfile.createBinaryProfile();
     private final boolean leftJustified;
 
-    public WritePaddedBytesNode(RubyContext context, boolean leftJustified) {
-        super(context);
+    public WritePaddedBytesNode(boolean leftJustified) {
         this.leftJustified = leftJustified;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -34,6 +34,30 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2007, 2008 Ola Bini <ola@ologix.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
  */
 package org.jruby.truffle.core.rubinius;
 
@@ -46,14 +70,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.DefaultNativeTimeval;
 import jnr.posix.Timeval;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
 import org.jruby.truffle.core.array.ArrayGuards;
@@ -62,6 +84,7 @@ import org.jruby.truffle.core.rope.BytesVisitor;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.core.thread.ThreadManager;
 import org.jruby.truffle.core.thread.ThreadManager.ResultWithinTime;
@@ -72,10 +95,8 @@ import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
 import org.jruby.truffle.platform.FDSet;
+import org.jruby.truffle.platform.Platform;
 import org.jruby.truffle.platform.UnsafeGroup;
-import org.jruby.truffle.util.Dir;
-import org.jruby.truffle.util.UnsafeHolder;
-import org.jruby.truffle.util.ByteList;
 
 import java.nio.ByteBuffer;
 
@@ -86,13 +107,6 @@ public abstract class IOPrimitiveNodes {
     public static abstract class IOPrimitiveArrayArgumentsNode extends PrimitiveArrayArgumentsNode {
 
         private final BranchProfile errorProfile = BranchProfile.create();
-
-        public IOPrimitiveArrayArgumentsNode() {
-        }
-
-        public IOPrimitiveArrayArgumentsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
 
         protected int ensureSuccessful(int result, int errno, String extra) {
             assert result >= -1;
@@ -117,13 +131,8 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_allocate", unsafe = UnsafeGroup.IO)
     public static abstract class IOAllocatePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode newBufferNode;
-        @Child private AllocateObjectNode allocateNode;
-
-        public IOAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            newBufferNode = DispatchHeadNodeFactory.createMethodCall(context);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private CallDispatchHeadNode newBufferNode = DispatchHeadNodeFactory.createMethodCall();
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
@@ -234,13 +243,260 @@ public abstract class IOPrimitiveNodes {
             final Rope patternRope = rope(pattern);
             final Rope pathRope = rope(path);
 
-            return Dir.fnmatch(patternRope.getBytes(),
+            return fnmatch(patternRope.getBytes(),
                     0,
                     patternRope.byteLength(),
                     pathRope.getBytes(),
                     0,
                     pathRope.byteLength(),
-                    flags) != Dir.FNM_NOMATCH;
+                    flags) != FNM_NOMATCH;
+        }
+
+
+        private final static boolean DOSISH = Platform.IS_WINDOWS;
+
+        private final static int FNM_NOESCAPE = 0x01;
+        private final static int FNM_PATHNAME = 0x02;
+        private final static int FNM_DOTMATCH = 0x04;
+        private final static int FNM_CASEFOLD = 0x08;
+
+        public final static int FNM_NOMATCH = 1;
+
+        private static boolean isdirsep(char c) {
+            return c == '/' || DOSISH && c == '\\';
+        }
+
+        private static boolean isdirsep(byte c) {
+            return isdirsep((char)(c & 0xFF));
+        }
+
+        private static int rb_path_next(byte[] _s, int s, int send) {
+            while(s < send && !isdirsep(_s[s])) {
+                s++;
+            }
+            return s;
+        }
+
+        @SuppressWarnings("fallthrough")
+        private static int fnmatch_helper(byte[] bytes, int pstart, int pend, byte[] string, int sstart, int send, int flags) {
+            char test;
+            int s = sstart;
+            int pat = pstart;
+            boolean escape = (flags & FNM_NOESCAPE) == 0;
+            boolean pathname = (flags & FNM_PATHNAME) != 0;
+            boolean period = (flags & FNM_DOTMATCH) == 0;
+            boolean nocase = (flags & FNM_CASEFOLD) != 0;
+
+            while(pat<pend) {
+                char c = (char)(bytes[pat++] & 0xFF);
+                switch(c) {
+                    case '?':
+                        if(s >= send || (pathname && isdirsep(string[s])) ||
+                                (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
+                            return FNM_NOMATCH;
+                        }
+                        s++;
+                        break;
+                    case '*':
+                        while(pat < pend && (c = (char)(bytes[pat++] & 0xFF)) == '*') {}
+                        if(s < send && (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
+                            return FNM_NOMATCH;
+                        }
+                        if(pat > pend || (pat == pend && c == '*')) {
+                            if(pathname && rb_path_next(string, s, send) < send) {
+                                return FNM_NOMATCH;
+                            } else {
+                                return 0;
+                            }
+                        } else if((pathname && isdirsep(c))) {
+                            s = rb_path_next(string, s, send);
+                            if(s < send) {
+                                s++;
+                                break;
+                            }
+                            return FNM_NOMATCH;
+                        }
+                        test = (char)(escape && c == '\\' && pat < pend ? (bytes[pat] & 0xFF) : c);
+                        test = Character.toLowerCase(test);
+                        pat--;
+                        while(s < send) {
+                            if((c == '?' || c == '[' || Character.toLowerCase((char) string[s]) == test) &&
+                                    fnmatch(bytes, pat, pend, string, s, send, flags | FNM_DOTMATCH) == 0) {
+                                return 0;
+                            } else if((pathname && isdirsep(string[s]))) {
+                                break;
+                            }
+                            s++;
+                        }
+                        return FNM_NOMATCH;
+                    case '[':
+                        if(s >= send || (pathname && isdirsep(string[s]) ||
+                                (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1])))))) {
+                            return FNM_NOMATCH;
+                        }
+                        pat = range(bytes, pat, pend, (char)(string[s]&0xFF), flags);
+                        if(pat == -1) {
+                            return FNM_NOMATCH;
+                        }
+                        s++;
+                        break;
+                    case '\\':
+                        if (escape) {
+                            if (pat >= pend) {
+                                c = '\\';
+                            } else {
+                                c = (char)(bytes[pat++] & 0xFF);
+                            }
+                        }
+                    default:
+                        if(s >= send) {
+                            return FNM_NOMATCH;
+                        }
+                        if(DOSISH && (pathname && isdirsep(c) && isdirsep(string[s]))) {
+                        } else {
+                            if (nocase) {
+                                if(Character.toLowerCase(c) != Character.toLowerCase((char)string[s])) {
+                                    return FNM_NOMATCH;
+                                }
+
+                            } else {
+                                if(c != (char)(string[s] & 0xFF)) {
+                                    return FNM_NOMATCH;
+                                }
+                            }
+
+                        }
+                        s++;
+                        break;
+                }
+            }
+            return s >= send ? 0 : FNM_NOMATCH;
+        }
+
+        public static int fnmatch(
+                byte[] bytes, int pstart, int pend,
+                byte[] string, int sstart, int send, int flags) {
+
+            // This method handles '**/' patterns and delegates to
+            // fnmatch_helper for the main work.
+
+            boolean period = (flags & FNM_DOTMATCH) == 0;
+            boolean pathname = (flags & FNM_PATHNAME) != 0;
+
+            int pat_pos = pstart;
+            int str_pos = sstart;
+            int ptmp = -1;
+            int stmp = -1;
+
+            if (pathname) {
+                while (true) {
+                    if (isDoubleStarAndSlash(bytes, pat_pos)) {
+                        do { pat_pos += 3; } while (isDoubleStarAndSlash(bytes, pat_pos));
+                        ptmp = pat_pos;
+                        stmp = str_pos;
+                    }
+
+                    int patSlashIdx = nextSlashIndex(bytes, pat_pos, pend);
+                    int strSlashIdx = nextSlashIndex(string, str_pos, send);
+
+                    if (fnmatch_helper(bytes, pat_pos, patSlashIdx,
+                            string, str_pos, strSlashIdx, flags) == 0) {
+                        if (patSlashIdx < pend && strSlashIdx < send) {
+                            pat_pos = ++patSlashIdx;
+                            str_pos = ++strSlashIdx;
+                            continue;
+                        }
+                        if (patSlashIdx == pend && strSlashIdx == send) {
+                            return 0;
+                        }
+                    }
+                /* failed : try next recursion */
+                    if (ptmp != -1 && stmp != -1 && !(period && string[stmp] == '.')) {
+                        stmp = nextSlashIndex(string, stmp, send);
+                        if (stmp < send) {
+                            pat_pos = ptmp;
+                            stmp++;
+                            str_pos = stmp;
+                            continue;
+                        }
+                    }
+                    return FNM_NOMATCH;
+                }
+            } else {
+                return fnmatch_helper(bytes, pstart, pend, string, sstart, send, flags);
+            }
+
+        }
+
+        // are we at '**/'
+        private static boolean isDoubleStarAndSlash(byte[] bytes, int pos) {
+            if ((bytes.length - pos) <= 2) {
+                return false; // not enough bytes
+            }
+
+            return bytes[pos] == '*'
+                    && bytes[pos + 1] == '*'
+                    && bytes[pos + 2] == '/';
+        }
+
+        // Look for slash, starting from 'start' position, until 'end'.
+        private static int nextSlashIndex(byte[] bytes, int start, int end) {
+            int idx = start;
+            while (idx < end && idx < bytes.length && bytes[idx] != '/') {
+                idx++;
+            }
+            return idx;
+        }
+
+        private static int range(byte[] _pat, int pat, int pend, char test, int flags) {
+            boolean not;
+            boolean ok = false;
+            boolean nocase = (flags & FNM_CASEFOLD) != 0;
+            boolean escape = (flags & FNM_NOESCAPE) == 0;
+
+            not = _pat[pat] == '!' || _pat[pat] == '^';
+            if(not) {
+                pat++;
+            }
+
+            if (nocase) {
+                test = Character.toLowerCase(test);
+            }
+
+            while(_pat[pat] != ']') {
+                char cstart, cend;
+                if(escape && _pat[pat] == '\\') {
+                    pat++;
+                }
+                if(pat >= pend) {
+                    return -1;
+                }
+                cstart = cend = (char)(_pat[pat++]&0xFF);
+                if(_pat[pat] == '-' && _pat[pat+1] != ']') {
+                    pat++;
+                    if(escape && _pat[pat] == '\\') {
+                        pat++;
+                    }
+                    if(pat >= pend) {
+                        return -1;
+                    }
+
+                    cend = (char)(_pat[pat++] & 0xFF);
+                }
+
+                if (nocase) {
+                    if (Character.toLowerCase(cstart) <= test
+                            && test <= Character.toLowerCase(cend)) {
+                        ok = true;
+                    }
+                } else {
+                    if (cstart <= test && test <= cend) {
+                        ok = true;
+                    }
+                }
+            }
+
+            return ok == not ? -1 : pat + 1;
         }
 
     }
@@ -329,12 +585,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_reopen", unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode resetBufferingNode;
-
-        public IOReopenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+        @Child private CallDispatchHeadNode resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
 
         @TruffleBoundary(throwsControlFlowException = true)
         private void performReopen(DynamicObject self, DynamicObject target) {
@@ -361,12 +612,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_reopen_path", lowerFixnum = 2, unsafe = UnsafeGroup.IO)
     public static abstract class IOReopenPathPrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode resetBufferingNode;
-
-        public IOReopenPathPrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+        @Child private CallDispatchHeadNode resetBufferingNode = DispatchHeadNodeFactory.createMethodCall();
 
         @TruffleBoundary(throwsControlFlowException = true)
         public void performReopenPath(DynamicObject self, DynamicObject path, int mode) {
@@ -525,12 +771,7 @@ public abstract class IOPrimitiveNodes {
     @Primitive(name = "io_close", unsafe = UnsafeGroup.IO)
     public static abstract class IOClosePrimitiveNode extends IOPrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode ensureOpenNode;
-
-        public IOClosePrimitiveNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            ensureOpenNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+        @Child private CallDispatchHeadNode ensureOpenNode = DispatchHeadNodeFactory.createMethodCall();
 
         @Specialization
         public int close(VirtualFrame frame, DynamicObject io) {
@@ -577,14 +818,14 @@ public abstract class IOPrimitiveNodes {
             final int fd = Layouts.IO.getDescriptor(io);
 
             final int[] addressLength = { 16 };
-            final long address = UnsafeHolder.U.allocateMemory(addressLength[0]);
+            final long address = getContext().getNativePlatform().getMallocFree().malloc(addressLength[0]);
 
             final int newFd;
 
             try {
                 newFd = ensureSuccessful(nativeSockets().accept(fd, memoryManager().newPointer(address), addressLength));
             } finally {
-                UnsafeHolder.U.freeMemory(address);
+                getContext().getNativePlatform().getMallocFree().free(address);
             }
 
             return newFd;

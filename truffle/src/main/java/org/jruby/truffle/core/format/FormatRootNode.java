@@ -18,7 +18,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.RubyLanguage;
 import org.jruby.truffle.core.rope.CodeRange;
-import org.jruby.truffle.core.string.StringSupport;
 import org.jruby.truffle.language.backtrace.InternalRootNode;
 
 /**
@@ -48,7 +47,7 @@ public class FormatRootNode extends RootNode implements InternalRootNode {
         frame.setObject(FormatFrameDescriptor.OUTPUT_SLOT, new byte[expectedLength]);
         frame.setInt(FormatFrameDescriptor.OUTPUT_POSITION_SLOT, 0);
         frame.setInt(FormatFrameDescriptor.STRING_LENGTH_SLOT, 0);
-        frame.setInt(FormatFrameDescriptor.STRING_CODE_RANGE_SLOT, StringSupport.CR_UNKNOWN);
+        frame.setInt(FormatFrameDescriptor.STRING_CODE_RANGE_SLOT, CodeRange.CR_UNKNOWN.toInt());
         frame.setBoolean(FormatFrameDescriptor.TAINT_SLOT, false);
 
         child.execute(frame);

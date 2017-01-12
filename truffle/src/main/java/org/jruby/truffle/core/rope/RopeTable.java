@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.parser.ParserByteList;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -36,6 +37,10 @@ public class RopeTable {
 
     public Rope getRopeUTF8(String string) {
         return getRope(string);
+    }
+
+    public Rope getRope(ParserByteList string, CodeRange codeRange) {
+        return getRope(string.getBytes(), string.getEncoding(), codeRange);
     }
 
     @TruffleBoundary

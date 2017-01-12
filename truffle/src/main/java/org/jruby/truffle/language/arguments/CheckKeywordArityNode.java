@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,11 +13,9 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.Log;
 import org.jruby.truffle.core.hash.HashOperations;
 import org.jruby.truffle.core.hash.KeyValue;
-import org.jruby.truffle.language.PerformanceWarnings;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
@@ -32,8 +30,7 @@ public class CheckKeywordArityNode extends RubyNode {
     private final BranchProfile receivedKeywordsProfile = BranchProfile.create();
     private final BranchProfile basicArityCheckFailedProfile = BranchProfile.create();
 
-    public CheckKeywordArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
-        super(context, sourceSection);
+    public CheckKeywordArityNode(Arity arity) {
         this.arity = arity;
         readUserKeywordsHashNode = new ReadUserKeywordsHashNode(arity.getRequired());
     }
@@ -56,6 +53,7 @@ public class CheckKeywordArityNode extends RubyNode {
 
         if (keywordArguments != null) {
             receivedKeywordsProfile.enter();
+            Log.notOptimizedOnce(Log.KWARGS_NOT_OPTIMIZED_YET);
             checkArityKeywordArguments(keywordArguments, given);
         }
     }
@@ -68,8 +66,6 @@ public class CheckKeywordArityNode extends RubyNode {
 
     @TruffleBoundary
     private void checkArityKeywordArguments(Object keywordArguments, int given) {
-        PerformanceWarnings.warn(PerformanceWarnings.KWARGS_NOT_OPTIMIZED_YET);
-
         final DynamicObject keywordHash = (DynamicObject) keywordArguments;
 
         for (KeyValue keyValue : HashOperations.iterableKeyValues(keywordHash)) {

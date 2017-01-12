@@ -27,9 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ import java.util.List;
 public class OptArgParseNode extends ParseNode implements INameNode {
     private ParseNode value;
 
-    public OptArgParseNode(ISourcePosition position, ParseNode value) {
+    public OptArgParseNode(SourceIndexLength position, ParseNode value) {
         super(position, value != null && value.containsVariableAssignment());
         this.value = value;
     }

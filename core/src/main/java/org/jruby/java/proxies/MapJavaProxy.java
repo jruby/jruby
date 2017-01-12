@@ -293,7 +293,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyBoolean getCompareByIdentity_p(ThreadContext context) {
+        public RubyBoolean compare_by_identity_p(ThreadContext context) {
             // NOTE: obviously little we can do to detect - but at least report Java built-in one :
             return context.runtime.newBoolean( mapDelegate() instanceof java.util.IdentityHashMap );
         }
@@ -770,13 +770,13 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     }
 
     @JRubyMethod(name = "compare_by_identity")
-    public IRubyObject getCompareByIdentity(ThreadContext context) {
+    public IRubyObject compare_by_identity(ThreadContext context) {
         return this; // has no effect - mostly for compatibility
     }
 
     @JRubyMethod(name = "compare_by_identity?")
-    public IRubyObject getCompareByIdentity_p(ThreadContext context) {
-        return getOrCreateRubyHashMap().getCompareByIdentity_p(context);
+    public IRubyObject compare_by_identity_p(ThreadContext context) {
+        return getOrCreateRubyHashMap().compare_by_identity_p(context);
     }
 
     @Override

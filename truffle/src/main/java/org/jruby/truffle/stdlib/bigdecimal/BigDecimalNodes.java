@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -36,7 +36,7 @@ import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.util.SafeDoubleParser;
+import org.jruby.truffle.parser.SafeDoubleParser;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -52,7 +52,7 @@ public abstract class BigDecimalNodes {
 
     // TODO (pitr 21-Jun-2015): Check for missing coerce on OpNodes
 
-    @CoreMethod(names = "initialize", required = 1, optional = 1)
+    @CoreMethod(names = "initialize", required = 1, optional = 1, lowerFixnum = 2)
     public abstract static class InitializeNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -87,7 +87,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(names = "add", required = 2)
+    @CoreMethod(names = "add", required = 2, lowerFixnum = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class AddNode extends AbstractAddNode {
 
@@ -130,7 +130,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = "sub", required = 2)
+    @CoreMethod(names = "sub", required = 2, lowerFixnum = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class SubNode extends AbstractSubNode {
 
@@ -238,7 +238,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = "mult", required = 2)
+    @CoreMethod(names = "mult", required = 2, lowerFixnum = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class MultNode extends AbstractMultNode {
 
@@ -316,7 +316,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = "div", required = 1, optional = 1)
+    @CoreMethod(names = "div", required = 1, optional = 1, lowerFixnum = 2)
     @NodeChild(value = "precision", type = RubyNode.class)
     public abstract static class DivNode extends AbstractDivNode {
 
@@ -553,7 +553,7 @@ public abstract class BigDecimalNodes {
         }
 
         protected IntegerCastNode createIntegerCastNode() {
-            return IntegerCastNodeGen.create(null, null, null);
+            return IntegerCastNodeGen.create(null);
         }
 
     }
@@ -681,7 +681,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = { "**", "power" }, required = 1, optional = 1)
+    @CoreMethod(names = { "**", "power" }, required = 1, optional = 1, lowerFixnum = { 1, 2 })
     @NodeChildren({
             @NodeChild(value = "self", type = RubyNode.class),
             @NodeChild(value = "exponent", type = RubyNode.class),
@@ -789,7 +789,7 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @CoreMethod(names = "sqrt", required = 1)
+    @CoreMethod(names = "sqrt", required = 1, lowerFixnum = 1)
     @NodeChildren({
             @NodeChild(value = "self", type = RubyNode.class),
             @NodeChild(value = "precision", type = RubyNode.class),
@@ -847,7 +847,7 @@ public abstract class BigDecimalNodes {
             BigDecimal v = BigDecimal.ONE.divide(TWO.multiply(x), nMC);        // v0 = 1/(2*x)
 
             // Collect iteration precisions beforehand
-            List<Integer> nPrecs = new ArrayList<Integer>();
+            List<Integer> nPrecs = new ArrayList<>();
 
             assert nInit > 3 : "Never ending loop!";                // assume nInit = 16 <= prec
 
@@ -1233,7 +1233,7 @@ public abstract class BigDecimalNodes {
 
     }
 
-    @CoreMethod(names = "round", optional = 2)
+    @CoreMethod(names = "round", optional = 2, lowerFixnum = { 1, 2 })
     public abstract static class RoundNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
         @TruffleBoundary

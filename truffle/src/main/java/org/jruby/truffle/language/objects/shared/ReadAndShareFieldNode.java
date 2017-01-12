@@ -17,7 +17,8 @@ import com.oracle.truffle.api.object.Property;
 public abstract class ReadAndShareFieldNode extends Node {
 
     private final Property property;
-    @Child WriteBarrierNode writeBarrierNode;
+    
+    @Child private WriteBarrierNode writeBarrierNode;
 
     public ReadAndShareFieldNode(Property property, int depth) {
         this.property = property;

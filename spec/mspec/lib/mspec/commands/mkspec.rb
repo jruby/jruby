@@ -69,10 +69,12 @@ class MkSpec
   end
 
   def write_requires(dir, file)
-    /\A#{Regexp.escape config[:base]}\/?(.*)/ =~ dir
-    parents = '../' * ($1.split('/').length + 1)
+    prefix = config[:base] + '/'
+    raise dir unless dir.start_with? prefix
+    sub = dir[prefix.size..-1]
+    parents = '../' * (sub.split('/').length + 1)
 
-    File.open file, 'w' do |f|
+    File.open(file, 'w') do |f|
       f.puts "require File.expand_path('../#{parents}spec_helper', __FILE__)"
       config[:requires].each do |lib|
         f.puts "require '#{lib}'"
@@ -94,7 +96,7 @@ class MkSpec
   def write_spec(file, meth, exists)
     if exists
       out = `#{ruby} #{MSPEC_HOME}/bin/mspec-run --dry-run -fs -e '#{meth}' #{file}`
-      return if out =~ /#{Regexp.escape meth}/
+      return if out.include?(meth)
     end
 
     File.open file, 'a' do |f|

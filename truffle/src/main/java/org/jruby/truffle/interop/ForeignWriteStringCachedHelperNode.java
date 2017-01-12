@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -32,9 +32,9 @@ import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
 })
 abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
 
-    private @Child DoesRespondDispatchHeadNode definedNode;
-    private @Child DoesRespondDispatchHeadNode indexDefinedNode;
-    private @Child CallDispatchHeadNode callNode;
+    @Child private DoesRespondDispatchHeadNode definedNode;
+    @Child private DoesRespondDispatchHeadNode indexDefinedNode;
+    @Child private CallDispatchHeadNode callNode;
 
     protected final static String INDEX_SET_METHOD_NAME = "[]=";
 
@@ -97,7 +97,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
     protected DoesRespondDispatchHeadNode getDefinedNode() {
         if (definedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            definedNode = insert(new DoesRespondDispatchHeadNode(getContext(), true));
+            definedNode = insert(new DoesRespondDispatchHeadNode(true));
         }
 
         return definedNode;
@@ -106,7 +106,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
     protected DoesRespondDispatchHeadNode getIndexDefinedNode() {
         if (indexDefinedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            indexDefinedNode = insert(new DoesRespondDispatchHeadNode(getContext(), true));
+            indexDefinedNode = insert(new DoesRespondDispatchHeadNode(true));
         }
 
         return indexDefinedNode;
@@ -124,7 +124,7 @@ abstract class ForeignWriteStringCachedHelperNode extends RubyNode {
     protected CallDispatchHeadNode getCallNode() {
         if (callNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            callNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            callNode = insert(DispatchHeadNodeFactory.createMethodCall(true));
         }
 
         return callNode;

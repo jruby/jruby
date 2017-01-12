@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -56,8 +56,8 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
 import org.jruby.truffle.core.format.read.SourceNode;
+import org.jruby.truffle.core.format.write.bytes.EncodeUM;
 import org.jruby.truffle.core.rope.AsciiOnlyLeafRope;
-import org.jruby.truffle.util.Pack;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -66,10 +66,6 @@ import java.util.Arrays;
         @NodeChild(value = "value", type = SourceNode.class),
 })
 public abstract class ReadBase64StringNode extends FormatNode {
-
-    public ReadBase64StringNode(RubyContext context) {
-        super(context);
-    }
 
     @Specialization
     public Object read(VirtualFrame frame, byte[] source) {
@@ -102,27 +98,27 @@ public abstract class ReadBase64StringNode extends FormatNode {
             }
             while (encode.hasRemaining()) {
                 // obtain a
-                s = Pack.safeGet(encode);
-                a = Pack.b64_xtable[s];
+                s = safeGet(encode);
+                a = EncodeUM.b64_xtable[s];
                 if (a == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain b
-                s = Pack.safeGet(encode);
-                b = Pack.b64_xtable[s];
+                s = safeGet(encode);
+                b = EncodeUM.b64_xtable[s];
                 if (b == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain c
-                s = Pack.safeGet(encode);
-                c = Pack.b64_xtable[s];
+                s = safeGet(encode);
+                c = EncodeUM.b64_xtable[s];
                 if (s == '=') {
-                    if (Pack.safeGet(encode) != '=') throw new InvalidFormatException("invalid base64");
+                    if (safeGet(encode) != '=') throw new InvalidFormatException("invalid base64");
                     break;
                 }
                 if (c == -1) throw new InvalidFormatException("invalid base64");
 
                 // obtain d
-                s = Pack.safeGet(encode);
-                d = Pack.b64_xtable[s];
+                s = safeGet(encode);
+                d = EncodeUM.b64_xtable[s];
                 if (s == '=') break;
                 if (d == -1) throw new InvalidFormatException("invalid base64");
 
@@ -151,24 +147,24 @@ public abstract class ReadBase64StringNode extends FormatNode {
                 b = c = -1;
 
                 // obtain a
-                s = Pack.safeGet(encode);
-                while (((a = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                    s = Pack.safeGet(encode);
+                s = safeGet(encode);
+                while (((a = EncodeUM.b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                    s = safeGet(encode);
                 }
                 if (a == -1) break;
 
                 // obtain b
-                s = Pack.safeGet(encode);
-                while (((b = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                    s = Pack.safeGet(encode);
+                s = safeGet(encode);
+                while (((b = EncodeUM.b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                    s = safeGet(encode);
                 }
                 if (b == -1) break;
 
                 // obtain c
-                s = Pack.safeGet(encode);
-                while (((c = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                s = safeGet(encode);
+                while (((c = EncodeUM.b64_xtable[s]) == -1) && encode.hasRemaining()) {
                     if (s == '=') break;
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 }
                 if ((s == '=') || c == -1) {
                     if (s == '=') {
@@ -178,10 +174,10 @@ public abstract class ReadBase64StringNode extends FormatNode {
                 }
 
                 // obtain d
-                s = Pack.safeGet(encode);
-                while (((d = Pack.b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                s = safeGet(encode);
+                while (((d = EncodeUM.b64_xtable[s]) == -1) && encode.hasRemaining()) {
                     if (s == '=') break;
-                    s = Pack.safeGet(encode);
+                    s = safeGet(encode);
                 }
                 if ((s == '=') || d == -1) {
                     if (s == '=') {

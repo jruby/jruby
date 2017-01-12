@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.scope;
 
-import org.jruby.truffle.parser.IRScopeType;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AssignableParseNode;
 import org.jruby.truffle.parser.ast.DAsgnParseNode;
@@ -37,9 +37,7 @@ import org.jruby.truffle.parser.ast.LocalAsgnParseNode;
 import org.jruby.truffle.parser.ast.LocalVarParseNode;
 import org.jruby.truffle.parser.ast.ParseNode;
 import org.jruby.truffle.parser.ast.VCallParseNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
-import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -53,18 +51,11 @@ import java.util.Arrays;
  * will point to the previous scope of the enclosing module/class (cref).
  * 
  */
-public class StaticScope implements Serializable {
-    private static final long serialVersionUID = 3423852552352498148L;
+public class StaticScope {
 
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
     final protected StaticScope enclosingScope;
-
-    // Live reference to module
-    private transient Object cref = null;
-
-    // Next CRef down the lexical structure
-    private StaticScope previousCRefScope = null;
 
     // Our name holder (offsets are assigned as variables are added)
     private String[] variableNames;
@@ -77,8 +68,6 @@ public class StaticScope implements Serializable {
 
     // File name where this static scope came from or null if a native or artificial scope
     private String file;
-
-    protected IRScopeType scopeType;
 
     private static final String[] NO_NAMES = new String[0];
 
@@ -94,7 +83,7 @@ public class StaticScope implements Serializable {
     /**
      *
      */
-    protected StaticScope(Type type, StaticScope enclosingScope, String file) {
+    public StaticScope(Type type, StaticScope enclosingScope, String file) {
         this(type, enclosingScope, NO_NAMES);
 
         this.file = file;
@@ -127,14 +116,6 @@ public class StaticScope implements Serializable {
         this.variableNames = names;
         this.type = type;
         this.isBlockOrEval = (type != Type.LOCAL);
-    }
-
-    public IRScopeType getScopeType() {
-        return scopeType;
-    }
-
-    public void setScopeType(IRScopeType scopeType) {
-        this.scopeType = scopeType;
     }
 
     /**
@@ -228,51 +209,6 @@ public class StaticScope implements Serializable {
     }
 
     /**
-     * Gets a constant back from lexical search from the cref in this scope.
-     * As it is for defined? we will not forced resolution of autoloads nor
-     * call const_defined
-     */
-    public Object getConstantDefined(String internedName) {
-        /*Object result = cref.fetchConstant(internedName);
-
-        if (result != null) return result;
-
-        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(internedName);*/
-        throw new UnsupportedOperationException();
-    }
-
-    public Object getConstantDefinedNoObject(String internedName) {
-        if (previousCRefScope == null) return null;
-
-        return getConstantDefined(internedName);
-    }
-
-    public Object getConstant(String internedName) {
-        /*Object result = getConstantInner(internedName);
-
-        // If we could not find the constant from cref..then try getting from inheritence hierarchy
-        return result == null ? cref.getConstantNoConstMissing(internedName) : result;*/
-        throw new UnsupportedOperationException();
-    }
-
-    public Object getConstantInner(String internedName) {
-        /*Object result = cref.fetchConstant(internedName);
-
-        if (result != null) {
-            return result == RubyObject.UNDEF ? cref.resolveUndefConstant(internedName) : result;
-        }
-
-        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(internedName);*/
-        throw new UnsupportedOperationException();
-    }
-
-    private Object getConstantInnerNoObject(String internedName) {
-        if (previousCRefScope == null) return null;
-
-        return getConstantInner(internedName);
-    }
-
-    /**
      * Next outer most scope in list of scopes.  An enclosing scope may have no direct scoping
      * relationship to its child.  If I am in a localScope and then I enter something which
      * creates another localScope the enclosing scope will be the first scope, but there are
@@ -320,7 +256,7 @@ public class StaticScope implements Serializable {
      * @param name
      * @param value
      */
-    public AssignableParseNode assign(ISourcePosition position, String name, ParseNode value) {
+    public AssignableParseNode assign(SourceIndexLength position, String name, ParseNode value) {
         return assign(position, name, value, this, 0);
     }
 
@@ -357,13 +293,13 @@ public class StaticScope implements Serializable {
         }
     }
 
-    public AssignableParseNode addAssign(ISourcePosition position, String name, ParseNode value) {
+    public AssignableParseNode addAssign(SourceIndexLength position, String name, ParseNode value) {
         int slot = addVariable(name);
         // No bit math to store level since we know level is zero for this case
         return new DAsgnParseNode(position, name, slot, value);
     }
 
-    public AssignableParseNode assign(ISourcePosition position, String name, ParseNode value,
+    public AssignableParseNode assign(SourceIndexLength position, String name, ParseNode value,
                                       StaticScope topScope, int depth) {
         int slot = exists(name);
 
@@ -385,7 +321,7 @@ public class StaticScope implements Serializable {
                 : topScope.addAssign(position, name, value);
     }
 
-    public ParseNode declare(ISourcePosition position, String name, int depth) {
+    public ParseNode declare(SourceIndexLength position, String name, int depth) {
         int slot = exists(name);
 
         if (slot >= 0) {
@@ -402,7 +338,7 @@ public class StaticScope implements Serializable {
      * @param name     of the variable to be created is named
      * @return a DVarParseNode or LocalVarParseNode
      */
-    public ParseNode declare(ISourcePosition position, String name) {
+    public ParseNode declare(SourceIndexLength position, String name) {
         return declare(position, name, 0);
     }
 
@@ -415,26 +351,6 @@ public class StaticScope implements Serializable {
 
     public StaticScope getLocalScope() {
         return (type != Type.BLOCK) ? this : enclosingScope.getLocalScope();
-    }
-
-    /**
-     * Update current scoping structure to populate with proper cref scoping values.  This should
-     * be called at any point when you reference a scope for the first time.  For the interpreter
-     * this is done in a small number of places (defnNode, defsNode, and getBlock).  The compiler
-     * does this in the same places.
-     *
-     * @return the current cref, though this is largely an implementation detail
-     */
-    public Object determineModule() {
-        if (cref == null) {
-            cref = getEnclosingScope().determineModule();
-
-            assert cref != null : "CRef is always created before determine happens";
-
-            previousCRefScope = getEnclosingScope().previousCRefScope;
-        }
-
-        return cref;
     }
 
     public boolean isBlockScope() {

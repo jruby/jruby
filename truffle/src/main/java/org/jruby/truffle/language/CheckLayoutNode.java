@@ -22,7 +22,7 @@ import org.jruby.truffle.language.objects.ShapeCachingGuards;
 
 public class CheckLayoutNode extends RubyBaseNode {
 
-    @Child GetObjectTypeNode getObjectTypeNode = GetObjectTypeNodeGen.create(null);
+    @Child private GetObjectTypeNode getObjectTypeNode = GetObjectTypeNodeGen.create(null);
 
     public boolean isArray(DynamicObject object) {
         return Layouts.ARRAY.isArray(getObjectTypeNode.executeGetObjectType(object));

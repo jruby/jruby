@@ -283,5 +283,14 @@ describe "CApiTimeSpecs" do
         lambda { @s.rb_time_timespec_new(1447087832, 476451125, -86400) }.should raise_error(ArgumentError)
       end
     end
+
+    describe "rb_timespec_now" do
+      it "fills a struct timespec with the current time" do
+        now = Time.now
+        time = @s.rb_time_from_timespec(now.utc_offset)
+        time.should be_an_instance_of(Time)
+        (time - now).should be_close(0, 10)
+      end
+    end
   end
 end

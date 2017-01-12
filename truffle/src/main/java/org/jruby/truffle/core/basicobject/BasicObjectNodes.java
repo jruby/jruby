@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -25,9 +25,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -38,6 +36,7 @@ import org.jruby.truffle.core.cast.BooleanCastNodeGen;
 import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.RubyRootNode;
@@ -57,7 +56,6 @@ import org.jruby.truffle.language.objects.PropertyFlags;
 import org.jruby.truffle.language.supercall.SuperCallNode;
 import org.jruby.truffle.language.yield.YieldNode;
 import org.jruby.truffle.parser.ParserContext;
-import org.jruby.truffle.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -84,12 +82,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode equalNode;
-
-        public NotEqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+        @Child private CallDispatchHeadNode equalNode = DispatchHeadNodeFactory.createMethodCall();
 
         @Specialization
         public boolean equal(VirtualFrame frame, Object a, Object b) {
@@ -98,7 +91,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = { "equal?", "==" }, required = 1)
+    @CoreMethod(names = {"equal?", "=="}, required = 1)
     public abstract static class ReferenceEqualNode extends CoreMethodArrayArgumentsNode {
 
         public static ReferenceEqualNode create() {
@@ -132,8 +125,8 @@ public abstract class BasicObjectNodes {
             return a == b;
         }
 
-        @Specialization(guards = { "isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)" })
-        public boolean equal(Object a, Object b) {
+        @Specialization(guards = { "isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)", "isNotIntLong(a) || isNotIntLong(b)" })
+        public boolean equalIncompatiblePrimitiveTypes(Object a, Object b) {
             return false;
         }
 
@@ -155,6 +148,10 @@ public abstract class BasicObjectNodes {
             return a.getClass() != b.getClass();
         }
 
+        protected boolean isNotIntLong(Object v) {
+            return !(v instanceof Integer) && !(v instanceof Long);
+        }
+
     }
 
     @CoreMethod(names = "initialize", needsSelf = false)
@@ -167,15 +164,10 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 3, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "instance_eval", needsBlock = true, optional = 3, lowerFixnum = 3, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldNode yield;
-
-        public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
-        }
+        @Child private YieldNode yield = new YieldNode(DeclarationContext.INSTANCE_EVAL);
 
         @Specialization(guards = { "isRubyString(string)", "isRubyString(fileName)" })
         public Object instanceEval(VirtualFrame frame, Object receiver, DynamicObject string, DynamicObject fileName, int line, NotProvided block, @Cached("create()") IndirectCallNode callNode) {
@@ -222,12 +214,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_exec", needsBlock = true, rest = true)
     public abstract static class InstanceExecNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private YieldNode yield;
-
-        public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            yield = new YieldNode(context, DeclarationContext.INSTANCE_EVAL);
-        }
+        @Child private YieldNode yield = new YieldNode(DeclarationContext.INSTANCE_EVAL);
 
         @Specialization
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, DynamicObject block) {
@@ -398,10 +385,8 @@ public abstract class BasicObjectNodes {
 
         @Child private CallDispatchHeadNode dispatchNode;
 
-        public SendNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-
-            dispatchNode = new CallDispatchHeadNode(context, true,
+        public SendNode() {
+            dispatchNode = new CallDispatchHeadNode(true,
                     MissingBehavior.CALL_METHOD_MISSING);
         }
 
@@ -420,12 +405,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
@@ -438,12 +418,7 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "internal_allocate", constructor = true)
     public abstract static class InternalAllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
-        public InternalAllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateObjectNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject internal_allocate(DynamicObject rubyClass) {

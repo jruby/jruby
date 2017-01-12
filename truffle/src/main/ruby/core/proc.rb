@@ -48,8 +48,6 @@ class Proc
       end
     end
 
-    args = []
-
     m = Rubinius::Mirror.reflect self
     f = m.curry self, [], arity
 

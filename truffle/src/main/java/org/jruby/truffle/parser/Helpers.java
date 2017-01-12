@@ -49,7 +49,7 @@ import java.util.Map;
 public class Helpers {
 
     public static final Map<String, String> map(String... keyValues) {
-        HashMap<String, String> map = new HashMap<String, String>(keyValues.length / 2);
+        HashMap<String, String> map = new HashMap<>(keyValues.length / 2);
         for (int i = 0; i < keyValues.length;) {
             map.put(keyValues[i++], keyValues[i++]);
         }

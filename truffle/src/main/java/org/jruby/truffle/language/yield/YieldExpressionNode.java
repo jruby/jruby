@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,8 +14,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNode;
 import org.jruby.truffle.core.array.ArrayToObjectArrayNodeGen;
 import org.jruby.truffle.language.RubyNode;
@@ -33,9 +31,7 @@ public class YieldExpressionNode extends RubyNode {
     private final BranchProfile useCapturedBlock = BranchProfile.create();
     private final BranchProfile noCapturedBlock = BranchProfile.create();
 
-    public YieldExpressionNode(RubyContext context, SourceSection sourceSection,
-                               boolean unsplat, RubyNode[] arguments) {
-        super(context, sourceSection);
+    public YieldExpressionNode(boolean unsplat, RubyNode[] arguments) {
         this.unsplat = unsplat;
         this.arguments = arguments;
     }
@@ -89,7 +85,7 @@ public class YieldExpressionNode extends RubyNode {
     private YieldNode getYieldNode() {
         if (yieldNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            yieldNode = insert(new YieldNode(getContext()));
+            yieldNode = insert(new YieldNode());
         }
 
         return yieldNode;

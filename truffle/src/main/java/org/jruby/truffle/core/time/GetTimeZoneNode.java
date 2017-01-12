@@ -30,7 +30,7 @@ public abstract class GetTimeZoneNode extends RubyNode {
         TZ_UNCHANGED.invalidate();
     }
 
-    @Child SnippetNode snippetNode = new SnippetNode();
+    @Child private SnippetNode snippetNode = new SnippetNode();
 
     public abstract TimeZoneAndName executeGetTimeZone(VirtualFrame frame);
 

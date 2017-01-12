@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,12 +18,12 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.SafepointAction;
 import org.jruby.truffle.language.backtrace.Backtrace;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.control.JavaException;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
-import org.jruby.truffle.util.StringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -67,7 +67,7 @@ public class InstrumentationServerManager {
 
                     context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
                         @Override
-                        public void run(DynamicObject thread, Node currentNode) {
+                        public void accept(DynamicObject thread, Node currentNode) {
                             synchronized (this) {
                                 try {
                                     final Backtrace backtrace = context.getCallStack().getBacktrace(null);

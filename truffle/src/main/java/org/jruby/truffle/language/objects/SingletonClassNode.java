@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,24 +16,18 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.klass.ClassNodes;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
-import org.jruby.truffle.util.StringUtils;
 
 @NodeChild(value = "value", type = RubyNode.class)
 public abstract class SingletonClassNode extends RubyNode {
 
     @Child private IsFrozenNode isFrozenNode;
     @Child private FreezeNode freezeNode;
-
-    public SingletonClassNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-    }
 
     public abstract DynamicObject executeSingletonClass(Object value);
 
@@ -168,7 +162,7 @@ public abstract class SingletonClassNode extends RubyNode {
     public void freeze(final DynamicObject singletonClass) {
         if (freezeNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            freezeNode = insert(FreezeNodeGen.create(getContext(), null, null));
+            freezeNode = insert(FreezeNodeGen.create(null));
         }
         freezeNode.executeFreeze(singletonClass);
     }
@@ -176,7 +170,7 @@ public abstract class SingletonClassNode extends RubyNode {
     protected boolean isFrozen(Object object) {
         if (isFrozenNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), null, null));
+            isFrozenNode = insert(IsFrozenNodeGen.create(null));
         }
         return isFrozenNode.executeIsFrozen(object);
     }

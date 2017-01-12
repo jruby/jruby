@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -43,10 +43,8 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -87,12 +85,7 @@ public abstract class PsychEmitterNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateNode;
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateNode = AllocateObjectNode.create();
-        }
+        @Child private AllocateObjectNode allocateNode = AllocateObjectNode.create();
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
@@ -133,7 +126,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "start_stream", required = 1)
+    @CoreMethod(names = "start_stream", required = 1, lowerFixnum = 1)
     public abstract static class StartStreamNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary
@@ -240,7 +233,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "scalar", required = 6)
+    @CoreMethod(names = "scalar", required = 6, lowerFixnum = 6)
     public abstract static class ScalarNode extends CoreMethodArrayArgumentsNode {
 
         // Map style constants from Psych values (ANY = 0 ... FOLDED = 5)
@@ -295,7 +288,7 @@ public abstract class PsychEmitterNodes {
     }
 
 
-    @CoreMethod(names = "start_sequence", required = 4)
+    @CoreMethod(names = "start_sequence", required = 4, lowerFixnum = 4)
     public abstract static class StartSequenceNode extends CoreMethodArrayArgumentsNode {
 
         private static final int SEQUENCE_BLOCK = 1;
@@ -348,7 +341,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "start_mapping", required = 4)
+    @CoreMethod(names = "start_mapping", required = 4, lowerFixnum = 4)
     public abstract static class StartMappingNode extends CoreMethodArrayArgumentsNode {
 
         private static final int MAPPING_BLOCK = 1;
@@ -433,7 +426,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "indentation=", required = 1)
+    @CoreMethod(names = "indentation=", required = 1, lowerFixnum = 1)
     public abstract static class SetIndentationNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -454,7 +447,7 @@ public abstract class PsychEmitterNodes {
 
     }
 
-    @CoreMethod(names = "line_width=", required = 1)
+    @CoreMethod(names = "line_width=", required = 1, lowerFixnum = 1)
     public abstract static class SetLineWidthNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

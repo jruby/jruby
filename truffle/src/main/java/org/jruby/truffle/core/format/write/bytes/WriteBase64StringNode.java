@@ -17,8 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.exceptions.NoImplicitConversionException;
-import org.jruby.truffle.util.Pack;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
 
 @NodeChildren({
         @NodeChild(value = "value", type = FormatNode.class),
@@ -28,8 +27,7 @@ public abstract class WriteBase64StringNode extends FormatNode {
     private final int length;
     private final boolean ignoreStar;
 
-    public WriteBase64StringNode(RubyContext context, int length, boolean ignoreStar) {
-        super(context);
+    public WriteBase64StringNode(int length, boolean ignoreStar) {
         this.length = length;
         this.ignoreStar = ignoreStar;
     }
@@ -50,7 +48,7 @@ public abstract class WriteBase64StringNode extends FormatNode {
         // TODO CS 30-Mar-15 should write our own optimisable version of Base64
 
         final ByteList output = new ByteList();
-        Pack.encodeUM(null, new ByteList(bytes, false), length, ignoreStar, 'm', output);
+        EncodeUM.encodeUM(null, new ByteList(bytes, false), length, ignoreStar, 'm', output);
         return output.bytes();
     }
 

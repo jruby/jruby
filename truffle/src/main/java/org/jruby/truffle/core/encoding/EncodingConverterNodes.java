@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -15,37 +15,33 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
-import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscodingManager;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.NonStandard;
 import org.jruby.truffle.builtins.Primitive;
 import org.jruby.truffle.builtins.PrimitiveArrayArgumentsNode;
+import org.jruby.truffle.builtins.YieldingCoreMethodNode;
 import org.jruby.truffle.core.rope.Rope;
 import org.jruby.truffle.core.rope.RopeConstants;
 import org.jruby.truffle.core.rope.RopeNodes;
 import org.jruby.truffle.core.rope.RopeNodesFactory;
 import org.jruby.truffle.core.rope.RopeOperations;
+import org.jruby.truffle.core.string.ByteList;
 import org.jruby.truffle.core.string.StringOperations;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.Visibility;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.AllocateObjectNode;
-import org.jruby.truffle.util.StringUtils;
-import org.jruby.truffle.util.ByteList;
 
 import java.util.Map;
 
@@ -79,63 +75,28 @@ public abstract class EncodingConverterNodes {
             return nil();
         }
 
-        /**
-         * Rubinius and JRuby process Encoding::Converter options flags differently.  Rubinius splits the processing
-         * between initial setup and the replacement value setup, whereas JRuby handles them all during initial setup.
-         * We figure out what flags JRuby additionally expects to be set and set them to satisfy EConv.
-         */
-        private int rubiniusToJRubyFlags(int flags) {
-            if ((flags & EConvFlags.XML_TEXT_DECORATOR) != 0) {
-                flags |= EConvFlags.UNDEF_HEX_CHARREF;
-            }
-
-            if ((flags & EConvFlags.XML_ATTR_CONTENT_DECORATOR) != 0) {
-                flags |= EConvFlags.UNDEF_HEX_CHARREF;
-            }
-
-            return flags;
-        }
-
     }
 
     @NonStandard
-    @CoreMethod(names = "transcoding_map", onSingleton = true)
-    public abstract static class TranscodingMapNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode upcaseNode;
-        @Child private CallDispatchHeadNode toSymNode;
-        @Child private CallDispatchHeadNode newLookupTableNode;
-        @Child private CallDispatchHeadNode lookupTableWriteNode;
-        @Child private CallDispatchHeadNode newTranscodingNode;
-
-        public TranscodingMapNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            upcaseNode = DispatchHeadNodeFactory.createMethodCall(context);
-            toSymNode = DispatchHeadNodeFactory.createMethodCall(context);
-            newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
-            lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
-            newTranscodingNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+    @CoreMethod(names = "each_transcoder", onSingleton = true, needsBlock = true)
+    public abstract static class EachTranscoderNode extends YieldingCoreMethodNode {
 
         @Specialization
-        public Object transcodingMap(VirtualFrame frame) {
-            final Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
-
+        public Object transcodingMap(VirtualFrame frame, DynamicObject block) {
             for (Map.Entry<String, Map<String, Transcoder>> sourceEntry : TranscodingManager.allTranscoders.entrySet()) {
                 final DynamicObject source = getContext().getSymbolTable().getSymbol(sourceEntry.getKey());
-                final Object destinations = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
+                final int size = sourceEntry.getValue().size();
+                final Object[] destinations = new Object[size];
 
+                int i = 0;
                 for (Map.Entry<String, Transcoder> destinationEntry : sourceEntry.getValue().entrySet()) {
-                    final DynamicObject destination = getContext().getSymbolTable().getSymbol(destinationEntry.getKey());
-                    final Object lookupTableValue = newTranscodingNode.call(frame, coreLibrary().getTranscodingClass(), "create", source, destination);
-
-                    lookupTableWriteNode.call(frame, destinations, "[]=", destination, lookupTableValue);
+                    destinations[i++] = getContext().getSymbolTable().getSymbol(destinationEntry.getKey());
                 }
 
-                lookupTableWriteNode.call(frame, ret, "[]=", source, destinations);
+                yield(frame, block, source, createArray(destinations, size));
             }
 
-            return ret;
+            return nil();
         }
     }
 
@@ -155,12 +116,7 @@ public abstract class EncodingConverterNodes {
     @Primitive(name = "encoding_converter_primitive_convert")
     public static abstract class PrimitiveConvertNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private RopeNodes.MakeSubstringNode makeSubstringNode;
-
-        public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
-        }
+        @Child private RopeNodes.MakeSubstringNode makeSubstringNode = RopeNodesFactory.MakeSubstringNodeGen.create(null, null, null);
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
         public Object encodingConverterPrimitiveConvert(DynamicObject encodingConverter, DynamicObject source,
@@ -260,7 +216,7 @@ public abstract class EncodingConverterNodes {
                     outBytes.setEncoding(ec.destinationEncoding);
                 }
 
-                StringOperations.setRope(target, StringOperations.ropeFromByteList(outBytes));
+                StringOperations.setRope(target, RopeOperations.ropeFromByteList(outBytes));
 
                 return getSymbol(res.symbolicName());
             }
@@ -312,17 +268,9 @@ public abstract class EncodingConverterNodes {
     @Primitive(name = "encoding_converter_last_error")
     public static abstract class EncodingConverterLastErrorNode extends PrimitiveArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode newLookupTableNode;
-        @Child private CallDispatchHeadNode lookupTableWriteNode;
-
-        public EncodingConverterLastErrorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
-            lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
+        @TruffleBoundary
         @Specialization
-        public Object encodingConverterLastError(VirtualFrame frame, DynamicObject encodingConverter) {
+        public Object encodingConverterLastError(DynamicObject encodingConverter) {
             final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
             final EConv.LastError lastError = ec.lastError;
 
@@ -332,21 +280,23 @@ public abstract class EncodingConverterNodes {
                 return nil();
             }
 
-            Object ret = newLookupTableNode.call(frame, coreLibrary().getLookupTableClass(), "new");
+            final boolean readAgain = lastError.getReadAgainLength() != 0;
+            final int size = readAgain ? 5 : 4;
+            final Object[] store = new Object[size];
 
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("destination_encoding_name"), createString(new ByteList(lastError.getDestination())));
-            lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes(),
-                lastError.getErrorBytesP(), lastError.getErrorBytesP() + lastError.getErrorBytesLength())));
+            store[0] = eConvResultToSymbol(lastError.getResult());
+            store[1] = createString(new ByteList(lastError.getSource()));
+            store[2] = createString(new ByteList(lastError.getDestination()));
+            store[3] = createString(new ByteList(lastError.getErrorBytes(),
+                    lastError.getErrorBytesP(), lastError.getErrorBytesP() + lastError.getErrorBytesLength()));
 
-            if (lastError.getReadAgainLength() != 0) {
-                lookupTableWriteNode.call(frame, ret, "[]=", getSymbol("read_again_bytes"), createString(new ByteList(lastError.getErrorBytes(),
+            if (readAgain) {
+                store[4] = createString(new ByteList(lastError.getErrorBytes(),
                     lastError.getErrorBytesLength() + lastError.getErrorBytesP(),
-                    lastError.getReadAgainLength())));
+                    lastError.getReadAgainLength()));
             }
 
-            return ret;
+            return createArray(store, size);
         }
 
         private DynamicObject eConvResultToSymbol(EConvResult result) {

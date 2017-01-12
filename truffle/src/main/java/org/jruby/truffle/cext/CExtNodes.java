@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -23,9 +23,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -44,7 +42,6 @@ import org.jruby.truffle.language.constants.LookupConstantNode;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.DeclarationContext;
 import org.jruby.truffle.language.objects.MetaClassNode;
-import org.jruby.truffle.util.UnsafeHolder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -67,7 +64,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "NUM2UINT", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class NUM2UINTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -93,7 +90,7 @@ public class CExtNodes {
         }
     }
 
-    @CoreMethod(names = "NUM2ULONG", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "NUM2ULONG", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class NUM2ULONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -104,7 +101,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "NUM2DBL", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "NUM2DBL", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class NUM2DBLNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -114,7 +111,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2INT", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "FIX2INT", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class FIX2INTNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -141,7 +138,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "FIX2LONG", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class FIX2LONGNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -181,7 +178,7 @@ public class CExtNodes {
 
     }
 
-    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "UINT2NUM", isModuleFunction = true, required = 1, lowerFixnum = 1)
     public abstract static class UINT2NUMNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -326,8 +323,8 @@ public class CExtNodes {
             return NameToJavaStringNodeGen.create(name);
         }
 
-        @Child LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, false);
-        @Child GetConstantNode getConstantNode = GetConstantNode.create();
+        @Child private LookupConstantNode lookupConstantNode = LookupConstantNode.create(true, false);
+        @Child private GetConstantNode getConstantNode = GetConstantNode.create();
 
         @Specialization
         public Object constGetFrom(VirtualFrame frame, DynamicObject module, String name) {
@@ -351,12 +348,7 @@ public class CExtNodes {
     public abstract static class CextModuleFunctionNode extends CoreMethodArrayArgumentsNode {
 
         @Child
-        ModuleNodes.SetVisibilityNode setVisibilityNode;
-
-        public CextModuleFunctionNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(context, sourceSection, Visibility.MODULE_FUNCTION, null, null);
-        }
+        ModuleNodes.SetVisibilityNode setVisibilityNode = ModuleNodesFactory.SetVisibilityNodeGen.create(Visibility.MODULE_FUNCTION, null, null);
 
         @Specialization(guards = {"isRubyModule(module)", "isRubySymbol(name)"})
         public DynamicObject cextModuleFunction(VirtualFrame frame, DynamicObject module, DynamicObject name) {
@@ -410,8 +402,8 @@ public class CExtNodes {
         public long toNativeHandle(DynamicObject object) {
             synchronized (handlesLock) {
                 return toNative.computeIfAbsent(object, (k) -> {
-                    final long handle = UnsafeHolder.U.allocateMemory(Long.BYTES);
-                    UnsafeHolder.U.putLong(handle, 0xdeadbeef);
+                    final long handle = getContext().getNativePlatform().getMallocFree().malloc(Long.BYTES);
+                    memoryManager().newPointer(handle).putLong(0, 0xdeadbeef);
                     System.err.printf("native handle 0x%x -> %s%n", handle, object);
                     toManaged.put(handle, object);
                     return handle;

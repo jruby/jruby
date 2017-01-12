@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,12 +17,12 @@ import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.builtins.UnaryCoreMethodNode;
 import org.jruby.truffle.core.Hashing;
+import org.jruby.truffle.core.module.ModuleOperations;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.Visibility;
@@ -66,14 +66,8 @@ public abstract class UnboundMethodNodes {
     @CoreMethod(names = "bind", required = 1)
     public abstract static class BindNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private MetaClassNode metaClassNode;
-        @Child private CanBindMethodToModuleNode canBindMethodToModuleNode;
-
-        public BindNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
-            canBindMethodToModuleNode = CanBindMethodToModuleNodeGen.create(context, sourceSection, null, null);
-        }
+        @Child private MetaClassNode metaClassNode = MetaClassNodeGen.create(null);
+        @Child private CanBindMethodToModuleNode canBindMethodToModuleNode = CanBindMethodToModuleNodeGen.create(null, null);
 
         @Specialization
         public DynamicObject bind(DynamicObject unboundMethod, Object object,
@@ -174,6 +168,26 @@ public abstract class UnboundMethodNodes {
                 DynamicObject file = createString(StringOperations.encodeRope(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return createArray(objects, objects.length);
+            }
+        }
+
+    }
+
+    @CoreMethod(names = "super_method")
+    public abstract static class SuperMethodNode extends CoreMethodArrayArgumentsNode {
+
+        @Child MetaClassNode metaClassNode = MetaClassNode.create();
+
+        @Specialization
+        public DynamicObject superMethod(DynamicObject unboundMethod) {
+            InternalMethod internalMethod = Layouts.UNBOUND_METHOD.getMethod(unboundMethod);
+            DynamicObject origin = Layouts.UNBOUND_METHOD.getOrigin(unboundMethod);
+            InternalMethod superMethod = ModuleOperations.lookupSuperMethod(internalMethod, origin);
+            if (superMethod == null || superMethod.isUndefined()) {
+                return nil();
+            } else {
+                return Layouts.UNBOUND_METHOD.createUnboundMethod(coreLibrary().getUnboundMethodFactory(),
+                        superMethod.getDeclaringModule(), superMethod);
             }
         }
 

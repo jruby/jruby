@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -62,7 +62,7 @@ public class RubyMessageResolution {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
                 final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                executeMethodNode = insert(ForeignExecuteHelperNodeGen.create(context, null, null));
+                executeMethodNode = insert(ForeignExecuteHelperNodeGen.create( null, null));
             }
 
             return executeMethodNode;
@@ -85,7 +85,7 @@ public class RubyMessageResolution {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
                 final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                dispatchNode = insert(new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
+                dispatchNode = insert(new DispatchHeadNode(true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
             }
 
             return dispatchNode;
@@ -117,7 +117,7 @@ public class RubyMessageResolution {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
                 final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                dispatchHeadNode = insert(new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
+                dispatchHeadNode = insert(new DispatchHeadNode(true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
             }
 
             return dispatchHeadNode;
@@ -179,8 +179,7 @@ public class RubyMessageResolution {
             if (helperNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
-                final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                helperNode = insert(ForeignReadStringCachingHelperNodeGen.create(context, null, null));
+                helperNode = insert(ForeignReadStringCachingHelperNodeGen.create( null, null));
             }
 
             return helperNode;
@@ -224,8 +223,7 @@ public class RubyMessageResolution {
             if (helperNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
-                final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                helperNode = insert(ForeignWriteStringCachingHelperNodeGen.create(context, null, null, null));
+                helperNode = insert(ForeignWriteStringCachingHelperNodeGen.create( null, null, null));
             }
 
             return helperNode;
@@ -250,7 +248,7 @@ public class RubyMessageResolution {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
                 context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
-                dispatchNode = insert(new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
+                dispatchNode = insert(new DispatchHeadNode(true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD));
             }
 
             return dispatchNode;

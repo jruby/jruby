@@ -10,6 +10,7 @@
 package org.jruby.truffle.core.format.printf;
 
 import org.jruby.truffle.core.format.exceptions.InvalidFormatException;
+import org.jruby.truffle.language.RubyGuards;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,9 +18,13 @@ import java.util.List;
 public class PrintfSimpleParser {
 
     private final char[] source;
+    private final Object[] arguments;
+    private final boolean isDebug;
 
-    public PrintfSimpleParser(char[] source) {
+    public PrintfSimpleParser(char[] source, Object[] arguments, boolean isDebug) {
         this.source = source;
+        this.arguments = arguments;
+        this.isDebug = isDebug;
     }
 
     @SuppressWarnings("fallthrough")
@@ -28,6 +33,7 @@ public class PrintfSimpleParser {
         ArgType argType = ArgType.NONE;
 
         final int end = source.length;
+        int argCount = 0;
 
         for (int i = 0; i < end; ) {
 
@@ -128,6 +134,7 @@ public class PrintfSimpleParser {
                         config.setNamesBytes(charsToBytes(nameBytes));
                         i = j + 1;
                         checkNameArg(argType, nameBytes);
+                        checkHash(arguments);
                         argType = ArgType.NAMED;
                         argTypeSet = true;
                         if (term == '}') {
@@ -148,6 +155,7 @@ public class PrintfSimpleParser {
                             i = numberDollarWidth.getNextI();
                         } else {
                             checkNextArg(argType, 1); // TODO index next args
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                             config.setWidthStar(true);
                             i++;
@@ -168,6 +176,7 @@ public class PrintfSimpleParser {
                                 i = numberDollar.getNextI();
                             } else {
                                 checkNextArg(argType, 1); // TODO idx
+                                argCount += 1;
                                 argType = ArgType.UNNUMBERED;
                                 config.setPrecisionStar(true);
                                 i += 2;
@@ -198,6 +207,7 @@ public class PrintfSimpleParser {
                         i++;
                         if (!argTypeSet) {
                             checkNextArg(argType, 1);
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                         }
                         finished = true;
@@ -209,6 +219,7 @@ public class PrintfSimpleParser {
                         i++;
                         if (!argTypeSet) { // Speculative
                             checkNextArg(argType, 1);
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                         }
                         finished = true;
@@ -223,6 +234,7 @@ public class PrintfSimpleParser {
                     case 'u':
                         if (!argTypeSet) {
                             checkNextArg(argType, 1); // TODO idx correctly
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                         }
                         config.setFormatType(SprintfConfig.FormatType.INTEGER);
@@ -239,6 +251,7 @@ public class PrintfSimpleParser {
                     case 'f':
                         if (!argTypeSet) {
                             checkNextArg(argType, 1);
+                            argCount += 1;
                             argType = ArgType.UNNUMBERED;
                         }
                         config.setFormatType(SprintfConfig.FormatType.FLOAT);
@@ -251,9 +264,22 @@ public class PrintfSimpleParser {
                 }
             }
         }
+        if ((argType == ArgType.UNNUMBERED || argType == ArgType.NONE) &&
+            arguments.length > argCount) {
+            if (isDebug) {
+                throw new InvalidFormatException("too many arguments for format string");
+            }
+        }
+
         return configs;
     }
 
+    private static void checkHash(Object[] arguments) {
+        if(arguments.length != 1  ||
+            !RubyGuards.isRubyHash(arguments[0])) {
+            throw new InvalidFormatException("one hash required");
+        }
+    }
 
     private static void checkNextArg(ArgType argType, int nextArgumentIndex) {
         switch (argType) {
@@ -292,18 +318,6 @@ public class PrintfSimpleParser {
         NAMED
     }
 
-    private void checkPosArg(int relativeArgumentIndex, int absoluteArgumentIndex) {
-        if (relativeArgumentIndex > 0) {
-            throw new InvalidFormatException("numbered(" + absoluteArgumentIndex + ") after unnumbered(" + relativeArgumentIndex + ")");
-        }
-        if (relativeArgumentIndex == -2) {
-            throw new InvalidFormatException("numbered(" + absoluteArgumentIndex + ") after named");
-        }
-        if (absoluteArgumentIndex < 1) {
-            throw new InvalidFormatException("invalid index - " + absoluteArgumentIndex + "$");
-        }
-    }
-
     public LookAheadResult getNum(int startI, int end) {
         StringBuilder sb = new StringBuilder();
 
@@ -326,7 +340,11 @@ public class PrintfSimpleParser {
 
         Integer result;
         if (sb.length() > 0) {
-            result = Integer.parseInt(sb.toString());
+            try {
+                result = Integer.parseInt(sb.toString());
+            } catch (NumberFormatException nfe) {
+                throw new InvalidFormatException("precision too big");
+            }
         } else {
             result = null;
         }

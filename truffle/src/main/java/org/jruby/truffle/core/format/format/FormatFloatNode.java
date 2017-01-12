@@ -23,11 +23,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.format.FormatNode;
 import org.jruby.truffle.core.format.printf.PrintfSimpleTreeBuilder;
-import org.jruby.truffle.util.Sprintf;
-import org.jruby.truffle.util.ByteList;
+import org.jruby.truffle.core.string.ByteList;
 
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 @NodeChildren({
     @NodeChild(value = "width", type = FormatNode.class),
@@ -46,8 +48,7 @@ public abstract class FormatFloatNode extends FormatNode {
     private final boolean hasMinusFlag;
     private final boolean hasFSharpFlag;
 
-    public FormatFloatNode(RubyContext context, char format, boolean hasSpaceFlag, boolean hasZeroFlag, boolean hasPlusFlag, boolean hasMinusFlag, boolean hasFSharpFlag) {
-        super(context);
+    public FormatFloatNode(char format, boolean hasSpaceFlag, boolean hasZeroFlag, boolean hasPlusFlag, boolean hasMinusFlag, boolean hasFSharpFlag) {
         this.format = format;
         this.hasSpaceFlag = hasSpaceFlag;
         this.hasZeroFlag = hasZeroFlag;
@@ -112,7 +113,7 @@ public abstract class FormatFloatNode extends FormatNode {
             }
             width -= len;
 
-            if (width > 0 && !hasZeroFlag && !hasMinusFlag) {
+            if (width > 0 && !hasMinusFlag) {
                 buf.fill(' ', width);
                 width = 0;
             }
@@ -132,7 +133,7 @@ public abstract class FormatFloatNode extends FormatNode {
         }
 
         final Locale locale = Locale.ENGLISH;
-        NumberFormat nf = Sprintf.getNumberFormat(locale);
+        NumberFormat nf = getNumberFormat(locale);
         nf.setMaximumFractionDigits(Integer.MAX_VALUE);
         String str = nf.format(dval);
 
@@ -209,7 +210,7 @@ public abstract class FormatFloatNode extends FormatNode {
                 expSign = 1;
             }
             for (; i < strlen; ) {
-                expVal = expVal * 10 + ((int) str.charAt(i++) - (int) '0');
+                expVal = expVal * 10 + (str.charAt(i++) - '0');
             }
             exponent += expVal * expSign;
         }
@@ -258,7 +259,7 @@ public abstract class FormatFloatNode extends FormatNode {
                 expChar = 0;
         }
 
-        final byte decimalSeparator = (byte) Sprintf.getDecimalFormat(locale).getDecimalSeparator();
+        final byte decimalSeparator = (byte) getDecimalFormat(locale).getDecimalSeparator();
 
         switch (fchar) {
             case 'g':
@@ -609,6 +610,38 @@ public abstract class FormatFloatNode extends FormatNode {
 
         }
         return buf.bytes();
+    }
+
+    private static final ThreadLocal<Map<Locale, DecimalFormatSymbols>> LOCALE_DECIMAL_FORMATS = new ThreadLocal<>();
+
+    public static DecimalFormatSymbols getDecimalFormat(Locale locale) {
+        Map<Locale, DecimalFormatSymbols> decimalFormats = LOCALE_DECIMAL_FORMATS.get();
+        if (decimalFormats == null) {
+            decimalFormats = new HashMap<>(4);
+            LOCALE_DECIMAL_FORMATS.set(decimalFormats);
+        }
+        DecimalFormatSymbols format = decimalFormats.get(locale);
+        if (format == null) {
+            format = new DecimalFormatSymbols(locale);
+            decimalFormats.put(locale, format);
+        }
+        return format;
+    }
+
+    private static final ThreadLocal<Map<Locale, NumberFormat>> LOCALE_NUMBER_FORMATS = new ThreadLocal<>();
+
+    private static NumberFormat getNumberFormat(Locale locale) {
+        Map<Locale, NumberFormat> numberFormats = LOCALE_NUMBER_FORMATS.get();
+        if (numberFormats == null) {
+            numberFormats = new HashMap<>(4);
+            LOCALE_NUMBER_FORMATS.set(numberFormats);
+        }
+        NumberFormat format = numberFormats.get(locale);
+        if ( format == null ) {
+            format = NumberFormat.getNumberInstance(locale);
+            numberFormats.put(locale, format);
+        }
+        return format;
     }
 
     private static int round(byte[] bytes, int nDigits, int roundPos, boolean roundDown) {

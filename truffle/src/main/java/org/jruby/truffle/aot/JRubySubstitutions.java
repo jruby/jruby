@@ -13,34 +13,12 @@
  */
 package org.jruby.truffle.aot;
 
-import com.oracle.truffle.api.source.Source;
 import org.jcodings.exception.InternalException;
-import org.joda.time.DateTimeZone;
-import org.jruby.truffle.RubyLanguage;
-import org.jruby.truffle.language.loader.SourceLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.text.DateFormatSymbols;
-import java.util.Locale;
 
 // Checkstyle: stop
-
-final class Target_org_jruby_util_unsafe_UnsafeHolder {
-    static boolean SUPPORTS_FENCES = false;
-    static long ARRAY_OBJECT_BASE_OFFSET;
-    static long ARRAY_OBJECT_INDEX_SCALE;
-
-    static void fullFence() {
-    }
-}
 
 final class Target_org_jcodings_Encoding {
     static org.jcodings.Encoding load(String name) {
@@ -59,50 +37,6 @@ final class Target_org_jcodings_util_ArrayReader {
             throw new InternalException(("entry: /tables/" + name + ".bin not found"));
         }
         return new DataInputStream(new ByteArrayInputStream(table));
-    }
-}
-
-@SuppressWarnings("static-method")
-final class Target_org_joda_time_tz_ZoneInfoProvider {
-    File iFileDir;
-
-    DateTimeZone getZone(String id) {
-        return JRubySupport.allTimeZones.get(id);
-    }
-
-    InputStream openResource(String name) throws IOException {
-        if (iFileDir != null) {
-            return new FileInputStream(new File(iFileDir, name));
-        } else {
-            throw new IllegalArgumentException("Not supported on SubstrateVM");
-        }
-    }
-}
-
-final class Target_org_joda_time_DateTimeUtils {
-    static DateFormatSymbols getDateFormatSymbols(Locale locale) {
-        return DateFormatSymbols.getInstance(locale);
-    }
-}
-
-final class Target_org_jruby_truffle_core_string_StringSupport {
-    static int ARRAY_BYTE_BASE_OFFSET;
-}
-
-@SuppressWarnings("static-method")
-final class Target_org_jruby_truffle_language_loader_SourceLoader {
-    Source loadResource(String path) throws IOException {
-        if (!(path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME))) {
-            throw new UnsupportedOperationException();
-        }
-
-        final String canonicalPath = JRubySourceLoaderSupport.canonicalizeResourcePath(path);
-        final JRubySourceLoaderSupport.CoreLibraryFile coreFile = JRubySourceLoaderSupport.allCoreLibraryFiles.get(canonicalPath);
-        if (coreFile == null) {
-            throw new FileNotFoundException(path);
-        }
-
-        return Source.newBuilder(new InputStreamReader(new ByteArrayInputStream(coreFile.code), StandardCharsets.UTF_8)).name(path).mimeType(RubyLanguage.MIME_TYPE).build();
     }
 }
 

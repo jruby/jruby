@@ -31,9 +31,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.truffle.parser.ast;
 
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.parser.ast.types.INameNode;
 import org.jruby.truffle.parser.ast.visitor.NodeVisitor;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class LocalVarParseNode extends ParseNode implements INameNode, IScopedNo
     // is what index in the right scope to set the value.
     private final int location;
 
-    public LocalVarParseNode(ISourcePosition position, int location, String name) {
+    public LocalVarParseNode(SourceIndexLength position, int location, String name) {
         super(position, false);
         this.location = location;
         this.name = name;

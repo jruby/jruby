@@ -36,12 +36,15 @@
 package org.jruby.truffle.parser.parser;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.collections.Tuple;
 import org.jruby.truffle.core.regexp.ClassicRegexp;
 import org.jruby.truffle.core.regexp.RegexpOptions;
-import org.jruby.truffle.core.string.StringSupport;
+import org.jruby.truffle.core.rope.CodeRange;
+import org.jruby.truffle.language.SourceIndexLength;
 import org.jruby.truffle.language.control.RaiseException;
-import org.jruby.truffle.parser.KeyValuePair;
+import org.jruby.truffle.parser.ParserByteList;
 import org.jruby.truffle.parser.RubyWarnings;
 import org.jruby.truffle.parser.Signature;
 import org.jruby.truffle.parser.ast.AliasParseNode;
@@ -124,21 +127,18 @@ import org.jruby.truffle.parser.ast.WhenParseNode;
 import org.jruby.truffle.parser.ast.YieldParseNode;
 import org.jruby.truffle.parser.ast.types.ILiteralNode;
 import org.jruby.truffle.parser.ast.types.INameNode;
-import org.jruby.truffle.parser.lexer.ISourcePosition;
-import org.jruby.truffle.parser.lexer.ISourcePositionHolder;
 import org.jruby.truffle.parser.lexer.RubyLexer;
 import org.jruby.truffle.parser.lexer.SyntaxException.PID;
 import org.jruby.truffle.parser.scope.DynamicScope;
 import org.jruby.truffle.parser.scope.StaticScope;
-import org.jruby.truffle.util.ByteList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.jruby.truffle.parser.lexer.LexingCommon.ASCII8BIT_ENCODING;
-import static org.jruby.truffle.parser.lexer.LexingCommon.USASCII_ENCODING;
-import static org.jruby.truffle.parser.lexer.LexingCommon.UTF8_ENCODING;
+import static org.jruby.truffle.parser.lexer.RubyLexer.ASCII8BIT_ENCODING;
+import static org.jruby.truffle.parser.lexer.RubyLexer.USASCII_ENCODING;
+import static org.jruby.truffle.parser.lexer.RubyLexer.UTF8_ENCODING;
 
 /** 
  *
@@ -162,8 +162,11 @@ public class ParserSupport {
 
     private final RubyContext context;
 
-    public ParserSupport(RubyContext context) {
+    private String file;
+
+    public ParserSupport(RubyContext context, String file) {
         this.context = context;
+        this.file = file;
     }
 
     public RubyContext getContext() {
@@ -192,16 +195,16 @@ public class ParserSupport {
     }
 
     public void pushBlockScope() {
-        currentScope = configuration.getStaticScopeFactory().newBlockScope(currentScope, lexer.getFile());
+        currentScope = new StaticScope(StaticScope.Type.BLOCK, currentScope, lexer.getFile());
     }
 
     public void pushLocalScope() {
-        currentScope = configuration.getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
+        currentScope = new StaticScope(StaticScope.Type.LOCAL, currentScope, lexer.getFile());
         currentScope.setCommandArgumentStack(lexer.getCmdArgumentState().getStack());
         lexer.getCmdArgumentState().reset(0);
     }
 
-    public ParseNode arg_concat(ISourcePosition position, ParseNode node1, ParseNode node2) {
+    public ParseNode arg_concat(SourceIndexLength position, ParseNode node1, ParseNode node2) {
         return node2 == null ? node1 : new ArgsCatParseNode(position, node1, node2);
     }
 
@@ -260,7 +263,7 @@ public class ParserSupport {
         return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
     }
 
-    protected void getterIdentifierError(ISourcePosition position, String identifier) {
+    protected void getterIdentifierError(SourceIndexLength position, String identifier) {
         lexer.compile_error(PID.BAD_IDENTIFIER, "identifier " + identifier + " is not valid to get");
     }
 
@@ -269,7 +272,7 @@ public class ParserSupport {
      *
      *@param node
      */
-    public ParseNode newline_node(ParseNode node, ISourcePosition position) {
+    public ParseNode newline_node(ParseNode node, SourceIndexLength position) {
         if (node == null) return null;
         node.setNewline();
         return node;
@@ -285,7 +288,7 @@ public class ParserSupport {
             endPosition = -1;
         }
 
-        ISourcePosition position;
+        SourceIndexLength position;
         if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) {
                 topOfAST = NilImplicitParseNode.NIL;
@@ -318,7 +321,7 @@ public class ParserSupport {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListParseNode) head).getLast())) {
-            warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, tail.getPosition().getFile(), tail.getPosition().getLine(), "statement not reached");
+            warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, file, tail.getPosition().toSourceSection(lexer.getSource()).getStartLine(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
@@ -342,7 +345,7 @@ public class ParserSupport {
         return getOperatorCallNode(firstNode, operator, secondNode, null);
     }
 
-    public ParseNode getOperatorCallNode(ParseNode firstNode, String operator, ParseNode secondNode, ISourcePosition defaultPosition) {
+    public ParseNode getOperatorCallNode(ParseNode firstNode, String operator, ParseNode secondNode, SourceIndexLength defaultPosition) {
         if (defaultPosition != null) {
             firstNode = checkForNilNode(firstNode, defaultPosition);
             secondNode = checkForNilNode(secondNode, defaultPosition);
@@ -416,7 +419,7 @@ public class ParserSupport {
         }
     }
 
-    public ParseNode arg_add(ISourcePosition position, ParseNode node1, ParseNode node2) {
+    public ParseNode arg_add(SourceIndexLength position, ParseNode node1, ParseNode node2) {
         if (node1 == null) {
             if (node2 == null) {
                 return new ArrayParseNode(position, NilImplicitParseNode.NIL);
@@ -449,7 +452,7 @@ public class ParserSupport {
         return newNode;
     }
 
-    public ParseNode ret_args(ParseNode node, ISourcePosition position) {
+    public ParseNode ret_args(ParseNode node, SourceIndexLength position) {
         if (node != null) {
             if (node instanceof BlockPassParseNode) {
                 lexer.compile_error(PID.BLOCK_ARG_UNEXPECTED, "block argument should not be given");
@@ -472,7 +475,7 @@ public class ParserSupport {
      * @return true if a control node, false otherwise
      */
     public boolean isBreakStatement(ParseNode node) {
-        breakLoop: do {
+        do { // breakLoop:
             if (node == null) return false;
 
             switch (node.getNodeType()) {
@@ -487,13 +490,13 @@ public class ParserSupport {
 
     public void warnUnlessEOption(RubyWarnings.ID id, ParseNode node, String message) {
         if (!configuration.isInlineSource()) {
-            warnings.warn(id, node.getPosition().getFile(), node.getPosition().getLine(), message);
+            warnings.warn(id, file, node.getPosition().toSourceSection(lexer.getSource()).getStartLine(), message);
         }
     }
 
     public void warningUnlessEOption(RubyWarnings.ID id, ParseNode node, String message) {
         if (warnings.isVerbose() && !configuration.isInlineSource()) {
-            warnings.warning(id, node.getPosition().getFile(), node.getPosition().getLine(), message);
+            warnings.warning(id, file, node.getPosition().toSourceSection(lexer.getSource()).getStartLine(), message);
         }
     }
 
@@ -545,7 +548,7 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(ParseNode node, String useless) {
-        warnings.warn(RubyWarnings.ID.USELESS_EXPRESSION, node.getPosition().getFile(), node.getPosition().getLine(), "Useless use of " + useless + " in void context.");
+        warnings.warn(RubyWarnings.ID.USELESS_EXPRESSION, file, node.getPosition().toSourceSection(lexer.getSource()).getStartLine(), "Useless use of " + useless + " in void context.");
     }
 
     /**
@@ -556,7 +559,7 @@ public class ParserSupport {
     public void checkUselessStatement(ParseNode node) {
         if (!warnings.isVerbose() || (!configuration.isInlineSource() && configuration.isEvalParse())) return;
 
-        uselessLoop: do {
+        do { // uselessLoop:
             if (node == null) return;
 
             switch (node.getNodeType()) {
@@ -631,7 +634,7 @@ public class ParserSupport {
         } else if (node instanceof LocalAsgnParseNode || node instanceof DAsgnParseNode || node instanceof GlobalAsgnParseNode || node instanceof InstAsgnParseNode) {
             ParseNode valueNode = ((AssignableParseNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warnings.warn(RubyWarnings.ID.ASSIGNMENT_IN_CONDITIONAL, node.getPosition().getFile(), node.getPosition().getLine(), "found = in conditional, should be ==");
+                warnings.warn(RubyWarnings.ID.ASSIGNMENT_IN_CONDITIONAL, file, node.getPosition().toSourceSection(lexer.getSource()).getStartLine(), "found = in conditional, should be ==");
             }
             return true;
         }
@@ -643,7 +646,7 @@ public class ParserSupport {
     private boolean isStaticContent(ParseNode node) {
         if (node instanceof HashParseNode) {
             HashParseNode hash = (HashParseNode) node;
-            for (KeyValuePair<ParseNode, ParseNode> pair : hash.getPairs()) {
+            for (Tuple<ParseNode, ParseNode> pair : hash.getPairs()) {
                 if (!isStaticContent(pair.getKey()) || !isStaticContent(pair.getValue())) return false;
             }
             return true;
@@ -677,7 +680,7 @@ public class ParserSupport {
         // FIXME: DSTR,EVSTR,STR: warning "string literal in condition"
         switch(node.getNodeType()) {
         case DREGEXPNODE: {
-            ISourcePosition position = node.getPosition();
+            SourceIndexLength position = node.getPosition();
 
             return new Match2ParseNode(position, node, new GlobalVarParseNode(position, "$_"));
         }
@@ -734,23 +737,23 @@ public class ParserSupport {
         return node;
     }
 
-    public SValueParseNode newSValueNode(ISourcePosition position, ParseNode node) {
+    public SValueParseNode newSValueNode(SourceIndexLength position, ParseNode node) {
         return new SValueParseNode(position, node);
     }
 
-    public SplatParseNode newSplatNode(ISourcePosition position, ParseNode node) {
+    public SplatParseNode newSplatNode(SourceIndexLength position, ParseNode node) {
         return new SplatParseNode(position, makeNullNil(node));
     }
 
-    public ArrayParseNode newArrayNode(ISourcePosition position, ParseNode firstNode) {
+    public ArrayParseNode newArrayNode(SourceIndexLength position, ParseNode firstNode) {
         return new ArrayParseNode(position, makeNullNil(firstNode));
     }
 
-    public ISourcePosition position(ISourcePositionHolder one, ISourcePositionHolder two) {
+    public SourceIndexLength position(ParseNode one, ParseNode two) {
         return one == null ? two.getPosition() : one.getPosition();
     }
 
-    public AndParseNode newAndNode(ISourcePosition position, ParseNode left, ParseNode right) {
+    public AndParseNode newAndNode(SourceIndexLength position, ParseNode left, ParseNode right) {
         checkExpression(left);
 
         if (left == null && right == null) return new AndParseNode(position, makeNullNil(left), makeNullNil(right));
@@ -758,7 +761,7 @@ public class ParserSupport {
         return new AndParseNode(position(left, right), makeNullNil(left), makeNullNil(right));
     }
 
-    public OrParseNode newOrNode(ISourcePosition position, ParseNode left, ParseNode right) {
+    public OrParseNode newOrNode(SourceIndexLength position, ParseNode left, ParseNode right) {
         checkExpression(left);
 
         if (left == null && right == null) return new OrParseNode(position, makeNullNil(left), makeNullNil(right));
@@ -775,7 +778,7 @@ public class ParserSupport {
      * @param firstWhenNode first when (which could also be the else)
      * @return a new case node
      */
-    public CaseParseNode newCaseNode(ISourcePosition position, ParseNode expression, ParseNode firstWhenNode) {
+    public CaseParseNode newCaseNode(SourceIndexLength position, ParseNode expression, ParseNode firstWhenNode) {
         ArrayParseNode cases = new ArrayParseNode(firstWhenNode != null ? firstWhenNode.getPosition() : position);
         CaseParseNode caseNode = new CaseParseNode(position, expression, cases);
 
@@ -812,7 +815,7 @@ public class ParserSupport {
 
         if (expressionNodes instanceof ListParseNode) {
             ListParseNode list = (ListParseNode) expressionNodes;
-            ISourcePosition position = sourceWhen.getPosition();
+            SourceIndexLength position = sourceWhen.getPosition();
             ParseNode bodyNode = sourceWhen.getBodyNode();
 
             for (int i = 0; i < list.size(); i++) {
@@ -829,7 +832,7 @@ public class ParserSupport {
         }
     }
 
-    public WhenParseNode newWhenNode(ISourcePosition position, ParseNode expressionNodes, ParseNode bodyNode, ParseNode nextCase) {
+    public WhenParseNode newWhenNode(SourceIndexLength position, ParseNode expressionNodes, ParseNode bodyNode, ParseNode nextCase) {
         if (bodyNode == null) bodyNode = NilImplicitParseNode.NIL;
 
         if (expressionNodes instanceof SplatParseNode || expressionNodes instanceof ArgsCatParseNode || expressionNodes instanceof ArgsPushParseNode) {
@@ -851,7 +854,7 @@ public class ParserSupport {
 
     // FIXME: Currently this is passing in position of receiver
     public ParseNode new_opElementAsgnNode(ParseNode receiverNode, String operatorName, ParseNode argsNode, ParseNode valueNode) {
-        ISourcePosition position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
+        SourceIndexLength position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
 
         ParseNode newNode = new OpElementAsgnParseNode(position, receiverNode, operatorName, argsNode, valueNode);
 
@@ -860,11 +863,11 @@ public class ParserSupport {
         return newNode;
     }
 
-    public ParseNode newOpAsgn(ISourcePosition position, ParseNode receiverNode, String callType, ParseNode valueNode, String variableName, String operatorName) {
+    public ParseNode newOpAsgn(SourceIndexLength position, ParseNode receiverNode, String callType, ParseNode valueNode, String variableName, String operatorName) {
         return new OpAsgnParseNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
     }
 
-    public ParseNode newOpConstAsgn(ISourcePosition position, ParseNode lhs, String operatorName, ParseNode rhs) {
+    public ParseNode newOpConstAsgn(SourceIndexLength position, ParseNode lhs, String operatorName, ParseNode rhs) {
         // FIXME: Maybe need to fixup position?
         if (lhs != null) {
             return new OpAsgnConstDeclParseNode(position, lhs, operatorName, rhs);
@@ -877,10 +880,11 @@ public class ParserSupport {
         return "&.".equals(callType);
     }
 
-    public ParseNode new_attrassign(ISourcePosition position, ParseNode receiver, String name, ParseNode args, boolean isLazy) {
+    public ParseNode new_attrassign(SourceIndexLength position, ParseNode receiver, String name, ParseNode args, boolean isLazy) {
         return new AttrAssignParseNode(position, receiver, name, args, isLazy);
     }
 
+    @SuppressWarnings("unused")
     private boolean isNumericOperator(String name) {
         if (name.length() == 1) {
             switch (name.charAt(0)) {
@@ -916,13 +920,13 @@ public class ParserSupport {
         return new_call(receiver, ".", name, argsNode, iter);
     }
 
-    public Colon2ParseNode new_colon2(ISourcePosition position, ParseNode leftNode, String name) {
+    public Colon2ParseNode new_colon2(SourceIndexLength position, ParseNode leftNode, String name) {
         if (leftNode == null) return new Colon2ImplicitParseNode(position, name);
 
         return new Colon2ConstParseNode(position, leftNode, name);
     }
 
-    public Colon3ParseNode new_colon3(ISourcePosition position, String name) {
+    public Colon3ParseNode new_colon3(SourceIndexLength position, String name) {
         return new Colon3ParseNode(position, name);
     }
 
@@ -949,7 +953,7 @@ public class ParserSupport {
         return new FCallParseNode(lexer.tokline, operation);
     }
 
-    public ParseNode new_super(ISourcePosition position, ParseNode args) {
+    public ParseNode new_super(SourceIndexLength position, ParseNode args) {
         if (args != null && args instanceof BlockPassParseNode) {
             return new SuperParseNode(position, ((BlockPassParseNode) args).getArgsNode(), args);
         }
@@ -1028,28 +1032,28 @@ public class ParserSupport {
         this.lexer = lexer;
     }
 
-    public DStrParseNode createDStrNode(ISourcePosition position) {
+    public DStrParseNode createDStrNode(SourceIndexLength position) {
         DStrParseNode dstr = new DStrParseNode(position, lexer.getEncoding());
         if (getConfiguration().isFrozenStringLiteral()) dstr.setFrozen(true);
         return dstr;
     }
 
-    public KeyValuePair<ParseNode, ParseNode> createKeyValue(ParseNode key, ParseNode value) {
+    public Tuple<ParseNode, ParseNode> createKeyValue(ParseNode key, ParseNode value) {
         if (key != null && key instanceof StrParseNode) ((StrParseNode) key).setFrozen(true);
 
-        return new KeyValuePair<>(key, value);
+        return new Tuple<>(key, value);
     }
 
-    public ParseNode asSymbol(ISourcePosition position, String value) {
+    public ParseNode asSymbol(SourceIndexLength position, String value) {
         return new SymbolParseNode(position, value, lexer.getEncoding(), lexer.getTokenCR());
     }
 
-    public ParseNode asSymbol(ISourcePosition position, ParseNode value) {
+    public ParseNode asSymbol(SourceIndexLength position, ParseNode value) {
         return value instanceof StrParseNode ? new SymbolParseNode(position, ((StrParseNode) value).getValue()) :
                 new DSymbolParseNode(position, (DStrParseNode) value);
     }
 
-    public ParseNode literal_concat(ISourcePosition position, ParseNode head, ParseNode tail) {
+    public ParseNode literal_concat(SourceIndexLength position, ParseNode head, ParseNode tail) {
         if (head == null) return tail;
         if (tail == null) return head;
 
@@ -1071,7 +1075,7 @@ public class ParserSupport {
                 StrParseNode front = (StrParseNode) head;
                 // string_contents always makes an empty strnode...which is sometimes valid but
                 // never if it ever is in literal_concat.
-                if (front.getValue().getRealSize() > 0) {
+                if (front.getValue().getLength() > 0) {
                     return new StrParseNode(head.getPosition(), front, (StrParseNode) tail);
                 } else {
                     return tail;
@@ -1096,7 +1100,7 @@ public class ParserSupport {
         if (head instanceof StrParseNode) {
 
             //Do not add an empty string node
-            if(((StrParseNode) head).getValue().length() == 0) {
+            if(((StrParseNode) head).getValue().getLength() == 0) {
                 head = createDStrNode(head.getPosition());
             } else {
                 head = createDStrNode(head.getPosition()).add(head);
@@ -1107,18 +1111,18 @@ public class ParserSupport {
 
     public ParseNode newRescueModNode(ParseNode body, ParseNode rescueBody) {
         if (rescueBody == null) rescueBody = NilImplicitParseNode.NIL; // foo rescue () can make null.
-        ISourcePosition pos = getPosition(body);
+        SourceIndexLength pos = getPosition(body);
 
         return new RescueModParseNode(pos, body, new RescueBodyParseNode(pos, null, rescueBody, null));
     }
 
-    public ParseNode newEvStrNode(ISourcePosition position, ParseNode node) {
+    public ParseNode newEvStrNode(SourceIndexLength position, ParseNode node) {
         if (node instanceof StrParseNode || node instanceof DStrParseNode || node instanceof EvStrParseNode) return node;
 
         return new EvStrParseNode(position, node);
     }
 
-    public ParseNode new_yield(ISourcePosition position, ParseNode node) {
+    public ParseNode new_yield(SourceIndexLength position, ParseNode node) {
         if (node != null && node instanceof BlockPassParseNode) {
             lexer.compile_error(PID.BLOCK_ARG_UNEXPECTED, "Block argument should not be given.");
         }
@@ -1170,11 +1174,11 @@ public class ParserSupport {
                                 rationalNode.getDenominator());
     }
 
-    private ParseNode checkForNilNode(ParseNode node, ISourcePosition defaultPosition) {
+    private ParseNode checkForNilNode(ParseNode node, SourceIndexLength defaultPosition) {
         return (node == null) ? new NilParseNode(defaultPosition) : node;
     }
 
-    public ParseNode new_args(ISourcePosition position, ListParseNode pre, ListParseNode optional, RestArgParseNode rest,
+    public ParseNode new_args(SourceIndexLength position, ListParseNode pre, ListParseNode optional, RestArgParseNode rest,
                               ListParseNode post, ArgsTailHolder tail) {
         ArgsParseNode argsNode;
         if (tail == null) {
@@ -1189,7 +1193,7 @@ public class ParserSupport {
         return argsNode;
     }
 
-    public ArgsTailHolder new_args_tail(ISourcePosition position, ListParseNode keywordArg,
+    public ArgsTailHolder new_args_tail(SourceIndexLength position, ListParseNode keywordArg,
                                         String keywordRestArgName, BlockArgParseNode blockArg) {
         if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
 
@@ -1206,13 +1210,13 @@ public class ParserSupport {
     public ParseNode remove_duplicate_keys(HashParseNode hash) {
         List<ParseNode> encounteredKeys = new ArrayList<>();
 
-        for (KeyValuePair<ParseNode,ParseNode> pair: hash.getPairs()) {
+        for (Tuple<ParseNode,ParseNode> pair: hash.getPairs()) {
             ParseNode key = pair.getKey();
             if (key == null) continue;
             int index = encounteredKeys.indexOf(key);
             if (index >= 0) {
                 warn(RubyWarnings.ID.AMBIGUOUS_ARGUMENT, hash.getPosition(), "key " + key +
-                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1));
+                        " is duplicated and overwritten on line " + (encounteredKeys.get(index).getPosition().toSourceSection(lexer.getSource()).getStartLine()));
             } else {
                 encounteredKeys.add(key);
             }
@@ -1221,11 +1225,11 @@ public class ParserSupport {
         return hash;
     }
 
-    public ParseNode newAlias(ISourcePosition position, ParseNode newNode, ParseNode oldNode) {
+    public ParseNode newAlias(SourceIndexLength position, ParseNode newNode, ParseNode oldNode) {
         return new AliasParseNode(position, newNode, oldNode);
     }
 
-    public ParseNode newUndef(ISourcePosition position, ParseNode nameNode) {
+    public ParseNode newUndef(SourceIndexLength position, ParseNode nameNode) {
         return new UndefParseNode(position, nameNode);
     }
 
@@ -1245,16 +1249,22 @@ public class ParserSupport {
         lexer.compile_error(PID.GRAMMAR_ERROR, message + ", unexpected " + found + "\n");
     }
 
-    public ISourcePosition getPosition(ISourcePositionHolder start) {
-        return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
+    public SourceIndexLength getPosition(ParseNode start) {
+        if (start != null) {
+            SourceIndexLength startPosition = start.getPosition();
+            if (startPosition != null) return startPosition;
+            return lexer.getPosition();
+        } else {
+            return lexer.getPosition();
+        }
     }
 
-    public void warn(RubyWarnings.ID id, ISourcePosition position, String message, Object... data) {
-        warnings.warn(id, position.getFile(), position.getLine(), message);
+    public void warn(RubyWarnings.ID id, SourceIndexLength position, String message, Object... data) {
+        warnings.warn(id, file, position.toSourceSection(lexer.getSource()).getStartLine(), message);
     }
 
-    public void warning(RubyWarnings.ID id, ISourcePosition position, String message, Object... data) {
-        if (warnings.isVerbose()) warnings.warning(id, position.getFile(), position.getLine(), message);
+    public void warning(RubyWarnings.ID id, SourceIndexLength position, String message, Object... data) {
+        if (warnings.isVerbose()) warnings.warning(id, file, position.toSourceSection(lexer.getSource()).getStartLine(), message);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
@@ -1315,7 +1325,7 @@ public class ParserSupport {
             if (warnings.isVerbose() && current.isDefined(name) >= 0 &&
                     !skipTruffleRubiniusWarnings(lexer)) {
 
-                warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, lexer.getPosition().getFile(), lexer.getPosition().getLine(),
+                warnings.warning(RubyWarnings.ID.STATEMENT_NOT_REACHED, file, lexer.getPosition().toSourceSection(lexer.getSource()).getStartLine(),
                         "shadowing outer local variable - " + name);
             }
         } else if (current.exists(name) >= 0) {
@@ -1367,21 +1377,22 @@ public class ParserSupport {
     }
 
     // MRI: reg_fragment_check
-    public void regexpFragmentCheck(RegexpParseNode end, ByteList value) {
-        setRegexpEncoding(end, value);
+    public ParserByteList regexpFragmentCheck(RegexpParseNode end, ParserByteList value) {
+        value = setRegexpEncoding(end, value);
         try {
-            ClassicRegexp.preprocessCheck(configuration.getContext(), value);
+            ClassicRegexp.preprocessCheck(configuration.getContext(), value.toRope());
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }
+        return value;
     }        // 1.9 mode overrides to do extra checking...
 
     private List<Integer> allocateNamedLocals(RegexpParseNode regexpNode) {
-        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext(), regexpNode.getValue(), regexpNode.getOptions());
+        ClassicRegexp pattern = ClassicRegexp.newRegexp(configuration.getContext(), regexpNode.getValue().toRope(), regexpNode.getOptions());
         pattern.setLiteral();
         String[] names = pattern.getNames();
         int length = names.length;
-        List<Integer> locals = new ArrayList<Integer>();
+        List<Integer> locals = new ArrayList<>();
         StaticScope scope = getCurrentScope();
 
         for (int i = 0; i < length; i++) {
@@ -1403,8 +1414,8 @@ public class ParserSupport {
         return locals;
     }
 
-    private boolean is7BitASCII(ByteList value) {
-        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    private boolean is7BitASCII(ParserByteList value) {
+        return value.codeRangeScan() == CodeRange.CR_7BIT;
     }
 
     // TODO: Put somewhere more consolidated (similiar
@@ -1419,8 +1430,8 @@ public class ParserSupport {
 
     public void compile_error(String message) { // mri: rb_compile_error_with_enc
         String line = lexer.getCurrentLine();
-        ISourcePosition position = lexer.getPosition();
-        String errorMessage = lexer.getFile() + ":" + (position.getLine() + 1) + ": ";
+        SourceIndexLength position = lexer.getPosition();
+        String errorMessage = lexer.getFile() + ":" + (position.toSourceSection(lexer.getSource()).getStartLine()) + ": ";
 
         if (line != null && line.length() > 5) {
             boolean addNewline = message != null && ! message.endsWith("\n");
@@ -1437,7 +1448,7 @@ public class ParserSupport {
     }
     
     // MRI: reg_fragment_setenc_gen
-    public void setRegexpEncoding(RegexpParseNode end, ByteList value) {
+    public ParserByteList setRegexpEncoding(RegexpParseNode end, ParserByteList value) {
         RegexpOptions options = end.getOptions();
         Encoding optionsEncoding = options.setup(configuration.getContext()) ;
 
@@ -1447,22 +1458,23 @@ public class ParserSupport {
                 compileError(optionsEncoding, value.getEncoding());
             }
 
-            value.setEncoding(optionsEncoding);
+            value = value.withEncoding(optionsEncoding);
         } else if (options.isEncodingNone()) {
             if (value.getEncoding() == ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }
-            value.setEncoding(ASCII8BIT_ENCODING);
+            value = value.withEncoding(ASCII8BIT_ENCODING);
         } else if (lexer.getEncoding() == USASCII_ENCODING) {
             if (!is7BitASCII(value)) {
-                value.setEncoding(USASCII_ENCODING); // This will raise later
+                value = value.withEncoding(USASCII_ENCODING); // This will raise later
             } else {
-                value.setEncoding(ASCII8BIT_ENCODING);
+                value = value.withEncoding(ASCII8BIT_ENCODING);
             }
         }
+        return value;
     }    
 
-    protected void checkRegexpSyntax(ByteList value, RegexpOptions options) {
+    protected void checkRegexpSyntax(ParserByteList value, RegexpOptions options) {
         final String stringValue = value.toString();
         // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
         if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
@@ -1470,27 +1482,27 @@ public class ParserSupport {
 
         try {
             // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
-            ClassicRegexp.newRegexpParser(getConfiguration().getContext(), value, (RegexpOptions)options.clone());
+            ClassicRegexp.newRegexpParser(getConfiguration().getContext(), value.toRope(), (RegexpOptions)options.clone());
         } catch (RaiseException re) {
             compile_error(re.getMessage());
         }
     }
 
-    public ParseNode newRegexpNode(ISourcePosition position, ParseNode contents, RegexpParseNode end) {
+    public ParseNode newRegexpNode(SourceIndexLength position, ParseNode contents, RegexpParseNode end) {
         RegexpOptions options = end.getOptions();
         Encoding encoding = lexer.getEncoding();
 
         if (contents == null) {
-            ByteList newValue = ByteList.create("");
+            ParserByteList newValue = new ParserByteList(new byte[]{});
             if (encoding != null) {
-                newValue.setEncoding(encoding);
+                newValue = newValue.withEncoding(encoding);
             }
 
-            regexpFragmentCheck(end, newValue);
+            newValue = regexpFragmentCheck(end, newValue);
             return new RegexpParseNode(position, newValue, options.withoutOnce());
         } else if (contents instanceof StrParseNode) {
-            ByteList meat = ((StrParseNode) contents).getValue().dup();
-            regexpFragmentCheck(end, meat);
+            ParserByteList meat = ((StrParseNode) contents).getValue();
+            meat = regexpFragmentCheck(end, meat);
             checkRegexpSyntax(meat, options.withoutOnce());
             return new RegexpParseNode(contents.getPosition(), meat, options.withoutOnce());
         } else if (contents instanceof DStrParseNode) {
@@ -1499,8 +1511,8 @@ public class ParserSupport {
             for (int i = 0; i < dStrNode.size(); i++) {
                 ParseNode fragment = dStrNode.get(i);
                 if (fragment instanceof StrParseNode) {
-                    ByteList frag = ((StrParseNode) fragment).getValue();
-                    regexpFragmentCheck(end, frag);
+                    ParserByteList frag = ((StrParseNode) fragment).getValue();
+                    frag = regexpFragmentCheck(end, frag);
 //                    if (!lexer.isOneEight()) encoding = frag.getEncoding();
                 }
             }
@@ -1512,8 +1524,8 @@ public class ParserSupport {
         }
 
         // EvStrParseNode: #{val}: no fragment check, but at least set encoding
-        ByteList master = createMaster(options);
-        regexpFragmentCheck(end, master);
+        ParserByteList master = createMaster(options);
+        master = regexpFragmentCheck(end, master);
         encoding = master.getEncoding();
         DRegexpParseNode node = new DRegexpParseNode(position, options, encoding);
         node.add(new StrParseNode(contents.getPosition(), master));
@@ -1524,31 +1536,13 @@ public class ParserSupport {
     // Create the magical empty 'master' string which will be encoded with
     // regexp options encoding so dregexps can end up starting with the
     // right encoding.
-    private ByteList createMaster(RegexpOptions options) {
+    private ParserByteList createMaster(RegexpOptions options) {
         Encoding encoding = options.setup(configuration.getContext());
 
-        return new ByteList(ByteList.NULL_ARRAY, encoding);
+        return new ParserByteList(new byte[]{}, encoding == null ? ASCIIEncoding.INSTANCE : encoding);
     }
     
-    // FIXME:  This logic is used by many methods in MRI, but we are only using it in lexer
-    // currently.  Consolidate this when we tackle a big encoding refactoring
-    public static int associateEncoding(ByteList buffer, Encoding newEncoding, int codeRange) {
-        Encoding bufferEncoding = buffer.getEncoding();
-                
-        if (newEncoding == bufferEncoding) return codeRange;
-        
-        // TODO: Special const error
-        
-        buffer.setEncoding(newEncoding);
-        
-        if (codeRange != StringSupport.CR_7BIT || !newEncoding.isAsciiCompatible()) {
-            return StringSupport.CR_UNKNOWN;
-        }
-        
-        return codeRange;
-    }
-    
-    public KeywordArgParseNode keyword_arg(ISourcePosition position, AssignableParseNode assignable) {
+    public KeywordArgParseNode keyword_arg(SourceIndexLength position, AssignableParseNode assignable) {
         return new KeywordArgParseNode(position, assignable);
     }
     
@@ -1569,7 +1563,7 @@ public class ParserSupport {
         return null;
     }
     
-    public ParseNode new_defined(ISourcePosition position, ParseNode something) {
+    public ParseNode new_defined(SourceIndexLength position, ParseNode something) {
         return new DefinedParseNode(position, something);
     }
 
@@ -1580,4 +1574,9 @@ public class ParserSupport {
     public boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
         return lexer.getFile().startsWith(context.getOptions().CORE_LOAD_PATH);
     }
+
+    public SourceIndexLength extendedUntil(SourceIndexLength start, SourceIndexLength end) {
+        return new SourceIndexLength(start.getCharIndex(), end.getCharEnd() - start.getCharIndex());
+    }
+
 }

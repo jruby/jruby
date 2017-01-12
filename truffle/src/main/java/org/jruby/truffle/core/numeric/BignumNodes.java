@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -16,10 +16,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -49,7 +47,7 @@ public abstract class BignumNodes {
         public Object fixnumOrBignum(BigInteger value) {
             if (fixnumOrBignum == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), null));
+                fixnumOrBignum = insert(new FixnumOrBignumNode());
             }
             return fixnumOrBignum.fixnumOrBignum(value);
         }
@@ -186,8 +184,8 @@ public abstract class BignumNodes {
     @CoreMethod(names = "div", required = 1)
     public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
 
-        @Child DivNode divNode = DivNodeFactory.create(null);
-        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null, null);
+        @Child private DivNode divNode = DivNodeFactory.create(null);
+        @Child private FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null);
 
         @Specialization
         public Object idiv(VirtualFrame frame, Object a, Object b,
@@ -346,12 +344,12 @@ public abstract class BignumNodes {
 
             if (reverseCallNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                reverseCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                reverseCallNode = insert(DispatchHeadNodeFactory.createMethodCall());
             }
 
             final Object reversedResult = reverseCallNode.call(frame, b, "==", a);
 
-            return booleanCastNode.executeBoolean(frame, reversedResult);
+            return booleanCastNode.executeToBoolean(reversedResult);
         }
     }
 
@@ -542,11 +540,8 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object rightShift(VirtualFrame frame, DynamicObject a, long b) {
-            if (CoreLibrary.fitsIntoInteger(b)) {
-                return executeRightShift(frame, a, (int) b);
-            } else {
-                return 0;
-            }
+            assert !CoreLibrary.fitsIntoInteger(b);
+            return 0;
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -583,42 +578,10 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "coerce", required = 1)
-    public abstract static class CoerceNode extends CoreMethodArrayArgumentsNode {
-
-        // NOTE (eregon, 16 Feb. 2015): In other implementations, b is converted to a Bignum here,
-        // even if it fits in a Fixnum. We avoid it for implementation sanity
-        // and to keep the representations strictly distinct over the range of values.
-
-        @Specialization
-        public DynamicObject coerce(DynamicObject a, int b) {
-            Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
-        }
-
-        @Specialization
-        public DynamicObject coerce(DynamicObject a, long b) {
-            Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
-        }
-
-        @Specialization(guards = "isRubyBignum(b)")
-        public DynamicObject coerce(DynamicObject a, DynamicObject b) {
-            Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
-        }
-
-    }
-
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private GeneralDivModNode divModNode;
-
-        public DivModNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            divModNode = new GeneralDivModNode(context, sourceSection);
-        }
+        @Child private GeneralDivModNode divModNode = new GeneralDivModNode();
 
         @Specialization
         public DynamicObject divMod(DynamicObject a, long b) {
@@ -689,7 +652,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"}, optional = 1)
+    @CoreMethod(names = { "to_s", "inspect" }, optional = 1, lowerFixnum = 1)
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @TruffleBoundary

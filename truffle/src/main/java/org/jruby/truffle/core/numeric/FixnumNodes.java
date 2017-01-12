@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -17,10 +17,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.profiles.BranchProfile;
 import com.oracle.truffle.api.profiles.ConditionProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.Layouts;
-import org.jruby.truffle.RubyContext;
+import org.jruby.truffle.algorithms.SipHash;
 import org.jruby.truffle.builtins.CoreClass;
 import org.jruby.truffle.builtins.CoreMethod;
 import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
@@ -37,7 +36,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.methods.UnsupportedOperationBehavior;
-import org.jruby.truffle.util.SipHashInline;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -73,7 +71,7 @@ public abstract class FixnumNodes {
         public Object negWithOverflow(long value) {
             if (fixnumOrBignumNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fixnumOrBignumNode = insert(new FixnumOrBignumNode(getContext(), null));
+                fixnumOrBignumNode = insert(new FixnumOrBignumNode());
             }
 
             return fixnumOrBignumNode.fixnumOrBignum(BigInteger.valueOf(value).negate());
@@ -388,8 +386,8 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "div", required = 1)
     public abstract static class IDivNode extends BignumNodes.BignumCoreMethodNode {
 
-        @Child DivNode divNode = DivNodeFactory.create(null);
-        @Child FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null, null, null);
+        @Child private DivNode divNode = DivNodeFactory.create(null);
+        @Child private FloatNodes.FloorNode floorNode = FloatNodesFactory.FloorNodeFactory.create(null);
 
         @Specialization
         public Object idiv(VirtualFrame frame, Object a, Object b,
@@ -471,12 +469,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private GeneralDivModNode divModNode;
-
-        public DivModNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            divModNode = new GeneralDivModNode(context, sourceSection);
-        }
+        @Child private GeneralDivModNode divModNode = new GeneralDivModNode();
 
         @Specialization
         public DynamicObject divMod(long a, long b) {
@@ -582,12 +575,7 @@ public abstract class FixnumNodes {
     @CoreMethod(names = { "==", "===" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode reverseCallNode;
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            reverseCallNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
+        @Child private CallDispatchHeadNode reverseCallNode = DispatchHeadNodeFactory.createMethodCall();
 
         @Specialization
         public boolean equal(int a, int b) {
@@ -926,7 +914,7 @@ public abstract class FixnumNodes {
         public Object leftShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
             return fallbackCallNode.call(frame, a, "left_shift_fallback", b);
         }
@@ -1006,7 +994,7 @@ public abstract class FixnumNodes {
         public Object rightShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
             return fallbackCallNode.call(frame, a, "right_shift_fallback", b);
         }
@@ -1132,7 +1120,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "to_s", optional = 1)
+    @CoreMethod(names = "to_s", optional = 1, lowerFixnum = 1)
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization
@@ -1211,7 +1199,7 @@ public abstract class FixnumNodes {
             final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2);
             buffer.putLong(a);
             buffer.putLong(b);
-            return SipHashInline.hash24(Hashing.SEED_K0, Hashing.SEED_K1, buffer.array());
+            return SipHash.hash24(Hashing.SEED_K0, Hashing.SEED_K1, buffer.array());
         }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -61,7 +61,7 @@ public class RubyDebugTest {
     }
 
     @Before
-    public void before() throws IOException {
+    public void before() {
         suspendedEvent = null;
 
         engine = PolyglotEngine.newBuilder().setOut(out).setErr(err).build();
@@ -153,12 +153,6 @@ public class RubyDebugTest {
                         "n", "2", "nMinusOne", "1",
                         "nMOFact", "1",
                         "res", "nil");
-        stepOut();
-        assertLocation(23, "res = fac(2)" + System.lineSeparator()
-            + "  puts res" + System.lineSeparator() // wrong!?
-            + "  res", // wrong!?
-                        "res", "2");
-
         continueExecution();
 
         // Init before eval:
@@ -185,10 +179,6 @@ public class RubyDebugTest {
 
     private void stepOver(final int size) {
         run.addLast(() -> suspendedEvent.prepareStepOver(size));
-    }
-
-    private void stepOut() {
-        run.addLast(() -> suspendedEvent.prepareStepOut());
     }
 
     private void continueExecution() {
@@ -241,7 +231,7 @@ public class RubyDebugTest {
         assertTrue(msg + ". Assuming all requests processed: " + run, run.isEmpty());
     }
 
-    private static Source createFactorial() throws IOException {
+    private static Source createFactorial() {
         return getSource("src/test/ruby/factorial.rb");
     }
 

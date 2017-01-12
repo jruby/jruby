@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.builtins.CoreClass;
@@ -27,6 +26,7 @@ import org.jruby.truffle.builtins.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.core.module.ModuleFields;
 import org.jruby.truffle.core.module.ModuleNodes;
 import org.jruby.truffle.core.module.ModuleNodesFactory;
+import org.jruby.truffle.core.string.StringUtils;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.Visibility;
@@ -34,7 +34,6 @@ import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.language.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.language.objects.shared.SharedObjects;
-import org.jruby.truffle.util.StringUtils;
 
 @CoreClass("Class")
 public abstract class ClassNodes {
@@ -261,14 +260,8 @@ public abstract class ClassNodes {
     @CoreMethod(names = "new", needsBlock = true, rest = true)
     public abstract static class NewNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private CallDispatchHeadNode allocateNode;
-        @Child private CallDispatchHeadNode initialize;
-
-        public NewNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-        }
+        @Child private CallDispatchHeadNode allocateNode = DispatchHeadNodeFactory.createMethodCallOnSelf();
+        @Child private CallDispatchHeadNode initialize = DispatchHeadNodeFactory.createMethodCallOnSelf();
 
         @Specialization
         public Object newInstance(VirtualFrame frame, DynamicObject rubyClass, Object[] args, NotProvided block) {
@@ -296,7 +289,7 @@ public abstract class ClassNodes {
         void triggerInheritedHook(VirtualFrame frame, DynamicObject subClass, DynamicObject superClass) {
             if (inheritedNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
+                inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf());
             }
             inheritedNode.call(frame, superClass, "inherited", subClass);
         }
@@ -388,7 +381,7 @@ public abstract class ClassNodes {
 
     }
 
-    @CoreMethod(names = "inherited", required = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "inherited", needsSelf = false, required = 1, visibility = Visibility.PRIVATE)
     public abstract static class InheritedNode extends CoreMethodArrayArgumentsNode {
 
         @Specialization

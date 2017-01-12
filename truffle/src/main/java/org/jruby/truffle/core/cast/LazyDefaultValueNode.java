@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,8 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.language.NotProvided;
 import org.jruby.truffle.language.RubyNode;
 
@@ -28,8 +26,7 @@ public abstract class LazyDefaultValueNode extends RubyNode {
     @CompilationFinal private boolean hasDefault;
     @CompilationFinal private Object defaultValue;
 
-    public LazyDefaultValueNode(RubyContext context, SourceSection sourceSection, Supplier<Object> defaultValueProducer) {
-        super(context, sourceSection);
+    public LazyDefaultValueNode(Supplier<Object> defaultValueProducer) {
         this.defaultValueProducer = defaultValueProducer;
     }
 

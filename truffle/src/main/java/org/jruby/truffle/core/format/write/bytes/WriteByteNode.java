@@ -21,10 +21,6 @@ import org.jruby.truffle.core.format.FormatNode;
 })
 public abstract class WriteByteNode extends FormatNode {
 
-    public WriteByteNode(RubyContext context) {
-        super(context);
-    }
-
     @Specialization
     public Object doWrite(VirtualFrame frame, byte value) {
         writeByte(frame, value);

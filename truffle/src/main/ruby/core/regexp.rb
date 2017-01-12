@@ -1,4 +1,4 @@
-# Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 #
@@ -255,7 +255,7 @@ class Regexp
   end
 
   def encoding
-    source.encoding
+    Truffle.invoke_primitive :encoding_get_object_encoding, self
   end
 
   def ~
@@ -309,15 +309,8 @@ class Regexp
   #    #=> {}
   #
   def named_captures
-    hash = {}
-
-    if @names
-      @names.sort_by { |a,b| b.first }.each do |k, v| # LookupTable is unordered
-        hash[k.to_s] = v
-      end
-    end
-
-    return hash
+    @named_captures ||= Hash[Truffle.invoke_primitive(:regexp_names, self)].freeze
+    @named_captures.dup
   end
 
   #
@@ -336,11 +329,7 @@ class Regexp
   #     #=> []
   #
   def names
-    if @names
-      @names.sort_by { |a,b| b.first }.map { |x| x.first.to_s } # LookupTable is unordered
-    else
-      []
-    end
+    named_captures.keys.dup
   end
 
 end
