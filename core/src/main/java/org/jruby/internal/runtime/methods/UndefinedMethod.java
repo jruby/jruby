@@ -30,6 +30,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -52,13 +53,16 @@ public class UndefinedMethod extends DynamicMethod {
     /**
      * The one implementation of call, which throws an exception because
      * UndefinedMethod can't be invoked.
-     * 
-     * @see DynamicMethod.call
      */
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         throw new UnsupportedOperationException("BUG: invoking UndefinedMethod.call; report at http://bugs.jruby.org");
     }
-    
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        throw new UnsupportedOperationException("BUG: invoking UndefinedMethod.call; report at http://bugs.jruby.org");
+    }
+
     /**
      * A dummy implementation of dup that just returns the singleton instance.
      * 

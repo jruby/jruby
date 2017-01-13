@@ -37,6 +37,7 @@ import org.jruby.PrependedModule;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -154,8 +155,13 @@ public abstract class DynamicMethod {
      * @param block The block passed to this invocation
      * @return The result of the call
      */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz,
+                                     String name, IRubyObject[] args, Block block) {
+        return call(context, self, clazz, name, args, block);
+    }
+
     public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz,
-            String name, IRubyObject[] args, Block block);
+                                     String name, IRubyObject[] args, Block block);
 
     /**
      * A default implementation of n-arity, non-block 'call' method,
@@ -169,6 +175,11 @@ public abstract class DynamicMethod {
      * @param args The first argument to this invocation
      * @return The result of the call
      */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz,
+                                        String name, IRubyObject[] args) {
+        return call(context, callsite, self, clazz, name, args, Block.NULL_BLOCK);
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz,
             String name, IRubyObject[] args) {
         return call(context, self, clazz, name, args, Block.NULL_BLOCK);
@@ -186,6 +197,9 @@ public abstract class DynamicMethod {
     // finally falls back on the minimum implementation requirement for
     // dynamic method handles.
     ////////////////////////////////////////////////////////////////////////////
+
+    // We are calling through a native call using this first set of call() methods.  The profiler cannot
+    // do much here like inline so we do not pass callsite through this path.
 
     /** Arity 0, no block */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
@@ -217,7 +231,42 @@ public abstract class DynamicMethod {
     }
     /** Arity 3, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
+        return call(context, null, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
+    }
+
+    // Callsite pushing sites...Profiler is interested in these calls.
+
+    /** Arity 0, no block */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name) {
+        return call(context, callsite, self, klazz, name, Block.NULL_BLOCK);
+    }
+    /** Arity 0, with block; calls through IRubyObject[] path */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, Block block) {
+        return call(context, callsite, self, klazz, name, IRubyObject.NULL_ARRAY, block);
+    }
+    /** Arity 1, no block */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0) {
+        return call(context, callsite, self, klazz, name, arg0, Block.NULL_BLOCK);
+    }
+    /** Arity 1, with block; calls through IRubyObject[] path */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
+        return call(context, callsite, self, klazz, name, new IRubyObject[] {arg0}, block);
+    }
+    /** Arity 2, no block */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        return call(context, callsite, self, klazz, name, arg0, arg1, Block.NULL_BLOCK);
+    }
+    /** Arity 2, with block; calls through IRubyObject[] path */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return call(context, callsite, self, klazz, name, new IRubyObject[] {arg0, arg1}, block);
+    }
+    /** Arity 3, no block */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return call(context, callsite, self, klazz, name, arg0, arg1, arg2, Block.NULL_BLOCK);
+    }
+    /** Arity 3, with block; calls through IRubyObject[] path */
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return call(context, callsite, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
     }
 
 

@@ -5,6 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -37,9 +38,9 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        return callInternal(context, self, clazz, name, block);
+        return callInternal(context, callsite, self, clazz, name, block);
     }
 }

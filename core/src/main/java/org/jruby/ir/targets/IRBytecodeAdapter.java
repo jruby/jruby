@@ -142,6 +142,8 @@ public abstract class IRBytecodeAdapter {
         adapter.aload(signature.argOffset("scope"));
     }
 
+    public void loadCallSite() { adapter.aload(signature.argOffset("callSite")); }
+
     public void loadSelf() {
         adapter.aload(signature.argOffset("self"));
     }

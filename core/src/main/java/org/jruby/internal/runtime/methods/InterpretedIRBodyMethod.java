@@ -8,6 +8,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -28,18 +29,23 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        return call(context, self, clazz, name, block);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        return call(context, callsite, self, clazz, name, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        return callInternal(context, self, clazz, name, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        return call(context, null, self, clazz, name, args, block);
     }
 
-    protected IRubyObject callInternal(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+    @Override
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, Block block) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        return callInternal(context, callsite, self, clazz, name, block);
+    }
+
+    protected IRubyObject callInternal(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, Block block) {
         InterpreterContext ic = ensureInstrsReady();
 
         if (!ic.hasExplicitCallProtocol()) this.pre(ic, context, self, name, block);
@@ -48,9 +54,9 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
             Compilable uncompilable = new Uncompilable(clazz);  // FIXME: This can get compiled in theory but we might not want to for interpreted
 
             switch (method.getScopeType()) {
-                case MODULE_BODY: return INTERPRET_MODULE(ic, uncompilable, context, self, method.getName(), block);
-                case CLASS_BODY: return INTERPRET_CLASS(ic, uncompilable, context, self, method.getName(), block);
-                case METACLASS_BODY: return INTERPRET_METACLASS(ic, uncompilable, context, self, "singleton class", block);
+                case MODULE_BODY: return INTERPRET_MODULE(callsite, ic, uncompilable, context, self, method.getName(), block);
+                case CLASS_BODY: return INTERPRET_CLASS(callsite, ic, uncompilable, context, self, method.getName(), block);
+                case METACLASS_BODY: return INTERPRET_METACLASS(callsite, ic, uncompilable, context, self, "singleton class", block);
                 default: throw new RuntimeException("invalid body method type: " + method);
             }
         } finally {
@@ -58,64 +64,64 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
         }
     }
 
-    private IRubyObject INTERPRET_METACLASS(InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
-        return interpretWithBacktrace(ic, compilable, context, self, name, block);
+    private IRubyObject INTERPRET_METACLASS(CallSite callsite, InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
+        return interpretWithBacktrace(callsite, ic, compilable, context, self, name, block);
     }
 
-    private IRubyObject INTERPRET_MODULE(InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
-        return interpretWithBacktrace(ic, compilable, context, self, name, block);
+    private IRubyObject INTERPRET_MODULE(CallSite callsite, InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
+        return interpretWithBacktrace(callsite, ic, compilable, context, self, name, block);
     }
 
-    private IRubyObject INTERPRET_CLASS(InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
-        return interpretWithBacktrace(ic, compilable, context, self, name, block);
+    private IRubyObject INTERPRET_CLASS(CallSite callsite, InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
+        return interpretWithBacktrace(callsite, ic, compilable, context, self, name, block);
     }
 
-    private IRubyObject interpretWithBacktrace(InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
+    private IRubyObject interpretWithBacktrace(CallSite callsite, InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, compilable, null, self, ic, name, block);
+            return ic.getEngine().interpret(context, callsite, compilable, null, self, ic, name, block);
         } finally {
             ThreadContext.popBacktrace(context);
         }
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        return call(context, self, clazz, name, block);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        return call(context, callsite, self, clazz, name, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return call(context, self, clazz, name, block);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return call(context, callsite, self, clazz, name, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return call(context, self, clazz, name, block);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return call(context, callsite, self, clazz, name, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        return call(context, callsite, self, clazz, name, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name) {
+        return call(context, callsite, self, clazz, name, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        return call(context, callsite, self, clazz, name, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        return call(context, callsite, self, clazz, name, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return call(context, callsite, self, clazz, name, Block.NULL_BLOCK);
     }
 }

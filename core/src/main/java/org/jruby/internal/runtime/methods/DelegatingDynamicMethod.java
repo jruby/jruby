@@ -31,6 +31,7 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -50,52 +51,52 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        return delegate.call(context, self, klazz, name);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name) {
+        return delegate.call(context, callsite, self, klazz, name);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
-        return delegate.call(context, self, klazz, name, arg);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
+        return delegate.call(context, callsite, self, klazz, name, arg);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
-        return delegate.call(context, self, klazz, name, arg1, arg2);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
+        return delegate.call(context, callsite, self, klazz, name, arg1, arg2);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return delegate.call(context, self, klazz, name, arg1, arg2, arg3);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return delegate.call(context, callsite, self, klazz, name, arg1, arg2, arg3);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
-        return delegate.call(context, self, klazz, name, args);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
+        return delegate.call(context, callsite, self, klazz, name, args);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-        return delegate.call(context, self, klazz, name, block);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, Block block) {
+        return delegate.call(context, callsite, self, klazz, name, block);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
-        return delegate.call(context, self, klazz, name, arg1, block);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
+        return delegate.call(context, callsite, self, klazz, name, arg1, block);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return delegate.call(context, self, klazz, name, arg1, arg2, block);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return delegate.call(context, callsite, self, klazz, name, arg1, arg2, block);
     }
     
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return delegate.call(context, self, klazz, name, arg1, arg2, arg3, block);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        return delegate.call(context, callsite, self, klazz, name, arg1, arg2, arg3, block);
     }
     
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        return delegate.call(context, self, klazz, name, args, block);
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+        return delegate.call(context, callsite, self, klazz, name, args, block);
     }
 
     @Override

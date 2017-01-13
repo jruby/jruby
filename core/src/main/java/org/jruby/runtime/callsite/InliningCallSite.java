@@ -56,7 +56,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName, args);
+            return cache.method.call(context, this, self, selfType, methodName, args);
         }
         return cacheAndCall(caller, selfType, args, context, self);
     }
@@ -67,7 +67,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName, args, block);
+            return cache.method.call(context, this, self, selfType, methodName, args, block);
         }
         return cacheAndCall(caller, selfType, block, args, context, self);
     }
@@ -120,7 +120,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName);
+            return cache.method.call(context, this, self, selfType, methodName);
         }
         return cacheAndCall(caller, selfType, context, self);
     }
@@ -131,7 +131,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName, block);
+            return cache.method.call(context, this, self, selfType, methodName, block);
         }
         return cacheAndCall(caller, selfType, block, context, self);
     }
@@ -154,7 +154,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName, arg1);
+            return cache.method.call(context, this, self, selfType, methodName, arg1);
         }
         return cacheAndCall(caller, selfType, context, self, arg1);
     }
@@ -165,7 +165,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName, arg1, block);
+            return cache.method.call(context, this, self, selfType, methodName, arg1, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, arg1);
     }
@@ -188,7 +188,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2);
+            return cache.method.call(context, this, self, selfType, methodName, arg1, arg2);
         }
         return cacheAndCall(caller, selfType, context, self, arg1, arg2);
     }
@@ -199,7 +199,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, block);
+            return cache.method.call(context, this, self, selfType, methodName, arg1, arg2, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
     }
@@ -222,7 +222,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            return cache.method.call(context, this, self, selfType, methodName, arg1, arg2, arg3);
         }
         return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
     }
@@ -233,7 +233,7 @@ public class InliningCallSite extends CallSite {
         InliningCacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if (cache.maybeInline(callingScope)) attemptInline(selfType);
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+            return cache.method.call(context, this, self, selfType, methodName, arg1, arg2, arg3, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
     }
@@ -262,7 +262,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method, args, block);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName, args, block);
+        return method.call(context, this, self, selfType, methodName, args, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, IRubyObject[] args, ThreadContext context, IRubyObject self) {
@@ -272,7 +272,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method, args);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName, args);
+        return method.call(context, this, self, selfType, methodName, args);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self) {
@@ -282,7 +282,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName);
+        return method.call(context, this, self, selfType, methodName);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self) {
@@ -292,7 +292,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method, block);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName, block);
+        return method.call(context, this, self, selfType, methodName, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
@@ -302,7 +302,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method, arg);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName, arg);
+        return method.call(context, this, self, selfType, methodName, arg);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg) {
@@ -312,7 +312,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method, arg, block);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName, arg, block);
+        return method.call(context, this, self, selfType, methodName, arg, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
@@ -322,7 +322,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method, arg1, arg2);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName, arg1, arg2);
+        return method.call(context, this, self, selfType, methodName, arg1, arg2);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
@@ -332,7 +332,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method, arg1, arg2, block);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName, arg1, arg2, block);
+        return method.call(context, this, self, selfType, methodName, arg1, arg2, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -342,7 +342,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method, arg1, arg2, arg3);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+        return method.call(context, this, self, selfType, methodName, arg1, arg2, arg3);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -352,7 +352,7 @@ public class InliningCallSite extends CallSite {
             return callMethodMissing(context, self, method, arg1, arg2, arg3, block);
         }
         updateCache(entry);
-        return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+        return method.call(context, this, self, selfType, methodName, arg1, arg2, arg3, block);
     }
 
     protected void updateCache(InliningCacheEntry newEntry) {
@@ -365,43 +365,43 @@ public class InliningCallSite extends CallSite {
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject[] args) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, args, Block.NULL_BLOCK);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, args, Block.NULL_BLOCK);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, Block.NULL_BLOCK);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, Block.NULL_BLOCK);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, Block block) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, block);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, block);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, arg, Block.NULL_BLOCK);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, arg, Block.NULL_BLOCK);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject[] args, Block block) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, args, block);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, args, block);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, Block block) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, arg0, block);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, arg0, block);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, IRubyObject arg1) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, arg0, arg1, Block.NULL_BLOCK);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, arg0, arg1, Block.NULL_BLOCK);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, arg0, arg1, block);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, arg0, arg1, block);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, arg0, arg1, arg2, Block.NULL_BLOCK);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, arg0, arg1, arg2, Block.NULL_BLOCK);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, arg0, arg1, arg2, block);
+        return Helpers.selectMethodMissing(context, self, method.getVisibility(), methodName, callType).call(context, this, self, self.getMetaClass(), methodName, arg0, arg1, arg2, block);
     }
 
     protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {

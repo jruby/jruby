@@ -24,9 +24,6 @@ public class MethodMissingMethod extends DynamicMethod {
         this.name = name;
     }
 
-    /**
-     * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
-     */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         args = createArgs(args);
 

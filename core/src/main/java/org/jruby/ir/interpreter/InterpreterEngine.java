@@ -59,6 +59,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
@@ -73,36 +74,36 @@ import org.jruby.runtime.opto.ConstantCache;
  */
 public class InterpreterEngine {
 
-    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, CallSite callsite, Compilable method, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext, String name, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, IRubyObject.NULL_ARRAY, blockArg);
+        return interpret(context, callsite, method, block, self, interpreterContext, name, IRubyObject.NULL_ARRAY, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, CallSite callsite, Compilable method, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext,
                                  String name, IRubyObject arg1, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1}, blockArg);
+        return interpret(context, callsite, method, block, self, interpreterContext, name, new IRubyObject[] {arg1}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, CallSite callsite, Compilable method, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext,
                                  String name, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2}, blockArg);
+        return interpret(context, callsite, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, CallSite callsite, Compilable method, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext,
                                  String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
+        return interpret(context, callsite, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, CallSite callsite, Compilable method, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext,
                                  String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
+        return interpret(context, callsite, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, CallSite callsite, Compilable compilable, Block block, IRubyObject self,
                                          InterpreterContext interpreterContext,
                                          String name, IRubyObject[] args, Block blockArg) {
         Instr[]   instrs    = interpreterContext.getInstructions();

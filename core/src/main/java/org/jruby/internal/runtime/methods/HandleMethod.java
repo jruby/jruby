@@ -33,6 +33,7 @@ import java.util.concurrent.Callable;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -203,19 +204,19 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         try {
             MethodHandle target4 = ensureTarget4();
             if (target4 != null) {
                 Arity.checkArgumentCount(context, args.length, min, max);
-                return (IRubyObject) target4.invokeExact(context, self, clazz, name, args, block);
+                return (IRubyObject) target4.invokeExact(context, callsite, self, clazz, name, args, block);
             } else {
                 int arity = Arity.checkArgumentCount(context, args.length, min, max);
                 switch (args.length) {
-                    case 0: return (IRubyObject) ensureTarget0().invokeExact(context, self, clazz, name, block);
-                    case 1: return (IRubyObject) ensureTarget1().invokeExact(context, self, clazz, name, args[0], block);
-                    case 2: return (IRubyObject) ensureTarget2().invokeExact(context, self, clazz, name, args[0], args[1], block);
-                    case 3: return (IRubyObject) ensureTarget3().invokeExact(context, self, clazz, name, args[0], args[1], args[2], block);
+                    case 0: return (IRubyObject) ensureTarget0().invokeExact(context, callsite, self, clazz, name, block);
+                    case 1: return (IRubyObject) ensureTarget1().invokeExact(context, callsite, self, clazz, name, args[0], block);
+                    case 2: return (IRubyObject) ensureTarget2().invokeExact(context, callsite, self, clazz, name, args[0], args[1], block);
+                    case 3: return (IRubyObject) ensureTarget3().invokeExact(context, callsite, self, clazz, name, args[0], args[1], args[2], block);
                     default:
                         throw new RuntimeException("invalid arity for call: " + arity);
                 }
@@ -227,13 +228,13 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, Block block) {
         MethodHandle target0 = ensureTarget0();
         if (target0 == null) {
-            return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
+            return call(context, callsite, self, clazz, name, IRubyObject.NULL_ARRAY, block);
         }
         try {
-            return (IRubyObject) target0.invokeExact(context, self, clazz, name, block);
+            return (IRubyObject) target0.invokeExact(context, callsite, self, clazz, name, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -241,13 +242,13 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         MethodHandle target1 = ensureTarget1();
         if (target1 == null) {
-            return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
+            return call(context, callsite, self, clazz, name, new IRubyObject[]{arg0}, block);
         }
         try {
-            return (IRubyObject) target1.invokeExact(context, self, clazz, name, arg0, block);
+            return (IRubyObject) target1.invokeExact(context, callsite, self, clazz, name, arg0, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -255,13 +256,13 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         MethodHandle target2 = ensureTarget2();
         if (target2 == null) {
-            return call(context, self, clazz, name, new IRubyObject[]{arg0, arg1}, block);
+            return call(context, callsite, self, clazz, name, new IRubyObject[]{arg0, arg1}, block);
         }
         try {
-            return (IRubyObject) target2.invokeExact(context, self, clazz, name, arg0, arg1, block);
+            return (IRubyObject) target2.invokeExact(context, callsite, self, clazz, name, arg0, arg1, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -269,17 +270,21 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         MethodHandle target3 = ensureTarget3();
         if (target3 == null) {
-            return call(context, self, clazz, name, new IRubyObject[]{arg0, arg1, arg2}, block);
+            return call(context, callsite, self, clazz, name, new IRubyObject[]{arg0, arg1, arg2}, block);
         }
         try {
-            return (IRubyObject) target3.invokeExact(context, self, clazz, name, arg0, arg1, arg2, block);
+            return (IRubyObject) target3.invokeExact(context, callsite, self, clazz, name, arg0, arg1, arg2, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
         }
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        return call(context, null, self, clazz, name, args, block);
     }
 
     @Override

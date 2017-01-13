@@ -33,6 +33,7 @@ import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -321,6 +322,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
     public static final Signature VARIABLE_ARITY_SIGNATURE = Signature
             .returning(IRubyObject.class)
             .appendArg("context", ThreadContext.class)
+            .appendArg("callSite", CallSite.class)
             .appendArg("self", IRubyObject.class)
             .appendArg("class", RubyModule.class)
             .appendArg("name", String.class)
@@ -333,6 +335,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             Signature specific = Signature
                     .returning(IRubyObject.class)
                     .appendArg("context", ThreadContext.class)
+                    .appendArg("callSite", CallSite.class)
                     .appendArg("self", IRubyObject.class)
                     .appendArg("class", RubyModule.class)
                     .appendArg("name", String.class);
@@ -352,9 +355,9 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         for (int i = 0; i < 4; i++) {
             SPREAD_BINDERS[i] = SmartBinder
                     .from(VARIABLE_ARITY_SIGNATURE)
-                    .permute("context", "self", "block", "args")
+                    .permute("context", "callSite", "self", "block", "args")
                     .spread("arg", i)
-                    .permute("context", "self", "arg*", "block");
+                    .permute("context", "callSite", "self", "arg*", "block");
         }
     }
 

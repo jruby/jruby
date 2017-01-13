@@ -9,6 +9,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -33,13 +34,13 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, Block block) {
         StaticScope staticScope1 = this.staticScope;
         RubyModule implementationClass1 = this.implementationClass;
         pre(context, staticScope1, implementationClass1, self, name, block);
 
         try {
-            return (IRubyObject) this.variable.invokeExact(context, staticScope1, self, IRubyObject.NULL_ARRAY, block, implementationClass1, name);
+            return (IRubyObject) this.variable.invokeExact(context, staticScope1, callsite, self, IRubyObject.NULL_ARRAY, block, implementationClass1, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached
@@ -49,22 +50,27 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     }
 
     @Override
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        throw new RuntimeException("BUG: this path should never be called");
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        throw new RuntimeException("BUG: this path should never be called");
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        throw new RuntimeException("BUG: this path should never be called");
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        throw new RuntimeException("BUG: this path should never be called");
+    }
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        throw new RuntimeException("BUG: this path should never be called");
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        throw new RuntimeException("BUG: this path should never be called");
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        throw new RuntimeException("BUG: this path should never be called");
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         throw new RuntimeException("BUG: this path should never be called");
     }
 

@@ -5,6 +5,7 @@ import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -28,7 +29,12 @@ public class UndefinedIRMethod extends DynamicMethod implements Compilable<Inter
      *
      * @see DynamicMethod
      */
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+        throw new UnsupportedOperationException("BUG: invoking UndefinedMethod.call; report at http://bugs.jruby.org");
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         throw new UnsupportedOperationException("BUG: invoking UndefinedMethod.call; report at http://bugs.jruby.org");
     }
 

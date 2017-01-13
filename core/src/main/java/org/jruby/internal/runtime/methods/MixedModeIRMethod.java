@@ -10,6 +10,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -86,6 +87,21 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     }
 
     @Override
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        DynamicMethodBox box = this.box;
+        if (box.callCount >= 0) tryJit(context, box);
+        DynamicMethod jittedMethod = box.actualMethod;
+
+        if (jittedMethod != null) {
+            return jittedMethod.call(context, callsite, self, clazz, name, args, block);
+        } else {
+            return INTERPRET_METHOD(context, ensureInstrsReady(), callsite, self, name, args, block);
+        }
+    }
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
@@ -94,23 +110,23 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = box.actualMethod;
 
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, clazz, name, args, block);
+            return jittedMethod.call(context, null, self, clazz, name, args, block);
         } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, args, block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), null, self, name, args, block);
         }
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
-                                               IRubyObject self, String name, IRubyObject[] args, Block block) {
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, CallSite callsite,
+                                         IRubyObject self, String name, IRubyObject[] args, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, args, block);
+                return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, args, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, args, block);
+                    return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, args, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -121,7 +137,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         DynamicMethodBox box = this.box;
@@ -129,23 +145,23 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = box.actualMethod;
 
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, clazz, name, block);
+            return jittedMethod.call(context, callsite, self, clazz, name, block);
         } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), callsite, self, name, block);
         }
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
-                                               IRubyObject self, String name, Block block) {
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, CallSite callsite,
+                                         IRubyObject self, String name, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, block);
+                return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, block);
+                    return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -156,7 +172,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz,
+                            String name, IRubyObject arg0, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         DynamicMethodBox box = this.box;
@@ -164,23 +181,23 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = box.actualMethod;
 
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, clazz, name, arg0, block);
+            return jittedMethod.call(context, callsite, self, clazz, name, arg0, block);
         } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, arg0, block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), callsite, self, name, arg0, block);
         }
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
-                                               IRubyObject self, String name, IRubyObject arg1, Block block) {
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, CallSite callsite,
+                                         IRubyObject self, String name, IRubyObject arg1, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, block);
+                return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, arg1, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, block);
+                    return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, arg1, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -191,7 +208,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz,
+                            String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         DynamicMethodBox box = this.box;
@@ -199,23 +217,23 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = box.actualMethod;
 
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, clazz, name, arg0, arg1, block);
+            return jittedMethod.call(context, callsite, self, clazz, name, arg0, arg1, block);
         } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, arg0, arg1, block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), callsite, self, name, arg0, arg1, block);
         }
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
-                                               IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2,  Block block) {
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, CallSite callsite,
+                                         IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2,  Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, block);
+                return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, arg1, arg2, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, block);
+                    return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, arg1, arg2, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -226,7 +244,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+    public IRubyObject call(ThreadContext context, CallSite callsite, IRubyObject self, RubyModule clazz,
+                            String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         DynamicMethodBox box = this.box;
@@ -234,23 +253,23 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = box.actualMethod;
 
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
+            return jittedMethod.call(context, callsite, self, clazz, name, arg0, arg1, arg2, block);
         } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), self, name, arg0, arg1, arg2, block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), callsite, self, name, arg0, arg1, arg2, block);
         }
     }
 
-    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic,
-                                               IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, CallSite callsite,
+                                         IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, arg3, block);
+                return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, arg1, arg2, arg3, block);
             } else {
                 try {
                     this.pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, arg3, block);
+                    return ic.getEngine().interpret(context, callsite, this, null, self, ic, name, arg1, arg2, arg3, block);
                 } finally {
                     this.post(ic, context);
                 }

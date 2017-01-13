@@ -66,7 +66,7 @@ public class JVMVisitor extends IRVisitor {
 
     private static final Signature METHOD_SIGNATURE_BASE = Signature
             .returning(IRubyObject.class)
-            .appendArgs(new String[]{"context", "scope", "self", BLOCK_ARG_NAME, "class", "callName"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
+            .appendArgs(new String[]{"context", "scope", "callSite", "self", BLOCK_ARG_NAME, "class", "callName"}, ThreadContext.class, StaticScope.class, CallSite.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
     private static final Signature METHOD_SIGNATURE_VARARGS = METHOD_SIGNATURE_BASE.insertArg(BLOCK_ARG_NAME, "args", IRubyObject[].class);
 
     public static final Signature CLOSURE_SIGNATURE = Signature
@@ -261,6 +261,7 @@ public class JVMVisitor extends IRVisitor {
         // push leading args
         m.loadContext();
         m.loadStaticScope();
+        m.loadCallSite();
         m.loadSelf();
 
         // unwrap specific args
@@ -298,14 +299,14 @@ public class JVMVisitor extends IRVisitor {
                     args[i] = "arg" + i;
                     types[i] = IRubyObject.class;
                 }
-                return METHOD_SIGNATURE_BASE.insertArgs(3, args, types);
+                return METHOD_SIGNATURE_BASE.insertArgs(BLOCK_ARG_NAME, args, types);
             }
             // we can't do an specific-arity signature
             return null;
         }
 
         // normal boxed arg list signature
-        return METHOD_SIGNATURE_BASE.insertArgs(3, new String[]{"args"}, IRubyObject[].class);
+        return METHOD_SIGNATURE_BASE.insertArgs(BLOCK_ARG_NAME, new String[]{"args"}, IRubyObject[].class);
     }
 
     protected void emitScriptBody(IRScriptBody script) {

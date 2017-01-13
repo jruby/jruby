@@ -15,6 +15,7 @@ import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -26,7 +27,7 @@ import org.jruby.runtime.opto.ConstantCache;
  * This interpreter is meant to interpret the instructions generated directly from IRBuild.
  */
 public class StartupInterpreterEngine extends InterpreterEngine {
-    public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, CallSite callsite, Compilable compilable, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext,
                                  String name, IRubyObject[] args, Block blockArg) {
         Instr[]   instrs    = interpreterContext.getInstructions();
