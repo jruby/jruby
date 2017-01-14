@@ -1107,6 +1107,94 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match19Common(context, str, 0, true, block);
     }
 
+    /**
+     * MRI: rb_reg_match_m_p
+     *
+     * @param context thread context
+     * @param str to be matched
+     */
+    @JRubyMethod(name = "match?")
+    public IRubyObject match_m_p(ThreadContext context, IRubyObject str) {
+        return matches(context, str, 0);
+    }
+
+    /**
+     * MRI: rb_reg_match_m_p
+     *
+     * @param context thread context
+     * @param str to be matched
+     * @param position the position from which to start matching
+     */
+    @JRubyMethod(name = "match?")
+    public IRubyObject match_m_p(ThreadContext context, IRubyObject str, IRubyObject position) {
+        return matches(context, str, RubyNumeric.num2int(position));
+    }
+
+
+    /**
+     * MRI: rb_reg_match_m_p
+     */
+    private IRubyObject matches(ThreadContext context, IRubyObject str, int position) {
+        if (str.isNil()) {
+            return context.getRuntime().getFalse();
+        }
+        final RubyString string = operandCheck(str);
+        return search20(context, string, position);
+    }
+
+    /**
+     * MRI: rb_reg_match_p
+     */
+    public final IRubyObject search20(ThreadContext context, RubyString string, int position) {
+        Ruby runtime = context.getRuntime();
+        int matchResult = -1;
+        ByteList strBL = string.getByteList();
+        int range = strBL.begin();
+        boolean tmpreg;
+
+        if (position != 0) {
+            if (position < 0) {
+                position += string.strLength();
+                if (position < 0) return context.getRuntime().getFalse();
+            }
+            position = string.rbStrOffset(position);
+        }
+
+        final Regex reg = preparePattern(string);
+        tmpreg = reg != this.pattern;
+        if (!tmpreg) this.useCount++;
+
+        Matcher matcher = reg.matcher(strBL.unsafeBytes(), strBL.begin(), strBL.begin() + strBL.realSize());
+        JOniException exception = null;
+        try {
+            matchResult = matcherSearch(runtime, matcher, strBL.begin() + position, range + string.size(), RE_OPTION_NONE);
+        } catch (JOniException je) {
+            exception = je;
+        }
+
+        if (tmpreg) {
+            if (this.useCount > 0) {
+//                onig_free(reg);
+            } else {
+//                onig_free(RREGEXP(re)->ptr);
+                this.pattern = reg;
+            }
+        } else {
+            this.useCount--;
+        }
+
+        if (matchResult < 0) {
+            if (matchResult == -1) {
+                return runtime.getFalse();
+            } else {
+                throw runtime.newRegexpError(exception == null ? "FIXME: missing message" : exception.getMessage());
+            }
+        }
+
+        return runtime.getTrue();
+    }
+
+
     public IRubyObject match_m19(ThreadContext context, IRubyObject str, boolean useBackref, Block block) {
         return match19Common(context, str, 0, useBackref, block);
     }
