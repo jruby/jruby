@@ -1,1 +1,0 @@
-fails:Set#divide yields each Object to the block

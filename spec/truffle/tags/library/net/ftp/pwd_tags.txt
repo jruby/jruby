@@ -1,7 +1,0 @@
-fails:Net::FTP#pwd sends the PWD command to the server
-fails:Net::FTP#pwd returns the current directory
-fails:Net::FTP#pwd raises a Net::FTPPermError when the response code is 500
-fails:Net::FTP#pwd raises a Net::FTPPermError when the response code is 501
-fails:Net::FTP#pwd raises a Net::FTPPermError when the response code is 502
-fails:Net::FTP#pwd raises a Net::FTPTempError when the response code is 421
-fails:Net::FTP#pwd raises a Net::FTPPermError when the response code is 550

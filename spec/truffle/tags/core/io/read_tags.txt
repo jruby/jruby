@@ -1,2 +1,0 @@
-fails:IO.read from a pipe opens a pipe to a fork if the rest is -
-fails(hangs):IO#read raises IOError when stream is closed by another thread

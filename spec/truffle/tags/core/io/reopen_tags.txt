@@ -1,2 +1,0 @@
-fails:IO#reopen with a String affects exec/system/fork performed after it
-fails:IO#reopen with an IO at EOF resets the EOF status to false

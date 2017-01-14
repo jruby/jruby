@@ -1,1 +1,0 @@
-fails:UNIXSocket.new opens a unix socket on the specified file

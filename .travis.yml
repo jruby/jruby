@@ -75,9 +75,6 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
-    # JRuby+Truffle needs Java 8
-    - env: JT='test fast'
-      jdk: oraclejdk8
   allow_failures:
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk7

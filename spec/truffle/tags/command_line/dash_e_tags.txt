@@ -1,1 +1,0 @@
-fails:The -e command line option joins multiple strings with newlines

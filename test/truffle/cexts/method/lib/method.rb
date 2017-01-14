@@ -1,1 +1,0 @@
-require 'method/method'

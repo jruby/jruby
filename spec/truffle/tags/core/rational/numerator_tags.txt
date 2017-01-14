@@ -1,1 +1,0 @@
-graalvm:Rational#numerator returns the numerator

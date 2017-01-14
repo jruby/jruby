@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root="$(dirname "$bin")"
-
-exec "$root"/tool/jt.rb ruby --no-print-cmd "$@"

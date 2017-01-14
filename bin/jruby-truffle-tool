@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root="$(dirname "$bin")"
-
-exec $bin/jruby $root/lib/ruby/truffle/jruby-truffle-tool/bin/jruby-truffle-tool "$@"

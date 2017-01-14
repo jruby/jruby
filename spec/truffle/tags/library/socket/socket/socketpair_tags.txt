@@ -1,2 +1,0 @@
-fails:Socket#socketpair ensures the returned sockets are connected
-fails:Socket#socketpair responses with array of two sockets

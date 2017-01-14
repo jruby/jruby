@@ -1,1 +1,0 @@
-fails:IO#close_on_exec? returns true by default

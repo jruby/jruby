@@ -1,1 +1,0 @@
-fails:StringIO#close_write raises an IOError when in read-only mode

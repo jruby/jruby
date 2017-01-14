@@ -1,3 +1,0 @@
-fails:Kernel#fork returns nil for the child process
-fails:Kernel#fork runs a block in a child process
-fails:Kernel#fork marks threads from the parent as killed

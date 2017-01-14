@@ -1,6 +1,0 @@
-exclude :test_sh_special_handling, "needs investigation"
-exclude :test_sh_with_a_single_string_argument, "needs investigation"
-exclude :test_sh, "needs investigation"
-exclude :test_ruby_with_multiple_arguments, "needs investigation"
-exclude :test_sh_with_multiple_arguments, "needs investigation"
-exclude :test_ruby_with_a_single_string_argument, "needs investigation"

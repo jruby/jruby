@@ -1,2 +1,0 @@
-fails:Socket#accept_nonblock raises IO::WaitReadable if the connection is not accepted yet
-fails:Socket#accept_nonblock returns :wait_readable in exceptionless mode

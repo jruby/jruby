@@ -1,2 +1,0 @@
-fails:TCPSocket#recv_nonblock returns a String read from the socket
-fails:TCPSocket#recv_nonblock returns :wait_readable in exceptionless mode

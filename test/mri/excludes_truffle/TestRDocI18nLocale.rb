@@ -1,5 +1,0 @@
-exclude :"test_load_nonexistent_po", "needs investigation"
-exclude :"test_name", "needs investigation"
-exclude :"test_translate_nonexistent_message", "needs investigation"
-exclude :"test_load_existent_po", "needs investigation"
-exclude :"test_translate_existent_message", "needs investigation"

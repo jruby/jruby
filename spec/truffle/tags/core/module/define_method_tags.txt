@@ -1,2 +1,0 @@
-fails:Module#define_method when name is not a special private name given an UnboundMethod and called from another module sets the visibility of the method to public
-fails:Module#define_method when name is not a special private name passed a block and called from another module sets the visibility of the method to public

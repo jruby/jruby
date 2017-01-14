@@ -399,10 +399,6 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
-                    } else if (extendedOption.equals("classic")) {
-                        throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
-                    } else if (extendedOption.equals("+T")) {
-                        throw new MainExitException(0, "jruby: you need to use the Truffle main to use Truffle - this should have been handled in the launcher");
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
                         config.setShouldRunInterpreter(false);
@@ -775,7 +771,7 @@ public class ArgumentProcessor {
 
     private static void checkProperties() {
         for (String propertyName : System.getProperties().stringPropertyNames()) {
-            if (propertyName.startsWith("jruby.") && !propertyName.startsWith("jruby.truffle.")) {
+            if (propertyName.startsWith("jruby.")) {
                 if (!isPropertySupported(propertyName)) {
                     System.err.println("jruby: warning: unknown property " + propertyName);
                 }
