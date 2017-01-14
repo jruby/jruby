@@ -1,2 +1,0 @@
-fails:Addrinfo#bind returns a bound socket when no block is given
-fails:Addrinfo#bind yields the socket if a block is given

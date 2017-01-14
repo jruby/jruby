@@ -1,1 +1,0 @@
-fails:IO#codepoints raises an error if reading invalid sequence

@@ -1,4 +1,0 @@
-fails:IO#close_write raises an IOError on subsequent invocations
-fails:IO#close_write raises IOError on closed stream
-fails:IO#close_write does nothing on subsequent invocations
-fails:IO#close_write does nothing on closed stream

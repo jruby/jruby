@@ -1,3 +1,0 @@
-fails:Addrinfo#ip_unpack for an ipv4 socket returns the ip address and port pair
-fails:Addrinfo#ip_unpack for an ipv6 socket returns the ip address and port pair
-fails:Addrinfo#ip_unpack for a unix socket raises an exception

@@ -1,3 +1,0 @@
-fails:Addrinfo#afamily for an ipv4 socket returns Socket::AF_INET
-fails:Addrinfo#afamily for an ipv6 socket returns Socket::AF_INET6
-fails:Addrinfo#afamily for a unix socket returns Socket::AF_UNIX

@@ -1,1 +1,0 @@
-fails:Enumerable#first returns a gathered array from yield parameters

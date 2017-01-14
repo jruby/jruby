@@ -1,1 +1,0 @@
-fails:Readline.emacs_editing_mode returns nil

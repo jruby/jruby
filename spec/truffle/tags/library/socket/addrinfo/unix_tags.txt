@@ -1,4 +1,0 @@
-fails:Addrinfo.unix creates a addrinfo for a unix socket
-fails:Addrinfo#unix? for an ipv4 socket returns false
-fails:Addrinfo#unix? for an ipv6 socket returns false
-fails:Addrinfo#unix? for a unix socket returns true

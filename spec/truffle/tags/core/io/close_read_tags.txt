@@ -1,4 +1,0 @@
-fails:IO#close_read raises an IOError on subsequent invocations
-fails:IO#close_read raises IOError on closed stream
-fails:IO#close_read does nothing on subsequent invocations
-fails:IO#close_read does nothing on closed stream

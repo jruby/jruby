@@ -241,7 +241,6 @@ DO NOT MODIFIY - GENERATED CODE
           <include>bin/testrb*</include>
           <include>lib/ruby/include/**</include>
           <include>lib/ruby/stdlib/**</include>
-          <include>lib/ruby/truffle/**</include>
         </includes>
         <excludes>
           <exclude>bin/jruby</exclude>

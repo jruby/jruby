@@ -1,3 +1,0 @@
-slow:ARGF.read reads the contents of stdin
-slow:ARGF.read reads a number of bytes from stdin
-slow:ARGF.read reads the contents of one file and stdin

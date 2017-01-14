@@ -1,3 +1,0 @@
-fails:Interrupt.new returns an instance of interrupt with no message given
-fails:Interrupt.new takes an optional message argument
-fails:rescueing Interrupt raises an Interrupt when sent a signal SIGINT

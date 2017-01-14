@@ -1,1 +1,0 @@
-fails:IO.open propagates an exception raised by #close that is a StandardError

@@ -1,4 +1,0 @@
-fails:Thread#key? tests for existance of thread local variables using symbols or strings
-fails:Thread#key? raises exceptions on the wrong type of keys
-fails:Thread#key? is not shared across fibers
-fails:Thread#key? stores a local in another thread when in a fiber
