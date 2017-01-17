@@ -36,7 +36,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
                     .findConstructor(ManyVarsDynamicScope.class, MethodType.methodType(void.class, StaticScope.class, DynamicScope.class))
                     .asType(MethodType.methodType(DynamicScope.class, StaticScope.class, DynamicScope.class));
         } catch (Exception e) {
-            throw new RuntimeException("BUG: could not initialize constructor handle");
+            throw new RuntimeException("BUG: could not initialize constructor handle", e);
         }
     }
 
