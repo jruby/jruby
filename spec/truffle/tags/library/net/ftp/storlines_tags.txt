@@ -1,2 +1,0 @@
-fails:Net::FTP#storlines sends the passed command and the passed File object's content to the server
-fails:Net::FTP#storlines yields each line of the transmitted content

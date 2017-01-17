@@ -12,36 +12,6 @@ bytelist (http://github.com/jruby/bytelist),
 yydebug (http://svn.codehaus.org/jruby/trunk/jay/yydebug)
 are released under the same copyright/license.
 
-The Truffle component is copyright (c) 2013-2017 Oracle and/or its
-affiliates and is released under the same licenses.
-
-The Truffle component also distributes:
-
-  SnakeYAML (Copyright the SnakeYAML authors, Apache 2.0 licence)
-  
-  truffle-api and truffle-debug (Copyright Oracle and/or its affiliates, GPL
-  v2, with classpath exception)
-
-  Parts of the core library implementation in truffle/src/main/ruby/core
-  are copyright (c) 2011, Evan Phoenix, and released under the 3-clause BSD
-  license.
-  
-  Parts of the core library implementation in truffle/src/main/ruby/core 
-  are copyright (c) 2007-2015, Evan Phoenix and contributors, and released under
-  the 3-clause BSD license.
-
-  Some parts of the Truffle Java code is derived from Rubinius C++ code which is
-  copyright (c) 2007-2015, Evan Phoenix and contributors, and released under the
-  3-clause BSD license.
-
-  Some parts of the RubySL implementations of the stdlib in
-  lib/ruby/truffle/rubysl are copyright (c) 2013 Brian Shirai and are licensed
-  under the 3-clause BSD license.
-
-  pr-zlib is copyright Park Heesob and Daniel Berger. "This library is covered
-  under the same license as zlib itself. For the text of the zlib license,
-  please see http://zlib.net/zlib_license.html."
-
 Some additional libraries distributed with JRuby are not covered by
 JRuby's licence. Most of these libraries and their licenses are listed 
 below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.

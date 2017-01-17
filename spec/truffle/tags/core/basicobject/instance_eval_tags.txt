@@ -1,1 +1,0 @@
-fails:BasicObject#instance_eval gets constants in the receiver if a string given

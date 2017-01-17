@@ -1,1 +1,0 @@
-fails:Kernel#method will see an alias of the original method as == when in a derived class

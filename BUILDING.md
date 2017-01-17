@@ -26,7 +26,6 @@ command to execute is:
 This will run the default "install" goal (```mvn install```) and will do all of the following:
 
 * Compile JRuby
-* Compile JRuby-Truffle and place it in `lib/jruby-truffle.jar`
 * Build `lib/jruby.jar`, needed for running at command line
 * It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of those gems in `lib/ruby/stdlib/`.
 
@@ -98,7 +97,6 @@ jar files by
 
 ```
 mvn -pl core
-mvn -pl truffle
 ```
 
 ### Day to Day Testing

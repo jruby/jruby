@@ -1,1 +1,0 @@
-fails:Processing RUBYOPT prints the version number for '-v'

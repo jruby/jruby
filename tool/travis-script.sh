@@ -6,12 +6,7 @@ set -x
 if [[ -v PHASE ]]
 then
   DOWNLOAD_OUTPUT_FILTER='Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$'
-  if [[ $JAVA_HOME == *"java-8"* ]]
-  then
-    ./mvnw $MAVEN_CLI_OPTS package -B --projects '!truffle' -Dinvoker.skip=false $PHASE | egrep -v "$DOWNLOAD_OUTPUT_FILTER"
-  else
-    ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip=false $PHASE | egrep -v "$DOWNLOAD_OUTPUT_FILTER"
-  fi
+  ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip=false $PHASE | egrep -v "$DOWNLOAD_OUTPUT_FILTER"
 
   MVN_STATUS=${PIPESTATUS[0]}
 

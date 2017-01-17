@@ -3,19 +3,14 @@ package org.jruby.javasupport.binding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IdUtil;
-import org.jruby.util.collections.*;
-import org.jruby.util.collections.ClassValue;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -28,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -175,89 +169,104 @@ public abstract class Initializer {
     }
 
     protected static void assignStaticAliases(final State state) {
-        for (Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet()) {
+        final Map<String, NamedInstaller> installers = state.staticInstallers;
+        for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
             // no aliases for __method methods
             if (entry.getKey().endsWith(METHOD_MANGLE)) continue;
 
             if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
-                assignAliases((MethodInstaller) entry.getValue(), state.staticNames);
+                assignAliases((MethodInstaller) entry.getValue(), state.staticNames, installers);
             }
         }
     }
 
-    protected static void assignAliases(MethodInstaller installer, Map<String, AssignedName> assignedNames) {
-        String name = installer.name;
+    static void assignAliases(final MethodInstaller installer,
+        final Map<String, AssignedName> assignedNames, final Map<String, NamedInstaller> installers) {
+
+        final String name = installer.name;
         String rubyCasedName = JavaUtil.getRubyCasedName(name);
-        addUnassignedAlias(rubyCasedName, assignedNames, installer);
+        addUnassignedAlias(rubyCasedName, assignedNames, installer, Priority.ALIAS);
 
         String javaPropertyName = JavaUtil.getJavaPropertyName(name);
-        String rubyPropertyName = null;
 
-        for (Method method: installer.methods) {
+        final List<Method> methods = installer.methods;
+
+        for ( int i = 0; i < methods.size(); i++ ) {
+            final Method method = methods.get(i);
             Class<?>[] argTypes = method.getParameterTypes();
             Class<?> resultType = method.getReturnType();
             int argCount = argTypes.length;
 
             // Add scala aliases for apply/update to roughly equivalent Ruby names
-            if (rubyCasedName.equals("apply")) {
-                addUnassignedAlias("[]", assignedNames, installer);
+            if (name.equals("apply")) {
+                addUnassignedAlias("[]", assignedNames, installer, Priority.ALIAS);
             }
-            if (rubyCasedName.equals("update") && argCount == 2) {
-                addUnassignedAlias("[]=", assignedNames, installer);
+            if (name.equals("update") && argCount == 2) {
+                addUnassignedAlias("[]=", assignedNames, installer, Priority.ALIAS);
             }
-
             // Scala aliases for $ method names
             if (name.startsWith("$")) {
-                addUnassignedAlias(ClassInitializer.fixScalaNames(name), assignedNames, installer);
+                addUnassignedAlias(ClassInitializer.fixScalaNames(name), assignedNames, installer, Priority.ALIAS);
             }
+
+            String rubyPropertyName = null;
 
             // Add property name aliases
             if (javaPropertyName != null) {
                 if (rubyCasedName.startsWith("get_")) {
                     rubyPropertyName = rubyCasedName.substring(4);
-                    if (argCount == 0) {                                // getFoo      => foo
-                        addUnassignedAlias(javaPropertyName, assignedNames, installer);
-                        addUnassignedAlias(rubyPropertyName, assignedNames, installer);
+                    if (argCount == 0) {  // getFoo      => foo
+                        addUnassignedAlias(javaPropertyName, assignedNames, installer, Priority.GET_ALIAS);
+                        addUnassignedAlias(rubyPropertyName, assignedNames, installer, Priority.GET_ALIAS);
                     }
                 } else if (rubyCasedName.startsWith("set_")) {
-                    rubyPropertyName = rubyCasedName.substring(4);
-                    if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
-                        addUnassignedAlias(javaPropertyName + '=', assignedNames, installer);
-                        addUnassignedAlias(rubyPropertyName + '=', assignedNames, installer);
+                    rubyPropertyName = rubyCasedName.substring(4); // TODO do not add foo? for setFoo (returning boolean)
+                    if (argCount == 1 && resultType == void.class) {  // setFoo(Foo) => foo=(Foo)
+                        addUnassignedAlias(javaPropertyName + '=', assignedNames, installer, Priority.ALIAS);
+                        addUnassignedAlias(rubyPropertyName + '=', assignedNames, installer, Priority.ALIAS);
                     }
                 } else if (rubyCasedName.startsWith("is_")) {
                     rubyPropertyName = rubyCasedName.substring(3);
-                    if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
-                        addUnassignedAlias(javaPropertyName, assignedNames, installer);
-                        addUnassignedAlias(rubyPropertyName, assignedNames, installer);
+                    // TODO (9.2) should be another check here to make sure these are only for getters
+                    // ... e.g. isFoo() and not arbitrary isFoo(param) see GH-4432
+                    if (resultType == boolean.class) {  // isFoo() => foo, isFoo(*) => foo(*)
+                        addUnassignedAlias(javaPropertyName, assignedNames, installer, Priority.IS_ALIAS);
+                        addUnassignedAlias(rubyPropertyName, assignedNames, installer, Priority.IS_ALIAS);
+                        // foo? is added bellow
                     }
                 }
             }
 
             // Additionally add ?-postfixed aliases to any boolean methods and properties.
             if (resultType == boolean.class) {
-                // is_something?, contains_thing?
-                addUnassignedAlias(rubyCasedName + '?', assignedNames, installer);
-                if (rubyPropertyName != null) { // something?
-                    addUnassignedAlias(rubyPropertyName + '?', assignedNames, installer);
+                // isFoo -> isFoo?, contains -> contains?
+                addUnassignedAlias(rubyCasedName + '?', assignedNames, installer, Priority.ALIAS);
+                if (rubyPropertyName != null) { // isFoo -> foo?
+                    addUnassignedAlias(rubyPropertyName + '?', assignedNames, installer, Priority.ALIAS);
                 }
             }
         }
     }
 
-    private static void addUnassignedAlias(String name, Map<String, AssignedName> assignedNames,
-                                           MethodInstaller installer) {
-        if (name == null) return;
+    private static boolean addUnassignedAlias(final String name,
+        final Map<String, AssignedName> assignedNames, final MethodInstaller installer,
+        final Priority aliasType) {
 
         AssignedName assignedName = assignedNames.get(name);
+
+        if (aliasType.moreImportantThan(assignedName)) {
+            installer.addAlias(name);
+            assignedNames.put(name, new AssignedName(name, aliasType));
+            return true;
+        }
+        if (aliasType.asImportantAs(assignedName)) {
+            installer.addAlias(name);
+            return true;
+        }
+
         // TODO: missing additional logic for dealing with conflicting protected fields.
-        if (Priority.ALIAS.moreImportantThan(assignedName)) {
-            installer.addAlias(name);
-            assignedNames.put(name, new AssignedName(name, Priority.ALIAS));
-        }
-        else if (Priority.ALIAS.asImportantAs(assignedName)) {
-            installer.addAlias(name);
-        }
+
+        return false;
     }
 
     protected static String fixScalaNames(final String name) {

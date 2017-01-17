@@ -1,4 +1,0 @@
-fails:Socket::IPSocket#peeraddr raises error if socket is not connected
-fails:Socket::IPSocket#peeraddr returns an array of information on the peer
-fails:Socket::IPSocket#peeraddr returns an IP instead of hostname if do_not_reverse_lookup is true
-fails:Socket::IPSocket#peeraddr returns an IP instead of hostname if passed false

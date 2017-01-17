@@ -2,10 +2,10 @@ package org.jruby.javasupport.binding;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.java.invokers.MethodInvoker;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -13,8 +13,8 @@ import java.util.List;
 */
 public abstract class MethodInstaller extends NamedInstaller {
 
-    protected final List<Method> methods = new ArrayList<>(4);
-    protected List<String> aliases;
+    final ArrayList<Method> methods = new ArrayList<>(4);
+    private List<String> aliases;
     private boolean localMethod;
 
     public MethodInstaller(String name, int type) { super(name, type); }
@@ -29,11 +29,17 @@ public abstract class MethodInstaller extends NamedInstaller {
 
     // called only by initializing thread; no synchronization required
     final void addAlias(final String alias) {
-        List<String> aliases = this.aliases;
+        Collection<String> aliases = this.aliases;
         if (aliases == null) {
             aliases = this.aliases = new ArrayList<>(4);
         }
         if ( ! aliases.contains(alias) ) aliases.add(alias);
+    }
+
+    final void removeAlias(final String alias) {
+        Collection<String> aliases = this.aliases;
+        if (aliases == null) return;
+        aliases.remove(alias);
     }
 
     final void defineMethods(RubyModule target, DynamicMethod invoker) {

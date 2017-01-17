@@ -1,1 +1,0 @@
-fails:SortedSet#classify yields each Object in self in sorted order

@@ -1,5 +1,0 @@
-fails:Addrinfo#ipv4_loopback? for an ipv4 socket returns true for the loopback address
-fails:Addrinfo#ipv4_loopback? for an ipv4 socket returns false for another address
-fails:Addrinfo#ipv4_loopback? for an ipv6 socket returns false for the loopback address
-fails:Addrinfo#ipv4_loopback? for an ipv6 socket returns false for another address
-fails:Addrinfo#ipv4_loopback? for a unix socket returns false

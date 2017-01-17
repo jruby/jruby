@@ -1,3 +1,0 @@
-fails:Marshal.dump with a Time dumps the zone and the offset
-fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC
-fails:Marshal.dump with a Symbol dumps a binary encoded Symbol

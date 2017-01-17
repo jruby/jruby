@@ -1,4 +1,0 @@
-fails:Net::FTP#noop sends the NOOP command to the server
-fails:Net::FTP#noop returns nil
-fails:Net::FTP#noop raises a Net::FTPPermError when the response code is 500
-fails:Net::FTP#noop raises a Net::FTPTempError when the response code is 421

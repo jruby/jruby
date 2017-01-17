@@ -1,1 +1,0 @@
-exclude :test_has_key, "needs investigation"

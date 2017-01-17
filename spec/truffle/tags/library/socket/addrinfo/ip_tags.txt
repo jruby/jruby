@@ -1,3 +1,0 @@
-fails:Addrinfo#ip? for an ipv4 socket returns true
-fails:Addrinfo#ip? for an ipv6 socket returns true
-fails:Addrinfo#ip? for a unix socket returns Socket::AF_INET6

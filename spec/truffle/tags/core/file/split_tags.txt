@@ -1,2 +1,0 @@
-fails:File.split splits the string at the last '\' when the last component does not have an extension
-fails:File.split splits the string at the last '\' when the last component has an extension

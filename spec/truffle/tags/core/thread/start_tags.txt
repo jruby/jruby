@@ -1,2 +1,0 @@
-fails:Thread.start Thread.start raises an ArgumentError if not passed a block
-fails:Thread.start Thread.start respects Thread subclasses
