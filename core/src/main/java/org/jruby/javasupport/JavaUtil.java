@@ -45,6 +45,7 @@ import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
+import static java.lang.Character.toUpperCase;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -366,6 +367,26 @@ public class JavaUtil {
             }
         }
         return null;
+    }
+
+    // property -> getProperty
+    public static String toJavaGetName(final String propertyName) {
+        if ( propertyName == null ) return null;
+        final int len = propertyName.length();
+        if ( len == 0 ) return null;
+        final char first = toUpperCase(propertyName.charAt(0));
+        if ( len == 1 ) return "get" + first;
+        return "get" + first + propertyName.substring(1);
+    }
+
+    // property -> isProperty
+    public static String toJavaIsName(final String propertyName) {
+        if ( propertyName == null ) return null;
+        final int len = propertyName.length();
+        if ( len == 0 ) return null;
+        final char first = toUpperCase(propertyName.charAt(0));
+        if ( len == 1 ) return "is" + first;
+        return "is" + first + propertyName.substring(1);
     }
 
     /**
