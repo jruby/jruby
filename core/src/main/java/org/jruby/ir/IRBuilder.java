@@ -392,7 +392,7 @@ public class IRBuilder {
             case ARGSPUSHNODE: return buildArgsPush((ArgsPushNode) node);
             case ARRAYNODE: return buildArray((ArrayNode) node, false);
             case ATTRASSIGNNODE: return buildAttrAssign(result, (AttrAssignNode) node);
-            case BACKREFNODE: return buildBackref((BackRefNode) node);
+            case BACKREFNODE: return buildBackref(result, (BackRefNode) node);
             case BEGINNODE: return buildBegin((BeginNode) node);
             case BIGNUMNODE: return buildBignum((BignumNode) node);
             case BLOCKNODE: return buildBlock((BlockNode) node);
@@ -428,7 +428,7 @@ public class IRBuilder {
             case FLOATNODE: return buildFloat((FloatNode) node);
             case FORNODE: return buildFor((ForNode) node);
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node);
-            case GLOBALVARNODE: return buildGlobalVar((GlobalVarNode) node);
+            case GLOBALVARNODE: return buildGlobalVar(result, (GlobalVarNode) node);
             case HASHNODE: return buildHash((HashNode) node);
             case IFNODE: return buildIf((IfNode) node);
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node);
@@ -892,8 +892,9 @@ public class IRBuilder {
         return value;
     }
 
-    public Operand buildBackref(BackRefNode node) {
-        return addResultInstr(new BuildBackrefInstr(createTemporaryVariable(), node.getType()));
+    public Operand buildBackref(Variable result, BackRefNode node) {
+        if (result == null) result = createTemporaryVariable();
+        return addResultInstr(new BuildBackrefInstr(result, node.getType()));
     }
 
     public Operand buildBegin(BeginNode beginNode) {
@@ -2873,8 +2874,10 @@ public class IRBuilder {
         return value;
     }
 
-    public Operand buildGlobalVar(GlobalVarNode node) {
-        return addResultInstr(new GetGlobalVariableInstr(createTemporaryVariable(), node.getName()));
+    public Operand buildGlobalVar(Variable result, GlobalVarNode node) {
+        if (result == null) result = createTemporaryVariable();
+
+        return addResultInstr(new GetGlobalVariableInstr(result, node.getName()));
     }
 
     public Operand buildHash(HashNode hashNode) {
