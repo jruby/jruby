@@ -413,11 +413,11 @@ public class IRBuilder {
             case DEFNNODE: return buildDefn((MethodDefNode) node);
             case DEFSNODE: return buildDefs((DefsNode) node);
             case DOTNODE: return buildDot((DotNode) node);
-            case DREGEXPNODE: return buildDRegexp((DRegexpNode) node);
-            case DSTRNODE: return buildDStr((DStrNode) node);
-            case DSYMBOLNODE: return buildDSymbol((DSymbolNode) node);
+            case DREGEXPNODE: return buildDRegexp(result, (DRegexpNode) node);
+            case DSTRNODE: return buildDStr(result, (DStrNode) node);
+            case DSYMBOLNODE: return buildDSymbol(result, (DSymbolNode) node);
             case DVARNODE: return buildDVar((DVarNode) node);
-            case DXSTRNODE: return buildDXStr((DXStrNode) node);
+            case DXSTRNODE: return buildDXStr(result, (DXStrNode) node);
             case ENCODINGNODE: return buildEncoding((EncodingNode)node);
             case ENSURENODE: return buildEnsureNode((EnsureNode) node);
             case EVSTRNODE: return buildEvStr((EvStrNode) node);
@@ -2480,54 +2480,55 @@ public class IRBuilder {
         return piece == null ? manager.getNil() : piece;
     }
 
-    public Operand buildDRegexp(DRegexpNode node) {
+    public Operand buildDRegexp(Variable result, DRegexpNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
-        Variable res = createTemporaryVariable();
-        addInstr(new BuildDynRegExpInstr(res, pieces, node.getOptions()));
-        return res;
+        if (result == null) result = createTemporaryVariable();
+        addInstr(new BuildDynRegExpInstr(result, pieces, node.getOptions()));
+        return result;
     }
 
-    public Operand buildDStr(DStrNode node) {
+    public Operand buildDStr(Variable result, DStrNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
-        Variable res = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding(), node.isFrozen(), getFileName(), node.getLine()));
-        return res;
+        if (result == null) result = createTemporaryVariable();
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), node.isFrozen(), getFileName(), node.getLine()));
+        return result;
     }
 
-    public Operand buildDSymbol(DSymbolNode node) {
+    public Operand buildDSymbol(Variable result, DSymbolNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
-        Variable res = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding(), false, getFileName(), node.getLine()));
-        return copyAndReturnValue(new DynamicSymbol(res));
+        if (result == null) result = createTemporaryVariable();
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), false, getFileName(), node.getLine()));
+        return copyAndReturnValue(new DynamicSymbol(result));
     }
 
     public Operand buildDVar(DVarNode node) {
         return getLocalVariable(node.getName(), node.getDepth());
     }
 
-    public Operand buildDXStr(final DXStrNode dstrNode) {
+    public Operand buildDXStr(Variable result, DXStrNode dstrNode) {
         Node[] nodePieces = dstrNode.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(), pieces));
+        if (result == null) result = createTemporaryVariable();
+        return addResultInstr(new BacktickInstr(result, pieces));
     }
 
     /* ****************************************************************
