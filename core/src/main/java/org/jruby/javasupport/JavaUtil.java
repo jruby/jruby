@@ -103,7 +103,7 @@ public class JavaUtil {
             try {
                 // We want to check if we can access a commonly-existing private field through reflection.
                 // If so, we're probably able to access some other fields too later on.
-                Field f = Java.class.getDeclaredField("_");
+                Field f = Java.class.getDeclaredField(Java.HIDDEN_STATIC_FIELD_NAME);
                 f.setAccessible(true);
                 canSetAccessible = f.getByte(null) == 72;
             }
