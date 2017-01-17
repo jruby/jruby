@@ -430,7 +430,7 @@ public class IRBuilder {
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node);
             case GLOBALVARNODE: return buildGlobalVar(result, (GlobalVarNode) node);
             case HASHNODE: return buildHash((HashNode) node);
-            case IFNODE: return buildIf((IfNode) node);
+            case IFNODE: return buildIf(result, (IfNode) node);
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node);
             case INSTVARNODE: return buildInstVar((InstVarNode) node);
             case ITERNODE: return buildIter((IterNode) node);
@@ -2927,10 +2927,9 @@ public class IRBuilder {
     // L2:
     //     --- r is the result of the if expression --
     //
-    public Operand buildIf(final IfNode ifNode) {
+    public Operand buildIf(Variable result, final IfNode ifNode) {
         Node actualCondition = ifNode.getCondition();
 
-        Variable result;
         Label    falseLabel = getNewLabel();
         Label    doneLabel  = getNewLabel();
         Operand  thenResult;
@@ -2943,19 +2942,20 @@ public class IRBuilder {
 
         // Build the then part of the if-statement
         if (ifNode.getThenBody() != null) {
-            thenResult = build(ifNode.getThenBody());
+            thenResult = build(result, ifNode.getThenBody());
             if (thenResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
                 // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
                 // than wait for dead code elimination to do it
                 result = getValueInTemporaryVariable(thenResult);
                 addInstr(new JumpInstr(doneLabel));
             } else {
-                result = createTemporaryVariable();
+                if (result == null) result = createTemporaryVariable();
                 thenUnil = true;
             }
         } else {
             thenNull = true;
-            result = addResultInstr(new CopyInstr(createTemporaryVariable(), manager.getNil()));
+            if (result == null) result = createTemporaryVariable();
+            addInstr(new CopyInstr(result, manager.getNil()));
             addInstr(new JumpInstr(doneLabel));
         }
 
