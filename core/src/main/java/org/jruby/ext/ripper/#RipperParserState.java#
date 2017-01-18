@@ -1,5 +1,5 @@
 /*
- **** BEGIN LICENSE BLOCK *****
+ ***** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -13,7 +13,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2013-2017 The JRuby Team (jruby@jruby.org)
- *
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -26,20 +26,10 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package dummy;
+package org.jruby.ext.ripper;
 
-import java.io.IOException;
-        
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.runtime.load.BasicLibraryService;
-import org.jruby.runtime.builtin.IRubyObject;
-
-public class DummyService implements BasicLibraryService {
-  public boolean basicLoad(final Ruby runtime) throws IOException {
-    // define some attr accessors, to ensure they're public
-    RubyModule dummy = runtime.getObject().defineClassUnder("XYZ_Dummy_XYZ", runtime.getObject(), runtime.getObject().getAllocator());
-    dummy.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("dummy_attr")});
-    return true;
-  }
+/**
+ */
+public interface RipperParserState {
+    public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop);
 }
