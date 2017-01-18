@@ -259,31 +259,25 @@ public class Helpers {
             return Errno.EBADF;
         }
 
+        final String errorMessage = t.getMessage();
         // TODO: this is kinda gross
-        if(t.getMessage() != null) {
-            String errorMessage = t.getMessage();
-
+        if (errorMessage != null) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
+            switch (errorMessage) {
+                case "Bad file descriptor" : return Errno.EBADF;
+                case "File not open" : return null;
+                case "An established connection was aborted by the software in your host machine" : return Errno.ECONNABORTED;
+                case "Broken pipe" : return Errno.EPIPE;
 
-            if ("Bad file descriptor".equals(errorMessage)) {
-                return Errno.EBADF;
-            } else if ("File not open".equals(errorMessage)) {
-                return null;
-            } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
-                return Errno.ECONNABORTED;
-            } else if (t.getMessage().equals("Broken pipe")) {
-                return Errno.EPIPE;
-            } else if ("Connection reset by peer".equals(errorMessage) ||
-                       "An existing connection was forcibly closed by the remote host".equals(errorMessage) ||
-                    (Platform.IS_WINDOWS && errorMessage.contains("connection was aborted"))) {
-                return Errno.ECONNRESET;
-            } else if (errorMessage.equals("No space left on device")) {
-                return Errno.ENOSPC;
-            } else if (errorMessage.equals("Too many open files")) {
-                return Errno.EMFILE;
+                case "Connection reset by peer" : return Errno.ECONNRESET;
+                case "An existing connection was forcibly closed by the remote host" : return Errno.ECONNRESET;
+
+                case "No space left on device" : return Errno.ENOSPC;
+                case "Too many open files" : return Errno.EMFILE;
             }
+            if (Platform.IS_WINDOWS && errorMessage.contains("connection was aborted")) return Errno.ECONNRESET;
         }
         return null;
     }
