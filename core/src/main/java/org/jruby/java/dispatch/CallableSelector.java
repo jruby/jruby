@@ -594,7 +594,9 @@ public class CallableSelector {
     }
 
     private static boolean assignable(Class<?> type, final IRubyObject arg) {
-        return JavaClass.assignable(type, getJavaClass(arg));
+        return JavaClass.assignable(type, getJavaClass(arg)) ||
+                // handle 'native' signatures e.g. method with a (org.jruby.RubyArray arg)
+                ( arg != null && type.isAssignableFrom(arg.getClass()) );
     }
 
     /**
