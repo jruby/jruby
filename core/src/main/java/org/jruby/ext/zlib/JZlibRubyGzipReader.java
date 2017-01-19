@@ -271,7 +271,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         if (0 == result.length() && -1 == ce) return getRuntime().getNil();
 
         line++;
-        position = result.length();
+        position += result.length();
 
         return newStr(getRuntime(), result);
     }
