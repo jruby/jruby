@@ -328,7 +328,7 @@ public abstract class IRScope implements ParseResult {
             if (current == null || current instanceof IREvalScript) return -1;
 
             current = current.getLexicalParent();
-            n++;
+            if (!(current instanceof IRFor)) n++;
         }
 
         return n;

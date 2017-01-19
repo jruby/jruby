@@ -15,7 +15,6 @@ end
 describe GH3545Loop do
 
   it "GH-3545: should not raise retrieving current scope" do
-    pending 'FIXME: https://github.com/jruby/jruby/issues/3545'
     expect { GH3545Loop.new.loop(2,2) }.not_to raise_exception
   end
 
