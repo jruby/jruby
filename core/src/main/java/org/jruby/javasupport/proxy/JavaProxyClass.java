@@ -63,6 +63,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ClassDefiningClassLoader;
 
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
@@ -155,7 +156,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         if ( proxyClass != null ) return proxyClass;
 
         final ClassLoader loader = runtime.getJRubyClassLoader();
-        proxyClass = runtime.getJavaProxyClassFactory().genProxyClass(runtime, loader, null, superClass, interfaces, names);
+        proxyClass = runtime.getJavaProxyClassFactory().genProxyClass(runtime, (ClassDefiningClassLoader) loader, null, superClass, interfaces, names);
         return JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
     }
 
