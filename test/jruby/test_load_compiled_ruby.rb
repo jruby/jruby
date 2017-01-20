@@ -1,11 +1,11 @@
 require 'test/unit'
-require 'jruby/jrubyc'
 require 'fileutils'
 
 class TestLoadCompiledRuby < Test::Unit::TestCase
   FILENAME = 'test_load_compiled_ruby_script.rb'
   COMPILED = 'test_load_compiled_ruby_script.class'
-  def test_load_compiled_ruby
+
+  def test_load_compiled_ruby; require 'jruby/jrubyc'
     begin
       File.open(FILENAME, 'w') do |f|
         f.write('$test_load_compiled_ruby = true')
