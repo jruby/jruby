@@ -10,15 +10,13 @@ class TestLoad < Test::Unit::TestCase
   include TestHelper
 
   def setup
-    @prev_loaded_features = $LOADED_FEATURES.dup
-    @prev_load_path = $LOAD_PATH.dup
+    @_LOADED_FEATURES = $LOADED_FEATURES.dup
+    @_LOAD_PATH = $LOAD_PATH.dup
   end
 
   def teardown
-    $LOADED_FEATURES.clear
-    $LOADED_FEATURES.concat(@prev_loaded_features)
-    $LOAD_PATH.clear
-    $LOAD_PATH.concat(@prev_load_path)
+    $LOADED_FEATURES.replace(@_LOADED_FEATURES)
+    $LOAD_PATH.replace(@_LOAD_PATH)
   end
 
   def test_require
@@ -69,6 +67,25 @@ class TestLoad < Test::Unit::TestCase
       assert $loaded_foo_bar
     ensure
       $:.shift
+    end
+  end
+
+  def test_LOADED_FEATURES_clear
+    #_LOADED_FEATURES = $LOADED_FEATURES.dup
+    begin
+      require('test/jruby/foo.bar.rb')
+      some_feat = $LOADED_FEATURES.first
+      full_path = File.expand_path('test/jruby/foo.bar.rb')
+      assert $LOADED_FEATURES.include?(full_path)
+
+      $LOADED_FEATURES.clear
+      assert_equal 0, $LOADED_FEATURES.size
+      assert $LOADED_FEATURES.empty?
+
+      assert ! $LOADED_FEATURES.include?(full_path)
+      assert ! $LOADED_FEATURES.include?(some_feat)
+    ensure
+      #$LOADED_FEATURES.replace(_LOADED_FEATURES)
     end
   end
 
