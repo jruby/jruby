@@ -817,15 +817,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param args
      * @return Resulting absolute path as a String
      */
-    public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expand_path19(context, recv, args);
+    @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true)
+    public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+        return expandPathInternal(context, recv, args, true, false);
     }
 
-    @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true)
+    @Deprecated
     public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        RubyString path = (RubyString) expandPathInternal(context, recv, args, true, false);
-
-        return path;
+        return expand_path(context, recv, args);
     }
 
 
