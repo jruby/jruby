@@ -97,27 +97,33 @@ class TestDir < Test::Unit::TestCase
     # Test that glob expansion of ** works ok with non-patterns as path
     # elements. This used to throw NPE.
     Dir.mkdir("testDir_2")
-    open("testDir_2/testDir_tmp1", "w").close
-    Dir.glob('./testDir_2/**/testDir_tmp1').each {|f| assert File.exist?(f) }
+    FileUtils.touch "testDir_2/testDir_tmp1"
+    result = Dir.glob('./testDir_2/**/testDir_tmp1')
+    assert_equal 1, result.size
+    result.each {|f| assert File.exist?(f) }
+  ensure
+    FileUtils.rm_r("testDir_2") rescue nil
   end
 
   def test_glob_consecutive_double_star_returns_uniq_results
     Dir.mkdir("testDir_bug4353")
     Dir.mkdir("testDir_bug4353/level2")
-    open("testDir_bug4353/level2/testDir_tmp1", "w").close
+    FileUtils.touch "testDir_bug4353/level2/testDir_tmp1"
     assert_equal(Dir.glob('./testDir_bug4353/**/**/testDir_tmp1'), ['./testDir_bug4353/level2/testDir_tmp1'])
-
-    FileUtils.rm_r 'testDir_bug4353'
+  ensure
+    FileUtils.rm_r("testDir_bug4353") rescue nil
   end
 
   def test_glob_with_blocks
     Dir.mkdir("testDir_3")
-    open("testDir_3/testDir_tmp1", "w").close
+    FileUtils.touch "testDir_3/testDir_tmp1"
     vals = []
-    glob_val = Dir.glob('./testDir_3/**/*tmp1'){|f| vals << f}
+    glob_val = Dir.glob('./testDir_3/**/*tmp1') { |f| vals << f }
     assert_equal(true, glob_val.nil?)
     assert_equal(1, vals.size)
     assert_equal(true, File.exists?(vals[0])) unless vals.empty?
+  ensure
+    FileUtils.rm_r("testDir_3") rescue nil
   end
 
   def test_dir_dot_does_not_throw_exception
