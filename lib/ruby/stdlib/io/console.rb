@@ -47,7 +47,6 @@ end
 # attempt to call stty; if failure, fall back on stubbed version
 
 if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
-  require 'java'
 
   result = begin
     if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd/
