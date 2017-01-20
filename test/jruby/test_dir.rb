@@ -7,7 +7,7 @@ class TestDir < Test::Unit::TestCase
   include TestHelper
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
-  def setup
+  def setup; require 'fileutils' ; require 'tmpdir'
     @save_dir = Dir.pwd
     1.upto(5) do |i|
       Dir["testDir_#{i}/*"].each do |f|
@@ -24,10 +24,6 @@ class TestDir < Test::Unit::TestCase
 
   # JRUBY-2519
   def test_dir_instance_should_not_cache_dir_contents
-
-    require 'fileutils'
-    require 'tmpdir'
-
     testdir = File.join(Dir.tmpdir, Process.pid.to_s)
     FileUtils.mkdir_p testdir
 
@@ -81,7 +77,7 @@ class TestDir < Test::Unit::TestCase
     assert dir.entries.include?('require_relative1.rb'), "#{jar_path} does not contain require_relative1.rb: #{dir.entries.inspect}"
     assert dir.entries.include?('check_versions.sh'), "#{jar_path} does not contain check_versions.sh: #{dir.entries.inspect}"
   end
-  
+
   def test_bogus_glob
     # Test unescaped special char that is meant to be used with another
     # (i.e. bogus glob pattern)
@@ -91,6 +87,11 @@ class TestDir < Test::Unit::TestCase
   def test_glob_empty_string
     assert_equal([], Dir.glob(''))
     assert_equal([], Dir[''])
+  end
+
+  def test_glob_escaped_comma
+    result = Dir.glob('{dont\,exist\,./**/*.rb}')
+    assert_equal 0, result.size
   end
 
   def test_glob_double_star
