@@ -352,7 +352,7 @@ public class JVMVisitor extends IRVisitor {
             emitScope(method, name, signature, false, true);
             context.addNativeSignature(-1, signature.type());
         } else {
-            emitScope(method, name, specificSig, true, false);
+            emitScope(method, name, specificSig, true, true);
             context.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
             emitVarargsMethodWrapper(method, name, METHOD_SIGNATURE_VARARGS, specificSig);
             context.addNativeSignature(-1, METHOD_SIGNATURE_VARARGS.type());
