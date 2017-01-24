@@ -35,9 +35,13 @@ public class ModuleVersionGuardInstr extends OneOperandInstr implements FixedAri
         return expectedVersion;
     }
 
+    public int getIPC() {
+        return ipc;
+    }
+
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "expected_version: " + expectedVersion};
+        return new String[] { "ipc: " + ipc, "expected_version: " + expectedVersion};
     }
 
     @Override
@@ -67,9 +71,5 @@ public class ModuleVersionGuardInstr extends OneOperandInstr implements FixedAri
         }
 
         return context.nil; /* not used */
-    }
-
-    public int getIPC() {
-        return ipc;
     }
 }
