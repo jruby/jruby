@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -15,23 +14,20 @@ import org.jruby.runtime.builtin.IRubyObject;
  * based on assuming that an object's metaclass is C (as determined by the version number
  * of C -- where the version number changes every time C's class structure changes).
  */
-public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedArityInstr {
+public class ModuleVersionGuardInstr extends OneOperandInstr implements FixedArityInstr {
     private final int expectedVersion;  // The token value that has been assumed
+    private final int ipc; // Where we should fall back to in full build on deopt.
 
-    public ModuleVersionGuardInstr(int expectedVersion, Operand candidateObj, Label failurePathLabel) {
-        super(Operation.MODULE_GUARD, candidateObj, failurePathLabel);
+    public ModuleVersionGuardInstr(int expectedVersion, Operand candidateObj, int ipc) {
+        super(Operation.MODULE_GUARD, candidateObj);
 
         this.expectedVersion = expectedVersion;
+        this.ipc = ipc;
     }
 
     /** The object whose metaclass token has to be verified*/
     public Operand getCandidateObject() {
         return getOperand1();
-    }
-
-    /** Where to jump if the version assumption fails? */
-    public Label getFailurePathLabel() {
-        return (Label) getOperand2();
     }
 
     public int getExpectedVersion() {
@@ -45,8 +41,7 @@ public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedAri
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ModuleVersionGuardInstr(expectedVersion, getCandidateObject().cloneForInlining(ii),
-                ii.getRenamedLabel(getFailurePathLabel()));
+        return new ModuleVersionGuardInstr(expectedVersion, getCandidateObject().cloneForInlining(ii), ipc);
     }
 
     private boolean versionMatches(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
@@ -57,11 +52,6 @@ public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedAri
         // as we know from how we add instance-methods.  We add it to rubyClass value on the stack.  So, how
         // do we handle this sticky situation?
         return (receiver.getMetaClass().getGeneration() == getExpectedVersion());
-    }
-
-    @Override
-    public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, StaticScope currScope, IRubyObject self, Object[] temp, int ipc) {
-        return versionMatches(context, currScope, currDynScope, self, temp) ? ipc : getFailurePathLabel().getTargetPC();
     }
 
     @Override

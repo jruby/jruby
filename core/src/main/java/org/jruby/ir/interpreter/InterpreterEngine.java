@@ -3,7 +3,6 @@ package org.jruby.ir.interpreter;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
-import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;

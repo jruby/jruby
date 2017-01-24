@@ -67,16 +67,19 @@ public class CFGInliner {
         return receiver instanceof Variable ? (Variable) receiver : hostScope.createTemporaryVariable();
     }
 
-    private BasicBlock findCallsiteBB(CallBase call) {
+    private Tuple<BasicBlock, Integer> findCallsiteBB(CallBase call) {
         long callSiteId = call.getSiteId();
         if (debug) System.out.println("LOOKING FOR CALLSITEID: " + callSiteId);
+        int ipc = 0;
         for (BasicBlock bb: cfg.getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 // Some instrs reuse instrs (like LineNumberInstr) so we need to add call check.
                 if (i instanceof CallBase && ((CallBase) i).getSiteId() == callSiteId) {
                     if (debug) System.out.println("Found it!!!! -- " + call +  ", i: " + i);
-                    return bb;
+                    return new Tuple(bb, ipc);
                 }
+
+                ipc++;
             }
         }
 
@@ -93,8 +96,9 @@ public class CFGInliner {
         System.out.println("---------------------------------- PROLOGUE (end) -----------");
     }
 
-    private void printInlineFoundBB(BasicBlock bb) {
+    private void printInlineFoundBB(BasicBlock bb, int fallbackIPC) {
         System.out.println("---------------------------------- callBB (start) -----------");
+        System.out.println("Fallback IPC is : " + fallbackIPC);
         System.out.println(bb.toStringInstrs());
         System.out.println("---------------------------------- callBB (end) -------------");
     }
@@ -138,13 +142,18 @@ public class CFGInliner {
         if (isRecursiveInline(methodScope)) return;
         if (debug) printInlineDebugPrologue(methodScope, call);
 
+        int fallbackIPC = -1;
+
         if (callBB == null) {
-            callBB = findCallsiteBB(call);
-            if (callBB == null) {
+            Tuple<BasicBlock, Integer> location = findCallsiteBB(call);
+            if (location == null) {
                 if (debug) printInlineCannotFindCallsiteBB(call);
                 return;
             } else {
-                if (debug) printInlineFoundBB(callBB);
+                callBB = location.a;
+                fallbackIPC = location.b;
+
+                if (debug) printInlineFoundBB(callBB, fallbackIPC);
             }
         }
 
@@ -265,19 +274,9 @@ public class CFGInliner {
         fullInterpreterContext.generateInstructionsForIntepretation();
 
         // Add inline guard that verifies that the method inlined is the same
-        // that gets called in future invocations.  In addition to the guard, add
-        // a failure path code.
-        Label failurePathLabel = hostScope.getNewLabel();
-        beforeInlineBB.addInstr(new ModuleVersionGuardInstr(classToken, call.getReceiver(), failurePathLabel));
-
-        BasicBlock failurePathBB = new BasicBlock(cfg, failurePathLabel);
-        cfg.addBasicBlock(failurePathBB);
-        failurePathBB.addInstr(call);
-        failurePathBB.addInstr(new JumpInstr(hostCloneInfo == null ? splitBBLabel : hostCloneInfo.getRenamedLabel(splitBBLabel)));
-        call.blockInlining();
-
-        cfg.addEdge(beforeInlineBB, failurePathBB, CFG.EdgeType.REGULAR);
-        cfg.addEdge(failurePathBB, afterInlineBB, CFG.EdgeType.REGULAR);
+        // that gets called in future invocations.
+        beforeInlineBB.addInstr(new ModuleVersionGuardInstr(classToken, call.getReceiver(), fallbackIPC));
+        call.blockInlining(); // we will not inline on this inlined call (FIXME: for now anyways)
 
         // Inline any closure argument passed into the call.
         Operand closureArg = call.getClosureArg(null);
