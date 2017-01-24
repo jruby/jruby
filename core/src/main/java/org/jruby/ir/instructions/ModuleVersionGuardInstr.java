@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.runtime.IRDeoptimization;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -57,5 +58,14 @@ public class ModuleVersionGuardInstr extends OneOperandInstr implements FixedAri
     @Override
     public void visit(IRVisitor visitor) {
         visitor.ModuleVersionGuardInstr(this);
+    }
+
+    @Override
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        if (!versionMatches(context, currScope, currDynScope, self, temp)) {
+            throw new IRDeoptimization(ipc);
+        }
+
+        return context.nil; /* not used */
     }
 }
