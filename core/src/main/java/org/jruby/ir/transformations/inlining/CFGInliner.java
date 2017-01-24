@@ -268,7 +268,7 @@ public class CFGInliner {
         // that gets called in future invocations.  In addition to the guard, add
         // a failure path code.
         Label failurePathLabel = hostScope.getNewLabel();
-        beforeInlineBB.addInstr(new ModuleVersionGuardInstr(implClass, classToken, call.getReceiver(), failurePathLabel));
+        beforeInlineBB.addInstr(new ModuleVersionGuardInstr(classToken, call.getReceiver(), failurePathLabel));
 
         BasicBlock failurePathBB = new BasicBlock(cfg, failurePathLabel);
         cfg.addBasicBlock(failurePathBB);

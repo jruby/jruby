@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
@@ -18,11 +17,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedArityInstr {
     private final int expectedVersion;  // The token value that has been assumed
-    private final RubyModule module;    // The module whose version we are testing */
 
-    public ModuleVersionGuardInstr(RubyModule module, int expectedVersion, Operand candidateObj, Label failurePathLabel) {
+    public ModuleVersionGuardInstr(int expectedVersion, Operand candidateObj, Label failurePathLabel) {
         super(Operation.MODULE_GUARD, candidateObj, failurePathLabel);
-        this.module = module;
+
         this.expectedVersion = expectedVersion;
     }
 
@@ -36,23 +34,18 @@ public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedAri
         return (Label) getOperand2();
     }
 
-    // FIXME: We should remove this and only save what we care about..live Module cannot be neccesary here?
-    public RubyModule getModule() {
-        return module;
-    }
-
     public int getExpectedVersion() {
         return expectedVersion;
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + module.getName(), "expected_version: " + expectedVersion};
+        return new String[] { "expected_version: " + expectedVersion};
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ModuleVersionGuardInstr(module, expectedVersion, getCandidateObject().cloneForInlining(ii),
+        return new ModuleVersionGuardInstr(expectedVersion, getCandidateObject().cloneForInlining(ii),
                 ii.getRenamedLabel(getFailurePathLabel()));
     }
 
