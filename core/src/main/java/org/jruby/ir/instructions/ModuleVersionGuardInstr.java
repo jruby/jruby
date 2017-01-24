@@ -68,4 +68,8 @@ public class ModuleVersionGuardInstr extends OneOperandInstr implements FixedAri
 
         return context.nil; /* not used */
     }
+
+    public int getIPC() {
+        return ipc;
+    }
 }

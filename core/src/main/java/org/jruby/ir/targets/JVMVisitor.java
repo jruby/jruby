@@ -1493,7 +1493,10 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) {
-//        throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
+        visit(moduleversionguardinstr.getCandidateObject());
+        jvmAdapter().pushInt(moduleversionguardinstr.getExpectedVersion());
+        jvmAdapter().pushInt(moduleversionguardinstr.getIPC());
+        jvmMethod().invokeHelper("isGenerationEqual", void.class, IRubyObject.class, int.class, int.class);
     }
 
     @Override

@@ -30,6 +30,7 @@ import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.runtime.IRDeoptimization;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
@@ -2188,6 +2189,12 @@ public class Helpers {
             metaClass = object.getMetaClass();
         }
         return metaClass.getGeneration() == generation;
+    }
+
+    public static void checkGeneration(IRubyObject object, int generation, int ipc) {
+        if (!isGenerationEqual(object, generation)) {
+            throw new IRDeoptimization(ipc);
+        }
     }
 
     public static String[] getScopeNames(String scopeNames) {
