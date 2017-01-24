@@ -58,7 +58,12 @@ module JRuby
         content = content.to_str
         filename = filename.to_str unless filename.equal?(DEFAULT_FILENAME)
 
-        runtime.parse_bytelist reference0(content).byte_list, filename, nil, lineno, extra_position_info
+        if content.encoding == Encoding::ASCII_8BIT
+          # binary content, parse as though from a stream
+          runtime.parse_file(filename, java.io.ByteArrayInputStream.new(content.to_java_bytes), nil)
+        else
+          runtime.parse_bytelist reference0(content).byte_list, filename, nil, lineno, extra_position_info
+        end
       end
     end
     alias ast_for parse

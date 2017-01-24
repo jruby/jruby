@@ -902,7 +902,7 @@ public class JavaClass extends JavaObject {
                 ArrayUtils.setWithExceptionHandlingDirect(runtime, newArray, i, nestedArray);
             }
         } else {
-            ArrayUtils.copyDataToJavaArrayDirect(context, fromArray, newArray);
+            ArrayUtils.copyDataToJavaArrayDirect(fromArray, newArray);
         }
 
         return newArray;

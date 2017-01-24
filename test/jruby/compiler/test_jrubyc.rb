@@ -86,6 +86,21 @@ class TestJrubyc < Test::Unit::TestCase
     File.delete("test_file1.class") rescue nil
   end
 
+  def test_unicode
+    file = Tempfile.create("test_unicode")
+    filename = file.path
+    file.write("$encoding = 'jalapeño'.encoding")
+
+    JRuby::Compiler::compile_argv(["--verbose", filename, "--dir", File.dirname(filename)])
+
+    file.close
+
+    assert_nothing_raised { load filename }
+    assert_equal(Encoding::UTF_8, $encoding)
+  ensure
+    file.close rescue nil
+  end
+
   # only filesystem installations of jruby can compile ruby to java
   if !(RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//))
     def test_signature_with_arg_named_result
