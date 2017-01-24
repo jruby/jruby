@@ -1,4 +1,0 @@
-fails:Net::FTP#mdtm sends the MDTM with the passed filename command to the server
-fails:Net::FTP#mdtm returns the last modification time of the passed file
-fails:Net::FTP#mdtm raises a Net::FTPPermError when the response code is 550
-fails:Net::FTP#mdtm raises a Net::FTPTempError when the response code is 421

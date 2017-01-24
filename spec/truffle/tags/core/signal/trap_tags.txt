@@ -1,5 +1,0 @@
-fails:Signal.trap the special EXIT signal code accepts the EXIT code
-fails:Signal.trap the special EXIT signal code runs the proc before at_exit handlers
-slow:Signal.trap the special EXIT signal code accepts the EXIT code
-slow:Signal.trap the special EXIT signal code runs the proc before at_exit handlers
-slow:Signal.trap the special EXIT signal code can unset the handler

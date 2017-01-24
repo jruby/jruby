@@ -1,1 +1,0 @@
-fails:GzipWriter#write handles inputs of 2^23 bytes

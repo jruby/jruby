@@ -298,14 +298,14 @@ public class JVMVisitor extends IRVisitor {
                     args[i] = "arg" + i;
                     types[i] = IRubyObject.class;
                 }
-                return METHOD_SIGNATURE_BASE.insertArgs(3, args, types);
+                return METHOD_SIGNATURE_BASE.insertArgs(BLOCK_ARG_NAME, args, types);
             }
             // we can't do an specific-arity signature
             return null;
         }
 
         // normal boxed arg list signature
-        return METHOD_SIGNATURE_BASE.insertArgs(3, new String[]{"args"}, IRubyObject[].class);
+        return METHOD_SIGNATURE_BASE.insertArgs(BLOCK_ARG_NAME, new String[]{"args"}, IRubyObject[].class);
     }
 
     protected void emitScriptBody(IRScriptBody script) {

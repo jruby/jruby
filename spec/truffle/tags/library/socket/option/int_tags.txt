@@ -1,2 +1,0 @@
-fails:Socket::Option#int returns int value
-fails:Socket::Option#int raises TypeError if option has not good size

@@ -172,14 +172,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   modules [ 'core', 'lib' ]
 
-  # Truffle is by default only built if a JDK 8+ is available
-  profile 'truffle' do
-    activation do
-      jdk '[1.8,)' # 1.8+
-    end
-    modules [ 'truffle' ]
-  end
-
   build do
     default_goal 'install'
   end
@@ -255,7 +247,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'truffle', 'test', 'maven' ]
+  all_modules = [ 'test', 'maven' ]
 
   profile 'all' do
 
@@ -276,13 +268,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'release' do
-    modules [ 'truffle', 'test', 'maven' ]
+    modules [ 'test', 'maven' ]
     properties 'invoker.skip' => true
   end
 
   profile 'snapshots' do
 
-    modules [ 'truffle', 'maven' ]
+    modules [ 'maven' ]
 
     distribution_management do
       repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )

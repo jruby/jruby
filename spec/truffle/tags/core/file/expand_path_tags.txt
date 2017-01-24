@@ -1,1 +1,0 @@
-fails:File.expand_path does not replace multiple '/' at the beginning of the path

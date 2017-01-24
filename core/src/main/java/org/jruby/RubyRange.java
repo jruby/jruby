@@ -481,9 +481,8 @@ public class RubyRange extends RubyObject {
         if (!block.isGiven()) {
             return enumeratorizeWithSize(context, this, "each", enumSizeFn(context));
         }
-        final Ruby runtime = context.runtime;
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            fixnumEach(context, runtime, block);
+            fixnumEach(context, block);
         } else if (begin instanceof RubySymbol && end instanceof RubySymbol) {
             begin.asString().uptoCommon(context, end.asString(), isExclusive, block, true);
         } else {
@@ -492,8 +491,7 @@ public class RubyRange extends RubyObject {
                 ((RubyString) tmp).uptoCommon(context, end, isExclusive, block);
             } else {
                 if (!discreteObject(context, begin)) {
-                    throw runtime.newTypeError("can't iterate from "
-                            + begin.getMetaClass().getName());
+                    throw context.runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
                 }
                 rangeEach(context, new RangeCallBack() {
                     @Override
@@ -506,7 +504,7 @@ public class RubyRange extends RubyObject {
         return this;
     }
 
-    private void fixnumEach(ThreadContext context, Ruby runtime, Block block) {
+    private void fixnumEach(ThreadContext context, Block block) {
         // We must avoid integer overflows.
         long to = ((RubyFixnum) end).getLongValue();
         if (isExclusive) {
@@ -517,7 +515,7 @@ public class RubyRange extends RubyObject {
         }
         long from = ((RubyFixnum) begin).getLongValue();
         if (block.getSignature() == Signature.NO_ARGUMENTS) {
-            IRubyObject nil = runtime.getNil();
+            final IRubyObject nil = context.nil;
             long i;
             for (i = from; i < to; i++) {
                 block.yield(context, nil);
@@ -526,6 +524,7 @@ public class RubyRange extends RubyObject {
                 block.yield(context, nil);
             }
         } else {
+            final Ruby runtime = context.runtime;
             long i;
             for (i = from; i < to; i++) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));

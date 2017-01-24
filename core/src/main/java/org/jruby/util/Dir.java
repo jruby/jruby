@@ -389,7 +389,7 @@ public class Dir {
 
     }
 
-    public static interface GlobFunc<T> {
+    public interface GlobFunc<T> {
         int call(byte[] ptr, int p, int len, T ary);
     }
 
@@ -451,7 +451,11 @@ public class Dir {
         int i = lbrace;
         while (pattern.bytes[i] != '}') {
             middleRegionIndex = i + 1;
-            for(i = middleRegionIndex; i < pattern.end && pattern.bytes[i] != '}' && pattern.bytes[i] != ','; i++) {
+            for (i = middleRegionIndex; i < pattern.end && pattern.bytes[i] != '}'; i++) {
+                if (pattern.bytes[i] == ',') {
+                    if (i > pattern.begin && pattern.bytes[i-1] == '\\') continue;
+                    break;
+                }
                 if (pattern.bytes[i] == '{') i = pattern.findClosingIndexOf(i); // skip inner braces
             }
 

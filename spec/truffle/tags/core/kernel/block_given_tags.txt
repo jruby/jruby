@@ -1,3 +1,0 @@
-fails:Kernel#block_given? returns false when a method defined by define_method is called with a block
-fails:Kernel.block_given? returns false when a method defined by define_method is called with a block
-fails:self.send(:block_given?) returns true if and only if a block is supplied

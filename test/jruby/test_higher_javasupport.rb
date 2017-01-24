@@ -716,6 +716,94 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_nothing_raised { AlphaSingleton.getInstance.alpha }
   end
 
+  def test_conflicting_getter_aliasing
+    assert BetaSingleton.instance.respond_to?(:beta)
+    assert BetaSingleton.instance.respond_to?(:beta?)
+    assert BetaSingleton.respond_to?(:betac)
+    assert BetaSingleton.respond_to?(:betac?)
+
+    instance = BetaSingleton.instance
+    assert_equal 'Beta', instance.getBeta
+    assert_equal 'Beta', instance.get_beta
+    assert_equal 'beta', instance.beta
+    assert_equal true,   instance.beta?
+
+    assert_equal 'Beta2', instance.getBeta2
+    assert_equal 'Beta2', instance.get_beta2
+    assert_equal 'Beta2', instance.beta2
+    assert_equal true,   instance.beta2?
+
+    assert_equal 'Beta3', instance.getBeta3
+    assert_equal 'Beta3', instance.get_beta3
+    assert_equal 'Beta3', instance.beta3
+    assert_equal true,   instance.beta3?
+
+    assert_equal 'Beta4', instance.getBeta4
+    assert_equal 'Beta4', instance.get_beta4
+    assert_equal true,    instance.beta4
+
+    assert_equal 'Beta5', instance.getBeta5
+    assert_equal 'Beta5', instance.get_beta5
+    assert_equal true,    instance.beta5(nil)
+
+    assert_equal 'beta6', instance.beta6
+    assert_equal true,    instance.beta6?
+
+    assert_equal nil , instance.beta7
+    assert_equal true, instance.beta7?
+
+    assert_equal 'BetaCased', instance.getBetaCased
+    assert_equal 'BetaCased', instance.get_beta_cased
+    assert_equal 'betaCased', instance.betaCased
+    assert_equal 'betaCased', instance.beta_cased
+    assert_equal true,        instance.beta_cased?
+    assert_equal true,        instance.isBetaCased
+    assert_equal true,        instance.is_beta_cased
+    assert_equal true,        instance.is_beta_cased?
+
+    assert_equal 'BetaCased2', instance.betaCased2
+    assert_equal 'BetaCased2', instance.beta_cased2
+    assert_equal true,         instance.beta_cased2?
+
+    assert_equal 'BetaCased3', instance.betaCased3
+    assert_equal 'BetaCased3', instance.beta_cased3
+    assert_equal true,         instance.beta_cased3?
+
+    #
+
+    assert_equal 'BetaCasedc', instance.class.getBetaCasedc
+    assert_equal 'BetaCasedc', instance.class.get_beta_casedc
+    assert_equal 'betaCasedc', instance.class.betaCasedc
+    assert_equal 'betaCasedc', instance.class.beta_casedc
+    assert_equal true,         instance.class.beta_casedc?
+    assert_equal true,         instance.class.isBetaCasedc
+    assert_equal true,         instance.class.is_beta_casedc?
+
+    assert_equal 'BetaCasedc2', instance.class.betaCasedc2
+    assert_equal 'BetaCasedc2', instance.class.beta_casedc2
+    assert_equal true,          instance.class.beta_casedc2?
+
+    assert_equal 'BetaCasedc3', instance.class.betaCasedc3
+    assert_equal 'BetaCasedc3', instance.class.beta_casedc3
+    assert_equal true,          instance.class.beta_casedc3?
+
+    klass = BetaSingleton
+    assert_equal 'BetaClass', klass.getBetac
+    assert_equal 'BetaClass', klass.get_betac
+    assert_equal 'betaClass', klass.betac
+    assert_equal true,        klass.betac?
+
+    assert_equal 'BetaClass2', klass.betac2
+    assert_equal true,         klass.betac2?
+
+    assert_equal 'BetaClass3', klass.betac3
+    assert_equal true,         klass.betac3?
+
+    assert_equal 'betaClass4', klass.betac4
+    assert_equal 'BetaClass4', klass.get_betac4
+    assert_raises(NoMethodError) { klass.betac4? }
+  end
+
   java_import 'org.jruby.javasupport.test.Color'
 
   def test_lazy_proxy_method_tests_for_alias_and_respond_to

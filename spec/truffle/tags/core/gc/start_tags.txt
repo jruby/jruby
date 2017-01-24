@@ -1,1 +1,0 @@
-slow:GC.start always returns nil

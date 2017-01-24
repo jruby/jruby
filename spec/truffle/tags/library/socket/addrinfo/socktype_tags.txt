@@ -1,3 +1,0 @@
-fails:Addrinfo#socktype for an ipv4 socket returns Socket::SOCK_STREAM
-fails:Addrinfo#socktype for an ipv6 socket returns Socket::SOCK_STREAM
-fails:Addrinfo#socktype for a unix socket returns Socket::SOCK_STREAM

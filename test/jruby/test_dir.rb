@@ -7,7 +7,7 @@ class TestDir < Test::Unit::TestCase
   include TestHelper
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
-  def setup
+  def setup; require 'fileutils' ; require 'tmpdir'
     @save_dir = Dir.pwd
     1.upto(5) do |i|
       Dir["testDir_#{i}/*"].each do |f|
@@ -24,10 +24,6 @@ class TestDir < Test::Unit::TestCase
 
   # JRUBY-2519
   def test_dir_instance_should_not_cache_dir_contents
-
-    require 'fileutils'
-    require 'tmpdir'
-
     testdir = File.join(Dir.tmpdir, Process.pid.to_s)
     FileUtils.mkdir_p testdir
 
@@ -81,7 +77,7 @@ class TestDir < Test::Unit::TestCase
     assert dir.entries.include?('require_relative1.rb'), "#{jar_path} does not contain require_relative1.rb: #{dir.entries.inspect}"
     assert dir.entries.include?('check_versions.sh'), "#{jar_path} does not contain check_versions.sh: #{dir.entries.inspect}"
   end
-  
+
   def test_bogus_glob
     # Test unescaped special char that is meant to be used with another
     # (i.e. bogus glob pattern)
@@ -93,31 +89,42 @@ class TestDir < Test::Unit::TestCase
     assert_equal([], Dir[''])
   end
 
+  def test_glob_escaped_comma
+    result = Dir.glob('{dont\,exist\,./**/*.rb}')
+    assert_equal 0, result.size
+  end
+
   def test_glob_double_star
     # Test that glob expansion of ** works ok with non-patterns as path
     # elements. This used to throw NPE.
     Dir.mkdir("testDir_2")
-    open("testDir_2/testDir_tmp1", "w").close
-    Dir.glob('./testDir_2/**/testDir_tmp1').each {|f| assert File.exist?(f) }
+    FileUtils.touch "testDir_2/testDir_tmp1"
+    result = Dir.glob('./testDir_2/**/testDir_tmp1')
+    assert_equal 1, result.size
+    result.each {|f| assert File.exist?(f) }
+  ensure
+    FileUtils.rm_r("testDir_2") rescue nil
   end
 
   def test_glob_consecutive_double_star_returns_uniq_results
     Dir.mkdir("testDir_bug4353")
     Dir.mkdir("testDir_bug4353/level2")
-    open("testDir_bug4353/level2/testDir_tmp1", "w").close
+    FileUtils.touch "testDir_bug4353/level2/testDir_tmp1"
     assert_equal(Dir.glob('./testDir_bug4353/**/**/testDir_tmp1'), ['./testDir_bug4353/level2/testDir_tmp1'])
-
-    FileUtils.rm_r 'testDir_bug4353'
+  ensure
+    FileUtils.rm_r("testDir_bug4353") rescue nil
   end
 
   def test_glob_with_blocks
     Dir.mkdir("testDir_3")
-    open("testDir_3/testDir_tmp1", "w").close
+    FileUtils.touch "testDir_3/testDir_tmp1"
     vals = []
-    glob_val = Dir.glob('./testDir_3/**/*tmp1'){|f| vals << f}
+    glob_val = Dir.glob('./testDir_3/**/*tmp1') { |f| vals << f }
     assert_equal(true, glob_val.nil?)
     assert_equal(1, vals.size)
     assert_equal(true, File.exists?(vals[0])) unless vals.empty?
+  ensure
+    FileUtils.rm_r("testDir_3") rescue nil
   end
 
   def test_dir_dot_does_not_throw_exception

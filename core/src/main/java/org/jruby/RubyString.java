@@ -5556,8 +5556,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         IRubyObject buf = context.nil;
         byte[] repBytes;
         int rep;
-        int replen;
+        int replen = -1;
         boolean tainted = false;
+
+        if (block.isGiven()) {
+            if (!repl.isNil()) {
+                throw runtime.newArgumentError("both of block and replacement given");
+            }
+            replen = 0;
+        }
 
         if (cr == CR_7BIT || cr == CR_VALID)
             return context.nil;
@@ -5695,7 +5702,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int e = p + value.getRealSize();
             int p1 = p;
             int mbminlen = enc.minLength();
-            if (!repl.isNil()) {
+            if (block.isGiven()) {
+                repBytes = null;
+                rep = 0;
+                replen = 0;
+            }
+            else if (!repl.isNil()) {
                 repBytes = ((RubyString)repl).value.unsafeBytes();
                 rep = ((RubyString)repl).value.begin();
                 replen = ((RubyString)repl).value.getRealSize();
@@ -5756,7 +5768,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                         ((RubyString)buf).cat(repBytes, rep, replen);
                     }
                     else {
-                        repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, e-p, enc));
+                        repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, clen, enc));
                         repl = EncodingUtils.strCompatAndValid(context, repl, enc);
                         tainted |= repl.isTaint();
                         ((RubyString)buf).cat((RubyString)repl);

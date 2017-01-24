@@ -1,4 +1,0 @@
-slow:ARGF.set_encoding sets the external encoding when passed an encoding instance
-slow:ARGF.set_encoding sets the external encoding when passed an encoding name
-slow:ARGF.set_encoding sets the external, internal encoding when passed two encoding instances
-slow:ARGF.set_encoding sets the external, internal encoding when passed 'ext:int' String

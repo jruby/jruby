@@ -1,4 +1,0 @@
-fails:OpenSSL::X509::Name.parse parses a /-delimited string of key-value pairs into a Name
-fails:OpenSSL::X509::Name.parse parses a comma-delimited string of key-value pairs into a name
-fails:OpenSSL::X509::Name.parse raises TypeError if the given string contains no key/value pairs
-fails:OpenSSL::X509::Name.parse raises OpenSSL::X509::NameError if the given string contains invalid keys

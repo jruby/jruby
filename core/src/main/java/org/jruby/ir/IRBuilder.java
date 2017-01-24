@@ -368,7 +368,7 @@ public class IRBuilder {
         }
     }
 
-    private Operand buildOperand(Node node) throws NotCompilableException {
+    private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
         if (node.isNewline()) {
             int currLineNum = node.getLine();
             if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
@@ -389,13 +389,13 @@ public class IRBuilder {
             case ARGSCATNODE: return buildArgsCat((ArgsCatNode) node);
             case ARGSPUSHNODE: return buildArgsPush((ArgsPushNode) node);
             case ARRAYNODE: return buildArray((ArrayNode) node, false);
-            case ATTRASSIGNNODE: return buildAttrAssign((AttrAssignNode) node);
-            case BACKREFNODE: return buildBackref((BackRefNode) node);
+            case ATTRASSIGNNODE: return buildAttrAssign(result, (AttrAssignNode) node);
+            case BACKREFNODE: return buildBackref(result, (BackRefNode) node);
             case BEGINNODE: return buildBegin((BeginNode) node);
             case BIGNUMNODE: return buildBignum((BignumNode) node);
             case BLOCKNODE: return buildBlock((BlockNode) node);
             case BREAKNODE: return buildBreak((BreakNode) node);
-            case CALLNODE: return buildCall((CallNode) node);
+            case CALLNODE: return buildCall(result, (CallNode) node);
             case CASENODE: return buildCase((CaseNode) node);
             case CLASSNODE: return buildClass((ClassNode) node);
             case CLASSVARNODE: return buildClassVar((ClassVarNode) node);
@@ -411,24 +411,24 @@ public class IRBuilder {
             case DEFNNODE: return buildDefn((MethodDefNode) node);
             case DEFSNODE: return buildDefs((DefsNode) node);
             case DOTNODE: return buildDot((DotNode) node);
-            case DREGEXPNODE: return buildDRegexp((DRegexpNode) node);
-            case DSTRNODE: return buildDStr((DStrNode) node);
-            case DSYMBOLNODE: return buildDSymbol((DSymbolNode) node);
+            case DREGEXPNODE: return buildDRegexp(result, (DRegexpNode) node);
+            case DSTRNODE: return buildDStr(result, (DStrNode) node);
+            case DSYMBOLNODE: return buildDSymbol(result, (DSymbolNode) node);
             case DVARNODE: return buildDVar((DVarNode) node);
-            case DXSTRNODE: return buildDXStr((DXStrNode) node);
+            case DXSTRNODE: return buildDXStr(result, (DXStrNode) node);
             case ENCODINGNODE: return buildEncoding((EncodingNode)node);
             case ENSURENODE: return buildEnsureNode((EnsureNode) node);
             case EVSTRNODE: return buildEvStr((EvStrNode) node);
             case FALSENODE: return buildFalse();
-            case FCALLNODE: return buildFCall((FCallNode) node);
+            case FCALLNODE: return buildFCall(result, (FCallNode) node);
             case FIXNUMNODE: return buildFixnum((FixnumNode) node);
             case FLIPNODE: return buildFlip((FlipNode) node);
             case FLOATNODE: return buildFloat((FloatNode) node);
             case FORNODE: return buildFor((ForNode) node);
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node);
-            case GLOBALVARNODE: return buildGlobalVar((GlobalVarNode) node);
+            case GLOBALVARNODE: return buildGlobalVar(result, (GlobalVarNode) node);
             case HASHNODE: return buildHash((HashNode) node);
-            case IFNODE: return buildIf((IfNode) node);
+            case IFNODE: return buildIf(result, (IfNode) node);
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node);
             case INSTVARNODE: return buildInstVar((InstVarNode) node);
             case ITERNODE: return buildIter((IterNode) node);
@@ -436,9 +436,9 @@ public class IRBuilder {
             case LITERALNODE: return buildLiteral((LiteralNode) node);
             case LOCALASGNNODE: return buildLocalAsgn((LocalAsgnNode) node);
             case LOCALVARNODE: return buildLocalVar((LocalVarNode) node);
-            case MATCH2NODE: return buildMatch2((Match2Node) node);
-            case MATCH3NODE: return buildMatch3((Match3Node) node);
-            case MATCHNODE: return buildMatch((MatchNode) node);
+            case MATCH2NODE: return buildMatch2(result, (Match2Node) node);
+            case MATCH3NODE: return buildMatch3(result, (Match3Node) node);
+            case MATCHNODE: return buildMatch(result, (MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
             case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgnNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
@@ -473,12 +473,12 @@ public class IRBuilder {
             case UNDEFNODE: return buildUndef(node);
             case UNTILNODE: return buildUntil((UntilNode) node);
             case VALIASNODE: return buildVAlias((VAliasNode) node);
-            case VCALLNODE: return buildVCall((VCallNode) node);
+            case VCALLNODE: return buildVCall(result, (VCallNode) node);
             case WHILENODE: return buildWhile((WhileNode) node);
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
             case XSTRNODE: return buildXStr((XStrNode) node);
-            case YIELDNODE: return buildYield((YieldNode) node);
-            case ZARRAYNODE: return buildZArray();
+            case YIELDNODE: return buildYield((YieldNode) node, result);
+            case ZARRAYNODE: return buildZArray(result);
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node);
             default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
         }
@@ -497,11 +497,15 @@ public class IRBuilder {
     }
 
     public Operand build(Node node) {
+        return build(null, node);
+    }
+
+    public Operand build(Variable result, Node node) {
         if (node == null) return null;
 
         if (hasListener()) manager.getIRScopeListener().startBuildOperand(node, scope);
 
-        Operand operand = buildOperand(node);
+        Operand operand = buildOperand(result, node);
 
         if (hasListener()) manager.getIRScopeListener().endBuildOperand(node, scope, operand);
 
@@ -850,13 +854,13 @@ public class IRBuilder {
         return addResultInstr(new BuildCompoundArrayInstr(createTemporaryVariable(), lhs, rhs, true));
     }
 
-    private Operand buildAttrAssign(final AttrAssignNode attrAssignNode) {
+    private Operand buildAttrAssign(Variable result, AttrAssignNode attrAssignNode) {
         boolean containsAssignment = attrAssignNode.containsVariableAssignment();
         Operand obj = buildWithOrder(attrAssignNode.getReceiverNode(), containsAssignment);
 
         Label lazyLabel = getNewLabel();
         Label endLabel = getNewLabel();
-        Variable result = createTemporaryVariable();
+        if (result == null) result = createTemporaryVariable();
         if (attrAssignNode.isLazy()) {
             addInstr(new BNilInstr(lazyLabel, obj));
         }
@@ -886,8 +890,9 @@ public class IRBuilder {
         return value;
     }
 
-    public Operand buildBackref(BackRefNode node) {
-        return addResultInstr(new BuildBackrefInstr(createTemporaryVariable(), node.getType()));
+    public Operand buildBackref(Variable result, BackRefNode node) {
+        if (result == null) result = createTemporaryVariable();
+        return addResultInstr(new BuildBackrefInstr(result, node.getType()));
     }
 
     public Operand buildBegin(BeginNode beginNode) {
@@ -1011,7 +1016,7 @@ public class IRBuilder {
         receiveBreakException(block, new CodeBlock() { public Operand run() { addInstr(callInstr); return callInstr.getResult(); } });
     }
 
-    public Operand buildCall(CallNode callNode) {
+    public Operand buildCall(Variable result, CallNode callNode) {
         Node callArgsNode = callNode.getArgsNode();
         Node receiverNode = callNode.getReceiverNode();
 
@@ -1024,7 +1029,7 @@ public class IRBuilder {
         // The receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
         Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
-        Variable callResult = createTemporaryVariable();
+        if (result == null) result = createTemporaryVariable();
 
         ArrayNode argsAry;
         if (
@@ -1036,8 +1041,8 @@ public class IRBuilder {
                 !scope.maybeUsingRefinements() &&
                 callNode.getIterNode() == null) {
             StrNode keyNode = (StrNode) argsAry.get(0);
-            addInstr(ArrayDerefInstr.create(callResult, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), keyNode.getPosition().getFile(), keyNode.getLine())));
-            return callResult;
+            addInstr(ArrayDerefInstr.create(result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), keyNode.getPosition().getFile(), keyNode.getLine())));
+            return result;
         }
 
         Label lazyLabel = getNewLabel();
@@ -1049,7 +1054,7 @@ public class IRBuilder {
         Operand[] args = setupCallArgs(callArgsNode);
         Operand block = setupCallClosure(callNode.getIterNode());
 
-        CallInstr callInstr = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
+        CallInstr callInstr = CallInstr.create(scope, result, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if ( callNode.getName().equals("new") &&
@@ -1063,11 +1068,11 @@ public class IRBuilder {
         if (callNode.isLazy()) {
             addInstr(new JumpInstr(endLabel));
             addInstr(new LabelInstr(lazyLabel));
-            addInstr(new CopyInstr(callResult, manager.getNil()));
+            addInstr(new CopyInstr(result, manager.getNil()));
             addInstr(new LabelInstr(endLabel));
         }
 
-        return callResult;
+        return result;
     }
 
     public Operand buildCase(CaseNode caseNode) {
@@ -2477,54 +2482,55 @@ public class IRBuilder {
         return piece == null ? manager.getNil() : piece;
     }
 
-    public Operand buildDRegexp(DRegexpNode node) {
+    public Operand buildDRegexp(Variable result, DRegexpNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
-        Variable res = createTemporaryVariable();
-        addInstr(new BuildDynRegExpInstr(res, pieces, node.getOptions()));
-        return res;
+        if (result == null) result = createTemporaryVariable();
+        addInstr(new BuildDynRegExpInstr(result, pieces, node.getOptions()));
+        return result;
     }
 
-    public Operand buildDStr(DStrNode node) {
+    public Operand buildDStr(Variable result, DStrNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
-        Variable res = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding(), node.isFrozen(), getFileName(), node.getLine()));
-        return res;
+        if (result == null) result = createTemporaryVariable();
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), node.isFrozen(), getFileName(), node.getLine()));
+        return result;
     }
 
-    public Operand buildDSymbol(DSymbolNode node) {
+    public Operand buildDSymbol(Variable result, DSymbolNode node) {
         Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
-        Variable res = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding(), false, getFileName(), node.getLine()));
-        return copyAndReturnValue(new DynamicSymbol(res));
+        if (result == null) result = createTemporaryVariable();
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), false, getFileName(), node.getLine()));
+        return copyAndReturnValue(new DynamicSymbol(result));
     }
 
     public Operand buildDVar(DVarNode node) {
         return getLocalVariable(node.getName(), node.getDepth());
     }
 
-    public Operand buildDXStr(final DXStrNode dstrNode) {
+    public Operand buildDXStr(Variable result, DXStrNode dstrNode) {
         Node[] nodePieces = dstrNode.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(), pieces));
+        if (result == null) result = createTemporaryVariable();
+        return addResultInstr(new BacktickInstr(result, pieces));
     }
 
     /* ****************************************************************
@@ -2664,11 +2670,12 @@ public class IRBuilder {
         return manager.getFalse();
     }
 
-    public Operand buildFCall(FCallNode fcallNode) {
+    public Operand buildFCall(Variable result, FCallNode fcallNode) {
         Node      callArgsNode = fcallNode.getArgsNode();
         Operand[] args         = setupCallArgs(callArgsNode);
         Operand   block        = setupCallClosure(fcallNode.getIterNode());
-        Variable  callResult   = createTemporaryVariable();
+
+        if (result == null) result = createTemporaryVariable();
 
         determineIfMaybeUsingMethod(fcallNode.getName(), args);
 
@@ -2684,9 +2691,9 @@ public class IRBuilder {
             }
         }
 
-        CallInstr callInstr    = CallInstr.create(scope, CallType.FUNCTIONAL, callResult, fcallNode.getName(), buildSelf(), args, block);
+        CallInstr callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
         receiveBreakException(block, callInstr);
-        return callResult;
+        return result;
     }
 
     private Operand setupCallClosure(Node node) {
@@ -2868,8 +2875,10 @@ public class IRBuilder {
         return value;
     }
 
-    public Operand buildGlobalVar(GlobalVarNode node) {
-        return addResultInstr(new GetGlobalVariableInstr(createTemporaryVariable(), node.getName()));
+    public Operand buildGlobalVar(Variable result, GlobalVarNode node) {
+        if (result == null) result = createTemporaryVariable();
+
+        return addResultInstr(new GetGlobalVariableInstr(result, node.getName()));
     }
 
     public Operand buildHash(HashNode hashNode) {
@@ -2919,10 +2928,9 @@ public class IRBuilder {
     // L2:
     //     --- r is the result of the if expression --
     //
-    public Operand buildIf(final IfNode ifNode) {
+    public Operand buildIf(Variable result, final IfNode ifNode) {
         Node actualCondition = ifNode.getCondition();
 
-        Variable result;
         Label    falseLabel = getNewLabel();
         Label    doneLabel  = getNewLabel();
         Operand  thenResult;
@@ -2935,19 +2943,20 @@ public class IRBuilder {
 
         // Build the then part of the if-statement
         if (ifNode.getThenBody() != null) {
-            thenResult = build(ifNode.getThenBody());
+            thenResult = build(result, ifNode.getThenBody());
             if (thenResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
                 // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
                 // than wait for dead code elimination to do it
                 result = getValueInTemporaryVariable(thenResult);
                 addInstr(new JumpInstr(doneLabel));
             } else {
-                result = createTemporaryVariable();
+                if (result == null) result = createTemporaryVariable();
                 thenUnil = true;
             }
         } else {
             thenNull = true;
-            result = addResultInstr(new CopyInstr(createTemporaryVariable(), manager.getNil()));
+            if (result == null) result = createTemporaryVariable();
+            addInstr(new CopyInstr(result, manager.getNil()));
             addInstr(new JumpInstr(doneLabel));
         }
 
@@ -3026,13 +3035,13 @@ public class IRBuilder {
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
-        Variable var  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
-        Operand value = build(localAsgnNode.getValueNode());
+        Variable variable  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
+        Operand value = build(variable, localAsgnNode.getValueNode());
 
         // no use copying a variable to itself
-        if (var == value) return value;
+        if (variable == value) return value;
 
-        addInstr(new CopyInstr(var, value));
+        addInstr(new CopyInstr(variable, value));
 
         return value;
 
@@ -3063,18 +3072,22 @@ public class IRBuilder {
         return getLocalVariable(node.getName(), node.getDepth());
     }
 
-    public Operand buildMatch(MatchNode matchNode) {
+    public Operand buildMatch(Variable result, MatchNode matchNode) {
         Operand regexp = build(matchNode.getRegexpNode());
 
         Variable tempLastLine = createTemporaryVariable();
         addResultInstr(new GetGlobalVariableInstr(tempLastLine, "$_"));
-        return addResultInstr(new MatchInstr(createTemporaryVariable(), regexp, tempLastLine));
+
+        if (result == null) result = createTemporaryVariable();
+        return addResultInstr(new MatchInstr(result, regexp, tempLastLine));
     }
 
-    public Operand buildMatch2(Match2Node matchNode) {
+    public Operand buildMatch2(Variable result, Match2Node matchNode) {
         Operand receiver = build(matchNode.getReceiverNode());
         Operand value    = build(matchNode.getValueNode());
-        Variable result  = createTemporaryVariable();
+
+        if (result == null) result = createTemporaryVariable();
+
         addInstr(new MatchInstr(result, receiver, value));
 
         if (matchNode instanceof Match2CaptureNode) {
@@ -3099,11 +3112,13 @@ public class IRBuilder {
         return getVarNameFromScopeTree(scope.getLexicalParent(), depth - 1, offset);
     }
 
-    public Operand buildMatch3(Match3Node matchNode) {
+    public Operand buildMatch3(Variable result, Match3Node matchNode) {
         Operand receiver = build(matchNode.getReceiverNode());
         Operand value = build(matchNode.getValueNode());
 
-        return addResultInstr(new MatchInstr(createTemporaryVariable(), receiver, value));
+        if (result == null) result = createTemporaryVariable();
+
+        return addResultInstr(new MatchInstr(result, receiver, value));
     }
 
     private Operand getContainerFromCPath(Colon3Node cpath) {
@@ -3875,9 +3890,10 @@ public class IRBuilder {
         return manager.getNil();
     }
 
-    public Operand buildVCall(VCallNode node) {
-        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, createTemporaryVariable(),
-                node.getName(), buildSelf(), NO_ARGS, null));
+    public Operand buildVCall(Variable result, VCallNode node) {
+        if (result == null) result = createTemporaryVariable();
+
+        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getName(), buildSelf(), NO_ARGS, null));
     }
 
     public Operand buildWhile(final WhileNode whileNode) {
@@ -3888,7 +3904,7 @@ public class IRBuilder {
         return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), node.getPosition().getFile(), node.getPosition().getLine())}));
     }
 
-    public Operand buildYield(YieldNode node) {
+    public Operand buildYield(YieldNode node, Variable result) {
         boolean unwrap = true;
         Node argNode = node.getArgsNode();
         // Get rid of one level of array wrapping
@@ -3897,7 +3913,7 @@ public class IRBuilder {
             unwrap = false;
         }
 
-        Variable ret = createTemporaryVariable();
+        Variable ret = result == null ? createTemporaryVariable() : result;
         if (argNode instanceof ArrayNode && unwrap) {
             addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), buildArray((ArrayNode)argNode, true), unwrap));
         } else {
@@ -3906,8 +3922,16 @@ public class IRBuilder {
         return ret;
     }
 
-    public Operand buildZArray() {
-       return copyAndReturnValue(new Array());
+    public Operand copy(Operand value) {
+        return copy(null, value);
+    }
+
+    public Operand copy(Variable result, Operand value) {
+        return addResultInstr(new CopyInstr(result == null ? createTemporaryVariable() : result, value));
+    }
+
+    public Operand buildZArray(Variable result) {
+       return copy(result, new Array());
     }
 
     private Operand buildZSuperIfNest(final Operand block) {
