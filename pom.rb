@@ -26,8 +26,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     archives "https://github.com/jruby/jruby/wiki/MailingLists"
   end
 
-  license 'GPL 3', 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'
-  license 'LGPL 3', 'http://www.gnu.org/licenses/lgpl-3.0-standalone.html'
+  license 'GPL 2', 'http://www.gnu.org/licenses/gpl-2.0-standalone.html'
+  license 'LGPL 2.1', 'http://www.gnu.org/licenses/lgpl-2.1-standalone.html'
   license 'EPL', 'http://www.eclipse.org/legal/epl-v10.html'
 
   plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
