@@ -19,7 +19,7 @@ class TestSystem < Test::Unit::TestCase
     path = ENV['PATH']
     ENV['PATH'] = "extra_path#{File::PATH_SEPARATOR}#{path}"
     Open3.popen3('java -version') do |i, o, e, t|
-      assert_match(/java/, e.read)
+      assert_match(/java|openjdk/i, e.read)
       assert_equal(t.value, 0)
     end
   ensure
