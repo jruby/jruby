@@ -1972,7 +1972,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static Throwable reraiseIRDeoptimization(Throwable t) throws Throwable {
+    public static Throwable rethrowIRDeoptimization(Throwable t) throws Throwable {
         if (t instanceof IRDeoptimization) {
             throw t;
         }
