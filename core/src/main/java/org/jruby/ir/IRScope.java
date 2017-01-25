@@ -139,6 +139,7 @@ public abstract class IRScope implements ParseResult {
     private Compilable compilable;
     // FIXME: A hack to limit number of inlines to 1
     public boolean alreadyHasInline;
+    private boolean deoptimizable;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -1250,5 +1251,13 @@ public abstract class IRScope implements ParseResult {
 
     public boolean needsBinding() {
         return reuseParentScope() || !getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+    }
+
+    public void setDeoptimizable(boolean deoptimizable) {
+        this.deoptimizable = deoptimizable;
+    }
+
+    public boolean isDeoptimizable() {
+        return deoptimizable;
     }
 }

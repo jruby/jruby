@@ -23,6 +23,7 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.runtime.IRDeoptimization;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
@@ -210,6 +211,10 @@ public class JVMVisitor extends IRVisitor {
             syntheticEndForStart.put(currentBlockStart, syntheticEnd);
         }
 
+        // wrap whole body with deopt logic if deopt is present
+        boolean hasDeopt = scope.isDeoptimizable();
+        org.objectweb.asm.Label deoptStart = hasDeopt ? new org.objectweb.asm.Label() : null;
+
         for (BasicBlock bb: bbs) {
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);
@@ -241,6 +246,33 @@ public class JVMVisitor extends IRVisitor {
             if (syntheticEnd != null) {
                 m.mark(syntheticEnd);
             }
+        }
+
+        if (hasDeopt) {
+            org.objectweb.asm.Label deoptEnd = new org.objectweb.asm.Label();
+
+            jvmAdapter().trycatch(deoptStart, deoptEnd, deoptEnd, p(IRDeoptimization.class));
+
+            jvmAdapter().dup();
+
+            // need better constructors for arrays of values
+            jvmAdapter().pushInt(jvm.methodData().varMap.size());
+            jvmAdapter().anewarray(p(Object.class));
+            int index = 0;
+            StringBuffer descriptor = new StringBuffer();
+            for (Map.Entry<String, Integer> var : jvm.methodData().varMap.entrySet()) {
+                jvmAdapter().dup();
+                jvmAdapter().pushInt(index++);
+                jvmAdapter().aload(var.getValue());
+                jvmAdapter().aastore();
+
+                if (index > 0) descriptor.append(';');
+                descriptor.append(var.getKey());
+            }
+            jvmAdapter().ldc(descriptor.toString());
+
+            jvmAdapter().invokevirtual(p(IRDeoptimization.class), "setVars", sig(void.class, Object[].class, String.class));
+            jvmAdapter().athrow();
         }
 
         jvm.popmethod();
@@ -1757,13 +1789,15 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveRubyExceptionInstr(ReceiveRubyExceptionInstr receiveexceptioninstr) {
-        // exception should be on stack from try/catch, so unwrap and store it
+        // exception is on the stack; check if it is deopt and reraise, or just store and continue
+        jvmMethod().invokeIRHelper("rethrowIRDeoptimization", sig(Throwable.class, Throwable.class));
         jvmStoreLocal(receiveexceptioninstr.getResult());
     }
 
     @Override
     public void ReceiveJRubyExceptionInstr(ReceiveJRubyExceptionInstr receiveexceptioninstr) {
-        // exception should be on stack from try/catch, so just store it
+        // exception is on the stack; check if it is deopt and reraise, or just store and continue
+        jvmMethod().invokeIRHelper("rethrowIRDeoptimization", sig(Throwable.class, Throwable.class));
         jvmStoreLocal(receiveexceptioninstr.getResult());
     }
 

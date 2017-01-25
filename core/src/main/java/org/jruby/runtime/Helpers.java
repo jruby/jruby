@@ -2191,6 +2191,7 @@ public class Helpers {
         return metaClass.getGeneration() == generation;
     }
 
+    @JIT
     public static void checkGeneration(IRubyObject object, int generation, int ipc) {
         if (!isGenerationEqual(object, generation)) {
             throw new IRDeoptimization(ipc);

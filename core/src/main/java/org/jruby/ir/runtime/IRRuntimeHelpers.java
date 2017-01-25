@@ -1971,6 +1971,14 @@ public class IRRuntimeHelpers {
         return RubyArray.newArray(context.runtime, obj0, obj1);
     }
 
+    @JIT
+    public static Throwable reraiseIRDeoptimization(Throwable t) throws Throwable {
+        if (t instanceof IRDeoptimization) {
+            throw t;
+        }
+        return t;
+    }
+
     private static IRRuntimeHelpersSites sites(ThreadContext context) {
         return context.sites.IRRuntimeHelpers;
     }
