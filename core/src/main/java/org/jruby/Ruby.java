@@ -1199,7 +1199,7 @@ public final class Ruby implements Constantizable {
         // if we can't use reflection, 'jruby' and 'java' won't work; no load.
         boolean reflectionWorks = doesReflectionWork();
 
-        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
+        if (!RubyInstanceConfig.KERNEL_SKIP && reflectionWorks) {
             loadService.require("jruby");
         }
 
@@ -1665,7 +1665,7 @@ public final class Ruby implements Constantizable {
 
     private void initBuiltins() {
         // We cannot load any .rb and debug new parser features
-        if (RubyInstanceConfig.DEBUG_PARSER) return;
+        if (RubyInstanceConfig.KERNEL_SKIP) return;
 
         addLazyBuiltin("java.rb", "java", "org.jruby.javasupport.Java");
         addLazyBuiltin("jruby.rb", "jruby", "org.jruby.ext.jruby.JRubyLibrary");
@@ -1727,7 +1727,7 @@ public final class Ruby implements Constantizable {
 
     private void initRubyKernel() {
         // We cannot load any .rb and debug new parser features
-        if (RubyInstanceConfig.DEBUG_PARSER) return;
+        if (RubyInstanceConfig.KERNEL_SKIP) return;
 
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
@@ -1735,7 +1735,7 @@ public final class Ruby implements Constantizable {
 
     private void initRubyPreludes() {
         // We cannot load any .rb and debug new parser features
-        if (RubyInstanceConfig.DEBUG_PARSER) return;
+        if (RubyInstanceConfig.KERNEL_SKIP) return;
 
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);

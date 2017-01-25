@@ -178,7 +178,7 @@ public class Options {
     public static final Option<Boolean> DEBUG_LAUNCH = bool(DEBUG, "debug.launch", false, "Log externally-launched processes.");
     public static final Option<Boolean> DEBUG_FULLTRACE = bool(DEBUG, "debug.fullTrace", false, "Set whether full traces are enabled (c-call/c-return).");
     public static final Option<Boolean> DEBUG_SCRIPTRESOLUTION = bool(DEBUG, "debug.scriptResolution", false, "Print which script is executed by '-S' flag.");
-    public static final Option<Boolean> DEBUG_PARSER = bool(DEBUG, "debug.parser", false, "disables JRuby impl script loads and prints parse exceptions");
+    public static final Option<Boolean> KERNEL_SKIP = bool(DEBUG, "kernel.skip", false, "skip loading the Ruby kernel and print parse exceptions");
     public static final Option<Boolean> ERRNO_BACKTRACE = bool(DEBUG, "errno.backtrace", false, "Generate backtraces for heavily-used Errno exceptions (EAGAIN).");
     public static final Option<Boolean> STOPITERATION_BACKTRACE = bool(DEBUG, "stop_iteration.backtrace", false, "Generate backtraces for heavily-used Errno exceptions (EAGAIN).");
     public static final Option<Boolean> LOG_EXCEPTIONS = bool(DEBUG, "log.exceptions", false, "Log every time an exception is constructed.");

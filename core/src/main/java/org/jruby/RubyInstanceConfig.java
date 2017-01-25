@@ -1838,7 +1838,7 @@ public class RubyInstanceConfig {
      */
     public static final boolean DEBUG_SCRIPT_RESOLUTION = Options.DEBUG_SCRIPTRESOLUTION.load();
 
-    public static final boolean DEBUG_PARSER = Options.DEBUG_PARSER.load();
+    public static final boolean KERNEL_SKIP = Options.KERNEL_SKIP.load();
 
     public static final boolean JUMPS_HAVE_BACKTRACE = Options.JUMP_BACKTRACE.load();
 
