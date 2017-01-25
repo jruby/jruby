@@ -18,6 +18,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.util.*;
@@ -62,6 +63,7 @@ public class Profiler {
         private CallBase call = null;   // which instr is at this callsite
         long count;                     // how many times callsite has been executed
         Compilable liveMethod;          // winner winner chicken dinner we think we have monomorphic target method to inline.
+        int generation = -1;
 
         public IRCallSite() {}
 
@@ -70,6 +72,7 @@ public class Profiler {
             id = cs.id;
             call  = cs.call;
             count = 0;
+            generation = cs.generation;
         }
 
         /**
@@ -95,15 +98,17 @@ public class Profiler {
             return (int) call.getSiteId();
         }
 
-        public void update(long callSiteId, IRScope scope) {
+        public void update(long callSiteId, IRScope scope, int generation) {
             this.scope = scope;
             this.id = callSiteId;
+            this.generation = generation;
         }
 
-        public void update(CallBase call, IRScope scope) {
+        public void update(CallBase call, IRScope scope, int generation) {
             this.scope = scope;
             this.id = call.getSiteId();
             this.call = call;
+            this.generation = generation;
         }
     }
 
@@ -330,7 +335,7 @@ public class Profiler {
                 }
                 RubyModule implClass = methodToInline.getImplementationClass();
                 long start = new java.util.Date().getTime();
-                parentIC.getScope().inlineMethodJIT(methodToInline, implClass, implClass.getGeneration(), null, call, false);//!inlinedScopes.contains(ic));
+                parentIC.getScope().inlineMethodJIT(methodToInline, implClass, callSite.generation, null, call, false);//!inlinedScopes.contains(ic));
                 inlinedScopes.add(parentIC.getScope());
                 long end = new java.util.Date().getTime();
                 if (Options.IR_PROFILE_DEBUG.load()) LOG.info("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +
@@ -341,7 +346,7 @@ public class Profiler {
                 if (shouldInline(scope, callSite.getCall(), parentIC, isClosure)) {
                     RubyModule implClass = methodToInline.getImplementationClass();
                     long start = new java.util.Date().getTime();
-                    parentIC.getScope().inlineMethod(methodToInline, implClass, implClass.getGeneration(), null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
+                    parentIC.getScope().inlineMethod(methodToInline, implClass, callSite.generation, null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
                     inlinedScopes.add(parentIC.getScope());
                     long end = new java.util.Date().getTime();
                     if (Options.IR_PROFILE_DEBUG.load()) LOG.info("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +
@@ -413,15 +418,15 @@ public class Profiler {
     }
 
     @JIT
-    public static void markCallAboutToBeCalled(long callsiteId, IRScope scope) {
+    public static void markCallAboutToBeCalled(long callsiteId, IRScope scope, IRubyObject self) {
         callerSite.call = null;
-        callerSite.update(callsiteId, scope);
+        callerSite.update(callsiteId, scope, self.getMetaClass().getGeneration());
     }
 
     // We do not pass profiling instructions through call so we temporarily tuck away last IR executed
     // call in Profiler.
-    public static void markCallAboutToBeCalled(CallBase call, InterpreterContext ic) {
-        callerSite.update(call, ic.getScope());
+    public static void markCallAboutToBeCalled(CallBase call, InterpreterContext ic, IRubyObject self) {
+        callerSite.update(call, ic.getScope(), self.getMetaClass().getGeneration());
     }
 
     public static void clockTick() {

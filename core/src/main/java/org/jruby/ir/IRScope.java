@@ -614,7 +614,6 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized BasicBlock[] prepareForCompilation() {
         if (optimizedInterpreterContext != null) {
-            System.out.println("OIC BBLISTY: " + optimizedInterpreterContext.getLinearizedBBList());
             return optimizedInterpreterContext.getLinearizedBBList();
         }
 

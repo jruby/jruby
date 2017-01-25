@@ -148,7 +148,7 @@ public class InterpreterEngine {
                         receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
-                        if (profile) Profiler.markCallAboutToBeCalled((CallBase) instr, interpreterContext);
+                        if (profile) Profiler.markCallAboutToBeCalled((CallBase) instr, interpreterContext, self);
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
