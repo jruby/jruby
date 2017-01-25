@@ -2194,7 +2194,7 @@ public class Helpers {
     @JIT
     public static void checkGeneration(IRubyObject object, int generation, int ipc) {
         if (!isGenerationEqual(object, generation)) {
-            throw new IRDeoptimization(ipc);
+//            throw new IRDeoptimization(ipc);
         }
     }
 

@@ -278,9 +278,6 @@ public class CFGInliner {
         beforeInlineBB.addInstr(new ModuleVersionGuardInstr(classToken, call.getReceiver(), fallbackIPC));
         call.blockInlining(); // we will not inline on this inlined call (FIXME: for now anyways)
 
-        // set deopt flag
-        hostScope.setDeoptimizable(true);
-
         // Inline any closure argument passed into the call.
         Operand closureArg = call.getClosureArg(null);
         List yieldSites = ii.getYieldSites();

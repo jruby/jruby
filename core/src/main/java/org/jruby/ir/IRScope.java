@@ -114,6 +114,9 @@ public abstract class IRScope implements ParseResult {
     /** -X-C full interpretation OR JIT depends on this */
     protected FullInterpreterContext fullInterpreterContext;
 
+    /** speculative optimizations */
+    protected FullInterpreterContext optimizedInterpreterContext;
+
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -139,7 +142,6 @@ public abstract class IRScope implements ParseResult {
     private Compilable compilable;
     // FIXME: A hack to limit number of inlines to 1
     public boolean alreadyHasInline;
-    private boolean deoptimizable;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -611,6 +613,11 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized BasicBlock[] prepareForCompilation() {
+        if (optimizedInterpreterContext != null) {
+            System.out.println("OIC BBLISTY: " + optimizedInterpreterContext.getLinearizedBBList());
+            return optimizedInterpreterContext.getLinearizedBBList();
+        }
+
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
@@ -1090,10 +1097,10 @@ public abstract class IRScope implements ParseResult {
         FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
 
         newContext.generateInstructionsForIntepretation();
-        this.fullInterpreterContext = newContext;
+        this.optimizedInterpreterContext = newContext;
 
         System.out.println(fullInterpreterContext.toStringInstrs());
-        compilable.setInterpreterContext(fullInterpreterContext);
+        compilable.setInterpreterContext(newContext);
         alreadyHasInline = true;
     }
 
@@ -1105,7 +1112,7 @@ public abstract class IRScope implements ParseResult {
         Ruby runtime = implClass.getRuntime();
 
         newContext.linearizeBasicBlocks();
-        this.fullInterpreterContext = newContext;
+        this.optimizedInterpreterContext = newContext;
 
         if (compilable instanceof MixedModeIRMethod) {
             runtime.getJITCompiler().getTaskFor(runtime.getCurrentContext(), compilable).run();
@@ -1253,11 +1260,7 @@ public abstract class IRScope implements ParseResult {
         return reuseParentScope() || !getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
     }
 
-    public void setDeoptimizable(boolean deoptimizable) {
-        this.deoptimizable = deoptimizable;
-    }
-
     public boolean isDeoptimizable() {
-        return deoptimizable;
+        return false; // optimizedInterpreterContext != null;
     }
 }
