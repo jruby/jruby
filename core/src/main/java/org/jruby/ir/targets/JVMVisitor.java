@@ -1528,7 +1528,7 @@ public class JVMVisitor extends IRVisitor {
         visit(moduleversionguardinstr.getCandidateObject());
         jvmAdapter().pushInt(moduleversionguardinstr.getExpectedVersion());
         jvmAdapter().pushInt(moduleversionguardinstr.getIPC());
-        jvmMethod().invokeHelper("isGenerationEqual", void.class, IRubyObject.class, int.class, int.class);
+        jvmMethod().invokeHelper("checkGeneration", void.class, IRubyObject.class, int.class, int.class);
     }
 
     @Override
