@@ -346,7 +346,7 @@ public class Profiler {
                 if (shouldInline(scope, callSite.getCall(), parentIC, isClosure)) {
                     RubyModule implClass = methodToInline.getImplementationClass();
                     long start = new java.util.Date().getTime();
-                    parentIC.getScope().inlineMethod(methodToInline, implClass, callSite.generation, null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
+                    parentIC.getScope().inlineMethod(methodToInline, callSite.generation, null, callSite.getCall(), false);//!inlinedScopes.contains(ic));
                     inlinedScopes.add(parentIC.getScope());
                     long end = new java.util.Date().getTime();
                     if (Options.IR_PROFILE_DEBUG.load()) LOG.info("Inlined " + methodToInline.getName() + " into " + parentIC.getName() + " @ instr " + callSite.getCall() +

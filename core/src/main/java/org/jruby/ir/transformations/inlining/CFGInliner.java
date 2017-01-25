@@ -136,7 +136,7 @@ public class CFGInliner {
     //   methodScope - scope of the method to be inlined
     //   callBB - BB where callsite is located
     //   call - callsite where we want to inline the methods body.
-    public void inlineMethod(IRScope methodScope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call, boolean cloneHost) {
+    public void inlineMethod(IRScope methodScope, int classToken, BasicBlock callBB, CallBase call, boolean cloneHost) {
         // Temporarily turn off inlining of recursive methods
         // Conservative turning off for inlining of a method in a closure nested within the same method
         if (isRecursiveInline(methodScope)) return;

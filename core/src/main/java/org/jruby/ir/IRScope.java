@@ -1071,14 +1071,14 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private FullInterpreterContext inlineMethodCommon(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+    private FullInterpreterContext inlineMethodCommon(Compilable method, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
         alreadyHasInline = true;
         IRMethod methodToInline = (IRMethod) method.getIRScope();
 
         // We need fresh fic so we can modify it during inlining without making already running code explode.
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
 
-        new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+        new CFGInliner(newContext).inlineMethod(methodToInline, classToken, basicBlock, call, cloneHost);
 
         // Reset state
         resetState();
@@ -1092,8 +1092,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
-    public void inlineMethod(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
-        FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
+    public void inlineMethod(Compilable method, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+        FullInterpreterContext newContext = inlineMethodCommon(method, classToken, basicBlock, call, cloneHost);
 
         newContext.generateInstructionsForIntepretation();
         this.optimizedInterpreterContext = newContext;
@@ -1105,7 +1105,7 @@ public abstract class IRScope implements ParseResult {
 
     // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
     public void inlineMethodJIT(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
-        FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
+        FullInterpreterContext newContext = inlineMethodCommon(method, classToken, basicBlock, call, cloneHost);
 
         // We are not running any JIT-specific passes here.
         Ruby runtime = implClass.getRuntime();
