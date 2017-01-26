@@ -198,7 +198,8 @@ public class InterpreterEngine {
                                 args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
                                 break;
                             default:
-                                processBookKeepingOp(interpreterContext, compilable, context, block, instr, operation, name, args, self, blockArg, currDynScope, temp, currScope);
+                                processBookKeepingOp(compilable, context, block, instr, operation, name, args, self,
+                                        blockArg, currDynScope, temp, currScope);
                                 break;
                         }
                         break;
@@ -374,7 +375,7 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void processBookKeepingOp(InterpreterContext ic, Compilable compilable, ThreadContext context, Block block, Instr instr, Operation operation,
+    protected static void processBookKeepingOp(Compilable compilable, ThreadContext context, Block block, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block blockArg,
                                              DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
         switch(operation) {

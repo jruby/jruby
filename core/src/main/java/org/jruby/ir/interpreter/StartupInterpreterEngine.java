@@ -96,7 +96,8 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 rescuePCs.pop();
                                 break;
                             default:
-                                processBookKeepingOp(interpreterContext, compilable, context, block, instr, operation, name, args, self, blockArg, currDynScope, temp, currScope);
+                                processBookKeepingOp(compilable, context, block, instr, operation, name, args, self,
+                                        blockArg, currDynScope, temp, currScope);
                         }
                         break;
                     case MOD_OP:
