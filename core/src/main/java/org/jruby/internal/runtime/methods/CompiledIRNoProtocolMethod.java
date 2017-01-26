@@ -3,7 +3,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
@@ -18,13 +17,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.invoke.MethodHandle;
 
 public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
-    private final boolean scope;
+    private final boolean needsDynamicScope;
     private final MethodHandle variable;
 
     public CompiledIRNoProtocolMethod(MethodHandle handle, IRScope scope, RubyModule implementationClass) {
         super(scope, Visibility.PUBLIC, implementationClass);
 
-        this.scope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        this.needsDynamicScope = !scope.getFullInterpreterContext().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
         this.variable = handle;
     }
 
@@ -71,18 +70,18 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     protected void post(ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();
-        if (scope) {
+        if (needsDynamicScope) {
             context.popScope();
         }
     }
 
     protected void pre(ThreadContext context, StaticScope staticScope, RubyModule implementationClass, IRubyObject self, String name, Block block) {
-        // update call stacks (push: frame, class, scope, etc.)
+        // update call stacks (push: frame, class, needsDynamicScope, etc.)
         context.preMethodFrameOnly(implementationClass, name, self, block);
-        if (scope) {
+        if (needsDynamicScope) {
             // Add a parent-link to current dynscope to support non-local returns cheaply
             // This doesn't affect variable scoping since local variables will all have
-            // the right scope depth.
+            // the right needsDynamicScope depth.
             context.pushScope(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
         }
         context.setCurrentVisibility(getVisibility());
@@ -90,14 +89,7 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
 
     @Override
     public InterpreterContext ensureInstrsReady() {
-        // FIXME: duplicated from MixedModeIRMethod
-        if (method instanceof IRMethod) {
-            return ((IRMethod) method).lazilyAcquireInterpreterContext();
-        }
-
-        InterpreterContext ic = method.getInterpreterContext();
-
-        return ic;
+        // AbstractIRMethod.getMethodData() calls this and we want IC since we have not eliminated any get/put fields.
+        return method.getInterpreterContext();
     }
-
 }
