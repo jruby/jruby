@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
@@ -111,7 +110,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Uncompilable compilable = new Uncompilable(clazz);
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, compilable, null, self, ic, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return ic.getEngine().interpret(context, compilable, null, self, ic, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -122,7 +121,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Uncompilable compilable = new Uncompilable(clazz);
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, compilable, null, self, ic, name, args, blockArg);
+            return ic.getEngine().interpret(context, compilable, null, self, ic, name, args, blockArg, null);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -133,7 +132,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             Uncompilable compilable = new Uncompilable(null); // FIXME: we can pass real compilable through
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, compilable, block, self, ic, name, args, blockArg);
+            return ic.getEngine().interpret(context, compilable, block, self, ic, name, args, blockArg, null);
         } finally {
             ThreadContext.popBacktrace(context);
         }

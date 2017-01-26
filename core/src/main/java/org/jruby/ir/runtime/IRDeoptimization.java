@@ -23,4 +23,8 @@ public class IRDeoptimization extends RuntimeException {
         this.vars = vars;
         this.varNames = descriptor.split(";");
     }
+
+    public void populateTempValues(Object[] temps) {
+        // FIXME: use vars and their mappings to reset variable values.
+    }
 }

@@ -73,7 +73,7 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     private IRubyObject interpretWithBacktrace(InterpreterContext ic, Compilable compilable, ThreadContext context, IRubyObject self, String name, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, compilable, null, self, ic, name, block);
+            return ic.getEngine().interpret(context, compilable, null, self, ic, name, block, null);
         } finally {
             ThreadContext.popBacktrace(context);
         }

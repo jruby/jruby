@@ -109,11 +109,11 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, args, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, args, block, null);
             } else {
                 try {
                     pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, args, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, args, block, null);
                 } finally {
                     post(ic, context);
                 }
@@ -147,11 +147,11 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, block, null);
             } else {
                 try {
                     pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, block, null);
                 } finally {
                     post(ic, context);
                 }
@@ -183,11 +183,11 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, block, null);
             } else {
                 try {
                     pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, block, null);
                 } finally {
                     post(ic, context);
                 }
@@ -219,11 +219,11 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, block, null);
             } else {
                 try {
                     pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, block, null);
                 } finally {
                     post(ic, context);
                 }
@@ -255,11 +255,11 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, arg3, block);
+                return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, arg3, block, null);
             } else {
                 try {
                     pre(ic, context, self, name, block);
-                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, arg3, block);
+                    return ic.getEngine().interpret(context, this, null, self, ic, name, arg1, arg2, arg3, block, null);
                 } finally {
                     post(ic, context);
                 }

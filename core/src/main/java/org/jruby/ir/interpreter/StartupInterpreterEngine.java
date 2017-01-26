@@ -12,6 +12,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
+import org.jruby.ir.runtime.IRDeoptimization;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -27,8 +28,8 @@ import org.jruby.runtime.opto.ConstantCache;
  */
 public class StartupInterpreterEngine extends InterpreterEngine {
     public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext,
-                                 String name, IRubyObject[] args, Block blockArg) {
+                                 InterpreterContext interpreterContext, String name, IRubyObject[] args, Block blockArg,
+                                 IRDeoptimization deopt) {
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
         int       n         = instrs.length;
@@ -45,7 +46,6 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
-        boolean profile = IRRuntimeHelpers.inProfileMode();
 
         // Enter the looooop!
         while (ipc < n) {

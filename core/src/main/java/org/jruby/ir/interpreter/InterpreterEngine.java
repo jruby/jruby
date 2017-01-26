@@ -75,37 +75,37 @@ import org.jruby.runtime.opto.ConstantCache;
 public class InterpreterEngine {
 
     public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext, String name, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, IRubyObject.NULL_ARRAY, blockArg);
+                                 InterpreterContext interpreterContext, String name, Block blockArg, IRDeoptimization deopt) {
+        return interpret(context, method, block, self, interpreterContext, name, IRubyObject.NULL_ARRAY, blockArg, deopt);
     }
 
     public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext,
-                                 String name, IRubyObject arg1, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1}, blockArg);
+                                 InterpreterContext interpreterContext, String name, IRubyObject arg1, Block blockArg,
+                                 IRDeoptimization deopt) {
+        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1}, blockArg, deopt);
     }
 
     public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext,
-                                 String name, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2}, blockArg);
+                                 InterpreterContext interpreterContext, String name, IRubyObject arg1, IRubyObject arg2,
+                                 Block blockArg, IRDeoptimization deopt) {
+        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2}, blockArg, deopt);
     }
 
     public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext,
-                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
+                                 InterpreterContext interpreterContext, String name, IRubyObject arg1, IRubyObject arg2,
+                                 IRubyObject arg3, Block blockArg, IRDeoptimization deopt) {
+        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg, deopt);
     }
 
     public IRubyObject interpret(ThreadContext context, Compilable method, Block block, IRubyObject self,
-                                 InterpreterContext interpreterContext,
-                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
-        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
+                                 InterpreterContext interpreterContext, String name, IRubyObject arg1, IRubyObject arg2,
+                                 IRubyObject arg3, IRubyObject arg4, Block blockArg, IRDeoptimization deopt) {
+        return interpret(context, method, block, self, interpreterContext, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg, deopt);
     }
 
     public IRubyObject interpret(ThreadContext context, Compilable compilable, Block block, IRubyObject self,
                                          InterpreterContext interpreterContext,
-                                         String name, IRubyObject[] args, Block blockArg) {
+                                         String name, IRubyObject[] args, Block blockArg, IRDeoptimization deopt) {
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
         double[]  floats    = interpreterContext.allocateTemporaryFloatVariables();
@@ -115,6 +115,12 @@ public class InterpreterEngine {
         int       ipc       = 0;
         Object    exception = null;
         boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
+
+        if (deopt != null) {
+            ipc = deopt.getIPC();
+            deopt.populateTempValues(temp);
+            // FIXME: Add deleted temp values
+        }
 
         // Blocks with explicit call protocol shouldn't do this before args are prepared
         if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {

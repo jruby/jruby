@@ -39,7 +39,7 @@ public class InliningCallSite extends CallSite {
     }
 
     public void attemptInline(RubyClass selfType) {
-        callingScope.inlineMethod((Compilable) cache.method, selfType, cache.token, null, call, false);
+        callingScope.inlineMethod((Compilable) cache.method, cache.token, null, call, false);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
