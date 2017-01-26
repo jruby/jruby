@@ -1,6 +1,7 @@
 package org.jruby.ir.interpreter;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,6 +151,10 @@ public class FullInterpreterContext extends InterpreterContext {
     @Override
     public CFG getCFG() {
         return cfg;
+    }
+
+    public EnumSet<IRFlags> getFlags() {
+        return getScope().getFlags();
     }
 
     @Override
