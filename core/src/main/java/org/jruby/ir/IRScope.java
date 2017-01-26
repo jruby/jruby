@@ -1262,4 +1262,10 @@ public abstract class IRScope implements ParseResult {
     public boolean isDeoptimizable() {
         return false; // optimizedInterpreterContext != null;
     }
+
+    public void deoptimize() {
+        optimizedInterpreterContext = null;
+
+        // FIXME: full should also delete any data associated with backing off to it.
+    }
 }
