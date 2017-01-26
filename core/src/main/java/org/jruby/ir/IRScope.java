@@ -996,6 +996,10 @@ public abstract class IRScope implements ParseResult {
         return true;
     }
 
+    public FullInterpreterContext getExecutionContext() {
+        return fullInterpreterContext;
+    }
+
     public InterpreterContext getInterpreterContext() {
         return interpreterContext;
     }

@@ -23,7 +23,7 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     public CompiledIRNoProtocolMethod(MethodHandle handle, IRScope scope, RubyModule implementationClass) {
         super(scope, Visibility.PUBLIC, implementationClass);
 
-        this.needsDynamicScope = !scope.getFullInterpreterContext().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        this.needsDynamicScope = !scope.getExecutionContext().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
         this.variable = handle;
     }
 
