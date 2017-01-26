@@ -34,6 +34,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.callsite.InliningCallSite;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
@@ -602,6 +603,23 @@ public abstract class IRScope implements ParseResult {
 
         fullInterpreterContext.generateInstructionsForIntepretation();
 
+        // Special logic for testing inliner (consider making this a different flag).  The special named method
+        // will get a special callsite which will attempt to inline itself after the threshold marked by the
+        // inlining callsite caches cacheentry. So if I call a method n times then it will force an inline
+        // then the next time the parent method is called it should be with the forced inlined method.
+        if (RubyInstanceConfig.IR_PROFILE) {
+            Instr[] instructions = fullInterpreterContext.getInstructions();
+
+            for (Instr instr: instructions) {
+                if (instr instanceof CallBase) {
+                    CallBase call = (CallBase) instr;
+                    String name = call.getName();
+
+                    if (name.startsWith("___inline___")) call.setCallSite(new InliningCallSite(call, this));
+                }
+            }
+        }
+
         return fullInterpreterContext;
     }
 
@@ -1093,6 +1111,7 @@ public abstract class IRScope implements ParseResult {
 
     // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
     public void inlineMethod(Compilable method, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+        if (alreadyHasInline) return;
         FullInterpreterContext newContext = inlineMethodCommon(method, classToken, basicBlock, call, cloneHost);
 
         newContext.generateInstructionsForIntepretation();
@@ -1260,12 +1279,13 @@ public abstract class IRScope implements ParseResult {
     }
 
     public boolean isDeoptimizable() {
-        return false; // optimizedInterpreterContext != null;
+        return optimizedInterpreterContext != null;
     }
 
     public void deoptimize() {
         optimizedInterpreterContext = null;
 
+        compilable.setInterpreterContext(fullInterpreterContext);
         // FIXME: full should also delete any data associated with backing off to it.
     }
 }

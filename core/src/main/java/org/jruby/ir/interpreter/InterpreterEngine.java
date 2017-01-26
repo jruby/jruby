@@ -212,6 +212,7 @@ public class InterpreterEngine {
                         break;
                 }
             } catch (IRDeoptimization e) {
+                System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!DEOPTING");
                 IRScope scope = interpreterContext.getScope();
                 scope.deoptimize();
                 instrs = scope.getFullInterpreterContext().getInstructions();

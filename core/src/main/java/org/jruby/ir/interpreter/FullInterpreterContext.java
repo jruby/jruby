@@ -151,24 +151,6 @@ public class FullInterpreterContext extends InterpreterContext {
         instructions = linearizedInstrArray;
         temporaryVariablecount = getScope().getTemporaryVariablesCount();
 
-        // FIXME: Profiler will end up doing this but we are just hacking with magic name for now.
-        /*
-        for (Instr instr: instructions) {
-            if (instr instanceof CallBase) {
-                CallBase call = (CallBase) instr;
-                String name = call.getName();
-                // Our poor man's inliner will continue to see "else" branch with the original inline.
-                // we do not want it to happen again.
-                if (name.startsWith("___inline___")) {
-                    if (call.getCallSite() instanceof InliningCallSite) {
-                        // FIXME: This is some
-                        call.setCallSite(CallBase.getCallSiteFor(call.getCallType(), call.getName(), call.isPotentiallyRefined()));
-                    } else {
-                        call.setCallSite(new InliningCallSite(call, getScope()));
-                    }
-                }
-            }
-        }*/
         // System.out.println("SCOPE: " + getScope().getName());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());
     }
