@@ -1,14 +1,15 @@
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 platform_is :windows do
   require 'win32ole'
 
   describe "WIN32OLE_EVENT.new" do
     before :each do
-      @ole = WIN32OLE.new('InternetExplorer.Application')
-      @event = ''
+      @ie = WIN32OLESpecs.new_ole('InternetExplorer.Application')
     end
 
     after :each do
-      @ole = nil
+      @ie.Quit if @ie
     end
 
     it "raises TypeError given invalid argument" do
@@ -16,19 +17,17 @@ platform_is :windows do
     end
 
     it "raises RuntimeError if event does not exist" do
-      lambda { WIN32OLE_EVENT.new(@ole, 'A') }.should raise_error RuntimeError
+      lambda { WIN32OLE_EVENT.new(@ie, 'A') }.should raise_error RuntimeError
     end
 
     it "raises RuntimeError if OLE object has no events" do
-      dict = WIN32OLE.new('Scripting.Dictionary')
+      dict = WIN32OLESpecs.new_ole('Scripting.Dictionary')
       lambda { WIN32OLE_EVENT.new(dict) }.should raise_error RuntimeError
     end
 
     it "creates WIN32OLE_EVENT object" do
-      ev = WIN32OLE_EVENT.new(@ole, 'DWebBrowserEvents')
+      ev = WIN32OLE_EVENT.new(@ie, 'DWebBrowserEvents')
       ev.should be_kind_of WIN32OLE_EVENT
     end
-
   end
-
 end

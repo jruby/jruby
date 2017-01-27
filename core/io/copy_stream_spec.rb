@@ -4,9 +4,9 @@ require File.expand_path('../fixtures/classes', __FILE__)
 describe :io_copy_stream_to_file, shared: true do
   it "copies the entire IO contents to the file" do
     IO.copy_stream(@object.from, @to_name)
-    @to_name.should have_data(@content)
+    File.read(@to_name).should == @content
     IO.copy_stream(@from_bigfile, @to_name)
-    @to_name.should have_data(@content_bigfile)
+    File.read(@to_name).should == @content_bigfile
   end
 
   it "returns the number of bytes copied" do
@@ -16,7 +16,7 @@ describe :io_copy_stream_to_file, shared: true do
 
   it "copies only length bytes when specified" do
     IO.copy_stream(@object.from, @to_name, 8).should == 8
-    @to_name.should have_data("Line one")
+    File.read(@to_name).should == "Line one"
   end
 
   it "calls #to_path to convert on object to a file name" do
@@ -24,7 +24,7 @@ describe :io_copy_stream_to_file, shared: true do
     obj.should_receive(:to_path).and_return(@to_name)
 
     IO.copy_stream(@object.from, obj)
-    @to_name.should have_data(@content)
+    File.read(@to_name).should == @content
   end
 
   it "raises a TypeError if #to_path does not return a String" do
@@ -39,7 +39,7 @@ describe :io_copy_stream_to_file_with_offset, shared: true do
   platform_is_not :windows do
     it "copies only length bytes from the offset" do
       IO.copy_stream(@object.from, @to_name, 8, 4).should == 8
-      @to_name.should have_data(" one\n\nLi")
+      File.read(@to_name).should == " one\n\nLi"
     end
   end
 end
@@ -47,9 +47,9 @@ end
 describe :io_copy_stream_to_io, shared: true do
   it "copies the entire IO contents to the IO" do
     IO.copy_stream(@object.from, @to_io)
-    @to_name.should have_data(@content)
+    File.read(@to_name).should == @content
     IO.copy_stream(@from_bigfile, @to_io)
-    @to_name.should have_data(@content + @content_bigfile)
+    File.read(@to_name).should == (@content + @content_bigfile)
   end
 
   it "returns the number of bytes copied" do
@@ -60,7 +60,7 @@ describe :io_copy_stream_to_io, shared: true do
   it "starts writing at the destination IO's current position" do
     @to_io.write("prelude ")
     IO.copy_stream(@object.from, @to_io)
-    @to_name.should have_data("prelude " + @content)
+    File.read(@to_name).should == ("prelude " + @content)
   end
 
   it "leaves the destination IO position at the last write" do
@@ -81,7 +81,7 @@ describe :io_copy_stream_to_io, shared: true do
 
   it "copies only length bytes when specified" do
     IO.copy_stream(@object.from, @to_io, 8).should == 8
-    @to_name.should have_data("Line one")
+    File.read(@to_name).should == "Line one"
   end
 end
 
@@ -89,7 +89,7 @@ describe :io_copy_stream_to_io_with_offset, shared: true do
   platform_is_not :windows do
     it "copies only length bytes from the offset" do
       IO.copy_stream(@object.from, @to_io, 8, 4).should == 8
-      @to_name.should have_data(" one\n\nLi")
+      File.read(@to_name).should == " one\n\nLi"
     end
   end
 end
@@ -176,7 +176,7 @@ describe "IO.copy_stream" do
       obj.should_receive(:to_path).and_return(@from_name)
 
       IO.copy_stream(obj, @to_name)
-      @to_name.should have_data(@content)
+      File.read(@to_name).should == @content
     end
 
     it "raises a TypeError if #to_path does not return a String" do
@@ -256,14 +256,14 @@ describe "IO.copy_stream" do
       from = IOSpecs::CopyStreamReadPartial.new @io
 
       IO.copy_stream(from, @to_name)
-      @to_name.should have_data(@content)
+      File.read(@to_name).should == @content
     end
 
     it "calls #read on the source Object" do
       from = IOSpecs::CopyStreamRead.new @io
 
       IO.copy_stream(from, @to_name)
-      @to_name.should have_data(@content)
+      File.read(@to_name).should == @content
     end
 
     it "calls #write on the destination Object" do

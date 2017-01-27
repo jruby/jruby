@@ -51,7 +51,7 @@ describe "IO.popen" do
     @io.write("bar")
     @io.close
 
-    @fname.should have_data("bar")
+    File.read(@fname).should == "bar"
   end
 
   it "raises IOError when reading a write-only pipe" do
@@ -72,7 +72,7 @@ describe "IO.popen" do
 
     $?.exitstatus.should == 0
 
-    @fname.should have_data("bar")
+    File.read(@fname).should == "bar"
   end
 
   it "does not throw an exception if child exited and has been waited for" do
