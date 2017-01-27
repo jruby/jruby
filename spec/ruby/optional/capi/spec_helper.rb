@@ -29,7 +29,7 @@ def compile_extension(name)
 
   if RUBY_NAME == 'rbx'
     hdrdir = RbConfig::CONFIG["rubyhdrdir"]
-  elsif RUBY_NAME =~ /^ruby/
+  elsif RUBY_NAME =~ /^ruby/ && !defined?(::Truffle)
     if hdrdir = RbConfig::CONFIG["rubyhdrdir"]
       arch_hdrdir = RbConfig::CONFIG["rubyarchhdrdir"] ||
                     File.join(hdrdir, RbConfig::CONFIG["arch"])
@@ -43,7 +43,7 @@ def compile_extension(name)
   elsif RUBY_NAME == "maglev"
     require 'mkmf'
     hdrdir = $hdrdir
-  elsif RUBY_NAME == 'jruby+truffle'
+  elsif RUBY_NAME =~ /^ruby/ && defined?(::Truffle) # TruffleRuby
     return compile_jruby_truffle_extconf_make(name, path, objdir)
   else
     raise "Don't know how to build C extensions with #{RUBY_NAME}"

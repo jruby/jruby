@@ -201,7 +201,7 @@ describe :process_exec, shared: true do
           child_fd = IO.read(@child_fd_file).to_i
           child_fd.to_i.should > STDERR.fileno
 
-          @name.should have_data("writing to fd: #{child_fd}")
+          File.read(@name).should == "writing to fd: #{child_fd}"
         end
       end
     end

@@ -1,1 +1,1 @@
-print ENV["FOO"]
+File.write ARGV[0], ENV["FOO"]

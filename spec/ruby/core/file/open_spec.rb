@@ -132,7 +132,7 @@ describe "File.open" do
     # even though the file permissions are r-r-r.
 
     File.open(@file, "w", 0444) { |f| f.write("test") }
-    @file.should have_data("test")
+    File.read(@file).should == "test"
   end
 
   platform_is_not :windows do
@@ -142,7 +142,7 @@ describe "File.open" do
       File.open(@file, "w", 0444) { |f| f.write("test") }
 
       File.stat(@file).mode.to_s(8).should == orig_perms
-      @file.should have_data("test")
+      File.read(@file).should == "test"
     end
   end
 
@@ -655,7 +655,7 @@ describe "File.open when passed a file descriptor" do
     @file.fileno.should equal(@fd)
     @file.write @content
     @file.flush
-    @name.should have_data(@content)
+    File.read(@name).should == @content
   end
 
   it "opens a file when passed a block" do
@@ -665,7 +665,7 @@ describe "File.open when passed a file descriptor" do
       f.write @content
       f
     end
-    @name.should have_data(@content)
+    File.read(@name).should == @content
   end
 end
 

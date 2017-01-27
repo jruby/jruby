@@ -1,1 +1,5 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require File.expand_path('../shared/each', __FILE__)
+
+describe "GzipReader#each" do
+  it_behaves_like :gzipreader_each, :each
+end
