@@ -1,5 +1,6 @@
 package org.jruby.ir.passes;
 
+import java.util.EnumSet;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
@@ -29,9 +30,10 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     @Override
     public Object execute(IRScope s, Object... data) {
         StoreLocalVarPlacementProblem slvp = new StoreLocalVarPlacementProblem();
+        EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();
 
         // Only run if we are pushing a scope or we are reusing the parents scope.
-        if (!s.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) || s.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE)) {
+        if (!flags.contains(IRFlags.DYNSCOPE_ELIMINATED) || flags.contains(IRFlags.REUSE_PARENT_DYNSCOPE)) {
             Map<Operand, Operand> varRenameMap = new HashMap<>();
             // 1. Figure out required stores
             // 2. Add stores
