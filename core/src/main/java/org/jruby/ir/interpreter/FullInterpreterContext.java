@@ -153,10 +153,6 @@ public class FullInterpreterContext extends InterpreterContext {
         return cfg;
     }
 
-    public EnumSet<IRFlags> getFlags() {
-        return getScope().getFlags();
-    }
-
     @Override
     public void computeScopeFlagsFromInstructions() {
         for (BasicBlock b: cfg.getBasicBlocks()) {
