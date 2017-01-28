@@ -20,6 +20,11 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         return "Add Local Variable Load/Store Instructions";
     }
 
+    @Override
+    public String getShortLabel() {
+        return "Add LVar L/S";
+    }
+
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(LiveVariableAnalysis.class);
 
     @Override

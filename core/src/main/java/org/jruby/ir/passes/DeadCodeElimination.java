@@ -14,6 +14,11 @@ public class DeadCodeElimination extends CompilerPass {
     }
 
     @Override
+    public String getShortLabel() {
+        return "DCE";
+    }
+
+    @Override
     public List<Class<? extends CompilerPass>> getDependencies() {
         return DEPENDENCIES;
     }

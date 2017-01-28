@@ -18,6 +18,11 @@ public class LocalOptimizationPass extends CompilerPass {
     }
 
     @Override
+    public String getShortLabel() {
+        return "Local Opts";
+    }
+
+    @Override
     public Object execute(IRScope s, Object... data) {
         for (BasicBlock b: s.getCFG().getBasicBlocks()) {
             runLocalOptsOnBasicBlock(s, b);

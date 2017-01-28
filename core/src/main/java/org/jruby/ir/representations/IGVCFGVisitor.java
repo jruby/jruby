@@ -110,7 +110,7 @@ public class IGVCFGVisitor {
         endTag(writer, "nodes");
 
         startTag(writer, "edges");
-        
+
         for (Tuple<Integer, Integer> edge: instrEdges) {
             emptyTag(writer, "edge", "from", edge.a, "to", edge.b);
         }

@@ -20,6 +20,11 @@ public class OptimizeDelegationPass extends CompilerPass {
     }
 
     @Override
+    public String getShortLabel() {
+        return "Opt Delegation";
+    }
+
+    @Override
     public Object execute(IRScope s, Object... data) {
         EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();
 
