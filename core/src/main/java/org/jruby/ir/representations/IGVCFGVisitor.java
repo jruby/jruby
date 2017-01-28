@@ -10,6 +10,7 @@ import org.jruby.ir.instructions.BranchInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.JumpTargetInstr;
+import org.jruby.ir.util.IGVInstrListener;
 
 import static org.jruby.ir.util.IGVHelper.emptyTag;
 import static org.jruby.ir.util.IGVHelper.endTag;
@@ -28,11 +29,14 @@ public class IGVCFGVisitor {
     List<Tuple<Integer, Integer>> instrEdges = new ArrayList();
     List<Tuple<Integer, JumpTargetInstr>> extraInstrEdges = new ArrayList();
     Instr lastInstr = null; // Last instr from the previous BB.
+    IGVInstrListener listener;
 
     public IGVCFGVisitor(CFG cfg, PrintStream writer, String name) {
         this.writer = writer;
 
+        listener = (IGVInstrListener) cfg.getScope().getManager().getInstructionsListener();
         CFG(cfg, name);
+        listener.reset();
     }
 
     protected void visitBasicBlocks(CFG cfg) {
@@ -50,9 +54,15 @@ public class IGVCFGVisitor {
             }
             endTag(writer, "successors");
             startTag(writer, "nodes");
+
             for (Instr instr: basicBlock.getInstrs()) {
                 emptyTag(writer, "node", "id", System.identityHashCode(instr));
             }
+
+            for (Instr instr: listener.removedList(basicBlock)) {
+                emptyTag(writer, "removeNode", "id", System.identityHashCode(instr));
+            }
+
             endTag(writer, "nodes");
             endTag(writer, "block");
         }

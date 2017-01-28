@@ -31,8 +31,10 @@ package org.jruby.ir.listeners;
 import org.jruby.ir.instructions.Instr;
 
 import java.util.*;
+import org.jruby.ir.representations.BasicBlock;
 
 public class InstructionsListenerDecorator implements List<Instr> {
+    private final BasicBlock basicBlock;
     private final List<Instr> instrs;
     private final InstructionsListener listener;
 
@@ -87,25 +89,26 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
         @Override
         public void remove() {
-            listener.instrChanged(instrs, currentInstr, null, currentIndex, InstructionsListener.OperationType.REMOVE);
+            listener.instrChanged(basicBlock, currentInstr, null, currentIndex, InstructionsListener.OperationType.REMOVE);
             listIterator.remove();
         }
 
         @Override
         public void set(Instr e) {
-            listener.instrChanged(instrs, currentInstr, e, currentIndex, InstructionsListener.OperationType.UPDATE);
+            listener.instrChanged(basicBlock, currentInstr, e, currentIndex, InstructionsListener.OperationType.UPDATE);
             listIterator.set(e);
         }
 
         @Override
         public void add(Instr e) {
-            listener.instrChanged(instrs, instrs.get(currentIndex +1), e, currentIndex +1 , InstructionsListener.OperationType.ADD);
+            listener.instrChanged(basicBlock, instrs.get(currentIndex +1), e, currentIndex +1 , InstructionsListener.OperationType.ADD);
             listIterator.add(e);
         }
 
     }
 
-    public InstructionsListenerDecorator(List<Instr> instrs, InstructionsListener listener) {
+    public InstructionsListenerDecorator(BasicBlock basicBlock, List<Instr> instrs, InstructionsListener listener) {
+        this.basicBlock = basicBlock;
         this.instrs = instrs;
         this.listener = listener;
     }
@@ -143,14 +146,14 @@ public class InstructionsListenerDecorator implements List<Instr> {
     @Override
     public boolean add(Instr e) {
         int index = instrs.size() + 1;
-        listener.instrChanged(instrs, null, e, index, InstructionsListener.OperationType.ADD);
+        listener.instrChanged(basicBlock, null, e, index, InstructionsListener.OperationType.ADD);
         return instrs.add(e);
     }
 
     @Override
     public boolean remove(Object o) {
         int index = instrs.indexOf(o);
-        if (index != -1) listener.instrChanged(instrs, (Instr) o, null, index, InstructionsListener.OperationType.REMOVE);
+        if (index != -1) listener.instrChanged(basicBlock, (Instr) o, null, index, InstructionsListener.OperationType.REMOVE);
         return instrs.remove(o);
     }
 
@@ -212,20 +215,22 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
     @Override
     public Instr set(int index, Instr element) {
-        listener.instrChanged(instrs, null, element, index, InstructionsListener.OperationType.UPDATE);
+        Instr oldElement = instrs.get(index);
+        listener.instrChanged(basicBlock, oldElement, element, index, InstructionsListener.OperationType.UPDATE);
         return instrs.set(index, element);
     }
 
     @Override
     public void add(int index, Instr element) {
-        listener.instrChanged(instrs, null, element, index, InstructionsListener.OperationType.ADD);
+        listener.instrChanged(basicBlock, null, element, index, InstructionsListener.OperationType.ADD);
         instrs.add(index, element);
     }
 
     @Override
     public Instr remove(int index) {
-        listener.instrChanged(instrs, null, null, index, InstructionsListener.OperationType.REMOVE);
-        return instrs.remove(index);
+        Instr element = instrs.remove(index);
+        listener.instrChanged(basicBlock, element, null, index, InstructionsListener.OperationType.REMOVE);
+        return element;
     }
 
     @Override
