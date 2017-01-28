@@ -1,7 +1,6 @@
 package org.jruby.ir.transformations.inlining;
 
 import org.jruby.dirgra.Edge;
-import org.jruby.RubyModule;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
