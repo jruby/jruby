@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jnr.ffi.annotations.In;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.BranchInstr;
 import org.jruby.ir.instructions.Instr;
@@ -109,14 +110,17 @@ public class IGVCFGVisitor {
         endTag(writer, "nodes");
 
         startTag(writer, "edges");
+        
         for (Tuple<Integer, Integer> edge: instrEdges) {
-            startTag(writer, "edge", "from", edge.a, "to", edge.b);
-            endTag(writer, "edge");
+            emptyTag(writer, "edge", "from", edge.a, "to", edge.b);
         }
 
         for (Tuple<Integer, JumpTargetInstr> edge: extraInstrEdges) {
-            startTag(writer, "edge", "from", edge.a, "to", indexOffsets.get(cfg.getBBForLabel(edge.b.getJumpTarget())));
-            endTag(writer, "edge");
+            emptyTag(writer, "edge", "from", edge.a, "to", indexOffsets.get(cfg.getBBForLabel(edge.b.getJumpTarget())));
+        }
+
+        for (Tuple<Instr, Instr> edge: listener.getRemovedEdges()) {
+            emptyTag(writer, "removedEdge", "from", System.identityHashCode(edge.a), "to", System.identityHashCode(edge.b));
         }
 
         endTag(writer, "edges");
