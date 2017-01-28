@@ -1162,6 +1162,13 @@ public abstract class IRScope implements ParseResult {
         newContext.linearizeBasicBlocks();
         this.optimizedInterpreterContext = newContext;
 
+        IGVDumper dumper = dumpToIGV();
+        if (dumper != null) {
+            dumper.dump(fullInterpreterContext.getCFG(), "Full");
+            dumper.dump(optimizedInterpreterContext.getCFG(), "Inlined");
+            dumper.close();
+        }
+
         if (compilable instanceof MixedModeIRMethod) {
             runtime.getJITCompiler().getTaskFor(runtime.getCurrentContext(), compilable).run();
             return;
