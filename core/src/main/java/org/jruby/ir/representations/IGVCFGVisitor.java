@@ -27,8 +27,7 @@ public class IGVCFGVisitor {
     Map<BasicBlock, Integer> indexOffsets = new HashMap();
     List<Tuple<Integer, Integer>> instrEdges = new ArrayList();
     List<Tuple<Integer, JumpTargetInstr>> extraInstrEdges = new ArrayList();
-    int instrIndex = 0;
-
+    Instr lastInstr = null; // Last instr from the previous BB.
 
     public IGVCFGVisitor(CFG cfg, PrintStream writer, String name) {
         this.writer = writer;
@@ -51,10 +50,8 @@ public class IGVCFGVisitor {
             }
             endTag(writer, "successors");
             startTag(writer, "nodes");
-            int index = indexOffsets.get(basicBlock);
-            int length = basicBlock.getInstrs().size();
-            for (int i = 0; i < length; i++) {
-                emptyTag(writer, "node", "id", index + i);
+            for (Instr instr: basicBlock.getInstrs()) {
+                emptyTag(writer, "node", "id", System.identityHashCode(instr));
             }
             endTag(writer, "nodes");
             endTag(writer, "block");
@@ -66,20 +63,28 @@ public class IGVCFGVisitor {
         int size = instrs.size();
 
         if (size > 0) {
-            for (int i = 0; i < size - 1; i++) {
-                Instr(instrs.get(i));
-                instrEdges.add(new Tuple(instrIndex - 1, instrIndex));
+            int lastIPC = Instr(instrs.get(0));
+
+            // Last BB processed needs to hook up to first in next one if not a Jump (fallthrough)
+            if (lastInstr != null && !(lastInstr instanceof JumpInstr)) {
+                instrEdges.add(new Tuple(System.identityHashCode(lastInstr), lastIPC));
             }
 
-            Instr lastInstr = instrs.get(size - 1);
-            Instr(lastInstr);
-            // jumps do not fall to next BB but all other instrs will
-            if (!(lastInstr instanceof JumpInstr)) instrEdges.add(new Tuple(instrIndex - 1, instrIndex));
+            for (int i = 1; i < size; i++) {
+                int ipc = Instr(instrs.get(i));
+                instrEdges.add(new Tuple(lastIPC, ipc));
+                lastIPC = ipc;
+            }
+
+            lastInstr = instrs.get(size - 1);
         }
     }
 
     public void BasicBlock(BasicBlock basicBlock) {
-        indexOffsets.put(basicBlock, instrIndex);
+        // We have potentially empty entry and exit BBs
+        if (!basicBlock.getInstrs().isEmpty()) {
+            indexOffsets.put(basicBlock, System.identityHashCode(basicBlock.getInstrs().get(0)));
+        }
         visitInstrs(basicBlock);
     }
 
@@ -113,8 +118,8 @@ public class IGVCFGVisitor {
         endTag(writer, "graph");
     }
 
-    public void Instr(Instr instr) {
-        int ipc = instrIndex;
+    public int Instr(Instr instr) {
+        int ipc = System.identityHashCode(instr);
 
         startTag(writer, "node", "id", ipc);
         startTag(writer, "properties");
@@ -126,6 +131,7 @@ public class IGVCFGVisitor {
 
         endTag(writer, "properties");
         endTag(writer, "node");
-        instrIndex++;
+
+        return ipc;
     }
 }
