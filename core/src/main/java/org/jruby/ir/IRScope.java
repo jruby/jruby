@@ -1,6 +1,5 @@
 package org.jruby.ir;
 
-import java.io.IOException;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -588,13 +587,19 @@ public abstract class IRScope implements ParseResult {
         return fullInterpreterContext;
     }
 
+    public String getFullyQualifiedName() {
+        if (getLexicalParent() == null) return getName();
+
+        return getLexicalParent().getFullyQualifiedName() + "::" + getName();
+    }
+
     public IGVDumper dumpToIGV() {
         if (RubyInstanceConfig.IR_DEBUG_IGV != null) {
             String spec = RubyInstanceConfig.IR_DEBUG_IGV;
 
             if (spec.contains(":") && spec.equals(getFileName() + ":" + getLineNumber()) ||
                     spec.equals(getFileName())) {
-                return new IGVDumper(spec + " - " + name);
+                return new IGVDumper(getFullyQualifiedName() + "; line " + getLineNumber());
             }
         }
 
