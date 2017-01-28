@@ -114,6 +114,7 @@ public class Options {
     public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", JIT_THRESHOLD.load() != 0, "Run the JIT compiler in a background thread. Off if jit.threshold=0.");
     public static final Option<Boolean> JIT_KERNEL = bool(JIT, "jit.kernel", false, "Run the JIT compiler while the pure-Ruby kernel is booting.");
 
+    public static final Option<String> IR_DEBUG_IGV          = string(IR, "ir.debug.igv", (String) null, "Specify file:line of scope to jump to IGV");
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
     public static final Option<Boolean> IR_COMPILER_DEBUG    = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");

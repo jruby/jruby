@@ -11,6 +11,11 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.JumpTargetInstr;
 
+import static org.jruby.ir.util.IGVHelper.emptyTag;
+import static org.jruby.ir.util.IGVHelper.endTag;
+import static org.jruby.ir.util.IGVHelper.property;
+import static org.jruby.ir.util.IGVHelper.startTag;
+
 /**
  * Not a double visitor but I did not want both instr and dirgra
  * to have this visitor have an accept added to it. dirgra is
@@ -24,53 +29,11 @@ public class IGVCFGVisitor {
     List<Tuple<Integer, JumpTargetInstr>> extraInstrEdges = new ArrayList();
     int instrIndex = 0;
 
-    private void property(String name, Object content) {
-        startTag("p", "name", name);
-        writer.print(content.toString().replace("<", "&lt;"));
-        endTag("p");
-    }
-
-    private void emptyTag(String name, Object... attributes) {
-        writer.print("<" + name + " ");
-        for (int i = 0; i < attributes.length; i += 2) {
-            writer.print(attributes[i]);
-            writer.print("=\"");
-            writer.print(attributes[i+1]);
-            writer.print("\" ");
-        }
-        writer.println("/>");
-    }
-
-
-    private void startTag(String name) {
-        writer.println("<" + name + ">");
-    }
-
-    private void startTag(String name, Object... attributes) {
-        writer.print("<" + name + " ");
-        for (int i = 0; i < attributes.length; i += 2) {
-            writer.print(attributes[i]);
-            writer.print("=\"");
-            writer.print(attributes[i+1]);
-            writer.print("\" ");
-        }
-        writer.println(">");
-    }
-
-    private void endTag(String name) {
-        writer.println("</" + name + ">");
-    }
-
 
     public IGVCFGVisitor(CFG cfg, PrintStream writer, String name) {
         this.writer = writer;
 
-        startTag("group");
-        startTag("properties");
-        property("name", name);
-        endTag("properties");
-        CFG(cfg);
-        endTag("group");
+        CFG(cfg, name);
     }
 
     protected void visitBasicBlocks(CFG cfg) {
@@ -81,20 +44,20 @@ public class IGVCFGVisitor {
 
     protected void visitEdges(CFG cfg) {
         for (BasicBlock basicBlock: cfg.getBasicBlocks()) {
-            startTag("block", "name", basicBlock.getLabel());
-            startTag("successors");
+            startTag(writer, "block", "name", basicBlock.getLabel());
+            startTag(writer, "successors");
             for (BasicBlock destination: cfg.getOutgoingDestinations(basicBlock)) {
-                emptyTag("successor", "name", destination.getLabel());
+                emptyTag(writer, "successor", "name", destination.getLabel());
             }
-            endTag("successors");
-            startTag("nodes");
+            endTag(writer, "successors");
+            startTag(writer, "nodes");
             int index = indexOffsets.get(basicBlock);
             int length = basicBlock.getInstrs().size();
             for (int i = 0; i < length; i++) {
-                emptyTag("node", "id", index + i);
+                emptyTag(writer, "node", "id", index + i);
             }
-            endTag("nodes");
-            endTag("block");
+            endTag(writer, "nodes");
+            endTag(writer, "block");
         }
     }
 
@@ -120,46 +83,49 @@ public class IGVCFGVisitor {
         visitInstrs(basicBlock);
     }
 
-    public void CFG(CFG cfg) {
-        startTag("graph");
+    public void CFG(CFG cfg, String name) {
+        startTag(writer, "graph");
+        startTag(writer, "properties");
+        property(writer, "name", name);
+        endTag(writer, "properties");
 
-        startTag("nodes");
+        startTag(writer, "nodes");
         visitBasicBlocks(cfg);
-        endTag("nodes");
+        endTag(writer, "nodes");
 
-        startTag("edges");
+        startTag(writer, "edges");
         for (Tuple<Integer, Integer> edge: instrEdges) {
-            startTag("edge", "from", edge.a, "to", edge.b);
-            endTag("edge");
+            startTag(writer, "edge", "from", edge.a, "to", edge.b);
+            endTag(writer, "edge");
         }
 
         for (Tuple<Integer, JumpTargetInstr> edge: extraInstrEdges) {
-            startTag("edge", "from", edge.a, "to", indexOffsets.get(cfg.getBBForLabel(edge.b.getJumpTarget())));
-            endTag("edge");
+            startTag(writer, "edge", "from", edge.a, "to", indexOffsets.get(cfg.getBBForLabel(edge.b.getJumpTarget())));
+            endTag(writer, "edge");
         }
 
-        endTag("edges");
+        endTag(writer, "edges");
 
-        startTag("controlFlow");
+        startTag(writer, "controlFlow");
         visitEdges(cfg);
-        endTag("controlFlow");
+        endTag(writer, "controlFlow");
 
-        endTag("graph");
+        endTag(writer, "graph");
     }
 
     public void Instr(Instr instr) {
         int ipc = instrIndex;
 
-        startTag("node", "id", ipc);
-        startTag("properties");
-        property("label" , ipc);
-        property("name", instr);
+        startTag(writer, "node", "id", ipc);
+        startTag(writer, "properties");
+        property(writer, "label" , ipc);
+        property(writer, "name", instr);
 
         // We have not processed all BBs yet so we cannot resolve ipc locations of the jumps destinations.
         if (instr instanceof BranchInstr) extraInstrEdges.add(new Tuple(ipc, (JumpTargetInstr) instr));
 
-        endTag("properties");
-        endTag("node");
+        endTag(writer, "properties");
+        endTag(writer, "node");
         instrIndex++;
     }
 }
