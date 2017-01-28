@@ -5,6 +5,7 @@ import org.jruby.dirgra.ExplicitVertexID;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.NopInstr;
 import org.jruby.ir.instructions.Site;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.listeners.InstructionsListener;
@@ -197,7 +198,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
         for (Instr i: getInstrs()) {
             Instr clonedInstr = i.clone(ii);
-            if (clonedInstr != null) {
+            if (clonedInstr != null && clonedInstr != NopInstr.NOP) {
                 clonedBB.addInstr(clonedInstr);
                 if (clonedInstr instanceof YieldInstr) ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
             }
