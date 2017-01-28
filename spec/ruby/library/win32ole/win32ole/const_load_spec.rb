@@ -1,9 +1,11 @@
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 platform_is :windows do
   require 'win32ole'
 
   describe "WIN32OLE.const_load when passed Shell.Application OLE object" do
     before :each do
-      @win32ole = WIN32OLE.new 'Shell.Application'
+      @win32ole = WIN32OLESpecs.new_ole 'Shell.Application'
     end
 
     it "loads constant SsfWINDOWS into WIN32OLE namespace" do
@@ -16,7 +18,7 @@ platform_is :windows do
   describe "WIN32OLE.const_load when namespace is specified" do
     before :each do
       module WIN32OLE_RUBYSPEC; end
-      @win32ole = WIN32OLE.new 'Shell.Application'
+      @win32ole = WIN32OLESpecs.new_ole 'Shell.Application'
     end
 
     it "loads constants into given namespace" do

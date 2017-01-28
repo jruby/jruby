@@ -299,10 +299,16 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    public MethodHandle getIdTest() {
+        MethodHandle idTest = this.idTest;
+        if (idTest != null) return idTest;
+        return idTest = newIdTest();
+    }
+
     protected MethodHandle newIdTest() {
         return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
                 .insert(2,id)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
+                .invoke(testModuleMatch);
     }
 
     /** separate path for MetaClass construction
@@ -312,8 +318,6 @@ public class RubyModule extends RubyObject {
         super(runtime, metaClass, objectSpace);
 
         id = runtime.allocModuleId();
-
-        idTest = newIdTest();
 
         runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
@@ -4504,7 +4508,7 @@ public class RubyModule extends RubyObject {
      * Pre-built test that takes ThreadContext, IRubyObject and checks that the object is a module with the
      * same ID as this one.
      */
-    public final MethodHandle idTest;
+    private MethodHandle idTest;
 
     /**
      * The class/module within whose namespace this class/module resides.
@@ -4789,4 +4793,11 @@ public class RubyModule extends RubyObject {
     private boolean javaProxy = false;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+    /**
+     * A handle for invoking the module ID test, to be reused for all idTest handles below.
+     */
+    private static final MethodHandle testModuleMatch = Binder
+            .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
+            .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
 }

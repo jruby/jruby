@@ -27,6 +27,7 @@ import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+import org.jruby.ir.util.IGVDumper;
 import org.jruby.parser.StaticScope;
 
 import java.util.*;
@@ -504,7 +505,7 @@ public abstract class IRScope implements ParseResult {
     // SSS FIXME: We should configure different optimization levels
     // and run different kinds of analysis depending on time budget.
     // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
-    private void runCompilerPasses(List<CompilerPass> passes) {
+    private void runCompilerPasses(List<CompilerPass> passes, IGVDumper dumper) {
         // All passes are disabled in scopes where BEGIN and END scopes might
         // screw around with escaped variables. Optimizing for them is not
         // worth the effort. It is simpler to just go fully safe in scopes
@@ -513,14 +514,22 @@ public abstract class IRScope implements ParseResult {
             passes = getManager().getSafePasses(this);
         }
 
+        if (dumper != null) dumper.dump(getCFG(), "Start");
+
         CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
         for (CompilerPass pass : scheduler) {
             pass.run(this);
+            if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
         }
 
         if (RubyInstanceConfig.IR_UNBOXING) {
-            (new UnboxingPass()).run(this);
+            CompilerPass pass = new UnboxingPass();
+            pass.run(this);
+            if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
         }
+
+        if (dumper != null) dumper.close();
+
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
@@ -595,7 +604,7 @@ public abstract class IRScope implements ParseResult {
         }
 
         prepareFullBuildCommon();
-        runCompilerPasses(getManager().getCompilerPasses(this));
+        runCompilerPasses(getManager().getCompilerPasses(this), dumpToIGV());
         getManager().optimizeIfSimpleScope(this);
 
         // Always add call protocol instructions now since we are removing support for implicit stuff in interp.
@@ -623,13 +632,30 @@ public abstract class IRScope implements ParseResult {
         return fullInterpreterContext;
     }
 
-    // FIXME: This is awkward but we toggle fic before we create linearizedBBList and the inliningcaching
-    // callsite will arrive between those two events
     public boolean isFullBuildComplete() {
         return fullInterpreterContext != null && fullInterpreterContext.getInstructions() != null;
     }
 
-    /** Run any necessary passes to get the IR ready for compilation */
+    public String getFullyQualifiedName() {
+        if (getLexicalParent() == null) return getName();
+
+        return getLexicalParent().getFullyQualifiedName() + "::" + getName();
+    }
+
+    public IGVDumper dumpToIGV() {
+        if (RubyInstanceConfig.IR_DEBUG_IGV != null) {
+            String spec = RubyInstanceConfig.IR_DEBUG_IGV;
+
+            if (spec.contains(":") && spec.equals(getFileName() + ":" + getLineNumber()) ||
+                    spec.equals(getFileName())) {
+                return new IGVDumper(getFullyQualifiedName() + "; line " + getLineNumber());
+            }
+        }
+
+        return null;
+    }
+
+    /** Run any necessary passes to get the IR ready for compilation (AOT and/or JIT) */
     public synchronized BasicBlock[] prepareForCompilation() {
         if (optimizedInterpreterContext != null) {
             return optimizedInterpreterContext.getLinearizedBBList();
@@ -646,7 +672,7 @@ public abstract class IRScope implements ParseResult {
 
         prepareFullBuildCommon();
 
-        runCompilerPasses(getManager().getJITPasses(this));
+        runCompilerPasses(getManager().getJITPasses(this), dumpToIGV());
 
         BasicBlock[] bbs = fullInterpreterContext.linearizeBasicBlocks();
 
@@ -1047,6 +1073,10 @@ public abstract class IRScope implements ParseResult {
         return true;
     }
 
+    public FullInterpreterContext getExecutionContext() {
+        return fullInterpreterContext;
+    }
+
     public InterpreterContext getInterpreterContext() {
         return interpreterContext;
     }
@@ -1279,7 +1309,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public boolean isDeoptimizable() {
-        return optimizedInterpreterContext != null;
+        return false; //optimizedInterpreterContext != null;
     }
 
     public void deoptimize() {

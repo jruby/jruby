@@ -1,9 +1,15 @@
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 platform_is :windows do
   require 'win32ole'
 
   describe "WIN32OLE#ole_put_methods" do
     before :each do
-      @ie = WIN32OLE.new 'InternetExplorer.application'
+      @ie = WIN32OLESpecs.new_ole('InternetExplorer.Application')
+    end
+
+    after :each do
+      @ie.Quit
     end
 
     it "raises ArgumentError if argument is given" do
@@ -17,7 +23,5 @@ platform_is :windows do
     it "contains a 'Height' method for Internet Explorer" do
       @ie.ole_put_methods.map { |m| m.name }.include?('Height').should be_true
     end
-
   end
-
 end

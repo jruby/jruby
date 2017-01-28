@@ -1,5 +1,6 @@
 package org.jruby.ir.interpreter;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -31,7 +32,6 @@ public class InterpreterContext {
 
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
     private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
-    private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
 
     public InterpreterEngine getEngine() {
         if (engine == null) {
@@ -241,4 +241,9 @@ public class InterpreterContext {
 
         retrieveFlags();
     }
+
+    public EnumSet<IRFlags> getFlags() {
+        return scope.getFlags();
+    }
 }
+

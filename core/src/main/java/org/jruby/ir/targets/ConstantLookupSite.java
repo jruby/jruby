@@ -244,7 +244,7 @@ public class ConstantLookupSite extends MutableCallSite {
         MethodHandle fallback = getFallback(module, cachingFallback);
 
         // Test that module is same as before
-        target = guardWithTest(module.idTest, target, fallback);
+        target = guardWithTest(module.getIdTest(), target, fallback);
 
         // Global invalidation
         SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();

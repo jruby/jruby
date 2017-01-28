@@ -1,9 +1,11 @@
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 platform_is :windows do
   require 'win32ole'
 
   describe "WIN32OLE#_invoke" do
     before :each do
-      @shell = WIN32OLE.new 'Shell.application'
+      @shell = WIN32OLESpecs.new_ole 'Shell.application'
     end
 
     it "raises ArgumentError if insufficient number of arguments are given" do

@@ -149,7 +149,7 @@ public class RubyObjectSpace {
             }
             return runtime.newFixnum(count);
         }
-        if (args[0].getClass() == MetaClass.class) {
+        if (rubyClass.getClass() == MetaClass.class) {
             // each_object(Cls.singleton_class) is basically a walk of Cls and all descendants of Cls.
             // In other words, this is walking all instances of Cls's singleton class and its subclasses.
             IRubyObject attached = ((MetaClass) args[0]).getAttached();

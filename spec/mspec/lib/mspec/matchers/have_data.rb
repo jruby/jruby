@@ -1,5 +1,6 @@
 require 'mspec/guards/feature'
 require 'mspec/helpers/io'
+require 'mspec/utils/deprecate'
 
 class HaveDataMatcher
   def initialize(data, mode="rb:binary")
@@ -46,6 +47,7 @@ class Object
   # file can contain more bytes than +data+. The extra bytes do not
   # affect the result.
   def have_data(data, mode="rb:binary")
+    MSpec.deprecate "have_data", "File.read or File.binread(file).should == data"
     HaveDataMatcher.new(data, mode)
   end
 end
