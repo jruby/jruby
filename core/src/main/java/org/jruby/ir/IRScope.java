@@ -503,13 +503,13 @@ public abstract class IRScope implements ParseResult {
         CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
         for (CompilerPass pass : scheduler) {
             pass.run(this);
-            if (dumper != null) dumper.dump(getCFG(), pass.getLabel());
+            if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
         }
 
         if (RubyInstanceConfig.IR_UNBOXING) {
             CompilerPass pass = new UnboxingPass();
             pass.run(this);
-            if (dumper != null) dumper.dump(getCFG(), pass.getLabel());
+            if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
         }
 
         if (dumper != null) dumper.close();

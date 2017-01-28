@@ -22,6 +22,11 @@ public class OptimizeDynScopesPass extends CompilerPass {
         return "Optimize Dynamic Scopes";
     }
 
+    @Override
+    public String getShortLabel() {
+        return "Opt Dyn Scopes";
+    }
+
     private void setupLocalVarReplacement(LocalVariable v, IRScope s, Map<Operand, Operand> varRenameMap) {
          if (varRenameMap.get(v) == null) varRenameMap.put(v, s.getNewTemporaryVariableFor(v));
     }

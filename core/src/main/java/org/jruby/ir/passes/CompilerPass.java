@@ -36,6 +36,13 @@ public abstract class CompilerPass {
      */
     public abstract String getLabel();
 
+    /**
+     * Shorter label
+     */
+    public String getShortLabel() {
+        return getLabel();
+    }
+
     @Override
     public int hashCode() {
         return getLabel().hashCode();
