@@ -42,6 +42,7 @@ import org.jcodings.Encoding;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -297,18 +298,6 @@ public class RubyModule extends RubyObject {
             }
             including.add(hierarchy);
         }
-    }
-
-    public MethodHandle getIdTest() {
-        MethodHandle idTest = this.idTest;
-        if (idTest != null) return idTest;
-        return this.idTest = newIdTest();
-    }
-
-    protected MethodHandle newIdTest() {
-        return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
-                .insert(2,id)
-                .invoke(testModuleMatch);
     }
 
     /** separate path for MetaClass construction
@@ -4790,12 +4779,4 @@ public class RubyModule extends RubyObject {
     /** Whether this class proxies a normal Java class */
     private boolean javaProxy = false;
 
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-
-    /**
-     * A handle for invoking the module ID test, to be reused for all idTest handles below.
-     */
-    private static final MethodHandle testModuleMatch = Binder
-            .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
-            .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
 }

@@ -15,12 +15,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.JIT;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Binding;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CompiledIRBlockBody;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.GlobalSite;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
@@ -39,6 +34,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.*;
+import java.lang.invoke.CallSite;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
@@ -657,7 +653,10 @@ public class Bootstrap {
         VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name());
 
         // produce nil if the variable has not been initialize
-        MethodHandle nullToNil = self.getRuntime().getNullToNilHandle();
+        IRubyObject nilObject = self.getRuntime().getNil();
+        MethodHandle nullToNil = lookup().findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        nullToNil = MethodHandles.insertArguments(nullToNil, 1, nilObject);
+        nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
 
         // get variable value and filter with nullToNil
         MethodHandle getValue;

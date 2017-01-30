@@ -1,6 +1,6 @@
 package org.jruby.runtime;
 
-import java.lang.invoke.MethodHandle;
+import org.jruby.util.invoke.MethodHandle;
 import java.util.ArrayList;
 import junit.framework.TestCase;
 import org.jruby.RubyBasicObject;

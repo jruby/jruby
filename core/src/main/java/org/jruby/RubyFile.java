@@ -418,24 +418,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public IRubyObject birthtime(ThreadContext context) {
         checkClosed(context);
 
-        FileTime btime = getBirthtimeWithNIO(getPath());
-        if (btime != null) return context.runtime.newTime(btime.toMillis()); // btime comes in nanos
-        return ctime(context);
-    }
-
-    public static final FileTime getBirthtimeWithNIO(String pathString) {
-        // FIXME: birthtime is in stat, so we should use that if platform supports it (#2152)
-        // TODO: This requires Java 7 APIs and may not work on Android
-        Path path = Paths.get(pathString);
-        PosixFileAttributeView view = Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
         try {
-            if (view != null) {
-                return view.readAttributes().creationTime();
+            FileTime btime = null;
+            Path path = Paths.get(getPath());
+            PosixFileAttributeView view = Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+            try {
+                if (view != null) {
+                    btime = view.readAttributes().creationTime();
+                    return context.runtime.newTime(btime.toMillis());
+                }
+            } catch (IOException ioe) {
+                // ignore, just fall back on ctime
             }
-        } catch (IOException ioe) {
-            // ignore, just fall back on ctime
+        } catch (NoClassDefFoundError e) {
         }
-        return null;
+        return ctime(context);
     }
 
     @JRubyMethod

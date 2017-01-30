@@ -13,6 +13,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IdUtil;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.util.collections.ClassValue;
+import org.jruby.util.collections.ClassValueCalculator;
+import org.jruby.util.collections.MapBasedClassValue;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -460,26 +463,26 @@ public abstract class Initializer {
 
     }
 
-    public static final java.lang.ClassValue<Method[]> DECLARED_METHODS = new java.lang.ClassValue<Method[]>() {
+    public static final org.jruby.util.collections.ClassValue<Method[]> DECLARED_METHODS = new MapBasedClassValue<Method[]>(new ClassValueCalculator<Method[]>() {
         @Override
         public Method[] computeValue(Class cls) {
             return cls.getDeclaredMethods();
         }
-    };
+    });
 
-    public static final java.lang.ClassValue<Method[]> METHODS = new java.lang.ClassValue<Method[]>() {
+    public static final org.jruby.util.collections.ClassValue<Method[]> METHODS = new MapBasedClassValue<Method[]>(new ClassValueCalculator<Method[]>() {
         @Override
         public Method[] computeValue(Class cls) {
             return cls.getMethods();
         }
-    };
+    });
 
-    public static final java.lang.ClassValue<Class<?>[]> INTERFACES = new java.lang.ClassValue<Class<?>[]>() {
+    public static final org.jruby.util.collections.ClassValue<Class<?>[]> INTERFACES = new MapBasedClassValue<Class<?>[]>(new ClassValueCalculator<Class<?>[]>() {
         @Override
         public Class<?>[] computeValue(Class cls) {
             return cls.getInterfaces();
         }
-    };
+    });
 
     static Map<String, List<Method>> getMethods(final Class<?> javaClass) {
         HashMap<String, List<Method>> nameMethods = new HashMap<>(32);

@@ -3,6 +3,7 @@ package org.jruby.runtime;
 import org.jruby.RubyModule;
 import org.jruby.EvalType;
 import org.jruby.compiler.Compilable;
+import org.jruby.compiler.JITCompiler;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
@@ -158,7 +159,9 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     protected void promoteToFullBuild(ThreadContext context) {
         if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't Promote to full build during runtime boot
 
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) context.runtime.getJITCompiler().buildThresholdReached(context, this);
+        JITCompiler jitCompiler = context.runtime.getJITCompiler();
+        if (jitCompiler == null) return;
+        if (callCount++ >= Options.JIT_THRESHOLD.load()) jitCompiler.buildThresholdReached(context, this);
     }
 
     public RubyModule getImplementationClass() {

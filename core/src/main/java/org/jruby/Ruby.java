@@ -63,6 +63,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.MRIRecursionGuard;
+import org.jruby.util.invoke.MethodHandles;
+import org.jruby.util.invoke.MethodType;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -152,6 +154,9 @@ import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
+import org.jruby.util.collections.ClassValue;
+import org.jruby.util.collections.ClassValueCalculator;
+import org.jruby.util.collections.MapBasedClassValue;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.func.Function1;
 import org.jruby.util.io.FilenoUtil;
@@ -159,6 +164,7 @@ import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
+import org.jruby.util.invoke.MethodHandle;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileDescriptor;
@@ -166,7 +172,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
@@ -249,7 +254,13 @@ public final class Ruby implements Constantizable {
 
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
-        this.jitCompiler        = new JITCompiler(this);
+
+        if (config.getCompileMode().shouldJIT()) {
+            this.jitCompiler = new JITCompiler(this);
+        } else {
+            this.jitCompiler = null;
+        }
+
         this.parserStats        = new ParserStats(this);
 
         Random myRandom;
@@ -4637,23 +4648,6 @@ public final class Ruby implements Constantizable {
         return baseNewMethod;
     }
 
-    /**
-     * Get the "nullToNil" method handle filter for this runtime.
-     *
-     * @return a method handle suitable for filtering a single IRubyObject value from null to nil
-     */
-    public MethodHandle getNullToNilHandle() {
-        MethodHandle nullToNil = this.nullToNil;
-
-        if (nullToNil != null) return nullToNil;
-
-        nullToNil = InvokeDynamicSupport.findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        nullToNil = insertArguments(nullToNil, 1, nilObject);
-        nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
-
-        return this.nullToNil = nullToNil;
-    }
-
     // Parser stats methods
     private void addLoadParseToStats() {
         if (parserStats != null) parserStats.addLoadParse();
@@ -5111,17 +5105,12 @@ public final class Ruby implements Constantizable {
      */
     private DynamicMethod baseNewMethod;
 
-    /**
-     * The nullToNil filter for this runtime.
-     */
-    private MethodHandle nullToNil;
-
-    public final ClassValue<TypePopulator> POPULATORS = new ClassValue<TypePopulator>() {
+    public final org.jruby.util.collections.ClassValue<TypePopulator> POPULATORS = new MapBasedClassValue<TypePopulator>(new ClassValueCalculator<TypePopulator>() {
         @Override
-        protected TypePopulator computeValue(Class<?> type) {
+        public TypePopulator computeValue(Class<?> type) {
             return RubyModule.loadPopulatorFor(type);
         }
-    };
+    });
 
     public final JavaSites sites = new JavaSites();
 

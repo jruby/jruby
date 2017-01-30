@@ -248,7 +248,15 @@ public class ConstantLookupSite extends MutableCallSite {
         MethodHandle fallback = getFallback(module, cachingFallback);
 
         // Test that module is same as before
-        target = guardWithTest(module.getIdTest(), target, fallback);
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodHandle testModuleMatch = null;
+        try {
+            testModuleMatch = lookup.findStatic(Bootstrap.class, "testModuleMatch", MethodType.methodType(boolean.class, ThreadContext.class, IRubyObject.class, int.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        MethodHandle idTest = MethodHandles.insertArguments(testModuleMatch, 2, module.id);
+        target = guardWithTest(idTest, target, fallback);
 
         // Global invalidation
         SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();
