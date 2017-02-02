@@ -1594,6 +1594,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
     }
 
+    @JRubyMethod(name = "casecmp?")
+    public IRubyObject casecmp_p(ThreadContext context, IRubyObject other) {
+        RubyString downcasedString = this.downcase19(context);
+        RubyString otherDowncasedString = other.convertToString().downcase19(context);
+        return downcasedString.equals(otherDowncasedString) ? context.runtime.getTrue() : context.runtime.getFalse();
+    }
+
     /** rb_str_match
      *
      */
