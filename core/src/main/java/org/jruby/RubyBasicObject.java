@@ -1759,8 +1759,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     private Block setupBlock(Block block, EvalType evalType) {
-        // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
-        return block.cloneBlockForEval(this, evalType);
+        if (block.getProcObject() == null) {
+            // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
+            block = block.cloneBlockForEval(this, evalType);
+        } else {
+            block = block.deepCloneBlockForEval(this, evalType);
+        }
+
+        block.getBinding().setVisibility(PUBLIC);
+
+        return block;
     }
 
     /**
@@ -1775,18 +1783,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, Block block, EvalType evalType) {
         context.preExecuteUnder(this, under, block);
 
-        IRubyObject savedBindingSelf = block.getBinding().getSelf();
-        IRubyObject savedFrameSelf = block.getBinding().getFrame().getSelf();
-        Visibility savedVisibility = block.getBinding().getVisibility();
-        block.getBinding().setVisibility(PUBLIC);
-
         try {
             return setupBlock(block, evalType).yieldNonArray(context, this, this); //, context.getRubyClass());
         } finally {
-            block.getBinding().setVisibility(savedVisibility);
-            block.getBinding().setSelf(savedBindingSelf);
-            block.getBinding().getFrame().setSelf(savedFrameSelf);
-
             context.postExecuteUnder();
         }
     }
