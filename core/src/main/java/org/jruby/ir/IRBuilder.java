@@ -3493,7 +3493,12 @@ public class IRBuilder {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
                 rescueNode.getElseNode() != null) return false;
 
-        Node body = rescueNode.getRescueNode().getBodyNode();
+        RescueBodyNode rescueClause = rescueNode.getRescueNode();
+
+        if (rescueClause.getOptRescueNode() != null) return false;  // We will not handle multiple rescues
+        if (rescueClause.getExceptionNodes() != null) return false; // We cannot know if these are builtin or not statically.
+
+        Node body = rescueClause.getBodyNode();
 
         // This optimization omits backtrace info for the exception getting rescued so we cannot
         // optimize the exception variable.
