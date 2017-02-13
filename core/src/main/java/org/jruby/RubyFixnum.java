@@ -302,6 +302,53 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
     }
 
+    /** rb_fix_digits
+     *
+     */
+    @Override
+    public RubyArray digits(ThreadContext context, IRubyObject base) {
+
+        long self = ((RubyFixnum)this).getLongValue();
+        if (self < 0) {
+            throw context.getRuntime().newMathDomainError("out of domain");
+        }
+        if (!(base instanceof RubyInteger)) {
+            try {
+                base = base.convertToInteger();
+            } catch (ClassCastException e) {
+                String cname = base.getMetaClass().getRealClass().getName();
+                throw context.getRuntime().newTypeError("wrong argument type " + cname + " (expected Integer)");
+            }
+        }
+        if (base instanceof RubyBignum){
+            return RubyArray
+                    .newArray(context.runtime, 1)
+                    .append(RubyFixnum.newFixnum(context.getRuntime(), self));
+        }
+        long longBase = ((RubyFixnum)base).getLongValue();
+        if (longBase < 0) {
+            throw context.getRuntime().newArgumentError("negative radix");
+        }
+        if (longBase < 2) {
+            throw context.getRuntime().newArgumentError("invalid radix: " + longBase);
+        }
+
+        RubyArray res = RubyArray.newArray(context.runtime, 0);
+
+        if (self == 0) {
+            res.append(RubyFixnum.newFixnum(context.getRuntime(), 0));
+            return res;
+        }
+
+        while (self > 0) {
+            long q = self % longBase;
+            res.append(RubyFixnum.newFixnum(context.getRuntime(), q));
+            self /= longBase;
+        }
+
+        return res;
+    }
+
     /** fix_to_s
      *
      */

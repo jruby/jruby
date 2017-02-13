@@ -236,6 +236,54 @@ public class RubyBignum extends RubyInteger {
      *  ================
      */
 
+    /** rb_big_digits
+     *
+     */
+    @Override
+    public RubyArray digits(ThreadContext context, IRubyObject base) {
+        BigInteger self = (this).getValue();
+        if (self.compareTo(new BigInteger("0")) == -1) {
+            throw context.getRuntime().newMathDomainError("out of domain");
+        }
+        if (!(base instanceof RubyInteger)) {
+            try {
+                base = base.convertToInteger();
+            } catch (ClassCastException e) {
+                String cname = base.getMetaClass().getRealClass().getName();
+                throw context.getRuntime().newTypeError("wrong argument type " + cname + " (expected Integer)");
+            }
+        }
+
+        BigInteger bigBase;
+        if (base instanceof RubyBignum) {
+            bigBase = ((RubyBignum) base).getValue();
+        } else {
+            bigBase = long2big( ((RubyFixnum) base).getLongValue() );
+        }
+
+        if (bigBase.compareTo(BigInteger.ZERO) == -1) {
+            throw context.getRuntime().newArgumentError("negative radix");
+        }
+        if (bigBase.compareTo(new BigInteger("2")) == -1) {
+            throw context.getRuntime().newArgumentError("invalid radix: " + bigBase);
+        }
+
+        RubyArray res = RubyArray.newArray(context.runtime, 0);
+
+        if (self.compareTo(new BigInteger("0")) == 0) {
+            res.append(RubyFixnum.newFixnum(context.getRuntime(), 0));
+            return res;
+        }
+
+        while (self.compareTo(BigInteger.ZERO) > 0) {
+            BigInteger q = self.mod(bigBase);
+            res.append(RubyBignum.newBignum(context.getRuntime(), q));
+            self = self.divide(bigBase);
+        }
+
+        return res;
+    }
+
     /** rb_big_to_s
      *
      */
