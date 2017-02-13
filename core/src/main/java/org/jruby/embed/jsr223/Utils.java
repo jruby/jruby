@@ -49,6 +49,7 @@ import org.jruby.embed.variable.TransientLocalVariable;
 import org.jruby.embed.variable.VariableInterceptor;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.util.io.BadDescriptorException;
+import org.jruby.util.io.ChannelDescriptor;
 
 /**
  * A collection of JSR223 specific utility methods.
@@ -152,6 +153,9 @@ public class Utils {
         runtime.getObject().storeConstant("STDOUT", io);
         runtime.getGlobalVariables().alias("$>", "$stdout");
         runtime.getGlobalVariables().alias("$defout", "$stdout");
+
+        // unregister the fileno so it doesn't leak (jruby/jruby#4446)
+        ChannelDescriptor.unregisterDescriptor((int) io.fileno(runtime.getCurrentContext()).getLongValue());
     }
     
     private static void setErrorWriter(ScriptingContainer container, Writer writer) throws IOException, BadDescriptorException {
@@ -172,6 +176,9 @@ public class Utils {
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io), GlobalVariable.Scope. GLOBAL);
         runtime.getObject().storeConstant("STDERR", io);
         runtime.getGlobalVariables().alias("$deferr", "$stderr");
+
+        // unregister the fileno so it doesn't leak (jruby/jruby#4446)
+        ChannelDescriptor.unregisterDescriptor((int) io.fileno(runtime.getCurrentContext()).getLongValue());
     }
     
     private static RubyIO getRubyIO(Ruby runtime, Writer writer) throws IOException, BadDescriptorException {
