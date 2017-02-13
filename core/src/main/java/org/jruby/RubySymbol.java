@@ -406,6 +406,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 newShared(runtime).casecmp19(context, ((RubySymbol) other).newShared(runtime));
     }
 
+    @JRubyMethod(name = "casecmp?")
+    public IRubyObject casecmp_p(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.runtime;
+
+        return !(other instanceof RubySymbol) ? runtime.getNil() :
+            newShared(runtime).casecmp_p(context, ((RubySymbol) other).newShared(runtime));
+    }
+
     @JRubyMethod(name = "=~")
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {

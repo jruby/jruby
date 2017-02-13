@@ -1,3 +1,4 @@
+# coding: utf-8
 # frozen_string_literal: false
 require 'test/unit'
 
@@ -2208,6 +2209,13 @@ CODE
 
   def test_casecmp
     assert_equal(1, "\u3042B".casecmp("\u3042a"))
+  end
+
+  def test_casecmp?
+    assert_equal(true, 'FoO'.casecmp?('fOO'))
+    assert_equal(false, 'FoO'.casecmp?('BaR'))
+    assert_equal(false, 'baR'.casecmp?('FoO'))
+    assert_equal(true, 'äöü'.casecmp?('ÄÖÜ'))
   end
 
   def test_upcase2
