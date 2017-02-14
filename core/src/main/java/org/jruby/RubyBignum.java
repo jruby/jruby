@@ -241,16 +241,17 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public RubyArray digits(ThreadContext context, IRubyObject base) {
-        BigInteger self = (this).getValue();
-        if (self.compareTo(new BigInteger("0")) == -1) {
-            throw context.getRuntime().newMathDomainError("out of domain");
+        BigInteger self = value;
+        Ruby runtime = context.runtime;
+        if (self.compareTo(BigInteger.ZERO) == -1) {
+            throw runtime.newMathDomainError("out of domain");
         }
         if (!(base instanceof RubyInteger)) {
             try {
                 base = base.convertToInteger();
             } catch (ClassCastException e) {
                 String cname = base.getMetaClass().getRealClass().getName();
-                throw context.getRuntime().newTypeError("wrong argument type " + cname + " (expected Integer)");
+                throw runtime.newTypeError("wrong argument type " + cname + " (expected Integer)");
             }
         }
 
@@ -262,15 +263,15 @@ public class RubyBignum extends RubyInteger {
         }
 
         if (bigBase.compareTo(BigInteger.ZERO) == -1) {
-            throw context.getRuntime().newArgumentError("negative radix");
+            throw runtime.newArgumentError("negative radix");
         }
         if (bigBase.compareTo(new BigInteger("2")) == -1) {
-            throw context.getRuntime().newArgumentError("invalid radix: " + bigBase);
+            throw runtime.newArgumentError("invalid radix: " + bigBase);
         }
 
         RubyArray res = RubyArray.newArray(context.runtime, 0);
 
-        if (self.compareTo(new BigInteger("0")) == 0) {
+        if (self.compareTo(BigInteger.ZERO) == 0) {
             res.append(RubyFixnum.newFixnum(context.getRuntime(), 0));
             return res;
         }

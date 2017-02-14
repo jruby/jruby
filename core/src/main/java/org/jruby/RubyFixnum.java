@@ -308,41 +308,42 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public RubyArray digits(ThreadContext context, IRubyObject base) {
 
-        long self = ((RubyFixnum)this).getLongValue();
+        long self = getLongValue();
+        Ruby runtime = context.getRuntime();
         if (self < 0) {
-            throw context.getRuntime().newMathDomainError("out of domain");
+            throw runtime.newMathDomainError("out of domain");
         }
         if (!(base instanceof RubyInteger)) {
             try {
                 base = base.convertToInteger();
             } catch (ClassCastException e) {
                 String cname = base.getMetaClass().getRealClass().getName();
-                throw context.getRuntime().newTypeError("wrong argument type " + cname + " (expected Integer)");
+                throw runtime.newTypeError("wrong argument type " + cname + " (expected Integer)");
             }
         }
         if (base instanceof RubyBignum){
             return RubyArray
                     .newArray(context.runtime, 1)
-                    .append(RubyFixnum.newFixnum(context.getRuntime(), self));
+                    .append(newFixnum(runtime, self));
         }
         long longBase = ((RubyFixnum)base).getLongValue();
         if (longBase < 0) {
-            throw context.getRuntime().newArgumentError("negative radix");
+            throw runtime.newArgumentError("negative radix");
         }
         if (longBase < 2) {
-            throw context.getRuntime().newArgumentError("invalid radix: " + longBase);
+            throw runtime.newArgumentError("invalid radix: " + longBase);
         }
 
         RubyArray res = RubyArray.newArray(context.runtime, 0);
 
         if (self == 0) {
-            res.append(RubyFixnum.newFixnum(context.getRuntime(), 0));
+            res.append(newFixnum(runtime, 0));
             return res;
         }
 
         while (self > 0) {
             long q = self % longBase;
-            res.append(RubyFixnum.newFixnum(context.getRuntime(), q));
+            res.append(newFixnum(runtime, q));
             self /= longBase;
         }
 
