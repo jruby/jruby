@@ -2,17 +2,23 @@ class Proc
   def curry(curried_arity = nil)
     if lambda? && curried_arity
       if arity >= 0 && curried_arity != arity
-        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
+        raise ArgumentError, "wrong number of arguments (given %i, expected %i)" % [
           curried_arity,
           arity
         ]
       end
 
-      if arity < -1 && curried_arity != (-arity - 1)
-        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
-          curried_arity,
-          -arity - 1
-        ]
+      if arity < -1
+        is_rest = parameters.find {|(type, _)| type == :rest }
+        req = -arity - 1
+        opt = parameters.find_all {|(type, _)| type == :opt }.size
+        if curried_arity < req || curried_arity > (req + opt) && !is_rest
+          expected = is_rest ?  "#{req}+" : "#{req}..#{req+opt}"
+          raise ArgumentError, "wrong number of arguments (given %i, expected %s)" % [
+                  curried_arity,
+                  expected
+                ]
+        end
       end
     end
 
