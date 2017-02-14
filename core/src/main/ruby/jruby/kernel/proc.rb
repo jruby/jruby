@@ -9,9 +9,16 @@ class Proc
       end
 
       if arity < -1
-        is_rest = parameters.find {|(type, _)| type == :rest }
+        is_rest, opt = false, 0
+        parameters.each do |arr|
+          case arr[0]
+          when :rest then
+            is_rest = true
+          when :opt then
+            opt += 1
+          end
+        end
         req = -arity - 1
-        opt = parameters.find_all {|(type, _)| type == :opt }.size
         if curried_arity < req || curried_arity > (req + opt) && !is_rest
           expected = is_rest ?  "#{req}+" : "#{req}..#{req+opt}"
           raise ArgumentError, "wrong number of arguments (given %i, expected %s)" % [
