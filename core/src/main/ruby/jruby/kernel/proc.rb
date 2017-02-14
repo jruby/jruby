@@ -1,14 +1,14 @@
 class Proc
   def curry(curried_arity = nil)
     if lambda? && curried_arity
-      if arity > 0 && curried_arity != arity
+      if arity >= 0 && curried_arity != arity
         raise ArgumentError, "wrong number of arguments (%i for %i)" % [
           curried_arity,
           arity
         ]
       end
 
-      if arity < 0 && curried_arity < (-arity - 1)
+      if arity < -1 && curried_arity != (-arity - 1)
         raise ArgumentError, "wrong number of arguments (%i for %i)" % [
           curried_arity,
           -arity - 1
