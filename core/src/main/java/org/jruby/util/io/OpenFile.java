@@ -2393,8 +2393,9 @@ public class OpenFile implements Finalizable {
 
     // MRI: check_tty
     public void checkTTY() {
-        // TODO: native descriptors? Is this only used for stdio?
-        if (stdio_file != null) {
+        if (fd.realFileno != -1 && runtime.getPosix().isatty(fd.realFileno) != 0
+            || stdio_file != null) {
+
             boolean locked = lock();
             try {
                 mode |= TTY | DUPLEX;
