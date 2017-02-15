@@ -285,6 +285,9 @@ public final class Ruby implements Constantizable {
             objectSpacer = DISABLED_OBJECTSPACE;
         }
 
+        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
+        filenoUtil = new FilenoUtil(posix);
+
         reinitialize(false);
     }
 
@@ -1136,7 +1139,6 @@ public final class Ruby implements Constantizable {
     private void init() {
         // Construct key services
         loadService = config.createLoadService(this);
-        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
         javaSupport = loadJavaSupport();
 
         executor = new ThreadPoolExecutor(
@@ -4810,7 +4812,7 @@ public final class Ruby implements Constantizable {
     private final Invalidator checkpointInvalidator;
     private final ThreadService threadService;
 
-    private POSIX posix;
+    private final POSIX posix;
 
     private final ObjectSpace objectSpace = new ObjectSpace();
 
@@ -5094,7 +5096,7 @@ public final class Ruby implements Constantizable {
     private final Config configBean;
     private final org.jruby.management.Runtime runtimeBean;
 
-    private final FilenoUtil filenoUtil = new FilenoUtil();
+    private final FilenoUtil filenoUtil;
 
     private Interpreter interpreter = new Interpreter();
 
