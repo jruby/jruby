@@ -86,7 +86,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'ant.version' => '1.9.2',
               'asm.version' => '5.0.4',
               'jffi.version' => '1.2.14',
-              'bouncy-castle.version' => '1.47',
               'joda.time.version' => '2.8.2' )
 
   plugin_management do
