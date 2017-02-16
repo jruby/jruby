@@ -53,6 +53,7 @@ class Proc
 
   # Yank the singleton class out of the curried prototype object.
   Curried = JRuby.reference(curried_prototype).meta_class
+  private_constant :Curried
 
   def self.__make_curry_proc__(proc, passed, arity)
     f = __send__((proc.lambda? ? :lambda : :proc)) do |*argv, &passed_proc|
