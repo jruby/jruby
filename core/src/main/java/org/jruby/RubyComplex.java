@@ -82,12 +82,13 @@ import static org.jruby.util.Numeric.safe_mul;
 @JRubyClass(name = "Complex", parent = "Numeric")
 public class RubyComplex extends RubyNumeric {
 
-    private static final String[] UNDEFINED = new String[]{
-            "<", "<=", "<=>", ">", ">=", "between?", "divmod", "floor", "ceil", "modulo", "round", "step",
-            "truncate", "positive?", "negative?"
-    };
-
     public static RubyClass createComplexClass(Ruby runtime) {
+        final String[] UNDEFINED = new String[]{
+                "<", "<=", "<=>", ">", ">=",
+                "between?", "divmod", "floor", "ceil", "modulo",
+                "round", "step", "truncate", "positive?", "negative?"
+        };
+
         RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
         runtime.setComplex(complexc);
 
