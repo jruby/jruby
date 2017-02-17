@@ -477,8 +477,12 @@ public class RubyComplex extends RubyNumeric {
         }
 
         if (a2.isNil()) {
-            if (a1 instanceof RubyNumeric && !f_real_p(context, a1).isTrue()) return a1;
-            if (singleArg && responds_to_to_c(context, a1) ) return a1.callMethod(context, "to_c");
+            if (a1 instanceof RubyNumeric) {
+                if (!f_real_p(context, a1).isTrue()) return a1;
+            }
+            else if (singleArg && ! a1.isNil() && responds_to_to_c(context, a1)) {
+                return a1.callMethod(context, "to_c");
+            }
             return newInstance(context, recv, a1);
         } else {
             if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
