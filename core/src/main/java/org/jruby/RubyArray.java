@@ -40,6 +40,7 @@ package org.jruby;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
@@ -4073,38 +4074,27 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         unpack();
         try {
             IRubyObject randgen = context.runtime.getRandomClass();
-            if (args.length == 0) {
-                if (realLength == 0)
-                    return context.nil;
-                int i = realLength == 1 ? 0 : randomReal(context, randgen, realLength);
-                return eltOk(i);
-            }
+
             if (args.length > 0) {
-                IRubyObject hash = TypeConverter.checkHashType(context.runtime,
-                        args[args.length - 1]);
+                IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
                 if (!hash.isNil()) {
-                    IRubyObject argRandgen = ((RubyHash) hash).fastARef(context.runtime.newSymbol("random"));
-                    if (argRandgen != null) {
-                        randgen = argRandgen;
-                    }
+                    IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, new String[] { "random" });
+                    if (!rets[0].isNil()) randgen = rets[0];
                     args = ArraySupport.newCopy(args, args.length - 1);
                 }
             }
+
             if (args.length == 0) {
-                if (realLength == 0) {
-                    return context.nil;
-                } else if (realLength == 1) {
-                    return eltOk(0);
-                }
-                return eltOk(randomReal(context, randgen, realLength));
+                if (realLength == 0) return context.nil;
+                return eltOk(realLength == 1 ? 0 : randomReal(context, randgen, realLength));
             }
+
             final Ruby runtime = context.runtime;
             int n = RubyNumeric.num2int(args[0]);
 
-            if (n < 0)
-                throw runtime.newArgumentError("negative sample number");
-            if (n > realLength)
-                n = realLength;
+            if (n < 0) throw runtime.newArgumentError("negative sample number");
+            if (n > realLength) n = realLength;
+
             double[] rnds = new double[SORTED_THRESHOLD];
             if (n <= SORTED_THRESHOLD) {
                 for (int idx = 0; idx < n; ++idx) {
@@ -4117,51 +4107,50 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             case 0:
                 return newEmptyArray(runtime);
             case 1:
-                if (realLength <= 0)
-                    return newEmptyArray(runtime);
-
-                return newArray(runtime, eltOk((int) (rnds[0] * realLength)));
+                return realLength <= 0 ? newEmptyArray(runtime) : newArray(runtime, eltOk((int) (rnds[0] * realLength)));
             case 2:
                 i = (int) (rnds[0] * realLength);
                 j = (int) (rnds[1] * (realLength - 1));
-                if (j >= i)
-                    j++;
+
+                if (j >= i) j++;
+
                 return newArray(runtime, eltOk(i), eltOk(j));
             case 3:
                 i = (int) (rnds[0] * realLength);
                 j = (int) (rnds[1] * (realLength - 1));
                 k = (int) (rnds[2] * (realLength - 2));
-                int l = j,
-                g = i;
+
+                int l = j, g = i;
+
                 if (j >= i) {
                     l = i;
                     g = ++j;
                 }
-                if (k >= l && (++k >= g))
-                    ++k;
+
+                if (k >= l && (++k >= g)) ++k;
+
                 return newArray(runtime, eltOk(i), eltOk(j), eltOk(k));
             }
 
             int len = realLength;
-            if (n > len)
-                n = len;
+
+            if (n > len) n = len;
             if (n < SORTED_THRESHOLD) {
                 int idx[] = new int[SORTED_THRESHOLD];
                 int sorted[] = new int[SORTED_THRESHOLD];
                 sorted[0] = idx[0] = (int) (rnds[0] * len);
                 for (i = 1; i < n; i++) {
                     k = (int) (rnds[i] * --len);
-                    for (j = 0; j < i; j++) {
-                        if (k < sorted[j])
-                            break;
-                        k++;
+                    for (j = 0; j < i; j++, k++) {
+                        if (k < sorted[j]) break;
                     }
                     System.arraycopy(sorted, j, sorted, j + 1, i - j);
                     sorted[j] = idx[i] = k;
                 }
                 IRubyObject[] result = new IRubyObject[n];
-                for (i = 0; i < n; i++)
+                for (i = 0; i < n; i++) {
                     result[i] = eltOk(idx[i]);
+                }
                 return RubyArray.newArrayMayCopy(runtime, result);
             } else {
                 IRubyObject[] result = new IRubyObject[len];
