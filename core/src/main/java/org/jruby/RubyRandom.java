@@ -717,23 +717,39 @@ public class RubyRandom extends RubyObject {
         }
         return context.runtime.newString(new ByteList(bytes));
     }
-    
+
+    private static RandomType tryGetRandomType(ThreadContext context, IRubyObject obj) {
+        if (obj.equals(context.runtime.getRandomClass())) return getDefaultRand(context);
+        if (obj instanceof RubyRandom) return ((RubyRandom) obj).random;
+        return null;
+    }
+
+    // rb_random_ulong_limited
+    public static long randomLongLimited(ThreadContext context, IRubyObject obj, long limit) {
+        RandomType rnd = tryGetRandomType(context, obj);
+
+        if (rnd == null) {
+            RubyInteger v = Helpers.invoke(context, obj, "rand").convertToInteger();
+            long r = RubyNumeric.num2long(v);
+            if (r < 0) throw context.runtime.newRangeError("random number too small " + r);
+            if (r > limit) throw context.runtime.newRangeError("random number too big " + r);
+
+            return r;
+        }
+
+        return randLimitedFixnumInner(rnd.mt, limit);
+    }
+
     // c: rb_random_real
     public static double randomReal(ThreadContext context, IRubyObject obj) {
-        RandomType random = null;
-        if (obj.equals(context.runtime.getRandomClass())) {
-            random = getDefaultRand(context);
-        }
-        if (obj instanceof RubyRandom) {
-            random = ((RubyRandom) obj).random;
-        }
-        if (random != null) {
-            return random.genrandReal();
-        }
+        RandomType random = tryGetRandomType(context, obj);
+
+        if (random != null) return random.genrandReal();
+
         double d = RubyNumeric.num2dbl(Helpers.invoke(context, obj, "rand"));
-        if (d < 0.0 || d >= 1.0) {
-            throw context.runtime.newRangeError("random number too big: " + d);
-        }
+
+        if (d < 0.0 || d >= 1.0) throw context.runtime.newRangeError("random number too big: " + d);
+
         return d;
     }
     

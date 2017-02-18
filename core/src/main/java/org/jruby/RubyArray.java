@@ -4084,7 +4084,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
             if (args.length == 0) {
                 if (realLength == 0) return context.nil;
-                return eltOk(realLength == 1 ? 0 : randomReal(context, randgen, realLength));
+                return eltOk(realLength == 1 ? 0 : RubyRandom.randomLongLimited(context, randgen, realLength - 1));
             }
 
             final Ruby runtime = context.runtime;
@@ -4093,10 +4093,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (n < 0) throw runtime.newArgumentError("negative sample number");
             if (n > realLength) n = realLength;
 
-            double[] rnds = new double[SORTED_THRESHOLD];
+            long[] rnds = new long[SORTED_THRESHOLD];
             if (n <= SORTED_THRESHOLD) {
                 for (int idx = 0; idx < n; ++idx) {
-                    rnds[idx] = RubyRandom.randomReal(context, randgen);
+                    rnds[idx] = RubyRandom.randomLongLimited(context, randgen, realLength - idx - 1);
                 }
             }
 
@@ -4105,18 +4105,18 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             case 0:
                 return newEmptyArray(runtime);
             case 1:
-                return realLength <= 0 ? newEmptyArray(runtime) : newArray(runtime, eltOk((int) (rnds[0] * realLength)));
+                return realLength <= 0 ? newEmptyArray(runtime) : newArray(runtime, eltOk((int) rnds[0]));
             case 2:
-                i = (int) (rnds[0] * realLength);
-                j = (int) (rnds[1] * (realLength - 1));
+                i = (int) rnds[0];
+                j = (int) rnds[1];
 
                 if (j >= i) j++;
 
                 return newArray(runtime, eltOk(i), eltOk(j));
             case 3:
-                i = (int) (rnds[0] * realLength);
-                j = (int) (rnds[1] * (realLength - 1));
-                k = (int) (rnds[2] * (realLength - 2));
+                i = (int) rnds[0];
+                j = (int) rnds[1];
+                k = (int) rnds[2];
 
                 int l = j, g = i;
 
@@ -4136,9 +4136,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (n < SORTED_THRESHOLD) {
                 int idx[] = new int[SORTED_THRESHOLD];
                 int sorted[] = new int[SORTED_THRESHOLD];
-                sorted[0] = idx[0] = (int) (rnds[0] * len);
+                sorted[0] = idx[0] = (int) rnds[0];
                 for (i = 1; i < n; i++) {
-                    k = (int) (rnds[i] * --len);
+                    k = (int) rnds[i];
                     for (j = 0; j < i; j++, k++) {
                         if (k < sorted[j]) break;
                     }
@@ -4154,7 +4154,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 IRubyObject[] result = new IRubyObject[len];
                 System.arraycopy(values, begin, result, 0, len);
                 for (i = 0; i < n; i++) {
-                    j = randomReal(context, randgen, len - i) + i;
+                    j = (int) RubyRandom.randomLongLimited(context, randgen, len - i - 1) + i;
                     IRubyObject tmp = result[j];
                     result[j] = result[i];
                     result[i] = tmp;
