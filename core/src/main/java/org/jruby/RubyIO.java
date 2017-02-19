@@ -4258,7 +4258,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "try_convert", meta = true)
     public static IRubyObject tryConvert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return sites(context).respond_to_to_io.respondsTo(context, arg, arg, true) ? convertToIO(context, arg) : context.runtime.getNil();
+        return ( arg instanceof RubyObject &&
+                sites(context).respond_to_to_io.respondsTo(context, arg, arg, true) ) ?
+                    convertToIO(context, arg) : context.nil;
     }
 
     private static ByteList getNilByteList(Ruby runtime) {
