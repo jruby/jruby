@@ -174,7 +174,7 @@ public class CallableSelector {
                         ( implMethod = getFunctionalInterfaceMethod(msTypes[last]) ) != null ) {
                         mostSpecificArity = implMethod.getParameterTypes().length;
                     }
-                    procArity = ((RubyProc) lastArg).getBlock().getSignature().arityValue();
+                    procArity = procArityValue(lastArg);
                 }
                 else {
                     procArity = Integer.MIN_VALUE;
@@ -737,14 +737,16 @@ public class CallableSelector {
     }
 
     private static int javaClassHashCode(final IRubyObject arg) {
-        // if ( arg == null ) return 0;
         return arg.getJavaClass().hashCode();
     }
 
     private static int javaClassOrProcHashCode(final IRubyObject arg) {
-        // if ( arg == null ) return 0;
         final Class<?> javaClass = arg.getJavaClass();
-        return javaClass == RubyProc.class ? ((RubyProc) arg).arity().hashCode() : javaClass.hashCode();
+        return javaClass == RubyProc.class ? 11 * procArityValue(arg) : javaClass.hashCode();
+    }
+
+    private static int procArityValue(final IRubyObject proc) {
+        return ((RubyProc) proc).getBlock().getSignature().arityValue();
     }
 
     private static Class<?> getJavaClass(final IRubyObject arg) {
