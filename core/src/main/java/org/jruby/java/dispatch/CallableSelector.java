@@ -744,7 +744,7 @@ public class CallableSelector {
     private static int javaClassOrProcHashCode(final IRubyObject arg) {
         // if ( arg == null ) return 0;
         final Class<?> javaClass = arg.getJavaClass();
-        return javaClass == RubyProc.class ? arg.hashCode() : javaClass.hashCode();
+        return javaClass == RubyProc.class ? ((RubyProc) arg).arity().hashCode() : javaClass.hashCode();
     }
 
     private static Class<?> getJavaClass(final IRubyObject arg) {
