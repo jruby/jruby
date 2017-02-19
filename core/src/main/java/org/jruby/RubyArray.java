@@ -4042,7 +4042,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int i = realLength;
         try {
             while (i > 0) {
-                int r = (int) (RubyRandom.randomReal(context, randgen) * i);
+                int r = (int) RubyRandom.randomLongLimited(context, randgen, i - 1);
                 IRubyObject tmp = eltOk(--i);
                 eltSetOk(i, eltOk(r));
                 eltSetOk(r, tmp);
@@ -4166,10 +4166,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(context.runtime, ex);
         }
-    }
-
-    private int randomReal(ThreadContext context, IRubyObject randgen, int len) {
-        return (int) (RubyRandom.randomReal(context, randgen) * len);
     }
 
     private static void aryReverse(IRubyObject[] _p1, int p1, IRubyObject[] _p2, int p2) {
