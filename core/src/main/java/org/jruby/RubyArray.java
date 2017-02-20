@@ -1794,7 +1794,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod
     public IRubyObject each_index(ThreadContext context, Block block) {
-        return block.isGiven() ? eachIndex(context, block) : enumeratorize(context.runtime, this, "each_index");
+        return block.isGiven() ? eachIndex(context, block) : enumeratorizeWithSize(context, this, "each_index", enumLengthFn());
     }
 
     /** rb_ary_reverse_each
