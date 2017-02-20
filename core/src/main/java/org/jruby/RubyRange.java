@@ -345,26 +345,26 @@ public class RubyRange extends RubyObject {
     public RubyBoolean exclude_end_p() {
         return getRuntime().newBoolean(isExclusive);
     }
+    
+    @JRubyMethod(name = "eql?", required = 1)
+    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+        return equalityInner(context, other, MethodNames.EQL);
+    }
 
-    @JRubyMethod(name = {"==", "eql?"}, required = 1)
+    @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (this == other) {
-            return context.runtime.getTrue();
-        }
-        if (!(other instanceof RubyRange)) {
-            return context.runtime.getFalse();
-        }
+        return equalityInner(context, other, MethodNames.OP_EQUAL);
+    }
+
+    private IRubyObject equalityInner(ThreadContext context, IRubyObject other, MethodNames equalityCheck) {
+        if (this == other) return context.runtime.getTrue();
+        if (!(other instanceof RubyRange)) return context.runtime.getFalse();
+
         RubyRange otherRange = (RubyRange) other;
-        if (isExclusive != otherRange.isExclusive) {
-            return context.runtime.getFalse();
-        }
-        if (!invokedynamic(context, this.begin, MethodNames.EQL, otherRange.begin).isTrue()) {
-            return context.runtime.getFalse();
-        }
-        if (invokedynamic(context, this.end, MethodNames.EQL, otherRange.end).isTrue()) {
-            return context.runtime.getTrue();
-        }
-        return context.runtime.getFalse();
+
+        return context.runtime.newBoolean(isExclusive == otherRange.isExclusive &&
+                invokedynamic(context, this.begin, equalityCheck, otherRange.begin).isTrue() &&
+                invokedynamic(context, this.end, equalityCheck, otherRange.end).isTrue());
     }
 
     private static abstract class RangeCallBack {
