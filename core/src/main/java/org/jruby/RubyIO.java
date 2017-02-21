@@ -1610,15 +1610,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(required = 1)
     public IRubyObject putc(ThreadContext context, IRubyObject ch) {
-        Ruby runtime = context.runtime;
         IRubyObject str;
         if (ch instanceof RubyString) {
-            str = ((RubyString)ch).substr(runtime, 0, 1);
+            str = ((RubyString)ch).substr(context.runtime, 0, 1);
+        } else {
+            str = RubyString.newStringShared(context.runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[RubyNumeric.num2chr(ch) & 0xFF]);
         }
-        else {
-            str = RubyString.newStringShared(runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[RubyNumeric.num2chr(ch) & 0xFF]);
-        }
-        write(context, str);
+
+        sites(context).write.call(context, this, this, str);
+
         return ch;
     }
 
