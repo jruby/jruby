@@ -311,8 +311,12 @@ public class JavaNameMangler {
         throw new IllegalStateException("unknown scope type for backtrace encoding: " + scope.getClass());
     }
 
+    public static final String VARARGS_MARKER = "$__VARARGS__";
+
     public static String decodeMethodForBacktrace(String methodName) {
-        if ( ! methodName.startsWith("RUBY$") ) return null;
+        if (!methodName.startsWith("RUBY$")) return null;
+
+        if (methodName.contains(VARARGS_MARKER)) return null;
 
         final List<String> name = StringSupport.split(methodName, '$');
         final String type = name.get(1); // e.g. RUBY $ class $ methodName
