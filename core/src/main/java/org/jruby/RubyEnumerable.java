@@ -1246,6 +1246,7 @@ public class RubyEnumerable {
     public static IRubyObject max(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
         RubyArray sorted = (RubyArray)sort(context, self, block);
+        if (arg.isNil()) return sorted.last();
         return ((RubyArray) sorted.last(arg)).reverse();
     }
 
