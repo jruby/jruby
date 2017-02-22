@@ -1153,14 +1153,13 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_cons")
     public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        return block.isGiven() ? each_consCommon(context, self, arg, block) : enumeratorizeWithSize(context, self, "each_cons", new IRubyObject[] { arg }, eachConsSizeFn(context, self));
+        int size = (int) RubyNumeric.num2long(arg);
+        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+        return block.isGiven() ? each_consCommon(context, self, size, block) : enumeratorizeWithSize(context, self, "each_cons", new IRubyObject[] { arg }, eachConsSizeFn(context, self));
     }
 
-    static IRubyObject each_consCommon(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        final int size = (int) RubyNumeric.num2long(arg);
+    static IRubyObject each_consCommon(ThreadContext context, IRubyObject self, final int size, final Block block) {
         final Ruby runtime = context.runtime;
-        if (size <= 0) throw runtime.newArgumentError("invalid size");
-
         final RubyArray result = runtime.newArray(size);
 
         RubyEnumerable.callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
