@@ -1259,6 +1259,7 @@ public class RubyEnumerable {
     public static IRubyObject min(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
         RubyArray sorted = (RubyArray)sort(context, self, block);
+        if (arg.isNil()) return sorted.first();
         return sorted.first(arg);
     }
 
