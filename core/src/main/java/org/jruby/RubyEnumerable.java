@@ -1098,12 +1098,14 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_slice")
     public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        return block.isGiven() ? each_sliceCommon(context, self, arg, block) :
+        int size = (int) RubyNumeric.num2long(arg);
+        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+
+        return block.isGiven() ? each_sliceCommon(context, self, size, block) :
                 enumeratorizeWithSize(context, self, "each_slice", new IRubyObject[]{arg}, eachSliceSizeFn(context, self));
     }
 
-    static IRubyObject each_sliceCommon(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        final int size = RubyNumeric.num2int(arg);
+    static IRubyObject each_sliceCommon(ThreadContext context, IRubyObject self, final int size, final Block block) {
         final Ruby runtime = context.runtime;
         if (size <= 0) throw runtime.newArgumentError("invalid slice size");
 
