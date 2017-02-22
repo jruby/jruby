@@ -114,7 +114,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         this.arity = arity;
 
-        this.fallback = prepareBinder().invokeVirtualQuiet(Bootstrap.LOOKUP, "invoke");
+        this.fallback = prepareBinder(true).invokeVirtualQuiet(Bootstrap.LOOKUP, "invoke");
     }
 
     public static CallSite bootstrap(InvokeSite site, MethodHandles.Lookup lookup) {
@@ -163,17 +163,101 @@ public abstract class InvokeSite extends MutableCallSite {
         return entry.method.call(context, self, selfClass, name, args, block);
     }
 
-    public Binder prepareBinder() {
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
+        return fail(context, caller, self, IRubyObject.NULL_ARRAY, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, arg0, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry, caller)) {
+            return callMethodMissing(entry, callType, context, self, name, arg0, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, selfClass, name, arg0, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry, caller)) {
+            return callMethodMissing(entry, callType, context, self, name, arg0, arg1, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry, caller)) {
+            return callMethodMissing(entry, callType, context, self, name, arg0, arg1, arg2, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
+    }
+
+    /**
+     * Prepare a binder for this call site's target, forcing varargs if specified
+     *
+     * @param varargs whether to only call an arg-boxed variable arity path
+     * @return the prepared binder
+     */
+    public Binder prepareBinder(boolean varargs) {
         SmartBinder binder = SmartBinder.from(signature);
 
-        // prepare arg[]
-        if (arity == -1) {
-            // do nothing, already have IRubyObject[] in args
-        } else if (arity == 0) {
-            binder = binder.insert(argOffset, "args", IRubyObject.NULL_ARRAY);
-        } else {
-            binder = binder
-                    .collect("args", "arg[0-9]+");
+        if (varargs || arity > 3) {
+            // we know we want to call varargs path always, so prepare args[] here
+            if (arity == -1) {
+                // do nothing, already have IRubyObject[] in args
+            } else if (arity == 0) {
+                binder = binder.insert(argOffset, "args", IRubyObject.NULL_ARRAY);
+            } else {
+                binder = binder
+                        .collect("args", "arg[0-9]+");
+            }
         }
 
         // add block if needed
@@ -246,7 +330,8 @@ public abstract class InvokeSite extends MutableCallSite {
                     LOG.info(methodName + "\tat site #" + siteID + " encountered more than " + Options.INVOKEDYNAMIC_MAXPOLY.load() + " types; bailing out (" + file + ":" + line + ")");
                 }
             }
-            setTarget(target = prepareBinder().invokeVirtualQuiet(lookup(), "fail"));
+            // bind to specific-arity fail method if available
+            setTarget(target = prepareBinder(false).invokeVirtualQuiet(lookup(), "fail"));
         } else {
             MethodHandle fallback;
             MethodHandle gwt;
@@ -321,8 +406,34 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public abstract boolean methodMissing(CacheEntry entry, IRubyObject caller);
 
+    /**
+     * Variable arity method_missing invocation. Arity zero also passes through here.
+     */
     public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) {
         return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, args, block);
+    }
+
+    /**
+     * Arity one method_missing invocation
+     */
+    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, Block block) {
+        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, block);
+    }
+
+
+    /**
+     * Arity two method_missing invocation
+     */
+    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, block);
+    }
+
+
+    /**
+     * Arity three method_missing invocation
+     */
+    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, arg2, block);
     }
 
     private static String logMethod(DynamicMethod method) {

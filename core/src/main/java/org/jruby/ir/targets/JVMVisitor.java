@@ -239,11 +239,9 @@ public class JVMVisitor extends IRVisitor {
         jvm.popmethod();
     }
 
-    protected void emitVarargsMethodWrapper(IRScope scope, String name, Signature variableSignature, Signature specificSignature) {
+    protected void emitVarargsMethodWrapper(IRScope scope, String variableName, String specificName, Signature variableSignature, Signature specificSignature) {
 
-        Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
-
-        jvm.pushmethod(name, scope, variableSignature, false);
+        jvm.pushmethod(variableName, scope, variableSignature, false);
 
         IRBytecodeAdapter m = jvmMethod();
 
@@ -271,8 +269,8 @@ public class JVMVisitor extends IRVisitor {
         m.loadFrameName();
 
         // invoke specific-arity version and return
-        Method specificMethod = new Method(name, Type.getType(specificSignature.type().returnType()), IRRuntimeHelpers.typesFromSignature(specificSignature));
-        jvmAdapter().invokestatic(m.getClassData().clsName, name, specificMethod.getDescriptor());
+        Method specificMethod = new Method(specificName, Type.getType(specificSignature.type().returnType()), IRRuntimeHelpers.typesFromSignature(specificSignature));
+        jvmAdapter().invokestatic(m.getClassData().clsName, specificName, specificMethod.getDescriptor());
         jvmAdapter().areturn();
 
         jvm.popmethod();
@@ -337,24 +335,38 @@ public class JVMVisitor extends IRVisitor {
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
 
-        context.setJittedName(name);
+        context.setBaseName(name);
+        context.setVariableName(name);
 
         jvm.cls().visitEnd();
         jvm.popclass();
     }
 
     private void emitWithSignatures(IRMethod method, JVMVisitorMethodContext context, String name) {
-        context.setJittedName(name);
+        context.setBaseName(name);
 
         Signature specificSig = signatureFor(method, true);
+
         if (specificSig == null) {
+            // only varargs, so use name as is
+            context.setVariableName(name);
             Signature signature = signatureFor(method, false);
             emitScope(method, name, signature, false, true);
             context.addNativeSignature(-1, signature.type());
         } else {
-            emitScope(method, name, specificSig, true, true);
+            String specificName = name;
+
+            context.setSpecificName(specificName);
+
+            emitScope(method, specificName, specificSig, true, true);
             context.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
-            emitVarargsMethodWrapper(method, name, METHOD_SIGNATURE_VARARGS, specificSig);
+
+            // specific arity path, so mangle the dummy varargs wrapper
+            String variableName = name + JavaNameMangler.VARARGS_MARKER;
+
+            context.setVariableName(variableName);
+
+            emitVarargsMethodWrapper(method, variableName, specificName, METHOD_SIGNATURE_VARARGS, specificSig);
             context.addNativeSignature(-1, METHOD_SIGNATURE_VARARGS.type());
         }
     }
@@ -1199,13 +1211,14 @@ public class JVMVisitor extends IRVisitor {
         emitMethod(method, context);
 
         String defSignature = pushHandlesForDef(
-                context.getJittedName(),
+                context.getVariableName(),
+                context.getSpecificName(),
                 context.getNativeSignaturesExceptVariable(),
                 METHOD_SIGNATURE_VARARGS.type(),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, IRubyObject.class));
 
-        jvmAdapter().getstatic(jvm.clsData().clsName, context.getJittedName() + "_IRScope", ci(IRScope.class));
+        jvmAdapter().getstatic(jvm.clsData().clsName, context.getBaseName() + "_IRScope", ci(IRScope.class));
         visit(defineclassmethodinstr.getContainer());
 
         // add method
@@ -1229,13 +1242,14 @@ public class JVMVisitor extends IRVisitor {
         assert(variable != null);
 
         String defSignature = pushHandlesForDef(
-                context.getJittedName(),
+                context.getVariableName(),
+                context.getSpecificName(),
                 context.getNativeSignaturesExceptVariable(),
                 variable,
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, DynamicScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, DynamicScope.class, IRubyObject.class));
 
-        a.getstatic(jvm.clsData().clsName, context.getJittedName() + "_IRScope", ci(IRScope.class));
+        a.getstatic(jvm.clsData().clsName, context.getBaseName() + "_IRScope", ci(IRScope.class));
         jvmLoadLocal(DYNAMIC_SCOPE);
         jvmMethod().loadSelf();
 
@@ -1243,10 +1257,10 @@ public class JVMVisitor extends IRVisitor {
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod", defSignature);
     }
 
-    private String pushHandlesForDef(String name, IntHashMap<MethodType> signaturesExceptVariable, MethodType variable, String variableOnly, String variableAndSpecific) {
+    private String pushHandlesForDef(String variableName, String specificName, IntHashMap<MethodType> signaturesExceptVariable, MethodType variable, String variableOnly, String variableAndSpecific) {
         String defSignature;
 
-        jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(variable.returnType(), variable.parameterArray())));
+        jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, variableName, sig(variable.returnType(), variable.parameterArray())));
 
         if (signaturesExceptVariable.size() == 0) {
             defSignature = variableOnly;
@@ -1254,7 +1268,7 @@ public class JVMVisitor extends IRVisitor {
             defSignature = variableAndSpecific;
 
             for (IntHashMap.Entry<MethodType> entry : signaturesExceptVariable.entrySet()) {
-                jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(entry.getValue().returnType(), entry.getValue().parameterArray())));
+                jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, specificName, sig(entry.getValue().returnType(), entry.getValue().parameterArray())));
                 jvmAdapter().pushInt(entry.getKey());
                 break; // FIXME: only supports one arity
             }
