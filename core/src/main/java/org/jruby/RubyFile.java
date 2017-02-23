@@ -2046,9 +2046,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 element = path.getUnicodeValue();
             }
 
-            chomp(buffer);
-            if (i > 0 && !startsWith(element, separator)) {
-                buffer.append(separator);
+            int trailingDelimiterIndex = chomp(buffer);
+            boolean leadingDelimiter = startsWith(element, separator);
+            boolean trailingDelimiter = trailingDelimiterIndex != -1;
+            if (i > 0) {
+                if (leadingDelimiter) {
+                    // both present delete leading one(s)
+                    if (trailingDelimiter) buffer.delete(trailingDelimiterIndex, buffer.length());
+                } else if (!trailingDelimiter) { // no edge delimiters are present
+                    buffer.append(separator);
+                }
             }
             buffer.append(element);
         }
@@ -2077,17 +2084,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    private static void chomp(final StringBuilder buffer) {
-        int lastIndex = buffer.length() - 1;
+    // Return the last index before where there is a delimeter.  Otherwise -1.
+    // If there are non-consecutive delimeters at the end we will return the
+    // first non-delimiter character.
+    private static int chomp(final StringBuilder buffer) {
+        boolean found = false;
 
-        while ( lastIndex >= 0 ) {
+        for (int lastIndex = buffer.length() - 1; lastIndex >= 0; lastIndex--) {
             char c = buffer.charAt(lastIndex);
-            if ( c == '/' || c == '\\' ) {
-                buffer.setLength(lastIndex--);
-                continue;
+
+            if (c != '/' && c != '\\') {
+                if (found) return lastIndex + 1;
+                break;
             }
-            break;
+
+            found = true;
         }
+
+        return found ? 0 : -1;
     }
 
     // String.startsWith for a CharSequence
