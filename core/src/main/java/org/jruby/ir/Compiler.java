@@ -47,6 +47,11 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
         byte[] bytecode;
         MethodHandle _compiledHandle;
 
+        if ((scope.getBeginBlocks() != null && scope.getBeginBlocks().size() > 0) ||
+                (scope.getEndBlocks() != null && scope.getBeginBlocks().size() > 0)) {
+            throw new NotCompilableException("target script has BEGIN or END");
+        }
+
         try {
             JVMVisitor visitor = new JVMVisitor();
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();
