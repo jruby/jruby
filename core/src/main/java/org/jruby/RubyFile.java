@@ -2051,9 +2051,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             boolean trailingDelimiter = trailingDelimiterIndex != -1;
             if (i > 0) {
                 if (leadingDelimiter) {
-                    // both present delete leading one(s)
+                    // both present delete trailing delimiter(s)
                     if (trailingDelimiter) buffer.delete(trailingDelimiterIndex, buffer.length());
-                } else if (!trailingDelimiter) { // no edge delimiters are present
+                } else if (!trailingDelimiter) { // no edge delimiters are present add supplied separator
                     buffer.append(separator);
                 }
             }
@@ -2084,6 +2084,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
+    // FIXME: MRI and JRuby are both broken here since it does not actually look up
+    // File::{SEPARATOR,ALT_SEPARATOR} but merely hardcodes depending on whether we are on Windows.
+    private static boolean isDirSeparator(char c) {
+        return c == '/' || Platform.IS_WINDOWS && c == '\\';
+    }
+
     // Return the last index before where there is a delimeter.  Otherwise -1.
     // If there are non-consecutive delimeters at the end we will return the
     // first non-delimiter character.
@@ -2091,9 +2097,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         boolean found = false;
 
         for (int lastIndex = buffer.length() - 1; lastIndex >= 0; lastIndex--) {
-            char c = buffer.charAt(lastIndex);
-
-            if (c != '/' && c != '\\') {
+            if (!isDirSeparator(buffer.charAt(lastIndex))) {
                 if (found) return lastIndex + 1;
                 break;
             }
