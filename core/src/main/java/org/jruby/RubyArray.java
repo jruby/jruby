@@ -40,6 +40,7 @@ package org.jruby;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
@@ -4634,6 +4635,26 @@ float_loop:
         RubyString iFmt = obj.convertToString();
         try {
             return Pack.pack(context, context.runtime, this, iFmt);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw concurrentModification(context.runtime, e);
+        }
+    }
+
+    @JRubyMethod(name = "pack")
+    public RubyString pack(ThreadContext context, IRubyObject obj, IRubyObject maybeOpts) {
+        Ruby runtime = context.runtime;
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
+        RubyString str = RubyString.newEmptyString(runtime);
+        RubyString iFmt = obj.convertToString();
+        try {
+            if (!opts.isNil()){
+                IRubyObject buffer = ((RubyHash) opts).fastARef(runtime.newSymbol("buffer"));
+                if (buffer != null) {
+                    str = (RubyString) buffer;
+                }
+            }
+
+            return str.append(Pack.pack(context, context.runtime, this, iFmt));
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(context.runtime, e);
         }
