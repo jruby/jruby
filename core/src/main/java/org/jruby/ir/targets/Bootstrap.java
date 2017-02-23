@@ -412,7 +412,6 @@ public class Bootstrap {
 
         MethodHandle getValue;
 
-        // FIXME: Duplicated from ivar get
         if (accessor instanceof FieldVariableAccessor) {
             int offset = ((FieldVariableAccessor)accessor).getOffset();
             getValue = Binder.from(site.type())
@@ -424,9 +423,9 @@ public class Bootstrap {
             getValue = Binder.from(site.type())
                     .drop(0, 2)
                     .filterReturn(filter)
-                    .cast(methodType(Object.class, RubyBasicObject.class))
-                    .append(accessor.getIndex())
-                    .invokeVirtualQuiet(LOOKUP, "getVariable");
+                    .cast(methodType(Object.class, Object.class))
+                    .prepend(accessor)
+                    .invokeVirtualQuiet(LOOKUP, "get");
         }
 
         // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
@@ -459,9 +458,9 @@ public class Bootstrap {
             setValue = Binder.from(site.type())
                     .drop(0, 2)
                     .filterReturn(filter)
-                    .cast(methodType(void.class, RubyBasicObject.class, Object.class))
-                    .insert(1, accessor.getIndex())
-                    .invokeVirtualQuiet(LOOKUP, "setVariable");
+                    .cast(methodType(void.class, Object.class, Object.class))
+                    .prepend(accessor)
+                    .invokeVirtualQuiet(LOOKUP, "set");
         }
 
         return setValue;
