@@ -2047,8 +2047,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
 
             int trailingDelimiterIndex = chomp(buffer);
-            boolean leadingDelimiter = startsWith(element, separator);
             boolean trailingDelimiter = trailingDelimiterIndex != -1;
+            boolean leadingDelimiter = element.length() > 0 && isDirSeparator(element.charAt(0));
             if (i > 0) {
                 if (leadingDelimiter) {
                     // both present delete trailing delimiter(s)
