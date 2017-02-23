@@ -396,14 +396,20 @@ public class RubyTime extends RubyObject {
             long nsecs;
             POSIX posix = runtime.getPosix();
             if (posix.isNative()) {
-                Timeval tv = posix.allocateTimeval();
-                posix.gettimeofday(tv);
+                // FIXME: we should have a pure Java fallback in jnr-posix and Windows is missing gettimeofday impl
+                try {
+                    Timeval tv = posix.allocateTimeval();
+                    posix.gettimeofday(tv);
 
-                long secs = tv.sec();
-                long usecs = tv.usec();
+                    long secs = tv.sec();
+                    long usecs = tv.usec();
 
-                msecs = secs * 1000 + (usecs / 1000);
-                nsecs = usecs % 1000 * 1000;
+                    msecs = secs * 1000 + (usecs / 1000);
+                    nsecs = usecs % 1000 * 1000;
+                } catch (RaiseException notImplementedError) {
+                    msecs = System.currentTimeMillis();
+                    nsecs = 0;
+                }
             } else {
                 msecs = System.currentTimeMillis();
                 nsecs = 0;
