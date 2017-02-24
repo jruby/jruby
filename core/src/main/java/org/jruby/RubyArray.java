@@ -4644,19 +4644,21 @@ float_loop:
     public RubyString pack(ThreadContext context, IRubyObject obj, IRubyObject maybeOpts) {
         Ruby runtime = context.runtime;
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
-        RubyString str = RubyString.newEmptyString(runtime);
-        RubyString iFmt = obj.convertToString();
-        try {
-            if (!opts.isNil()){
-                IRubyObject buffer = ((RubyHash) opts).fastARef(runtime.newSymbol("buffer"));
-                if (buffer != null) {
-                    str = (RubyString) buffer;
-                }
-            }
+        RubyString str;
 
-            return str.append(Pack.pack(context, context.runtime, this, iFmt));
+        try {
+            IRubyObject buffer = ((RubyHash) opts).fastARef(runtime.newSymbol("buffer"));
+            if (buffer != null) {
+                str = (RubyString) buffer;
+            } else {
+                str = RubyString.newString(runtime, "");
+            }
+            return str.append(pack(context, obj));
+
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(context.runtime, e);
+        } catch (ClassCastException e){
+            throw runtime.newTypeError(opts, "String");
         }
     }
 
