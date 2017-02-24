@@ -302,7 +302,7 @@ public class RubyModule extends RubyObject {
     public MethodHandle getIdTest() {
         MethodHandle idTest = this.idTest;
         if (idTest != null) return idTest;
-        return idTest = newIdTest();
+        return this.idTest = newIdTest();
     }
 
     protected MethodHandle newIdTest() {
