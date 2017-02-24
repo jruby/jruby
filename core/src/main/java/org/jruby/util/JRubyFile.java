@@ -128,17 +128,21 @@ public class JRubyFile extends JavaSecuredFile {
         if (pathname.startsWith("file:")) {
             pathname = pathname.substring(5);
         }
-        File internal = new JavaSecuredFile(pathname);
-        if (internal.isAbsolute()) {
-            return new JRubyFile(internal);
-        }
         if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/")) {
             return new JRubyFile(cwd + '/' + pathname);
         }
-        internal = new JavaSecuredFile(cwd, pathname);
+
+        File internal = new JavaSecuredFile(pathname);
+        internal = internal.isAbsolute() ? internal : new JavaSecuredFile(cwd, pathname);
+
         if(!internal.isAbsolute()) {
             throw new IllegalArgumentException("Neither current working directory ("+cwd+") nor pathname ("+pathname+") led to an absolute path");
         }
+
+        if (pathname.endsWith("/") && !internal.isDirectory()) {
+            return JRubyFile.DUMMY;
+        }
+
         return new JRubyFile(internal);
     }
 
