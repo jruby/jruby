@@ -458,7 +458,6 @@ public class RubyBasicSocket extends RubyIO {
         // shutdown half
         int how = closeHalf == OpenFile.READABLE ? 0 : 1;
         shutdownInternal(context, fptr, how);
-        fptr.setMode(fptr.getMode() & ~closeHalf);
 
         return context.nil;
     }
