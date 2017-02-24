@@ -515,6 +515,14 @@ public abstract class RubyInteger extends RubyNumeric {
         return context.runtime.newArray(f_gcd(context, this, other), f_lcm(context, this, other));
     }
 
+    @JRubyMethod(name = "digits")
+    public RubyArray digits(ThreadContext context) {
+        return digits(context, RubyFixnum.newFixnum(context.getRuntime(), 10));
+    }
+
+    @JRubyMethod(name = "digits")
+    public abstract RubyArray digits(ThreadContext context, IRubyObject base);
+
     @Override
     @JRubyMethod(name = "numerator")
     public IRubyObject numerator(ThreadContext context) {

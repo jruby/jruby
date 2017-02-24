@@ -302,6 +302,54 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
     }
 
+    /** rb_fix_digits
+     *
+     */
+    @Override
+    public RubyArray digits(ThreadContext context, IRubyObject base) {
+
+        long self = getLongValue();
+        Ruby runtime = context.getRuntime();
+        if (self < 0) {
+            throw runtime.newMathDomainError("out of domain");
+        }
+        if (!(base instanceof RubyInteger)) {
+            try {
+                base = base.convertToInteger();
+            } catch (ClassCastException e) {
+                String cname = base.getMetaClass().getRealClass().getName();
+                throw runtime.newTypeError("wrong argument type " + cname + " (expected Integer)");
+            }
+        }
+        if (base instanceof RubyBignum){
+            return RubyArray
+                    .newArray(context.runtime, 1)
+                    .append(newFixnum(runtime, self));
+        }
+        long longBase = ((RubyFixnum)base).getLongValue();
+        if (longBase < 0) {
+            throw runtime.newArgumentError("negative radix");
+        }
+        if (longBase < 2) {
+            throw runtime.newArgumentError("invalid radix: " + longBase);
+        }
+
+        RubyArray res = RubyArray.newArray(context.runtime, 0);
+
+        if (self == 0) {
+            res.append(newFixnum(runtime, 0));
+            return res;
+        }
+
+        while (self > 0) {
+            long q = self % longBase;
+            res.append(newFixnum(runtime, q));
+            self /= longBase;
+        }
+
+        return res;
+    }
+
     /** fix_to_s
      *
      */
