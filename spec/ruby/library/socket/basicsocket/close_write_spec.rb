@@ -26,6 +26,11 @@ describe "Socket::BasicSocket#close_write" do
     @server.closed?.should be_false
   end
 
+  it "does not prevent reading" do
+    @server.close_write
+    @server.read(0).should == ""
+  end
+
   it "fully closes the socket if it was already closed for reading" do
     @server.close_read
     @server.close_write
