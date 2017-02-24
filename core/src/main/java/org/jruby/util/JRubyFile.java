@@ -129,7 +129,8 @@ public class JRubyFile extends JavaSecuredFile {
             pathname = pathname.substring(5);
         }
         File internal = new JavaSecuredFile(pathname);
-        if (internal.isAbsolute()) {
+        // File and company do not seem to recognize bare \ and / on Windows as absolute.  Cheat!
+        if (internal.isAbsolute() || Platform.IS_WINDOWS && (pathname.startsWith("/") || pathname.startsWith("\\"))) {
             return new JRubyFile(internal);
         }
         if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/")) {
