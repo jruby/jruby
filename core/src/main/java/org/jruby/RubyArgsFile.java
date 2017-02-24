@@ -128,29 +128,29 @@ public class RubyArgsFile extends RubyObject {
 
         public boolean next_argv(ThreadContext context) {
             if (!inited) {
-                if (argv.getLength() > 0) {
-                    next_p = 1;
-                } else {
-                    next_p = -1;
-                }
+                next_p = argv.getLength() > 0 ? 1 : -1;
                 inited = true;
                 currentLineNumber = 0;
+            } else {
+                if (argv.isNil()) {
+                    next_p = -1;
+                } else if (next_p == -1 && argv.getLength() > 0) {
+                    next_p = 1;
+                }
             }
 
             IRubyObject $FILENAME = runtime.getGlobalVariables().get("$FILENAME");
 
             if (next_p == 1) {
-                next_p = 0;
                 if (argv.getLength() > 0) {
                     final RubyString filename = argv.shift(context).convertToString();
                     if ( ! filename.op_equal(context, $FILENAME).isTrue() ) {
                         runtime.defineReadonlyVariable("$FILENAME", filename, GlobalVariable.Scope.GLOBAL);
                     }
 
-                    if ( filenameEqlDash(filename) ) {
+                    if (filenameEqlDash(filename)) {
                         currentFile = runtime.getGlobalVariables().get("$stdin");
-                    }
-                    else {
+                    } else {
                         currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{ filename }, Block.NULL_BLOCK);
                         String extension = runtime.getInstanceConfig().getInPlaceBackupExtension();
                         if (extension != null) {
@@ -161,20 +161,20 @@ public class RubyArgsFile extends RubyObject {
                             }
                         }
                         minLineNumber = currentLineNumber;
+
                         currentFile.callMethod(context, "lineno=", context.runtime.newFixnum(currentLineNumber));
                     }
+                    next_p = 0;
                 } else {
                     next_p = 1;
                     return false;
                 }
-            }
-            else if (next_p == -1) {
+            } else if (next_p == -1) {
                 currentFile = runtime.getGlobalVariables().get("$stdin");
-                if ( ! filenameEqlDash((RubyString) $FILENAME) ) {
+                if (!filenameEqlDash((RubyString) $FILENAME)) {
                     runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
                 }
             }
-
             return true;
         }
 
@@ -304,7 +304,7 @@ public class RubyArgsFile extends RubyObject {
 
             line = data.currentFile.callMethod(context, "gets", args);
 
-            if ( line.isNil() && data.next_p != -1 ) {
+            if (line.isNil() && data.next_p != -1) {
                 argf_close(context, data.currentFile);
                 data.next_p = 1;
                 retry = true;
@@ -500,7 +500,7 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject skip(IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
-        if (data.next_p != -1) {
+        if (data.inited && data.next_p == 0) {
             argf_close(recv.getRuntime().getCurrentContext(), data.currentFile);
             data.next_p = 1;
         }
@@ -521,7 +521,6 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
         data.next_argv(context);
-
         argf_close(context, data.currentFile);
 
         if (data.next_p != -1) data.next_p = 1;
@@ -660,6 +659,7 @@ public class RubyArgsFile extends RubyObject {
 
             if (!bt.isNil()) return bt;
 
+            argf_close(context, data.currentFile);
             data.next_p = 1;
         }
     }
@@ -701,19 +701,15 @@ public class RubyArgsFile extends RubyObject {
         //}
         res = ((RubyIO) data.currentFile).getPartial(context, args, nonBlocking, noException);
 
-        if ( res.isNil() ) {
-            if ( data.next_p == -1 ) {
-                return RubyIO.nonblockEOF(runtime, noException);
-            }
+        if (res.isNil()) {
+            if (data.next_p == -1) return RubyIO.nonblockEOF(runtime, noException);
 
             argf_close(context, data.currentFile);
             data.next_p = 1;
 
-            if ( data.argv.size() == 0 ) {
-                return RubyIO.nonblockEOF(runtime, noException);
-            }
+            if (data.argv.isEmpty()) return RubyIO.nonblockEOF(runtime, noException);
 
-            if ( args.length > 1 && args[1] instanceof RubyString ) return args[1];
+            if (args.length > 1 && args[1] instanceof RubyString )return args[1];
             return RubyString.newEmptyString(runtime);
         }
 
@@ -745,6 +741,7 @@ public class RubyArgsFile extends RubyObject {
 
             if (!bt.isNil()) return bt;
 
+            argf_close(context, data.currentFile);
             data.next_p = 1;
         }
     }
