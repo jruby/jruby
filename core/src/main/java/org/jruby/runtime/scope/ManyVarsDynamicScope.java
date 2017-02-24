@@ -32,7 +32,8 @@ public class ManyVarsDynamicScope extends DynamicScope {
     public static final MethodHandle CONSTRUCTOR;
     static {
         try {
-            CONSTRUCTOR = MethodHandles.publicLookup()
+            // use lookup() to avoid IllegalAccessException with JRuby embed
+            CONSTRUCTOR = MethodHandles.lookup()
                     .findConstructor(ManyVarsDynamicScope.class, MethodType.methodType(void.class, StaticScope.class, DynamicScope.class))
                     .asType(MethodType.methodType(DynamicScope.class, StaticScope.class, DynamicScope.class));
         } catch (Exception e) {
