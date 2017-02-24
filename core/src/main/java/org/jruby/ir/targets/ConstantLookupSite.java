@@ -97,7 +97,7 @@ public class ConstantLookupSite extends MutableCallSite {
         setTarget(switchPoint.guardWithTest(target, fallback));
 
         if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) {
-            LOG.info(name + "\tretrieved and cached from scope " + staticScope.getIRScope());
+            LOG.info(name + "\tretrieved and cached from scope (searchConst) " + staticScope.getIRScope());
         }
 
         return constant;
@@ -121,6 +121,10 @@ public class ConstantLookupSite extends MutableCallSite {
 
         // bind constant until invalidated
         bind(runtime, module, constant, SMFC());
+
+        if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) {
+            LOG.info(name + "\tretrieved and cached from module (searchModuleForConst) " + cmVal.getMetaClass());// + " added to PIC" + extractSourceInfo(site));
+        }
 
         return constant;
     }
@@ -166,7 +170,7 @@ public class ConstantLookupSite extends MutableCallSite {
         tracker.addType(module.id);
 
         if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) {
-            LOG.info(name + "\tconstant cached from type " + cmVal.getMetaClass());
+            LOG.info(name + "\tconstant cached from type (inheritanceSearchConst) " + cmVal.getMetaClass());
         }
 
         return constant;
@@ -277,7 +281,7 @@ public class ConstantLookupSite extends MutableCallSite {
         setTarget(switchPoint.guardWithTest(target, fallback));
 
         if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) {
-            LOG.info(name + "\tretrieved and cached from scope " + scope.getIRScope());// + " added to PIC" + extractSourceInfo(site));
+            LOG.info(name + "\tretrieved and cached from scope (lexicalSearchConst) " + scope.getIRScope());// + " added to PIC" + extractSourceInfo(site));
         }
 
         return constant;
