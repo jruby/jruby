@@ -244,11 +244,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(meta = true)
     public static RubyBigDecimal _load(ThreadContext context, IRubyObject recv, IRubyObject from) {
-        RubyBigDecimal instance = (RubyBigDecimal) (((RubyClass) recv).allocate());
         String precisionAndValue = from.convertToString().asJavaString();
         String value = precisionAndValue.substring(precisionAndValue.indexOf(":")+1);
-        instance.value = new BigDecimal(value);
-        return instance;
+        return newInstance(context, recv, RubyString.newString(context.runtime, value));
     }
 
     @JRubyMethod(meta = true)
