@@ -78,7 +78,7 @@ module Fiddle
       raise TypeError.new "invalid return type" unless args.is_a?(Array)
 
       @function = FFI::Function.new(
-        __ffi_type__(@ctype),
+        Fiddle::JRuby::__ffi_type__(@ctype),
         @args.map { |t| Fiddle::JRuby.__ffi_type__(t) },
         self,
         :convention => abi
