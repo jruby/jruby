@@ -11,6 +11,12 @@ module Fiddle
   TYPE_FLOAT        = 7
   TYPE_DOUBLE       = 8
 
+  TYPE_SIZE_T       = -5
+  TYPE_SSIZE_T      = 5
+  TYPE_PTRDIFF_T    = 5
+  TYPE_INTPTR_T     = 5
+  TYPE_UINTPTR_T    = -5
+
   WINDOWS = FFI::Platform.windows?
 
   module JRuby
@@ -303,4 +309,16 @@ module Fiddle
   SIZEOF_LONG_LONG   = Fiddle::JRuby::FFITypes[TYPE_LONG_LONG].size
   SIZEOF_FLOAT       = Fiddle::JRuby::FFITypes[TYPE_FLOAT].size
   SIZEOF_DOUBLE      = Fiddle::JRuby::FFITypes[TYPE_DOUBLE].size
+
+  ALIGN_SIZE_T       = ALIGN_VOIDP
+  ALIGN_SSIZE_T      = ALIGN_VOIDP
+  ALIGN_PTRDIFF_T    = ALIGN_VOIDP
+  ALIGN_INTPTR_T     = ALIGN_VOIDP
+  ALIGN_UINTPTR_T    = ALIGN_VOIDP
+
+  SIZEOF_SIZE_T      = SIZEOF_VOIDP
+  SIZEOF_SSIZE_T     = SIZEOF_VOIDP
+  SIZEOF_PTRDIFF_T   = SIZEOF_VOIDP
+  SIZEOF_INTPTR_T    = SIZEOF_VOIDP
+  SIZEOF_UINTPTR_T   = SIZEOF_VOIDP
 end
