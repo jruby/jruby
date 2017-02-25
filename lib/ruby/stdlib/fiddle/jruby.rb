@@ -250,6 +250,8 @@ module Fiddle
     end
   end
 
+  NULL = Pointer.new(0, 0)
+
   class Handle
     RTLD_GLOBAL = FFI::DynamicLibrary::RTLD_GLOBAL
     RTLD_LAZY = FFI::DynamicLibrary::RTLD_LAZY
