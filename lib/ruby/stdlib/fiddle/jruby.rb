@@ -1,4 +1,5 @@
 require 'ffi'
+require 'ffi/libc'
 
 module Fiddle
   TYPE_VOID         = 0
@@ -18,6 +19,12 @@ module Fiddle
   TYPE_UINTPTR_T    = -5
 
   WINDOWS = FFI::Platform.windows?
+
+  LibC = FFI::LibC
+
+  def self.malloc(size)
+    LibC.malloc(size)
+  end
 
   module JRuby
     FFITypes = {
@@ -63,7 +70,7 @@ module Fiddle
       @ptr, @args, @return_type, @abi = ptr, args, return_type, abi
       raise TypeError.new "invalid return type" unless return_type.is_a?(Integer)
       raise TypeError.new "invalid return type" unless args.is_a?(Array)
-      
+
       @function = FFI::Function.new(
         Fiddle::JRuby::__ffi_type__(@return_type),
         @args.map { |t| Fiddle::JRuby.__ffi_type__(t) },
@@ -171,7 +178,7 @@ module Fiddle
     end
 
     def self.malloc(size, free = nil)
-      self.new(LibC.malloc(size), size, free ? free : LibC::FREE)
+      self.new(Fiddle.malloc(size), size, free ? free : LibC::FREE)
     end
 
     def null?
