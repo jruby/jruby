@@ -192,9 +192,17 @@ module Fiddle
 
     def [](index, length = nil)
       if length
-        ffi_ptr.get_string(index, length)
+        ffi_ptr.get_bytes(index, length)
       else
-        ffi_ptr.get_int(index)
+        ffi_ptr.get_int8(index)
+      end
+    end
+
+    def []=(index, length = nil, value)
+      if length
+        ffi_ptr.put_bytes(index, value, 0, length)
+      else
+        ffi_ptr.put_int8(index, value)
       end
     end
 
