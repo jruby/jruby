@@ -1,12 +1,16 @@
 # frozen_string_literal: false
 require 'minitest/autorun'
 require 'fiddle'
+require 'rbconfig'
 
 # FIXME: this is stolen from DL and needs to be refactored.
 
 libc_so = libm_so = nil
 
-case RUBY_PLATFORM
+platform = RUBY_PLATFORM
+platform = RbConfig::CONFIG['target_os'] if platform == 'java'
+
+case platform
 when /cygwin/
   libc_so = "cygwin1.dll"
   libm_so = "cygwin1.dll"
