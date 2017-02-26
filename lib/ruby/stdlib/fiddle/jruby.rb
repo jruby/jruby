@@ -23,6 +23,8 @@ module Fiddle
   LibC = FFI::LibC
   RUBY_FREE = LibC::FREE.address
 
+  BUILD_RUBY_PLATFORM = RUBY_PLATFORM
+
   def self.malloc(size)
     LibC.malloc(size)
   end
