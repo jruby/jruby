@@ -142,7 +142,11 @@ module Fiddle
 
       elsif value.respond_to?(:to_ptr)
         ptr = value.to_ptr
-        ptr.is_a?(Pointer) ? ptr : Pointer.new(ptr)
+        if ptr.is_a?(Pointer)
+          ptr
+        else
+          raise DLError.new('to_ptr should return a Fiddle::Pointer object')
+        end
 
       else
         Pointer.new(value)
