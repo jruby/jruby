@@ -258,11 +258,12 @@ module Fiddle
     end
 
     def +(delta)
-      self.class.new(ffi_ptr + delta, @size - delta)
+      self.class.new(ffi_ptr.address + delta, @size - delta)
     end
 
     def -(delta)
-      self.class.new(ffi_ptr - delta, @size + delta)
+      self.class.new(ffi_ptr.address - delta, @size + delta)
+    end
 
     def ==(value)
       return false unless value.is_a?(Pointer)
