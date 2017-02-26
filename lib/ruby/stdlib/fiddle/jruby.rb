@@ -157,7 +157,7 @@ module Fiddle
       alias [] to_ptr
     end
 
-    def initialize(addr, size = nil, free = nil)
+    def initialize(addr, size = 0, freefunc = nil)
       ptr = if addr.is_a?(FFI::Pointer)
               addr
 
@@ -165,9 +165,9 @@ module Fiddle
               FFI::Pointer.new(addr)
             end
 
-      @size = size ? size : ptr.size
-      @free = free
-      @ffi_ptr = free.nil? ? ptr : FFI::AutoPointer.new(ptr, self.class.__freefunc__(free))
+      @size = size
+      self.free = freefunc
+      @ffi_ptr = freefunc.nil? ? ptr : FFI::AutoPointer.new(ptr, ->(x){@__freefunc__.call(x)})
     end
 
     def self.__freefunc__(free)
@@ -189,7 +189,7 @@ module Fiddle
     end
 
     def self.malloc(size, free = nil)
-      self.new(Fiddle.malloc(size), size, free ? free : LibC::FREE)
+      self.new(Fiddle.malloc(size), size, free)
     end
 
     def null?
@@ -206,6 +206,21 @@ module Fiddle
 
     def size=(size)
       @size = size
+    end
+
+    def free
+      return nil if @free.zero?
+      Function.new(@free, [TYPE_VOIDP], TYPE_VOID)
+    end
+
+    def free=(freefunc)
+      if freefunc.nil?
+        @free = 0
+        @__freefunc__ = Proc.new { |ptr| }
+      else
+        @free = Integer(freefunc)
+        @__freefunc__ = self.class.__freefunc__(freefunc)
+      end
     end
 
     def [](index, length = nil)
@@ -239,7 +254,7 @@ module Fiddle
     alias to_s to_str
 
     def inspect
-      "#<#{self.class.name} ptr=#{ffi_ptr.address.to_s(16)} size=#{@size} free=#{@free.inspect}>"
+      "#<#{self.class.name} ptr=#{ffi_ptr.address.to_s(16)} size=#{@size} free=#{@free.to_s(16)}>"
     end
 
     def +(delta)
@@ -261,7 +276,7 @@ module Fiddle
     end
   end
 
-  NULL = Pointer.new(0, 0)
+  NULL = Pointer.new(0, 0, 0)
 
   class Handle
     RTLD_GLOBAL = FFI::DynamicLibrary::RTLD_GLOBAL
