@@ -228,6 +228,8 @@ module Fiddle
       else
         ffi_ptr.get_int8(index)
       end
+    rescue FFI::NullPointerError
+      raise DLError.new('NULL pointer dereference')
     end
 
     def []=(index, length = nil, value)
@@ -236,6 +238,8 @@ module Fiddle
       else
         ffi_ptr.put_int8(index, value)
       end
+    rescue FFI::NullPointerError
+      raise DLError.new('NULL pointer dereference')
     end
 
     def to_i
