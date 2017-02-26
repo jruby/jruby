@@ -217,6 +217,12 @@ describe MSpecMain, "#run" do
     @script = MSpecMain.new
     @script.stub(:config).and_return(@config)
     @script.stub(:exec)
+    @err = $stderr
+    $stderr = IOStub.new
+  end
+
+  after :each do
+    $stderr = @err
   end
 
   it "uses exec to invoke the runner script" do
@@ -225,12 +231,20 @@ describe MSpecMain, "#run" do
     @script.run
   end
 
+  it "shows the command line on stderr" do
+    @script.should_receive(:exec).with("ruby", "-v", %r"#{MSPEC_HOME}/bin/mspec-run$")
+    @script.options []
+    @script.run
+    $stderr.to_s.should == "$ ruby -v #{Dir.pwd}/bin/mspec-run\n"
+  end
+
   it "adds config[:launch] to the exec options" do
     @script.should_receive(:exec).with("ruby",
         "-Xlaunch.option", "-v", %r"#{MSPEC_HOME}/bin/mspec-run$")
     @config[:launch] << "-Xlaunch.option"
     @script.options []
     @script.run
+    $stderr.to_s.should == "$ ruby -Xlaunch.option -v #{Dir.pwd}/bin/mspec-run\n"
   end
 
   it "calls #multi_exec if the command is 'ci' and the multi option is passed" do

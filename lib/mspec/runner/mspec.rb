@@ -5,9 +5,11 @@ require 'mspec/runner/tag'
 module MSpec
 
   @exit    = nil
+  @abort   = nil
   @start   = nil
   @enter   = nil
   @before  = nil
+  @add     = nil
   @after   = nil
   @leave   = nil
   @finish  = nil
@@ -293,7 +295,7 @@ module MSpec
     tags = []
     file = tags_file
     if File.exist? file
-      File.open(file, "rb") do |f|
+      File.open(file, "r:utf-8") do |f|
         f.each_line do |line|
           line.chomp!
           next if line.empty?
@@ -321,7 +323,7 @@ module MSpec
   def self.write_tags(tags)
     file = tags_file
     make_tag_dir(file)
-    File.open(file, "wb") do |f|
+    File.open(file, "w:utf-8") do |f|
       tags.each { |t| f.puts t }
     end
   end
@@ -338,7 +340,7 @@ module MSpec
 
     file = tags_file
     make_tag_dir(file)
-    File.open(file, "ab") { |f| f.puts tag.to_s }
+    File.open(file, "a:utf-8") { |f| f.puts tag.to_s }
     return true
   end
 
@@ -351,7 +353,7 @@ module MSpec
     file = tags_file
     if File.exist? file
       lines = IO.readlines(file)
-      File.open(file, "wb") do |f|
+      File.open(file, "w:utf-8") do |f|
         lines.each do |line|
           line = line.chomp
           if line.start_with?(tag.tag) and line.end_with?(desc)
