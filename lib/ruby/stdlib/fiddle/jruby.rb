@@ -21,9 +21,14 @@ module Fiddle
   WINDOWS = FFI::Platform.windows?
 
   LibC = FFI::LibC
+  RUBY_FREE = LibC::FREE.address
 
   def self.malloc(size)
     LibC.malloc(size)
+  end
+
+  def self.free(ptr)
+    LibC.free(Pointer.to_native(ptr, nil))
   end
 
   module JRuby
