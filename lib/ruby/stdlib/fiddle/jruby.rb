@@ -243,14 +243,17 @@ module Fiddle
     end
     alias to_int to_i
 
-    def to_str(len = nil)
+    def to_s(len = nil)
       if len
-        ffi_ptr.get_string(0, len)
+        ffi_ptr.get_bytes(0, len)
       else
         ffi_ptr.get_string(0)
       end
     end
-    alias to_s to_str
+
+    def to_str(len = size)
+      ffi_ptr.get_bytes(0, len)
+    end
 
     def inspect
       "#<#{self.class.name} ptr=#{ffi_ptr.address.to_s(16)} size=#{@size} free=#{@free.to_s(16)}>"
