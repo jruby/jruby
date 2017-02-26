@@ -31,6 +31,10 @@ describe "IO.try_convert" do
     IO.try_convert(mock("io")).should be_nil
   end
 
+  it "return nil when BasicObject is passed" do
+    IO.try_convert(BasicObject.new).should be_nil
+  end
+
   it "raises a TypeError if the object does not return an IO from #to_io" do
     obj = mock("io")
     obj.should_receive(:to_io).and_return("io")

@@ -117,11 +117,13 @@ VALUE sws_typed_change_struct(VALUE self, VALUE obj, VALUE new_val) {
   RTYPEDDATA(obj)->data = new_struct;
   return Qnil;
 }
+#endif
 
 void Init_typed_data_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiAllocTypedSpecs", rb_cObject);
-
+  
+#if defined(HAVE_RTYPEDDATA) && defined(HAVE_TYPEDDATA_WRAP_STRUCT)
   rb_define_alloc_func(cls, sdaf_alloc_typed_func);
   rb_define_method(cls, "typed_wrapped_data", sdaf_typed_get_struct, 0);
 
@@ -133,9 +135,9 @@ void Init_typed_data_spec(void) {
   rb_define_method(cls, "typed_get_struct_rdata", sws_typed_get_struct_rdata, 1);
   rb_define_method(cls, "typed_get_struct_data_ptr", sws_typed_get_struct_data_ptr, 1);
   rb_define_method(cls, "typed_change_struct", sws_typed_change_struct, 2);
+#endif
 }
 
-#endif
 #ifdef __cplusplus
 }
 #endif

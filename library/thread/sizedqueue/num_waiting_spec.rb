@@ -3,7 +3,7 @@ require 'thread'
 require File.expand_path('../../shared/queue/num_waiting', __FILE__)
 
 describe "Thread::SizedQueue#num_waiting" do
-  it_behaves_like :queue_num_waiting, :num_waiting, SizedQueue.new(10)
+  it_behaves_like :queue_num_waiting, :num_waiting, -> { SizedQueue.new(10) }
 
   it "reports the number of threads waiting to push" do
     q = SizedQueue.new(1)

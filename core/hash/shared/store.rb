@@ -1,3 +1,5 @@
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 describe :hash_store, shared: true do
   it "associates the key with the value and return the value" do
     h = { a: 1 }
@@ -56,6 +58,32 @@ describe :hash_store, shared: true do
     h = {}
     h.send(@method, key, 0)
     h.keys[0].should equal(key)
+  end
+
+  it "keeps the existing key in the hash if there is a matching one" do
+    h = { "a" => 1, "b" => 2, "c" => 3, "d" => 4 }
+    key1 = HashSpecs::ByValueKey.new(13)
+    key2 = HashSpecs::ByValueKey.new(13)
+    h[key1] = 41
+    key_in_hash = h.keys.last
+    key_in_hash.should equal(key1)
+    h[key2] = 42
+    last_key = h.keys.last
+    last_key.should equal(key_in_hash)
+    last_key.should_not equal(key2)
+  end
+
+  it "keeps the existing String key in the hash if there is a matching one" do
+    h = { "a" => 1, "b" => 2, "c" => 3, "d" => 4 }
+    key1 = "foo"
+    key2 = "foo"
+    key1.should_not equal(key2)
+    h[key1] = 41
+    frozen_key = h.keys.last
+    frozen_key.should_not equal(key1)
+    h[key2] = 42
+    h.keys.last.should equal(frozen_key)
+    h.keys.last.should_not equal(key2)
   end
 
   it "raises a RuntimeError if called on a frozen instance" do

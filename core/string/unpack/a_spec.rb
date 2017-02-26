@@ -27,6 +27,12 @@ describe "String#unpack with format 'A'" do
       ["a\x00 b\x00\v", ["a\x00 b\x00\v"]],
     ].should be_computed_by(:unpack, "A*")
   end
+
+  it "decodes into raw (ascii) string values" do
+    str = "str".force_encoding('UTF-8').unpack("A*")[0]
+    str.encoding.name.should == 'ASCII-8BIT'
+  end
+
 end
 
 describe "String#unpack with format 'a'" do
@@ -48,4 +54,10 @@ describe "String#unpack with format 'a'" do
       ["a\x00 b\v",     ["a\x00 b\v"]]
     ].should be_computed_by(:unpack, "a*")
   end
+
+  it "decodes into raw (ascii) string values" do
+    str = "".unpack("a*")[0]
+    str.encoding.name.should == 'ASCII-8BIT'
+  end
+
 end

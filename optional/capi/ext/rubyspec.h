@@ -149,6 +149,7 @@
 #define HAVE_RB_CSTRING                    1
 #define HAVE_RB_CSTRUCT                    1
 #define HAVE_RB_CSYMBOL                    1
+#define HAVE_RB_CTIME                      1
 #define HAVE_RB_CTHREAD                    1
 #define HAVE_RB_CTRUECLASS                 1
 #define HAVE_RB_CNUMERATOR                 1
@@ -608,8 +609,6 @@
 
 /* Util */
 #define HAVE_RB_SCAN_ARGS                  1
-#define HAVE_RUBY_SETENV                   1
-#define HAVE_RUBY_STRDUP                   1
 
 /* Now, create the differential set. The format of the preprocessor directives
  * is significant. The alternative implementations should define RUBY because
@@ -622,8 +621,8 @@
 #include "rubinius.h"
 #elif defined(JRUBY)
 #include "jruby.h"
-#elif defined(JRUBY_TRUFFLE)
-#include "jruby_truffle.h"
+#elif defined(TRUFFLERUBY)
+#include "truffleruby.h"
 #endif
 
 #endif

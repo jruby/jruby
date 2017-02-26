@@ -60,7 +60,7 @@ ruby_version_is ''...'2.2' do
       @app.start
     end
 
-    after :all do
+    after :each do
       @log_file.close
       rm_r @file_path
     end

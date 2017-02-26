@@ -1,15 +1,19 @@
 sudo: false
 language: ruby
-rvm:
-  - 2.1.10
-  - 2.2.6
-  - 2.3.3
-  - 2.4.0
-  - ruby-head
 install:
   - git clone https://github.com/ruby/mspec.git ../mspec
 script:
-  - ../mspec/bin/mspec
+  - ../mspec/bin/mspec $MSPEC_OPTS
+matrix:
+  include:
+    - rvm: 2.1.10
+    - rvm: 2.2.6
+    - rvm: 2.3.3
+    - rvm: 2.4.0
+      env: CHECK_LEAKS=true
+    - rvm: 2.4.0
+      env: MSPEC_OPTS="-R2 -ff"
+    - rvm: ruby-head
 branches:
   only:
     - master

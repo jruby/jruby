@@ -52,9 +52,10 @@ describe "C-API Class function" do
 
   describe "rb_include_module" do
     it "includes a module into a class" do
-      o = CApiClassSpecs::IncludesM.new
+      c = Class.new
+      o = c.new
       lambda { o.included? }.should raise_error(NameError)
-      @s.rb_include_module(CApiClassSpecs::IncludesM, CApiClassSpecs::M)
+      @s.rb_include_module(c, CApiClassSpecs::M)
       o.included?.should be_true
     end
   end
@@ -158,6 +159,7 @@ describe "C-API Class function" do
       o.new_cv.should be_nil
       @s.rb_cv_set(CApiClassSpecs::CVars, "@@new_cv", 1)
       o.new_cv.should == 1
+      CApiClassSpecs::CVars.remove_class_variable :@@new_cv
     end
   end
 
@@ -179,6 +181,7 @@ describe "C-API Class function" do
       o.new_cvar.should be_nil
       @s.rb_cvar_set(CApiClassSpecs::CVars, "@@new_cvar", 1)
       o.new_cvar.should == 1
+      CApiClassSpecs::CVars.remove_class_variable :@@new_cvar
     end
 
   end
@@ -201,6 +204,7 @@ describe "C-API Class function" do
     it "calls #inherited on the superclass" do
       CApiClassSpecs::Super.should_receive(:inherited)
       @s.rb_define_class("ClassSpecDefineClass2", CApiClassSpecs::Super)
+      Object.send(:remove_const, :ClassSpecDefineClass2)
     end
 
     it "raises a TypeError when given a non class object to superclass" do
@@ -241,6 +245,7 @@ describe "C-API Class function" do
     it "calls #inherited on the superclass" do
       CApiClassSpecs::Super.should_receive(:inherited)
       @s.rb_define_class_under(CApiClassSpecs, "ClassUnder4", CApiClassSpecs::Super)
+      CApiClassSpecs.send(:remove_const, :ClassUnder4)
     end
 
     it "raises a TypeError when given a non class object to superclass" do
@@ -298,6 +303,7 @@ describe "C-API Class function" do
     it "calls #inherited on the superclass" do
       CApiClassSpecs::Super.should_receive(:inherited)
       @s.rb_define_class_id_under(CApiClassSpecs, :ClassIdUnder4, CApiClassSpecs::Super)
+      CApiClassSpecs.send(:remove_const, :ClassIdUnder4)
     end
 
     it "defines a class for an existing Autoload" do
@@ -319,6 +325,7 @@ describe "C-API Class function" do
       o.rbdcv_cvar.should be_nil
       @s.rb_define_class_variable(CApiClassSpecs::CVars, "@@rbdcv_cvar", 1)
       o.rbdcv_cvar.should == 1
+      CApiClassSpecs::CVars.remove_class_variable :@@rbdcv_cvar
     end
   end
 

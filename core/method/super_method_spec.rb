@@ -30,10 +30,16 @@ describe "Method#super_method" do
     end
 
     it "returns nil when the parent's method is removed" do
-      object = MethodSpecs::B.new
+      klass = Class.new do
+        def overridden; end
+      end
+      sub = Class.new(klass) do
+        def overridden; end
+      end
+      object = sub.new
       method = object.method(:overridden)
 
-      MethodSpecs::A.class_eval { undef :overridden }
+      klass.class_eval { undef :overridden }
 
       method.super_method.should == nil
     end

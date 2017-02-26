@@ -278,7 +278,7 @@ describe :dir_glob, shared: true do
 end
 
 describe :dir_glob_recursive, shared: true do
-  before :all do
+  before :each do
     @cwd = Dir.pwd
     @mock_dir = File.expand_path tmp('dir_glob_mock')
 
@@ -294,7 +294,7 @@ describe :dir_glob_recursive, shared: true do
     Dir.chdir @mock_dir
   end
 
-  after :all do
+  after :each do
     Dir.chdir @cwd
     rm_r @mock_dir
   end
