@@ -4647,9 +4647,9 @@ float_loop:
         RubyString str;
 
         try {
-            IRubyObject buffer = ((RubyHash) opts).fastARef(runtime.newSymbol("buffer"));
+            IRubyObject buffer = opts.convertToHash().fastARef(runtime.newSymbol("buffer"));
             if (buffer != null) {
-                str = (RubyString) buffer;
+                str = buffer.convertToString();
             } else {
                 str = RubyString.newString(runtime, "");
             }
@@ -4657,8 +4657,6 @@ float_loop:
 
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(context.runtime, e);
-        } catch (ClassCastException e){
-            throw runtime.newTypeError(opts, "String");
         }
     }
 
