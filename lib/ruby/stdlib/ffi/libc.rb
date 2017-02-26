@@ -1,3 +1,5 @@
+# Originally from https://github.com/postmodern/ffi-libc
+
 module FFI
   module LibC
     extend FFI::Library
