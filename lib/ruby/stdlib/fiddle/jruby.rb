@@ -234,7 +234,12 @@ module Fiddle
 
     def []=(index, length = nil, value)
       if length
-        ffi_ptr.put_bytes(index, value, 0, [length, value.bytesize].min)
+        if value.is_a?(Integer)
+          value_str = Pointer.new(value).to_s
+        else
+          value_str = value.to_str
+        end
+        ffi_ptr.put_bytes(index, value_str, 0, [length, value_str.bytesize].min)
       else
         ffi_ptr.put_int8(index, value)
       end
