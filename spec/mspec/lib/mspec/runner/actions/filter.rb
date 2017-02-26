@@ -13,7 +13,7 @@ class ActionFilter
   def initialize(tags=nil, descs=nil)
     @tags = Array(tags)
     descs = Array(descs)
-    @sfilter = MatchFilter.new(nil, *descs) unless descs.empty?
+    @sfilter = descs.empty? ? nil : MatchFilter.new(nil, *descs)
     @tfilter = nil
   end
 

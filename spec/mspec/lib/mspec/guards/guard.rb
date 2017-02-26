@@ -119,11 +119,11 @@ class SpecGuard
       when :rubinius
         RUBY_NAME =~ /^rbx/
       when :ruby
-        RUBY_NAME =~ /^ruby/ && !defined?(::Truffle)
+        RUBY_NAME =~ /^ruby/
       when :jruby
         RUBY_NAME =~ /^jruby/
       when :truffleruby
-        RUBY_NAME =~ /^ruby/ && defined?(::Truffle)
+        RUBY_NAME =~ /^truffleruby/
       when :ironruby
         RUBY_NAME =~ /^ironruby/
       when :macruby
