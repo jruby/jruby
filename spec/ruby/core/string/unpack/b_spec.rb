@@ -182,9 +182,9 @@ describe "String#unpack with format 'b'" do
     "\x01\x00".unpack("b b").should == ["1", "0"]
   end
 
-  it "decodes into raw (ascii) string values" do
+  it "decodes into US-ASCII string values" do
     str = "s".force_encoding('UTF-8').unpack("b*")[0]
-    str.encoding.name.should == 'ASCII-8BIT'
+    str.encoding.name.should == 'US-ASCII'
   end
 
 end

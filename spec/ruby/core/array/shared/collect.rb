@@ -35,6 +35,13 @@ describe :array_collect, shared: true do
     a.send(@method).should be_an_instance_of(enumerator_class)
   end
 
+  it "raises an ArgumentError when no block and with arguments" do
+    a = [1, 2, 3]
+    lambda {
+      a.send(@method, :foo)
+    }.should raise_error(ArgumentError)
+  end
+
   it "does not copy tainted status" do
     a = [1, 2, 3]
     a.taint

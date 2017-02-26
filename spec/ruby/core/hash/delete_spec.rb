@@ -20,6 +20,18 @@ describe "Hash#delete" do
     Hash.new { :defualt }.delete(:d).should == nil
   end
 
+  # MRI explicitly implements this behavior
+  it "allows removing a key while iterating" do
+    h = { a: 1, b: 2 }
+    visited = []
+    h.each_pair { |k,v|
+      visited << k
+      h.delete(k)
+    }
+    visited.should == [:a, :b]
+    h.should == {}
+  end
+
   it "accepts keys with private #hash method" do
     key = HashSpecs::KeyWithPrivateHash.new
     { key => 5 }.delete(key).should == 5

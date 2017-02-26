@@ -3,5 +3,5 @@ require 'thread'
 require File.expand_path('../../shared/queue/length', __FILE__)
 
 describe "Thread::Queue#size" do
-  it_behaves_like :queue_length, :size, Queue.new
+  it_behaves_like :queue_length, :size, -> { Queue.new }
 end

@@ -72,11 +72,13 @@ VALUE sws_change_struct(VALUE self, VALUE obj, VALUE new_val) {
   RDATA(obj)->data = new_struct;
   return Qnil;
 }
+#endif
 
 void Init_data_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiAllocSpecs", rb_cObject);
 
+#if defined(HAVE_RDATA) && defined(HAVE_DATA_WRAP_STRUCT)
   rb_define_alloc_func(cls, sdaf_alloc_func);
   rb_define_method(cls, "wrapped_data", sdaf_get_struct, 0);
 

@@ -3,13 +3,11 @@ require File.expand_path('../fixtures/common', __FILE__)
 require 'find'
 
 describe "Find.find" do
-  it "needs to be reviewed for spec completeness"
-
-  before :all do
+  before :each do
     FindDirSpecs.create_mock_dirs
   end
 
-  after :all do
+  after :each do
     FindDirSpecs.delete_mock_dirs
   end
 

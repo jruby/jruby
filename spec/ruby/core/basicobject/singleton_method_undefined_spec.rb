@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/singleton_method', __FILE__)
 
 describe "BasicObject#singleton_method_undefined" do
   before :each do
@@ -11,7 +10,13 @@ describe "BasicObject#singleton_method_undefined" do
   end
 
   it "is called when a method is removed on self" do
-    class << BasicObjectSpecs::SingletonMethod
+    klass = Class.new
+    def klass.singleton_method_undefined(name)
+      ScratchPad.record [:singleton_method_undefined, name]
+    end
+    def klass.singleton_method_to_undefine
+    end
+    class << klass
       undef_method :singleton_method_to_undefine
     end
     ScratchPad.recorded.should == [:singleton_method_undefined, :singleton_method_to_undefine]

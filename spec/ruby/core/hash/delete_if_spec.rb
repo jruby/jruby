@@ -16,6 +16,12 @@ describe "Hash#delete_if" do
     h.should == { b: 2, d: 4 }
   end
 
+  it "removes all entries if the block is true" do
+    h = { a: 1, b: 2, c: 3 }
+    h.delete_if { |k,v| true }.should equal(h)
+    h.should == {}
+  end
+
   it "processes entries with the same order as each()" do
     h = { a: 1, b: 2, c: 3, d: 4 }
 

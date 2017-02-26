@@ -1,6 +1,6 @@
 describe :sizedqueue_enq, shared: true do
   it "blocks if queued elements exceed size" do
-    q = @object.new(1)
+    q = SizedQueue.new(1)
 
     q.size.should == 0
     q.send(@method, :first_element)
@@ -20,7 +20,7 @@ describe :sizedqueue_enq, shared: true do
 
   ruby_version_is "2.2" do
     it "raises a ThreadError if queued elements exceed size when not blocking" do
-      q = @object.new(2)
+      q = SizedQueue.new(2)
 
       non_blocking = true
       add_to_queue = lambda { q.send(@method, Object.new, non_blocking) }

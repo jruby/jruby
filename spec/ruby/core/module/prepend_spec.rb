@@ -260,7 +260,7 @@ describe "Module#prepend" do
         end
       end
 
-      class PC
+      klass = Class.new do
         prepend PM1
 
         def get
@@ -268,14 +268,14 @@ describe "Module#prepend" do
         end
       end
 
-      c = PC.new
-      c.get.should == :m1
+      o = klass.new
+      o.get.should == :m1
 
-      class PC
+      klass.class_eval do
         prepend PM2
       end
 
-      c.get.should == :m2
+      o.get.should == :m2
     end
   end
 

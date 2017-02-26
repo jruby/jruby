@@ -3,5 +3,5 @@ require 'thread'
 require File.expand_path('../../shared/queue/deque', __FILE__)
 
 describe "Thread::Queue#pop" do
-  it_behaves_like :queue_deq, :pop, Queue.new
+  it_behaves_like :queue_deq, :pop, -> { Queue.new }
 end

@@ -29,7 +29,7 @@ def compile_extension(name)
 
   if RUBY_NAME == 'rbx'
     hdrdir = RbConfig::CONFIG["rubyhdrdir"]
-  elsif RUBY_NAME =~ /^ruby/ && !defined?(::Truffle)
+  elsif RUBY_NAME =~ /^ruby/
     if hdrdir = RbConfig::CONFIG["rubyhdrdir"]
       arch_hdrdir = RbConfig::CONFIG["rubyarchhdrdir"] ||
                     File.join(hdrdir, RbConfig::CONFIG["arch"])
@@ -43,8 +43,8 @@ def compile_extension(name)
   elsif RUBY_NAME == "maglev"
     require 'mkmf'
     hdrdir = $hdrdir
-  elsif RUBY_NAME =~ /^ruby/ && defined?(::Truffle) # TruffleRuby
-    return compile_jruby_truffle_extconf_make(name, path, objdir)
+  elsif RUBY_NAME == 'truffleruby'
+    return compile_truffleruby_extconf_make(name, path, objdir)
   else
     raise "Don't know how to build C extensions with #{RUBY_NAME}"
   end
@@ -103,7 +103,7 @@ ensure
   ENV[preloadenv] = preload if preloadenv
 end
 
-def compile_extension_jruby_truffle(name)
+def compile_extension_truffleruby(name)
   sulong_config_file = File.join(extension_path, '.jruby-cext-build.yml')
   output_file = File.join(object_path, "#{name}_spec.#{RbConfig::CONFIG['DLEXT']}")
 
@@ -121,7 +121,7 @@ ensure
   File.delete(sulong_config_file) if File.exist?(sulong_config_file)
 end
 
-def compile_jruby_truffle_extconf_make(name, path, objdir)
+def compile_truffleruby_extconf_make(name, path, objdir)
   ext       = "#{name}_spec"
   file      = "#{ext}.c"
   source    = "#{path}/#{file}"
@@ -130,7 +130,7 @@ def compile_jruby_truffle_extconf_make(name, path, objdir)
   begin
     copy =  "#{temp_dir}/#{file}"
     FileUtils.cp "#{path}/rubyspec.h", temp_dir
-    FileUtils.cp "#{path}/jruby_truffle.h", temp_dir
+    FileUtils.cp "#{path}/truffleruby.h", temp_dir
     FileUtils.cp source, copy
     extconf_src = "require 'mkmf'\n" +
                   "create_makefile('#{ext}', '#{temp_dir}')"

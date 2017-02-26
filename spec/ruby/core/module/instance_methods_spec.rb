@@ -22,7 +22,11 @@ describe "Module#instance_methods" do
   end
 
   it "does not return methods undefined in the current class" do
-    ModuleSpecs::Child.send(:undef_method, 'undefed_child')
+    class ModuleSpecs::Child
+      def undefed_child
+      end
+    end
+    ModuleSpecs::Child.send(:undef_method, :undefed_child)
     methods = ModuleSpecs::Child.instance_methods
     methods.should_not include(:undefed_method, :undefed_child)
   end

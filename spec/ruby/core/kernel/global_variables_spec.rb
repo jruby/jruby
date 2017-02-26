@@ -6,13 +6,18 @@ describe "Kernel.global_variables" do
     Kernel.should have_private_instance_method(:global_variables)
   end
 
+  before :all do
+    @i = 0
+  end
+
   it "finds subset starting with std" do
     global_variables.grep(/std/).should include(:$stderr, :$stdin, :$stdout)
     a = global_variables.size
-    global_variables.include?(:$foolish_global_var).should == false
-    eval("$foolish_global_var = 1")
+    gvar_name = "$foolish_global_var#{@i += 1}"
+    global_variables.include?(gvar_name.to_sym).should == false
+    eval("#{gvar_name} = 1")
     global_variables.size.should == a+1
-    global_variables.should include(:$foolish_global_var)
+    global_variables.should include(gvar_name.to_sym)
   end
 end
 
