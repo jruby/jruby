@@ -160,9 +160,8 @@ module Fiddle
     def initialize(addr, size = 0, freefunc = nil)
       ptr = if addr.is_a?(FFI::Pointer)
               addr
-
-            elsif addr.is_a?(Integer)
-              FFI::Pointer.new(addr)
+            else
+              FFI::Pointer.new(Integer(addr))
             end
 
       @size = size
