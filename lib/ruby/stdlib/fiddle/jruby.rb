@@ -263,6 +263,16 @@ module Fiddle
 
     def -(delta)
       self.class.new(ffi_ptr - delta, @size + delta)
+
+    def ==(value)
+      return false unless value.is_a?(Pointer)
+      self.ffi_ptr.address == value.ffi_ptr.address
+    end
+    alias eql? ==
+
+    def <=>(value)
+      return nil unless value.is_a?(Pointer)
+      self.ffi_ptr.address <=> value.ffi_ptr.address
     end
 
     def ptr
