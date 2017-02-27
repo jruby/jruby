@@ -2,7 +2,6 @@ package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
-import jnr.posix.FileStat;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -1602,8 +1601,7 @@ public class OpenFile implements Finalizable {
         boolean locked = lock();
         try {
             lineno++;
-            RubyArgsFile.ArgsFileData data = RubyArgsFile.ArgsFileData.maybeGetData(runtime);
-            if (data != null && io == data.currentFile) {
+            if (RubyArgsFile.ArgsFileData.getArgsFileData(runtime).isCurrentFile(io)) {
                 runtime.setCurrentLine(runtime.getCurrentLine() + 1);
             } else {
                 runtime.setCurrentLine(lineno);

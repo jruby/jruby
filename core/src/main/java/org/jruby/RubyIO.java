@@ -41,9 +41,7 @@ import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.POSIX;
 import org.jcodings.transcode.EConvFlags;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.IOSites;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.util.StringSupport;
@@ -1737,11 +1735,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr = getOpenFileChecked();
         boolean locked = fptr.lock();
         try {
-            if (fptr.seek(context, 0L, 0) == -1 && fptr.errno() != null)
+            if (fptr.seek(context, 0L, 0) == -1 && fptr.errno() != null) {
                 throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
-            RubyArgsFile.ArgsFileData data = RubyArgsFile.ArgsFileData.maybeGetData(runtime);
-            if (data != null && this == data.currentFile) {
-                data.setCurrentLineNumber(runtime, runtime.getCurrentLine() - fptr.getLineNumber());
+            }
+
+            if (RubyArgsFile.ArgsFileData.getArgsFileData(runtime).isCurrentFile(this)) {
+                runtime.setCurrentLine(runtime.getCurrentLine() - fptr.getLineNumber());
             }
             fptr.setLineNumber(0);
             if (fptr.readconv != null) {
