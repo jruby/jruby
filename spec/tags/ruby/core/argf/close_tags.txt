@@ -1,2 +1,0 @@
-fails:ARGF.close raises an IOError if called on a closed stream
-fails:ARGF.close does not close STDIN

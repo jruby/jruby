@@ -517,6 +517,9 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         data.next_argv(context);
+
+        if (data.currentFile == context.runtime.getGlobalVariables().get("$stdin")) return recv;
+
         argf_close(context, data.currentFile);
 
         if (data.next_p != -1) data.next_p = 1;
