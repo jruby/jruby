@@ -823,7 +823,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
 
             if (!str.isNil() && !noLimit) {
-                fptr.incrementLineno(runtime);
+                fptr.incrementLineno(runtime, this);
             }
         } finally {
             if (locked) fptr.unlock();
@@ -1738,10 +1738,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
         boolean locked = fptr.lock();
         try {
             if (fptr.seek(context, 0L, 0) == -1 && fptr.errno() != null)
-                throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
-            RubyArgsFile.ArgsFileData data = RubyArgsFile.ArgsFileData.getDataFrom(runtime.getArgsFile());
-            if (this == data.currentFile) {
-                data.currentLineNumber -= fptr.getLineNumber();
+                throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+            RubyArgsFile.ArgsFileData data = RubyArgsFile.ArgsFileData.maybeGetData(runtime);
+            if (data != null && this == data.currentFile) {
+                data.setCurrentLineNumber(runtime, runtime.getCurrentLine() - fptr.getLineNumber());
             }
             fptr.setLineNumber(0);
             if (fptr.readconv != null) {
@@ -3258,7 +3258,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private IRubyObject each_lineInternal(ThreadContext context, IRubyObject[] args, Block block, String name) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, name, args);
 
-        Ruby runtime = context.runtime;
         IRubyObject separator = prepareGetsSeparator(context, args);
 
         ByteListCache cache = new ByteListCache();

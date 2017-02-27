@@ -105,18 +105,25 @@ public class RubyArgsFile extends RubyObject {
             argv = runtime.newArray(args);
         }
 
-        ArgsFileData data = new ArgsFileData(runtime, argv);
-        this.dataWrapStruct(data);
+        // ARGF is intended to be a singleton from a Ruby perspective but it is still
+        // possible for someone to ARGF.class.new.  We do still want a global view of
+        // ARGF otherwise getline and rewind in IO would have to keep track of the n
+        // instances in play.  So all instances will share
+        if (runtime.getArgsFile() == null) {
+            dataWrapStruct(new ArgsFileData(runtime, argv));
+        } else {
+            ArgsFileData data = (ArgsFileData) runtime.getArgsFile().dataGetStruct();
+            dataWrapStruct(data);
+            data.setArgs(argv);
+        }
         return this;
     }
 
-    static final class ArgsFileData {
+    public static final class ArgsFileData {
 
         private final Ruby runtime;
-        private final RubyArray argv;
+        private RubyArray argv;
         public IRubyObject currentFile;
-        public int currentLineNumber;
-        public int minLineNumber;
         private boolean inited = false;
         public int next_p = 0;
 
@@ -126,11 +133,20 @@ public class RubyArgsFile extends RubyObject {
             this.currentFile = runtime.getNil();
         }
 
+        public void setCurrentLineNumber(Ruby runtime, int linenumber) {
+            runtime.setCurrentLine(linenumber);
+        }
+
+        void setArgs(RubyArray argv) {
+            inited = false;
+            this.argv = argv;
+        }
+
         public boolean next_argv(ThreadContext context) {
             if (!inited) {
                 next_p = argv.getLength() > 0 ? 1 : -1;
                 inited = true;
-                currentLineNumber = 0;
+                runtime.setCurrentLine(0);
             } else {
                 if (argv.isNil()) {
                     next_p = -1;
@@ -160,9 +176,6 @@ public class RubyArgsFile extends RubyObject {
                                 inplaceEdit(context, filename.asJavaString(), extension);
                             }
                         }
-                        minLineNumber = currentLineNumber;
-
-                        currentFile.callMethod(context, "lineno=", context.runtime.newFixnum(currentLineNumber));
                     }
                     next_p = 0;
                 } else {
@@ -181,6 +194,12 @@ public class RubyArgsFile extends RubyObject {
         private static boolean filenameEqlDash(final RubyString filename) {
             final ByteList filenameBytes = filename.getByteList();
             return filenameBytes.length() == 1 && filenameBytes.get(0) == '-';
+        }
+
+        // Since the depths of IO will want to check to see if we have any ARGF
+        // data we do not want to incidentally create it.
+        public static ArgsFileData maybeGetData(Ruby runtime) {
+            return (ArgsFileData) runtime.getArgsFile().dataGetStruct();
         }
 
         public static ArgsFileData getDataFrom(IRubyObject recv) {
@@ -247,9 +266,7 @@ public class RubyArgsFile extends RubyObject {
     public static void setCurrentLineNumber(IRubyObject recv, int newLineNumber) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
-        if (data != null) {
-            data.currentLineNumber = newLineNumber;
-        }
+        if (data != null) data.setCurrentLineNumber(recv.getRuntime(), newLineNumber);
     }
 
     @JRubyMethod(name = "argv")
@@ -296,26 +313,19 @@ public class RubyArgsFile extends RubyObject {
     private static IRubyObject argf_getline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
-        boolean retry = true;
-        IRubyObject line = null;
-        while (retry) {
-            retry = false;
-            if ( ! data.next_argv(context) ) return context.nil;
+        while (true) {
+            if (!data.next_argv(context)) return context.nil;
 
-            line = data.currentFile.callMethod(context, "gets", args);
+            IRubyObject line = data.currentFile.callMethod(context, "gets", args);
 
             if (line.isNil() && data.next_p != -1) {
                 argf_close(context, data.currentFile);
                 data.next_p = 1;
-                retry = true;
+                continue;
             }
-        }
 
-        if ( line != null && ! line.isNil() ) {
-            context.runtime.setCurrentLine(data.currentLineNumber);
+            return line;
         }
-
-        return line;
     }
 
     // ARGF methods
@@ -525,7 +535,7 @@ public class RubyArgsFile extends RubyObject {
 
         if (data.next_p != -1) data.next_p = 1;
 
-        data.currentLineNumber = 0;
+        data.setCurrentLineNumber(context.runtime, 0);
         return recv;
     }
 
@@ -561,14 +571,13 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod(name = "lineno")
     public static IRubyObject lineno(ThreadContext context, IRubyObject recv) {
-        return recv.getRuntime().newFixnum(ArgsFileData.getDataFrom(recv).currentLineNumber);
+        return recv.getRuntime().newFixnum(context.runtime.getCurrentLine());
     }
 
     @JRubyMethod(name = "lineno=")
     public static IRubyObject lineno_set(ThreadContext context, IRubyObject recv, IRubyObject line) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
-        data.currentLineNumber = RubyNumeric.fix2int(line);
-        context.runtime.setCurrentLine(data.currentLineNumber);
+        data.setCurrentLineNumber(context.runtime, RubyNumeric.fix2int(line));
         return recv.getRuntime().getNil();
     }
 
@@ -589,8 +598,6 @@ public class RubyArgsFile extends RubyObject {
         RubyFixnum retVal = ((RubyIO)data.currentFile).rewind(context);
         ((RubyIO)data.currentFile).lineno_set(context, context.runtime.newFixnum(0));
 
-        data.minLineNumber = 0;
-        data.currentLineNumber = 0;
         return retVal;
     }
 

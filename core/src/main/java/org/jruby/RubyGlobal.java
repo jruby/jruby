@@ -666,7 +666,6 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             int line = (int)value.convertToInteger().getLongValue();
             runtime.setCurrentLine(line);
-            RubyArgsFile.setCurrentLineNumber(runtime.getArgsFile(), line);
             return value;
         }
 

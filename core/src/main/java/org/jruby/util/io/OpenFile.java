@@ -1590,7 +1590,7 @@ public class OpenFile implements Finalizable {
             if (str == null) return context.nil;
             str = EncodingUtils.ioEncStr(runtime, str, this);
             ((RubyString) str).setCodeRange(cr);
-            incrementLineno(runtime);
+            incrementLineno(runtime, io);
         } finally {
             if (locked) unlock();
         }
@@ -1598,12 +1598,26 @@ public class OpenFile implements Finalizable {
         return str;
     }
 
+    public void incrementLineno(Ruby runtime, RubyIO io) {
+        boolean locked = lock();
+        try {
+            lineno++;
+            RubyArgsFile.ArgsFileData data = RubyArgsFile.ArgsFileData.maybeGetData(runtime);
+            if (data != null && io == data.currentFile) {
+                runtime.setCurrentLine(runtime.getCurrentLine() + 1);
+            } else {
+                runtime.setCurrentLine(lineno);
+            }
+        } finally {
+            if (locked) unlock();
+        }
+    }
+
+    @Deprecated
     public void incrementLineno(Ruby runtime) {
         boolean locked = lock();
         try {
             lineno++;
-            runtime.setCurrentLine(lineno);
-            RubyArgsFile.setCurrentLineNumber(runtime.getArgsFile(), lineno);
         } finally {
             if (locked) unlock();
         }
