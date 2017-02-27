@@ -1,1 +1,0 @@
-fails:ARGF.rewind resets ARGF.lineno to 0
