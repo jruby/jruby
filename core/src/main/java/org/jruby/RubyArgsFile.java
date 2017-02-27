@@ -126,6 +126,7 @@ public class RubyArgsFile extends RubyObject {
         public IRubyObject currentFile;
         private boolean inited = false;
         public int next_p = 0;
+        public boolean binmode = false;
 
         public ArgsFileData(Ruby runtime, RubyArray argv) {
             this.runtime = runtime;
@@ -177,6 +178,7 @@ public class RubyArgsFile extends RubyObject {
                                 inplaceEdit(context, filename.asJavaString(), extension);
                             }
                         }
+                        if (binmode) ((RubyIO) currentFile).binmode();
                     }
                     next_p = 0;
                 } else {
@@ -541,7 +543,11 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod(name = "binmode")
     public static IRubyObject binmode(ThreadContext context, IRubyObject recv) {
-        getCurrentDataFile(context, "no stream").binmode();
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+
+        data.binmode = true;
+        if (!data.currentFile.isNil()) ((RubyIO) data.currentFile).binmode();
+
         return recv;
     }
 
