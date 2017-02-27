@@ -1,4 +1,3 @@
-fails:ARGF.readpartial clears output buffer even if EOFError is raised because @argf is at end
 windows:ARGF.readpartial treats second argument as an output buffer
 windows:ARGF.readpartial clears output buffer before appending to it
 windows:ARGF.readpartial reads a number of bytes from stdin

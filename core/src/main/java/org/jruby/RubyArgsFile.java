@@ -665,6 +665,7 @@ public class RubyArgsFile extends RubyObject {
     private static IRubyObject getPartial(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean nonBlocking) {
         final Ruby runtime = context.runtime;
         boolean noException = false;
+        RubyString str = null;
         if ( args.length > 1 ) {
             IRubyObject opts = TypeConverter.checkHashType(runtime, args[args.length - 1]);
             if ( ! opts.isNil() &&
@@ -672,13 +673,20 @@ public class RubyArgsFile extends RubyObject {
                 noException = true;
             }
             if (args.length > 2 || opts.isNil()) {
-                if (!args[1].isNil()) args[1] = args[1].convertToString();
+                if (!args[1].isNil()) {
+                    args[1] = args[1].convertToString();
+                    str = (RubyString) args[1];
+                }
             }
         }
 
         final ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
 
-        if (!data.next_argv(context)) return RubyIO.nonblockEOF(runtime, noException);
+        if (!data.next_argv(context)) {
+            if (str != null) str.clear();
+            
+            return RubyIO.nonblockEOF(runtime, noException);
+        }
 
         IRubyObject res = ((RubyIO) data.currentFile).getPartial(context, args, nonBlocking, noException);
         if (res.isNil()) {
