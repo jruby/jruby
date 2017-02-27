@@ -1,4 +1,3 @@
-fails:ARGF.readpartial treats second nil argument as no output buffer
 fails:ARGF.readpartial clears output buffer even if EOFError is raised because @argf is at end
 windows:ARGF.readpartial treats second argument as an output buffer
 windows:ARGF.readpartial clears output buffer before appending to it

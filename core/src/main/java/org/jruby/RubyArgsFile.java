@@ -671,7 +671,9 @@ public class RubyArgsFile extends RubyObject {
                 runtime.getFalse() == ((RubyHash) opts).op_aref(context, runtime.newSymbol("exception")) ) {
                 noException = true;
             }
-            if ( args.length > 2 || opts.isNil() ) args[1] = args[1].convertToString();
+            if (args.length > 2 || opts.isNil()) {
+                if (!args[1].isNil()) args[1] = args[1].convertToString();
+            }
         }
 
         final ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
