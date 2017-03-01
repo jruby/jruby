@@ -1555,10 +1555,9 @@ public class RubyHash extends RubyObject implements Map {
             return result;
         }
 
-        if ((flags & PROCDEFAULT_HASH_F) != 0) {
-            return sites(context).default_.call(context, this, this, context.nil);
-        }
-        return ifNone == UNDEF ? context.nil : ifNone;
+        if (isBuiltin("default")) return default_value_get(context, context.nil);
+
+        return sites(context).default_.call(context, this, this, context.nil);
     }
 
     public final boolean fastDelete(IRubyObject key) {
