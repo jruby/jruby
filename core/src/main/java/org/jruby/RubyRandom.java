@@ -758,6 +758,21 @@ public class RubyRandom extends RubyObject {
         return randomSeed(context.runtime);
     }
 
+    @JRubyMethod(name = "raw_seed", meta = true)
+    public static IRubyObject rawSeed(ThreadContext context, IRubyObject recv, IRubyObject num) {
+        Ruby runtime = context.runtime;
+        int n = num.convertToInteger().getIntValue();
+
+        if (n < 0) throw runtime.newArgumentError("negative string size (or size too big)");
+
+        if (n == 0) return runtime.newString();
+
+        byte[] seed = new byte[n];
+        runtime.getRandom().nextBytes(seed);
+
+        return RubyString.newString(runtime, seed);
+    }
+
     private void setRandomType(RandomType random) {
         this.random = random;
     }
