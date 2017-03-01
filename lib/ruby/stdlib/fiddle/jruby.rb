@@ -1,5 +1,4 @@
 require 'ffi'
-require 'ffi/libc'
 
 module Fiddle
   TYPE_VOID         = 0
@@ -12,26 +11,7 @@ module Fiddle
   TYPE_FLOAT        = 7
   TYPE_DOUBLE       = 8
 
-  TYPE_SIZE_T       = -5
-  TYPE_SSIZE_T      = 5
-  TYPE_PTRDIFF_T    = 5
-  TYPE_INTPTR_T     = 5
-  TYPE_UINTPTR_T    = -5
-
   WINDOWS = FFI::Platform.windows?
-
-  LibC = FFI::LibC
-  RUBY_FREE = LibC::FREE.address
-
-  BUILD_RUBY_PLATFORM = RUBY_PLATFORM
-
-  def self.malloc(size)
-    LibC.malloc(size)
-  end
-
-  def self.free(ptr)
-    LibC.free(Pointer.to_native(ptr, nil))
-  end
 
   module JRuby
     FFITypes = {
@@ -77,7 +57,7 @@ module Fiddle
       @ptr, @args, @return_type, @abi = ptr, args, return_type, abi
       raise TypeError.new "invalid return type" unless return_type.is_a?(Integer)
       raise TypeError.new "invalid return type" unless args.is_a?(Array)
-
+      
       @function = FFI::Function.new(
         Fiddle::JRuby::__ffi_type__(@return_type),
         @args.map { |t| Fiddle::JRuby.__ffi_type__(t) },
@@ -98,7 +78,7 @@ module Fiddle
       raise TypeError.new "invalid return type" unless args.is_a?(Array)
 
       @function = FFI::Function.new(
-        Fiddle::JRuby::__ffi_type__(@ctype),
+        __ffi_type__(@ctype),
         @args.map { |t| Fiddle::JRuby.__ffi_type__(t) },
         self,
         :convention => abi
@@ -142,11 +122,7 @@ module Fiddle
 
       elsif value.respond_to?(:to_ptr)
         ptr = value.to_ptr
-        if ptr.is_a?(Pointer)
-          ptr
-        else
-          raise DLError.new('to_ptr should return a Fiddle::Pointer object')
-        end
+        ptr.is_a?(Pointer) ? ptr : Pointer.new(ptr)
 
       else
         Pointer.new(value)
@@ -157,16 +133,17 @@ module Fiddle
       alias [] to_ptr
     end
 
-    def initialize(addr, size = 0, freefunc = nil)
+    def initialize(addr, size = nil, free = nil)
       ptr = if addr.is_a?(FFI::Pointer)
               addr
-            else
-              FFI::Pointer.new(Integer(addr))
+
+            elsif addr.is_a?(Integer)
+              FFI::Pointer.new(addr)
             end
 
-      @size = size
-      self.free = freefunc
-      @ffi_ptr = freefunc.nil? ? ptr : FFI::AutoPointer.new(ptr, ->(x){@__freefunc__.call(x)})
+      @size = size ? size : ptr.size
+      @free = free
+      @ffi_ptr = free.nil? ? ptr : FFI::AutoPointer.new(ptr, self.class.__freefunc__(free))
     end
 
     def self.__freefunc__(free)
@@ -188,7 +165,7 @@ module Fiddle
     end
 
     def self.malloc(size, free = nil)
-      self.new(Fiddle.malloc(size), size, free)
+      self.new(LibC.malloc(size), size, free ? free : LibC::FREE)
     end
 
     def null?
@@ -207,44 +184,12 @@ module Fiddle
       @size = size
     end
 
-    def free
-      return nil if @free.zero?
-      Function.new(@free, [TYPE_VOIDP], TYPE_VOID)
-    end
-
-    def free=(freefunc)
-      if freefunc.nil?
-        @free = 0
-        @__freefunc__ = Proc.new { |ptr| }
-      else
-        @free = Integer(freefunc)
-        @__freefunc__ = self.class.__freefunc__(freefunc)
-      end
-    end
-
     def [](index, length = nil)
       if length
-        ffi_ptr.get_bytes(index, length)
+        ffi_ptr.get_string(index, length)
       else
-        ffi_ptr.get_int8(index)
+        ffi_ptr.get_int(index)
       end
-    rescue FFI::NullPointerError
-      raise DLError.new('NULL pointer dereference')
-    end
-
-    def []=(index, length = nil, value)
-      if length
-        if value.is_a?(Integer)
-          value_str = Pointer.new(value).to_s
-        else
-          value_str = value.to_str
-        end
-        ffi_ptr.put_bytes(index, value_str, 0, [length, value_str.bytesize].min)
-      else
-        ffi_ptr.put_int8(index, value)
-      end
-    rescue FFI::NullPointerError
-      raise DLError.new('NULL pointer dereference')
     end
 
     def to_i
@@ -252,39 +197,25 @@ module Fiddle
     end
     alias to_int to_i
 
-    def to_s(len = nil)
+    def to_str(len = nil)
       if len
-        ffi_ptr.get_bytes(0, len)
+        ffi_ptr.get_string(0, len)
       else
         ffi_ptr.get_string(0)
       end
     end
-
-    def to_str(len = size)
-      ffi_ptr.get_bytes(0, len)
-    end
+    alias to_s to_str
 
     def inspect
-      "#<#{self.class.name} ptr=#{ffi_ptr.address.to_s(16)} size=#{@size} free=#{@free.to_s(16)}>"
+      "#<#{self.class.name} ptr=#{ffi_ptr.address.to_s(16)} size=#{@size} free=#{@free.inspect}>"
     end
 
     def +(delta)
-      self.class.new(ffi_ptr.address + delta, @size - delta)
+      self.class.new(ffi_ptr + delta, @size - delta)
     end
 
     def -(delta)
-      self.class.new(ffi_ptr.address - delta, @size + delta)
-    end
-
-    def ==(value)
-      return false unless value.is_a?(Pointer)
-      self.ffi_ptr.address == value.ffi_ptr.address
-    end
-    alias eql? ==
-
-    def <=>(value)
-      return nil unless value.is_a?(Pointer)
-      self.ffi_ptr.address <=> value.ffi_ptr.address
+      self.class.new(ffi_ptr - delta, @size + delta)
     end
 
     def ptr
@@ -297,8 +228,6 @@ module Fiddle
       cptr
     end
   end
-
-  NULL = Pointer.new(0, 0, 0)
 
   class Handle
     RTLD_GLOBAL = FFI::DynamicLibrary::RTLD_GLOBAL
@@ -374,16 +303,4 @@ module Fiddle
   SIZEOF_LONG_LONG   = Fiddle::JRuby::FFITypes[TYPE_LONG_LONG].size
   SIZEOF_FLOAT       = Fiddle::JRuby::FFITypes[TYPE_FLOAT].size
   SIZEOF_DOUBLE      = Fiddle::JRuby::FFITypes[TYPE_DOUBLE].size
-
-  ALIGN_SIZE_T       = ALIGN_VOIDP
-  ALIGN_SSIZE_T      = ALIGN_VOIDP
-  ALIGN_PTRDIFF_T    = ALIGN_VOIDP
-  ALIGN_INTPTR_T     = ALIGN_VOIDP
-  ALIGN_UINTPTR_T    = ALIGN_VOIDP
-
-  SIZEOF_SIZE_T      = SIZEOF_VOIDP
-  SIZEOF_SSIZE_T     = SIZEOF_VOIDP
-  SIZEOF_PTRDIFF_T   = SIZEOF_VOIDP
-  SIZEOF_INTPTR_T    = SIZEOF_VOIDP
-  SIZEOF_UINTPTR_T   = SIZEOF_VOIDP
 end
