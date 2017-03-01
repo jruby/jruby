@@ -1359,7 +1359,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
-        jvmMethod().getGlobalVariable(getglobalvariableinstr.getTarget().getName());
+        jvmMethod().getGlobalVariable(getglobalvariableinstr.getTarget().getName(), file, lastLine);
         jvmStoreLocal(getglobalvariableinstr.getResult());
     }
 

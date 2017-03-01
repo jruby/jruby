@@ -174,7 +174,7 @@ public class Bootstrap {
     }
 
     public static Handle global() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
     }
 
     public static RubyString string(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
@@ -868,11 +868,11 @@ public class Bootstrap {
         site.setTarget(target);
     }
 
-    public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
+    public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
         String[] names = name.split(":");
         String operation = names[0];
         String varName = JavaNameMangler.demangleMethodName(names[1]);
-        GlobalSite site = new GlobalSite(type, varName);
+        GlobalSite site = new GlobalSite(type, varName, file, line);
         MethodHandle handle;
 
         if (operation.equals("get")) {
@@ -895,7 +895,7 @@ public class Bootstrap {
                 variable.getScope() != GlobalVariable.Scope.GLOBAL) {
 
             // use uncached logic forever
-//            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
+            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
 
             MethodHandle uncached = lookup().findStatic(Bootstrap.class, "getGlobalUncached", methodType(IRubyObject.class, GlobalVariable.class));
             uncached = uncached.bindTo(variable);

@@ -958,12 +958,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void getGlobalVariable(String name) {
+    public void getGlobalVariable(String name, String file, int line) {
         loadContext();
         adapter.invokedynamic(
                 "get:" + JavaNameMangler.mangleMethodName(name),
                 sig(IRubyObject.class, ThreadContext.class),
-                Bootstrap.global());
+                Bootstrap.global(),
+                file, line);
     }
 
     @Override
