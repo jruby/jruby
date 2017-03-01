@@ -1,0 +1,6 @@
+exclude :test_conversion_unsigned_char, "needs investigation"
+exclude :test_conversion_unsigned_int, "needs investigation"
+exclude :test_conversion_unsigned_long, "needs investigation"
+exclude :test_conversion_unsigned_long_long, "needs investigation"
+exclude :test_conversion_unsigned_short, "needs investigation"
+exclude :test_memsize, "needs investigation"
