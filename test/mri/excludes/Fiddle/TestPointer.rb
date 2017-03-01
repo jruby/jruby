@@ -1,0 +1,6 @@
+exclude :test_aref_aset, "needs investigation"
+exclude :test_ref_ptr, "needs investigation"
+exclude :test_to_ptr_io, "needs investigation"
+exclude :test_to_ptr_string, "needs investigation"
+exclude :test_to_str, "needs investigation"
+exclude :test_to_value, "needs investigation"
