@@ -892,7 +892,8 @@ public class Bootstrap {
         GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
 
         if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
-                variable.getScope() != GlobalVariable.Scope.GLOBAL) {
+                variable.getScope() != GlobalVariable.Scope.GLOBAL ||
+                RubyGlobal.UNCACHED_GLOBALS.contains(site.name())) {
 
             // use uncached logic forever
             if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") uncacheable or rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
