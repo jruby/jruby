@@ -957,7 +957,7 @@ public class Pack {
                             }
                             lElem[lCurByte] = (bits & 1) != 0 ? (byte)'1' : (byte)'0';
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, USASCII, false)));
                     }
                     break;
                 case 'B' :
