@@ -34,7 +34,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.9.18</version>
+      <version>0.9.20</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
