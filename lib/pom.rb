@@ -10,7 +10,7 @@ end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.19' ),
+   ImportedGem.new( 'jruby-openssl', '0.9.20' ),
    ImportedGem.new( 'rake', '${rake.version}' ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
    ImportedGem.new( 'json', '1.8.0' ),
@@ -35,8 +35,8 @@ project 'JRuby Lib Setup' do
   jar "org.jruby:jruby-core:#{version}"
 
   # for testing out jruby-ossl before final release :
-  #repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
-  #            :id => 'gem-staging' )
+  repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
+              :id => 'gem-staging' )
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',

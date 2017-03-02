@@ -32,7 +32,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.9.19</version>
+      <version>0.9.20</version>
       <type>gem</type>
     </dependency>
     <dependency>
@@ -60,6 +60,12 @@ DO NOT MODIFIY - GENERATED CODE
       <type>gem</type>
     </dependency>
   </dependencies>
+  <repositories>
+    <repository>
+      <id>gem-staging</id>
+      <url>http://oss.sonatype.org/content/repositories/staging</url>
+    </repository>
+  </repositories>
   <build>
     <plugins>
       <plugin>
