@@ -597,7 +597,7 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: the new value
      */
-    public abstract void setGlobalVariable(String name);
+    public abstract void setGlobalVariable(String name, String file, int line);
 
     /**
      * Yield argument list to a block.

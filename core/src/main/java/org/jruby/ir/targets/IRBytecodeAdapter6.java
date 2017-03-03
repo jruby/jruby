@@ -968,10 +968,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void setGlobalVariable(String name) {
-        loadRuntime();
-        adapter.ldc(name);
-        invokeHelper("setGlobalVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
+    public void setGlobalVariable(String name, String file, int line) {
+        loadContext();
+        adapter.invokedynamic(
+                "set:" + JavaNameMangler.mangleMethodName(name),
+                sig(void.class, IRubyObject.class, ThreadContext.class),
+                Bootstrap.global(),
+                file, line);
     }
 
     @Override

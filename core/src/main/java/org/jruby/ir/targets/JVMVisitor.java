@@ -1743,9 +1743,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) {
         visit(putglobalvarinstr.getValue());
-        jvmMethod().setGlobalVariable(putglobalvarinstr.getTarget().getName());
-        // leaves copy of value on stack
-        jvmAdapter().pop();
+        jvmMethod().setGlobalVariable(putglobalvarinstr.getTarget().getName(), file, lastLine);
     }
 
     @Override

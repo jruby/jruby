@@ -878,7 +878,7 @@ public class Bootstrap {
         if (operation.equals("get")) {
             handle = lookup.findStatic(Bootstrap.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
         } else {
-            throw new RuntimeException("invalid variable access type");
+            handle = lookup.findStatic(Bootstrap.class, "setGlobalFallback", methodType(void.class, GlobalSite.class, IRubyObject.class, ThreadContext.class));
         }
 
         handle = handle.bindTo(site);
@@ -924,6 +924,23 @@ public class Bootstrap {
 
     public static IRubyObject getGlobalUncached(GlobalVariable variable) throws Throwable {
         return variable.getAccessor().getValue();
+    }
+
+    public static void setGlobalFallback(GlobalSite site, IRubyObject value, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
+        MethodHandle uncached = lookup().findStatic(Bootstrap.class, "setGlobalUncached", methodType(void.class, GlobalVariable.class, IRubyObject.class));
+        uncached = uncached.bindTo(variable);
+        uncached = dropArguments(uncached, 1, ThreadContext.class);
+        site.setTarget(uncached);
+        uncached.invokeWithArguments(value, context);
+    }
+
+    public static void setGlobalUncached(GlobalVariable variable, IRubyObject value) throws Throwable {
+        // FIXME: duplicated logic from GlobalVariables.set
+        variable.getAccessor().setValue(value);
+        variable.trace(value);
+        variable.invalidate();
     }
 
     public static Handle prepareBlock() {
