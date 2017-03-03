@@ -1549,6 +1549,21 @@ CLASSDEF
     assert(x.java_class.kind_of?Java::JavaClass)
   end
 
+  java_import 'org.jruby.javasupport.test.name.Sample'
+
+  def test_native_ruby_array_java_argument
+    assert_equal '10', Sample.test(16)
+    assert_equal 3, Sample.test([1, 2.0, 3])
+  end
+
+  def test_ruby_object_java_argument
+    assert_equal 'RubyString',  Sample.rubyObj('s')
+    assert_equal 'RubyInteger', Sample.rubyObj(100)
+    assert_equal 'RubyObject',  Sample.rubyObj([1])
+    # undefined territory as nil gets into null early
+    #assert_equal 'RubyObject',  Sample.rubyObj(nil)
+  end
+
   # JRUBY-4524
   class IncludePackageSuper
     def self.const_missing(a)
