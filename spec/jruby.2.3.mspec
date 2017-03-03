@@ -4,6 +4,16 @@ require 'rbconfig'
 require 'java'
 require 'jruby'
 
+# Some non-deterministic specs assume a GC will actually fire.  For spec
+# runs we change our noop version of GC.start to requesting we actually
+# perform a GC on the JVM.
+module GC
+  def start
+    java.lang.System.gc
+  end
+  module_function :start
+end
+
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
 WINDOWS = RbConfig::CONFIG['host_os'] =~ /mswin/
 
