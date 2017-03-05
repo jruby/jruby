@@ -619,11 +619,11 @@ public class RubyTime extends RubyObject {
     }
 
     public IRubyObject op_plus(IRubyObject other) {
-        return op_plus19(getRuntime().getCurrentContext(), other);
+        return op_plus(getRuntime().getCurrentContext(), other);
     }
 
     @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         checkOpCoercion(context, other);
         if (other instanceof RubyTime) {
             throw context.runtime.newTypeError("time + time ?");
@@ -632,6 +632,11 @@ public class RubyTime extends RubyObject {
 
         long adjustNanos = (long)(RubyNumeric.num2dbl(other) * 1000000000);
         return opPlusNanos(adjustNanos);
+    }
+
+    @Deprecated
+    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
+        return op_plus(context, other);
     }
 
     private IRubyObject opPlusNanos(long adjustNanos) {
@@ -673,14 +678,19 @@ public class RubyTime extends RubyObject {
     }
 
     public IRubyObject op_minus(IRubyObject other) {
-        return op_minus19(getRuntime().getCurrentContext(), other);
+        return op_minus(getRuntime().getCurrentContext(), other);
     }
 
     @JRubyMethod(name = "-", required = 1)
-    public IRubyObject op_minus19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         checkOpCoercion(context, other);
         if (other instanceof RubyTime) return opMinus((RubyTime) other);
         return opMinusCommon(other.callMethod(context, "to_r"));
+    }
+
+    @Deprecated
+    public IRubyObject op_minus19(ThreadContext context, IRubyObject other) {
+        return op_minus(context, other);
     }
 
     private IRubyObject opMinusCommon(IRubyObject other) {
