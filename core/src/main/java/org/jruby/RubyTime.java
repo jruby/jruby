@@ -557,9 +557,10 @@ public class RubyTime extends RubyObject {
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other.isNil()) {
-            return RubyBoolean.newBoolean(getRuntime(), false);
-        } else if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) == 0);
+            return context.runtime.getFalse();
+        }
+        if (other instanceof RubyTime) {
+            return context.runtime.newBoolean(cmp((RubyTime) other) == 0);
         }
 
         return RubyComparable.op_equal19(context, this, other);
@@ -568,7 +569,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = ">=", required = 1)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) >= 0);
+            return context.runtime.newBoolean(cmp((RubyTime) other) >= 0);
         }
 
         return RubyComparable.op_ge(context, this, other);
@@ -577,7 +578,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = ">", required = 1)
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) > 0);
+            return context.runtime.newBoolean(cmp((RubyTime) other) > 0);
         }
 
         return RubyComparable.op_gt(context, this, other);
@@ -586,7 +587,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<=", required = 1)
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) <= 0);
+            return context.runtime.newBoolean(cmp((RubyTime) other) <= 0);
         }
 
         return RubyComparable.op_le(context, this, other);
@@ -595,7 +596,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<", required = 1)
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) < 0);
+            return context.runtime.newBoolean(cmp((RubyTime) other) < 0);
         }
 
         return RubyComparable.op_lt(context, this, other);
@@ -625,7 +626,7 @@ public class RubyTime extends RubyObject {
     public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
         checkOpCoercion(context, other);
         if (other instanceof RubyTime) {
-            throw getRuntime().newTypeError("time + time ?");
+            throw context.runtime.newTypeError("time + time ?");
         }
         other = other.callMethod(context, "to_r");
 
