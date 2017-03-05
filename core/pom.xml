@@ -135,7 +135,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.35-SNAPSHOT</version>
+      <version>3.0.35</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -146,7 +146,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.9.8-SNAPSHOT</version>
+      <version>0.9.8</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
