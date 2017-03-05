@@ -1515,8 +1515,7 @@ public class RubyTime extends RubyObject {
                     .plusSeconds(int_args[3]);
 
             // 1.9 will observe fractional seconds *if* not given usec
-            if (!args[5].isNil()
-                    && args[6].isNil()) {
+            if (!args[5].isNil() && args[6].isNil()) {
                 double secs = RubyFloat.num2dbl(args[5]);
                 int int_millis = (int) (secs * 1000) % 1000;
                 dt = dt.plusMillis(int_millis);
@@ -1548,7 +1547,7 @@ public class RubyTime extends RubyObject {
             if (fractionalUSecGiven) {
                 double micros = RubyNumeric.num2dbl(args[6]);
                 time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
-                nanos = ((long) (micros * 1000) % 1000000);
+                nanos = (long) Math.rint((micros * 1000) % 1000000);
             } else {
                 int usec = int_args[4] % 1000;
                 int msec = int_args[4] / 1000;
