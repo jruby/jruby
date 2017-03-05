@@ -563,7 +563,7 @@ public class RubyTime extends RubyObject {
             return context.runtime.newBoolean(cmp((RubyTime) other) == 0);
         }
 
-        return RubyComparable.op_equal19(context, this, other);
+        return RubyComparable.op_equal(context, this, other);
     }
 
     @JRubyMethod(name = ">=", required = 1)
