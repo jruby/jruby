@@ -670,11 +670,11 @@ public class RubyTime extends RubyObject {
         }
     }
 
-    private IRubyObject opMinus(RubyTime other) {
+    private RubyFloat opMinus(Ruby runtime, RubyTime other) {
         long timeInMillis = (getTimeInMillis() - other.getTimeInMillis());
         double timeInSeconds = timeInMillis/1000.0 + (getNSec() - other.getNSec())/1000000000.0;
 
-        return RubyFloat.newFloat(getRuntime(), timeInSeconds); // float number of seconds
+        return RubyFloat.newFloat(runtime, timeInSeconds); // float number of seconds
     }
 
     public IRubyObject op_minus(IRubyObject other) {
@@ -684,7 +684,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         checkOpCoercion(context, other);
-        if (other instanceof RubyTime) return opMinus((RubyTime) other);
+        if (other instanceof RubyTime) return opMinus(context.runtime, (RubyTime) other);
         return opMinusCommon(other.callMethod(context, "to_r"));
     }
 
