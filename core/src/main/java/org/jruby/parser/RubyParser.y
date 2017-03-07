@@ -1352,7 +1352,7 @@ primary         : literal
                 | tLPAREN_ARG {
                     $$ = lexer.getCmdArgumentState().getStack();
                     lexer.getCmdArgumentState().reset();
-                } expr {
+                } stmt {
                     lexer.setState(EXPR_ENDARG); 
                 } rparen {
                     lexer.getCmdArgumentState().reset($<Long>2.longValue());
