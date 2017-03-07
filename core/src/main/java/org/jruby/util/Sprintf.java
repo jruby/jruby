@@ -157,14 +157,14 @@ public class Sprintf {
             if (runtime.isVerbose()) runtime.getWarnings().warning(id, message);
         }
 
-        private IRubyObject getHashValue(ByteList name) {
+        private IRubyObject getHashValue(ByteList name, char startDelim, char endDelim) {
             // FIXME: get_hash does hash conversion of argv and arity check...this is a bit complicated with
             // our version.  Implement it.
             if (rubyHash == null) {
                 raiseArgumentError("one hash required");
             }
 
-            checkNameArg(name);
+            checkNameArg(name, startDelim, endDelim);
             RubySymbol nameSym = runtime.newSymbol(name);
             IRubyObject object = rubyHash.fastARef(nameSym);
 
@@ -173,12 +173,12 @@ public class Sprintf {
             if (object == null) {
                 object = rubyHash.getIfNone();
                 if (object == RubyBasicObject.UNDEF) {
-                    raiseKeyError("key<" + name + "> not found");
+                    raiseKeyError("key" + startDelim + name + endDelim + " not found");
                 } else if (rubyHash.hasDefaultProc()) {
                     object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                 }
 
-                if (object.isNil()) throw runtime.newKeyError("key " + nameSym + " not found");
+                if (object.isNil()) throw runtime.newKeyError("key" + startDelim + nameSym + endDelim + " not found");
             }
 
             return object;
@@ -233,9 +233,9 @@ public class Sprintf {
         }
 
         // MRI: check_name_arg, CHECKNAMEARG
-        private void checkNameArg(ByteList name) {
-            if (positionIndex > 0) raiseArgumentError("named " + name + " after unnumbered(" + positionIndex + ")");
-            if (positionIndex == -1) raiseArgumentError("named " + name + " after numbered");
+        private void checkNameArg(ByteList name, char startDelim, char endDelim) {
+            if (positionIndex > 0) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after unnumbered(" + positionIndex + ")");
+            if (positionIndex == -1) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after numbered");
 
             positionIndex = -2;
         }
@@ -432,7 +432,7 @@ public class Sprintf {
                     if (name != null) raiseArgumentError(args, "named<" + newName + "> after <" + name + ">");
                     name = newName;
                     // we retrieve value from hash so we can generate argument error as side-effect.
-                    args.nextObject = args.getHashValue(name);
+                    args.nextObject = args.getHashValue(name, '<', '>');
 
                     break;
                 }
@@ -453,7 +453,7 @@ public class Sprintf {
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
 
                     ByteList localName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-                    buf.append(args.getHashValue(localName).asString().getByteList());
+                    buf.append(args.getHashValue(localName, '{', '}').asString().getByteList());
                     incomplete = false;
 
                     break;
