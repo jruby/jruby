@@ -358,7 +358,6 @@ public class Sprintf {
         int length;
         int start;
         int mark;
-        ByteList name = null;
         Encoding encoding = null;
 
         // used for RubyString functions to manage encoding, etc
@@ -379,6 +378,7 @@ public class Sprintf {
         }
 
         while (offset < length) {
+            ByteList name = null;
             start = offset;
             for ( ; offset < length && format[offset] != '%'; offset++) {}
 
@@ -428,11 +428,9 @@ public class Sprintf {
                     }
 
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
-
-                    ByteList oldName = name;
-                    name = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-
-                    if (oldName != null) raiseArgumentError(args, "name<" + name + "> after <" + oldName + ">");
+                    ByteList newName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
+                    if (name != null) raiseArgumentError(args, "named<" + newName + "> after <" + name + ">");
+                    name = newName;
                     // we retrieve value from hash so we can generate argument error as side-effect.
                     args.nextObject = args.getHashValue(name);
 
