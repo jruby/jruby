@@ -112,7 +112,13 @@ public class Sprintf {
             this.rubyObject = rubyObject;
             if (rubyObject instanceof RubyArray) {
                 this.rubyArray = (RubyArray)rubyObject;
-                this.rubyHash = null;
+
+                if (rubyArray.last() instanceof RubyHash) {
+                    this.rubyHash = (RubyHash) rubyArray.pop(rubyArray.getRuntime().getCurrentContext());
+                } else {
+                    this.rubyHash = null;
+                }
+
                 this.length = rubyArray.size();
             } else if (rubyObject instanceof RubyHash) {
                 // allow a hash for args if in 1.9 mode
@@ -173,7 +179,7 @@ public class Sprintf {
             if (object == null) {
                 object = rubyHash.getIfNone();
                 if (object == RubyBasicObject.UNDEF) {
-                    raiseKeyError("key" + startDelim + name + endDelim + " not found");
+                    raiseKeyError("key" + startDelim + RubyString.newString(runtime, name) + endDelim + " not found");
                 } else if (rubyHash.hasDefaultProc()) {
                     object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                 }
@@ -185,7 +191,12 @@ public class Sprintf {
         }
 
         private IRubyObject getNthArg(int index) {
-            if (index > length) raiseArgumentError("too few arguments");
+            if (index > length) {
+                if (index == length + 1 && rubyHash != null) {
+                    return rubyHash;
+                }
+                raiseArgumentError("too few arguments");
+            }
 
             return rubyArray == null ? rubyObject : rubyArray.eltInternal(index - 1);
         }
@@ -429,7 +440,7 @@ public class Sprintf {
 
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
                     ByteList newName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-                    if (name != null) raiseArgumentError(args, "named<" + newName + "> after <" + name + ">");
+                    if (name != null) raiseArgumentError(args, "named<" + RubyString.newString(runtime, newName) + "> after <" + RubyString.newString(runtime, name) + ">");
                     name = newName;
                     // we retrieve value from hash so we can generate argument error as side-effect.
                     args.nextObject = args.getHashValue(name, '<', '>');
