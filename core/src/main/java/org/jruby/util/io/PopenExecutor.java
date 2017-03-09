@@ -165,6 +165,7 @@ public class PopenExecutor {
             errno = Errno.ENOENT;
             return -1;
         }
+
         status = runtime.getPosix().posix_spawnp(
                 prog,
                 eargp.fileActions,

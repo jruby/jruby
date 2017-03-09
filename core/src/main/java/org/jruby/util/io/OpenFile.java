@@ -2415,6 +2415,9 @@ public class OpenFile implements Finalizable {
                 if (locked) unlock();
             }
         }
+
+        // Clear errno so ENOTTY does not get picked up elsewhere (jruby/jruby#4527
+        runtime.getPosix().errno(0);
     }
 
     public boolean isBOM() {
