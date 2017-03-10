@@ -126,7 +126,15 @@ public class RubyLexer extends LexingCommon {
     }
     
     private RationalNode newRationalNode(String value, int radix) throws NumberFormatException {
-        return new RationalNode(getPosition(), Long.parseLong(value, radix), 1);
+        NumericNode numerator;
+
+        try {
+            numerator = new FixnumNode(getPosition(), Long.parseLong(value, radix));
+        } catch (NumberFormatException e) {
+            numerator = new BignumNode(getPosition(), new BigInteger(value, radix));
+        }
+
+        return new RationalNode(getPosition(), numerator, new FixnumNode(getPosition(), 1));
     }
     
     private ComplexNode newComplexNode(NumericNode number) {
@@ -429,7 +437,8 @@ public class RubyLexer extends LexingCommon {
             BigDecimal numerator = bd.multiply(denominator);
 
             try {
-                yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
+                yaccValue = new RationalNode(getPosition(), new FixnumNode(getPosition(), numerator.longValueExact()),
+                        new FixnumNode(getPosition(), denominator.longValueExact()));
             } catch (ArithmeticException ae) {
                 // FIXME: Rational supports Bignum numerator and denominator
                 compile_error(PID.RATIONAL_OUT_OF_RANGE, "Rational (" + numerator + "/" + denominator + ") out of range.");

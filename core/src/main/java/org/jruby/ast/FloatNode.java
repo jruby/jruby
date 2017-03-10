@@ -56,6 +56,11 @@ public class FloatNode extends NumericNode implements ILiteralNode, SideEffectFr
         return iVisitor.visitFloatNode(this);
     }
 
+    @Override
+    public NumericNode negate() {
+        return new FloatNode(getPosition(), -value);
+    }
+
     /**
      * Gets the value.
      * @return Returns a double

@@ -3453,7 +3453,9 @@ public class IRBuilder {
     }
 
     public Operand buildRational(RationalNode rationalNode) {
-        return new Rational(rationalNode.getNumerator(), rationalNode.getDenominator());
+
+        return new Rational((ImmutableLiteral) build(rationalNode.getNumerator()),
+                (ImmutableLiteral) build(rationalNode.getDenominator()));
     }
 
     public Operand buildRedo() {

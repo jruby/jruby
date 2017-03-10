@@ -56,6 +56,11 @@ public class FixnumNode extends NumericNode implements ILiteralNode, SideEffectF
         return NodeType.FIXNUMNODE;
     }
 
+    @Override
+    public NumericNode negate() {
+        return new FixnumNode(getPosition(), -value);
+    }
+
     /**
      * Gets the value.
      * @return Returns a long
