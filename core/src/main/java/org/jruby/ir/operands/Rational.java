@@ -2,6 +2,8 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyRational;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -28,6 +30,17 @@ public class Rational extends ImmutableLiteral {
     public Object createCacheObject(ThreadContext context) {
         return RubyRational.newRationalRaw(context.runtime,
                 (IRubyObject) numerator.cachedObject(context), (IRubyObject) denominator.cachedObject(context));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        numerator.encode(e);
+        denominator.encode(e);
+    }
+
+    public static Rational decode(IRReaderDecoder d) {
+        return new Rational((ImmutableLiteral) d.decodeOperand(), (ImmutableLiteral) d.decodeOperand());
     }
 
     @Override
