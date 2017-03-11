@@ -2460,7 +2460,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadRuntime();
         visit(rational.getNumerator());
         visit(rational.getDenominator());
-        jvmAdapter().invokevirtual(p(RubyRational.class), "newRationalRaw", sig(RubyRational.class, Ruby.class, IRubyObject.class, IRubyObject.class));
+        jvmAdapter().invokestatic(p(RubyRational.class), "newRationalRaw", sig(RubyRational.class, Ruby.class, IRubyObject.class, IRubyObject.class));
     }
 
     @Override
