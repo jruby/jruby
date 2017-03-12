@@ -53,6 +53,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
         this.name = name;
         this.argsNode = argsNode;
         this.iterNode = iterNode;
+        setNewline();
     }
 
     public NodeType getNodeType() {
