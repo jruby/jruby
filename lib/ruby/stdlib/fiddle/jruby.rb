@@ -163,8 +163,6 @@ module Fiddle
         elsif ptr.is_a?(FFI::Pointer)
           Pointer.new(ptr)
         else
-          p value
-          p ptr
           raise DLError.new('to_ptr should return a Fiddle::Pointer object')
         end
 
