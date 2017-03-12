@@ -534,53 +534,53 @@ public class RubyLexer extends LexingCommon {
 
         switch (c) {
         case 'Q':
-            lex_strterm = new StringTerm(str_dquote, begin ,end);
+            lex_strterm = new StringTerm(str_dquote, begin ,end, ruby_sourceline);
             yaccValue = "%"+ (shortHand ? (""+end) : ("" + c + begin));
             return Tokens.tSTRING_BEG;
 
         case 'q':
-            lex_strterm = new StringTerm(str_squote, begin, end);
+            lex_strterm = new StringTerm(str_squote, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return Tokens.tSTRING_BEG;
 
         case 'W':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end, ruby_sourceline);
             do {c = nextc();} while (Character.isWhitespace(c));
             pushback(c);
             yaccValue = "%"+c+begin;
             return Tokens.tWORDS_BEG;
 
         case 'w':
-            lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end, ruby_sourceline);
             do {c = nextc();} while (Character.isWhitespace(c));
             pushback(c);
             yaccValue = "%"+c+begin;
             return Tokens.tQWORDS_BEG;
 
         case 'x':
-            lex_strterm = new StringTerm(str_xquote, begin, end);
+            lex_strterm = new StringTerm(str_xquote, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return Tokens.tXSTRING_BEG;
 
         case 'r':
-            lex_strterm = new StringTerm(str_regexp, begin, end);
+            lex_strterm = new StringTerm(str_regexp, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return Tokens.tREGEXP_BEG;
 
         case 's':
-            lex_strterm = new StringTerm(str_ssym, begin, end);
+            lex_strterm = new StringTerm(str_ssym, begin, end, ruby_sourceline);
             setState(EXPR_FNAME|EXPR_FITEM);
             yaccValue = "%"+c+begin;
             return Tokens.tSYMBEG;
         
         case 'I':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end, ruby_sourceline);
             do {c = nextc();} while (Character.isWhitespace(c));
             pushback(c);
             yaccValue = "%" + c + begin;
             return Tokens.tSYMBOLS_BEG;
         case 'i':
-            lex_strterm = new StringTerm(/* str_squote | */STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(/* str_squote | */STR_FUNC_QWORDS, begin, end, ruby_sourceline);
             do {c = nextc();} while (Character.isWhitespace(c));
             pushback(c);
             yaccValue = "%" + c + begin;
@@ -1164,7 +1164,7 @@ public class RubyLexer extends LexingCommon {
             return Tokens.tBACK_REF2;
         }
 
-        lex_strterm = new StringTerm(str_xquote, '\0', '`');
+        lex_strterm = new StringTerm(str_xquote, '\0', '`', ruby_sourceline);
         return Tokens.tXSTRING_BEG;
     }
     
@@ -1237,10 +1237,10 @@ public class RubyLexer extends LexingCommon {
         
         switch (c) {
         case '\'':
-            lex_strterm = new StringTerm(str_ssym, '\0', c);
+            lex_strterm = new StringTerm(str_ssym, '\0', c, ruby_sourceline);
             break;
         case '"':
-            lex_strterm = new StringTerm(str_dsym, '\0', c);
+            lex_strterm = new StringTerm(str_dsym, '\0', c, ruby_sourceline);
             break;
         default:
             pushback(c);
@@ -1412,7 +1412,7 @@ public class RubyLexer extends LexingCommon {
     
     private int doubleQuote(boolean commandState) throws IOException {
         int label = isLabelPossible(commandState) ? str_label : 0;
-        lex_strterm = new StringTerm(str_dquote|label, '\0', '"');
+        lex_strterm = new StringTerm(str_dquote|label, '\0', '"', ruby_sourceline);
         yaccValue = "\"";
 
         return Tokens.tSTRING_BEG;
@@ -1918,7 +1918,7 @@ public class RubyLexer extends LexingCommon {
     
     private int singleQuote(boolean commandState) throws IOException {
         int label = isLabelPossible(commandState) ? str_label : 0;
-        lex_strterm = new StringTerm(str_squote|label, '\0', '\'');
+        lex_strterm = new StringTerm(str_squote|label, '\0', '\'', ruby_sourceline);
         yaccValue = "'";
 
         return Tokens.tSTRING_BEG;
@@ -1926,7 +1926,7 @@ public class RubyLexer extends LexingCommon {
     
     private int slash(boolean spaceSeen) throws IOException {
         if (isBEG()) {
-            lex_strterm = new StringTerm(str_regexp, '\0', '/');
+            lex_strterm = new StringTerm(str_regexp, '\0', '/', ruby_sourceline);
             yaccValue = "/";
             return Tokens.tREGEXP_BEG;
         }
@@ -1941,7 +1941,7 @@ public class RubyLexer extends LexingCommon {
         pushback(c);
         if (isSpaceArg(c, spaceSeen)) {
             arg_ambiguous();
-            lex_strterm = new StringTerm(str_regexp, '\0', '/');
+            lex_strterm = new StringTerm(str_regexp, '\0', '/', ruby_sourceline);
             yaccValue = "/";
             return Tokens.tREGEXP_BEG;
         }
