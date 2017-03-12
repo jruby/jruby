@@ -310,12 +310,14 @@ module Fiddle
     def ptr
       Pointer.new(ffi_ptr.get_pointer(0))
     end
+    alias +@ ptr
 
     def ref
       cptr = Pointer.malloc(FFI::Type::POINTER.size)
       cptr.ffi_ptr.put_pointer(0, ffi_ptr)
       cptr
     end
+    alias -@ ref
   end
 
   NULL = Pointer.new(0, 0, 0)
