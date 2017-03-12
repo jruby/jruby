@@ -11,30 +11,34 @@ module FFI
     # time.h
     typedef :long, :clock_t
 
-    ffi_lib [FFI::CURRENT_PROCESS, 'c']
+    ffi_lib FFI::Library::LIBC
 
     # The NULL constant
     NULL = nil
 
     # errno.h
-    attach_variable :sys_errlist, :pointer
-    attach_variable :sys_nerr, :int
-    attach_variable :errno, :int
+    unless FFI::Platform.windows?
+      attach_variable :sys_errlist, :pointer
+      attach_variable :sys_nerr, :int
+      attach_variable :errno, :int
+    end
 
     def self.raise_error(error=self.errno)
       raise(strerror(error))
     end
 
     # unistd.h
-    attach_function :brk, [:pointer], :int
-    attach_function :sbrk, [:pointer], :pointer
-    attach_function :getpid, [], :pid_t
-    attach_function :getppid, [], :pid_t
-    attach_function :getuid, [], :uid_t
-    attach_function :geteuid, [], :uid_t
-    attach_function :getgid, [], :gid_t
-    attach_function :getegid, [], :gid_t
-    attach_function :alarm, [:uint], :uint
+    unless FFI::Platform.windows?
+      attach_function :brk, [:pointer], :int
+      attach_function :sbrk, [:pointer], :pointer
+      attach_function :getpid, [], :pid_t
+      attach_function :getppid, [], :pid_t
+      attach_function :getuid, [], :uid_t
+      attach_function :geteuid, [], :uid_t
+      attach_function :getgid, [], :gid_t
+      attach_function :getegid, [], :gid_t
+      attach_function :alarm, [:uint], :uint
+    end
 
     # stdlib.h
     attach_function :calloc, [:size_t, :size_t], :pointer
@@ -42,8 +46,10 @@ module FFI
     FREE = attach_function :free, [:pointer], :void
     attach_function :realloc, [:pointer, :size_t], :pointer
     attach_function :getenv, [:string], :string
-    attach_function :putenv, [:string], :int
-    attach_function :unsetenv, [:string], :int
+    unless FFI::Platform.windows?
+      attach_function :putenv, [:string], :int
+      attach_function :unsetenv, [:string], :int
+    end
 
     begin
       attach_function :clearenv, [], :int
@@ -56,15 +62,19 @@ module FFI
     attach_function :time, [:pointer], :time_t
 
     # sys/time.h
-    attach_function :gettimeofday, [:pointer, :pointer], :int
-    attach_function :settimeofday, [:pointer, :pointer], :int
+    unless FFI::Platform.windows?
+      attach_function :gettimeofday, [:pointer, :pointer], :int
+      attach_function :settimeofday, [:pointer, :pointer], :int
+    end
 
     # sys/mman.h
-    attach_function :mmap, [:pointer, :size_t, :int, :int, :int, :off_t], :pointer
-    attach_function :munmap, [:pointer, :size_t], :int
+    unless FFI::Platform.windows?
+      attach_function :mmap, [:pointer, :size_t, :int, :int, :int, :off_t], :pointer
+      attach_function :munmap, [:pointer, :size_t], :int
+    end
 
     # string.h
-    attach_function :bzero, [:pointer, :size_t], :void
+    attach_function :bzero, [:pointer, :size_t], :void unless FFI::Platform.windows?
     attach_function :memset, [:pointer, :int, :size_t], :pointer
     attach_function :memcpy, [:buffer_out, :buffer_in, :size_t], :pointer
     attach_function :memcmp, [:buffer_in, :buffer_in, :size_t], :int
@@ -81,8 +91,10 @@ module FFI
     attach_function :strcmp, [:buffer_in, :buffer_in], :int
     attach_function :strncmp, [:buffer_in, :buffer_in, :size_t], :int
     attach_function :strlen, [:buffer_in], :size_t
-    attach_function :index, [:buffer_in, :int], :pointer
-    attach_function :rindex, [:buffer_in, :int], :pointer
+    unless FFI::Platform.windows?
+      attach_function :index, [:buffer_in, :int], :pointer
+      attach_function :rindex, [:buffer_in, :int], :pointer
+    end
     attach_function :strchr, [:buffer_in, :int], :pointer
     attach_function :strrchr, [:buffer_in, :int], :pointer
     attach_function :strstr, [:buffer_in, :string], :pointer
@@ -97,7 +109,7 @@ module FFI
     end
 
     attach_function :fopen, [:string, :string], :FILE
-    attach_function :fdopen, [:int, :string], :FILE
+    attach_function :fdopen, [:int, :string], :FILE unless FFI::Platform.windows?
     attach_function :freopen, [:string, :string, :FILE], :FILE
     attach_function :fseek, [:FILE, :long, :int], :int
     attach_function :ftell, [:FILE], :long
@@ -113,7 +125,7 @@ module FFI
     attach_function :clearerr, [:FILE], :void
     attach_function :feof, [:FILE], :int
     attach_function :ferror, [:FILE], :int
-    attach_function :fileno, [:FILE], :int
+    attach_function :fileno, [:FILE], :int unless FFI::Platform.windows?
     attach_function :perror, [:string], :void
 
     attach_function :getc, [:FILE], :int
@@ -126,12 +138,14 @@ module FFI
     attach_function :puts, [:string], :int
 
     # netdb.h
-    attach_function :getnameinfo, [
-      :pointer,
-      :socklen_t, :pointer,
-      :socklen_t, :pointer,
-      :socklen_t, :int
-    ], :int
+    unless FFI::Platform.windows?
+      attach_function :getnameinfo, [
+        :pointer,
+        :socklen_t, :pointer,
+        :socklen_t, :pointer,
+        :socklen_t, :int
+      ], :int
+    end
 
     NI_MAXHOST = 1024
     NI_MAXSERV = 32
@@ -143,8 +157,10 @@ module FFI
     NI_DGRAM       = 16      # Look up UDP service rather than TCP.
 
     # ifaddrs.h
-    attach_function :getifaddrs, [:pointer], :int
-    attach_function :freeifaddrs, [:pointer], :void
+    unless FFI::Platform.windows?
+      attach_function :getifaddrs, [:pointer], :int
+      attach_function :freeifaddrs, [:pointer], :void
+    end
 
     #
     # Enumerates over the Interface Addresses.
@@ -189,7 +205,7 @@ module FFI
     RUSAGE_CHILDREN = -1
     RUSAGE_THREAD = 1 # Linux/glibc only
 
-    attach_function :getrusage, [:int, :pointer], :int
+    attach_function :getrusage, [:int, :pointer], :int unless FFI::Platform.windows?
 
     #
     # Gets the RUsage for the user.
