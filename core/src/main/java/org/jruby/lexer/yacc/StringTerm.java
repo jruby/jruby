@@ -196,7 +196,7 @@ public class StringTerm extends StrTerm {
         enc[0] = lexer.getEncoding();
 
         if (parseStringIntoBuffer(lexer, buffer, enc) == EOF) {
-            lexer.compile_error("unterminated string meets end of file");
+            lexer.compile_error("unterminated " + ((flags & STR_FUNC_REGEXP) != 0 ? "regexp" : "string") +  " meets end of file");
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));
