@@ -49,7 +49,7 @@ describe "JRuby::Compiler.compile_argv" do
   it "can load all number operands" do
     load File.join(FILES_DIR, 'operands.class')
 
-    expect( $numbers_result ).to eql [1r, 1c, 1, 1.0]
+    expect( $numbers_result ).to eql [1r, 1i, 1, 1.0]
   end
 
   it "compiles hashy_kwargs.class correctly" do
