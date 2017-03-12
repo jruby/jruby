@@ -84,11 +84,21 @@ module Fiddle
         FFI::Pointer.new(ptr.to_i),
         :convention => @abi
       )
-      @function.attach(self, "call")
+      @function.attach(self, "__ffi_call__")
     end
 
-    # stubbed; should be overwritten by initialize's #attach call above
-    def call(*args); end
+    def call(*args)
+      native_args = args.zip(@args).map{ |arg,type| make_native(arg, type) }
+      ret = self.__ffi_call__(*native_args)
+      make_native(ret, @return_type)
+    end
+
+    private
+
+    def make_native(arg, type)
+      return arg if type != TYPE_VOIDP
+      Pointer[arg]
+    end
   end
 
   class Closure
