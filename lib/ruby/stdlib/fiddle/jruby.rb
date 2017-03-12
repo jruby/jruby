@@ -88,16 +88,22 @@ module Fiddle
     end
 
     def call(*args)
-      native_args = args.zip(@args).map{ |arg,type| make_native(arg, type) }
+      pointer_args = args.zip(@args).map{ |arg,type| make_pointer(arg, type) }
+      native_args = pointer_args.zip(@args).map{ |ptr,type| make_native(ptr, type) }
       ret = self.__ffi_call__(*native_args)
-      make_native(ret, @return_type)
+      make_pointer(ret, @return_type)
     end
 
     private
 
-    def make_native(arg, type)
+    def make_pointer(arg, type)
       return arg if type != TYPE_VOIDP
       Pointer[arg]
+    end
+
+    def make_native(ptr, type)
+      return ptr if type != TYPE_VOIDP
+      ptr.ffi_ptr
     end
   end
 
@@ -211,10 +217,6 @@ module Fiddle
 
     def null?
       @ffi_ptr.null?
-    end
-
-    def to_ptr
-      @ffi_ptr
     end
 
     def size
