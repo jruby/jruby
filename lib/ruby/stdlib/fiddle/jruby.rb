@@ -144,6 +144,9 @@ module Fiddle
     end
 
     def self.to_ptr(value)
+      if value.is_a?(IO)
+        raise "Converting IO to Pointer is not supported yet"
+      end
       if value.is_a?(String)
         cptr = Pointer.malloc(value.bytesize + 1)
         size = value.bytesize + 1
