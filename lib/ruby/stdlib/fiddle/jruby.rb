@@ -150,11 +150,18 @@ module Fiddle
         cptr.ffi_ptr.put_string(0, value)
         cptr
 
+      elsif value.is_a?(FFI::Pointer)
+        Pointer.new(value)
+
       elsif value.respond_to?(:to_ptr)
         ptr = value.to_ptr
         if ptr.is_a?(Pointer)
           ptr
+        elsif ptr.is_a?(FFI::Pointer)
+          Pointer.new(ptr)
         else
+          p value
+          p ptr
           raise DLError.new('to_ptr should return a Fiddle::Pointer object')
         end
 
