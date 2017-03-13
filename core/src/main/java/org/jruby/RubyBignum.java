@@ -236,6 +236,63 @@ public class RubyBignum extends RubyInteger {
      *  ================
      */
 
+    /** rb_big_ceil
+     *
+     */
+    @Override
+    public IRubyObject ceil(ThreadContext context, IRubyObject args){
+        BigInteger ndigits = args.convertToInteger().getBigIntegerValue();
+        BigInteger self = value;
+        if (ndigits.compareTo(BigInteger.ZERO) == 1){
+            return convertToFloat();
+        } else if (ndigits.compareTo(BigInteger.ZERO) == 0){
+            return this;
+        } else {
+            BigInteger posdigits = ndigits.abs();
+            BigInteger exp = BigInteger.TEN.pow(posdigits.intValue());
+            BigInteger mod = self.mod(exp);
+            BigInteger res = self;
+            if (mod.compareTo(BigInteger.ZERO) != 0) {
+                res = self.add( exp.subtract(mod) );// self + (exp - (mod));
+            }
+            return newBignum(context.runtime, res);
+        }
+    }
+
+    /** rb_big_floor
+     *
+     */
+    @Override
+    public IRubyObject floor(ThreadContext context, IRubyObject args){
+        BigInteger ndigits = args.convertToInteger().getBigIntegerValue();
+        BigInteger self = value;
+        if (ndigits.compareTo(BigInteger.ZERO) == 1){
+            return convertToFloat();
+        } else if (ndigits.compareTo(BigInteger.ZERO) == 0){
+            return this;
+        } else {
+            BigInteger posdigits = ndigits.abs();
+            BigInteger exp = BigInteger.TEN.pow(posdigits.intValue());
+            BigInteger res = self.subtract(self.mod(exp));
+            return newBignum(context.runtime, res);
+        }
+    }
+
+    /** rb_big_truncate
+     *
+     */
+    @Override
+    public IRubyObject truncate(ThreadContext context, IRubyObject args){
+        BigInteger self = value;
+        if (self.compareTo(BigInteger.ZERO) == 1){
+            return floor(context, args);
+        } else if (self.compareTo(BigInteger.ZERO) == -1){
+            return ceil(context, args);
+        } else {
+            return this;
+        }
+    }
+
     /** rb_big_digits
      *
      */
