@@ -426,7 +426,7 @@ public class CGIEscape implements Library {
         rb_mEscape.defineAnnotatedMethods(CGIEscape.class);
         RubyModule rb_mUtil = rb_cCGI.defineModuleUnder("Util");
         rb_mUtil.prependModule(rb_mEscape);
-        rb_cCGI.extend_object(rb_mEscape);
+        rb_mEscape.extend_object(rb_cCGI);
     }
 
     // PORTED FROM OTHER FILES IN MRI

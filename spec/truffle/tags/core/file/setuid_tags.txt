@@ -1,1 +1,0 @@
-slow:File.setuid? returns true when the gid bit is set

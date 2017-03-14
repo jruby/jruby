@@ -37,6 +37,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.posix.POSIX;
+import jnr.posix.Timeval;
 import org.jcodings.specific.USASCIIEncoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -388,9 +390,31 @@ public class RubyTime extends RubyObject {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             DateTimeZone dtz = getLocalTimeZone(runtime);
-            DateTime dt = new DateTime(dtz);
+            long msecs;
+            long nsecs;
+            POSIX posix = runtime.getPosix();
+            if (posix.isNative()) {
+                // FIXME: we should have a pure Java fallback in jnr-posix and Windows is missing gettimeofday impl
+                try {
+                    Timeval tv = posix.allocateTimeval();
+                    posix.gettimeofday(tv);
+
+                    long secs = tv.sec();
+                    long usecs = tv.usec();
+
+                    msecs = secs * 1000 + (usecs / 1000);
+                    nsecs = usecs % 1000 * 1000;
+                } catch (RaiseException notImplementedError) {
+                    msecs = System.currentTimeMillis();
+                    nsecs = 0;
+                }
+            } else {
+                msecs = System.currentTimeMillis();
+                nsecs = 0;
+            }
+            DateTime dt = new DateTime(msecs, dtz);
             RubyTime rt =  new RubyTime(runtime, klass, dt);
-            rt.setNSec(0);
+            rt.setNSec(nsecs);
 
             return rt;
         }
@@ -437,6 +461,12 @@ public class RubyTime extends RubyObject {
 
     public static RubyTime newTime(Ruby runtime, long milliseconds) {
         return newTime(runtime, new DateTime(milliseconds));
+    }
+
+    public static RubyTime newTimeFromNanoseconds(Ruby runtime, long nanoseconds) {
+        long milliseconds = nanoseconds / 1000000;
+        long extraNanoseconds = nanoseconds % 1000000;
+        return RubyTime.newTime(runtime, new DateTime(milliseconds), extraNanoseconds);
     }
 
     public static RubyTime newTime(Ruby runtime, DateTime dt) {
@@ -531,18 +561,19 @@ public class RubyTime extends RubyObject {
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other.isNil()) {
-            return RubyBoolean.newBoolean(getRuntime(), false);
-        } else if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) == 0);
+            return context.runtime.getFalse();
+        }
+        if (other instanceof RubyTime) {
+            return context.runtime.newBoolean(cmp((RubyTime) other) == 0);
         }
 
-        return RubyComparable.op_equal19(context, this, other);
+        return RubyComparable.op_equal(context, this, other);
     }
 
     @JRubyMethod(name = ">=", required = 1)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) >= 0);
+            return context.runtime.newBoolean(cmp((RubyTime) other) >= 0);
         }
 
         return RubyComparable.op_ge(context, this, other);
@@ -551,7 +582,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = ">", required = 1)
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) > 0);
+            return context.runtime.newBoolean(cmp((RubyTime) other) > 0);
         }
 
         return RubyComparable.op_gt(context, this, other);
@@ -560,7 +591,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<=", required = 1)
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) <= 0);
+            return context.runtime.newBoolean(cmp((RubyTime) other) <= 0);
         }
 
         return RubyComparable.op_le(context, this, other);
@@ -569,7 +600,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<", required = 1)
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return getRuntime().newBoolean(cmp((RubyTime) other) < 0);
+            return context.runtime.newBoolean(cmp((RubyTime) other) < 0);
         }
 
         return RubyComparable.op_lt(context, this, other);
@@ -579,12 +610,13 @@ public class RubyTime extends RubyObject {
         long millis = getTimeInMillis();
 		long millis_other = other.getTimeInMillis();
         // ignore < usec on 1.8
-        long nanosec = this.nsec;
+        long nsec = this.nsec;
         long nsec_other = other.nsec;
 
-		if (millis > millis_other || (millis == millis_other && nanosec > nsec_other)) {
+		if (millis > millis_other || (millis == millis_other && nsec > nsec_other)) {
 		    return 1;
-		} else if (millis < millis_other || (millis == millis_other && nanosec < nsec_other)) {
+		}
+		if (millis < millis_other || (millis == millis_other && nsec < nsec_other)) {
 		    return -1;
 		}
 
@@ -592,19 +624,24 @@ public class RubyTime extends RubyObject {
     }
 
     public IRubyObject op_plus(IRubyObject other) {
-        return op_plus19(getRuntime().getCurrentContext(), other);
+        return op_plus(getRuntime().getCurrentContext(), other);
     }
 
     @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         checkOpCoercion(context, other);
         if (other instanceof RubyTime) {
-            throw getRuntime().newTypeError("time + time ?");
+            throw context.runtime.newTypeError("time + time ?");
         }
         other = other.callMethod(context, "to_r");
 
         long adjustNanos = (long)(RubyNumeric.num2dbl(other) * 1000000000);
         return opPlusNanos(adjustNanos);
+    }
+
+    @Deprecated
+    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
+        return op_plus(context, other);
     }
 
     private IRubyObject opPlusNanos(long adjustNanos) {
@@ -638,22 +675,27 @@ public class RubyTime extends RubyObject {
         }
     }
 
-    private IRubyObject opMinus(RubyTime other) {
+    private RubyFloat opMinus(Ruby runtime, RubyTime other) {
         long timeInMillis = (getTimeInMillis() - other.getTimeInMillis());
         double timeInSeconds = timeInMillis/1000.0 + (getNSec() - other.getNSec())/1000000000.0;
 
-        return RubyFloat.newFloat(getRuntime(), timeInSeconds); // float number of seconds
+        return RubyFloat.newFloat(runtime, timeInSeconds); // float number of seconds
     }
 
     public IRubyObject op_minus(IRubyObject other) {
-        return op_minus19(getRuntime().getCurrentContext(), other);
+        return op_minus(getRuntime().getCurrentContext(), other);
     }
 
     @JRubyMethod(name = "-", required = 1)
-    public IRubyObject op_minus19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         checkOpCoercion(context, other);
-        if (other instanceof RubyTime) return opMinus((RubyTime) other);
+        if (other instanceof RubyTime) return opMinus(context.runtime, (RubyTime) other);
         return opMinusCommon(other.callMethod(context, "to_r"));
+    }
+
+    @Deprecated
+    public IRubyObject op_minus19(ThreadContext context, IRubyObject other) {
+        return op_minus(context, other);
     }
 
     private IRubyObject opMinusCommon(IRubyObject other) {
@@ -1169,8 +1211,12 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = {"local", "mktime"}, required = 1, optional = 9, meta = true)
+    public static RubyTime local(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return createTime(context, (RubyClass) recv, args, false, false);
+    }
+
     public static RubyTime new_local(IRubyObject recv, IRubyObject[] args) {
-        return createTime(recv, args, false, false);
+        return createTime(recv.getRuntime().getCurrentContext(), (RubyClass) recv, args, false, false);
     }
 
     @JRubyMethod(name = "new", optional = 7, meta = true)
@@ -1198,12 +1244,17 @@ public class RubyTime extends RubyObject {
                                      isDst,            // is DST?
                                      args[6] };        // UTC offset
         }
-        return createTime(recv, args, false, true);
+        return createTime(context, (RubyClass) recv, args, false, true);
     }
 
+
     @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, meta = true)
+    public static RubyTime utc(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return createTime(context, (RubyClass) recv, args, true, false);
+    }
+
     public static RubyTime new_utc(IRubyObject recv, IRubyObject[] args) {
-        return createTime(recv, args, true, false);
+        return createTime(recv.getRuntime().getCurrentContext(), (RubyClass) recv, args, true, false);
     }
 
     @JRubyMethod(name = "_load", meta = true)
@@ -1356,8 +1407,8 @@ public class RubyTime extends RubyObject {
 
     private static final int ARG_SIZE = 7;
 
-    private static RubyTime createTime(IRubyObject recv, IRubyObject[] args, boolean gmt, boolean utcOffset) {
-        Ruby runtime = recv.getRuntime();
+    private static RubyTime createTime(ThreadContext context, RubyClass klass, IRubyObject[] args, boolean gmt, boolean utcOffset) {
+        Ruby runtime = context.runtime;
         int len = ARG_SIZE;
         boolean isDst = false;
         boolean setTzRelative = false;
@@ -1374,7 +1425,7 @@ public class RubyTime extends RubyObject {
                 dtz = getTimeZoneFromString(runtime, args[9].toString());
             }
         } else if (args.length == 10 && args[9].respondsTo("to_int")) {
-            IRubyObject offsetInt = args[9].callMethod(runtime.getCurrentContext(), "to_int");
+            IRubyObject offsetInt = args[9].callMethod(context, "to_int");
             dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
         } else {
             dtz = getLocalTimeZone(runtime);
@@ -1391,9 +1442,7 @@ public class RubyTime extends RubyObject {
             if (len < ARG_SIZE) {
                 IRubyObject[] newArgs = new IRubyObject[ARG_SIZE];
                 ArraySupport.copy(args, newArgs, 0, len);
-                for (int i = len; i < ARG_SIZE; i++) {
-                    newArgs[i] = runtime.getNil();
-                }
+                for (int i = len; i < ARG_SIZE; i++) newArgs[i] = context.nil;
                 args = newArgs;
                 len = ARG_SIZE;
             }
@@ -1437,11 +1486,9 @@ public class RubyTime extends RubyObject {
             if (!args[i + 2].isNil()) {
                 if (!(args[i + 2] instanceof RubyNumeric)) {
                     if (args[i + 2].respondsTo("to_int")) {
-                        args[i + 2] = args[i + 2].callMethod(
-                                runtime.getCurrentContext(), "to_int");
+                        args[i + 2] = args[i + 2].callMethod(context, "to_int");
                     } else {
-                        args[i + 2] = args[i + 2].callMethod(
-                                runtime.getCurrentContext(), "to_i");
+                        args[i + 2] = args[i + 2].callMethod(context, "to_i");
                     }
                 }
 
@@ -1472,8 +1519,7 @@ public class RubyTime extends RubyObject {
                     .plusSeconds(int_args[3]);
 
             // 1.9 will observe fractional seconds *if* not given usec
-            if (!args[5].isNil()
-                    && args[6].isNil()) {
+            if (!args[5].isNil() && args[6].isNil()) {
                 double secs = RubyFloat.num2dbl(args[5]);
                 int int_millis = (int) (secs * 1000) % 1000;
                 dt = dt.plusMillis(int_millis);
@@ -1497,7 +1543,7 @@ public class RubyTime extends RubyObject {
             throw runtime.newArgumentError("time out of range");
         }
 
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv, dt);
+        RubyTime time = new RubyTime(runtime, klass, dt);
         // Ignores usec if 8 args (for compatibility with parsedate) or if not supplied.
         if (args.length != 8 && !args[6].isNil()) {
             boolean fractionalUSecGiven = args[6] instanceof RubyFloat || args[6] instanceof RubyRational;
@@ -1505,7 +1551,7 @@ public class RubyTime extends RubyObject {
             if (fractionalUSecGiven) {
                 double micros = RubyNumeric.num2dbl(args[6]);
                 time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
-                nanos = ((long) (micros * 1000) % 1000000);
+                nanos = (long) Math.rint((micros * 1000) % 1000000);
             } else {
                 int usec = int_args[4] % 1000;
                 int msec = int_args[4] / 1000;

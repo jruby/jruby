@@ -1,1 +1,0 @@
-fails:Enumerator#peek_values returns an array with only nil if yield is called with nil

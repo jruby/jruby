@@ -357,6 +357,7 @@ describe "Constant resolution within methods" do
         OpAssignUndefined ||= 42
       end
       ConstantSpecs::OpAssignUndefined.should == 42
+      ConstantSpecs.send(:remove_const, :OpAssignUndefined)
     end
   end
 end

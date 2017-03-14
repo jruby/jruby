@@ -39,14 +39,6 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        // CON: No native [] impls require backref/lastline for a literal String arg,
-        // so we don't have to deopt frame here.
-        super.computeScopeFlags(scope);
-        return true;
-    }
-
-    @Override
     public Instr clone(CloneInfo ii) {
         return new ArrayDerefInstr((Variable) getResult().cloneForInlining(ii), getReceiver().cloneForInlining(ii), key);
     }

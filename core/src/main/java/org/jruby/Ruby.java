@@ -57,6 +57,7 @@ import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.instructions.Instr;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -285,6 +286,9 @@ public final class Ruby implements Constantizable {
         } else {
             objectSpacer = DISABLED_OBJECTSPACE;
         }
+
+        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
+        filenoUtil = new FilenoUtil(posix);
 
         reinitialize(false);
     }
@@ -1137,7 +1141,6 @@ public final class Ruby implements Constantizable {
     private void init() {
         // Construct key services
         loadService = config.createLoadService(this);
-        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
         javaSupport = loadJavaSupport();
 
         executor = new ThreadPoolExecutor(
@@ -1182,7 +1185,8 @@ public final class Ruby implements Constantizable {
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
         // relationship handled either more directly or through a descriptice method
         // FIXME: We need a failing test case for this since removing it did not regress tests
-        new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
+        IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
+        top.allocateInterpreterContext(new ArrayList<Instr>());
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
@@ -2877,16 +2881,11 @@ public final class Ruby implements Constantizable {
             ThreadContext.pushBacktrace(context, "(root)", file, 0);
             context.preNodeEval(self);
             ParseResult parseResult = parseFile(scriptName, in, null);
+            RootNode root = (RootNode) parseResult;
 
             if (wrap) {
                 // toss an anonymous module into the search path
-                RubyModule wrapper = RubyModule.newModule(this);
-                ((RubyBasicObject)self).extend(new IRubyObject[] {wrapper});
-                RootNode root = (RootNode) parseResult;
-                StaticScope top = root.getStaticScope();
-                StaticScope newTop = staticScopeFactory.newLocalScope(null);
-                top.setPreviousCRefScope(newTop);
-                top.setModule(wrapper);
+                wrapRootForLoad((RubyBasicObject) self, root);
             }
 
             runInterpreter(context, parseResult, self);
@@ -2918,22 +2917,37 @@ public final class Ruby implements Constantizable {
     }
 
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
-        InputStream readStream = in;
-
-        // script was not found in cache above, so proceed to compile
-        RootNode scriptNode = (RootNode) parseFile(readStream, filename, null);
-
+        IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
         ThreadContext context = getCurrentContext();
+        InputStream readStream = in;
 
         String oldFile = context.getFile();
         int oldLine = context.getLine();
         try {
-            context.setFileAndLine(scriptNode.getFile(), scriptNode.getLine());
+            context.preNodeEval(self);
+            ParseResult parseResult = parseFile(filename, in, null);
+            RootNode root = (RootNode) parseResult;
 
-            runNormally(scriptNode, wrap);
+            if (wrap) {
+                wrapRootForLoad((RubyBasicObject) self, root);
+            } else {
+                root.getStaticScope().setModule(getObject());
+            }
+
+            runNormally(root, wrap);
         } finally {
-            context.setFileAndLine(oldFile, oldLine);
+            context.postNodeEval();
         }
+    }
+
+    private void wrapRootForLoad(RubyBasicObject self, RootNode root) {
+        // toss an anonymous module into the search path
+        RubyModule wrapper = RubyModule.newModule(this);
+        self.extend(new IRubyObject[] {wrapper});
+        StaticScope top = root.getStaticScope();
+        StaticScope newTop = staticScopeFactory.newLocalScope(null);
+        top.setPreviousCRefScope(newTop);
+        top.setModule(wrapper);
     }
 
     public void loadScript(Script script) {
@@ -3181,10 +3195,6 @@ public final class Ruby implements Constantizable {
         mriRecursionGuard = null;
 
         final ThreadContext context = getCurrentContext();
-
-        // Disable event hooks during runtime teardown
-        // This avoids deadlocks if some other thread is holding a debugger lock while we're trying to exit
-        context.setEventHooksEnabled(false);
 
         // FIXME: 73df3d230b9d92c7237d581c6366df1b92ad9b2b exposed no toplevel scope existing anymore (I think the
         // bogus scope I removed was playing surrogate toplevel scope and wallpapering this bug).  For now, add a
@@ -4788,7 +4798,7 @@ public final class Ruby implements Constantizable {
     private final Invalidator checkpointInvalidator;
     private final ThreadService threadService;
 
-    private POSIX posix;
+    private final POSIX posix;
 
     private final ObjectSpace objectSpace = new ObjectSpace();
 
@@ -5073,7 +5083,7 @@ public final class Ruby implements Constantizable {
     private final Config configBean;
     private final org.jruby.management.Runtime runtimeBean;
 
-    private final FilenoUtil filenoUtil = new FilenoUtil();
+    private final FilenoUtil filenoUtil;
 
     private Interpreter interpreter = new Interpreter();
 

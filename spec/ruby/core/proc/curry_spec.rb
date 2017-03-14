@@ -121,10 +121,18 @@ describe "Proc#curry with arity argument" do
     lambda { lambda{|x, y, z, *more|}.curry(2) }.should raise_error(ArgumentError)
   end
 
+  it 'returns a Proc if called on a lambda that requires fewer than _arity_ arguments but may take more' do
+    lambda{|a, b, c, d=nil, e=nil|}.curry(4).should be_an_instance_of(Proc)
+    lambda{|a, b, c, d=nil, *e|}.curry(4).should be_an_instance_of(Proc)
+    lambda{|a, b, c, *d|}.curry(4).should be_an_instance_of(Proc)
+  end
+
   it "raises an ArgumentError if called on a lambda that requires fewer than _arity_ arguments" do
     lambda { @lambda_add.curry(4) }.should raise_error(ArgumentError)
     lambda { lambda { true }.curry(1) }.should raise_error(ArgumentError)
     lambda { lambda {|a, b=nil|}.curry(5) }.should raise_error(ArgumentError)
+    lambda { lambda {|a, &b|}.curry(2) }.should raise_error(ArgumentError)
+    lambda { lambda {|a, b=nil, &c|}.curry(3) }.should raise_error(ArgumentError)
   end
 
   it "calls the curried proc with the arguments if _arity_ arguments have been given" do

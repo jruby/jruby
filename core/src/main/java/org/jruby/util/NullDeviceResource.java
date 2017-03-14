@@ -16,7 +16,7 @@ import java.nio.channels.FileChannel;
 /**
  * Represents a the NUL: device on Windows, which is not a normal file.
  */
-class NullDeviceResource extends AbstractFileResource {
+public class NullDeviceResource extends AbstractFileResource {
     private static final JRubyFile file = new JRubyFile("NUL:");
     private final POSIX posix;
 

@@ -6,7 +6,7 @@ import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.internal.runtime.methods.CompiledIRMetaClassBody;
+import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
@@ -202,10 +202,6 @@ public class IRRuntimeHelpers {
             // that ensures are run, frames/scopes are popped
             // from runtime stacks, etc.
             return ((IRWrappedLambdaReturnValue)exc).returnValue;
-        } else if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
-            // We just unwound all the way up because of a non-local break
-            context.setSavedExceptionInLambda(IRException.BREAK_LocalJumpError.getException(context.runtime));
-            return null;
         } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
             try {
                 // Ignore non-local return processing in non-lambda blocks.
@@ -1240,7 +1236,7 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newCompiledMetaClass(ThreadContext context, MethodHandle handle, IRScope metaClassBody, IRubyObject obj) {
         RubyClass singletonClass = newMetaClassFromIR(context.runtime, metaClassBody, obj);
 
-        return new CompiledIRMetaClassBody(handle, metaClassBody, singletonClass);
+        return new CompiledIRNoProtocolMethod(handle, metaClassBody, singletonClass);
     }
 
     private static RubyClass newMetaClassFromIR(Ruby runtime, IRScope metaClassBody, IRubyObject obj) {

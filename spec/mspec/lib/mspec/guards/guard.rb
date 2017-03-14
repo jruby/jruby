@@ -122,6 +122,8 @@ class SpecGuard
         RUBY_NAME =~ /^ruby/
       when :jruby
         RUBY_NAME =~ /^jruby/
+      when :truffleruby
+        RUBY_NAME =~ /^truffleruby/
       when :ironruby
         RUBY_NAME =~ /^ironruby/
       when :macruby

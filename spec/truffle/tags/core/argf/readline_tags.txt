@@ -1,4 +1,0 @@
-fails:ARGF.readline sets $_ global variable with each line read
-fails:ARGF.readline modifies the files when in place edit mode is on
-fails:ARGF.readline modifies and backups two files when in place edit mode is on
-slow:ARGF.readline reads all lines of stdin

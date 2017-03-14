@@ -422,7 +422,10 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @JRubyMethod(name = "each_slice")
     public IRubyObject each_slice(ThreadContext context, IRubyObject arg, final Block block) {
-        return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "each_slice", arg);
+        int size = (int) RubyNumeric.num2long(arg);
+        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+
+        return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) : enumeratorize(context.runtime, getType(), this, "each_slice", arg);
     }
 
     @Deprecated
@@ -432,7 +435,9 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @JRubyMethod(name = "each_cons")
     public IRubyObject each_cons(ThreadContext context, IRubyObject arg, final Block block) {
-        return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, arg, block) : enumeratorize(context.runtime, getType(), this, "each_cons", arg);
+        int size = (int) RubyNumeric.num2long(arg);
+        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+        return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, size, block) : enumeratorize(context.runtime, getType(), this, "each_cons", arg);
     }
 
     @JRubyMethod

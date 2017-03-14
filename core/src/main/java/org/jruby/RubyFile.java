@@ -817,15 +817,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param args
      * @return Resulting absolute path as a String
      */
-    public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expand_path19(context, recv, args);
+    @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true)
+    public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+        return expandPathInternal(context, recv, args, true, false);
     }
 
-    @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true)
+    @Deprecated
     public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        RubyString path = (RubyString) expandPathInternal(context, recv, args, true, false);
-
-        return path;
+        return expand_path(context, recv, args);
     }
 
 
@@ -2047,9 +2046,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 element = path.getUnicodeValue();
             }
 
-            chomp(buffer);
-            if (i > 0 && !startsWith(element, separator)) {
-                buffer.append(separator);
+            int trailingDelimiterIndex = chomp(buffer);
+            boolean trailingDelimiter = trailingDelimiterIndex != -1;
+            boolean leadingDelimiter = element.length() > 0 && isDirSeparator(element.charAt(0));
+            if (i > 0) {
+                if (leadingDelimiter) {
+                    // both present delete trailing delimiter(s)
+                    if (trailingDelimiter) buffer.delete(trailingDelimiterIndex, buffer.length());
+                } else if (!trailingDelimiter) { // no edge delimiters are present add supplied separator
+                    buffer.append(separator);
+                }
             }
             buffer.append(element);
         }
@@ -2078,17 +2084,28 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    private static void chomp(final StringBuilder buffer) {
-        int lastIndex = buffer.length() - 1;
+    // FIXME: MRI and JRuby are both broken here since it does not actually look up
+    // File::{SEPARATOR,ALT_SEPARATOR} but merely hardcodes depending on whether we are on Windows.
+    private static boolean isDirSeparator(char c) {
+        return c == '/' || Platform.IS_WINDOWS && c == '\\';
+    }
 
-        while ( lastIndex >= 0 ) {
-            char c = buffer.charAt(lastIndex);
-            if ( c == '/' || c == '\\' ) {
-                buffer.setLength(lastIndex--);
-                continue;
+    // Return the last index before where there is a delimeter.  Otherwise -1.
+    // If there are non-consecutive delimeters at the end we will return the
+    // first non-delimiter character.
+    private static int chomp(final StringBuilder buffer) {
+        boolean found = false;
+
+        for (int lastIndex = buffer.length() - 1; lastIndex >= 0; lastIndex--) {
+            if (!isDirSeparator(buffer.charAt(lastIndex))) {
+                if (found) return lastIndex + 1;
+                break;
             }
-            break;
+
+            found = true;
         }
+
+        return found ? 0 : -1;
     }
 
     // String.startsWith for a CharSequence

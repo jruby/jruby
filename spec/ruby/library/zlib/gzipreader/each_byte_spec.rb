@@ -22,6 +22,22 @@ describe "GzipReader#each_byte" do
     ScratchPad.recorded.should == [49, 50, 51, 52, 53, 97, 98, 99, 100, 101]
   end
 
+  it "returns an enumerator, which yields each byte in the stream, when no block is passed" do
+    gz = Zlib::GzipReader.new @io
+    enum = gz.each_byte
+
+    ScratchPad.record []
+    while true
+      begin
+        ScratchPad << enum.next
+      rescue StopIteration
+        break
+      end
+    end
+
+    ScratchPad.recorded.should == [49, 50, 51, 52, 53, 97, 98, 99, 100, 101]
+  end
+
   it "increments position before calling the block" do
     gz = Zlib::GzipReader.new @io
 

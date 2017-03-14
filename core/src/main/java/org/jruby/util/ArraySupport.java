@@ -51,9 +51,13 @@ public abstract class ArraySupport {
     public static void copy(Object[] src, Object[] dst, int dstOff, final int length) {
         switch (length) {
             case 0: return;
-            case 1: dst[dstOff] = src[0]; return;
-            case 2: dst[dstOff] = src[0]; dst[++dstOff] = src[1]; return;
-            case 3: dst[dstOff] = src[0]; dst[++dstOff] = src[1]; dst[++dstOff] = src[2]; return;
+            case 1:
+                dst[dstOff] = src[0]; return;
+            // NOTE: these won't handle src == dst in all cases, for now this is intentional - do not call with src == dst!
+            case 2: assert src != dst;
+                dst[dstOff] = src[0]; dst[++dstOff] = src[1]; return;
+            case 3: assert src != dst;
+                dst[dstOff] = src[0]; dst[++dstOff] = src[1]; dst[++dstOff] = src[2]; return;
         }
         System.arraycopy(src, 0, dst, dstOff, length);
     }
@@ -61,9 +65,13 @@ public abstract class ArraySupport {
     public static void copy(Object[] src, int srcOff, Object[] dst, int dstOff, final int length) {
         switch (length) {
             case 0: return;
-            case 1: dst[dstOff] = src[srcOff]; return;
-            case 2: dst[dstOff] = src[srcOff]; dst[++dstOff] = src[srcOff + 1]; return;
-            case 3: dst[dstOff] = src[srcOff]; dst[++dstOff] = src[srcOff + 1]; dst[++dstOff] = src[srcOff + 2]; return;
+            case 1:
+                dst[dstOff] = src[srcOff]; return;
+            // NOTE: these won't handle src == dst in all cases, for now this is intentional - do not call with src == dst!
+            case 2: assert src != dst;
+                dst[dstOff] = src[srcOff]; dst[++dstOff] = src[srcOff + 1]; return;
+            case 3: assert src != dst;
+                dst[dstOff] = src[srcOff]; dst[++dstOff] = src[srcOff + 1]; dst[++dstOff] = src[srcOff + 2]; return;
         }
         System.arraycopy(src, srcOff, dst, dstOff, length);
     }

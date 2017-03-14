@@ -67,30 +67,7 @@ module Enumerable
     raise ArgumentError.new("missing block") unless block
 
     Enumerator.new do |enum|
-      ary = nil
-      last_after = nil
-      if size == 1
-        each {|x| enum.yield [x]}
-      else
-        each_cons(2) do |before, after|
-          last_after = after
-          match = block.call before, after
-
-          ary ||= []
-          if match
-            ary << before
-            enum.yield ary
-            ary = []
-          else
-            ary << before
-          end
-        end
-
-        unless ary.nil?
-          ary << last_after
-          enum.yield ary
-        end
-      end
+      __slicey_chunky(false, enum, block)
     end
   end
   
@@ -98,6 +75,14 @@ module Enumerable
     raise ArgumentError.new("missing block") unless block
 
     Enumerator.new do |enum|
+      __slicey_chunky(true, enum, block)
+    end
+  end
+
+  def __slicey_chunky(invert, enum, block)
+    if respond_to?(:size) && size == 1
+      each {|x| enum.yield [x]}
+    else
       ary = nil
       last_after = nil
       each_cons(2) do |before, after|
@@ -105,12 +90,12 @@ module Enumerable
         match = block.call before, after
 
         ary ||= []
-        if match
-          ary << before
-        else
+        if invert ? !match : match
           ary << before
           enum.yield ary
           ary = []
+        else
+          ary << before
         end
       end
 
@@ -120,6 +105,7 @@ module Enumerable
       end
     end
   end
+  private :__slicey_chunky
 
   def lazy
     klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8

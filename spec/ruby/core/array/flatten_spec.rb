@@ -81,6 +81,7 @@ describe "Array#flatten" do
     ArraySpecs::MyArray[].flatten.should be_an_instance_of(ArraySpecs::MyArray)
     ArraySpecs::MyArray[1, 2, 3].flatten.should be_an_instance_of(ArraySpecs::MyArray)
     ArraySpecs::MyArray[1, [2], 3].flatten.should be_an_instance_of(ArraySpecs::MyArray)
+    ArraySpecs::MyArray[1, [2, 3], 4].flatten.should == ArraySpecs::MyArray[1, 2, 3, 4]
     [ArraySpecs::MyArray[1, 2, 3]].flatten.should be_an_instance_of(Array)
   end
 

@@ -35,15 +35,13 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
-import org.jruby.FlagRegistry;
+import org.jruby.ObjectFlags;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
@@ -56,8 +54,8 @@ import java.util.Collections;
 import java.util.List;
 
 public final class StringSupport {
-    public static final int CR_7BIT_F    = Constants.CR_7BIT_F;
-    public static final int CR_VALID_F   = Constants.CR_VALID_F;
+    public static final int CR_7BIT_F    = ObjectFlags.CR_7BIT_F;
+    public static final int CR_VALID_F   = ObjectFlags.CR_VALID_F;
     public static final int CR_UNKNOWN   = 0;
 
     // We hardcode these so they can be used in a switch below. The assert verifies they match FlagRegistry's value.

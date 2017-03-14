@@ -43,8 +43,8 @@ def compile_extension(name)
   elsif RUBY_NAME == "maglev"
     require 'mkmf'
     hdrdir = $hdrdir
-  elsif RUBY_NAME == 'jruby+truffle'
-    return compile_jruby_truffle_extconf_make(name, path, objdir)
+  elsif RUBY_NAME == 'truffleruby'
+    return compile_truffleruby_extconf_make(name, path, objdir)
   else
     raise "Don't know how to build C extensions with #{RUBY_NAME}"
   end
@@ -86,8 +86,9 @@ def compile_extension(name)
   ldshared += " #{RbConfig::CONFIG["ARCH_FLAG"]}" if RbConfig::CONFIG["ARCH_FLAG"]
   libpath   = "-L#{path}"
   libs      = RbConfig::CONFIG["LIBS"]
-  dldflags  = "#{RbConfig::CONFIG["LDFLAGS"]} #{RbConfig::CONFIG["DLDFLAGS"]}"
+  dldflags  = "#{RbConfig::CONFIG["LDFLAGS"]} #{RbConfig::CONFIG["DLDFLAGS"]} #{RbConfig::CONFIG["EXTDLDFLAGS"]}"
   dldflags.sub!(/-Wl,-soname,\S+/, '')
+  dldflags.sub!("$(TARGET_ENTRY)", "Init_#{ext}")
 
   link_cmd = "#{ldshared} #{obj} #{libpath} #{dldflags} #{libs} -o #{lib}"
   output = `#{link_cmd}`
@@ -102,7 +103,7 @@ ensure
   ENV[preloadenv] = preload if preloadenv
 end
 
-def compile_extension_jruby_truffle(name)
+def compile_extension_truffleruby(name)
   sulong_config_file = File.join(extension_path, '.jruby-cext-build.yml')
   output_file = File.join(object_path, "#{name}_spec.#{RbConfig::CONFIG['DLEXT']}")
 
@@ -120,7 +121,7 @@ ensure
   File.delete(sulong_config_file) if File.exist?(sulong_config_file)
 end
 
-def compile_jruby_truffle_extconf_make(name, path, objdir)
+def compile_truffleruby_extconf_make(name, path, objdir)
   ext       = "#{name}_spec"
   file      = "#{ext}.c"
   source    = "#{path}/#{file}"
@@ -129,7 +130,7 @@ def compile_jruby_truffle_extconf_make(name, path, objdir)
   begin
     copy =  "#{temp_dir}/#{file}"
     FileUtils.cp "#{path}/rubyspec.h", temp_dir
-    FileUtils.cp "#{path}/jruby_truffle.h", temp_dir
+    FileUtils.cp "#{path}/truffleruby.h", temp_dir
     FileUtils.cp source, copy
     extconf_src = "require 'mkmf'\n" +
                   "create_makefile('#{ext}', '#{temp_dir}')"
@@ -148,6 +149,11 @@ end
 
 def load_extension(name)
   require compile_extension(name)
+rescue LoadError
+  if %r{/usr/sbin/execerror ruby "\(ld 3 1 main ([/a-zA-Z0-9_\-.]+_spec\.so)"} =~ $!.message
+    system('/usr/sbin/execerror', "#{RbConfig::CONFIG["bindir"]}/ruby", "(ld 3 1 main #{$1}")
+  end
+  raise
 end
 
 # Constants

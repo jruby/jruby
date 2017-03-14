@@ -442,6 +442,8 @@ describe "A nested method definition" do
   it "creates a class method when evaluated in a class method" do
     class DefSpecNested
       class << self
+        # cleanup
+        remove_method :a_class_method if method_defined? :a_class_method
         def create_class_method
           def a_class_method;self;end
           a_class_method

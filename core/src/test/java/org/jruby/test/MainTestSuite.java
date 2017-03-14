@@ -1,10 +1,11 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -18,7 +19,7 @@
  * Copyright (C) 2002 uid41545 <uid41545@users.sourceforge.net>
  * Copyright (C) 2002 Don Schwartz <schwardo@users.sourceforge.net>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- *
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -93,6 +94,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRubyRational.class);
         suite.addTestSuite(TestRecursiveCheck.class);
         suite.addTestSuite(TestEncodingAPI.class);
+        suite.addTestSuite(TestSignature.class);
         // Disabled test due to difficulty of making WeakRef logic deterministic
 //        suite.addTestSuite(TestRegexpCache.class);
         return suite;

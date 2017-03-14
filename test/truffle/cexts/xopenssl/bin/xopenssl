@@ -1,5 +1,0 @@
-#!/usr/bin/env ruby
-
-require 'xopenssl'
-
-puts XOpenSSL.md5('hello')

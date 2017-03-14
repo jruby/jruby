@@ -1,6 +1,0 @@
-fails:File.birthtime raises an NotImplementedError
-fails:File#birthtime raises an NotImplementedError
-fails:File.birthtime returns the birth time for the named file as a Time object
-fails:File.birthtime accepts an object that has a #to_path method
-fails:File.birthtime raises an Errno::ENOENT exception if the file is not found
-fails:File#birthtime returns the birth time for self

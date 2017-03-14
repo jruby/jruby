@@ -1,18 +1,31 @@
 class Proc
   def curry(curried_arity = nil)
     if lambda? && curried_arity
-      if arity > 0 && curried_arity != arity
-        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
+      if arity >= 0 && curried_arity != arity
+        raise ArgumentError, "wrong number of arguments (given %i, expected %i)" % [
           curried_arity,
           arity
         ]
       end
 
-      if arity < 0 && curried_arity < (-arity - 1)
-        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
-          curried_arity,
-          -arity - 1
-        ]
+      if arity < -1
+        is_rest, opt = false, 0
+        parameters.each do |arr|
+          case arr[0]
+          when :rest then
+            is_rest = true
+          when :opt then
+            opt += 1
+          end
+        end
+        req = -arity - 1
+        if curried_arity < req || curried_arity > (req + opt) && !is_rest
+          expected = is_rest ?  "#{req}+" : "#{req}..#{req+opt}"
+          raise ArgumentError, "wrong number of arguments (given %i, expected %s)" % [
+                  curried_arity,
+                  expected
+                ]
+        end
       end
     end
 
@@ -40,6 +53,7 @@ class Proc
 
   # Yank the singleton class out of the curried prototype object.
   Curried = JRuby.reference(curried_prototype).meta_class
+  private_constant :Curried
 
   def self.__make_curry_proc__(proc, passed, arity)
     f = __send__((proc.lambda? ? :lambda : :proc)) do |*argv, &passed_proc|

@@ -1,1 +1,0 @@
-fails:File.split does not split a string that contains '\'

@@ -196,7 +196,7 @@ public class MarshalStream extends FilterOutputStream {
         return variables;
     }
 
-    private boolean shouldMarshalEncoding(IRubyObject value) {
+    private static boolean shouldMarshalEncoding(IRubyObject value) {
         if (!(value instanceof MarshalEncoding)) return false;
         return ((MarshalEncoding) value).shouldMarshalEncoding();
     }

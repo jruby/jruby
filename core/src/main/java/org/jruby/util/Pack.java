@@ -786,16 +786,15 @@ public class Pack {
      * @see RubyArray#pack
      **/
     public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
-        Encoding encoding = encodedString.getEncoding();
-        RubyArray result = runtime.newArray();
+        // Encoding encoding = encodedString.getEncoding();
+        final RubyArray result = runtime.newArray();
         // FIXME: potentially could just use ByteList here?
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), encodedString.begin(), encodedString.length());
-        int type = 0;
         int next = safeGet(format);
 
         mainLoop: while (next != 0) {
-            type = next;
+            int type = next;
             next = safeGet(format);
             if (UNPACK_IGNORE_NULL_CODES.indexOf(type) != -1 && next == 0) {
                 next = safeGetIgnoreNull(format);
@@ -813,8 +812,7 @@ public class Pack {
             if (next == '_' || next == '!') {
                 int index = NATIVE_CODES.indexOf(type);
                 if (index == -1) {
-                    throw runtime.newArgumentError("'" + next +
-                            "' allowed only after types " + NATIVE_CODES);
+                    throw runtime.newArgumentError("'" + next + "' allowed only after types " + NATIVE_CODES);
                 }
                 type = MAPPED_CODES.charAt(index);
                 
@@ -825,8 +823,7 @@ public class Pack {
                 next = next == '>' ? BE : LE;
                 int index = ENDIANESS_CODES.indexOf(type + next);
                 if (index == -1) {
-                    throw runtime.newArgumentError("'" + (char)next +
-                            "' allowed only after types sSiIlLqQ");
+                    throw runtime.newArgumentError("'" + (char)next + "' allowed only after types sSiIlLqQ");
                 }
                 type = ENDIANESS_CODES.charAt(index);
                 next = safeGet(format);
@@ -835,7 +832,7 @@ public class Pack {
             }
 
             // How many occurrences of 'type' we want
-            int occurrences = 0;
+            int occurrences;
             if (next == 0) {
                 occurrences = 1;
             } else {
@@ -893,7 +890,7 @@ public class Pack {
                            }
                     }
 
-                    result.append(RubyString.newString(runtime, new ByteList(potential, 0, occurrences, encoding, false)));
+                    result.append(RubyString.newString(runtime, new ByteList(potential, 0, occurrences, ASCIIEncoding.INSTANCE, false)));
                     }
                     break;
                 case 'Z' :
@@ -916,7 +913,7 @@ public class Pack {
                             t++;
                         }
 
-                        result.append(RubyString.newString(runtime, new ByteList(potential, 0, t, encoding, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(potential, 0, t, ASCIIEncoding.INSTANCE, false)));
 
                         // In case when the number of occurences is
                         // explicitly specified, we have to read up
@@ -943,7 +940,7 @@ public class Pack {
                     }
                     byte[] potential = new byte[occurrences];
                     encode.get(potential);
-                    result.append(RubyString.newString(runtime, new ByteList(potential, encoding, false)));
+                    result.append(RubyString.newString(runtime, new ByteList(potential, ASCIIEncoding.INSTANCE, false)));
                     break;
                 case 'b' :
                     {
@@ -960,7 +957,7 @@ public class Pack {
                             }
                             lElem[lCurByte] = (bits & 1) != 0 ? (byte)'1' : (byte)'0';
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, encoding, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, USASCII, false)));
                     }
                     break;
                 case 'B' :
@@ -979,7 +976,7 @@ public class Pack {
                             lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
                         }
 
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, encoding, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false)));
                     }
                     break;
                 case 'h' :
@@ -997,7 +994,7 @@ public class Pack {
                             }
                             lElem[lCurByte] = sHexDigits[bits & 15];
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, encoding, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false)));
                     }
                     break;
                 case 'H' :
@@ -1015,7 +1012,7 @@ public class Pack {
                             }
                             lElem[lCurByte] = sHexDigits[(bits >>> 4) & 15];
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, encoding, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false)));
                     }
                     break;
 
@@ -1083,7 +1080,7 @@ public class Pack {
                             }
                         }
                     }
-                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, encoding, false)));
+                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, ASCIIEncoding.INSTANCE, false)));
                 }
                 break;
 
@@ -1196,12 +1193,13 @@ public class Pack {
                             lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                             lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                             lElem[index++] = (byte)((c << 6 | d) & 255);
+                            a = -1;
                         }
 
                         if (a != -1 && b != -1) {
-                            if (c == -1 && s == '=') {
+                            if (c == -1) {
                                 lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                            } else if(c != -1 && s == '=') {
+                            } else {
                                 lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                                 lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                             }
@@ -1260,8 +1258,7 @@ public class Pack {
                                 // but should use UTF8Encoding facilities
                                 // from Joni, once it starts prefroming
                                 // UTF-8 content validation. 
-                                result.append(
-                                        runtime.newFixnum(utf8Decode(encode)));
+                                result.append(runtime.newFixnum(utf8Decode(encode)));
                             } catch (IllegalArgumentException e) {
                                 throw runtime.newArgumentError(e.getMessage());
                             }

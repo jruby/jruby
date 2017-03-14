@@ -1,1 +1,0 @@
-fails:Socket::Option.new should raise error on unknown level

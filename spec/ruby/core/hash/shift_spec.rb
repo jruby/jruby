@@ -16,6 +16,29 @@ describe "Hash#shift" do
     h.should == {}
   end
 
+  # MRI explicitly implements this behavior
+  it "allows shifting entries while iterating" do
+    h = { a: 1, b: 2, c: 3 }
+    visited = []
+    shifted = []
+    h.each_pair { |k,v|
+      visited << k
+      shifted << h.shift
+    }
+    visited.should == [:a, :b, :c]
+    shifted.should == [[:a, 1], [:b, 2], [:c, 3]]
+    h.should == {}
+  end
+
+  it "calls #default with nil if the Hash is empty" do
+    h = {}
+    def h.default(key)
+      key.should == nil
+      :foo
+    end
+    h.shift.should == :foo
+  end
+
   it "returns nil from an empty hash" do
     {}.shift.should == nil
   end

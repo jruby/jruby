@@ -63,6 +63,12 @@ describe "Hash#reject!" do
     hsh.keys.sort.should == [1,3,5,7,9]
   end
 
+  it "removes all entries if the block is true" do
+    h = { a: 1, b: 2, c: 3 }
+    h.reject! { |k,v| true }.should equal(h)
+    h.should == {}
+  end
+
   it "is equivalent to delete_if if changes are made" do
     hsh = { a: 1 }
     hsh.reject! { |k,v| v < 2 }.should == hsh.dup.delete_if { |k, v| v < 2 }

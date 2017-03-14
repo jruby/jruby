@@ -76,7 +76,7 @@ class BlockJITTask implements Runnable {
                 JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + "." + methodName, "done jitting");
             }
 
-            String jittedName = context.getJittedName();
+            String jittedName = context.getVariableName();
 
             // blocks only have variable-arity
             body.completeBuild(

@@ -1,3 +1,0 @@
-:global
-:static_global
-:extern_global

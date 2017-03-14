@@ -1,1 +1,0 @@
-fails:Enumerable#min_by when called with an argument n without a block returns an enumerator

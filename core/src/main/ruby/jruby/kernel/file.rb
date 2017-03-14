@@ -8,7 +8,7 @@ if org.jruby.platform.Platform::IS_WINDOWS
     # Gracefully bail if FFI is not available
   end
 
-  if defined?(::FFI)
+  if defined?(::FFI::Config)
     module JRuby::Windows
       module File
         module Constants

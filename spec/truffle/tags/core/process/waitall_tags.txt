@@ -1,2 +1,0 @@
-fails:Process.waitall waits for all children
-fails:Process.waitall returns an array of pid/status pairs

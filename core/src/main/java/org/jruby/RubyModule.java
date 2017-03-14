@@ -93,7 +93,6 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
@@ -134,10 +133,10 @@ public class RubyModule extends RubyObject {
     private static final Logger LOG = LoggerFactory.getLogger(RubyModule.class);
     // static { LOG.setDebugEnable(true); } // enable DEBUG output
 
-    public static final int CACHEPROXY_F = Constants.CACHEPROXY_F;
-    public static final int NEEDSIMPL_F = Constants.NEEDSIMPL_F;
-    public static final int REFINED_MODULE_F = Constants.REFINED_MODULE_F;
-    public static final int IS_OVERLAID_F = Constants.IS_OVERLAID_F;
+    public static final int CACHEPROXY_F = ObjectFlags.CACHEPROXY_F;
+    public static final int NEEDSIMPL_F = ObjectFlags.NEEDSIMPL_F;
+    public static final int REFINED_MODULE_F = ObjectFlags.REFINED_MODULE_F;
+    public static final int IS_OVERLAID_F = ObjectFlags.IS_OVERLAID_F;
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override
@@ -300,10 +299,16 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    public MethodHandle getIdTest() {
+        MethodHandle idTest = this.idTest;
+        if (idTest != null) return idTest;
+        return this.idTest = newIdTest();
+    }
+
     protected MethodHandle newIdTest() {
         return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
                 .insert(2,id)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
+                .invoke(testModuleMatch);
     }
 
     /** separate path for MetaClass construction
@@ -313,8 +318,6 @@ public class RubyModule extends RubyObject {
         super(runtime, metaClass, objectSpace);
 
         id = runtime.allocModuleId();
-
-        idTest = newIdTest();
 
         runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
@@ -4505,7 +4508,7 @@ public class RubyModule extends RubyObject {
      * Pre-built test that takes ThreadContext, IRubyObject and checks that the object is a module with the
      * same ID as this one.
      */
-    public final MethodHandle idTest;
+    private MethodHandle idTest;
 
     /**
      * The class/module within whose namespace this class/module resides.
@@ -4790,4 +4793,11 @@ public class RubyModule extends RubyObject {
     private boolean javaProxy = false;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+    /**
+     * A handle for invoking the module ID test, to be reused for all idTest handles below.
+     */
+    private static final MethodHandle testModuleMatch = Binder
+            .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
+            .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
 }

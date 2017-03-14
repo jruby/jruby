@@ -18,12 +18,12 @@ describe "IO#printf" do
     obj.should_receive(:to_str).and_return("%s")
 
     @io.printf obj, "printf"
-    @name.should have_data("printf")
+    File.read(@name).should == "printf"
   end
 
   it "writes the #sprintf formatted string" do
     @io.printf "%d %s", 5, "cookies"
-    @name.should have_data("5 cookies")
+    File.read(@name).should == "5 cookies"
   end
 
   it "raises IOError on closed stream" do

@@ -517,6 +517,7 @@ describe "String#%" do
     ("%1$p" % [10, 5]).should == "10"
     ("%-22p" % 10).should == "10                    "
     ("%*p" % [10, 10]).should == "        10"
+    ("%p" % {capture: 1}).should == "{:capture=>1}"
   end
 
   it "calls inspect on arguments for %p format" do

@@ -76,6 +76,7 @@ import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -352,13 +353,12 @@ public class RubyRational extends RubyNumeric {
     
     private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
         if (a1 instanceof RubyComplex) {
-            RubyComplex a1Complex = (RubyComplex)a1;
-            if (k_exact_p(a1Complex.getImage()) && f_zero_p(context, a1Complex.getImage())) a1 = a1Complex.getReal();            
+            RubyComplex a1c = (RubyComplex) a1;
+            if (k_exact_p(a1c.getImage()) && f_zero_p(context, a1c.getImage())) a1 = a1c.getReal();
         }
-
         if (a2 instanceof RubyComplex) {
-            RubyComplex a2Complex = (RubyComplex)a2;
-            if (k_exact_p(a2Complex.getImage()) && f_zero_p(context, a2Complex.getImage())) a2 = a2Complex.getReal();
+            RubyComplex a2c = (RubyComplex) a2;
+            if (k_exact_p(a2c.getImage()) && f_zero_p(context, a2c.getImage())) a2 = a2c.getReal();
         }
         
         if (a1 instanceof RubyFloat) {
@@ -366,7 +366,7 @@ public class RubyRational extends RubyNumeric {
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
         } else {
-            if (a1.respondsTo("to_r")) {
+            if (a1 instanceof RubyObject && responds_to_to_r(context, a1)) {
                 a1 = f_to_r(context, a1);
             }
         }
@@ -392,6 +392,13 @@ public class RubyRational extends RubyNumeric {
             return newInstance(context, recv, a1, a2);
         }
     }
+
+    private static boolean responds_to_to_r(ThreadContext context, IRubyObject obj) {
+        return respond_to_to_r.respondsTo(context, obj, obj);
+    }
+
+    // TODO: wasn't sure whether to put this on NumericSites, here for now - should move
+    static final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
 
     /** nurat_numerator
      * 

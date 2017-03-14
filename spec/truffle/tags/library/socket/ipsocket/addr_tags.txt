@@ -1,3 +1,0 @@
-fails:Socket::IPSocket#addr returns an array with the socket's information
-fails:Socket::IPSocket#addr returns an address in the array if do_not_reverse_lookup is true
-fails:Socket::IPSocket#addr returns an address in the array if passed false

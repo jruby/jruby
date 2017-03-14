@@ -1,3 +1,5 @@
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 platform_is :windows do
   require 'win32ole'
 
@@ -16,28 +18,28 @@ platform_is :windows do
 
   describe "WIN32OLE_EVENT#on_event with no argument" do
     before :each do
-      @ole    = WIN32OLE.new('InternetExplorer.Application')
-      @ev     = WIN32OLE_EVENT.new(@ole, 'DWebBrowserEvents')
+      @ie     = WIN32OLESpecs.new_ole('InternetExplorer.Application')
+      @ev     = WIN32OLE_EVENT.new(@ie, 'DWebBrowserEvents')
       @event  = ''
       @event2 = ''
       @event3 = ''
-      @ole.StatusBar = true
+      @ie.StatusBar = true
     end
 
     after :each do
-      @ole = nil
+      @ie.Quit
     end
 
     it "sets event handler properly, and the handler is invoked by event loop" do
       @ev.on_event { |*args| default_handler(*args) }
-      @ole.StatusText='hello'
+      @ie.StatusText='hello'
       WIN32OLE_EVENT.message_loop
       @event.should =~ /StatusTextChange/
     end
 
     it "accepts a String argument, sets event handler properly, and the handler is invoked by event loop" do
       @ev.on_event("StatusTextChange") { |*args| @event = 'foo' }
-      @ole.StatusText='hello'
+      @ie.StatusText='hello'
       WIN32OLE_EVENT.message_loop
       @event.should =~ /foo/
     end
@@ -45,18 +47,16 @@ platform_is :windows do
     it "registers multiple event handlers for the same event" do
       @ev.on_event("StatusTextChange") { |*args| default_handler(*args) }
       @ev.on_event("StatusTextChange") { |*args| alternate_handler(*args) }
-      @ole.StatusText= 'hello'
+      @ie.StatusText= 'hello'
       WIN32OLE_EVENT.message_loop
       @event2.should == 'alternate'
     end
 
     it "accepts a Symbol argument, sets event handler properly, and the handler is invoked by event loop" do
       @ev.on_event(:StatusTextChange) { |*args| @event = 'foo' }
-      @ole.StatusText='hello'
+      @ie.StatusText='hello'
       WIN32OLE_EVENT.message_loop
       @event.should =~ /foo/
     end
-
   end
-
 end

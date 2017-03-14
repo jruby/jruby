@@ -243,11 +243,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(meta = true)
     public static RubyBigDecimal _load(ThreadContext context, IRubyObject recv, IRubyObject from) {
-        RubyBigDecimal instance = (RubyBigDecimal) (((RubyClass) recv).allocate());
         String precisionAndValue = from.convertToString().asJavaString();
         String value = precisionAndValue.substring(precisionAndValue.indexOf(":")+1);
-        instance.value = new BigDecimal(value);
-        return instance;
+        return newInstance(context, recv, RubyString.newString(context.runtime, value));
     }
 
     @JRubyMethod(meta = true)
@@ -441,8 +439,16 @@ public class RubyBigDecimal extends RubyNumeric {
     private static RubyBigDecimal getVpValueWithPrec19(ThreadContext context, IRubyObject value, long precision, boolean must) {
         if (value instanceof RubyFloat) {
             if (precision > Long.MAX_VALUE) return cannotBeCoerced(context, value, must);
+            double doubleValue = ((RubyFloat) value).getDoubleValue();
 
-            return new RubyBigDecimal(context.runtime, BigDecimal.valueOf(((RubyFloat) value).getDoubleValue()));
+            if (Double.isInfinite(doubleValue)) {
+                throw context.runtime.newFloatDomainError(doubleValue < 0 ? "-Infinity" : "Infinity");
+            }
+            if (Double.isNaN(doubleValue)) {
+                throw context.runtime.newFloatDomainError("NaN");
+            }
+
+            return new RubyBigDecimal(context.runtime, BigDecimal.valueOf(doubleValue));
         }
         else if (value instanceof RubyRational) {
             if (precision < 0) {
@@ -1353,14 +1359,12 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "round", optional = 2)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        final int scale = args.length > 0 ? num2int(args[0]) : 0;
-
         // Special treatment for BigDecimal::NAN and BigDecimal::INFINITY
         //
         // If round is called without any argument, we should raise a
         // FloatDomainError. Otherwise, we don't have to call round ;
         // we can simply return the number itself.
-        if (scale == 0 && isInfinity()) {
+        if (args.length == 0 && isInfinity()) {
             StringBuilder message = new StringBuilder("Computation results to ");
             message.append('\'').append(callMethod(context, "to_s")).append('\'');
 
@@ -1372,6 +1376,7 @@ public class RubyBigDecimal extends RubyNumeric {
             }
         }
 
+        final int scale = args.length > 0 ? num2int(args[0]) : 0;
         RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(context.runtime, args[1]) : getRoundingMode(context.runtime);
         // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
         final RubyBigDecimal bigDecimal;

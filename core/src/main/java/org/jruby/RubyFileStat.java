@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 
+import jnr.posix.NanosecondFileStat;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
@@ -62,6 +63,7 @@ public class RubyFileStat extends RubyObject {
     private static final int S_IRUGO = (FileStat.S_IRUSR | FileStat.S_IRGRP | FileStat.S_IROTH);
     private static final int S_IWUGO = (FileStat.S_IWUSR | FileStat.S_IWGRP | FileStat.S_IWOTH);
     private static final int S_IXUGO = (FileStat.S_IXUSR | FileStat.S_IXGRP | FileStat.S_IXOTH);
+    public static final int BILLION = 1000000000;
 
     private FileResource file;
     private FileStat stat;
@@ -156,6 +158,9 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "atime")
     public IRubyObject atime() {
         checkInitialized();
+        if (stat instanceof NanosecondFileStat) {
+            return RubyTime.newTimeFromNanoseconds(getRuntime(), stat.atime() * BILLION + ((NanosecondFileStat) stat).aTimeNanoSecs());
+        }
         return getRuntime().newTime(stat.atime() * 1000);
     }
     
@@ -211,6 +216,9 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "ctime")
     public IRubyObject ctime() {
         checkInitialized();
+        if (stat instanceof NanosecondFileStat) {
+            return RubyTime.newTimeFromNanoseconds(getRuntime(), stat.ctime() * BILLION + ((NanosecondFileStat) stat).cTimeNanoSecs());
+        }
         return getRuntime().newTime(stat.ctime() * 1000);
     }
 
@@ -357,19 +365,49 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "mtime")
     public IRubyObject mtime() {
         checkInitialized();
+        if (stat instanceof NanosecondFileStat) {
+            return RubyTime.newTimeFromNanoseconds(getRuntime(), stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs());
+        }
         return getRuntime().newTime(stat.mtime() * 1000);
     }
     
     public IRubyObject mtimeEquals(IRubyObject other) {
-        return getRuntime().newBoolean(stat.mtime() == newFileStat(getRuntime(), other.convertToString().toString(), false).stat.mtime()); 
+        FileStat otherStat = newFileStat(getRuntime(), other.convertToString().toString(), false).stat;
+        boolean equal = stat.mtime() == otherStat.mtime();
+
+        if (stat instanceof NanosecondFileStat && otherStat instanceof NanosecondFileStat) {
+            equal = equal && ((NanosecondFileStat) stat).mTimeNanoSecs() == ((NanosecondFileStat) otherStat).mTimeNanoSecs();
+        }
+
+        return getRuntime().newBoolean(equal);
     }
 
     public IRubyObject mtimeGreaterThan(IRubyObject other) {
-        return getRuntime().newBoolean(stat.mtime() > newFileStat(getRuntime(), other.convertToString().toString(), false).stat.mtime()); 
+        FileStat otherStat = newFileStat(getRuntime(), other.convertToString().toString(), false).stat;
+        boolean gt;
+
+        if (stat instanceof NanosecondFileStat && otherStat instanceof NanosecondFileStat) {
+            gt = (stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs())
+                    > (otherStat.mtime() * BILLION + ((NanosecondFileStat) otherStat).mTimeNanoSecs());
+        } else {
+            gt = stat.mtime() > otherStat.mtime();
+        }
+
+        return getRuntime().newBoolean(gt);
     }
 
     public IRubyObject mtimeLessThan(IRubyObject other) {
-        return getRuntime().newBoolean(stat.mtime() < newFileStat(getRuntime(), other.convertToString().toString(), false).stat.mtime()); 
+        FileStat otherStat = newFileStat(getRuntime(), other.convertToString().toString(), false).stat;
+        boolean lt;
+
+        if (stat instanceof NanosecondFileStat && otherStat instanceof NanosecondFileStat) {
+            lt = (stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs())
+                    < (otherStat.mtime() * BILLION + ((NanosecondFileStat) otherStat).mTimeNanoSecs());
+        } else {
+            lt = stat.mtime() < otherStat.mtime();
+        }
+
+        return getRuntime().newBoolean(lt);
     }
 
     @JRubyMethod(name = "nlink")

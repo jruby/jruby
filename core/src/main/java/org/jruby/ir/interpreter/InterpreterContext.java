@@ -1,5 +1,6 @@
 package org.jruby.ir.interpreter;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -227,5 +228,9 @@ public class InterpreterContext {
         this.engine = engine;
 
         retrieveFlags();
+    }
+
+    public EnumSet<IRFlags> getFlags() {
+        return scope.getFlags();
     }
 }

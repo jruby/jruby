@@ -100,7 +100,14 @@ public class Parser {
                 io = RubyIO.newIO(runtime, Channels.newChannel(content));
             }
             LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io, list, configuration.getDefaultEncoding());
-            return parse(file, lexerSource, blockScope, configuration);
+
+            try {
+                return parse(file, lexerSource, blockScope, configuration);
+            } finally {
+                // In case of GetsLexerSource we actually will dispatch to gets which will increment $.
+                // We do not want that in the case of raw parsing.
+                runtime.setCurrentLine(0);
+            }
         }
     }
 

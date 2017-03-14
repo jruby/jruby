@@ -233,7 +233,7 @@ describe "The if expression" do
     end
 
     it "mimics a sed conditional with a zero-element exclusive-end range" do
-      10.times { |i| ScratchPad << i if (i == 4)...(i == 4) }
+      eval "10.times { |i| ScratchPad << i if (i == 4)...(i == 4) }"
       ScratchPad.recorded.should == [4, 5, 6, 7, 8, 9]
     end
 
@@ -249,13 +249,13 @@ describe "The if expression" do
 
     it "evaluates the first conditions lazily with inclusive-end range" do
       collector = proc { |i| ScratchPad << i }
-      10.times { |i| i if collector[i]...false }
+      eval "10.times { |i| i if collector[i]...false }"
       ScratchPad.recorded.should == [0]
     end
 
     it "evaluates the first conditions lazily with exclusive-end range" do
       collector = proc { |i| ScratchPad << i }
-      10.times { |i| i if collector[i]..false }
+      eval "10.times { |i| i if collector[i]..false }"
       ScratchPad.recorded.should == [0]
     end
 
@@ -282,8 +282,8 @@ describe "The if expression" do
     end
 
     it "keeps flip-flops from interfering" do
-      a = proc { |i| ScratchPad << i if (i == 4)..(i == 7) }
-      b = proc { |i| ScratchPad << i if (i == 4)..(i == 7) }
+      a = eval "proc { |i| ScratchPad << i if (i == 4)..(i == 7) }"
+      b = eval "proc { |i| ScratchPad << i if (i == 4)..(i == 7) }"
       6.times(&a)
       6.times(&b)
       ScratchPad.recorded.should == [4, 5, 4, 5]

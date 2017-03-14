@@ -1,7 +1,14 @@
 package org.jruby.test;
 
 import junit.framework.TestCase;
+import org.jruby.Ruby;
+import org.jruby.RubyException;
+import org.jruby.RubyFloat;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
+import org.jruby.runtime.ThreadContext;
+
+import java.math.BigDecimal;
 
 public class TestRubyBigDecimal extends TestCase {
   public void testFormatWithLeadingPlus() {
@@ -14,6 +21,38 @@ public class TestRubyBigDecimal extends TestCase {
     assertFalse(RubyBigDecimal.formatHasLeadingSpace("+"));
     assertTrue(RubyBigDecimal.formatHasLeadingSpace(" "));
     assertFalse(RubyBigDecimal.formatHasLeadingSpace("1"));
+  }
+
+  public void testGetVpValueWithPrec19ToRaiseFloatDomainErrorExceptionForFloatNAN() {
+    Ruby runtime  = Ruby.newInstance();
+    ThreadContext currentContext = runtime.getCurrentContext();
+
+    RubyBigDecimal decimalValue = new RubyBigDecimal(runtime, new BigDecimal("1"));
+
+    RubyFloat NAN = RubyFloat.newFloat(runtime, RubyFloat.NAN);
+
+    try {
+      decimalValue.op_quo20(currentContext, NAN);
+    } catch (RaiseException re) {
+        RubyException rubyException = re.getException();
+        assertEquals(runtime.getFloatDomainError(), rubyException.getMetaClass());
+    }
+  }
+
+  public void testGetVpValueWithPrec19ToRaiseFloatDomainErrorExceptionForFloatINFINITY() {
+    Ruby runtime  = Ruby.newInstance();
+    ThreadContext currentContext = runtime.getCurrentContext();
+
+    RubyBigDecimal decimalValue = new RubyBigDecimal(runtime, new BigDecimal("1"));
+
+    RubyFloat INFINITY = RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
+
+    try {
+      decimalValue.op_quo20(currentContext, INFINITY);
+    } catch (RaiseException re) {
+      RubyException rubyException = re.getException();
+      assertEquals(runtime.getFloatDomainError(), rubyException.getMetaClass());
+    }
   }
 
   public void testFormatWithFloatingPointNotation() {

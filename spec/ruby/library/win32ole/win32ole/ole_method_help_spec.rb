@@ -1,3 +1,4 @@
+require File.expand_path('../../fixtures/classes', __FILE__)
 require File.expand_path('../shared/ole_method', __FILE__)
 
 platform_is :windows do

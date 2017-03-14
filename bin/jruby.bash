@@ -157,9 +157,6 @@ else
         if [ "$j" == "$JRUBY_HOME"/lib/jruby.jar ]; then
           continue
         fi
-        if [ "$j" == "$JRUBY_HOME"/lib/jruby-truffle.jar ]; then
-          continue
-        fi
         if [ "$j" == "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
           continue
         fi
@@ -188,7 +185,6 @@ declare -a ruby_args
 mode=""
 
 JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
-JAVA_CLASS_JRUBY_TRUFFLE_MAIN=org.jruby.truffle.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
 JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
@@ -245,12 +241,6 @@ do
      # Pass -X... and -X? search options through
      -X*\.\.\.|-X*\?)
         ruby_args=("${ruby_args[@]}" "$1") ;;
-     -Xclassic)
-        unset USING_TRUFFLE
-        ;;
-     -X+T)
-        USING_TRUFFLE="true"
-        ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
         val=${1:2}
@@ -320,12 +310,6 @@ do
     shift
 done
 
-if [[ "$USING_TRUFFLE" != "" ]]; then
-   JRUBY_CP="$JRUBY_HOME/lib/jruby-truffle.jar"
-   java_class=$JAVA_CLASS_JRUBY_TRUFFLE_MAIN
-   ruby_args=("-X+T" "${ruby_args[@]}")
-fi
-
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
 if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
   java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
@@ -368,7 +352,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [[ "$NO_BOOTCLASSPATH" != "" || ("$VERIFY_JRUBY" != "" && -z "$USING_TRUFFLE") ]]; then
+if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
   fi

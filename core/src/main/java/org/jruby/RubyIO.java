@@ -41,9 +41,7 @@ import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.POSIX;
 import org.jcodings.transcode.EConvFlags;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.IOSites;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.util.StringSupport;
@@ -823,7 +821,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
 
             if (!str.isNil() && !noLimit) {
-                fptr.incrementLineno(runtime);
+                fptr.incrementLineno(runtime, this);
             }
         } finally {
             if (locked) fptr.unlock();
@@ -1610,15 +1608,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(required = 1)
     public IRubyObject putc(ThreadContext context, IRubyObject ch) {
-        Ruby runtime = context.runtime;
         IRubyObject str;
         if (ch instanceof RubyString) {
-            str = ((RubyString)ch).substr(runtime, 0, 1);
+            str = ((RubyString)ch).substr(context.runtime, 0, 1);
+        } else {
+            str = RubyString.newStringShared(context.runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[RubyNumeric.num2chr(ch) & 0xFF]);
         }
-        else {
-            str = RubyString.newStringShared(runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[RubyNumeric.num2chr(ch) & 0xFF]);
-        }
-        write(context, str);
+
+        sites(context).write.call(context, this, this, str);
+
         return ch;
     }
 
@@ -1737,11 +1735,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr = getOpenFileChecked();
         boolean locked = fptr.lock();
         try {
-            if (fptr.seek(context, 0L, 0) == -1 && fptr.errno() != null)
-                throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
-            RubyArgsFile.ArgsFileData data = RubyArgsFile.ArgsFileData.getDataFrom(runtime.getArgsFile());
-            if (this == data.currentFile) {
-                data.currentLineNumber -= fptr.getLineNumber();
+            if (fptr.seek(context, 0L, 0) == -1 && fptr.errno() != null) {
+                throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+            }
+
+            if (RubyArgsFile.ArgsFileData.getArgsFileData(runtime).isCurrentFile(this)) {
+                runtime.setCurrentLine(runtime.getCurrentLine() - fptr.getLineNumber());
             }
             fptr.setLineNumber(0);
             if (fptr.readconv != null) {
@@ -3258,7 +3257,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private IRubyObject each_lineInternal(ThreadContext context, IRubyObject[] args, Block block, String name) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, name, args);
 
-        Ruby runtime = context.runtime;
         IRubyObject separator = prepareGetsSeparator(context, args);
 
         ByteListCache cache = new ByteListCache();
@@ -4258,7 +4256,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "try_convert", meta = true)
     public static IRubyObject tryConvert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return sites(context).respond_to_to_io.respondsTo(context, arg, arg, true) ? convertToIO(context, arg) : context.runtime.getNil();
+        return ( arg instanceof RubyObject &&
+                sites(context).respond_to_to_io.respondsTo(context, arg, arg, true) ) ?
+                    convertToIO(context, arg) : context.nil;
     }
 
     private static ByteList getNilByteList(Ruby runtime) {

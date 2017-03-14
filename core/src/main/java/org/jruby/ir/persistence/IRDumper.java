@@ -91,15 +91,9 @@ public class IRDumper extends IRVisitor {
     public void visit(IRScope scope, boolean full, boolean recurse) {
         println("begin " + scope.getScopeType().name() + "<" + scope.getName() + ">");
 
-        println("flags: " + scope.getFlags());
+        InterpreterContext ic = full ? scope.getFullInterpreterContext() : scope.getInterpreterContext();
 
-        InterpreterContext ic;
-
-        if (full) {
-            ic = scope.getFullInterpreterContext();
-        } else {
-            ic = scope.getInterpreterContext();
-        }
+        println("flags: " + ic.getFlags());
 
         if (ic.getStaticScope().getSignature() == null) {
             println(Signature.NO_ARGUMENTS);

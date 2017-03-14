@@ -283,8 +283,6 @@ module ConstantSpecs
 
   CS_PRIVATE = :cs_private
   private_constant :CS_PRIVATE
-
-  autoload :AutoloadedConstant, 'a_file'
 end
 
 include ConstantSpecs::ModuleA

@@ -35,11 +35,11 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
     private void initInstrs() {
         instrs = new ArrayList<>();
-        if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_VISUALIZER) {
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_DEBUG_IGV != null) {
             IRManager irManager = cfg.getManager();
             InstructionsListener listener = irManager.getInstructionsListener();
             if (listener != null) {
-                instrs = new InstructionsListenerDecorator(instrs, listener);
+                instrs = new InstructionsListenerDecorator(this, instrs, listener);
             }
         }
     }

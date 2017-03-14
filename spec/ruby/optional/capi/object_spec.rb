@@ -173,6 +173,15 @@ describe "CApiObject" do
   end
 
   describe "rb_require" do
+    before :each do
+      @saved_loaded_features = $LOADED_FEATURES.dup
+    end
+
+    after :each do
+      $foo = nil
+      $LOADED_FEATURES.replace @saved_loaded_features
+    end
+
     it "requires a ruby file" do
       $foo.should == nil
       $:.unshift File.dirname(__FILE__)

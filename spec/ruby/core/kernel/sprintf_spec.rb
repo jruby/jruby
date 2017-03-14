@@ -78,6 +78,10 @@ describe "Kernel#sprintf" do
     it "raises KeyError when no matching key is in second argument" do
       lambda { sprintf("%<foo>f", {}) }.should raise_error(KeyError)
     end
+
+    it "raises ArgumentError if missing second named argument" do
+      lambda { sprintf("%<key><foo>d", {key: 1}) }.should raise_error(ArgumentError)
+    end
   end
 
   describe "with negative values" do

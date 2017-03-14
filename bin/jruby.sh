@@ -118,9 +118,6 @@ else
         if [ "$j" == "$JRUBY_HOME"/lib/jruby.jar ]; then
           continue
         fi
-        if [ "$j" == "$JRUBY_HOME"/lib/jruby-truffle.jar ]; then
-          continue
-        fi
         if [ "$j" == "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
           continue
         fi

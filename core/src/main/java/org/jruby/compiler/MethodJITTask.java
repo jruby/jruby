@@ -112,8 +112,8 @@ class MethodJITTask implements Runnable {
                 JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), className + '.' + methodName, "done jitting");
             }
 
-            final String jittedName = context.getJittedName();
-            MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, context.getNativeSignature(-1));
+            String variableName = context.getVariableName();
+            MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
             IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
 
             if (signatures.size() == 0) {
@@ -132,7 +132,7 @@ class MethodJITTask implements Runnable {
                     method.completeBuild(
                             new CompiledIRMethod(
                                     variable,
-                                    JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, entry.getValue()),
+                                    JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()),
                                     entry.getKey(),
                                     method.getIRScope(),
                                     method.getVisibility(),

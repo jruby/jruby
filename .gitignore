@@ -83,8 +83,6 @@ test/pom.xml
 test/prawn
 test/rails
 test/testapp/testapp
-test/truffle/*.methods
-test/truffle/integration/gem-testing
 tool/nailgun/Makefile
 tool/nailgun/config.log
 tool/nailgun/config.status
@@ -92,7 +90,6 @@ tool/nailgun/ng
 reference.txt
 rubyspec_temp
 .polyglot.pom.rb
-test/truffle/cexts/**/Makefile
 
 # binaries
 !bin/gem
@@ -133,11 +130,6 @@ build.eclipse
 /mx.imports
 /RUBY.dist
 /RUBY-TEST.dist
-
-# Truffle findbugs
-truffle-findbugs-report.html
-findbugs-noUpdateChecks-3.0.0.tar.gz
-findbugs-3.0.0
 
 # Vagrant
 .vagrant

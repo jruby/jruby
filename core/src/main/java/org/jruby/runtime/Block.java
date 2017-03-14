@@ -192,6 +192,15 @@ public class Block {
         return newBlock;
     }
 
+    public Block cloneBlockAndBinding() {
+        Block newBlock = new Block(body, binding.clone());
+
+        newBlock.type = type;
+        newBlock.escapeBlock = this;
+
+        return newBlock;
+    }
+
     public Block cloneBlockAndFrame() {
         Binding oldBinding = binding;
         Binding binding = new Binding(
@@ -213,6 +222,16 @@ public class Block {
 
     public Block cloneBlockForEval(IRubyObject self, EvalType evalType) {
         Block block = cloneBlock();
+
+        block.getBinding().setSelf(self);
+        block.getBinding().getFrame().setSelf(self);
+        block.setEvalType(evalType);
+
+        return block;
+    }
+
+    public Block deepCloneBlockForEval(IRubyObject self, EvalType evalType) {
+        Block block = cloneBlockAndBinding();
 
         block.getBinding().setSelf(self);
         block.getBinding().getFrame().setSelf(self);

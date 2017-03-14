@@ -68,6 +68,37 @@ describe "The break statement in a lambda" do
     @program = BreakSpecs::Lambda.new
   end
 
+  it "returns from the lambda" do
+    l = lambda {
+      ScratchPad << :before
+      break :foo
+      ScratchPad << :after
+    }
+    l.call.should == :foo
+    ScratchPad.recorded.should == [:before]
+  end
+
+  it "returns from the call site if the lambda is passed as a block" do
+    def mid(&b)
+      lambda {
+        ScratchPad << :before
+        b.call
+        ScratchPad << :unreachable1
+      }.call
+      ScratchPad << :unreachable2
+    end
+
+    result = [1].each do |e|
+      mid {
+        break # This breaks from mid
+        ScratchPad << :unreachable3
+      }
+      ScratchPad << :after
+    end
+    result.should == [1]
+    ScratchPad.recorded.should == [:before, :after]
+  end
+
   describe "when the invocation of the scope creating the lambda is still active" do
     it "returns nil when not passed an argument" do
       @program.break_in_defining_scope false

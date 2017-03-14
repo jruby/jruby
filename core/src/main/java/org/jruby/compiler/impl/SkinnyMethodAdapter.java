@@ -563,33 +563,41 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
         getMethodVisitor().visitCode();
         getMethodVisitor().visitLabel(start);
     }
-    
+
+    static final Runnable NO_LOCALS = new Runnable() { public void run() { /* no-op */ } };
+
     public void end() {
-        end(new Runnable() {
-            public void run() {
-            }
-        });
+        end(NO_LOCALS);
     }
 
     public void end(Runnable locals) {
-        if (DEBUG) {
-            PrintWriter pw = new PrintWriter(System.out);
-            String className = "(unknown class)";
-            if (cv instanceof ClassWriter) {
-                className = new ClassReader(((ClassWriter)cv).toByteArray()).getClassName();
-            }
-            if (name != null) {
-                pw.write("*** Dumping " + className + "." + name + " ***\n");
-            } else {
-                pw.write("*** Dumping ***\n");
-            }
-            printer.print(pw);
-            pw.flush();
-        }
+        if (DEBUG) printByteCode(getClassName());
         getMethodVisitor().visitLabel(end);
         locals.run();
         getMethodVisitor().visitMaxs(1, 1);
         getMethodVisitor().visitEnd();
+    }
+
+    private String getClassName() {
+        if (cv instanceof ClassWriter) {
+            return new ClassReader(((ClassWriter) cv).toByteArray()).getClassName();
+        }
+        return "(unknown class)";
+    }
+
+    private PrintWriter outDebugWriter() {
+        return new PrintWriter(System.out);
+    }
+
+    private void printByteCode(final String className) {
+        PrintWriter pw = outDebugWriter();
+        if (name != null) {
+            pw.write("*** Dumping " + className + '.' + name + " ***\n");
+        } else {
+            pw.write("*** Dumping ***\n");
+        }
+        if (printer != null) printer.print(pw);
+        pw.flush();
     }
 
     public void local(int index, String name, Class type) {

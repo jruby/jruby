@@ -1,4 +1,0 @@
-fails:Addrinfo#ipv4_private? for an ipv4 socket returns true for a private address
-fails:Addrinfo#ipv4_private? for an ipv4 socket returns false for a public address
-fails:Addrinfo#ipv4_private? for an ipv6 socket returns false
-fails:Addrinfo#ipv4_private? for a unix socket returns false

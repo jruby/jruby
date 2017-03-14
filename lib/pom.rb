@@ -26,14 +26,14 @@ end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.18' ),
+   ImportedGem.new( 'jruby-openssl', '0.9.20' ),
    ImportedGem.new( 'jruby-readline', '1.1.1' ),
    ImportedGem.new( 'rake', '${rake.version}' ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
    ImportedGem.new( 'minitest', '${minitest.version}' ),
    ImportedGem.new( 'test-unit', '${test-unit.version}' ),
    ImportedGem.new( 'power_assert', '${power_assert.version}' ),
-   ImportedGem.new( 'psych', '2.2.2' ),
+   ImportedGem.new( 'psych', '2.2.4' ),
    ImportedGem.new( 'json', '${json.version}' ),
    ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
    ImportedGem.new( 'racc', '${racc.version}'),
@@ -293,7 +293,7 @@ project 'JRuby Lib Setup' do
 
     resource do
       directory '${basedir}/..'
-      includes 'bin/ast*', 'bin/gem*', 'bin/irb*', 'bin/jgem*', 'bin/jirb*', 'bin/jruby*', 'bin/rake*', 'bin/ri*', 'bin/rdoc*', 'bin/testrb*', 'lib/ruby/include/**', 'lib/ruby/stdlib/**', 'lib/ruby/truffle/**'
+      includes 'bin/ast*', 'bin/gem*', 'bin/irb*', 'bin/jgem*', 'bin/jirb*', 'bin/jruby*', 'bin/rake*', 'bin/ri*', 'bin/rdoc*', 'bin/testrb*', 'lib/ruby/include/**', 'lib/ruby/stdlib/**'
       excludes 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*',
         'lib/ruby/stdlib/rubygems/defaults/jruby_native.rb',
         'lib/ruby/stdlib/gauntlet*.rb' # gauntlet_rdoc.rb, gauntlet_rubygems.rb

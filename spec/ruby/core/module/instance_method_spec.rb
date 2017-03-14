@@ -62,11 +62,12 @@ describe "Module#instance_method" do
   end
 
   it "raises a NameError if the method has been undefined" do
-    ModuleSpecs::InstanceMethChild.send :undef_method, :foo
+    child = Class.new(ModuleSpecs::InstanceMeth)
+    child.send :undef_method, :foo
     um = ModuleSpecs::InstanceMeth.instance_method(:foo)
     um.should == @parent_um
     lambda do
-      ModuleSpecs::InstanceMethChild.instance_method(:foo)
+      child.instance_method(:foo)
     end.should raise_error(NameError)
   end
 

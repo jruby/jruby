@@ -20,9 +20,16 @@ public class OptimizeDelegationPass extends CompilerPass {
     }
 
     @Override
+    public String getShortLabel() {
+        return "Opt Delegation";
+    }
+
+    @Override
     public Object execute(IRScope s, Object... data) {
-        if (s.getFlags().contains(IRFlags.BINDING_HAS_ESCAPED)) return null;
-        if (!s.getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG)) return null;
+        EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();
+
+        if (flags.contains(IRFlags.BINDING_HAS_ESCAPED)) return null;
+        if (!flags.contains(IRFlags.RECEIVES_CLOSURE_ARG)) return null;
 
         optimizeDelegatedVars(s);
 

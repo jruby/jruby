@@ -1,8 +1,0 @@
-fails:Socket::Constants defines socket types
-fails:Socket::Constants defines protocol families
-fails:Socket::Constants defines address families
-fails:Socket::Constants defines send/receive options
-fails:Socket::Constants defines socket level options
-fails:Socket::Constants defines socket options
-fails:Socket::Constants defines multicast options
-fails:Socket::Constants defines TCP options

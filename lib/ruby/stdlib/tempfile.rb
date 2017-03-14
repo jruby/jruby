@@ -32,18 +32,11 @@ end
 #      ... do something with f ...
 #   end
 #
-def Tempfile.create(basename, *rest)
+def Tempfile.create(basename, tmpdir=nil, mode: 0, **options)
   tmpfile = nil
-  Dir::Tmpname.create(basename, *rest) do |tmpname, n, opts|
-    mode = File::RDWR|File::CREAT|File::EXCL
-    perm = 0600
-    if opts
-      mode |= opts.delete(:mode) || 0
-      opts[:perm] = perm
-      perm = nil
-    else
-      opts = perm
-    end
+  Dir::Tmpname.create(basename, tmpdir, options) do |tmpname, n, opts|
+    mode |= File::RDWR|File::CREAT|File::EXCL
+    opts[:perm] = 0600
     tmpfile = File.open(tmpname, mode, opts)
   end
   if block_given?

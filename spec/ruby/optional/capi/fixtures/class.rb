@@ -5,9 +5,6 @@ class CApiClassSpecs
     end
   end
 
-  class IncludesM
-  end
-
   class Alloc
     attr_reader :initialized
     attr_reader :arguments

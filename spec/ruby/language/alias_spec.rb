@@ -131,9 +131,8 @@ describe "The alias keyword" do
   end
 
   it "operates on methods with splat arguments defined in a superclass" do
-    class AliasObject3;end
-    class Sub3 < AliasObject3;end
-    AliasObject3.class_eval do
+    alias_class = Class.new
+    alias_class.class_eval do
       def test(*args)
         4
       end
@@ -141,11 +140,11 @@ describe "The alias keyword" do
         test_without_check(*args)
       end
     end
-    Sub3.class_eval do
+    sub = Class.new(alias_class) do
       alias test_without_check test
       alias test test_with_check
     end
-    Sub3.new.test(1,2,3,4,5).should == 4
+    sub.new.test(1,2,3,4,5).should == 4
   end
 
   it "operates on methods with splat arguments defined in a superclass using text block for class eval" do

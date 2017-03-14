@@ -169,18 +169,21 @@ describe "A class definition" do
     ClassSpecs::C.class_variables.should == []
     ClassSpecs::C.make_class_variable
     ClassSpecs.string_class_variables(ClassSpecs::C).should == ["@@cvar"]
+    ClassSpecs::C.remove_class_variable :@@cvar
   end
 
   it "allows the definition of class-level instance variables in a class method" do
     ClassSpecs.string_instance_variables(ClassSpecs::C).should_not include("@civ")
     ClassSpecs::C.make_class_instance_variable
     ClassSpecs.string_instance_variables(ClassSpecs::C).should include("@civ")
+    ClassSpecs::C.remove_instance_variable :@civ
   end
 
   it "allows the declaration of class variables in an instance method" do
     ClassSpecs::D.class_variables.should == []
     ClassSpecs::D.new.make_class_variable
     ClassSpecs.string_class_variables(ClassSpecs::D).should == ["@@cvar"]
+    ClassSpecs::D.remove_class_variable :@@cvar
   end
 
   it "allows the definition of instance methods" do
@@ -318,6 +321,7 @@ describe "Reopening a class" do
       end
     end
     ClassSpecs::M.m.should == 1
+    ClassSpecs::L.singleton_class.send(:remove_method, :m)
   end
 end
 
