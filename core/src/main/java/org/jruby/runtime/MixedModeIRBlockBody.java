@@ -40,7 +40,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     public void setEvalType(EvalType evalType) {
-        if (jittedBody == null) this.evalType.set(evalType);
+        if (jittedBody == null) super.setEvalType(evalType);
         else jittedBody.setEvalType(evalType);
     }
 
