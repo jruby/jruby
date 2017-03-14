@@ -880,7 +880,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject dup() {
         Ruby runtime = getRuntime();
 
-        if (isImmediate()) throw runtime.newTypeError("can't dup " + getMetaClass().getName());
+        if (isImmediate()) {
+            return this;
+        }
 
         IRubyObject dup = getMetaClass().getRealClass().allocate();
         if (isTaint()) dup.setTaint(true);
@@ -974,7 +976,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     private IRubyObject rbCloneInternal(ThreadContext context, boolean freeze) {
         Ruby runtime = context.runtime;
 
-        if (isImmediate()) throw runtime.newTypeError("can't clone " + getMetaClass().getName());
+        if (isImmediate()) {
+            if (!freeze) {
+                throw runtime.newArgumentError("can't unfreeze " + getType().getName());
+            }
+            return this;
+        }
 
         // We're cloning ourselves, so we know the result should be a RubyObject
         RubyBasicObject clone = (RubyBasicObject) getMetaClass().getRealClass().allocate();
