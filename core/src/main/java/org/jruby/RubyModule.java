@@ -2603,7 +2603,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "include", required = 1) // most common path: include Enumerable
     public RubyModule include(ThreadContext context, IRubyObject module) {
-        if ( ! module.isModule() ) {
+        if (!module.isModule()) {
             throw context.runtime.newTypeError(module, context.runtime.getModule());
         }
         module.callMethod(context, "append_features", this);
