@@ -2582,7 +2582,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_include
      *
      */
-    @JRubyMethod(name = "include", rest = true)
+    @JRubyMethod(name = "include", required = 1, rest = true)
     public RubyModule include(IRubyObject[] modules) {
         ThreadContext context = getRuntime().getCurrentContext();
         // MRI checks all types first:
@@ -3475,7 +3475,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "prepend", rest = true)
+    @JRubyMethod(name = "prepend", required = 1, rest = true)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
         // MRI checks all types first:
         for (int i = modules.length; --i >= 0; ) {
@@ -3492,7 +3492,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "prepended", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "prepended", required = 1)
     public IRubyObject prepended(ThreadContext context, IRubyObject other) {
         return context.nil;
     }
