@@ -121,6 +121,7 @@ public class JavaSites {
         public final CallSite to_s = new FunctionalCachingCallSite("to_s");
         public final CallSite op_match = new FunctionalCachingCallSite("=~");
         public final CallSite match = new FunctionalCachingCallSite("match");
+        public final CallSite match_p = new FunctionalCachingCallSite("match?");
         public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
         public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
         public final CallSite begin = new FunctionalCachingCallSite("begin");
