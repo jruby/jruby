@@ -2199,8 +2199,9 @@ public class RubyLexer extends LexingCommon {
                     break;
                 case 'e' :
                 case 'E' :
-                    if (nondigit != '\0') {
-                        compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
+                    if (nondigit != 0) {
+                        pushback(c);
+                        return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
                     } else if (seen_e) {
                         pushback(c);
                         return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
