@@ -35,6 +35,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -93,15 +94,26 @@ public class RubyRunnable implements ThreadedRunnable {
         // uber-ThreadKill catcher, since it should always just mean "be dead"
         try {
             // Call the thread's code
-            RubyModule frameClass = proc.getBlock().getFrame().getKlazz();
+            Block threadBlock = proc.getBlock();
+            RubyModule frameClass = threadBlock.getFrame().getKlazz();
+            String file = threadBlock.getBinding().getFile();
+            int line = threadBlock.getBinding().getLine();
             try {
-                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_BEGIN, null, frameClass);
+                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_BEGIN, null, frameClass, file, line);
                 IRubyObject result = proc.call(context, arguments);
-                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_END, null, frameClass);
+                if (runtime.hasEventHooks() && runtime.is2_0()) context.trace(RubyEvent.THREAD_END, null, frameClass, file, line);
                 rubyThread.cleanTerminate(result);
             } catch (JumpException.ReturnJump rj) {
                 if (runtime.is1_9()) {
-                    rubyThread.exceptionRaised(rj.buildException(runtime));
+                    // re-push the class, file, and line so the exception has appropriate data (jruby/jruby#3781)
+                    Frame oldFrame = context.preYieldNoScope(threadBlock.getBinding(), frameClass);
+                    ThreadContext.pushBacktrace(context, "(thread " + javaThread.getName(), file, line);
+                    try {
+                        rubyThread.exceptionRaised(rj.buildException(runtime));
+                    } finally {
+                        ThreadContext.popBacktrace(context);
+                        context.postYieldNoScope(oldFrame);
+                    }
                 } else {
                     rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
                 }
