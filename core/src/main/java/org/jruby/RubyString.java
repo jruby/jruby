@@ -1648,6 +1648,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
     }
 
+    @JRubyMethod(name = "match", required = 1, rest = true)
+    public IRubyObject match19(ThreadContext context, IRubyObject[] args, Block block) {
+        if (args.length < 1) {
+            Arity.checkArgumentCount(context, args, 1, 2);
+        }
+        RubyRegexp pattern = getPattern(args[0]);
+        args[0] = this;
+        IRubyObject result = sites(context).match.call(context, pattern, pattern, args);
+        return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
+    }
+
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject _pattern) {
         RubyRegexp pattern = getPattern(_pattern);
@@ -5932,17 +5943,5 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @Deprecated
     public RubyArray split19(ThreadContext context, IRubyObject arg0, boolean useBackref) {
         return splitCommon19(arg0, useBackref, flags, flags, context, useBackref);
-    }
-
-    @Deprecated
-    public IRubyObject match19(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-            case 1:
-                return match19(context, args[0], block);
-            case 2:
-                return match19(context, args[0], args[1], block);
-        }
-        Arity.raiseArgumentError(context.runtime, args, 1, 2);
-        return null; // not reached
     }
 }

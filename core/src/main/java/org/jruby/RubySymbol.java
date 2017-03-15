@@ -430,6 +430,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newShared(context.runtime).match19(context, other, pos, block);
     }
 
+    @JRubyMethod(name = "match", required = 1, rest = true)
+    public IRubyObject match_m(ThreadContext context, IRubyObject[] args, Block block) {
+        return newShared(context.runtime).match19(context, args, block);
+    }
+
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject other) {
         return newShared(context.runtime).match_p(context, other);
