@@ -103,15 +103,13 @@ public class Block {
         //
         // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
         // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
-        EvalType evalType = ((IRBlockBody)body).getEvalType();
-        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, evalType);
+        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, body.getEvalType());
         if (type == Block.Type.LAMBDA) newScope.setLambda(true);
         return newScope;
     }
 
     public EvalType getEvalType() {
-        // SSS FIXME: This is smelly
-        return body instanceof IRBlockBody ? ((IRBlockBody)body).getEvalType() : null;
+        return body.getEvalType();
     }
 
     public void setEvalType(EvalType evalType) {

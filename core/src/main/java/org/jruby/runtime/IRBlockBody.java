@@ -29,8 +29,12 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         return type == null ? EvalType.NONE : type;
     }
 
-    public void setEvalType(EvalType evalType) {
-        this.evalType.set(evalType);
+    public void setEvalType(final EvalType type) {
+        if (type == null || type == EvalType.NONE) {
+            this.evalType.remove();
+        } else {
+            this.evalType.set(type);
+        }
     }
 
     @Override

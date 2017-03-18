@@ -60,7 +60,12 @@ public abstract class BlockBody {
         return signature;
     }
 
+    public EvalType getEvalType()  {
+        return null; // method should be abstract - isn't due compatibility
+    }
+
     public void setEvalType(EvalType evalType) {
+        // NOOP - but "real" block bodies should track their eval-type
     }
 
     public boolean canCallDirect() {
