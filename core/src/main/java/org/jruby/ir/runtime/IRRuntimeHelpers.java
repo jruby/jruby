@@ -194,26 +194,24 @@ public class IRRuntimeHelpers {
         }
     }
 
+    // Are we within the scope where we want to return the value we are passing down the stack?
+    private static boolean inReturnScope(Block.Type blockType, IRReturnJump exception, DynamicScope dynScope) {
+        // blockType == null is any non-block scope but in this case it is always a method based on how we emit instrs.
+        return (blockType == null || inLambda(blockType)) && exception.methodToReturnFrom == dynScope;
+    }
+
     @JIT
     public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
         if (exc instanceof IRWrappedLambdaReturnValue) {
-            // Wrap the return value in an exception object
-            // and push it through the nonlocal return exception paths so
-            // that ensures are run, frames/scopes are popped
-            // from runtime stacks, etc.
-            return ((IRWrappedLambdaReturnValue)exc).returnValue;
-        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
-            try {
-                // Ignore non-local return processing in non-lambda blocks.
-                // Methods have a null blocktype
-                return handleNonlocalReturn(scope, dynScope, exc, blockType);
-            } catch (Throwable e) {
-                context.setSavedExceptionInLambda(e);
-                return null;
-            }
+            // Wrap the return value in an exception object and push it through the nonlocal return exception
+            // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
+            return ((IRWrappedLambdaReturnValue) exc).returnValue;
+        } else if (exc instanceof IRReturnJump && inReturnScope(blockType, (IRReturnJump) exc, dynScope)) {
+            if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
+            return (IRubyObject) ((IRReturnJump) exc).returnValue;
         } else {
             // Propagate the exception
-            context.setSavedExceptionInLambda((Throwable)exc);
+            context.setSavedExceptionInLambda((Throwable) exc);
             return null;
         }
     }
