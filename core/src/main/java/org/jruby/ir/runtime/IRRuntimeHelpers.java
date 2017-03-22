@@ -128,19 +128,11 @@ public class IRRuntimeHelpers {
         // If not in a lambda, check if this was a non-local return
         while (dynScope != null) {
             StaticScope ss = dynScope.getStaticScope();
-            // SSS FIXME: Why is scopeType empty? Looks like this static-scope
-            // was not associated with the AST scope that got converted to IR.
-            //
-            // Ruby code: lambda { Thread.new { return }.join }.call
-            //
-            // To be investigated.
             IRScopeType ssType = ss.getScopeType();
-            if (ssType != null) {
-                if (ssType.isMethodType() ||
-                        (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) ||
-                        (ssType.isClosureType() && dynScope.isLambda())) {
-                    break;
-                }
+            if (ssType.isMethodType() ||
+                    (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) ||
+                    (ssType.isClosureType() && dynScope.isLambda())) {
+                break;
             }
             dynScope = dynScope.getParentScope();
         }
@@ -159,7 +151,7 @@ public class IRRuntimeHelpers {
 
             // If we are in the method scope we are supposed to return from, stop p<ropagating.
             if (rj.methodToReturnFrom == dynScope) {
-                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope + " matching dynscope? " + (rj.methodToReturnFrom == dynScope));
+                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
                 return (IRubyObject) rj.returnValue;
             }
 
