@@ -15,6 +15,8 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRMetaClassBody;
+import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Interp;
@@ -38,8 +40,6 @@ import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
-import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
@@ -126,18 +126,14 @@ public class IRRuntimeHelpers {
         if (IRRuntimeHelpers.inLambda(blockType)) throw new IRWrappedLambdaReturnValue(returnValue);
 
         // If not in a lambda, check if this was a non-local return
-        while (dynScope != null) {
-            StaticScope ss = dynScope.getStaticScope();
-            IRScopeType ssType = ss.getScopeType();
-            if (ssType.isMethodType() ||
-                    (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) ||
-                    (ssType.isClosureType() && dynScope.isLambda())) {
-                break;
-            }
-            dynScope = dynScope.getParentScope();
+        for (; dynScope != null; dynScope = dynScope.getParentScope()) {
+            StaticScope staticScope = dynScope.getStaticScope();
+            IRScope scope = staticScope.getIRScope();
+
+            // 1) method 2) lambda 3) closure (define_method) for zsuper
+            if (scope instanceof IRMethod || (scope instanceof IRClosure && (dynScope.isLambda() || staticScope.isArgumentScope()))) break;
         }
 
-        // methodtoReturnFrom will not be -1 for explicit returns from class/module/sclass bodies
         throw IRReturnJump.create(dynScope, returnValue);
     }
 
