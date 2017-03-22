@@ -80,24 +80,20 @@ public class IRRuntimeHelpers {
     }
 
     public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean maybeLambda, Block.Type blockType) {
-        if (IRRuntimeHelpers.inLambda(blockType)) return;
+        if (IRRuntimeHelpers.inLambda(blockType)) return; // break/return in lambda will return from lambda (no LJE possible).
 
-        StaticScope scope = dynScope.getStaticScope();
-        IRScopeType scopeType = scope.getScopeType();
-        boolean inDefineMethod = false;
-        while (dynScope != null) {
-            StaticScope ss = dynScope.getStaticScope();
-            IRScopeType ssType = ss.getScopeType();
-                if (ssType.isMethodType()) {
-                    break;
-                } else if (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) {
-                    inDefineMethod = true;
-                    break;
-                }
-            dynScope = dynScope.getParentScope();
+        StaticScope entryScope = dynScope.getStaticScope();
+        IRScopeType entryScopeType = entryScope.getScopeType();
+
+        for (; dynScope != null; dynScope = dynScope.getParentScope()) {
+            StaticScope currentScope = dynScope.getStaticScope();
+            IRScopeType currentScopeType = currentScope.getScopeType();
+
+            if (currentScopeType.isMethodType()) break;
+            if (currentScope.isArgumentScope() && currentScopeType.isClosureType() && currentScopeType != IRScopeType.EVAL_SCRIPT) return;
         }
 
-        if (!inDefineMethod && scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT && (maybeLambda || !context.scopeExistsOnCallStack(dynScope))) {
+        if (entryScopeType.isClosureType() && entryScopeType != IRScopeType.EVAL_SCRIPT && (maybeLambda || !context.scopeExistsOnCallStack(dynScope))) {
             // Cannot return from the call that we have long since exited.
             throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
