@@ -87,33 +87,17 @@ public class IRRuntimeHelpers {
         boolean inDefineMethod = false;
         while (dynScope != null) {
             StaticScope ss = dynScope.getStaticScope();
-            // SSS FIXME: Why is scopeType empty? Looks like this static-scope
-            // was not associated with the AST scope that got converted to IR.
-            //
-            // Ruby code: lambda { Thread.new { return }.join }.call
-            //
-            // To be investigated.
             IRScopeType ssType = ss.getScopeType();
-            if (ssType != null) {
                 if (ssType.isMethodType()) {
                     break;
                 } else if (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) {
                     inDefineMethod = true;
                     break;
                 }
-            }
             dynScope = dynScope.getParentScope();
         }
 
-        // SSS FIXME: Why is scopeType empty? Looks like this static-scope
-        // was not associated with the AST scope that got converted to IR.
-        //
-        // Ruby code: lambda { Thread.new { return }.join }.call
-        //
-        // To be investigated.
-        if (   (scopeType == null || (!inDefineMethod && scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT))
-            && (maybeLambda || !context.scopeExistsOnCallStack(dynScope)))
-        {
+        if (!inDefineMethod && scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT && (maybeLambda || !context.scopeExistsOnCallStack(dynScope))) {
             // Cannot return from the call that we have long since exited.
             throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
