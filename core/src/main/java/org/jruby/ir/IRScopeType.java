@@ -12,6 +12,10 @@ public enum IRScopeType {
         return VALUES[ordinal];
     }
 
+    public boolean isEval() {
+        return this == EVAL_SCRIPT;
+    }
+
     public boolean isMethodType() {
         return this == INSTANCE_METHOD || this == CLASS_METHOD;
     }

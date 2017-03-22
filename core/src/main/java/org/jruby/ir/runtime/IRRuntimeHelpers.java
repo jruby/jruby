@@ -157,7 +157,7 @@ public class IRRuntimeHelpers {
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
-            // If we are in the method scope we are supposed to return from, stop propagating.
+            // If we are in the method scope we are supposed to return from, stop p<ropagating.
             if (rj.methodToReturnFrom == dynScope) {
                 if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope + " matching dynscope? " + (rj.methodToReturnFrom == dynScope));
                 return (IRubyObject) rj.returnValue;
@@ -168,30 +168,26 @@ public class IRRuntimeHelpers {
         }
     }
 
+    // Is the current dynamicScope we pass in representing a closure (or eval which is impld internally as closure)?
+    private static IRScopeType ensureScopeIsClosure(ThreadContext context, DynamicScope dynamicScope) {
+        IRScopeType scopeType = dynamicScope.getStaticScope().getScopeType();
+
+        // Error -- breaks can only be initiated in closures
+        if (!scopeType.isClosureType()) throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+
+        return scopeType;
+    }
+
+    // FIXME: When we recompile lambdas we can eliminate this binary code path and we can emit as a NONLOCALRETURN directly.
     public static IRubyObject initiateBreak(ThreadContext context, DynamicScope dynScope, IRubyObject breakValue, Block.Type blockType) throws RuntimeException {
-        if (inLambda(blockType)) {
-            // Wrap the return value in an exception object
-            // and push it through the break exception paths so
-            // that ensures are run, frames/scopes are popped
-            // from runtime stacks, etc.
-            throw new IRWrappedLambdaReturnValue(breakValue);
-        } else {
-            StaticScope scope = dynScope.getStaticScope();
-            IRScopeType scopeType = scope.getScopeType();
-            if (!scopeType.isClosureType()) {
-                // Error -- breaks can only be initiated in closures
-                throw IRException.BREAK_LocalJumpError.getException(context.runtime);
-            }
+        // Wrap the return value in an exception object and push it through the break exception
+        // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
+        if (inLambda(blockType)) throw new IRWrappedLambdaReturnValue(breakValue);
 
-            IRBreakJump bj = IRBreakJump.create(dynScope.getParentScope(), breakValue);
-            if (scopeType == IRScopeType.EVAL_SCRIPT) {
-                // If we are in an eval, record it so we can account for it
-                bj.breakInEval = true;
-            }
+        IRScopeType scopeType = ensureScopeIsClosure(context, dynScope);
 
-            // Start the process of breaking through the intermediate scopes
-            throw bj;
-        }
+        // Raise a break jump so we can bubble back down the stack to the appropriate place to break from.
+        throw IRBreakJump.create(dynScope.getParentScope(), breakValue, scopeType.isEval()); // weirdly evals are impld as closures...yes yes.
     }
 
     // Are we within the scope where we want to return the value we are passing down the stack?
@@ -240,16 +236,11 @@ public class IRRuntimeHelpers {
 
         IRBreakJump bj = (IRBreakJump)bjExc;
         if (bj.breakInEval) {
-            // If the break was in an eval, we pretend as if it was in the containing scope
-            StaticScope scope = dynScope.getStaticScope();
-            IRScopeType scopeType = scope.getScopeType();
-            if (!scopeType.isClosureType()) {
-                // Error -- breaks can only be initiated in closures
-                throw IRException.BREAK_LocalJumpError.getException(context.runtime);
-            } else {
-                bj.breakInEval = false;
-                throw bj;
-            }
+            // If the break was in an eval, we pretend as if it was in the containing scope.
+            ensureScopeIsClosure(context, dynScope);
+
+            bj.breakInEval = false;
+            throw bj;
         } else if (bj.scopeToReturnTo == dynScope) {
             // Done!! Hurray!
             if (isDebug()) System.out.println("---> Break reached target in scope: " + dynScope);
