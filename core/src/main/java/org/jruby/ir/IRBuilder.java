@@ -3691,12 +3691,14 @@ public class IRBuilder {
         Operand retVal = build(returnNode.getValueNode());
 
         if (scope instanceof IRClosure) {
-            // If 'm' is a block scope, a return returns from the closest enclosing method.
-            // If this happens to be a module body, the runtime throws a local jump error if the
-            // closure is a proc. If the closure is a lambda, then this becomes a normal return.
-            boolean maybeLambda = scope.getNearestMethod() == null;
-            addInstr(new CheckForLJEInstr(maybeLambda));
-            addInstr(new NonlocalReturnInstr(retVal, maybeLambda ? "--none--" : scope.getNearestMethod().getName()));
+            // Closures return behavior has several cases (which depend on runtime state):
+            // 1. closure in method (return). !method (error) except if in define_method (return)
+            // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
+            // 3. migrated closure (LJE) [dynamic]
+            // 4. eval/for (return) [static]
+            boolean notDefinedWithinMethod = scope.getNearestMethod() == null;
+            if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) addInstr(new CheckForLJEInstr(notDefinedWithinMethod));
+            addInstr(new NonlocalReturnInstr(retVal, notDefinedWithinMethod ? "--none--" : scope.getNearestMethod().getName()));
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 

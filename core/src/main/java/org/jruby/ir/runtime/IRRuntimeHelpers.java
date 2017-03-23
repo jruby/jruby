@@ -79,24 +79,28 @@ public class IRRuntimeHelpers {
         return blockType == Block.Type.PROC;
     }
 
-    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean maybeLambda, Block.Type blockType) {
-        if (IRRuntimeHelpers.inLambda(blockType)) return; // break/return in lambda will return from lambda (no LJE possible).
+    // FIXME: ENEBO: If we inline this instr then dynScope will be for the inlined dynscope and that scope could be many things.
+    //   CheckForLJEInstr.clone should convert this as appropriate based on what it is being inlined into.
+    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean notDefinedWithinMethod, Block.Type blockType) {
+        if (inLambda(blockType)) return; // break/return in lambda unconditionally a return.
 
-        StaticScope entryScope = dynScope.getStaticScope();
-        IRScopeType entryScopeType = entryScope.getScopeType();
-
-        for (; dynScope != null; dynScope = dynScope.getParentScope()) {
-            StaticScope currentScope = dynScope.getStaticScope();
-            IRScopeType currentScopeType = currentScope.getScopeType();
-
-            if (currentScopeType.isMethodType()) break;
-            if (currentScope.isArgumentScope() && currentScopeType.isClosureType() && currentScopeType != IRScopeType.EVAL_SCRIPT) return;
-        }
-
-        if (entryScopeType.isClosureType() && entryScopeType != IRScopeType.EVAL_SCRIPT && (maybeLambda || !context.scopeExistsOnCallStack(dynScope))) {
-            // Cannot return from the call that we have long since exited.
+        // Is our proc in something unreturnable (e.g. module/class) or has it migrated (lexical parent method not in stack any more)?
+        if (notDefinedWithinMethod || !context.scopeExistsOnCallStack(getContainingMethodsDynamicScope(dynScope))) {
             throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
+    }
+
+    // Finds dynamic method this proc exists in or null if it is not within one.
+    private static DynamicScope getContainingMethodsDynamicScope(DynamicScope dynScope) {
+        for (; dynScope != null; dynScope = dynScope.getParentScope()) {
+            StaticScope scope = dynScope.getStaticScope();
+            IRScopeType scopeType = scope.getScopeType();
+
+            // We hit a method boundary (actual method or a define_method closure).
+            if (scopeType.isMethodType() || scopeType.isBlock() && scope.isArgumentScope()) return dynScope;
+        }
+
+        return null;
     }
 
     /*
