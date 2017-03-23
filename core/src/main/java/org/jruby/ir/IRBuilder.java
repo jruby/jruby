@@ -3696,9 +3696,9 @@ public class IRBuilder {
             // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
             // 3. migrated closure (LJE) [dynamic]
             // 4. eval/for (return) [static]
-            boolean notDefinedWithinMethod = scope.getNearestMethod() == null;
-            if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) addInstr(new CheckForLJEInstr(notDefinedWithinMethod));
-            addInstr(new NonlocalReturnInstr(retVal, notDefinedWithinMethod ? "--none--" : scope.getNearestMethod().getName()));
+            boolean definedWithinMethod = scope.getNearestMethod() != null;
+            if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) addInstr(new CheckForLJEInstr(definedWithinMethod));
+            addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getName() : "--none--" ));
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 

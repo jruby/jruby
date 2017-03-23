@@ -81,16 +81,23 @@ public class IRRuntimeHelpers {
 
     // FIXME: ENEBO: If we inline this instr then dynScope will be for the inlined dynscope and that scope could be many things.
     //   CheckForLJEInstr.clone should convert this as appropriate based on what it is being inlined into.
-    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean notDefinedWithinMethod, Block.Type blockType) {
+    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean definedWithinMethod, Block.Type blockType) {
         if (inLambda(blockType)) return; // break/return in lambda unconditionally a return.
 
         // Is our proc in something unreturnable (e.g. module/class) or has it migrated (lexical parent method not in stack any more)?
-        if (notDefinedWithinMethod || !context.scopeExistsOnCallStack(getContainingMethodsDynamicScope(dynScope))) {
+        if (!definedWithinMethod || !context.scopeExistsOnCallStack(getContainingMethodsDynamicScope(dynScope))) {
             throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
     }
 
-    // Finds dynamic method this proc exists in or null if it is not within one.
+    // Create a jump for a non-local return which will return from nearest lambda (which may be itself) or method.
+    public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, IRubyObject returnValue) {
+        if (IRRuntimeHelpers.inLambda(blockType)) throw new IRWrappedLambdaReturnValue(returnValue);
+
+        throw IRReturnJump.create(getContainingMethodOrLambdasDynamicScope(dynScope), returnValue);
+    }
+
+    // Finds dynamicscope method this proc exists in or null if it is not within one.
     private static DynamicScope getContainingMethodsDynamicScope(DynamicScope dynScope) {
         for (; dynScope != null; dynScope = dynScope.getParentScope()) {
             StaticScope scope = dynScope.getStaticScope();
@@ -103,22 +110,19 @@ public class IRRuntimeHelpers {
         return null;
     }
 
-    /*
-     * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
-     */
-    public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, IRubyObject returnValue) {
-        if (IRRuntimeHelpers.inLambda(blockType)) throw new IRWrappedLambdaReturnValue(returnValue);
-
+    // Finds dynamicscope method or lambda this proc exists in or null if it is not within one.
+    private static DynamicScope getContainingMethodOrLambdasDynamicScope(DynamicScope dynScope) {
         // If not in a lambda, check if this was a non-local return
         for (; dynScope != null; dynScope = dynScope.getParentScope()) {
             StaticScope staticScope = dynScope.getStaticScope();
             IRScope scope = staticScope.getIRScope();
 
             // 1) method 2) lambda 3) closure (define_method) for zsuper
-            if (scope instanceof IRMethod || (scope instanceof IRClosure && (dynScope.isLambda() || staticScope.isArgumentScope()))) break;
+            if (scope instanceof IRMethod ||
+                    (scope instanceof IRClosure && (dynScope.isLambda() || staticScope.isArgumentScope()))) return dynScope;
         }
 
-        throw IRReturnJump.create(dynScope, returnValue);
+        return null;
     }
 
     @JIT

@@ -1134,7 +1134,7 @@ public class JVMVisitor extends IRVisitor {
     public void CheckForLJEInstr(CheckForLJEInstr checkForljeinstr) {
         jvmMethod().loadContext();
         jvmLoadLocal(DYNAMIC_SCOPE);
-        jvmAdapter().ldc(checkForljeinstr.maybeLambda());
+        jvmAdapter().ldc(checkForljeinstr.isDefinedWithinMethod());
         jvmMethod().loadBlockType();
         jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkForLJE", sig(void.class, ThreadContext.class, DynamicScope.class, boolean.class, Block.Type.class));
     }
