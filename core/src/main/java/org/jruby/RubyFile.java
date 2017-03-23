@@ -1638,32 +1638,42 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             int index = relativePath.indexOf("!/");
             postFix = relativePath.substring(index);
             relativePath = relativePath.substring(0, index);
-        }
-        else if (protocol.find()) {
+        } else if (protocol.find()) {
             preFix = protocol.group();
             int offset = protocol.end();
             String extra = "";
             int index = relativePath.indexOf("file://");
+            boolean classloaderURI = preFix.equals("uri:classloader:") || preFix.equals("classpath:");
+
             if (index >= 0) {
                 index += 7; // "file://".length == 7
                 // chck if its "file:///"
                 if (relativePath.length() > index && relativePath.charAt(index) == '/') {
                     offset += 2; extra = "//";
-                }
-                else {
+                } else {
                     offset += 1; extra = "/";
                 }
+            } else {
+                if (classloaderURI && relativePath.startsWith("//", offset)) {
+                    // on Windows "uri:classloader://home" ends up as "//home" - trying a network drive!
+                    offset += 1; // skip one '/'
+                }
             }
-            else if ( ( preFix.equals("uri:classloader:") || preFix.equals("classpath:") )
-                    && relativePath.startsWith("//", offset) ) {
-                // on Windows "uri:classloader://home" ends up as "//home" - trying a network drive!
-                offset += 1; // skip one '/'
+
+            relativePath = relativePath.substring(offset);
+
+            if (classloaderURI) {
+                String fakePrefix = "/THIS_IS_A_FAKE_PATH_FOR_JRUBY";
+                relativePath = canonicalizePath(fakePrefix + "/" + relativePath).substring(fakePrefix.length());
+            } else {
+                relativePath = canonicalizePath(relativePath);
             }
-            relativePath = canonicalizePath(relativePath.substring(offset));
+
             if (Platform.IS_WINDOWS && !preFix.contains("file:") && startsWithDriveLetterOnWindows(relativePath)) {
                 // this is basically for classpath:/ and uri:classloader:/
                 relativePath = relativePath.substring(2).replace('\\', '/');
             }
+
             return concatStrings(runtime, preFix, extra, relativePath, enc);
         }
 
