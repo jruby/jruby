@@ -660,14 +660,10 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
-        boolean flag = false;
+        boolean defined = frameName != null && frameClass != null &&
+                Helpers.findImplementerIfNecessary(receiver.getMetaClass(), frameClass).getSuperClass().isMethodBound(frameName, false);
 
-        if (frameName != null) {
-            if (frameClass != null) {
-                flag = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), frameClass).getSuperClass().isMethodBound(frameName, false);
-            }
-        }
-        return flag ? definedMessage : context.nil;
+        return defined ? definedMessage : context.nil;
     }
 
     public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
