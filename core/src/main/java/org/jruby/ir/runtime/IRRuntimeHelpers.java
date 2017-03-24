@@ -84,8 +84,11 @@ public class IRRuntimeHelpers {
     public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean definedWithinMethod, Block.Type blockType) {
         if (inLambda(blockType)) return; // break/return in lambda unconditionally a return.
 
+        dynScope = getContainingMethodsDynamicScope(dynScope);
+        boolean inDefineMethod = dynScope != null &&  dynScope.getStaticScope().isArgumentScope() && dynScope.getStaticScope().getScopeType().isBlock();
+
         // Is our proc in something unreturnable (e.g. module/class) or has it migrated (lexical parent method not in stack any more)?
-        if (!definedWithinMethod || !context.scopeExistsOnCallStack(getContainingMethodsDynamicScope(dynScope))) {
+        if (!definedWithinMethod && !inDefineMethod || !context.scopeExistsOnCallStack(dynScope)) {
             throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
     }
