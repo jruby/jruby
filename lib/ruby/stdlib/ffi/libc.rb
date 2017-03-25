@@ -51,10 +51,12 @@ module FFI
       attach_function :unsetenv, [:string], :int
     end
 
-    begin
-      attach_function :clearenv, [], :int
-    rescue FFI::NotFoundError
-      # clearenv is not available on OSX
+    unless FFI::Platform.windows?
+      begin
+        attach_function :clearenv, [], :int
+      rescue FFI::NotFoundError
+        # clearenv is not available on OSX
+      end
     end
 
     # time.h
@@ -80,10 +82,12 @@ module FFI
     attach_function :memcmp, [:buffer_in, :buffer_in, :size_t], :int
     attach_function :memchr, [:buffer_in, :int, :size_t], :pointer
 
-    begin
-      attach_function :memrchr, [:buffer_in, :int, :size_t], :pointer
-    rescue FFI::NotFoundError
-      # memrchr is not available on OSX
+    unless FFI::Platform.windows?
+      begin
+        attach_function :memrchr, [:buffer_in, :int, :size_t], :pointer
+      rescue FFI::NotFoundError
+        # memrchr is not available on OSX
+      end
     end
 
     attach_function :strcpy, [:buffer_out, :string], :pointer
@@ -100,12 +104,14 @@ module FFI
     attach_function :strstr, [:buffer_in, :string], :pointer
     attach_function :strerror, [:int], :string
 
-    begin
-      attach_variable :stdin, :pointer
-      attach_variable :stdout, :pointer
-      attach_variable :stderr, :pointer
-    rescue FFI::NotFoundError
-      # stdin, stdout, stderr are not available on OSX
+    unless FFI::Platform.windows?
+      begin
+        attach_variable :stdin, :pointer
+        attach_variable :stdout, :pointer
+        attach_variable :stderr, :pointer
+      rescue FFI::NotFoundError
+        # stdin, stdout, stderr are not available on OSX
+      end
     end
 
     attach_function :fopen, [:string, :string], :FILE
