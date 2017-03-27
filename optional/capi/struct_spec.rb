@@ -126,4 +126,12 @@ describe "C-API Struct function" do
       i.c.should == 3
     end
   end
+
+  ruby_version_is "2.4" do
+    describe "rb_struct_size" do
+      it "returns the number of struct members" do
+        @s.rb_struct_size(@struct).should == 3
+      end
+    end
+  end
 end

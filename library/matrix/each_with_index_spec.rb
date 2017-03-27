@@ -16,7 +16,7 @@ describe "Matrix#each_with_index" do
 
   it "returns an Enumerator when called without a block" do
     enum = @m.each_with_index
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.to_a.should == @result
   end
 

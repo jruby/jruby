@@ -7,18 +7,29 @@ def ensure_bignum(n)
   n
 end
 
+full_range_longs = (fixnum_max == 2**(0.size * 8 - 1) - 1)
+
 describe "CApiBignumSpecs" do
   before :each do
     @s = CApiBignumSpecs.new
-    @max_long = ensure_bignum(2**(0.size * 8 - 1) - 1)
-    @min_long = ensure_bignum(-@max_long - 1)
-    @max_ulong = ensure_bignum(2**(0.size * 8) - 1)
-  end
+
+    if full_range_longs
+      @max_long = 2**(0.size * 8 - 1) - 1
+      @min_long = -@max_long - 1
+      @max_ulong = ensure_bignum(2**(0.size * 8) - 1)
+    else
+      @max_long = ensure_bignum(2**(0.size * 8 - 1) - 1)
+      @min_long = ensure_bignum(-@max_long - 1)
+      @max_ulong = ensure_bignum(2**(0.size * 8) - 1)
+    end
+end
 
   describe "rb_big2long" do
-    it "converts a Bignum" do
-      @s.rb_big2long(@max_long).should == @max_long
-      @s.rb_big2long(@min_long).should == @min_long
+    unless full_range_longs
+      it "converts a Bignum" do
+        @s.rb_big2long(@max_long).should == @max_long
+        @s.rb_big2long(@min_long).should == @min_long
+      end
     end
 
     it "raises RangeError if passed Bignum overflow long" do
@@ -28,9 +39,11 @@ describe "CApiBignumSpecs" do
   end
 
   describe "rb_big2ll" do
-    it "converts a Bignum" do
-      @s.rb_big2ll(@max_long).should == @max_long
-      @s.rb_big2ll(@min_long).should == @min_long
+    unless full_range_longs
+      it "converts a Bignum" do
+        @s.rb_big2ll(@max_long).should == @max_long
+        @s.rb_big2ll(@min_long).should == @min_long
+      end
     end
 
     it "raises RangeError if passed Bignum overflow long" do
@@ -44,8 +57,10 @@ describe "CApiBignumSpecs" do
       @s.rb_big2ulong(@max_ulong).should == @max_ulong
     end
 
-    it "wraps around if passed a negative bignum" do
-      @s.rb_big2ulong(ensure_bignum(@min_long + 1)).should == -(@min_long - 1)
+    unless full_range_longs
+      it "wraps around if passed a negative bignum" do
+        @s.rb_big2ulong(ensure_bignum(@min_long + 1)).should == -(@min_long - 1)
+      end
     end
 
     it "raises RangeError if passed Bignum overflow long" do
@@ -53,8 +68,10 @@ describe "CApiBignumSpecs" do
       lambda { @s.rb_big2ulong(ensure_bignum(@min_long - 1)) }.should raise_error(RangeError)
     end
 
-    it "wraps around if passed a negative bignum" do
-      @s.rb_big2ulong(ensure_bignum(@min_long)).should == -(@min_long)
+    unless full_range_longs
+      it "wraps around if passed a negative bignum" do
+        @s.rb_big2ulong(ensure_bignum(@min_long)).should == -(@min_long)
+      end
     end
   end
 
@@ -77,11 +94,11 @@ describe "CApiBignumSpecs" do
   describe "rb_big2str" do
 
     it "converts a Bignum to a string with base 10" do
-      @s.rb_big2str(ensure_bignum(4611686018427387904), 10).eql?("4611686018427387904").should == true
+      @s.rb_big2str(ensure_bignum(2**70), 10).eql?("1180591620717411303424").should == true
     end
 
     it "converts a Bignum to a string with a different base" do
-      @s.rb_big2str(ensure_bignum(4611686018427387904), 16).eql?("4000000000000000").should == true
+      @s.rb_big2str(ensure_bignum(2**70), 16).eql?("400000000000000000").should == true
     end
   end
 
@@ -99,6 +116,67 @@ describe "CApiBignumSpecs" do
     it "packs a Bignum into an unsigned long" do
       val = @s.rb_big_pack(@max_ulong)
       val.should == @max_ulong
+    end
+
+    ruby_version_is "2.2" do
+      platform_is wordsize: 64 do
+        it "packs max_ulong into 2 ulongs to allow sign bit" do
+          val = @s.rb_big_pack_length(@max_ulong)
+          val.should == 2
+          val = @s.rb_big_pack_array(@max_ulong, 2)
+          val[0].should == @max_ulong
+          val[1].should == 0
+        end
+
+        it "packs a 72-bit positive Bignum into 2 unsigned longs" do
+          num = 2 ** 71
+          val = @s.rb_big_pack_length(num)
+          val.should == 2
+        end
+
+        it "packs a 72-bit positive Bignum into correct 2 longs" do
+          num = 2 ** 71 + 1
+          val = @s.rb_big_pack_array(num, 2)
+          val[0].should == 1;
+          val[1].should == 0x80;
+        end
+
+        it "packs a 72-bit negative Bignum into correct 2 longs" do
+          num = -(2 ** 71 + 1)
+          val = @s.rb_big_pack_array(num, @s.rb_big_pack_length(num))
+          val[0].should == @max_ulong;
+          val[1].should == @max_ulong - 0x80;
+        end
+
+        it "packs lower order bytes into least significant bytes of longs for positive bignum" do
+          num = 0
+          32.times { |i| num += i << (i * 8) }
+          val = @s.rb_big_pack_array(num, @s.rb_big_pack_length(num))
+          val.size.should == 4
+          32.times do |i|
+            a_long = val[i/8]
+            a_byte = (a_long >> ((i % 8) * 8)) & 0xff
+            a_byte.should ==  i
+          end
+        end
+
+        it "packs lower order bytes into least significant bytes of longs for negative bignum" do
+          num = 0
+          32.times { |i| num += i << (i * 8) }
+          num = -num
+          val = @s.rb_big_pack_array(num, @s.rb_big_pack_length(num))
+          val.size.should == 4
+          expected_bytes = [0x00, 0xff, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
+                            0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
+                            0xef, 0xee, 0xed, 0xec, 0xeb, 0xea, 0xe9, 0xe8,
+                            0xe7, 0xe6, 0xe5, 0xe4, 0xe3, 0xe2, 0xe1, 0xe0 ]
+          32.times do |i|
+            a_long = val[i/8]
+            a_byte = (a_long >> ((i % 8) * 8)) & 0xff
+            a_byte.should == expected_bytes[i]
+          end
+        end
+      end
     end
   end
 

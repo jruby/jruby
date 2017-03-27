@@ -147,7 +147,7 @@ describe "C-API IO function" do
 
     it "raises an error if the IO is closed" do
       @io.close
-      lambda { @o.rb_io_check_writable(@io) }.should raise_error(IOError)
+      lambda { @o.rb_io_check_closed(@io) }.should raise_error(IOError)
     end
   end
 

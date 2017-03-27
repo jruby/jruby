@@ -257,15 +257,15 @@ describe :numeric_step, :shared => true do
 
   describe "when no block is given" do
     it "returns an Enumerator when step is 0" do
-      1.send(@method, *@step_args.call(2, 0)).should be_an_instance_of(enumerator_class)
+      1.send(@method, *@step_args.call(2, 0)).should be_an_instance_of(Enumerator)
     end
 
     it "returns an Enumerator when not passed a block and self > stop" do
-      1.send(@method, *@step_args.call(0, 2)).should be_an_instance_of(enumerator_class)
+      1.send(@method, *@step_args.call(0, 2)).should be_an_instance_of(Enumerator)
     end
 
     it "returns an Enumerator when not passed a block and self < stop" do
-      1.send(@method, *@step_args.call(2, 3)).should be_an_instance_of(enumerator_class)
+      1.send(@method, *@step_args.call(2, 3)).should be_an_instance_of(Enumerator)
     end
 
     it "returns an Enumerator that uses the given step" do
@@ -275,13 +275,13 @@ describe :numeric_step, :shared => true do
     describe "when step is a String" do
       describe "with self and stop as Fixnums" do
         it "returns an Enumerator" do
-          1.send(@method, *@step_args.call(5, "foo")).should be_an_instance_of(enumerator_class)
+          1.send(@method, *@step_args.call(5, "foo")).should be_an_instance_of(Enumerator)
         end
       end
 
       describe "with self and stop as Floats" do
         it "returns an Enumerator" do
-          1.1.send(@method, *@step_args.call(5.1, "foo")).should be_an_instance_of(enumerator_class)
+          1.1.send(@method, *@step_args.call(5.1, "foo")).should be_an_instance_of(Enumerator)
         end
       end
     end

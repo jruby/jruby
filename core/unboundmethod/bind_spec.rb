@@ -21,7 +21,7 @@ describe "UnboundMethod#bind" do
     UnboundMethodSpecs::Mod.instance_method(:from_mod).bind(Object.new).should be_kind_of(Method)
   end
 
-  it "Method returned for obj is equal to one directly returned by obj.method" do
+  it "returns Method returned for obj is equal to one directly returned by obj.method" do
     obj = UnboundMethodSpecs::Methods.new
     @normal_um.bind(obj).should == obj.method(:foo)
   end

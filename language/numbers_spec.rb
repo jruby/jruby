@@ -45,6 +45,11 @@ describe "A number literal" do
     eval('-3r').should == Rational(-3, 1)
   end
 
+  it "can be an bignum literal with trailing 'r' to represent a Rational" do
+    eval('1111111111111111111111111111111111111111111111r').should == Rational(1111111111111111111111111111111111111111111111, 1)
+    eval('-1111111111111111111111111111111111111111111111r').should == Rational(-1111111111111111111111111111111111111111111111, 1)
+  end
+
   it "can be a decimal literal with trailing 'r' to represent a Rational" do
     eval('0.3r').should == Rational(3, 10)
     eval('-0.3r').should == Rational(-3, 10)

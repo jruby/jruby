@@ -282,4 +282,12 @@ describe "The rescue keyword" do
     rescue rescuer
     end.should == :foo
   end
+
+  it "should splat the handling Error classes" do
+    begin
+      raise "raise"
+    rescue *(RuntimeError) => e
+      :expected
+    end.should == :expected
+  end
 end

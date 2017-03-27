@@ -15,41 +15,41 @@ describe :enum_each, shared: true do
 
   it "yields each element of self to the given block" do
     acc = []
-    enumerator_class.new([1,2,3]).each {|e| acc << e }
+    Enumerator.new([1,2,3]).each {|e| acc << e }
     acc.should == [1,2,3]
   end
 
   it "calls #each on the object given in the constructor by default" do
     each = mock('each')
     each.should_receive(:each)
-    enumerator_class.new(each).each {|e| e }
+    Enumerator.new(each).each {|e| e }
   end
 
   it "calls #each on the underlying object until it's exhausted" do
     each = mock('each')
     each.should_receive(:each).and_yield(1).and_yield(2).and_yield(3)
     acc = []
-    enumerator_class.new(each).each {|e| acc << e }
+    Enumerator.new(each).each {|e| acc << e }
     acc.should == [1,2,3]
   end
 
   it "calls the method given in the constructor instead of #each" do
     each = mock('peach')
     each.should_receive(:peach)
-    enumerator_class.new(each, :peach).each {|e| e }
+    Enumerator.new(each, :peach).each {|e| e }
   end
 
   it "calls the method given in the constructor until it's exhausted" do
     each = mock('each')
     each.should_receive(:each).and_yield(1).and_yield(2).and_yield(3)
     acc = []
-    enumerator_class.new(each).each {|e| acc << e }
+    Enumerator.new(each).each {|e| acc << e }
     acc.should == [1,2,3]
   end
 
   it "raises a NoMethodError if the object doesn't respond to #each" do
     lambda do
-      enumerator_class.new(Object.new).each {|e| e }
+      Enumerator.new(Object.new).each {|e| e }
     end.should raise_error(NoMethodError)
   end
 
@@ -68,7 +68,7 @@ describe :enum_each, shared: true do
   end
 
   it "requires multiple arguments" do
-    enumerator_class.instance_method(:each).arity.should < 0
+    Enumerator.instance_method(:each).arity.should < 0
   end
 
   it "appends given arguments to receiver.each" do
@@ -82,7 +82,7 @@ describe :enum_each, shared: true do
 
   it "returns new Enumerator if given arguments but not given a block" do
     ret = @enum_with_arguments.each 1
-    ret.should be_an_instance_of(enumerator_class)
+    ret.should be_an_instance_of(Enumerator)
     ret.should_not equal(@enum_with_arguments)
   end
 end

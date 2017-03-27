@@ -13,6 +13,10 @@ ruby_version_is "2.2" do
       [0.0, barely_negative].should include midpoint
     end
 
+    it "returns -Float::INFINITY for -Float::INFINITY" do
+      (-Float::INFINITY).prev_float.should == -Float::INFINITY
+    end
+
     it "steps directly between MAX and INFINITY" do
       Float::INFINITY.prev_float.should == Float::MAX
       (-Float::MAX).prev_float.should == -Float::INFINITY
@@ -26,7 +30,7 @@ ruby_version_is "2.2" do
       (-1.0).prev_float.should == -1.0 - Float::EPSILON
     end
 
-    it "reverses the effect of next_float" do
+    it "reverses the effect of next_float for all Floats except -INFINITY and -0.0" do
       num = rand
       num.next_float.prev_float.should == num
     end
@@ -34,9 +38,10 @@ ruby_version_is "2.2" do
     it "returns positive zero when stepping downward from just above zero" do
       x = 0.0.next_float.prev_float
       (1/x).should == Float::INFINITY
-      x = (-0.0).next_float.prev_float
-      (1/x).should == Float::INFINITY
-      x.prev_float.should < 0
+    end
+
+    it "gives the same result for -0.0 as for +0.0" do
+      (0.0).prev_float.should == (-0.0).prev_float
     end
 
     it "returns NAN if NAN was the receiver" do

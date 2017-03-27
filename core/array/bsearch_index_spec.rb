@@ -9,7 +9,7 @@ ruby_version_is "2.3" do
       end
 
       it "returns an Enumerator" do
-        @enum.should be_an_instance_of(enumerator_class)
+        @enum.should be_an_instance_of(Enumerator)
       end
 
       it "returns an Enumerator with unknown size" do

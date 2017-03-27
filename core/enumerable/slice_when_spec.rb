@@ -12,7 +12,7 @@ ruby_version_is "2.2" do
 
     context "when given a block" do
       it "returns an enumerator" do
-        @result.should be_an_instance_of(enumerator_class)
+        @result.should be_an_instance_of(Enumerator)
       end
 
       it "splits chunks between adjacent elements i and j where the block returns true" do
@@ -26,6 +26,15 @@ ruby_version_is "2.2" do
           i - 1 != j
         end.to_a
         times_called.should == (@enum_length - 1)
+      end
+
+      it "doesn't yield an empty array if the block matches the first or the last time" do
+        @enum.slice_when { true }.to_a.should == [[10], [9], [7], [6], [4], [3], [2], [1]]
+      end
+
+      it "doesn't yield an empty array on a small enumerable" do
+        EnumerableSpecs::Empty.new.slice_when { raise }.to_a.should == []
+        EnumerableSpecs::Numerous.new(42).slice_when { raise }.to_a.should == [[42]]
       end
     end
 

@@ -32,7 +32,7 @@ describe :array_collect, shared: true do
 
   it "returns an Enumerator when no block given" do
     a = [1, 2, 3]
-    a.send(@method).should be_an_instance_of(enumerator_class)
+    a.send(@method).should be_an_instance_of(Enumerator)
   end
 
   it "raises an ArgumentError when no block and with arguments" do
@@ -89,7 +89,7 @@ describe :array_collect_b, shared: true do
   it "returns an Enumerator when no block given, and the enumerator can modify the original array" do
     a = [1, 2, 3]
     enum = a.send(@method)
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.each{|i| "#{i}!" }
     a.should == ["1!", "2!", "3!"]
   end

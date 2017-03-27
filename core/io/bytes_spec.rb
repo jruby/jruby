@@ -15,7 +15,7 @@ describe "IO#bytes" do
 
   it "returns an enumerator of the next bytes from the stream" do
     enum = @io.bytes
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     @io.readline.should == "Voici la ligne une.\n"
     enum.first(5).should == [81, 117, 105, 32, 195]
   end

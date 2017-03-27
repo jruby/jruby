@@ -17,7 +17,7 @@ describe "Enumerable#each_entry" do
 
   it "returns an enumerator if no block" do
     e = @enum.each_entry
-    e.should be_an_instance_of(enumerator_class)
+    e.should be_an_instance_of(Enumerator)
     e.to_a.should == @entries
   end
 

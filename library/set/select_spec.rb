@@ -31,7 +31,7 @@ describe "Set#select!" do
 
   it "returns an Enumerator when passed no block" do
     enum = @set.select!
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
 
     enum.each { |x| x.size != 3 }
 

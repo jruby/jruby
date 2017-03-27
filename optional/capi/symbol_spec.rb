@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 require File.expand_path('../spec_helper', __FILE__)
 
 load_extension('symbol')
@@ -18,6 +19,25 @@ describe "C-API Symbol function" do
     it "converts a string to a symbol, uniquely, for a string of given length" do
       @s.rb_intern2("test_symbol", 4).should == :test
       @s.rb_intern2_c_compare("test_symbol", 4, :test).should == true
+    end
+  end
+
+  describe "rb_intern3" do
+    it "converts a multibyte symbol with the encoding" do
+      sym = @s.rb_intern3("Ω", 2, Encoding::UTF_8)
+      sym.encoding.should == Encoding::UTF_8
+      sym.should == :Ω
+      @s.rb_intern3_c_compare("Ω", 2, Encoding::UTF_8, :Ω).should == true
+    end
+
+    it "converts an ascii compatible symbol with the ascii encoding" do
+      sym = @s.rb_intern3("foo", 3, Encoding::UTF_8)
+      sym.encoding.should == Encoding::US_ASCII
+      sym.should == :foo
+    end
+
+    it "should respect the symbol encoding via rb_intern3" do
+      :Ω.to_s.encoding.should == Encoding::UTF_8
     end
   end
 

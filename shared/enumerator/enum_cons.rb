@@ -6,7 +6,7 @@ describe :enum_cons, shared: true do
     a = []
     enum = EnumSpecs::Numerous.new.enum_cons(3)
     enum.each {|x| a << x}
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     a.should == [[2, 5, 3], [5, 3, 6], [3, 6, 1], [6, 1, 4]]
   end
 end

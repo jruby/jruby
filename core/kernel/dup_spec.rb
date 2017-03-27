@@ -16,6 +16,18 @@ describe "Kernel#dup" do
     ScratchPad.recorded.should == dup.object_id
   end
 
+  it "uses the internal allocator and does not call #allocate" do
+    klass = Class.new
+    instance = klass.new
+
+    def klass.allocate
+      raise "allocate should not be called"
+    end
+
+    dup = instance.dup
+    dup.class.should equal klass
+  end
+
   it "does not copy frozen state from the original" do
     @obj.freeze
     dup = @obj.dup

@@ -19,7 +19,7 @@ describe "ENV.each_key" do
   end
 
   it "returns an Enumerator if called without a block" do
-    ENV.each_key.should be_an_instance_of(enumerator_class)
+    ENV.each_key.should be_an_instance_of(Enumerator)
   end
 
   it "returns keys in the locale encoding" do

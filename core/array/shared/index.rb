@@ -29,7 +29,7 @@ describe :array_index, shared: true do
 
   describe "given no argument and no block" do
     it "produces an Enumerator" do
-      [].send(@method).should be_an_instance_of(enumerator_class)
+      [].send(@method).should be_an_instance_of(Enumerator)
     end
   end
 end

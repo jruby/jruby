@@ -50,6 +50,13 @@ static VALUE struct_spec_rb_struct_new(VALUE self, VALUE klass,
 }
 #endif
 
+#ifdef HAVE_RB_STRUCT_SIZE
+static VALUE struct_spec_rb_struct_size(VALUE self, VALUE st)
+{
+  return rb_struct_size(st);
+}
+#endif
+
 void Init_struct_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiStructSpecs", rb_cObject);
@@ -72,6 +79,10 @@ void Init_struct_spec(void) {
 
 #ifdef HAVE_RB_STRUCT_NEW
   rb_define_method(cls, "rb_struct_new", struct_spec_rb_struct_new, 4);
+#endif
+
+#ifdef HAVE_RB_STRUCT_SIZE
+  rb_define_method(cls, "rb_struct_size", struct_spec_rb_struct_size, 1);
 #endif
 }
 

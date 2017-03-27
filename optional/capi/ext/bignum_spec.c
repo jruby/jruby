@@ -59,6 +59,49 @@ static VALUE bignum_spec_rb_big_pack(VALUE self, VALUE val) {
 }
 #endif
 
+#if HAVE_ABSINT_SIZE
+static VALUE bignum_spec_rb_big_pack_length(VALUE self, VALUE val) {
+  long long_len;
+  int leading_bits = 0;
+  int divisor = SIZEOF_LONG;
+  size_t len = rb_absint_size(val, &leading_bits);
+  if (leading_bits == 0) {
+    len += 1;
+  }
+
+  long_len = len / divisor + ((len % divisor == 0) ? 0 : 1);
+  return LONG2NUM(long_len);
+}
+#endif
+
+#ifdef HAVE_RB_BIG_PACK
+static VALUE bignum_spec_rb_big_pack_array(VALUE self, VALUE val, VALUE len) {
+  int i;
+  long long_len = NUM2LONG(len);
+
+  VALUE ary = rb_ary_new_capa(long_len);
+  unsigned long *buf = malloc(long_len * SIZEOF_LONG);
+
+  /* The array should be filled with recognisable junk so we can check
+     it is all cleared properly. */
+
+  for (i = 0; i < long_len; i++) {
+#if SIZEOF_LONG == 8
+    buf[i] = 0xfedcba9876543210L;
+#else
+    buf[i] = 0xfedcba98L;
+#endif
+  }
+
+  rb_big_pack(val, buf, long_len);
+  for (i = 0; i < long_len; i++) {
+    rb_ary_store(ary, i, ULONG2NUM(buf[i]));
+  }
+  free(buf);
+  return ary;
+}
+#endif
+
 #ifdef HAVE_RBIGNUM_SIGN
 static VALUE bignum_spec_RBIGNUM_SIGN(VALUE self, VALUE num) {
   return RBIGNUM_SIGN(num) ? Qtrue : Qfalse;
@@ -117,6 +160,11 @@ void Init_bignum_spec(void) {
 
 #ifdef HAVE_RB_BIG_PACK
   rb_define_method(cls, "rb_big_pack", bignum_spec_rb_big_pack, 1);
+  rb_define_method(cls, "rb_big_pack_array", bignum_spec_rb_big_pack_array, 2);
+#endif
+
+#ifdef HAVE_ABSINT_SIZE
+  rb_define_method(cls, "rb_big_pack_length", bignum_spec_rb_big_pack_length, 1);
 #endif
 
 #ifdef HAVE_RBIGNUM_SIGN

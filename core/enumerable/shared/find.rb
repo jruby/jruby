@@ -55,7 +55,7 @@ describe :enumerable_find, shared: true do
   end
 
   it "returns an enumerator when no block given" do
-    @numerous.send(@method).should be_an_instance_of(enumerator_class)
+    @numerous.send(@method).should be_an_instance_of(Enumerator)
   end
 
   it "passes the ifnone proc to the enumerator" do

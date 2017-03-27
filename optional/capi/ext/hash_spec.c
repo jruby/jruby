@@ -30,7 +30,7 @@ VALUE hash_spec_rb_hash_aref(VALUE self, VALUE hash, VALUE key) {
 
 VALUE hash_spec_rb_hash_aref_nil(VALUE self, VALUE hash, VALUE key) {
   VALUE ret = rb_hash_aref(hash, key);
-  return ret == Qnil ? Qtrue : Qfalse;
+  return NIL_P(ret) ? Qtrue : Qfalse;
 }
 #endif
 

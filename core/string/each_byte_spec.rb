@@ -41,7 +41,7 @@ describe "String#each_byte" do
   describe "when no block is given" do
     it "returns an enumerator" do
       enum = "hello".each_byte
-      enum.should be_an_instance_of(enumerator_class)
+      enum.should be_an_instance_of(Enumerator)
       enum.to_a.should == [104, 101, 108, 108, 111]
     end
 

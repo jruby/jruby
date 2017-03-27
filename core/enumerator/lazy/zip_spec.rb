@@ -16,12 +16,12 @@ describe "Enumerator::Lazy#zip" do
 
   it "returns a new instance of Enumerator::Lazy" do
     ret = @yieldsmixed.zip []
-    ret.should be_an_instance_of(enumerator_class::Lazy)
+    ret.should be_an_instance_of(Enumerator::Lazy)
     ret.should_not equal(@yieldsmixed)
   end
 
   it "keeps size" do
-    enumerator_class::Lazy.new(Object.new, 100) {}.zip([], []).size.should == 100
+    Enumerator::Lazy.new(Object.new, 100) {}.zip([], []).size.should == 100
   end
 
   describe "when the returned lazy enumerator is evaluated by Enumerable#first" do
@@ -40,7 +40,7 @@ describe "Enumerator::Lazy#zip" do
   end
 
   it "returns a Lazy when no arguments given" do
-    @yieldsmixed.zip.should be_an_instance_of(enumerator_class::Lazy)
+    @yieldsmixed.zip.should be_an_instance_of(Enumerator::Lazy)
   end
 
   it "raises a TypeError if arguments contain non-list object" do
@@ -49,7 +49,7 @@ describe "Enumerator::Lazy#zip" do
 
   describe "on a nested Lazy" do
     it "keeps size" do
-      enumerator_class::Lazy.new(Object.new, 100) {}.map {}.zip([], []).size.should == 100
+      Enumerator::Lazy.new(Object.new, 100) {}.map {}.zip([], []).size.should == 100
     end
 
     it "behaves as Enumerable#zip when given a block" do

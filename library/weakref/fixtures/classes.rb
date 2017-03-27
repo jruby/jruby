@@ -13,7 +13,7 @@ class WeakRefSpec
   def self.make_dead_weakref
     weaks = []
     weak = nil
-    100.times do
+    10_000.times do
       weaks << make_weakref
       GC.start
       GC.start

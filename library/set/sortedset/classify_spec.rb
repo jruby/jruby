@@ -14,7 +14,7 @@ describe "SortedSet#classify" do
 
   it "returns an Enumerator when passed no block" do
     enum = @set.classify
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
 
     classified = enum.each { |x| x.length }
     classified.should == { 3 => SortedSet["one", "two"], 4 => SortedSet["four"], 5 => SortedSet["three"] }

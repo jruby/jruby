@@ -4,7 +4,7 @@ require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#min_by" do
   it "returns an enumerator if no block" do
-    EnumerableSpecs::Numerous.new(42).min_by.should be_an_instance_of(enumerator_class)
+    EnumerableSpecs::Numerous.new(42).min_by.should be_an_instance_of(Enumerator)
   end
 
   it "returns nil if #each yields no objects" do
@@ -49,7 +49,7 @@ describe "Enumerable#min_by" do
 
       context "without a block" do
         it "returns an enumerator" do
-          @enum.min_by(2).should be_an_instance_of(enumerator_class)
+          @enum.min_by(2).should be_an_instance_of(Enumerator)
         end
       end
 

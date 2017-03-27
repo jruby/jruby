@@ -3,7 +3,7 @@ require 'bigdecimal'
 
 describe "BigDecimal#sign" do
 
-  it "BigDecimal defines several constants for signs" do
+  it "defines several constants for signs" do
     # are these really correct?
     BigDecimal::SIGN_POSITIVE_INFINITE.should == 3
     BigDecimal::SIGN_NEGATIVE_INFINITE.should == -3

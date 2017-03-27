@@ -58,6 +58,15 @@ describe :marshal_load, shared: true do
     end
   end
 
+  describe "when called with nil for the proc argument" do
+    it "behaves as if no proc argument was passed" do
+      a = [1]
+      a << a
+      b = Marshal.send(@method, Marshal.dump(a), nil)
+      b.should == a
+    end
+  end
+
   describe "when called on objects with custom _dump methods" do
     it "does not set instance variables of an object with user-defined _dump/_load" do
       # this string represents: <#UserPreviouslyDefinedWithInitializedIvar @field2=7 @field1=6>

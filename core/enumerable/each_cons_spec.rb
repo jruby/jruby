@@ -59,7 +59,7 @@ describe "Enumerable#each_cons" do
   describe "when no block is given" do
     it "returns an enumerator" do
       e = @enum.each_cons(3)
-      e.should be_an_instance_of(enumerator_class)
+      e.should be_an_instance_of(Enumerator)
       e.to_a.should == @in_threes
     end
 

@@ -24,7 +24,7 @@ describe :enumerable_collect, shared: true do
 
   it "returns an enumerator when no block given" do
     enum = EnumerableSpecs::Numerous.new.send(@method)
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.each { |i| -i }.should == [-2, -5, -3, -6, -1, -4]
   end
 
