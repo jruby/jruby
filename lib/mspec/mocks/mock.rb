@@ -118,10 +118,7 @@ module Mock
 
   def self.verify_call(obj, sym, *args, &block)
     compare = *args
-    behaves_like_ruby_1_9 = *[]
-    if (behaves_like_ruby_1_9)
-      compare = compare.first if compare.length <= 1
-    end
+    compare = compare.first if compare.length <= 1
 
     key = replaced_key obj, sym
     [mocks, stubs].each do |proxies|

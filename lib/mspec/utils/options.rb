@@ -483,4 +483,27 @@ class MSpecOptions
       $MSPEC_DEBUG = true
     end
   end
+
+  def all
+    # Generated with:
+    # puts File.read(__FILE__).scan(/def (\w+).*\n\s*on\(/)
+    configure {}
+    name
+    targets
+    formatters
+    filters
+    chdir
+    prefix
+    pretend
+    background
+    unguarded
+    randomize
+    repeat
+    verbose
+    interrupt
+    verify
+    action_filters
+    actions
+    debug
+  end
 end

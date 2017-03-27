@@ -20,14 +20,12 @@ class Object
   #   stasy("nom") => :nom
 
   def stasy(one, *rest)
-    era = SpecVersion.new(SpecGuard.ruby_version) < "1.9"
-    convert = era ? :to_s : :to_sym
-
-    one = one.send convert
+    MSpec.deprecate "stasy", "a Symbol literal"
+    one = one.send :to_sym
     if rest.empty?
       one
     else
-      [one].concat rest.map { |x| x.send convert }
+      [one].concat rest.map { |x| x.send :to_sym }
     end
   end
 end

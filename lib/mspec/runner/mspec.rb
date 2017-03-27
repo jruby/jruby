@@ -42,16 +42,31 @@ module MSpec
   end
 
   def self.process
+    STDOUT.puts RUBY_DESCRIPTION
+
     actions :start
     files
     actions :finish
   end
 
-  def self.files
-    return unless files = retrieve(:files)
+  def self.each_file(&block)
+    if ENV["MSPEC_MULTI"]
+      STDOUT.print "."
+      STDOUT.flush
+      while (file = STDIN.gets.chomp) != "QUIT"
+        yield file
+        STDOUT.print "."
+        STDOUT.flush
+      end
+    else
+      return unless files = retrieve(:files)
+      shuffle files if randomize?
+      files.each(&block)
+    end
+  end
 
-    shuffle files if randomize?
-    files.each do |file|
+  def self.files
+    each_file do |file|
       setup_env
       store :file, file
       actions :load
