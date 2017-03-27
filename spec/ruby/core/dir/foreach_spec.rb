@@ -35,13 +35,13 @@ describe "Dir.foreach" do
   end
 
   it "returns an Enumerator if no block given" do
-    Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(enumerator_class)
+    Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(Enumerator)
     Dir.foreach(DirSpecs.mock_dir).to_a.sort.should == DirSpecs.expected_paths
   end
 
   describe "when no block is given" do
     it "returns an Enumerator" do
-      Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(enumerator_class)
+      Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(Enumerator)
       Dir.foreach(DirSpecs.mock_dir).to_a.sort.should == DirSpecs.expected_paths
     end
 

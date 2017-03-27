@@ -100,7 +100,7 @@ describe "Array#reject!" do
   end
 
   it "returns an Enumerator if no block given, and the array is frozen" do
-    ArraySpecs.frozen_array.reject!.should be_an_instance_of(enumerator_class)
+    ArraySpecs.frozen_array.reject!.should be_an_instance_of(Enumerator)
   end
 
   it "raises a RuntimeError on a frozen array" do

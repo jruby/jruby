@@ -483,28 +483,3 @@ describe "C-API Encoding function" do
     end
   end
 end
-
-describe "rb_intern3" do
-  load_extension('symbol')
-
-  before :each do
-    @s = CApiSymbolSpecs.new
-  end
-
-  it "converts a multibyte symbol with the encoding" do
-    sym = @s.rb_intern3("Ω", 2, Encoding::UTF_8)
-    sym.encoding.should == Encoding::UTF_8
-    sym.should == :Ω
-    @s.rb_intern3_c_compare("Ω", 2, Encoding::UTF_8, :Ω).should == true
-  end
-
-  it "converts an ascii compatible symbol with the ascii encoding" do
-    sym = @s.rb_intern3("foo", 3, Encoding::UTF_8)
-    sym.encoding.should == Encoding::US_ASCII
-    sym.should == :foo
-  end
-
-  it "should respect the symbol encoding via rb_intern3" do
-    :Ω.to_s.encoding.should == Encoding::UTF_8
-  end
-end

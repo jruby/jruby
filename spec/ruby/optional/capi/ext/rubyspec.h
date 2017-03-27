@@ -23,6 +23,10 @@
    (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR < (minor)) || \
    (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR == (minor) && RUBY_VERSION_TEENY < (teeny)))
 
+#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 4)
+#define RUBY_VERSION_IS_2_4
+#endif
+
 #if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 3)
 #define RUBY_VERSION_IS_2_3
 #endif
@@ -83,6 +87,8 @@
 #define HAVE_RBIGNUM_POSITIVE_P            1
 #define HAVE_RBIGNUM_SIGN                  1
 #define HAVE_RBIGNUM_LEN                   1
+#else
+#define HAVE_ABSINT_SIZE                   1
 #endif
 #define HAVE_RB_BIG2DBL                    1
 #define HAVE_RB_DBL2BIG                    1
@@ -565,6 +571,9 @@
 #define HAVE_RB_STRUCT_DEFINE              1
 #define HAVE_RB_STRUCT_NEW                 1
 #define HAVE_RB_STRUCT_GETMEMBER           1
+#ifdef RUBY_VERSION_IS_2_4
+#define HAVE_RB_STRUCT_SIZE                1
+#endif
 
 /* Symbol */
 #define HAVE_RB_ID2NAME                    1

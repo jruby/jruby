@@ -26,7 +26,7 @@ describe :enum_with_index, shared: true do
 
   it "returns an enumerator if no block is supplied" do
     ewi = @enum.send(@method)
-    ewi.should be_an_instance_of(enumerator_class)
+    ewi.should be_an_instance_of(Enumerator)
     ewi.to_a.should == [[1, 0], [2, 1], [3, 2], [4, 3]]
   end
 end

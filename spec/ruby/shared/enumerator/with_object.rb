@@ -35,7 +35,7 @@ describe :enum_with_object, shared: true do
   context "without block" do
     it "returns new Enumerator" do
       ret = @enum.send(@method, @memo)
-      ret.should be_an_instance_of(enumerator_class)
+      ret.should be_an_instance_of(Enumerator)
       ret.should_not equal(@enum)
     end
   end

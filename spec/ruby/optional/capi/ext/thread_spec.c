@@ -89,7 +89,7 @@ static VALUE thread_spec_rb_thread_blocking_region_with_ubf_io(VALUE self) {
 #ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
 /* This is unblocked by unblock_func(). */
 static void* blocking_gvl_func(void* data) {
-  int rfd = (int)(size_t)data;
+  int rfd = *(int *)data;
   char dummy;
   ssize_t rv;
 
@@ -101,7 +101,7 @@ static void* blocking_gvl_func(void* data) {
 }
 
 static void unblock_gvl_func(void *data) {
-  int wfd = (int)(size_t)data;
+  int wfd = *(int *)data;
   char dummy = 0;
   ssize_t rv;
 
@@ -118,8 +118,8 @@ static VALUE thread_spec_rb_thread_call_without_gvl(VALUE self) {
   if (pipe(fds) == -1) {
     return Qfalse;
   }
-  ret = rb_thread_call_without_gvl(blocking_gvl_func, (void*)(size_t)fds[0],
-                                   unblock_gvl_func, (void*)(size_t)fds[1]);
+  ret = rb_thread_call_without_gvl(blocking_gvl_func, &fds[0],
+                                   unblock_gvl_func, &fds[1]);
   close(fds[0]);
   close(fds[1]);
   return (VALUE)ret;

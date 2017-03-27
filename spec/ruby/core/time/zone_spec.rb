@@ -3,9 +3,10 @@ require File.expand_path('../../../spec_helper', __FILE__)
 describe "Time#zone" do
   platform_is_not :windows do
     it "returns the time zone used for time" do
-      # Testing with Asia/Kuwait here because it doesn't have DST.
-      with_timezone("Asia/Kuwait") do
-        Time.now.zone.should == "AST"
+      with_timezone("America/New_York") do
+        Time.new(2001, 1, 1, 0, 0, 0).zone.should == "EST"
+        Time.new(2001, 7, 1, 0, 0, 0).zone.should == "EDT"
+        %w[EST EDT].should include Time.now.zone
       end
     end
   end
@@ -71,5 +72,14 @@ describe "Time#zone" do
 
   it "returns UTC when called on a UTC time" do
     Time.now.utc.zone.should == "UTC"
+  end
+
+  it "defaults to UTC when bad zones given" do
+    with_timezone("hello-foo") do
+      Time.now.utc_offset.should == 0
+    end
+    with_timezone("1,2") do
+      Time.now.utc_offset.should == 0
+    end
   end
 end

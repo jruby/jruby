@@ -290,7 +290,7 @@ describe :kernel_require, shared: true do
     end
   end
 
-  describe "($LOAD_FEATURES)" do
+  describe "($LOADED_FEATURES)" do
     before :each do
       @path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
     end
@@ -447,6 +447,34 @@ describe :kernel_require, shared: true do
         @object.require("../code/load_fixture.rb").should be_false
       end
       ScratchPad.recorded.should == []
+    end
+
+    ruby_version_is "2.2"..."2.3" do
+      it "complex, enumerator, rational and unicode_normalize are already required" do
+        provided = %w[complex enumerator rational unicode_normalize]
+        features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
+        provided.each { |feature|
+          features.should =~ /\b#{feature}\.(rb|so)$/
+        }
+
+        code = provided.map { |f| "puts require #{f.inspect}\n" }.join
+        required = ruby_exe(code, options: '--disable-gems')
+        required.should == "false\n" * provided.size
+      end
+    end
+
+    ruby_version_is "2.3" do
+      it "complex, enumerator, rational, thread and unicode_normalize are already required" do
+        provided = %w[complex enumerator rational thread unicode_normalize]
+        features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
+        provided.each { |feature|
+          features.should =~ /\b#{feature}\.(rb|so)$/
+        }
+
+        code = provided.map { |f| "puts require #{f.inspect}\n" }.join
+        required = ruby_exe(code, options: '--disable-gems')
+        required.should == "false\n" * provided.size
+      end
     end
   end
 

@@ -240,11 +240,10 @@ static VALUE array_spec_rb_iterate_then_yield(VALUE self, VALUE obj) {
 
 #if defined(HAVE_RB_MEM_CLEAR)
 static VALUE array_spec_rb_mem_clear(VALUE self, VALUE obj) {
-  VALUE ary = obj;
-
-  rb_mem_clear(&ary, 1);
-
-  return ary;
+  VALUE ary[1];
+  ary[0] = obj;
+  rb_mem_clear(ary, 1);
+  return ary[0];
 }
 #endif
 

@@ -45,6 +45,13 @@ describe "Thread#priority=" do
       value = (@thread.priority = 3)
       value.should == 3
     end
+
+    it "clamps the priority to -3..3" do
+      @thread.priority = 42
+      @thread.priority.should == 3
+      @thread.priority = -42
+      @thread.priority.should == -3
+    end
   end
 
   describe "when set with a non-integer" do

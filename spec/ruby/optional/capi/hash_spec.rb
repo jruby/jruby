@@ -115,7 +115,7 @@ describe "C-API Hash function" do
     end
 
     it "returns an Enumerator when no block is passed" do
-      @s.rb_hash_delete_if({a: 1}).should be_an_instance_of(enumerator_class)
+      @s.rb_hash_delete_if({a: 1}).should be_an_instance_of(Enumerator)
     end
   end
 

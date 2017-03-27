@@ -23,11 +23,11 @@ describe "Numeric#step" do
 
     describe "when no block is given" do
       it "returns an Enumerator when step is 0" do
-        1.step(5, 0).should be_an_instance_of(enumerator_class)
+        1.step(5, 0).should be_an_instance_of(Enumerator)
       end
 
       it "returns an Enumerator when step is 0.0" do
-        1.step(2, 0.0).should be_an_instance_of(enumerator_class)
+        1.step(2, 0.0).should be_an_instance_of(Enumerator)
       end
 
       describe "returned Enumerator" do

@@ -16,13 +16,13 @@ describe "Enumerator::Lazy#take" do
 
   it "returns a new instance of Enumerator::Lazy" do
     ret = @yieldsmixed.take(1)
-    ret.should be_an_instance_of(enumerator_class::Lazy)
+    ret.should be_an_instance_of(Enumerator::Lazy)
     ret.should_not equal(@yieldsmixed)
   end
 
   it "sets given count to size if the given count is less than old size" do
-    enumerator_class::Lazy.new(Object.new, 100) {}.take(20).size.should == 20
-    enumerator_class::Lazy.new(Object.new, 100) {}.take(200).size.should == 100
+    Enumerator::Lazy.new(Object.new, 100) {}.take(20).size.should == 20
+    Enumerator::Lazy.new(Object.new, 100) {}.take(200).size.should == 100
   end
 
   it "sets given count to size if the old size is Infinity" do
@@ -45,8 +45,8 @@ describe "Enumerator::Lazy#take" do
 
   describe "on a nested Lazy" do
     it "sets given count to size if the given count is less than old size" do
-      enumerator_class::Lazy.new(Object.new, 100) {}.take(20).take(50).size.should == 20
-      enumerator_class::Lazy.new(Object.new, 100) {}.take(50).take(20).size.should == 20
+      Enumerator::Lazy.new(Object.new, 100) {}.take(20).take(50).size.should == 20
+      Enumerator::Lazy.new(Object.new, 100) {}.take(50).take(20).size.should == 20
     end
 
     describe "when the returned lazy enumerator is evaluated by .force" do

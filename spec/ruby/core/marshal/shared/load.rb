@@ -62,10 +62,8 @@ describe :marshal_load, shared: true do
     it "behaves as if no proc argument was passed" do
       a = [1]
       a << a
-      lambda do
-        b = Marshal.send(@method, Marshal.dump(a), nil)
-        b.should == a
-      end.should_not raise_error
+      b = Marshal.send(@method, Marshal.dump(a), nil)
+      b.should == a
     end
   end
 

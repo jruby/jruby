@@ -8,7 +8,7 @@ describe "Enumerable#partition" do
   end
 
   it "returns an Enumerator if called without a block" do
-    EnumerableSpecs::Numerous.new.partition.should be_an_instance_of(enumerator_class)
+    EnumerableSpecs::Numerous.new.partition.should be_an_instance_of(Enumerator)
   end
 
   it "gathers whole arrays as elements when each yields multiple" do

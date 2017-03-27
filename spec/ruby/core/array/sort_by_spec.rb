@@ -10,7 +10,7 @@ describe "Array#sort_by!" do
   end
 
   it "returns an Enumerator if not given a block" do
-    (1..10).to_a.sort_by!.should be_an_instance_of(enumerator_class)
+    (1..10).to_a.sort_by!.should be_an_instance_of(Enumerator)
   end
 
   it "completes when supplied a block that always returns the same result" do

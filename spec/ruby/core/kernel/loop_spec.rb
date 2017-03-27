@@ -30,7 +30,7 @@ describe "Kernel.loop" do
 
   it "returns an enumerator if no block given" do
     enum = loop
-    enum.instance_of?(enumerator_class).should be_true
+    enum.instance_of?(Enumerator).should be_true
     cnt = 0
     enum.each do |*args|
       raise "Args should be empty #{args.inspect}" unless args.empty?

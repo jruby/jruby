@@ -46,7 +46,7 @@ describe :enumerable_collect_concat, shared: true do
 
   it "returns an enumerator when no block given" do
     enum = EnumerableSpecs::Numerous.new(1, 2).send(@method)
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.each{ |i| [i] * i }.should == [1, 2, 2]
   end
 

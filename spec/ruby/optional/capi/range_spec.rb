@@ -43,5 +43,26 @@ describe "C-API Range function" do
       fin.should == 20
       excl.should be_false
     end
+
+    it "stores the range properties of non-Range object" do
+      range_like = mock('range')
+
+      def range_like.begin
+        10
+      end
+
+      def range_like.end
+        20
+      end
+
+      def range_like.exclude_end?
+        false
+      end
+
+      beg, fin, excl = @s.rb_range_values(range_like)
+      beg.should == 10
+      fin.should == 20
+      excl.should be_false
+    end
   end
 end

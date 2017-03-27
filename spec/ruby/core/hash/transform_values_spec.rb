@@ -19,7 +19,7 @@ ruby_version_is "2.4" do
     context "when no block is given" do
       it "returns a sized Enumerator" do
         enumerator = @hash.transform_values
-        enumerator.should be_an_instance_of(enumerator_class)
+        enumerator.should be_an_instance_of(Enumerator)
         enumerator.size.should == @hash.size
         enumerator.each(&:succ).should == { a: 2, b: 3, c: 4 }
       end
@@ -44,7 +44,7 @@ ruby_version_is "2.4" do
     context "when no block is given" do
       it "returns a sized Enumerator" do
         enumerator = @hash.transform_values!
-        enumerator.should be_an_instance_of(enumerator_class)
+        enumerator.should be_an_instance_of(Enumerator)
         enumerator.size.should == @hash.size
         enumerator.each(&:succ)
         @hash.should == { a: 2, b: 3, c: 4 }
@@ -63,7 +63,7 @@ ruby_version_is "2.4" do
 
       context "when no block is given" do
         it "does not raise an exception" do
-          @hash.transform_values!.should be_an_instance_of(enumerator_class)
+          @hash.transform_values!.should be_an_instance_of(Enumerator)
         end
       end
     end

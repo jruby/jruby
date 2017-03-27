@@ -4,18 +4,33 @@ require File.expand_path('../fixtures/classes', __FILE__)
 describe :kernel_system, shared: true do
   it "executes the specified command in a subprocess" do
     lambda { @object.system("echo a") }.should output_to_fd("a\n")
+
+    $?.should be_an_instance_of Process::Status
+    $?.success?.should == true
   end
 
   it "returns true when the command exits with a zero exit status" do
     @object.system(ruby_cmd('exit 0')).should == true
+
+    $?.should be_an_instance_of Process::Status
+    $?.success?.should == true
+    $?.exitstatus.should == 0
   end
 
   it "returns false when the command exits with a non-zero exit status" do
     @object.system(ruby_cmd('exit 1')).should == false
+
+    $?.should be_an_instance_of Process::Status
+    $?.success?.should == false
+    $?.exitstatus.should == 1
   end
 
   it "returns nil when command execution fails" do
     @object.system("sad").should be_nil
+
+    $?.should be_an_instance_of Process::Status
+    $?.pid.should be_kind_of(Integer)
+    $?.exitstatus.should == 127
   end
 
   it "does not write to stderr when command execution fails" do

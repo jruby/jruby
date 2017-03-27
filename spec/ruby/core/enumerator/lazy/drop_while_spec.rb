@@ -16,12 +16,12 @@ describe "Enumerator::Lazy#drop_while" do
 
   it "returns a new instance of Enumerator::Lazy" do
     ret = @yieldsmixed.drop_while {}
-    ret.should be_an_instance_of(enumerator_class::Lazy)
+    ret.should be_an_instance_of(Enumerator::Lazy)
     ret.should_not equal(@yieldsmixed)
   end
 
   it "sets #size to nil" do
-    enumerator_class::Lazy.new(Object.new, 100) {}.drop_while { |v| v }.size.should == nil
+    Enumerator::Lazy.new(Object.new, 100) {}.drop_while { |v| v }.size.should == nil
   end
 
   describe "when the returned lazy enumerator is evaluated by Enumerable#first" do
@@ -45,7 +45,7 @@ describe "Enumerator::Lazy#drop_while" do
 
   describe "on a nested Lazy" do
     it "sets #size to nil" do
-      enumerator_class::Lazy.new(Object.new, 100) {}.take(20).drop_while { |v| v }.size.should == nil
+      Enumerator::Lazy.new(Object.new, 100) {}.take(20).drop_while { |v| v }.size.should == nil
     end
 
     describe "when the returned lazy enumerator is evaluated by Enumerable#first" do

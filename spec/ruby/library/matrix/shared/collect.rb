@@ -15,7 +15,7 @@ describe :collect, shared: true do
   end
 
   it "returns an enumerator if no block is given" do
-    @m.send(@method).should be_an_instance_of(enumerator_class)
+    @m.send(@method).should be_an_instance_of(Enumerator)
   end
 
   describe "for a subclass of Matrix" do

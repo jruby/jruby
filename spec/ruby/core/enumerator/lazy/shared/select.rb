@@ -16,12 +16,12 @@ describe :enumerator_lazy_select, shared: true do
 
   it "returns a new instance of Enumerator::Lazy" do
     ret = @yieldsmixed.send(@method) {}
-    ret.should be_an_instance_of(enumerator_class::Lazy)
+    ret.should be_an_instance_of(Enumerator::Lazy)
     ret.should_not equal(@yieldsmixed)
   end
 
   it "sets #size to nil" do
-    enumerator_class::Lazy.new(Object.new, 100) {}.send(@method) { true }.size.should == nil
+    Enumerator::Lazy.new(Object.new, 100) {}.send(@method) { true }.size.should == nil
   end
 
   describe "when the returned lazy enumerator is evaluated by Enumerable#first" do
@@ -45,7 +45,7 @@ describe :enumerator_lazy_select, shared: true do
 
   describe "on a nested Lazy" do
     it "sets #size to nil" do
-      enumerator_class::Lazy.new(Object.new, 100) {}.take(50) {}.send(@method) { true }.size.should == nil
+      Enumerator::Lazy.new(Object.new, 100) {}.take(50) {}.send(@method) { true }.size.should == nil
     end
 
     describe "when the returned lazy enumerator is evaluated by Enumerable#first" do

@@ -48,7 +48,7 @@ describe "Range#each" do
 
   it "returns an enumerator when no block given" do
     enum = (1..3).each
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.to_a.should == [1, 2, 3]
   end
 

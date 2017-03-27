@@ -390,6 +390,20 @@ describe "Marshal.dump" do
       Marshal.dump(obj).should == "\004\bo:\x0BObject\x00"
     end
 
+    it "dumps an Object if it has a singleton class but no singleton methods" do
+      obj = Object.new
+      obj.singleton_class
+      Marshal.dump(obj).should == "\004\bo:\x0BObject\x00"
+    end
+
+    it "raises if an Object has a singleton class and singleton methods" do
+      obj = Object.new
+      def obj.foo; end
+      lambda {
+        Marshal.dump(obj)
+      }.should raise_error(TypeError, "singleton can't be dumped")
+    end
+
     it "dumps a BasicObject subclass if it defines respond_to?" do
       obj = MarshalSpec::BasicObjectSubWithRespondToFalse.new
       Marshal.dump(obj).should == "\x04\bo:2MarshalSpec::BasicObjectSubWithRespondToFalse\x00"

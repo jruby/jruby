@@ -15,6 +15,20 @@ describe "File.atime" do
     File.atime(@file).should be_kind_of(Time)
   end
 
+  platform_is :linux do
+    ## NOTE also that some Linux systems disable atime (e.g. via mount params) for better filesystem speed.
+    it "returns the last access time for the named file with microseconds" do
+      supports_subseconds = Integer(`stat -c%x '#{__FILE__}'`[/\.(\d+)/, 1], 10)
+      if supports_subseconds != 0
+        expected_time = Time.at(Time.now.to_i + 0.123456)
+        File.utime expected_time, 0, @file
+        File.atime(@file).usec.should == expected_time.usec
+      else
+        File.atime(__FILE__).usec.should == 0
+      end
+    end
+  end
+
   it "raises an Errno::ENOENT exception if the file is not found" do
     lambda { File.atime('a_fake_file') }.should raise_error(Errno::ENOENT)
   end

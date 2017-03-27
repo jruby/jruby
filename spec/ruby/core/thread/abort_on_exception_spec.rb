@@ -42,8 +42,8 @@ describe :thread_abort_on_exception, shared: true do
       end.should raise_error(RuntimeError, "Thread#abort_on_exception= specs")
 
       ScratchPad << :after
-    rescue Object
-      ScratchPad << :rescue
+    rescue Exception => e
+      ScratchPad << [:rescue, e]
     end
 
     ScratchPad.recorded.should == [:before, :after]

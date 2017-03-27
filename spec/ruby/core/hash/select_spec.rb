@@ -33,11 +33,11 @@ describe "Hash#select" do
   end
 
   it "returns an Enumerator when called on a non-empty hash without a block" do
-    @hsh.select.should be_an_instance_of(enumerator_class)
+    @hsh.select.should be_an_instance_of(Enumerator)
   end
 
   it "returns an Enumerator when called on an empty hash without a block" do
-    @empty.select.should be_an_instance_of(enumerator_class)
+    @empty.select.should be_an_instance_of(Enumerator)
   end
 
   it_behaves_like(:hash_iteration_no_block, :select)
