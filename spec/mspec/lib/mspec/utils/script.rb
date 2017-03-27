@@ -210,6 +210,40 @@ class MSpecScript
     end
   end
 
+  def files_from_patterns(patterns)
+    unless $0.end_with?("_spec.rb")
+      if patterns.empty?
+        patterns = config[:files]
+      end
+      if patterns.empty? and File.directory? "./spec"
+        patterns = ["spec/"]
+      end
+      if patterns.empty?
+        puts "No files specified."
+        exit 1
+      end
+    end
+    files patterns
+  end
+
+  def cores
+    # From https://github.com/ruby-concurrency/concurrent-ruby/blob/master/lib/concurrent/utility/processor_counter.rb
+    if File.readable?("/proc/cpuinfo") # Linux
+      cores = File.readlines("/proc/cpuinfo").count { |line| line.start_with?('processor') }
+      raise "Could not parse /proc/cpuinfo" if cores == 0
+      cores
+    elsif File.executable?("/usr/sbin/psrinfo") # Solaris
+      File.readlines("/usr/sbin/psrinfo").grep(/on-*line/).size
+    elsif File.executable?("/usr/sbin/sysctl") # Darwin
+      Integer(`/usr/sbin/sysctl -n hw.ncpu`)
+    elsif File.executable?("/sbin/sysctl") # BSD
+      Integer(`/sbin/sysctl -n hw.ncpu`)
+    else
+      warn "Could not find number of processors"
+      1
+    end
+  end
+
   def setup_env
     ENV['MSPEC_RUNNER'] = '1'
 

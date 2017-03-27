@@ -1,14 +1,10 @@
-require 'mspec/matchers/stringsymboladapter'
-
 class VariableMatcher
-  include StringSymbolAdapter
-
   class << self
     attr_accessor :variables_method, :description
   end
 
   def initialize(variable)
-    @variable = convert_name(variable)
+    @variable = variable.to_sym
   end
 
   def matches?(object)

@@ -156,6 +156,7 @@ describe MSpecRun, "#run" do
       @spec_dir+"/one_spec.rb",
       @spec_dir+"/two_spec.rb"]
     @script.options @file_patterns
+    MSpec.stub :process
   end
 
   it "registers the tags patterns" do

@@ -295,6 +295,12 @@ describe MSpec, ".process" do
     MSpec.stub(:files)
     MSpec.store :start, []
     MSpec.store :finish, []
+    STDOUT.stub(:puts)
+  end
+
+  it "prints the RUBY_DESCRIPTION" do
+    STDOUT.should_receive(:puts).with(RUBY_DESCRIPTION)
+    MSpec.process
   end
 
   it "calls all start actions" do

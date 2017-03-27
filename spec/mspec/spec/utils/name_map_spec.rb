@@ -71,7 +71,6 @@ describe NameMap, "#class_or_module" do
     excluded = %w[
       MSpecScript
       MkSpec
-      DTracer
       NameMap
       OptionParser
     ]
