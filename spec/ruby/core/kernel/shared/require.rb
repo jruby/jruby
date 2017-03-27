@@ -468,7 +468,7 @@ describe :kernel_require, shared: true do
         provided = %w[complex enumerator rational thread unicode_normalize]
         features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
         provided.each { |feature|
-          features.should =~ /\b#{feature}\.(rb|so)$/
+          features.should =~ /\b#{feature}\.(rb|so|jar)$/
         }
 
         code = provided.map { |f| "puts require #{f.inspect}\n" }.join
