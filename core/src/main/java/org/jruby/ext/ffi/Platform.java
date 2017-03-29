@@ -232,8 +232,11 @@ public class Platform {
         try {
             String versionString = System.getProperty("java.version");
             if (versionString != null) {
+                // remove additional version identifiers, e.g. -ea
+                versionString = versionString.split("-|\\+")[0];
                 String[] v = versionString.split("\\.");
-                version = Integer.valueOf(v[1]);
+                // starting from JDK 9, there is no leading "1." in java.version
+                version = Integer.valueOf(v.length > 1 ? v[1] : v[0]);
             }
         } catch (Exception ex) {
             version = 0;
