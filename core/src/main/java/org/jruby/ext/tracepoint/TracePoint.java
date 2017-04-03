@@ -104,7 +104,7 @@ public class TracePoint extends RubyObject {
                 context.preTrace();
 
                 // FIXME: get return value
-                update(eventName, file, line, name, type, context.getErrorInfo(), context.nil, binding);
+                update( event.getName(), file, line, name, type, context.getErrorInfo(), context.nil, binding);
 
                 try {
                     block.yieldSpecific(context, TracePoint.this);
