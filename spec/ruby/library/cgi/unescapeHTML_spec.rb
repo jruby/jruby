@@ -31,4 +31,9 @@ describe "CGI.unescapeHTML" do
     expected = '&<&amp>&quot&abcdefghijklmn'
     CGI.unescapeHTML(input).should == expected
   end
+
+  it "leaves partial invalid &# at end of string" do
+    input = "fooooooo&#"
+    CGI.unescapeHTML(input).should == input
+  end
 end
