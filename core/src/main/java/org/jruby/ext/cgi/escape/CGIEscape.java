@@ -171,7 +171,7 @@ public class CGIEscape implements Library {
                         cc = ruby_scan_digits(cstrBytes, cstr + i, len - i, 10, clenOverflow);
                         clen = clenOverflow[0];
                         overflow = clenOverflow[1] == 1;
-                    } else if ((cstrBytes[cstr + i] == 'x' || cstrBytes[cstr + i] == 'X') && len - ++i >= 2 && ISXDIGIT(cstrBytes, cstr + i)) {
+                    } else if (i < len && (cstrBytes[cstr + i] == 'x' || cstrBytes[cstr + i] == 'X') && len - ++i >= 2 && ISXDIGIT(cstrBytes, cstr + i)) {
                         int[] clenOverflow = {clen, overflow ? 1 : 0};
                         cc = ruby_scan_digits(cstrBytes, cstr + i, len - i, 16, clenOverflow);
                         clen = clenOverflow[0];
