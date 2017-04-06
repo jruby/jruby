@@ -84,7 +84,7 @@ public class Platform {
         SPARCV9,
         S390X,
         ARM,
-	AARCH64,
+        AARCH64,
         UNKNOWN;
         @Override
         public String toString() { return name().toLowerCase(LOCALE); }
