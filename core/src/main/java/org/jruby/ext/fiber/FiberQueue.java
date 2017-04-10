@@ -37,7 +37,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * A RubyThread-aware BlockingQueue wrapper used by Fiber for transfering values.
+ * A RubyThread-aware BlockingQueue wrapper used by Fiber for transferring values.
  */
 public class FiberQueue {
     protected BlockingQueue<IRubyObject> queue;

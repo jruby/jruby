@@ -524,7 +524,7 @@ public class RubyObject extends RubyBasicObject {
      *
      * The internal helper that ensures a RubyString instance is returned
      * so dangerous casting can be omitted
-     * Prefered over callMethod(context, "inspect")
+     * Preferred over callMethod(context, "inspect")
      */
     public static RubyString inspect(ThreadContext context, IRubyObject object) {
         return (RubyString)rbInspect(context, object);
