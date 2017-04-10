@@ -582,7 +582,7 @@ public abstract class IRScope implements ParseResult {
         // Always add call protocol instructions now since we are removing support for implicit stuff in interp.
         if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
 
-        fullInterpreterContext.generateInstructionsForIntepretation();
+        fullInterpreterContext.generateInstructionsForInterpretation();
 
         return fullInterpreterContext;
     }
