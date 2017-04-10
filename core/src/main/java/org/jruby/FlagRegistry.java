@@ -24,7 +24,7 @@ public class FlagRegistry {
      *
      * The bit index for the new flag will be calculated at runtime, by walking parent classes
      * and looking for previously-registered flags. Ancestors should register all their flags
-     * before decendants (which means they should not be registered in a static initializer
+     * before descendants (which means they should not be registered in a static initializer
      * unless the parent is known to have fully run its own static initializers).
      *
      * @param klass the class for which to register a new flag

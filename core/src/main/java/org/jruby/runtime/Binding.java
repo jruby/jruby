@@ -199,7 +199,7 @@ public class Binding {
      * Gets the dynamicVariables that are local to this block.   Parent dynamic scopes are also
      * accessible via the current dynamic scope.
      * 
-     * @return Returns all relevent variable scoping information
+     * @return Returns all relevant variable scoping information
      */
     public DynamicScope getDynamicScope() {
         return dynamicScope;

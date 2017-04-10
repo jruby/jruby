@@ -332,7 +332,7 @@ public class StaticScope implements Serializable {
     public IRubyObject getConstant(String internedName) {
         IRubyObject result = getConstantInner(internedName);
 
-        // If we could not find the constant from cref..then try getting from inheritence hierarchy
+        // If we could not find the constant from cref, then try getting from inheritance hierarchy
         return result == null ? cref.getConstantNoConstMissing(internedName) : result;
     }
 

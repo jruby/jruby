@@ -71,7 +71,7 @@ public class DRegexpObjectSite extends ConstructObjectSite {
                 return cache;
             }
 
-            // we don't care if this suceeds, just that it ony gets set once
+            // we don't care if this succeeds, just that it only gets set once
             UPDATER.compareAndSet(this, null, cache);
 
             setTarget(Binder.from(type()).dropAll().constant(cache));

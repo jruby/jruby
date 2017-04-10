@@ -3230,7 +3230,7 @@ public class IRBuilder {
 
             // set attr
             addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
-            // Returning writerValue is incorrect becuase the assignment method
+            // Returning writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
             if (!opAsgnNode.isLazy()) return setValue;
 

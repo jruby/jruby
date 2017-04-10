@@ -2505,7 +2505,7 @@ public class Helpers {
     // . Array given to rest should pass itself
     // . Array with rest + other args should extract array
     // . Array with multiple values and NO rest should extract args if there are more than one argument
-    // Note: In 1.9 alreadyArray is only relevent from our internal Java code in core libs.  We never use it
+    // Note: In 1.9 alreadyArray is only relevant from our internal Java code in core libs.  We never use it
     // from interpreter or JIT.  FIXME: Change core lib consumers to stop using alreadyArray param.
     public static IRubyObject[] restructureBlockArgs19(IRubyObject value, Signature signature, Block.Type type, boolean needsSplat, boolean alreadyArray) {
         if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;

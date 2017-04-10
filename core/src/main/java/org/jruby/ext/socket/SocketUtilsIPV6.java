@@ -217,7 +217,7 @@ public class SocketUtilsIPV6 {
          * Subtraction. Will never underflow, but wraps around when the lowest
          * ip address has been reached.
          *
-         * @param value value to substract
+         * @param value value to subtract
          * @return new IPv6 address
          */
         public IPv6Address subtract(int value) {
@@ -225,7 +225,7 @@ public class SocketUtilsIPV6 {
 
             if (value >= 0) {
                 if (isLessThanUnsigned(lowBits, newLowBits)) {
-                    // oops, we subtracted something postive and the result is bigger -> overflow detected (carry over one bit from high to low)
+                    // oops, we subtracted something positive and the result is bigger -> overflow detected (carry over one bit from high to low)
                     return new IPv6Address(highBits - 1, newLowBits);
                 } else {
                     // no overflow

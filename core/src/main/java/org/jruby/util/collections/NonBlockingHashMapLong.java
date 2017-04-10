@@ -1176,7 +1176,7 @@ public class NonBlockingHashMapLong<TypeV>
    *  requires the creation of {@link java.util.Map.Entry} objects with each
    *  iteration.  The {@link org.cliffc.high_scale_lib.NonBlockingHashMap}
    *  does not normally create or using {@link java.util.Map.Entry} objects so
-   *  they will be created soley to support this iteration.  Iterating using
+   *  they will be created solely to support this iteration.  Iterating using
    *  {@link #keySet} or {@link #values} will be more efficient.  In addition,
    *  this version requires <strong>auto-boxing</strong> the keys.
    */
@@ -1221,7 +1221,7 @@ public class NonBlockingHashMapLong<TypeV>
       final long K = s.readLong();
       final TypeV V = (TypeV) s.readObject();
       if( K == NO_KEY && V == null ) break;
-      put(K,V);               // Insert with an offical put
+      put(K,V);               // Insert with an official put
     }
   }
 

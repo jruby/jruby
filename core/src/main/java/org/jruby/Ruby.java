@@ -646,7 +646,7 @@ public final class Ruby implements Constantizable {
     public IRubyObject runWithGetsLoop(RootNode scriptNode, boolean printing, boolean processLineEnds, boolean split) {
         ThreadContext context = getCurrentContext();
 
-        // We do not want special scope types in IR so we ammend the AST tree to contain the elements representing
+        // We do not want special scope types in IR so we amend the AST tree to contain the elements representing
         // a while gets; ...your code...; end
         scriptNode = addGetsLoop(scriptNode, printing, processLineEnds, split);
 
