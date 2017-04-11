@@ -55,7 +55,9 @@ matrix:
   include:
     # these profile do no need to run for all JDKs
     - env: PHASE='-Pdist'
-      jdk: oraclejdk8
+      jdk: 
+        - oraclejdk8
+        - oraclejdk9
     - env: PHASE='-Pjruby-jars'
       jdk: openjdk7
     - env: PHASE='-Pmain'
