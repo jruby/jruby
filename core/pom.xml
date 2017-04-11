@@ -595,6 +595,14 @@ DO NOT MODIFIY - GENERATED CODE
       </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
+        <version>3.0.0</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-all</artifactId>
+            <version>6.0_ALPHA</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <id>create lib/jruby.jar</id>

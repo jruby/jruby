@@ -258,7 +258,9 @@ project 'JRuby Core' do
   end
 
 
-  plugin :shade do
+  plugin ( :shade,
+           :dependencies => [ 'org.ow2.asm:asm-all:6.0_ALPHA' ]
+  ) do
     execute_goals( 'shade',
                    :id => 'create lib/jruby.jar',
                    :phase => 'package',
