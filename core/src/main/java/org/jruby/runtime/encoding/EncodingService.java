@@ -24,7 +24,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.encoding.ISO_8859_16;
 import org.jruby.util.io.EncodingUtils;
 
 public final class EncodingService {
@@ -398,10 +397,6 @@ public final class EncodingService {
     public Charset charsetForEncoding(Encoding encoding) {
         if (encoding.toString().equals("ASCII-8BIT")) {
             return Charset.forName("ISO-8859-1");
-        }
-
-        if (encoding == ISO8859_16Encoding.INSTANCE) {
-            return ISO_8859_16.INSTANCE;
         }
 
         try {
