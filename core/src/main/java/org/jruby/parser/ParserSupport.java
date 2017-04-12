@@ -454,7 +454,7 @@ public class ParserSupport {
     /**
      * Is this a literal in the sense that MRI has a NODE_LIT for.  This is different than
      * ILiteralNode.  We should pick a different name since ILiteralNode is something we created
-     * which is similiar but used for a slightly different condition (can I do singleton things).
+     * which is similar but used for a slightly different condition (can I do singleton things).
      * 
      * @param node to be tested
      * @return true if it is a literal

@@ -101,7 +101,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
                 // Unwrap the array arg
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature, true);
 
-                // FIXME: arity error is aginst new args but actual error shows arity of original args.
+                // FIXME: arity error is against new args but actual error shows arity of original args.
                 if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
 
                 return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);

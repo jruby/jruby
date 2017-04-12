@@ -1239,7 +1239,7 @@ public class LoadService {
         }
 
         Outer: for (int i = 0; i < loadPath.size(); i++) {
-            // TODO this is really inefficient, and potentially a problem everytime anyone require's something.
+            // TODO this is really inefficient, and potentially a problem every time anyone require's something.
             // we should try to make LoadPath a special array object.
             String loadPathEntry = getLoadPathEntry(loadPath.eltInternal(i));
 
@@ -1478,7 +1478,7 @@ public class LoadService {
         }
 
         for (int i = 0; i < loadPath.size(); i++) {
-            // TODO this is really inefficient, and potentially a problem everytime anyone require's something.
+            // TODO this is really inefficient, and potentially a problem every time anyone require's something.
             // we should try to make LoadPath a special array object.
             String entry = getLoadPathEntry(loadPath.eltInternal(i));
 

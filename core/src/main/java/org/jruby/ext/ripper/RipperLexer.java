@@ -2133,7 +2133,7 @@ public class RipperLexer extends LexingCommon {
      *  Parse a number from the input stream.
      *
      *@param c The first character of the number.
-     *@return A int constant wich represents a token.
+     *@return A int constant which represents a token.
      */
     private int parseNumber(int c) throws IOException {
         setState(EXPR_END);

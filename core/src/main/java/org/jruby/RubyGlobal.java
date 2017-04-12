@@ -214,7 +214,7 @@ public class RubyGlobal {
         runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"), FRAME);
         runtime.defineVariable(new BackRefGlobalVariable(runtime, "$~"), FRAME);
 
-        // On platforms without a c-library accessable through JNA, getpid will return hashCode
+        // On platforms without a c-library accessible through JNA, getpid will return hashCode
         // as $$ used to. Using $$ to kill processes could take down many runtimes, but by basing
         // $$ on getpid() where available, we have the same semantics as MRI.
         globals.defineReadonly("$$", new PidAccessor(runtime), GLOBAL);

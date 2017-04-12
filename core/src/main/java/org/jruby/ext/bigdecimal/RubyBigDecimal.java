@@ -1185,7 +1185,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         int n = RubyNumeric.fix2int(arg);
 
-        if (value.scale() <= n) return this; // no rounding neccessary
+        if (value.scale() <= n) return this; // no rounding necessary
 
         return new RubyBigDecimal(getRuntime(), value.setScale(n, RoundingMode.CEILING));
     }
@@ -1203,7 +1203,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return RubyBignum.newBignum(context.runtime, ceil);
     }
 
-    // FIXME: Do we really need this Java inheritence for coerce?
+    // FIXME: Do we really need this Java inheritance for coerce?
     @Override
     public IRubyObject coerce(IRubyObject other) {
         return coerce(getRuntime().getCurrentContext(), other);
