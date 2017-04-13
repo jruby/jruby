@@ -47,6 +47,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -122,7 +123,9 @@ public class Parser {
         }
 
         long startTime = System.nanoTime();
-        RubyParser parser = new RubyParser(lexerSource, runtime.getWarnings());
+        RubyParser parser = Options.FLAT_PARSER.load() ?
+                new FlatRubyParser(lexerSource, runtime.getWarnings()) :
+                new RubyParser(lexerSource, runtime.getWarnings());
         RubyParserResult result;
         try {
             result = parser.parse(configuration);
