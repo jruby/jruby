@@ -1025,7 +1025,7 @@ public class IRBuilder {
         // Frozen string optimization: check for "string".freeze
         if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
             StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange(), asString.getPosition().getFile(), asString.getPosition().getLine());
+            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFileName(), asString.getPosition().getLine());
         }
 
         // The receiver has to be built *before* call arguments are built
@@ -3773,11 +3773,11 @@ public class IRBuilder {
     public Operand buildStrRaw(StrNode strNode) {
         if (strNode instanceof FileNode) return new Filename();
 
-        ISourcePosition pos = strNode.getPosition();
+        int line = strNode.getLine();
 
-        if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), pos.getFile(), pos.getLine());
+        if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFileName(), line);
 
-        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), pos.getFile(), pos.getLine());
+        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), scope.getFileName(), line);
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {
@@ -3909,7 +3909,8 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), node.getPosition().getFile(), node.getPosition().getLine())}));
+        return addResultInstr(new BacktickInstr(createTemporaryVariable(),
+                new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFileName(), node.getLine())}));
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
