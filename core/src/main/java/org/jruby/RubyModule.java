@@ -1847,6 +1847,7 @@ public class RubyModule extends RubyObject {
         public RespondToMissingMethod(RubyModule implClass, Visibility vis, String methodName) {
             super(implClass, vis);
 
+            setParameterList(REST);
             site = new FunctionalCachingCallSite(methodName);
         }
         @Override
