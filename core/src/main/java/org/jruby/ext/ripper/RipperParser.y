@@ -748,6 +748,7 @@ reswords        : k__LINE__ | k__FILE__ | k__ENCODING__ | klBEGIN | klEND
                 | kFOR | kIN | kMODULE | kNEXT | kNIL | kNOT
                 | kOR | kREDO | kRESCUE | kRETRY | kRETURN | kSELF | kSUPER
                 | kTHEN | kTRUE | kUNDEF | kWHEN | kYIELD
+                | kIF | kUNLESS | kWHILE | kUNTIL
                 | kIF_MOD | kUNLESS_MOD | kWHILE_MOD | kUNTIL_MOD | kRESCUE_MOD
 
 arg             : lhs '=' arg {

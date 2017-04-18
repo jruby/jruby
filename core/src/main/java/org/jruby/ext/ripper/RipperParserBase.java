@@ -331,6 +331,7 @@ public class RipperParserBase {
     }
     
     public void compile_error(String message) {
+        System.out.println(getRuntime().newString(message));
         dispatch("on_parse_error", getRuntime().newString(message));
     }
 
