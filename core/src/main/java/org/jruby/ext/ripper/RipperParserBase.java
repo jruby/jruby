@@ -139,7 +139,7 @@ public class RipperParserBase {
             return name;
         }
 
-        currentScope.assign(null, javaName.intern(), null);
+        currentScope.assign(lexer.getPosition(), javaName.intern(), null);
         
         return name;
     }
