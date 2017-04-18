@@ -239,7 +239,7 @@ public class ParserSupport {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "statement not reached");
+            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), tail.getPosition().getLine(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
@@ -408,13 +408,17 @@ public class ParserSupport {
     
     public void warnUnlessEOption(ID id, Node node, String message) {
         if (!configuration.isInlineSource()) {
-            warnings.warn(id, node.getPosition(), message);
+            ISourcePosition pos = node.getPosition();
+
+            warnings.warn(id, lexer.getFile(), pos.getLine(), message);
         }
     }
 
     public void warningUnlessEOption(ID id, Node node, String message) {
         if (warnings.isVerbose() && !configuration.isInlineSource()) {
-            warnings.warning(id, node.getPosition(), message);
+            ISourcePosition pos = node.getPosition();
+
+            warnings.warning(id, lexer.getFile(), pos.getLine(), message);
         }
     }
 
@@ -467,7 +471,8 @@ public class ParserSupport {
 
     private void handleUselessWarn(Node node, String useless) {
         if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
-            warnings.warn(ID.USELESS_EXPRESSION, node.getPosition(), "Useless use of " + useless + " in void context.");
+            warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), node.getPosition().getLine(),
+                    "Useless use of " + useless + " in void context.");
         }
     }
 
@@ -554,7 +559,8 @@ public class ParserSupport {
         } else if (node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, node.getPosition(), "found = in conditional, should be ==");
+                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), node.getPosition().getLine(),
+                        "found = in conditional, should be ==");
             }
             return true;
         } 
@@ -1169,11 +1175,11 @@ public class ParserSupport {
     }
 
     public void warn(ID id, ISourcePosition position, String message, Object... data) {
-        warnings.warn(id, position, message);
+        warnings.warn(id, lexer.getFile(), position.getLine(), message);
     }
 
     public void warning(ID id, ISourcePosition position, String message, Object... data) {
-        if (warnings.isVerbose()) warnings.warning(id, position, message);
+        if (warnings.isVerbose()) warnings.warning(id, lexer.getFile(), position.getLine(), message);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
@@ -1218,7 +1224,7 @@ public class ParserSupport {
 
         if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
                 Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(), "shadowing outer local variable - " + name);
+            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), "shadowing outer local variable - " + name);
         }
 
         return name;

@@ -66,6 +66,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     @Override
+    @Deprecated
     public void warn(ID id, ISourcePosition position, String message) {
         if (!runtime.warningsEnabled()) return;
 
@@ -163,6 +164,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, only in verbose mode.
      */
     @Override
+    @Deprecated
     public void warning(ID id, ISourcePosition position, String message) {
         warning(id, position.getFile(), position.getLine() + 1, message);
     }
