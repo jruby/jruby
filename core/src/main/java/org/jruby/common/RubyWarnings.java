@@ -113,13 +113,14 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         if (stack.length == 0) {
             file = "(unknown)";
-            line = -1;
+            line = 0;
         } else {
             file = stack[0].getFileName();
             line = stack[0].getLineNumber();
         }
 
-        warn(id, file, line, message);
+        // 1 is subtracted here because getRubyStackTrace is 1-indexed.
+        warn(id, file, line - 1, message);
     }
 
     public void warnOnce(ID id, String message) {
