@@ -70,7 +70,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(ID id, ISourcePosition position, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        warn(id, position.getFile(), position.getLine() + 1, message);
+        warn(id, position.getFile(), position.getLine(), message);
     }
 
     /**
@@ -82,7 +82,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         StringBuilder buffer = new StringBuilder(100);
 
-        buffer.append(fileName).append(':').append(lineNumber).append(": ");
+        buffer.append(fileName).append(':').append(lineNumber + 1).append(": ");
         buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
@@ -166,7 +166,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     @Override
     @Deprecated
     public void warning(ID id, ISourcePosition position, String message) {
-        warning(id, position.getFile(), position.getLine() + 1, message);
+        warning(id, position.getFile(), position.getLine(), message);
     }
 
     /**
