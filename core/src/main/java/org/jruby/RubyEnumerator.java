@@ -248,12 +248,14 @@ public class RubyEnumerator extends RubyObject {
     }
 
     private IRubyObject initialize(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
+        final Ruby runtime = getRuntime();
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
+        this.feedValue = runtime.getNil();
         setInstanceVariable("@__object__", object);
         setInstanceVariable("@__method__", method);
-        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(getRuntime(), methodArgs));
+        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(runtime, methodArgs));
         return this;
     }
 
