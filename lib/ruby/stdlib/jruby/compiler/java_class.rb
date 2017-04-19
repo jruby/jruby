@@ -264,11 +264,11 @@ module JRuby::Compiler
         add_annotation(node.args_node.child_nodes)
       when 'java_implements'
         add_interface(*node.args_node.child_nodes)
-      when "java_require"
+      when 'java_require'
         add_requires(*node.args_node.child_nodes)
-      when "java_package"
+      when 'java_package'
         set_package(*node.args_node.child_nodes)
-      when "java_field"
+      when 'java_field'
         add_field(node.args_node.child_nodes[0].value)
       end
     end
@@ -308,7 +308,7 @@ module JRuby::Compiler
       @script_name = script_name
       @imports = imports.dup
       @requires = []
-      @package = ""
+      @package = ''
     end
 
     attr_accessor :classes, :imports, :script_name, :requires, :package
@@ -328,7 +328,7 @@ module JRuby::Compiler
     end
 
     def to_s
-      str = ""
+      str = ''
       @classes.each do |cls|
         str << cls.to_s
       end
@@ -337,7 +337,7 @@ module JRuby::Compiler
   end
 
   class RubyClass
-    def initialize(name, imports = [], script_name = nil, annotations = [], requires = [], package = "")
+    def initialize(name, imports = [], script_name = nil, annotations = [], requires = [], package = '')
       @name = name
       @imports = imports
       @script_name = script_name
@@ -361,7 +361,7 @@ module JRuby::Compiler
     end
 
     def new_method(name, java_signature = nil, annotations = [])
-      is_constructor = name == "initialize" ||
+      is_constructor = name.eql?('initialize') ||
           java_signature.is_a?(Java::OrgJrubyAstJava_signature::ConstructorSignatureNode)
       @has_constructor ||= is_constructor
 
@@ -380,11 +380,8 @@ module JRuby::Compiler
     end
 
     def interface_string
-      if @interfaces.size > 0
-        "implements " + @interfaces.join(', ')
-      else
-        ""
-      end
+      return '' if @interfaces.empty?
+      "implements #{@interfaces.join(', ')}"
     end
 
     def static_init
@@ -400,9 +397,7 @@ JAVA
     end
 
     def annotations_string
-      annotations.map do |a|
-        "@" + a
-      end.join("\n")
+      annotations.map { |anno| "@#{anno}" }.join("\n")
     end
 
     def methods_string
@@ -428,11 +423,8 @@ JAVA
     end
 
     def package_string
-      if package.empty?
-        ""
-      else
-        "package #{package};"
-      end
+      return '' if package.empty?
+      "package #{package};"
     end
 
     def constructor_string
@@ -507,11 +499,8 @@ JAVA
 
     def fields_string
       @fields.map do |field|
-        signature = field[0]
-        annotations = field[1]
-        annotations_string = annotations.map do |a|
-          "@" + a
-        end.join("\n")
+        signature, annotations = field[0], field[1]
+        annotations_string = annotations.map { |anno| "@#{anno}" }.join("\n")
         "    #{annotations_string}\n    #{signature};\n"
       end.join("\n\n")
     end
@@ -560,7 +549,7 @@ JAVA
     end
 
     def annotations_string
-      annotations.map { |a| "@" + a }.join("\n")
+      annotations.map { |anno| "@#{anno}" }.join("\n")
     end
 
     def conversion_string(var_names)
@@ -602,7 +591,7 @@ JAVA
     def typed_args
       return @typed_args if @typed_args
 
-      i = 0;
+      i = 0
       @typed_args = java_signature.parameters.map do |a|
         type = a.type.name
         if a.variable_name
@@ -636,7 +625,7 @@ JAVA
       return @passed_args if @passed_args
 
       if arity <= MAX_UNBOXED_ARITY_LENGTH
-        @passed_args = var_names.map {|a| "ruby_arg_#{a}"}.join(', ')
+        @passed_args = var_names.map { |var| "ruby_arg_#{var}" }.join(', ')
         @passed_args = ', ' + @passed_args if args.size > 0
       else
         @passed_args = ", ruby_args";
@@ -644,34 +633,32 @@ JAVA
     end
 
     def return_type
-      if java_signature
-        java_signature.return_type
-      else
-        raise "no java_signature has been set for method #{name}"
-      end
+      has_java_signature!
+      java_signature.return_type
     end
 
     def return_string
-      if java_signature
-        if return_type.void?
-          "return;"
-        else
-          # Can't return wrapped array as primitive array
-          cast_to = return_type.is_array ? return_type.fully_typed_name : return_type.wrapper_name
-          "return (#{cast_to})ruby_result.toJava(#{return_type.name}.class);"
-        end
+      has_java_signature!
+      if return_type.void?
+        "return;"
       else
-        raise "no java_signature has been set for method #{name}"
+        # Can't return wrapped array as primitive array
+        cast_to = return_type.is_array ? return_type.fully_typed_name : return_type.wrapper_name
+        "return (#{cast_to})ruby_result.toJava(#{return_type.name}.class);"
       end
     end
 
     def java_name
-      if java_signature
-        java_signature.name
-      else
-        raise "no java_signature has been set for method #{name}"
-      end
+      has_java_signature!
+      java_signature.name
     end
+
+    private
+
+    def has_java_signature!
+      raise "no java_signature has been set for method #{name}" unless java_signature
+    end
+
   end
 
   class RubyConstructor < RubyMethod
