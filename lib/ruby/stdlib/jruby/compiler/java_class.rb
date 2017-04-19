@@ -339,6 +339,9 @@ module JRuby::Compiler
   end
 
   class RubyClass
+
+    include_package 'org.jruby.ast.java_signature'
+
     def initialize(name, imports = [], script_name = nil, annotations = [], requires = [], package = '')
       @name = name
       @imports = imports
@@ -364,8 +367,7 @@ module JRuby::Compiler
     end
 
     def new_method(name, java_signature = nil, annotations = [])
-      is_constructor = name.eql?('initialize') ||
-          java_signature.is_a?(Java::OrgJrubyAstJava_signature::ConstructorSignatureNode)
+      is_constructor = name.eql?('initialize') || java_signature.is_a?(ConstructorSignatureNode)
       @has_constructor ||= is_constructor
 
       if is_constructor
