@@ -54,6 +54,9 @@ module JRuby::Compiler
   end
 
   class ClassNodeWalker
+
+    LOG = $VERBOSE # whether to generate verbose output
+
     AST = org.jruby.ast
 
     include AST::visitor::NodeVisitor
@@ -64,7 +67,8 @@ module JRuby::Compiler
 
     extend VisitorBuilder
 
-    attr_accessor :class_stack, :method_stack, :signature, :script, :annotations, :node
+    attr_reader :script
+    attr_accessor :class_stack, :method_stack, :signature, :annotations, :node
 
     def initialize(script_name = nil)
       @script = RubyScript.new(script_name)
@@ -100,10 +104,10 @@ module JRuby::Compiler
     end
 
     def new_class(name)
-      cls = @script.new_class(name, @annotations)
+      klass = @script.new_class(name, @annotations)
       @annotations = []
 
-      class_stack.push(cls)
+      class_stack.push(klass)
     end
 
     def current_class
@@ -160,21 +164,20 @@ module JRuby::Compiler
     end
 
     def build_args_signature(params)
-      sig = ["Object"]
+      sig = ['Object']
       param_strings = params.child_nodes.map do |param|
         if param.respond_to? :type_node
           type_node = param.type_node
           next name_or_value(type_node)
         end
-        raise 'unknown signature element: ' + param.to_s
+        raise "unknown signature element: #{param}"
       end
       sig.concat(param_strings)
-
       sig
     end
 
     def add_requires(*requires)
-      requires.each {|r| @script.add_require(name_or_value(r))}
+      requires.each { |req| @script.add_require name_or_value(req) }
     end
 
     def set_package(package)
@@ -184,7 +187,7 @@ module JRuby::Compiler
     def name_or_value(node)
       return node.name if defined? node.name
       return node.value if defined? node.value
-      raise "unknown node :" + node.to_s
+      raise "unknown node: #{node.inspect}"
     end
 
     def with_node(node)
@@ -202,7 +205,7 @@ module JRuby::Compiler
     end
 
     def log(str)
-      puts "[jrubyc] #{str}" if $VERBOSE
+      puts "[jrubyc] #{str}" if LOG
     end
 
     visit :args do
@@ -228,7 +231,7 @@ module JRuby::Compiler
 
       # if method still has no signature, generate one
       unless current_method.java_signature
-        args_string = current_method.args.map{|a| "Object #{a}"}.join(",")
+        args_string = current_method.args.map { |arg| "Object #{arg}" }.join(',')
         sig_string = "Object #{current_method.name}(#{args_string})"
         current_method.java_signature = build_signature(sig_string)
       end
@@ -274,7 +277,7 @@ module JRuby::Compiler
     end
 
     visit :block do
-      node.child_nodes.each {|n| n.accept self}
+      node.child_nodes.each { |node| node.accept self }
     end
 
     visit :newline do
@@ -288,7 +291,7 @@ module JRuby::Compiler
       node.body_node.accept(self)
     end
 
-    visit_default do |node|
+    visit_default do
       # ignore other nodes
     end
   end
@@ -311,7 +314,8 @@ module JRuby::Compiler
       @package = ''
     end
 
-    attr_accessor :classes, :imports, :script_name, :requires, :package
+    attr_reader :classes, :imports, :script_name, :requires
+    attr_accessor :package
 
     def add_import(name)
       @imports << name
@@ -322,9 +326,7 @@ module JRuby::Compiler
     end
 
     def new_class(name, annotations = [])
-      cls = RubyClass.new(name, imports, script_name, annotations, requires, package)
-      @classes << cls
-      cls
+      RubyClass.new(name, imports, script_name, annotations, requires, package).tap { |klass| @classes << klass }
     end
 
     def to_s
@@ -350,7 +352,8 @@ module JRuby::Compiler
       @has_constructor = false;
     end
 
-    attr_accessor :methods, :name, :script_name, :fields, :annotations, :interfaces, :requires, :package, :sourcefile
+    attr_reader :name, :script_name
+    attr_accessor :methods, :fields, :annotations, :interfaces, :requires, :package, :sourcefile
 
     def constructor?
       @has_constructor
@@ -583,7 +586,7 @@ JAVA
         visibility_str = 'public'
       end
 
-      annotations = java_signature.modifiers.select(&:annotation?).map(&:to_s).join(" ")
+      annotations = java_signature.modifiers.select(&:annotation?).map(&:to_s).join(' ')
 
       "#{annotations}#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
     end
@@ -597,17 +600,16 @@ JAVA
         if a.variable_name
           var_name = a.variable_name
         else
-          var_name = args[i]
-          i+=1
+          var_name = args[i]; i += 1
         end
 
-        {:name => var_name, :type => type}
+        { :name => var_name, :type => type }
       end
     end
 
     def throws_exceptions
       if java_signature.throws && !java_signature.throws.empty?
-        'throws ' + java_signature.throws.join(', ') + ' '
+        "throws #{java_signature.throws.join(', ')} "
       else
         ''
       end
@@ -628,7 +630,7 @@ JAVA
         @passed_args = var_names.map { |var| "ruby_arg_#{var}" }.join(', ')
         @passed_args = ', ' + @passed_args if args.size > 0
       else
-        @passed_args = ", ruby_args";
+        @passed_args = ', ruby_args'
       end
     end
 
