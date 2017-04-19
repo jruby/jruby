@@ -145,6 +145,10 @@ module JRuby::Compiler
       method_stack.pop
     end
 
+    def private_methods(names)
+      names.each { |name| current_class.private_method(name) }
+    end
+
     def build_signature(signature)
       if signature.kind_of? String
         bytes = signature.to_java_bytes
@@ -273,6 +277,8 @@ module JRuby::Compiler
         set_package(*node.args_node.child_nodes)
       when 'java_field'
         add_field(node.args_node.child_nodes[0].value)
+      when 'private'
+        private_methods(node.args_node.child_nodes.map(&:name))
       end
     end
 
@@ -352,14 +358,13 @@ module JRuby::Compiler
       @interfaces = []
       @requires = requires
       @package = package
-      @has_constructor = false;
     end
 
     attr_reader :name, :script_name
     attr_accessor :methods, :fields, :annotations, :interfaces, :requires, :package, :sourcefile
 
-    def constructor?
-      @has_constructor
+    def has_constructor?
+      !!methods.find { |method| constructor?(method.name, method.java_signature) }
     end
 
     def new_field(java_signature, annotations = [])
@@ -367,10 +372,7 @@ module JRuby::Compiler
     end
 
     def new_method(name, java_signature = nil, annotations = [])
-      is_constructor = name.eql?('initialize') || java_signature.is_a?(ConstructorSignatureNode)
-      @has_constructor ||= is_constructor
-
-      if is_constructor
+      if constructor?(name, java_signature)
         method = RubyConstructor.new(self, java_signature, annotations)
       else
         method = RubyMethod.new(self, name, java_signature, annotations)
@@ -379,6 +381,16 @@ module JRuby::Compiler
       methods << method
       method
     end
+
+    def private_method(name)
+      return if name.to_s.eql?('initialize') # keep the (private) constructor
+      methods.delete_if { |method| method.name == name.to_s }
+    end
+
+    def constructor?(name, java_signature = nil)
+      name.eql?('initialize') || java_signature.is_a?(ConstructorSignatureNode)
+    end
+    private :constructor?
 
     def add_interface(ifc)
       @interfaces << ifc
@@ -457,7 +469,7 @@ JAVA
     }
 JAVA
 
-      unless @has_constructor
+      unless has_constructor?
         str << <<JAVA
 
     /**

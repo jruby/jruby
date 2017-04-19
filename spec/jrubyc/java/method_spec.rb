@@ -411,6 +411,19 @@ describe "A Ruby class generating a Java stub" do
     end
   end
 
+  describe 'with private :method' do
+
+    it 'does not generate the given method' do
+      cls = generate("class Foo; def abar; end; private :abar; def afoo; true; end; end").classes[0]
+
+      java_source = cls.to_s
+
+      expect( java_source ).to_not include 'Object abar' + '()'
+      expect( java_source ).to include 'public Object afoo' + '()'
+    end
+
+  end
+
   describe "when no class definitions are present in the target script" do
     before do
       @source = Tempfile.new('jrubyc_method_spec')
