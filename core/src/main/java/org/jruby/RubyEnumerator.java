@@ -462,6 +462,13 @@ public class RubyEnumerator extends RubyObject {
         return RubyArray.newArray(context.runtime, nexter.peek());
     }
 
+    @JRubyMethod(name = "next_values", compat = RUBY1_9)
+    public synchronized IRubyObject nextValues(ThreadContext context) {
+        ensureNexter(context);
+
+        return RubyArray.newArray(context.runtime, nexter.next());
+    }
+
     private void ensureNexter(ThreadContext context) {
         if (nexter == null) {
             if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
