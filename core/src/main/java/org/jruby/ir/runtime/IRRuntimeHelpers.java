@@ -49,6 +49,7 @@ import org.objectweb.asm.Type;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
 import java.util.Map;
 
 public class IRRuntimeHelpers {
@@ -555,17 +556,49 @@ public class IRRuntimeHelpers {
     }
 
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
-        keywordArgs.visitAll(context, CheckUnwantedKeywordsVisitor, scope);
+        // we do an inexpensive non-gathering scan first to see if there's a bad keyword
+        try {
+            keywordArgs.visitAll(context, CheckUnwantedKeywordsVisitor, scope);
+        } catch (InvalidKeyException ike) {
+            // there's a bad keyword; perform more expensive scan to gather all bad names
+            GatherUnwantedKeywordsVisitor visitor = new GatherUnwantedKeywordsVisitor();
+            keywordArgs.visitAll(context, visitor, scope);
+            visitor.raiseIfError(context);
+        }
     }
 
+    private static class InvalidKeyException extends RuntimeException {}
+    private static final InvalidKeyException INVALID_KEY_EXCEPTION = new InvalidKeyException();
     private static final RubyHash.VisitorWithState<StaticScope> CheckUnwantedKeywordsVisitor = new RubyHash.VisitorWithState<StaticScope>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
-            if (!scope.keywordExists(key.asJavaString())) {
-                throw context.runtime.newArgumentError("unknown keyword: " + key.asJavaString());
+            String javaName = key.asJavaString();
+            if (!scope.keywordExists(javaName)) {
+                throw INVALID_KEY_EXCEPTION;
             }
         }
     };
+
+    private static class GatherUnwantedKeywordsVisitor extends RubyHash.VisitorWithState<StaticScope> {
+        ArrayList invalidKwargs;
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
+            String javaName = key.asJavaString();
+            if (!scope.keywordExists(javaName)) {
+                if (invalidKwargs == null) invalidKwargs = new ArrayList();
+                invalidKwargs.add(javaName);
+            }
+        }
+
+        public void raiseIfError(ThreadContext context) {
+            if (invalidKwargs != null) {
+                String invalidKwargs = this.invalidKwargs.toString();
+                throw context.runtime.newArgumentError(
+                        (this.invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ")
+                                + invalidKwargs.substring(1, invalidKwargs.length() - 1));
+            }
+        }
+    }
 
     public static IRubyObject match3(ThreadContext context, RubyRegexp regexp, IRubyObject argValue) {
         if (argValue instanceof RubyString) {
