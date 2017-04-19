@@ -84,11 +84,28 @@ module Fiddle
         FFI::Pointer.new(ptr.to_i),
         :convention => @abi
       )
-      @function.attach(self, "call")
+      @function.attach(self, "__ffi_call__")
     end
 
-    # stubbed; should be overwritten by initialize's #attach call above
-    def call(*args); end
+    def call(*args)
+      native_args = args.zip(@args).map{ |arg,type| make_native(make_pointer(arg, type)) }
+      ret = self.__ffi_call__(*native_args)
+      make_pointer(ret, @return_type)
+    end
+
+    private
+
+    def make_pointer(arg, type)
+      return arg if type != TYPE_VOIDP
+      return arg if arg.is_a?(String)
+      Pointer[arg]
+    end
+
+    def make_native(ptr, type)
+      return ptr if type != TYPE_VOIDP
+      return ptr if ptr.is_a?(String)
+      ptr.ffi_ptr
+    end
   end
 
   class Closure
@@ -134,16 +151,24 @@ module Fiddle
     end
 
     def self.to_ptr(value)
+      if value.is_a?(IO)
+        raise "Converting IO to Pointer is not supported yet"
+      end
       if value.is_a?(String)
         cptr = Pointer.malloc(value.bytesize + 1)
         size = value.bytesize + 1
         cptr.ffi_ptr.put_string(0, value)
         cptr
 
+      elsif value.is_a?(FFI::Pointer)
+        Pointer.new(value)
+
       elsif value.respond_to?(:to_ptr)
         ptr = value.to_ptr
         if ptr.is_a?(Pointer)
           ptr
+        elsif ptr.is_a?(FFI::Pointer)
+          Pointer.new(ptr)
         else
           raise DLError.new('to_ptr should return a Fiddle::Pointer object')
         end
@@ -193,10 +218,6 @@ module Fiddle
 
     def null?
       @ffi_ptr.null?
-    end
-
-    def to_ptr
-      @ffi_ptr
     end
 
     def size
@@ -290,12 +311,14 @@ module Fiddle
     def ptr
       Pointer.new(ffi_ptr.get_pointer(0))
     end
+    alias +@ ptr
 
     def ref
       cptr = Pointer.malloc(FFI::Type::POINTER.size)
       cptr.ffi_ptr.put_pointer(0, ffi_ptr)
       cptr
     end
+    alias -@ ref
   end
 
   NULL = Pointer.new(0, 0, 0)
