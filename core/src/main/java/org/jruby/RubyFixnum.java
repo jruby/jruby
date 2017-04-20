@@ -407,7 +407,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return res;
     }
 
-
     /** fix_to_s
      *
      */
