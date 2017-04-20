@@ -66,6 +66,8 @@ public class RubyEnumerator extends RubyObject {
 
     /** A value or proc to provide the size of the Enumerator contents*/
     private IRubyObject size;
+    
+    private IRubyObject feedValue;
 
     public static void defineEnumerator(Ruby runtime) {
         RubyModule enm = runtime.getClassFromPath("Enumerable");
@@ -96,9 +98,22 @@ public class RubyEnumerator extends RubyObject {
         initialize(runtime.getNil(), RubyString.newEmptyString(runtime), IRubyObject.NULL_ARRAY);
     }
 
+    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[]args, IRubyObject size) {
+        super(runtime, type);
+        initialize20(object, method, args, size);
+    }
+
     private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[]args) {
         super(runtime, type);
         initialize(object, method, args);
+    }
+
+    /**
+     * Transform object into an Enumerator with the given size
+     */
+    static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method,IRubyObject arg, IRubyObject size) {
+        Ruby runtime = context.runtime;
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg }, size);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
@@ -233,23 +248,27 @@ public class RubyEnumerator extends RubyObject {
     }
 
     private IRubyObject initialize(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
+        final Ruby runtime = getRuntime();
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
+        this.feedValue = runtime.getNil();
         setInstanceVariable("@__object__", object);
         setInstanceVariable("@__method__", method);
-        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(getRuntime(), methodArgs));
+        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(runtime, methodArgs));
         return this;
     }
 
     private IRubyObject initialize20(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size) {
+        final Ruby runtime = getRuntime();
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
         this.size = size;
+        this.feedValue = runtime.getNil();
         setInstanceVariable("@__object__", object);
         setInstanceVariable("@__method__", method);
-        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(getRuntime(), methodArgs));
+        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(runtime, methodArgs));
         return this;
     }
 
@@ -261,6 +280,8 @@ public class RubyEnumerator extends RubyObject {
         copy.object     = this.object;
         copy.method     = this.method;
         copy.methodArgs = this.methodArgs;
+        copy.size       = this.size;
+        copy.feedValue  = getRuntime().getNil();
         return copy;
     }
 
@@ -271,6 +292,10 @@ public class RubyEnumerator extends RubyObject {
      */
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
+        if (!block.isGiven()) {
+            return this;
+        }
+
         return object.callMethod(context, method, methodArgs, block);
     }
 
@@ -432,7 +457,7 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod
     public synchronized IRubyObject next(ThreadContext context) {
         ensureNexter(context);
-
+        if (!feedValue.isNil()) feedValue = context.nil;
         return nexter.next();
     }
 
@@ -453,6 +478,31 @@ public class RubyEnumerator extends RubyObject {
         ensureNexter(context);
 
         return nexter.peek();
+    }
+
+    @JRubyMethod(name = "peek_values", compat = RUBY1_9)
+    public synchronized IRubyObject peekValues(ThreadContext context) {
+        ensureNexter(context);
+
+        return RubyArray.newArray(context.runtime, nexter.peek());
+    }
+
+    @JRubyMethod(name = "next_values", compat = RUBY1_9)
+    public synchronized IRubyObject nextValues(ThreadContext context) {
+        ensureNexter(context);
+        if (!feedValue.isNil()) feedValue = context.nil;
+        return RubyArray.newArray(context.runtime, nexter.next());
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject feed(ThreadContext context, IRubyObject val) {
+        ensureNexter(context);
+        if (!feedValue.isNil()) {
+            throw context.runtime.newTypeError("feed value already set");
+        }
+        feedValue = val;
+        nexter.setFeedValue(val);
+        return context.nil;
     }
 
     private void ensureNexter(ThreadContext context) {
@@ -494,11 +544,21 @@ public class RubyEnumerator extends RubyObject {
         /** args to each method */
         protected final IRubyObject[] methodArgs;
 
+        private IRubyObject feedValue;
+
         public Nexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             this.object = object;
             this.method = method;
             this.methodArgs = methodArgs;
             this.runtime = runtime;
+        }
+
+        public void setFeedValue(IRubyObject feedValue) {
+            this.feedValue = feedValue;
+        }
+
+        public IRubyObject getFeedValue() {
+            return feedValue;
         }
 
         public abstract IRubyObject next();
@@ -569,6 +629,7 @@ public class RubyEnumerator extends RubyObject {
 
         public ThreadedNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             super(runtime, object, method, methodArgs);
+            setFeedValue(runtime.getNil());
         }
 
         public synchronized IRubyObject next() {
@@ -688,7 +749,9 @@ public class RubyEnumerator extends RubyObject {
                                 throw new JumpException.BreakJump(-1, NEVER);
                             }
 
-                            return context.nil;
+                            IRubyObject feedValue = getFeedValue();
+                            setFeedValue(context.nil);
+                            return feedValue;
                         }
                     }, context));
                 } catch (JumpException.BreakJump bj) {
