@@ -35,19 +35,18 @@ module JRuby::Compiler
   module VisitorBuilder
     def visit(name, &block)
       define_method :"visit_#{name}_node" do |node|
-        log "entering: #{node.node_type}"
-        with_node(node) do
-          instance_eval(&block)
-        end
+        log "visit: #{node.node_type} - #{node}"
+        with_node(node) { instance_eval(&block) }
       end
     end
 
     def visit_default(&block)
       define_method :method_missing do |name, node|
-        super unless name.to_s =~ /^visit/
-
-        with_node(node) do
-          block.call
+        if name.to_s.start_with?('visit')
+          log "visit: (default) #{node.node_type} - #{node}"
+          block.call(node)
+        else
+          super
         end
       end
     end
@@ -147,6 +146,18 @@ module JRuby::Compiler
 
     def private_methods(names)
       names.each { |name| current_class.private_method(name) }
+    end
+
+    def protected_methods(names)
+      names.each { |name| current_class.protected_method(name) }
+    end
+
+    def public_methods(names)
+      names.each { |name| current_class.public_method(name) }
+    end
+
+    def set_method_visibility(visibility)
+      current_class.method_visibility = visibility
     end
 
     def build_signature(signature)
@@ -279,6 +290,21 @@ module JRuby::Compiler
         add_field(node.args_node.child_nodes[0].value)
       when 'private'
         private_methods(node.args_node.child_nodes.map(&:name))
+      when 'protected'
+        protected_methods(node.args_node.child_nodes.map(&:name))
+      when 'public'
+        public_methods(node.args_node.child_nodes.map(&:name))
+      end
+    end
+
+    visit :vcall do
+      case node.name
+      when 'private' # visibility modifier without args
+        set_method_visibility :private
+      when 'protected'
+        set_method_visibility :protected
+      when 'public'
+        set_method_visibility :public
       end
     end
 
@@ -297,7 +323,7 @@ module JRuby::Compiler
       node.body_node.accept(self)
     end
 
-    visit_default do
+    visit_default do |node|
       # ignore other nodes
     end
   end
@@ -373,18 +399,32 @@ module JRuby::Compiler
 
     def new_method(name, java_signature = nil, annotations = [])
       if constructor?(name, java_signature)
-        method = RubyConstructor.new(self, java_signature, annotations)
+        method = RubyConstructor.new(self, java_signature, annotations, method_visibility)
       else
-        method = RubyMethod.new(self, name, java_signature, annotations)
+        method = RubyMethod.new(self, name, java_signature, annotations, method_visibility)
       end
 
       methods << method
       method
     end
 
+    attr_reader :method_visibility # current (Ruby) method modifier e.g. protected
+    def method_visibility=(visibility); @method_visibility = visibility end
+
     def private_method(name)
-      return if name.to_s.eql?('initialize') # keep the (private) constructor
-      methods.delete_if { |method| method.name == name.to_s }
+      return if name.to_s.eql?('initialize')
+      method = methods.find { |method| method.name == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method.visibility = :private
+    end
+
+    def protected_method(name)
+      method = methods.find { |method| method.name == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method.visibility = :protected
+    end
+
+    def public_method(name)
+      method = methods.find { |method| method.name == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method.visibility = :public
     end
 
     def constructor?(name, java_signature = nil)
@@ -417,8 +457,8 @@ JAVA
       annotations.map { |anno| "@#{anno}" }.join("\n")
     end
 
-    def methods_string
-      methods.map(&:to_s).join("\n")
+    def methods_string # skip methods marked as (Ruby) private
+      methods.select { |method| method.visibility != :private }.map(&:to_s).join("\n")
     end
 
     def requires_string
@@ -527,16 +567,21 @@ JAVA
     # How many arguments we can invoke without needing to box arguments
     MAX_UNBOXED_ARITY_LENGTH = 3
 
-    def initialize(ruby_class, name, java_signature = nil, annotations = [])
+    def initialize(ruby_class, name, java_signature = nil, annotations = [], visibility = nil)
       @ruby_class = ruby_class
       @name = name
       @java_signature = java_signature
       @static = false
       @args = []
       @annotations = annotations
+      @visibility = visibility
     end
 
-    attr_accessor :args, :name, :java_signature, :static, :annotations
+    attr_accessor :args, :name, :java_signature, :static, :annotations, :visibility
+
+    def private?
+      visibility == :private
+    end
 
     def constructor?
       false
@@ -596,8 +641,8 @@ JAVA
       visibilities = modifiers.keys.to_a.grep(/public|private|protected/)
       if visibilities.size > 0
         visibility_str = "#{visibilities[0]}"
-      else
-        visibility_str = 'public'
+      else # explicit java_signature takes precedence over Ruby visibility
+        visibility_str = visibility || 'public'
       end
 
       annotations = java_signature.modifiers.select(&:annotation?).map(&:to_s).join(' ')
@@ -678,8 +723,8 @@ JAVA
   end
 
   class RubyConstructor < RubyMethod
-    def initialize(ruby_class, java_signature = nil, annotations = [])
-      super(ruby_class, 'initialize', java_signature, annotations)
+    def initialize(ruby_class, java_signature = nil, annotations = [], visibility = nil)
+      super(ruby_class, 'initialize', java_signature, annotations, visibility)
     end
 
     def constructor?
