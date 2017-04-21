@@ -394,10 +394,34 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_to_i
      *
      */
-    @JRubyMethod(name = {"to_i", "to_int", "floor", "ceil", "truncate"})
+    @JRubyMethod(name = {"to_i", "to_int"})
     public IRubyObject to_i() {
         return this;
     }
+
+    @JRubyMethod(name = "ceil")
+    public IRubyObject ceil(){
+        return this;
+    }
+
+    @JRubyMethod(name = "ceil", required = 1)
+    public abstract IRubyObject ceil(ThreadContext context, IRubyObject args);
+
+    @JRubyMethod(name = "floor")
+    public IRubyObject floor(){
+        return this;
+    }
+
+    @JRubyMethod(name = "floor", required = 1)
+    public abstract IRubyObject floor(ThreadContext context, IRubyObject args);
+
+    @JRubyMethod(name = "truncate")
+    public IRubyObject truncate(){
+        return this;
+    }
+
+    @JRubyMethod(name = "truncate", required = 1)
+    public abstract IRubyObject truncate(ThreadContext context, IRubyObject args);
 
     @Override
     public IRubyObject round() {
