@@ -230,8 +230,8 @@ public class IncludedModuleWrapper extends RubyClass {
     }
 
     @Override
-    public IRubyObject getAutoloadConstant(String name) {
-        return delegate.getAutoloadConstant(name);
+    protected IRubyObject getAutoloadConstant(String name, boolean forceLoad) {
+        return delegate.getAutoloadConstant(name, forceLoad);
     }
 
     /** The module to which this include delegates. */
