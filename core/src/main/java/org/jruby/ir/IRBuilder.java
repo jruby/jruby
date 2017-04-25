@@ -7,7 +7,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.ir.instructions.*;
@@ -3821,7 +3820,7 @@ public class IRBuilder {
     public Operand buildSymbol(SymbolNode node) {
         // Since symbols are interned objects, no need to copyAndReturnValue(...)
         // SSS FIXME: Premature opt?
-        return new Symbol(node.getName(), node.getEncoding());
+        return new Symbol(node.getBytes());
     }
 
     public Operand buildTrue() {

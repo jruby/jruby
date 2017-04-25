@@ -324,10 +324,9 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: none
      *
-     * @param sym the symbol's string identifier
-     * @param encoding the symbol's encoding
+     * @param bytes the ByteList for the symbol
      */
-    public abstract void pushSymbol(String sym, Encoding encoding);
+    public abstract void pushSymbol(ByteList bytes);
 
     /**
      * Push a Symbol.to_proc on the stack.

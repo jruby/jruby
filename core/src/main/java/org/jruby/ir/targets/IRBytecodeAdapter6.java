@@ -343,17 +343,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void pushSymbol(final String sym, final Encoding encoding) {
-        cacheValuePermanentlyLoadContext("symbol", RubySymbol.class, keyFor("symbol", sym, encoding), new Runnable() {
+    public void pushSymbol(final ByteList bytes) {
+        cacheValuePermanentlyLoadContext("symbol", RubySymbol.class, keyFor("symbol", bytes, bytes.getEncoding()), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
-                adapter.ldc(sym);
-                loadContext();
-                adapter.ldc(encoding.toString());
-                invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
-
-                adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, String.class, Encoding.class));
+                pushByteList(bytes);
+                adapter.invokestatic(p(RubyString.class), "newSymbol", sig(RubyString.class, Ruby.class, ByteList.class));
             }
         });
     }

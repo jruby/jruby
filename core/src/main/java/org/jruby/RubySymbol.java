@@ -197,44 +197,40 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         } else if (name instanceof RubyString) {
             return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), false);
         } else {
-            return newSymbol(runtime, name.asJavaString());
+            return newSymbol(runtime, name.asString().getByteList());
         }
     }
 
     public static RubySymbol newHardSymbol(Ruby runtime, IRubyObject name) {
-        if (name instanceof RubySymbol || name instanceof RubyString) {
-            return runtime.getSymbolTable().getSymbol(name.asJavaString(), true);
+        if (name instanceof RubySymbol) {
+            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), true);
+        } else if (name instanceof RubyString) {
+            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), true);
         }
 
-        return newSymbol(runtime, name.asJavaString());
+        return newSymbol(runtime, name.asString().getByteList());
     }
 
     public static RubySymbol newSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name, false);
     }
 
+    public static RubySymbol newSymbol(Ruby runtime, ByteList bytes) {
+        return runtime.getSymbolTable().getSymbol(bytes, false);
+    }
+
     public static RubySymbol newHardSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name, true);
     }
 
-    // FIXME: same bytesequences will fight over encoding of the symbol once cached.  I think largely
-    // this will only happen in some ISO_8859_?? encodings making symbols at the same time so it should
-    // be pretty rare.
     public static RubySymbol newSymbol(Ruby runtime, String name, Encoding encoding) {
-        RubySymbol newSymbol = newSymbol(runtime, name);
-
-        newSymbol.associateEncoding(encoding);
+        RubySymbol newSymbol = runtime.getSymbolTable().getSymbol(RubyString.encodeBytelist(name, encoding));
 
         return newSymbol;
     }
 
-    // FIXME: same bytesequences will fight over encoding of the symbol once cached.  I think largely
-    // this will only happen in some ISO_8859_?? encodings making symbols at the same time so it should
-    // be pretty rare.
     public static RubySymbol newHardSymbol(Ruby runtime, String name, Encoding encoding) {
-        RubySymbol newSymbol = newHardSymbol(runtime, name);
-
-        newSymbol.associateEncoding(encoding);
+        RubySymbol newSymbol = runtime.getSymbolTable().getSymbol(RubyString.encodeBytelist(name, encoding));
 
         return newSymbol;
     }
@@ -386,7 +382,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ(ThreadContext context) {
         Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).succ(context).toString());
+        return newSymbol(runtime, newShared(runtime).succ(context).asString().getByteList());
     }
 
     @JRubyMethod(name = "<=>")
@@ -436,28 +432,28 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public IRubyObject upcase(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        return newSymbol(runtime, rubyStringFromString(runtime).upcase19(context).toString());
+        return newSymbol(runtime, newShared(runtime).upcase19(context).getByteList());
     }
 
     @JRubyMethod
     public IRubyObject downcase(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        return newSymbol(runtime, rubyStringFromString(runtime).downcase19(context).toString());
+        return newSymbol(runtime, newShared(runtime).downcase19(context).getByteList());
     }
 
     @JRubyMethod
     public IRubyObject capitalize(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        return newSymbol(runtime, rubyStringFromString(runtime).capitalize19(context).toString());
+        return newSymbol(runtime, ((RubyString) newShared(runtime).capitalize19(context)).getByteList());
     }
 
     @JRubyMethod
     public IRubyObject swapcase(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        return newSymbol(runtime, rubyStringFromString(runtime).swapcase19(context).toString());
+        return newSymbol(runtime, newShared(runtime).swapcase19(context).getByteList());
     }
 
     @JRubyMethod
@@ -614,7 +610,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubySymbol result = newSymbol(input.getRuntime(), RubyString.byteListToString(input.unmarshalString()));
+        RubySymbol result = newSymbol(input.getRuntime(), input.unmarshalString());
 
         input.registerLinkTarget(result);
 
