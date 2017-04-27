@@ -986,6 +986,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             byte val[] = iso8859.getUnsafeBytes();
             int begin = iso8859.begin();
             h = new String(val, begin, length, RubyEncoding.ISO).hashCode();
+            h ^= (iso8859.getEncoding().isAsciiCompatible() && RubyString.scanForCodeRange(iso8859) == CR_7BIT ? 0
+                    : iso8859.getEncoding().getIndex());
         }
         return h;
     }
