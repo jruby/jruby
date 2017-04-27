@@ -1,15 +1,6 @@
 fails:Marshal.load for a user Class raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
-fails:Marshal.load for a Integer loads 0
-fails:Marshal.load for a Class raises ArgumentError if given a nonexistent class
 fails:Marshal.load for a Module loads an old module
 fails:Marshal.load for a wrapped C pointer loads
-fails:Marshal.load for a Hash loads an extended_user_hash with a parameter to initialize
-fails:Marshal.load for a user Class loads a user-marshaled extended object
-fails:Marshal.load for a user Class loads an extended Object
-fails:Marshal.load for a Regexp loads an extended Regexp
-fails:Marshal.load for a Regexp loads a extended_user_regexp having ivar
-fails:Marshal.load when source is tainted does not taint Bignums
-fails:Marshal.load when source is tainted does not taint Floats
 fails:Marshal.load when a class does not exist in the namespace raises an ArgumentError
 fails:Marshal.load when called on objects with custom _dump methods that return an immediate value loads an array containing an instance of the object, followed by multiple instances of another object
 fails:Marshal.load when called on objects with custom _dump methods that return an immediate value loads any structure with multiple references to the same object, followed by multiple instances of another object
