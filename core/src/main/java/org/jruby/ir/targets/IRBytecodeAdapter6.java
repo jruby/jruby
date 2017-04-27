@@ -349,7 +349,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             public void run() {
                 loadRuntime();
                 pushByteList(bytes);
-                adapter.invokestatic(p(RubyString.class), "newSymbol", sig(RubyString.class, Ruby.class, ByteList.class));
+                adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, ByteList.class));
             }
         });
     }
