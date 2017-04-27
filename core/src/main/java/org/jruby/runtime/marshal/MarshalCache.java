@@ -37,15 +37,15 @@ import java.util.Map;
 
 import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class MarshalCache {
     private final Map<IRubyObject, Integer> linkCache = new IdentityHashMap();
-    private final Map<String, Integer> symbolCache = new HashMap();
+    private final Map<ByteList, Integer> symbolCache = new HashMap();
 
     public boolean isRegistered(IRubyObject value) {
-        if (value instanceof RubySymbol) {
-            return isSymbolRegistered(((RubySymbol)value).asJavaString());
-        }
+        assert !(value instanceof RubySymbol) : "Use isSymbolRegistered for symbol links";
+
         return linkCache.containsKey(value);
     }
 
@@ -54,40 +54,32 @@ public class MarshalCache {
     }
 
     public void register(IRubyObject value) {
-        if (value instanceof RubySymbol) {
-            registerSymbol(value.asJavaString());
-        } else {
-            linkCache.put(value, Integer.valueOf(linkCache.size()));
-        }
+        assert !(value instanceof RubySymbol) : "Use registeredSymbolIndex for symbols";
+
+        linkCache.put(value, Integer.valueOf(linkCache.size()));
     }
 
-    public void registerSymbol(String sym) {
+    public void registerSymbol(ByteList sym) {
         symbolCache.put(sym, symbolCache.size());
     }
 
     public void writeLink(MarshalStream output, IRubyObject value) throws IOException {
-        if (value instanceof RubySymbol) {
-            writeSymbolLink(output, ((RubySymbol)value).asJavaString());
-        } else {
-            output.write('@');
-            output.writeInt(registeredIndex(value));
-        }
+        assert !(value instanceof RubySymbol) : "Use writeSymbolLink for symbols";
+
+        output.write('@');
+        output.writeInt(registeredIndex(value));
     }
 
-    public void writeSymbolLink(MarshalStream output, String sym) throws IOException {
+    public void writeSymbolLink(MarshalStream output, ByteList sym) throws IOException {
         output.write(';');
         output.writeInt(registeredSymbolIndex(sym));
     }
 
     private int registeredIndex(IRubyObject value) {
-        if (value instanceof RubySymbol) {
-            return registeredSymbolIndex(value.asJavaString());
-        } else {
-            return linkCache.get(value).intValue();
-        }
+        return linkCache.get(value).intValue();
     }
 
-    private int registeredSymbolIndex(String sym) {
+    private int registeredSymbolIndex(ByteList sym) {
         return symbolCache.get(sym);
     }
 }
