@@ -48,6 +48,7 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -106,7 +107,11 @@ public class MarshalStream extends FilterOutputStream {
 
         tainted |= value.isTaint();
 
-        writeAndRegister(value);
+        if (value instanceof RubySymbol) {
+            writeAndRegisterSymbol(((RubySymbol) value).getBytes());
+        } else {
+            writeAndRegister(value);
+        }
 
         depth--;
         if (depth == 0) out.flush(); // flush afer whole dump is complete
@@ -118,7 +123,7 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
 
-    public void registerSymbol(String sym) {
+    public void registerSymbol(ByteList sym) {
         cache.registerSymbol(sym);
     }
 
@@ -137,8 +142,9 @@ public class MarshalStream extends FilterOutputStream {
         return fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
-    private void writeAndRegisterSymbol(String sym) throws IOException {
-        if (cache.isSymbolRegistered(sym)) {
+    private void writeAndRegisterSymbol(ByteList sym) throws IOException {
+        String symString = sym.toString();
+        if (cache.isSymbolRegistered(symString)) {
             cache.writeSymbolLink(this, sym);
         } else {
             registerSymbol(sym);
@@ -315,7 +321,7 @@ public class MarshalStream extends FilterOutputStream {
                 RubyStruct.marshalTo((RubyStruct)value, this);
                 return;
             case SYMBOL:
-                writeAndRegisterSymbol(((RubySymbol)value).asJavaString());
+                writeAndRegisterSymbol(((RubySymbol) value).getBytes());
                 return;
             case TRUE:
                 write('T');
@@ -341,7 +347,7 @@ public class MarshalStream extends FilterOutputStream {
         registerLinkTarget(value);
         write(TYPE_USRMARSHAL);
         RubyClass metaclass = value.getMetaClass().getRealClass();
-        writeAndRegisterSymbol(metaclass.getName());
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, metaclass.getName()).getBytes());
 
         IRubyObject marshaled;
         if (method != null) {
@@ -386,7 +392,7 @@ public class MarshalStream extends FilterOutputStream {
         write(TYPE_USERDEF);
         RubyClass metaclass = value.getMetaClass().getRealClass();
 
-        writeAndRegisterSymbol(metaclass.getName());
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, metaclass.getName()).getBytes());
 
         writeString(marshaled.getByteList());
 
@@ -408,7 +414,7 @@ public class MarshalStream extends FilterOutputStream {
         }
         
         // w_symbol
-        writeAndRegisterSymbol(type.getName());
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, type.getName()).getBytes());
     }
     
     public void dumpVariablesWithEncoding(List<Variable<Object>> vars, IRubyObject obj) throws IOException {
@@ -430,7 +436,7 @@ public class MarshalStream extends FilterOutputStream {
     private void dumpVariablesShared(List<Variable<Object>> vars) throws IOException {
         for (Variable<Object> var : vars) {
             if (var.getValue() instanceof IRubyObject) {
-                writeAndRegisterSymbol(var.getName());
+                writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, var.getName()).getBytes());
                 dumpObject((IRubyObject)var.getValue());
             }
         }
@@ -438,13 +444,13 @@ public class MarshalStream extends FilterOutputStream {
 
     public void writeEncoding(Encoding encoding) throws IOException {
         if (encoding == null || encoding == USASCIIEncoding.INSTANCE) {
-            writeAndRegisterSymbol(SYMBOL_ENCODING_SPECIAL);
+            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL).getBytes());
             writeObjectData(runtime.getFalse());
         } else if (encoding == UTF8Encoding.INSTANCE) {
-            writeAndRegisterSymbol(SYMBOL_ENCODING_SPECIAL);
+            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL).getBytes());
             writeObjectData(runtime.getTrue());
         } else {
-            writeAndRegisterSymbol(SYMBOL_ENCODING);
+            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, SYMBOL_ENCODING).getBytes());
             RubyString encodingString = new RubyString(runtime, runtime.getString(), encoding.getName());
             writeObjectData(encodingString);
         }
@@ -472,7 +478,7 @@ public class MarshalStream extends FilterOutputStream {
         }
         while(type.isIncluded()) {
             write('e');
-            writeAndRegisterSymbol(((IncludedModuleWrapper)type).getNonIncludedClass().getName());
+            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, type.getNonIncludedClass().getName()).getBytes());
             type = type.getSuperClass();
         }
         return type;
@@ -485,7 +491,7 @@ public class MarshalStream extends FilterOutputStream {
     public void dumpDefaultObjectHeader(char tp, RubyClass type) throws IOException {
         dumpExtended(type);
         write(tp);
-        writeAndRegisterSymbol(getPathFromClass(type.getRealClass()));
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, getPathFromClass(type.getRealClass())).getBytes());
     }
 
     public void writeString(String value) throws IOException {
@@ -500,9 +506,11 @@ public class MarshalStream extends FilterOutputStream {
         out.write(value.getUnsafeBytes(), value.begin(), len);
     }
 
-    public void dumpSymbol(String value) throws IOException {
+    public void dumpSymbol(ByteList value) throws IOException {
         write(':');
-        writeString(value);
+        int len = value.length();
+        writeInt(len);
+        out.write(value.getUnsafeBytes(), value.begin(), len);
     }
 
     public void writeInt(int value) throws IOException {
