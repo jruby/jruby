@@ -196,7 +196,7 @@ describe MkSpec, "#write_spec" do
   it "checks if specs exist for the method if the spec file exists" do
     name = Regexp.escape(@script.ruby)
     @script.should_receive(:`).with(
-        %r"#{name} #{MSPEC_HOME}/bin/mspec-run --dry-run -fs -e 'Object#inspect' spec/core/tcejbo/inspect_spec.rb")
+        %r"#{name} #{MSPEC_HOME}/bin/mspec-run --dry-run --unguarded -fs -e 'Object#inspect' spec/core/tcejbo/inspect_spec.rb")
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true)
   end
 

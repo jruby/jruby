@@ -554,16 +554,6 @@ describe "The -t, --target TARGET option" do
     end
   end
 
-  it "sets the target to 'ruby1.9' with TARGET 'r19', 'ruby19' or 'ruby1.9'" do
-    ["-t", "--target"].each do |opt|
-      ["r19", "ruby19"].each do |t|
-        @config[:target] = nil
-        @options.parse [opt, t]
-        @config[:target].should == "ruby1.9"
-      end
-    end
-  end
-
   it "sets the target to 'jruby' with TARGET 'j' or 'jruby'" do
     ["-t", "--target"].each do |opt|
       ["j", "jruby"].each do |t|
@@ -658,11 +648,11 @@ describe "The -I, --include DIR option" do
     @options.targets
   end
 
-  it "add DIR to the includes list" do
+  it "add DIR to the load path" do
     ["-I", "--include"].each do |opt|
-      @config[:includes].delete "-Ipackage"
+      @config[:loadpath].delete "-Ipackage"
       @options.parse [opt, "package"]
-      @config[:includes].should include("-Ipackage")
+      @config[:loadpath].should include("-Ipackage")
     end
   end
 end
@@ -1027,23 +1017,6 @@ describe "The -Z, --dry-run option" do
     ["-Z", "--dry-run"].each do |opt|
       @options.parse opt
     end
-  end
-end
-
-describe "The --background option" do
-  before :each do
-    @options, @config = new_option
-  end
-
-  it "is enabled with #background" do
-    @options.should_receive(:on).with("--background", an_instance_of(String))
-    @options.background
-  end
-
-  it "registers the MSpec background mode" do
-    MSpec.should_receive(:register_mode).with(:background)
-    @options.background
-    @options.parse "--background"
   end
 end
 

@@ -31,7 +31,7 @@ describe ComplainMatcher do
     matcher = ComplainMatcher.new(/talk/)
     matcher.matches?(lambda { warn "listen up" })
     matcher.failure_message.should ==
-      ["Expected warning to match:", "/talk/"]
+      ["Expected warning to match: /talk/", "but got: \"listen up\""]
   end
 
   it "provides a useful negative failure message" do
@@ -47,6 +47,6 @@ describe ComplainMatcher do
     matcher = ComplainMatcher.new(/ou/)
     matcher.matches?(proc)
     matcher.negative_failure_message.should ==
-      ["Expected warning not to match:", "/ou/"]
+      ["Expected warning not to match: /ou/", "but got: \"ouch\""]
   end
 end

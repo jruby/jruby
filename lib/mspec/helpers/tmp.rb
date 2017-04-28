@@ -32,7 +32,7 @@ end
 
 class Object
   def tmp(name, uniquify=true)
-    Dir.mkdir SPEC_TEMP_DIR unless File.exist? SPEC_TEMP_DIR
+    Dir.mkdir SPEC_TEMP_DIR unless Dir.exist? SPEC_TEMP_DIR
 
     if uniquify and !name.empty?
       slash = name.rindex "/"

@@ -1,20 +1,16 @@
-require 'mspec/guards/guard'
+require 'mspec/guards/platform'
 
 class SupportedGuard < SpecGuard
   def match?
-    if @args.include? :ruby
+    if @parameters.include? :ruby
       raise Exception, "improper use of not_supported_on guard"
     end
-    standard? or !implementation?(*@args)
+    !PlatformGuard.standard? and PlatformGuard.implementation?(*@parameters)
   end
 end
 
 class Object
-  def not_supported_on(*args)
-    g = SupportedGuard.new(*args)
-    g.name = :not_supported_on
-    yield if g.yield?
-  ensure
-    g.unregister
+  def not_supported_on(*args, &block)
+    SupportedGuard.new(*args).run_unless(:not_supported_on, &block)
   end
 end

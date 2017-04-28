@@ -37,11 +37,7 @@ class Object
   #
   #   MSpec.enable_feature :encoding
   #
-  def with_feature(*features)
-    g = FeatureGuard.new(*features)
-    g.name = :with_feature
-    yield if g.yield?
-  ensure
-    g.unregister
+  def with_feature(*features, &block)
+    FeatureGuard.new(*features).run_if(:with_feature, &block)
   end
 end

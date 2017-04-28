@@ -12,7 +12,7 @@ describe "Running mspec tag" do
 
   it "tags the failing specs" do
     fixtures = "spec/fixtures"
-    out = run_mspec("tag", "--add fails --fail #{fixtures}/tagging_spec.rb")
+    out, ret = run_mspec("tag", "--add fails --fail #{fixtures}/tagging_spec.rb")
     out.should == <<EOS
 RUBY_DESCRIPTION
 .FF
@@ -44,11 +44,12 @@ Finished in D.DDDDDD seconds
 
 1 file, 3 examples, 3 expectations, 2 failures, 0 errors, 0 tagged
 EOS
+    ret.success?.should == false
   end
 
   it "does not run already tagged specs" do
     fixtures = "spec/fixtures"
-    out = run_mspec("run", "--excl-tag fails #{fixtures}/tagging_spec.rb")
+    out, ret = run_mspec("run", "--excl-tag fails #{fixtures}/tagging_spec.rb")
     out.should == <<EOS
 RUBY_DESCRIPTION
 .
@@ -57,5 +58,6 @@ Finished in D.DDDDDD seconds
 
 1 file, 3 examples, 1 expectation, 0 failures, 0 errors, 2 tagged
 EOS
+    ret.success?.should == true
   end
 end

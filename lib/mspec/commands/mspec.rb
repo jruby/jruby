@@ -10,7 +10,9 @@ require 'mspec/runner/actions/timer'
 
 class MSpecMain < MSpecScript
   def initialize
-    config[:includes] = []
+    super
+
+    config[:loadpath] = []
     config[:requires] = []
     config[:target]   = ENV['RUBY'] || 'ruby'
     config[:flags]    = []
@@ -94,7 +96,8 @@ class MSpecMain < MSpecScript
     formatter = MultiFormatter.new
 
     output_files = []
-    children = cores.times.map { |i|
+    processes = [cores, @files.size].min
+    children = processes.times.map { |i|
       name = tmp "mspec-multi-#{i}"
       output_files << name
 
@@ -128,13 +131,16 @@ class MSpecMain < MSpecScript
       }
     end
 
+    ok = true
     children.each { |child|
       child.puts "QUIT"
       Process.wait(child.pid)
+      ok &&= $?.success?
     }
 
     formatter.aggregate_results(output_files)
     formatter.finish
+    ok
   end
 
   def run
@@ -142,16 +148,16 @@ class MSpecMain < MSpecScript
 
     argv.concat config[:launch]
     argv.concat config[:flags]
-    argv.concat config[:includes]
+    argv.concat config[:loadpath]
     argv.concat config[:requires]
     argv << "#{MSPEC_HOME}/bin/mspec-#{ config[:command] || "run" }"
     argv.concat config[:options]
 
     if config[:multi]
-      multi_exec argv
+      exit multi_exec(argv)
     else
       $stderr.puts "$ #{argv.join(' ')}"
-      exec *argv
+      exec(*argv)
     end
   end
 end

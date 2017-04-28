@@ -1,5 +1,4 @@
 require 'mspec/expectations/expectations'
-require 'mspec/helpers/singleton_class'
 
 class Object
   alias_method :__mspec_object_id__, :object_id

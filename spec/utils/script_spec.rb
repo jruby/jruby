@@ -199,6 +199,14 @@ describe MSpecScript, "#load" do
     Kernel.should_receive(:load).with(path).and_return(:loaded)
     @script.load(@base).should == :loaded
   end
+
+  it "loads a given file only once" do
+    path = File.expand_path @file, "spec"
+    File.should_receive(:exist?).with(path).and_return(true)
+    Kernel.should_receive(:load).once.with(path).and_return(:loaded)
+    @script.load(@base).should == :loaded
+    @script.load(@base).should == true
+  end
 end
 
 describe MSpecScript, "#custom_options" do
