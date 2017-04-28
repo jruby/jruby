@@ -1,5 +1,1 @@
-fails:Marshal.dump dumps subsequent appearances of a symbol as a link
-fails:Marshal.dump with an object responding to #_dump dumps the object returned by #marshal_dump
-fails:Marshal.dump with a String dumps multiple strings using symlinks for the :E (encoding) symbol
-fails:Marshal.dump with a Symbol dumps an encoded Symbol
 fails:Marshal.dump with a Time dumps the zone and the offset
