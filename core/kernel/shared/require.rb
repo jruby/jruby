@@ -26,7 +26,7 @@ describe :kernel_require_basic, shared: true do
     end
 
     # Can't make a file unreadable on these platforms
-    platform_is_not os: [:windows, :cygwin] do
+    platform_is_not :windows, :cygwin do
       describe "with an unreadable file" do
         before :each do
           @path = tmp("unreadable_file.rb")
@@ -222,7 +222,10 @@ describe :kernel_require, shared: true do
 
     it "loads a file that recursively requires itself" do
       path = File.expand_path "recursive_require_fixture.rb", CODE_LOADING_DIR
-      @object.require(path).should be_true
+      -> {
+        $VERBOSE = true
+        @object.require(path).should be_true
+      }.should complain(/circular require considered harmful/)
       ScratchPad.recorded.should == [:loaded]
     end
   end
@@ -468,7 +471,7 @@ describe :kernel_require, shared: true do
         provided = %w[complex enumerator rational thread unicode_normalize]
         features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
         provided.each { |feature|
-          features.should =~ /\b#{feature}\.(rb|so)$/
+          features.should =~ /\b#{feature}\.(rb|so|jar)$/
         }
 
         code = provided.map { |f| "puts require #{f.inspect}\n" }.join
@@ -541,10 +544,12 @@ describe :kernel_require, shared: true do
 
       t2 = Thread.new do
         Thread.pass until t1[:in_concurrent_rb]
+        $VERBOSE, @verbose = nil, $VERBOSE
         begin
           t2_res = @object.require(@path)
           ScratchPad.recorded << :t2_post
         ensure
+          $VERBOSE = @verbose
           fin = true
         end
       end
@@ -604,10 +609,12 @@ describe :kernel_require, shared: true do
 
       t2 = Thread.new do
         Thread.pass until t1[:in_concurrent_rb]
+        $VERBOSE, @verbose = nil, $VERBOSE
         begin
           t2_res = @object.require(@path)
           ScratchPad.recorded << :t2_post
         ensure
+          $VERBOSE = @verbose
           fin = true
         end
       end

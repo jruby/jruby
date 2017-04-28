@@ -12,7 +12,10 @@ describe "Struct.new" do
     first = Struct.new('Person', :height, :weight)
     first.should == Struct::Person
 
-    second = Struct.new('Person', :hair, :sex)
+    second = nil
+    lambda {
+      second = Struct.new('Person', :hair, :sex)
+    }.should complain(/redefining constant/)
     second.should == Struct::Person
 
     first.members.should_not == second.members

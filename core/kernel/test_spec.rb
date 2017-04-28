@@ -53,7 +53,7 @@ describe "Kernel#test" do
 
   context "time commands" do
     before :each do
-      @tmp_file = File.new(tmp("file.kernel.test"), "w") { |f| f.write "foo" }
+      @tmp_file = File.new(tmp("file.kernel.test"), "w")
     end
 
     after :each do

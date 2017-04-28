@@ -18,11 +18,8 @@ describe :string_each_codepoint_without_block, shared: true do
           str.send(@method).size.should == str.size
           str = "ola"
           str.send(@method).size.should == str.size
-          before = $KCODE
-          $KCODE = "UTF-8"
           str = "\303\207\342\210\202\303\251\306\222g"
           str.send(@method).size.should == str.size
-          $KCODE = before
         end
 
         it "should return the size of the string even when the string has an invalid encoding" do

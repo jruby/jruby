@@ -43,8 +43,12 @@ describe "Hash.[]" do
   end
 
   it "ignores elements that are not arrays" do
-    Hash[[:a]].should == {}
-    Hash[[:nil]].should == {}
+    -> {
+      Hash[[:a]].should == {}
+    }.should complain(/ignoring wrong elements/)
+    -> {
+      Hash[[:nil]].should == {}
+    }.should complain(/ignoring wrong elements/)
   end
 
   it "raises an ArgumentError for arrays of more than 2 elements" do
@@ -52,7 +56,11 @@ describe "Hash.[]" do
   end
 
   it "raises an ArgumentError when passed a list of value-invalid-pairs in an array" do
-    lambda{ Hash[[[:a, 1], [:b], 42, [:d, 2], [:e, 2, 3], []]] }.should raise_error(ArgumentError)
+    -> {
+      -> {
+        Hash[[[:a, 1], [:b], 42, [:d, 2], [:e, 2, 3], []]]
+      }.should complain(/ignoring wrong elements/)
+    }.should raise_error(ArgumentError)
   end
 
   describe "passed a single argument which responds to #to_hash" do

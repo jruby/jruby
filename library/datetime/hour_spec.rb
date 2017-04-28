@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require 'mspec/helpers/datetime'
 require 'date'
 
 describe "DateTime#hour" do

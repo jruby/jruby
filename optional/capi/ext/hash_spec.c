@@ -11,6 +11,12 @@ VALUE hash_spec_rb_hash(VALUE self, VALUE hash) {
 }
 #endif
 
+#ifdef HAVE_RB_HASH2
+VALUE hash_spec_rb_Hash(VALUE self, VALUE val) {
+  return rb_Hash(val);
+}
+#endif
+
 #ifdef HAVE_RB_HASH_DUP
 VALUE hash_spec_rb_hash_dup(VALUE self, VALUE hash) {
   return rb_hash_dup(hash);
@@ -134,6 +140,10 @@ void Init_hash_spec(void) {
 
 #ifdef HAVE_RB_HASH
   rb_define_method(cls, "rb_hash", hash_spec_rb_hash, 1);
+#endif
+
+#ifdef HAVE_RB_HASH2
+  rb_define_method(cls, "rb_Hash", hash_spec_rb_Hash, 1);
 #endif
 
 #ifdef HAVE_RB_HASH_DUP

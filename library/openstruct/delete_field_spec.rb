@@ -8,7 +8,7 @@ describe "OpenStruct#delete_field" do
 
   it "removes the named field from self's method/value table" do
     @os.delete_field(:name)
-    @os.send(:table)[:name].should be_nil
+    @os[:name].should be_nil
   end
 
   it "does remove the accessor methods" do

@@ -23,7 +23,7 @@ describe "Kernel.at_exit" do
   it "gives access to the last raised exception" do
     code = <<-EOC
       at_exit do
-        puts "The exception matches: #{$! == $exception}"
+        puts "The exception matches: \#{$! == $exception}"
       end
 
       begin

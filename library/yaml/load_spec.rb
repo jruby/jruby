@@ -71,6 +71,7 @@ describe "YAML.load" do
   end
 
   it "works on complex keys" do
+    require 'date'
     expected = {
       [ 'Detroit Tigers', 'Chicago Cubs' ] => [ Date.new( 2001, 7, 23 ) ],
       [ 'New York Yankees', 'Atlanta Braves' ] => [ Date.new( 2001, 7, 2 ),

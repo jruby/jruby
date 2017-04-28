@@ -2,6 +2,27 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Method#parameters" do
+  class MethodSpecs::Methods
+    def one_key(a: 1); end
+    def one_keyrest(**a); end
+
+    def one_keyreq(a:); end
+
+    def one_splat_one_req(*a,b); end
+    def one_splat_two_req(*a,b,c); end
+    def one_splat_one_req_with_block(*a,b,&blk); end
+
+    def one_opt_with_stabby(a=->(b){true}); end
+
+    def one_unnamed_splat(*); end
+
+    def one_splat_one_block(*args, &block)
+      local_is_not_parameter = {}
+    end
+
+    define_method(:one_optional_defined_method) {|x = 1|}
+  end
+
   it "returns an empty Array when the method expects no arguments" do
     MethodSpecs::Methods.instance_method(:zero).parameters.should == []
   end

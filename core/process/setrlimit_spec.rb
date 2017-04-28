@@ -89,7 +89,7 @@ platform_is_not :windows do
         end
       end
 
-      platform_is os: [:netbsd, :freebsd] do
+      platform_is :netbsd, :freebsd do
         it "coerces :SBSIZE into RLIMIT_SBSIZE" do
           Process.setrlimit(:SBSIZE, *Process.getrlimit(Process::RLIMIT_SBSIZE)).should be_nil
         end
@@ -171,7 +171,7 @@ platform_is_not :windows do
         end
       end
 
-      platform_is os: [:netbsd, :freebsd] do
+      platform_is :netbsd, :freebsd do
         it "coerces 'SBSIZE' into RLIMIT_SBSIZE" do
           Process.setrlimit("SBSIZE", *Process.getrlimit(Process::RLIMIT_SBSIZE)).should be_nil
         end

@@ -24,25 +24,12 @@ describe "Module#attr_writer" do
     o.instance_variable_get(:@test2).should == "test_2 updated"
   end
 
-  ruby_version_is ''...'2.2' do
-    it "allows for adding an attr_writer to an immediate" do
-      class TrueClass
-        attr_writer :spec_attr_writer
-      end
-
-      true.spec_attr_writer = "a"
-      true.instance_variable_get("@spec_attr_writer").should == "a"
+  it "not allows for adding an attr_writer to an immediate" do
+    class TrueClass
+      attr_writer :spec_attr_writer
     end
-  end
 
-  ruby_version_is '2.2' do
-    it "not allows for adding an attr_writer to an immediate" do
-      class TrueClass
-        attr_writer :spec_attr_writer
-      end
-
-      lambda { true.spec_attr_writer = "a" }.should raise_error(RuntimeError)
-    end
+    lambda { true.spec_attr_writer = "a" }.should raise_error(RuntimeError)
   end
 
   it "converts non string/symbol/fixnum names to strings using to_str" do

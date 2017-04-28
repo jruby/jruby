@@ -105,7 +105,10 @@ describe "Array.new with (size, object=nil)" do
   end
 
   it "uses the block value instead of using the default value" do
-    Array.new(3, :obj) { |i| i.to_s }.should == ['0', '1', '2']
+    lambda {
+      @result = Array.new(3, :obj) { |i| i.to_s }
+    }.should complain(/block supersedes default value argument/)
+    @result.should == ['0', '1', '2']
   end
 
   it "returns the value passed to break" do

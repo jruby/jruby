@@ -3,7 +3,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 describe :enum_next, shared: true do
 
   before :each do
-    @enum = Enumerator.new(1, :upto, 3)
+    @enum = 1.upto(3)
   end
 
   it "returns the next element of the enumeration" do

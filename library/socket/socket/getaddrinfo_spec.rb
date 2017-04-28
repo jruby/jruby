@@ -13,7 +13,7 @@ describe "Socket#getaddrinfo" do
     BasicSocket.do_not_reverse_lookup = @do_not_reverse_lookup
   end
 
-  platform_is_not 'i386-solaris2.10', :windows do
+  platform_is_not :solaris, :windows do
     it "gets the address information" do
       expected = []
       # The check for AP_INET6's class is needed because ipaddr.rb adds
@@ -110,4 +110,3 @@ describe "Socket#getaddrinfo" do
     end
   end
 end
-

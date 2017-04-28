@@ -7,16 +7,16 @@ describe "The -d command line option" do
 
   it "sets $DEBUG to true" do
     ruby_exe(@script, options: "-d",
-                      args: "0 2> #{dev_null()}").chomp.should == "$DEBUG true"
+                      args: "0 2> #{File::NULL}").chomp.should == "$DEBUG true"
   end
 
   it "sets $VERBOSE to true" do
     ruby_exe(@script, options: "-d",
-                      args: "1 2> #{dev_null()}").chomp.should == "$VERBOSE true"
+                      args: "1 2> #{File::NULL}").chomp.should == "$VERBOSE true"
   end
 
   it "sets $-d to true" do
     ruby_exe(@script, options: "-d",
-                      args: "2 2> #{dev_null()}").chomp.should == "$-d true"
+                      args: "2 2> #{File::NULL}").chomp.should == "$-d true"
   end
 end

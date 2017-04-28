@@ -19,10 +19,18 @@ describe "Socket.getnameinfo" do
     name_info.should == ['127.0.0.1', "#{SocketSpecs.port}"]
   end
 
+  def should_be_valid_dns_name(name)
+    # http://stackoverflow.com/questions/106179/regular-expression-to-match-hostname-or-ip-address
+    # ftp://ftp.rfc-editor.org/in-notes/rfc3696.txt
+    # http://domainkeys.sourceforge.net/underscore.html
+    valid_dns = /^(([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])\.)*([A-Za-z_]|[A-Za-z_][A-Za-z0-9\-_]*[A-Za-z0-9_])\.?$/
+    name.should =~ valid_dns
+  end
+
   it "gets the name information and resolve the host" do
     sockaddr = Socket.sockaddr_in SocketSpecs.port, '127.0.0.1'
     name_info = Socket.getnameinfo(sockaddr, Socket::NI_NUMERICSERV)
-    name_info[0].should be_valid_DNS_name
+    should_be_valid_dns_name(name_info[0])
     name_info[1].should == SocketSpecs.port.to_s
   end
 
@@ -30,7 +38,7 @@ describe "Socket.getnameinfo" do
     sockaddr = Socket.sockaddr_in 9, '127.0.0.1'
     name_info = Socket.getnameinfo(sockaddr)
     name_info.size.should == 2
-    name_info[0].should be_valid_DNS_name
+    should_be_valid_dns_name(name_info[0])
     # see http://www.iana.org/assignments/port-numbers
     name_info[1].should == 'discard'
   end

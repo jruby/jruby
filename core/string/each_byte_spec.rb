@@ -52,11 +52,8 @@ describe "String#each_byte" do
           str.each_byte.size.should == str.bytesize
           str = "ola"
           str.each_byte.size.should == str.bytesize
-          before = $KCODE
-          $KCODE = "UTF-8"
           str = "\303\207\342\210\202\303\251\306\222g"
           str.each_byte.size.should == str.bytesize
-          $KCODE = before
         end
       end
     end

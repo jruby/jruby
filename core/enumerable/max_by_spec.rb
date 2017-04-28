@@ -41,42 +41,40 @@ describe "Enumerable#max_by" do
 
   it_behaves_like :enumerable_enumeratorized_with_origin_size, :max_by
 
-  ruby_version_is "2.2" do
-    context "when called with an argument n" do
-      before :each do
-        @enum = EnumerableSpecs::Numerous.new(101, 55, 1, 20, 33, 500, 60)
+  context "when called with an argument n" do
+    before :each do
+      @enum = EnumerableSpecs::Numerous.new(101, 55, 1, 20, 33, 500, 60)
+    end
+
+    context "without a block" do
+      it "returns an enumerator" do
+        @enum.max_by(2).should be_an_instance_of(Enumerator)
+      end
+    end
+
+    context "with a block" do
+      it "returns an array containing the maximum n elements based on the block's value" do
+        result = @enum.max_by(3) { |i| i.to_s }
+        result.should == [60, 55, 500]
       end
 
-      context "without a block" do
-        it "returns an enumerator" do
-          @enum.max_by(2).should be_an_instance_of(Enumerator)
-        end
-      end
-
-      context "with a block" do
-        it "returns an array containing the maximum n elements based on the block's value" do
-          result = @enum.max_by(3) { |i| i.to_s }
-          result.should == [60, 55, 500]
-        end
-
-        context "on a enumerable of length x where x < n" do
-          it "returns an array containing the maximum n elements of length n" do
-            result = @enum.max_by(500) { |i| i.to_s }
-            result.length.should == 7
-          end
-        end
-
-        context "when n is negative" do
-          it "raises an ArgumentError" do
-            lambda { @enum.max_by(-1) { |i| i.to_s } }.should raise_error(ArgumentError)
-          end
+      context "on a enumerable of length x where x < n" do
+        it "returns an array containing the maximum n elements of length n" do
+          result = @enum.max_by(500) { |i| i.to_s }
+          result.length.should == 7
         end
       end
 
-      context "when n is nil" do
-        it "returns the maximum element" do
-          @enum.max_by(nil) { |i| i.to_s }.should == 60
+      context "when n is negative" do
+        it "raises an ArgumentError" do
+          lambda { @enum.max_by(-1) { |i| i.to_s } }.should raise_error(ArgumentError)
         end
+      end
+    end
+
+    context "when n is nil" do
+      it "returns the maximum element" do
+        @enum.max_by(nil) { |i| i.to_s }.should == 60
       end
     end
   end

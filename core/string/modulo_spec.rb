@@ -298,6 +298,7 @@ describe "String#%" do
     ("%*b" % [10, 6]).should == "       110"
     ("%*b" % [-10, 6]).should == "110       "
     ("%.4b" % 2).should == "0010"
+    ("%.32b" % 2147483648).should == "10000000000000000000000000000000"
   end
 
   it "supports binary formats using %b for negative numbers" do
@@ -524,6 +525,7 @@ describe "String#%" do
     ("%-22p" % 10).should == "10                    "
     ("%*p" % [10, 10]).should == "        10"
     ("%p" % {capture: 1}).should == "{:capture=>1}"
+    ("%p" % "str").should == "\"str\""
   end
 
   it "calls inspect on arguments for %p format" do

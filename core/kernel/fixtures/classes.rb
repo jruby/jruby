@@ -76,8 +76,7 @@ module KernelSpecs
   end
 
   class Method
-    public :abort, :exec, :exit, :exit!, :fork, :system
-    public :spawn if respond_to?(:spawn, true)
+    public :abort, :exit, :exit!, :fork, :system
   end
 
   class Methods
@@ -383,12 +382,6 @@ module KernelSpecs
 
     def to_a
       [3, 4]
-    end
-  end
-
-  class NotMatch
-    def !~(obj)
-      :foo
     end
   end
 end

@@ -168,4 +168,13 @@ end
     end
     err.backtrace.first.split(":")[0..1].should == ["a_file", "10"]
   end
+
+  it "evaluates string with given filename and negative linenumber" do
+    err = begin
+      Object.new.instance_eval("\n\nraise\n", "b_file", -100)
+    rescue => e
+      e
+    end
+    err.backtrace.first.split(":")[0..1].should == ["b_file", "-98"]
+  end
 end

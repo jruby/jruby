@@ -30,35 +30,16 @@ describe "Kernel#taint" do
     end
   end
 
-  ruby_version_is "2.1"..."2.2" do
-    it "raises a RuntimeError on symbols" do
-      v = :sym
-      lambda { v.taint }.should raise_error(RuntimeError)
-    end
+  it "no raises a RuntimeError on symbols" do
+    v = :sym
+    lambda { v.taint }.should_not raise_error(RuntimeError)
+    v.tainted?.should == false
   end
 
-  ruby_version_is "2.2" do
-    it "no raises a RuntimeError on symbols" do
-      v = :sym
+  it "no raises error on fixnum values" do
+    [1].each do |v|
       lambda { v.taint }.should_not raise_error(RuntimeError)
       v.tainted?.should == false
-    end
-  end
-
-  ruby_version_is ""..."2.2" do
-    it "raises error on fixnum values" do
-      [1].each do |v|
-        lambda { v.taint }.should raise_error(RuntimeError)
-      end
-    end
-  end
-
-  ruby_version_is "2.2" do
-    it "no raises error on fixnum values" do
-      [1].each do |v|
-        lambda { v.taint }.should_not raise_error(RuntimeError)
-        v.tainted?.should == false
-      end
     end
   end
 end

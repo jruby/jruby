@@ -3,10 +3,7 @@ require 'getoptlong'
 
 describe "GetoptLong#ordering=" do
   it "raises an ArgumentError if called after processing has started" do
-    begin
-      old_argv = ARGV
-      ARGV = [ "--size", "10k", "--verbose" ]
-
+    argv [ "--size", "10k", "--verbose" ] do
       opts = GetoptLong.new([ '--size', GetoptLong::REQUIRED_ARGUMENT ],
         [ '--verbose', GetoptLong::NO_ARGUMENT ])
       opts.quiet = true
@@ -15,8 +12,6 @@ describe "GetoptLong#ordering=" do
       lambda {
         opts.ordering = GetoptLong::PERMUTE
       }.should raise_error(ArgumentError)
-    ensure
-      ARGV = old_argv
     end
   end
 

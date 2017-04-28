@@ -16,10 +16,8 @@ describe :string_chars, shared: true do
 
 
   it "is unicode aware" do
-    before = $KCODE
-    $KCODE = "UTF-8"
-    "\303\207\342\210\202\303\251\306\222g".send(@method).to_a.should == ["\303\207", "\342\210\202", "\303\251", "\306\222", "g"]
-    $KCODE = before
+    "\303\207\342\210\202\303\251\306\222g".send(@method).to_a.should ==
+      ["\303\207", "\342\210\202", "\303\251", "\306\222", "g"]
   end
 
   with_feature :encoding do
