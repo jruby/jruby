@@ -54,7 +54,10 @@ describe "Net::HTTPHeader#fetch" do
       @headers.add_field("My-Other-Header", "a")
       @headers.add_field("My-Other-Header", "b")
       @headers.add_field("My-Other-Header", "c")
-      @headers.fetch("My-Other-Header", "bla") {}.should == "a, b, c"
+      -> {
+        @result = @headers.fetch("My-Other-Header", "bla") {}
+      }.should complain(/block supersedes default value argument/)
+      @result.should == "a, b, c"
     end
 
     # TODO: This raises a NoMethodError: undefined method `join' for "redaeh-ym":String

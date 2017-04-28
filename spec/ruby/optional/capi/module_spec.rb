@@ -24,8 +24,31 @@ describe "CApiModule" do
     end
 
     it "sets an existing constant's value" do
-      @m.rb_const_set(CApiModuleSpecs::C, :Z, 8)
+      -> {
+        @m.rb_const_set(CApiModuleSpecs::C, :Z, 8)
+      }.should complain(/already initialized constant/)
       CApiModuleSpecs::C::Z.should == 8
+    end
+  end
+
+  describe "rb_define_module" do
+    it "returns the module if it is already defined" do
+      mod = @m.rb_define_module("CApiModuleSpecsModuleA")
+      mod.const_get(:X).should == 1
+    end
+
+    it "raises a TypeError if the constant is not a module" do
+      ::CApiModuleSpecsGlobalConst = 7
+      lambda { @m.rb_define_module("CApiModuleSpecsGlobalConst") }.should raise_error(TypeError)
+      Object.send :remove_const, :CApiModuleSpecsGlobalConst
+    end
+
+    it "defines a new module at toplevel" do
+      mod = @m.rb_define_module("CApiModuleSpecsModuleB")
+      mod.should be_kind_of(Module)
+      mod.name.should == "CApiModuleSpecsModuleB"
+      ::CApiModuleSpecsModuleB.should be_kind_of(Module)
+      Object.send :remove_const, :CApiModuleSpecsModuleB
     end
   end
 
@@ -60,7 +83,9 @@ describe "CApiModule" do
     end
 
     it "sets an existing constant's value" do
-      @m.rb_define_const(CApiModuleSpecs::C, "Z", 9)
+      -> {
+        @m.rb_define_const(CApiModuleSpecs::C, "Z", 9)
+      }.should complain(/already initialized constant/)
       CApiModuleSpecs::C::Z.should == 9
     end
   end

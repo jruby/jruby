@@ -82,40 +82,38 @@ describe "Enumerable#max" do
     multi.max.should == [6, 7, 8, 9]
   end
 
-  ruby_version_is "2.2" do
-    context "when called with an argument n" do
-      context "without a block" do
-        it "returns an array containing the maximum n elements" do
-          result = @e_ints.max(2)
-          result.should == [1010101010, 666666]
-        end
-      end
-
-      context "with a block" do
-        it "returns an array containing the maximum n elements" do
-          result = @e_ints.max(2) { |a, b| a * 2 <=> b * 2 }
-          result.should == [1010101010, 666666]
-        end
-      end
-
-      context "on a enumerable of length x where x < n" do
-        it "returns an array containing the maximum n elements of length x" do
-          result = @e_ints.max(500)
-          result.length.should == 5
-        end
-      end
-
-      context "that is negative" do
-        it "raises an ArgumentError" do
-          lambda { @e_ints.max(-1) }.should raise_error(ArgumentError)
-        end
+  context "when called with an argument n" do
+    context "without a block" do
+      it "returns an array containing the maximum n elements" do
+        result = @e_ints.max(2)
+        result.should == [1010101010, 666666]
       end
     end
 
-    context "that is nil" do
-      it "returns the maximum element" do
-        @e_ints.max(nil).should == 1010101010
+    context "with a block" do
+      it "returns an array containing the maximum n elements" do
+        result = @e_ints.max(2) { |a, b| a * 2 <=> b * 2 }
+        result.should == [1010101010, 666666]
       end
+    end
+
+    context "on a enumerable of length x where x < n" do
+      it "returns an array containing the maximum n elements of length x" do
+        result = @e_ints.max(500)
+        result.length.should == 5
+      end
+    end
+
+    context "that is negative" do
+      it "raises an ArgumentError" do
+        lambda { @e_ints.max(-1) }.should raise_error(ArgumentError)
+      end
+    end
+  end
+
+  context "that is nil" do
+    it "returns the maximum element" do
+      @e_ints.max(nil).should == 1010101010
     end
   end
 end

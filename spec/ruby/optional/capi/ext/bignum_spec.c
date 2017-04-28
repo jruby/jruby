@@ -102,30 +102,6 @@ static VALUE bignum_spec_rb_big_pack_array(VALUE self, VALUE val, VALUE len) {
 }
 #endif
 
-#ifdef HAVE_RBIGNUM_SIGN
-static VALUE bignum_spec_RBIGNUM_SIGN(VALUE self, VALUE num) {
-  return RBIGNUM_SIGN(num) ? Qtrue : Qfalse;
-}
-#endif
-
-#ifdef HAVE_RBIGNUM_POSITIVE_P
-static VALUE bignum_spec_RBIGNUM_POSITIVE_P(VALUE self, VALUE num) {
-  return RBIGNUM_POSITIVE_P(num) ? Qtrue : Qfalse;
-}
-#endif
-
-#ifdef HAVE_RBIGNUM_NEGATIVE_P
-static VALUE bignum_spec_RBIGNUM_NEGATIVE_P(VALUE self, VALUE num) {
-  return RBIGNUM_NEGATIVE_P(num) ? Qtrue : Qfalse;
-}
-#endif
-
-#ifdef HAVE_RBIGNUM_LEN
-static VALUE bignum_spec_RBIGNUM_LEN(VALUE self, VALUE num) {
-  return LONG2NUM(RBIGNUM_LEN(num));
-}
-#endif
-
 void Init_bignum_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiBignumSpecs", rb_cObject);
@@ -165,22 +141,6 @@ void Init_bignum_spec(void) {
 
 #ifdef HAVE_ABSINT_SIZE
   rb_define_method(cls, "rb_big_pack_length", bignum_spec_rb_big_pack_length, 1);
-#endif
-
-#ifdef HAVE_RBIGNUM_SIGN
-  rb_define_method(cls, "RBIGNUM_SIGN", bignum_spec_RBIGNUM_SIGN, 1);
-#endif
-
-#ifdef HAVE_RBIGNUM_POSITIVE_P
-  rb_define_method(cls, "RBIGNUM_POSITIVE_P", bignum_spec_RBIGNUM_POSITIVE_P, 1);
-#endif
-
-#ifdef HAVE_RBIGNUM_NEGATIVE_P
-  rb_define_method(cls, "RBIGNUM_NEGATIVE_P", bignum_spec_RBIGNUM_NEGATIVE_P, 1);
-#endif
-
-#ifdef HAVE_RBIGNUM_LEN
-  rb_define_method(cls, "RBIGNUM_LEN", bignum_spec_RBIGNUM_LEN, 1);
 #endif
 }
 

@@ -15,41 +15,42 @@ describe :enum_each, shared: true do
 
   it "yields each element of self to the given block" do
     acc = []
-    Enumerator.new([1,2,3]).each {|e| acc << e }
+    [1,2,3].to_enum.each {|e| acc << e }
     acc.should == [1,2,3]
   end
 
   it "calls #each on the object given in the constructor by default" do
     each = mock('each')
     each.should_receive(:each)
-    Enumerator.new(each).each {|e| e }
+    each.to_enum.each {|e| e }
   end
 
   it "calls #each on the underlying object until it's exhausted" do
     each = mock('each')
     each.should_receive(:each).and_yield(1).and_yield(2).and_yield(3)
     acc = []
-    Enumerator.new(each).each {|e| acc << e }
+    each.to_enum.each {|e| acc << e }
     acc.should == [1,2,3]
   end
 
   it "calls the method given in the constructor instead of #each" do
     each = mock('peach')
     each.should_receive(:peach)
-    Enumerator.new(each, :peach).each {|e| e }
+    each.to_enum(:peach).each {|e| e }
   end
 
   it "calls the method given in the constructor until it's exhausted" do
     each = mock('each')
     each.should_receive(:each).and_yield(1).and_yield(2).and_yield(3)
     acc = []
-    Enumerator.new(each).each {|e| acc << e }
+    each.to_enum.each {|e| acc << e }
     acc.should == [1,2,3]
   end
 
   it "raises a NoMethodError if the object doesn't respond to #each" do
+    enum = Object.new.to_enum
     lambda do
-      Enumerator.new(Object.new).each {|e| e }
+      enum.each { |e| e }
     end.should raise_error(NoMethodError)
   end
 

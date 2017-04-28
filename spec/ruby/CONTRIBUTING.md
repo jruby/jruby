@@ -53,11 +53,11 @@ which indicates the file was generated but the method unspecified.
 Different guards are available as defined by mspec.
 In general, the usage of guards should be minimized as possible.
 
-The following guards are deprecated and should not be used in new code:
-* `not_compliant_on`: Simply tag the spec as failing instead.
-  If it makes sense to test part of the example, split it (an example should have only one or a few `should`).
-* `compliant_on` / `deviates_on`: The Ruby Spec Suite defines common behavior and not implementation details.
-  Use the implementation test suite for these.
+There are no guards to define implementation-specific behavior because
+the Ruby Spec Suite defines common behavior and not implementation details.
+Use the implementation test suite for these.
+
+If an implementation does not support some feature, simply tag the related specs as failing instead.
 
 ### Style
 

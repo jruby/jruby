@@ -1,4 +1,3 @@
-require 'mspec/helpers/datetime'
 require 'date'
 
 describe :datetime_sec, shared: true do

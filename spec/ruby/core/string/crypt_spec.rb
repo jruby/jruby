@@ -31,10 +31,14 @@ describe "String#crypt" do
   it "raises an ArgumentError when the salt is shorter than two characters" do
     lambda { "hello".crypt("")  }.should raise_error(ArgumentError)
     lambda { "hello".crypt("f") }.should raise_error(ArgumentError)
-    ruby_version_is "2.2" do
-      lambda { "hello".crypt("\x00\x00") }.should raise_error(ArgumentError)
-      lambda { "hello".crypt("\x00a") }.should raise_error(ArgumentError)
-      lambda { "hello".crypt("a\x00") }.should raise_error(ArgumentError)
+    lambda { "hello".crypt("\x00\x00") }.should raise_error(ArgumentError)
+    lambda { "hello".crypt("\x00a") }.should raise_error(ArgumentError)
+    lambda { "hello".crypt("a\x00") }.should raise_error(ArgumentError)
+  end
+
+  ruby_version_is "2.3" do
+    it "raises an ArgumentError when the string contains NUL character" do
+      lambda { "poison\0null".crypt("aa") }.should raise_error(ArgumentError)
     end
   end
 

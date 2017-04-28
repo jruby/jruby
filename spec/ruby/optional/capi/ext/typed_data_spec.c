@@ -8,6 +8,30 @@ extern "C" {
 #endif
 
 #if defined(HAVE_RTYPEDDATA) && defined(HAVE_TYPEDDATA_WRAP_STRUCT)
+struct sample_typed_wrapped_struct_parent {
+    int foo;
+};
+
+void sample_typed_wrapped_struct_parent_free(void* st) {
+  free(st);
+}
+
+void sample_typed_wrapped_struct_parent_mark(void* st) {
+}
+
+size_t sample_typed_wrapped_struct_parent_memsize(const void* st) {
+  return sizeof(struct sample_typed_wrapped_struct_parent);
+}
+
+static const rb_data_type_t sample_typed_wrapped_struct_parent_data_type = {
+  "sample_typed_wrapped_struct_parent",
+  {
+    sample_typed_wrapped_struct_parent_mark,
+    sample_typed_wrapped_struct_parent_free,
+    sample_typed_wrapped_struct_parent_memsize,
+  },
+};
+
 struct sample_typed_wrapped_struct {
     int foo;
 };
@@ -30,6 +54,7 @@ static const rb_data_type_t sample_typed_wrapped_struct_data_type = {
     sample_typed_wrapped_struct_free,
     sample_typed_wrapped_struct_memsize,
   },
+  &sample_typed_wrapped_struct_parent_data_type,
 };
 
 struct sample_typed_wrapped_struct_other {
@@ -96,6 +121,13 @@ VALUE sws_typed_get_struct_different_type(VALUE self, VALUE obj) {
     return INT2FIX((*bar).foo);
 }
 
+VALUE sws_typed_get_struct_parent_type(VALUE self, VALUE obj) {
+    struct sample_typed_wrapped_struct_parent* bar;
+    TypedData_Get_Struct(obj, struct sample_typed_wrapped_struct_parent, &sample_typed_wrapped_struct_parent_data_type, bar);
+
+    return INT2FIX((*bar).foo);
+}
+
 VALUE sws_typed_get_struct_rdata(VALUE self, VALUE obj) {
   struct sample_typed_wrapped_struct* bar;
   bar = (struct sample_typed_wrapped_struct*) RTYPEDDATA(obj)->data;
@@ -132,6 +164,7 @@ void Init_typed_data_spec(void) {
   rb_define_method(cls, "typed_wrap_struct_null", sws_typed_wrap_struct_null, 1);
   rb_define_method(cls, "typed_get_struct", sws_typed_get_struct, 1);
   rb_define_method(cls, "typed_get_struct_other", sws_typed_get_struct_different_type, 1);
+  rb_define_method(cls, "typed_get_struct_parent", sws_typed_get_struct_parent_type, 1);
   rb_define_method(cls, "typed_get_struct_rdata", sws_typed_get_struct_rdata, 1);
   rb_define_method(cls, "typed_get_struct_data_ptr", sws_typed_get_struct_data_ptr, 1);
   rb_define_method(cls, "typed_change_struct", sws_typed_change_struct, 2);

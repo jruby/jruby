@@ -263,6 +263,12 @@ VALUE string_spec_rb_str_plus(VALUE self, VALUE str1, VALUE str2) {
 }
 #endif
 
+#ifdef HAVE_RB_STR_TIMES
+VALUE string_spec_rb_str_times(VALUE self, VALUE str, VALUE times) {
+  return rb_str_times(str, times);
+}
+#endif
+
 #ifdef HAVE_RB_STR_RESIZE
 VALUE string_spec_rb_str_resize(VALUE self, VALUE str, VALUE size) {
   return rb_str_resize(str, FIX2INT(size));
@@ -425,6 +431,12 @@ static VALUE string_spec_rb_usascii_str_new_cstr(VALUE self, VALUE str) {
 }
 #endif
 
+#ifdef HAVE_RB_STRING
+static VALUE string_spec_rb_String(VALUE self, VALUE val) {
+  return rb_String(val);
+}
+#endif
+
 void Init_string_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiStringSpecs", rb_cObject);
@@ -558,6 +570,10 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_str_plus", string_spec_rb_str_plus, 2);
 #endif
 
+#ifdef HAVE_RB_STR_TIMES
+  rb_define_method(cls, "rb_str_times", string_spec_rb_str_times, 2);
+#endif
+
 #ifdef HAVE_RB_STR_RESIZE
   rb_define_method(cls, "rb_str_resize", string_spec_rb_str_resize, 2);
   rb_define_method(cls, "rb_str_resize_RSTRING_LEN",
@@ -636,6 +652,10 @@ void Init_string_spec(void) {
 
 #ifdef HAVE_RB_USASCII_STR_NEW_CSTR
   rb_define_method(cls, "rb_usascii_str_new_cstr", string_spec_rb_usascii_str_new_cstr, 1);
+#endif
+
+#ifdef HAVE_RB_STRING
+  rb_define_method(cls, "rb_String", string_spec_rb_String, 1);
 #endif
 }
 

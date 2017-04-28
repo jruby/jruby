@@ -10,7 +10,7 @@ describe "Float#round" do
     0.0.round.should == 0
   end
 
-  platform_is_not "x64-mingw32" do
+  platform_is_not :mingw32 do
     it "returns the nearest Integer for Float near the limit" do
       0.49999999999999994.round.should == 0
       -0.49999999999999994.round.should == 0

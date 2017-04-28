@@ -9,6 +9,10 @@ describe "Math.log2" do
   it "returns the natural logarithm of the argument" do
     Math.log2(1.1).should be_close(0.137503523749935, TOLERANCE)
     Math.log2(3.14).should be_close(1.6507645591169, TOLERANCE)
+    Math.log2((2**101+45677544234809571)).should be_close(101.00000000000003, TOLERANCE)
+
+    Math.log2((2**10001+45677544234809571)).should == 10001.0
+    Math.log2((2**301+45677544234809571)).should == 301.0
   end
 
   it "raises an Errno::EDOM if the argument is less than 0" do

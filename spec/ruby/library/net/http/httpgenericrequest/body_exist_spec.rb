@@ -10,18 +10,13 @@ describe "Net::HTTPGenericRequest#body_exist?" do
     request.body_exist?.should be_false
   end
 
-  # TODO: Doesn't work?!
-  #
-  # describe "when $VERBOSE is true" do
-  #   it "emits a warning" do
-  #     old_verbose, $VERBOSE = $VERBOSE, true
-  #
-  #     begin
-  #       request = Net::HTTPGenericRequest.new("POST", true, false, "/some/path")
-  #       lambda { request.body_exist? }.should complain("")
-  #     ensure
-  #       $VERBOSE = old_verbose
-  #     end
-  #   end
-  # end
+  describe "when $VERBOSE is true" do
+    it "emits a warning" do
+      request = Net::HTTPGenericRequest.new("POST", true, false, "/some/path")
+      lambda {
+        $VERBOSE = true
+        request.body_exist?
+      }.should complain(/body_exist\? is obsolete/)
+    end
+  end
 end

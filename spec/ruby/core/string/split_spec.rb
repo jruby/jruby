@@ -3,15 +3,6 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
 describe "String#split with String" do
-
-  before :each do
-    @kcode = $KCODE
-  end
-
-  after :each do
-    $KCODE = @kcode
-  end
-
   with_feature :encoding do
     it "throws an ArgumentError if the pattern is not a valid string" do
       str = 'проверка'
@@ -286,11 +277,9 @@ describe "String#split with Regexp" do
     "AABCCBAA".split(/(?=B)/, 2).should == ["AA", "BCCBAA"]
   end
 
-  it "respects $KCODE when splitting between characters" do
+  it "respects unicode when splitting between characters" do
     str = "こにちわ"
     reg = %r!!
-
-    $KCODE = "utf-8"
     ary = str.split(reg)
     ary.size.should == 4
     ary.should == ["こ", "に", "ち", "わ"]
@@ -298,9 +287,6 @@ describe "String#split with Regexp" do
 
   it "respects the encoding of the regexp when splitting between characters" do
     str = "\303\202"
-
-    $KCODE = "a"
-
     ary = str.split(//u)
     ary.size.should == 1
     ary.should == ["\303\202"]

@@ -3,13 +3,15 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Literal Regexps" do
   it "matches against $_ (last input) in a conditional if no explicit matchee provided" do
-    $_ = nil
+    -> {
+      eval <<-EOR
+      $_ = nil
+      (true if /foo/).should_not == true
 
-    (true if /foo/).should_not == true
-
-    $_ = "foo"
-
-    (true if /foo/).should == true
+      $_ = "foo"
+      (true if /foo/).should == true
+      EOR
+    }.should complain(/regex literal in condition/)
   end
 
   it "yields a Regexp" do

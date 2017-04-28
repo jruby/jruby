@@ -21,17 +21,8 @@ describe "Kernel#untrusted?" do
     c.untrusted?.should == false
   end
 
-  ruby_version_is ""..."2.2" do
-    it "has no effect on immediate values" do
-      d = 1
-      lambda { d.untrust }.should raise_error(RuntimeError)
-    end
-  end
-
-  ruby_version_is "2.2" do
-    it "has effect on immediate values" do
-      d = 1
-      lambda { d.untrust }.should_not raise_error(RuntimeError)
-    end
+  it "has effect on immediate values" do
+    d = 1
+    lambda { d.untrust }.should_not raise_error(RuntimeError)
   end
 end

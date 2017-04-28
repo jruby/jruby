@@ -38,12 +38,21 @@ describe :kernel_system, shared: true do
   end
 
   platform_is_not :windows do
+    before :each do
+      @shell = ENV['SHELL']
+    end
+
+    before :each do
+      ENV['SHELL'] = @shell
+    end
+
     it "executes with `sh` if the command contains shell characters" do
       lambda { @object.system("echo $0") }.should output_to_fd("sh\n")
     end
 
     it "ignores SHELL env var and always uses `sh`" do
-      lambda { @object.system("SHELL=/bin/zsh echo $0") }.should output_to_fd("sh\n")
+      ENV['SHELL'] = "/bin/zsh"
+      lambda { @object.system("echo $0") }.should output_to_fd("sh\n")
     end
   end
 

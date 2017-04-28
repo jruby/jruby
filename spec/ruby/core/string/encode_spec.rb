@@ -64,9 +64,13 @@ with_feature :encoding do
     end
 
     describe "when passed to, from" do
-      it "returns a copy when both encodings are the same" do
+      it "returns a copy in the destination encoding when both encodings are the same" do
         str = "あ"
-        str.encode("utf-8", "utf-8").should_not equal(str)
+        str.force_encoding("ascii-8bit")
+        encoded = str.encode("utf-8", "utf-8")
+        
+        encoded.should_not equal(str)
+        encoded.encoding.should == Encoding::UTF_8
       end
 
       it "returns the transcoded string" do

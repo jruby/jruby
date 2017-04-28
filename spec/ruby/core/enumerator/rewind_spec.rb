@@ -7,7 +7,7 @@ describe "Enumerator#rewind" do
 
   it "calls the enclosed object's rewind method if one exists" do
     obj = mock('rewinder')
-    enum = Enumerator.new(obj)
+    enum = obj.to_enum
     obj.should_receive(:each).at_most(1)
     obj.should_receive(:rewind)
     enum.rewind
@@ -15,7 +15,7 @@ describe "Enumerator#rewind" do
 
   it "does nothing if the object doesn't have a #rewind method" do
     obj = mock('rewinder')
-    enum = Enumerator.new(obj)
+    enum = obj.to_enum
     obj.should_receive(:each).at_most(1)
     lambda { enum.rewind.should == enum }.should_not raise_error
   end

@@ -81,9 +81,7 @@ module NetHTTPSpecs
         end
       end
       if @server_thread
-        ruby_version_is "2.2" do # earlier versions can stay blocked on IO.select
-          @server_thread.join
-        end
+        @server_thread.join
       end
       timeout = WEBrick::Utils::TimeoutHandler
       timeout.terminate if timeout.respond_to?(:terminate)

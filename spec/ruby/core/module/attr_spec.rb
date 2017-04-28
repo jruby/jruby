@@ -2,6 +2,14 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Module#attr" do
+  before :each do
+    $VERBOSE, @verbose = false, $VERBOSE
+  end
+
+  after :each do
+    $VERBOSE = @verbose
+  end
+
   it "creates a getter for the given attribute name" do
     c = Class.new do
       attr :attr
@@ -126,6 +134,13 @@ describe "Module#attr" do
     lambda { Class.new { attr o } }.should raise_error(TypeError)
     (o = mock('123')).should_receive(:to_str).and_return(123)
     lambda { Class.new { attr o } }.should raise_error(TypeError)
+  end
+
+  it "with a boolean argument emits a warning when $VERBOSE is true" do
+    lambda {
+      $VERBOSE = true
+      Class.new { attr :foo, true }
+    }.should complain(/boolean argument is obsoleted/)
   end
 
   it "is a private method" do

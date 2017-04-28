@@ -21,8 +21,10 @@ describe "NameError#name" do
 
   it "returns a class variable name as a symbol" do
     -> {
-      @@doesnt_exist
-    }.should raise_error(NameError) {|e| e.name.should == :@@doesnt_exist }
+      -> {
+        @@doesnt_exist
+      }.should complain(/class variable access from toplevel/)
+    }.should raise_error(NameError) { |e| e.name.should == :@@doesnt_exist }
   end
 
   ruby_version_is ""..."2.3" do

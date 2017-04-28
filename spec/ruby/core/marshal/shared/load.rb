@@ -55,6 +55,8 @@ describe :marshal_load, shared: true do
 
       arr.should == ["hi", false, 5, 10, "hi", "hi", 0.0, st, "none", false,
                      :b, :c, a, 2, ["hi", 10, "hi", "hi", st, [:a, :b, :c]], "ant", false]
+
+      Struct.send(:remove_const, :Brittle)
     end
   end
 
@@ -216,20 +218,18 @@ describe :marshal_load, shared: true do
       y.first.tainted?.should be_false
     end
 
-    ruby_version_is "2.2" do
-      it "does not taint Bignums" do
-        x = [bignum_value]
-        y = Marshal.send(@method, Marshal.dump(x).taint)
-        y.tainted?.should be_true
-        y.first.tainted?.should be_false
-      end
+    it "does not taint Bignums" do
+      x = [bignum_value]
+      y = Marshal.send(@method, Marshal.dump(x).taint)
+      y.tainted?.should be_true
+      y.first.tainted?.should be_false
+    end
 
-      it "does not taint Floats" do
-        x = [1.2]
-        y = Marshal.send(@method, Marshal.dump(x).taint)
-        y.tainted?.should be_true
-        y.first.tainted?.should be_false
-      end
+    it "does not taint Floats" do
+      x = [1.2]
+      y = Marshal.send(@method, Marshal.dump(x).taint)
+      y.tainted?.should be_true
+      y.first.tainted?.should be_false
     end
   end
 
@@ -416,19 +416,23 @@ describe :marshal_load, shared: true do
       obj.a = [:a, s]
       obj.b = [:Meths, s]
 
-      Marshal.send(@method, "\004\be:\nMethsS:\021Struct::Ure2\a:\006a[\a;\a\"\ahi:\006b[\a;\000@\a").should ==
-        obj
+      Marshal.send(@method,
+        "\004\be:\nMethsS:\021Struct::Ure2\a:\006a[\a;\a\"\ahi:\006b[\a;\000@\a"
+        ).should == obj
+      Struct.send(:remove_const, :Ure2)
     end
 
     it "loads a struct having ivar" do
       obj = Struct.new("Thick").new
       obj.instance_variable_set(:@foo, 5)
       Marshal.send(@method, "\004\bIS:\022Struct::Thick\000\006:\t@fooi\n").should == obj
+      Struct.send(:remove_const, :Thick)
     end
 
     it "loads a struct having fields" do
       obj = Struct.new("Ure1", :a, :b).new
       Marshal.send(@method, "\004\bS:\021Struct::Ure1\a:\006a0:\006b0").should == obj
+      Struct.send(:remove_const, :Ure1)
     end
 
     it "does not call initialize on the unmarshaled struct" do

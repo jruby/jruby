@@ -29,15 +29,6 @@ describe "String#casecmp independent of case" do
   end
 
   describe "in UTF-8 mode" do
-    before :each do
-      @kcode = $KCODE
-      $KCODE = "utf-8"
-    end
-
-    after :each do
-      $KCODE = @kcode
-    end
-
     describe "for non-ASCII characters" do
       before :each do
         @upper_a_tilde  = "\xc3\x83"

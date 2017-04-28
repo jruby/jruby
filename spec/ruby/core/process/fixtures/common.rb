@@ -13,7 +13,7 @@ module ProcessSpecs
     end
 
     def wait_for_daemon
-      sleep 0.1 until File.exist?(@data) and File.size?(@data)
+      sleep 0.001 until File.exist?(@data) and File.size?(@data)
     end
 
     def invoke(behavior, arguments=[])
@@ -38,6 +38,7 @@ module ProcessSpecs
         fail "not supported on windows"
       end
       @script = fixture __FILE__, "kill.rb"
+      @pid = nil
       @pid_file = tmp("process_kill_signal_file")
       rm_r @pid_file
 

@@ -141,6 +141,15 @@ describe "Kernel#eval" do
     }
   end
 
+  it "evaluates string with given filename and negative linenumber" do
+    expected_file = 'speccing.rb'
+    lambda {
+      eval('if true',TOPLEVEL_BINDING, expected_file, -100)
+    }.should raise_error(SyntaxError) { |e|
+      e.message.should =~ /#{expected_file}:-100:.+/
+    }
+  end
+
   it "sets constants at the toplevel from inside a block" do
     # The class Object bit is needed to workaround some mspec oddness
     class Object

@@ -200,7 +200,7 @@ describe "File.expand_path" do
 
   it "does not modify a HOME string argument" do
     str = "~/a"
-    File.expand_path(str).should == "#{home_directory}/a"
+    File.expand_path(str).should == "#{Dir.home}/a"
     str.should == "~/a"
   end
 

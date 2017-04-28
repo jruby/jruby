@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require 'socket'
 
 describe "Socket::BasicSocket#ioctl" do
-  platform_is os: :linux do
+  platform_is :linux do
     it "passes data from and to a String correctly" do
       s = Socket.new Socket::AF_INET, Socket::SOCK_DGRAM, 0
       # /usr/include/net/if.h, structure ifreq
@@ -21,7 +21,7 @@ describe "Socket::BasicSocket#ioctl" do
     end
   end
 
-  platform_is os: :freebsd do
+  platform_is :freebsd do
     it "passes data from and to a String correctly" do
       s = Socket.new Socket::AF_INET, Socket::SOCK_DGRAM, 0
       # /usr/include/net/if.h, structure ifreq

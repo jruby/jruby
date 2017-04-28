@@ -69,7 +69,7 @@ describe "BasicSocket#setsockopt" do
       n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
       n.should_not == [0].pack("i")
 
-      platform_is_not os: :windows do
+      platform_is_not :windows do
         lambda {
           @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "")
         }.should raise_error(SystemCallError)
@@ -79,7 +79,7 @@ describe "BasicSocket#setsockopt" do
       n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
       n.should_not == [0].pack("i")
 
-      platform_is_not os: :windows do
+      platform_is_not :windows do
         lambda {
           @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "0")
         }.should raise_error(SystemCallError)
@@ -89,13 +89,13 @@ describe "BasicSocket#setsockopt" do
       n = @sock.getsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE).to_s
       n.should == [0].pack("i")
 
-      platform_is_not os: :windows do
+      platform_is_not :windows do
         lambda {
           @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "1")
         }.should raise_error(SystemCallError)
       end
 
-      platform_is_not os: :windows do
+      platform_is_not :windows do
         lambda {
           @sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_OOBINLINE, "\x00\x00\x00")
         }.should raise_error(SystemCallError)

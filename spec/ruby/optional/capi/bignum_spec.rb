@@ -118,63 +118,61 @@ end
       val.should == @max_ulong
     end
 
-    ruby_version_is "2.2" do
-      platform_is wordsize: 64 do
-        it "packs max_ulong into 2 ulongs to allow sign bit" do
-          val = @s.rb_big_pack_length(@max_ulong)
-          val.should == 2
-          val = @s.rb_big_pack_array(@max_ulong, 2)
-          val[0].should == @max_ulong
-          val[1].should == 0
-        end
+    platform_is wordsize: 64 do
+      it "packs max_ulong into 2 ulongs to allow sign bit" do
+        val = @s.rb_big_pack_length(@max_ulong)
+        val.should == 2
+        val = @s.rb_big_pack_array(@max_ulong, 2)
+        val[0].should == @max_ulong
+        val[1].should == 0
+      end
 
-        it "packs a 72-bit positive Bignum into 2 unsigned longs" do
-          num = 2 ** 71
-          val = @s.rb_big_pack_length(num)
-          val.should == 2
-        end
+      it "packs a 72-bit positive Bignum into 2 unsigned longs" do
+        num = 2 ** 71
+        val = @s.rb_big_pack_length(num)
+        val.should == 2
+      end
 
-        it "packs a 72-bit positive Bignum into correct 2 longs" do
-          num = 2 ** 71 + 1
-          val = @s.rb_big_pack_array(num, 2)
-          val[0].should == 1;
-          val[1].should == 0x80;
-        end
+      it "packs a 72-bit positive Bignum into correct 2 longs" do
+        num = 2 ** 71 + 1
+        val = @s.rb_big_pack_array(num, 2)
+        val[0].should == 1;
+        val[1].should == 0x80;
+      end
 
-        it "packs a 72-bit negative Bignum into correct 2 longs" do
-          num = -(2 ** 71 + 1)
-          val = @s.rb_big_pack_array(num, @s.rb_big_pack_length(num))
-          val[0].should == @max_ulong;
-          val[1].should == @max_ulong - 0x80;
-        end
+      it "packs a 72-bit negative Bignum into correct 2 longs" do
+        num = -(2 ** 71 + 1)
+        val = @s.rb_big_pack_array(num, @s.rb_big_pack_length(num))
+        val[0].should == @max_ulong;
+        val[1].should == @max_ulong - 0x80;
+      end
 
-        it "packs lower order bytes into least significant bytes of longs for positive bignum" do
-          num = 0
-          32.times { |i| num += i << (i * 8) }
-          val = @s.rb_big_pack_array(num, @s.rb_big_pack_length(num))
-          val.size.should == 4
-          32.times do |i|
-            a_long = val[i/8]
-            a_byte = (a_long >> ((i % 8) * 8)) & 0xff
-            a_byte.should ==  i
-          end
+      it "packs lower order bytes into least significant bytes of longs for positive bignum" do
+        num = 0
+        32.times { |i| num += i << (i * 8) }
+        val = @s.rb_big_pack_array(num, @s.rb_big_pack_length(num))
+        val.size.should == 4
+        32.times do |i|
+          a_long = val[i/8]
+          a_byte = (a_long >> ((i % 8) * 8)) & 0xff
+          a_byte.should ==  i
         end
+      end
 
-        it "packs lower order bytes into least significant bytes of longs for negative bignum" do
-          num = 0
-          32.times { |i| num += i << (i * 8) }
-          num = -num
-          val = @s.rb_big_pack_array(num, @s.rb_big_pack_length(num))
-          val.size.should == 4
-          expected_bytes = [0x00, 0xff, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
-                            0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
-                            0xef, 0xee, 0xed, 0xec, 0xeb, 0xea, 0xe9, 0xe8,
-                            0xe7, 0xe6, 0xe5, 0xe4, 0xe3, 0xe2, 0xe1, 0xe0 ]
-          32.times do |i|
-            a_long = val[i/8]
-            a_byte = (a_long >> ((i % 8) * 8)) & 0xff
-            a_byte.should == expected_bytes[i]
-          end
+      it "packs lower order bytes into least significant bytes of longs for negative bignum" do
+        num = 0
+        32.times { |i| num += i << (i * 8) }
+        num = -num
+        val = @s.rb_big_pack_array(num, @s.rb_big_pack_length(num))
+        val.size.should == 4
+        expected_bytes = [0x00, 0xff, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8,
+                          0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0,
+                          0xef, 0xee, 0xed, 0xec, 0xeb, 0xea, 0xe9, 0xe8,
+                          0xe7, 0xe6, 0xe5, 0xe4, 0xe3, 0xe2, 0xe1, 0xe0 ]
+        32.times do |i|
+          a_long = val[i/8]
+          a_byte = (a_long >> ((i % 8) * 8)) & 0xff
+          a_byte.should == expected_bytes[i]
         end
       end
     end
@@ -216,44 +214,6 @@ end
       nan = 0.0 / 0
 
       lambda { @s.rb_dbl2big(nan) }.should raise_error(FloatDomainError)
-    end
-  end
-
-  ruby_version_is ""..."2.2" do
-    describe "RBIGNUM_SIGN" do
-      it "returns C true if the Bignum has a positive sign" do
-        @s.RBIGNUM_SIGN(bignum_value).should be_true
-      end
-
-      it "retuns C false if the Bignum has a negative sign" do
-        @s.RBIGNUM_SIGN(-bignum_value).should be_false
-      end
-    end
-
-    describe "RBIGNUM_POSITIVE_P" do
-      it "returns C true if the Bignum has a positive sign" do
-        @s.RBIGNUM_POSITIVE_P(bignum_value).should be_true
-      end
-
-      it "retuns C false if the Bignum has a negative sign" do
-        @s.RBIGNUM_POSITIVE_P(-bignum_value).should be_false
-      end
-    end
-
-    describe "RBIGNUM_NEGATIVE_P" do
-      it "returns C false if the Bignum has a positive sign" do
-        @s.RBIGNUM_NEGATIVE_P(bignum_value).should be_false
-      end
-
-      it "retuns C true if the Bignum has a negative sign" do
-        @s.RBIGNUM_NEGATIVE_P(-bignum_value).should be_true
-      end
-    end
-
-    describe "RBIGNUM_LEN" do
-      it "returns the number of BDIGITS needed for the bignum" do
-        @s.RBIGNUM_LEN(bignum_value * 2).should == 3
-      end
     end
   end
 end

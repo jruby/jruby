@@ -41,42 +41,40 @@ describe "Enumerable#min_by" do
 
   it_behaves_like :enumerable_enumeratorized_with_origin_size, :min_by
 
-  ruby_version_is "2.2" do
-    context "when called with an argument n" do
-      before :each do
-        @enum = EnumerableSpecs::Numerous.new(101, 55, 1, 20, 33, 500, 60)
+  context "when called with an argument n" do
+    before :each do
+      @enum = EnumerableSpecs::Numerous.new(101, 55, 1, 20, 33, 500, 60)
+    end
+
+    context "without a block" do
+      it "returns an enumerator" do
+        @enum.min_by(2).should be_an_instance_of(Enumerator)
+      end
+    end
+
+    context "with a block" do
+      it "returns an array containing the minimum n elements based on the block's value" do
+        result = @enum.min_by(3) { |i| i.to_s }
+        result.should == [1, 101, 20]
       end
 
-      context "without a block" do
-        it "returns an enumerator" do
-          @enum.min_by(2).should be_an_instance_of(Enumerator)
-        end
-      end
-
-      context "with a block" do
-        it "returns an array containing the minimum n elements based on the block's value" do
-          result = @enum.min_by(3) { |i| i.to_s }
-          result.should == [1, 101, 20]
-        end
-
-        context "on a enumerable of length x where x < n" do
-          it "returns an array containing the minimum n elements of length n" do
-            result = @enum.min_by(500) { |i| i.to_s }
-            result.length.should == 7
-          end
-        end
-
-        context "when n is negative" do
-          it "raises an ArgumentError" do
-            lambda { @enum.min_by(-1) { |i| i.to_s } }.should raise_error(ArgumentError)
-          end
+      context "on a enumerable of length x where x < n" do
+        it "returns an array containing the minimum n elements of length n" do
+          result = @enum.min_by(500) { |i| i.to_s }
+          result.length.should == 7
         end
       end
 
-      context "when n is nil" do
-        it "returns the minimum element" do
-          @enum.min_by(nil) { |i| i.to_s }.should == 1
+      context "when n is negative" do
+        it "raises an ArgumentError" do
+          lambda { @enum.min_by(-1) { |i| i.to_s } }.should raise_error(ArgumentError)
         end
+      end
+    end
+
+    context "when n is nil" do
+      it "returns the minimum element" do
+        @enum.min_by(nil) { |i| i.to_s }.should == 1
       end
     end
   end

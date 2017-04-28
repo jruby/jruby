@@ -3,7 +3,7 @@ platform_is_not :windows do
   require 'syslog'
 
   describe "Syslog.log" do
-    platform_is_not [:windows, :darwin] do
+    platform_is_not :windows, :darwin, :solaris, :aix do
 
       before :each do
         Syslog.opened?.should be_false

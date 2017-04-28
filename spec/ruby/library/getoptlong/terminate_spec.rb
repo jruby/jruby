@@ -12,15 +12,10 @@ describe "GetoptLong#terminate" do
   end
 
   it "terminates option proccessing" do
-    begin
-      old_argv = ARGV
-      ARGV = [ "--size", "10k", "-v", "-q", "a.txt", "b.txt" ]
-
+    argv [ "--size", "10k", "-v", "-q", "a.txt", "b.txt" ] do
       @opts.get.should == [ "--size", "10k" ]
       @opts.terminate
       @opts.get.should == nil
-    ensure
-      ARGV = old_argv
     end
   end
 
