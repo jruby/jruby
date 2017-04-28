@@ -105,11 +105,7 @@ public class MarshalStream extends FilterOutputStream {
 
         tainted |= value.isTaint();
 
-        if (value instanceof RubySymbol) {
-            writeAndRegisterSymbol(((RubySymbol) value).getBytes());
-        } else {
-            writeAndRegister(value);
-        }
+        writeAndRegister(value);
 
         depth--;
         if (depth == 0) {
@@ -143,8 +139,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void writeAndRegisterSymbol(ByteList sym) throws IOException {
-        String symString = sym.toString();
-        if (cache.isSymbolRegistered(symString)) {
+        if (cache.isSymbolRegistered(sym)) {
             cache.writeSymbolLink(this, sym);
         } else {
             registerSymbol(sym);
@@ -153,7 +148,10 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void writeAndRegister(IRubyObject value) throws IOException {
-        if (cache.isRegistered(value)) {
+        ByteList sym;
+        if (value instanceof RubySymbol && cache.isSymbolRegistered(sym = ((RubySymbol) value).getBytes())) {
+            cache.writeSymbolLink(this, sym);
+        } else if (!(value instanceof RubySymbol) && cache.isRegistered(value)) {
             cache.writeLink(this, value);
         } else {
             value.getMetaClass().smartDump(this, value);

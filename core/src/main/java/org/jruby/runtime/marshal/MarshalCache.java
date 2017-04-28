@@ -49,7 +49,7 @@ public class MarshalCache {
         return linkCache.containsKey(value);
     }
 
-    public boolean isSymbolRegistered(String sym) {
+    public boolean isSymbolRegistered(ByteList sym) {
         return symbolCache.containsKey(sym);
     }
 
