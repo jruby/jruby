@@ -95,7 +95,7 @@ class MkSpec
 
   def write_spec(file, meth, exists)
     if exists
-      out = `#{ruby} #{MSPEC_HOME}/bin/mspec-run --dry-run -fs -e '#{meth}' #{file}`
+      out = `#{ruby} #{MSPEC_HOME}/bin/mspec-run --dry-run --unguarded -fs -e '#{meth}' #{file}`
       return if out.include?(meth)
     end
 
@@ -153,4 +153,3 @@ EOS
     script.run
   end
 end
-

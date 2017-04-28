@@ -86,7 +86,9 @@ describe MSpecMain, "#run" do
       argv.should == ["ruby", "#{MSPEC_HOME}/bin/mspec-ci", "-fy"]
     end
     @script.options ["ci", "-j"]
-    @script.run
+    lambda do
+      @script.run
+    end.should raise_error(SystemExit)
   end
 end
 

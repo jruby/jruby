@@ -31,16 +31,6 @@ class SpecGuard
     @guards = []
   end
 
-  @@ruby_version_override = nil
-
-  def self.ruby_version_override=(version)
-    @@ruby_version_override = version
-  end
-
-  def self.ruby_version_override
-    @@ruby_version_override
-  end
-
   # Returns a partial Ruby version string based on +which+.
   # For example, if RUBY_VERSION = 8.2.3:
   #
@@ -59,22 +49,21 @@ class SpecGuard
       n = 3
     end
 
-    version = ruby_version_override || RUBY_VERSION
-    version.split('.')[0,n].join('.')
+    RUBY_VERSION.split('.')[0,n].join('.')
   end
 
-  attr_accessor :name, :parameters
+  attr_accessor :name
 
   def initialize(*args)
-    self.parameters = @args = args
+    @parameters = args
   end
 
-  def yield?(invert=false)
+  def yield?(invert = false)
     return true if MSpec.mode? :unguarded
 
     allow = match? ^ invert
 
-    if not allow and reporting?
+    if !allow and reporting?
       MSpec.guard
       MSpec.register :finish, SpecGuard
       MSpec.register :add,    self
@@ -86,8 +75,18 @@ class SpecGuard
     allow
   end
 
-  def ===(other)
-    true
+  def run_if(name, &block)
+    @name = name
+    yield if yield?(false)
+  ensure
+    unregister
+  end
+
+  def run_unless(name, &block)
+    @name = name
+    yield if yield?(true)
+  ensure
+    unregister
   end
 
   def reporting?
@@ -96,7 +95,7 @@ class SpecGuard
   end
 
   def report_key
-    "#{name} #{parameters.join(", ")}"
+    "#{name} #{@parameters.join(", ")}"
   end
 
   def record(description)
@@ -113,69 +112,7 @@ class SpecGuard
     MSpec.unregister :add, self
   end
 
-  def implementation?(*args)
-    args.any? do |name|
-      !!case name
-      when :rubinius
-        RUBY_NAME =~ /^rbx/
-      when :ruby
-        RUBY_NAME =~ /^ruby/
-      when :jruby
-        RUBY_NAME =~ /^jruby/
-      when :truffleruby
-        RUBY_NAME =~ /^truffleruby/
-      when :ironruby
-        RUBY_NAME =~ /^ironruby/
-      when :macruby
-        RUBY_NAME =~ /^macruby/
-      when :maglev
-        RUBY_NAME =~ /^maglev/
-      when :topaz
-        RUBY_NAME =~ /^topaz/
-      when :opal
-        RUBY_NAME =~ /^opal/
-      else
-        false
-      end
-    end
-  end
-
-  def standard?
-    implementation? :ruby
-  end
-
-  def windows?(sym, key)
-    sym == :windows && !key.match(/(mswin|mingw)/).nil?
-  end
-
-  def platform?(*args)
-    args.any? do |platform|
-      if platform != :java && RUBY_PLATFORM.match('java') && os?(platform)
-        true
-      else
-        RUBY_PLATFORM.match(platform.to_s) || windows?(platform, RUBY_PLATFORM)
-      end
-    end
-  end
-
-  def wordsize?(size)
-    size == 8 * 1.size
-  end
-
-  HOST_OS = begin
-    require 'rbconfig'
-    RbConfig::CONFIG['host_os'] || RUBY_PLATFORM
-  rescue LoadError
-    RUBY_PLATFORM
-  end.downcase
-
-  def os?(*oses)
-    oses.any? do |os|
-      HOST_OS.match(os.to_s) || windows?(os, HOST_OS)
-    end
-  end
-
   def match?
-    implementation?(*@args) or platform?(*@args)
+    raise "must be implemented by the subclass"
   end
 end

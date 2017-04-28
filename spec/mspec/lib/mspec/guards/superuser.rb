@@ -7,11 +7,11 @@ class SuperUserGuard < SpecGuard
 end
 
 class Object
-  def as_superuser
-    g = SuperUserGuard.new
-    g.name = :as_superuser
-    yield if g.yield?
-  ensure
-    g.unregister
+  def as_superuser(&block)
+    SuperUserGuard.new.run_if(:as_superuser, &block)
+  end
+
+  def as_user(&block)
+    SuperUserGuard.new.run_unless(:as_user, &block)
   end
 end

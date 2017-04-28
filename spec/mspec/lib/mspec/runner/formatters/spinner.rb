@@ -67,9 +67,9 @@ class SpinnerFormatter < DottedFormatter
     @which = (@which + 1) % Spins.size
     data = [Spins[@which], @bar, @etr, @counter.failures, @counter.errors]
     if @color
-      "\r[%s | %s | %s] \e[0;#{@fail_color}m%6dF \e[0;#{@error_color}m%6dE\e[0m" % data
+      "\r[%s | %s | %s] \e[0;#{@fail_color}m%6dF \e[0;#{@error_color}m%6dE\e[0m " % data
     else
-      "\r[%s | %s | %s] %6dF %6dE" % data
+      "\r[%s | %s | %s] %6dF %6dE " % data
     end
   end
 

@@ -12,11 +12,7 @@ class BlockDeviceGuard < SpecGuard
 end
 
 class Object
-  def with_block_device
-    g = BlockDeviceGuard.new
-    g.name = :with_block_device
-    yield if g.yield?
-  ensure
-    g.unregister
+  def with_block_device(&block)
+    BlockDeviceGuard.new.run_if(:with_block_device, &block)
   end
 end

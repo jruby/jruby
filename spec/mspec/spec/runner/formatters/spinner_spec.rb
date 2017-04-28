@@ -75,9 +75,9 @@ describe SpinnerFormatter, "#after" do
       reset = "\e[0m"
     end
 
-    output = "\r[/ |                   0%                     | 00:00:00] #{green}     0F #{green}     0E#{reset}" \
-             "\r[- |                   0%                     | 00:00:00] #{green}     0F #{green}     0E#{reset}" \
-            "\r[\\ | ==========        25%                    | 00:00:00] #{green}     0F #{green}     0E#{reset}"
+    output = "\r[/ |                   0%                     | 00:00:00] #{green}     0F #{green}     0E#{reset} " \
+             "\r[- |                   0%                     | 00:00:00] #{green}     0F #{green}     0E#{reset} " \
+            "\r[\\ | ==========        25%                    | 00:00:00] #{green}     0F #{green}     0E#{reset} "
     $stdout.should == output
   end
 end

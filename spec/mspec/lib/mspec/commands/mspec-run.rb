@@ -36,7 +36,6 @@ class MSpecRun < MSpecScript
     options.randomize
     options.repeat
     options.pretend
-    options.background
     options.interrupt
 
     options.doc "\n How to modify the guard behavior"

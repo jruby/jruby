@@ -125,35 +125,36 @@ class Object
   end
 
   def ruby_exe(code, opts = {})
+    if opts[:dir]
+      raise "ruby_exe(..., dir: dir) is no longer supported, use Dir.chdir"
+    end
+
     env = opts[:env] || {}
-    working_dir = opts[:dir] || "."
-    Dir.chdir(working_dir) do
-      saved_env = {}
-      env.each do |key, value|
+    saved_env = {}
+    env.each do |key, value|
+      key = key.to_s
+      saved_env[key] = ENV[key] if ENV.key? key
+      ENV[key] = value
+    end
+
+    escape = opts.delete(:escape)
+    if code and !File.exist?(code) and escape != false
+      tmpfile = tmp("rubyexe.rb")
+      File.open(tmpfile, "w") { |f| f.write(code) }
+      code = tmpfile
+    end
+
+    begin
+      platform_is_not :opal do
+        `#{ruby_cmd(code, opts)}`
+      end
+    ensure
+      saved_env.each { |key, value| ENV[key] = value }
+      env.keys.each do |key|
         key = key.to_s
-        saved_env[key] = ENV[key] if ENV.key? key
-        ENV[key] = value
+        ENV.delete key unless saved_env.key? key
       end
-
-      escape = opts.delete(:escape)
-      if code and not File.exist?(code) and escape != false
-        tmpfile = tmp("rubyexe.rb")
-        File.open(tmpfile, "w") { |f| f.write(code) }
-        code = tmpfile
-      end
-
-      begin
-        platform_is_not :opal do
-          `#{ruby_cmd(code, opts)}`
-        end
-      ensure
-        saved_env.each { |key, value| ENV[key] = value }
-        env.keys.each do |key|
-          key = key.to_s
-          ENV.delete key unless saved_env.key? key
-        end
-        File.delete tmpfile if tmpfile
-      end
+      File.delete tmpfile if tmpfile
     end
   end
 
@@ -164,7 +165,7 @@ class Object
       raise "escape: true is no longer supported in ruby_cmd, use ruby_exe or a fixture"
     end
 
-    if code and not File.exist?(code)
+    if code and !File.exist?(code)
       body = "-e #{code.inspect}"
     end
 

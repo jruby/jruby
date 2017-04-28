@@ -11,52 +11,10 @@ require 'mspec/guards'
 # is as typically understood: a..b means v >= a and v <= b;
 # a...b means v >= a and v < b.
 
-describe VersionGuard, "#ruby_version" do
-  before :all do
-    @verbose = $VERBOSE
-    $VERBOSE = nil
-  end
-
-  after :all do
-    $VERBOSE = @verbose
-  end
-
-  before :each do
-    @ruby_version = Object.const_get :RUBY_VERSION
-
-    Object.const_set :RUBY_VERSION, '1.8.6'
-
-    @guard = VersionGuard.new 'x.x.x'
-  end
-
-  after :each do
-    Object.const_set :RUBY_VERSION, @ruby_version
-  end
-
-  it "returns 'RUBY_VERSION'" do
-    @guard.ruby_version.should == 1010806
-  end
-end
-
 describe VersionGuard, "#match?" do
-  before :all do
-    @verbose = $VERBOSE
-    $VERBOSE = nil
-  end
-
-  after :all do
-    $VERBOSE = @verbose
-  end
-
   before :each do
     hide_deprecation_warnings
-    @ruby_version = Object.const_get :RUBY_VERSION
-
-    Object.const_set :RUBY_VERSION, '1.8.6'
-  end
-
-  after :each do
-    Object.const_set :RUBY_VERSION, @ruby_version
+    stub_const "VersionGuard::FULL_RUBY_VERSION", SpecVersion.new('1.8.6')
   end
 
   it "returns true when the argument is equal to RUBY_VERSION" do
@@ -79,6 +37,7 @@ describe VersionGuard, "#match?" do
     VersionGuard.new('1.8'...'1.9').match?.should == true
     VersionGuard.new('1.8'..'1.8.6').match?.should == true
     VersionGuard.new('1.8.5'..'1.8.6').match?.should == true
+    VersionGuard.new(''...'1.8.7').match?.should == true
   end
 
   it "returns false when the argument range does not include RUBY_VERSION" do
@@ -86,6 +45,7 @@ describe VersionGuard, "#match?" do
     VersionGuard.new('1.8.4'..'1.8.5').match?.should == false
     VersionGuard.new('1.8.4'...'1.8.6').match?.should == false
     VersionGuard.new('1.8.5'...'1.8.6').match?.should == false
+    VersionGuard.new(''...'1.8.6').match?.should == false
   end
 end
 

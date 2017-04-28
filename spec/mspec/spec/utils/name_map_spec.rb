@@ -72,7 +72,6 @@ describe NameMap, "#class_or_module" do
       MSpecScript
       MkSpec
       NameMap
-      OptionParser
     ]
 
     excluded.each do |const|

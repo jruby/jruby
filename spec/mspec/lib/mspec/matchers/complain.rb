@@ -32,7 +32,7 @@ class ComplainMatcher
     if @complaint.nil?
       ["Expected a warning", "but received none"]
     elsif @complaint.kind_of? Regexp
-      ["Expected warning to match:", @complaint.inspect]
+      ["Expected warning to match: #{@complaint.inspect}", "but got: #{@stderr.chomp.inspect}"]
     else
       ["Expected warning: #{@complaint.inspect}", "but got: #{@stderr.chomp.inspect}"]
     end
@@ -42,7 +42,7 @@ class ComplainMatcher
     if @complaint.nil?
       ["Unexpected warning: ", @stderr.chomp.inspect]
     elsif @complaint.kind_of? Regexp
-      ["Expected warning not to match:", @complaint.inspect]
+      ["Expected warning not to match: #{@complaint.inspect}", "but got: #{@stderr.chomp.inspect}"]
     else
       ["Expected warning: #{@complaint.inspect}", "but got: #{@stderr.chomp.inspect}"]
     end

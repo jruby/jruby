@@ -181,9 +181,10 @@ describe Object, "#ruby_exe" do
   end
 
   describe "with :dir option" do
-    it "executes the command in the given working directory" do
-      Dir.should_receive(:chdir).with("tmp")
-      @script.ruby_exe nil, :dir => "tmp"
+    it "is deprecated" do
+      lambda {
+        @script.ruby_exe nil, :dir => "tmp"
+      }.should raise_error(/no longer supported, use Dir\.chdir/)
     end
   end
 
