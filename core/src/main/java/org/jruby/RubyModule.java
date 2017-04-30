@@ -1340,7 +1340,7 @@ public class RubyModule extends RubyObject {
     }
 
     private CacheEntry cacheHit(String name) {
-        CacheEntry cacheEntry = getCachedMethods().get(name);
+        CacheEntry cacheEntry = methodLocation.getCachedMethods().get(name);
 
         if (cacheEntry != null) {
             if (cacheEntry.token == getGeneration()) {
