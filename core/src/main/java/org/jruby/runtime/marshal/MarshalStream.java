@@ -175,8 +175,14 @@ public class MarshalStream extends FilterOutputStream {
 
                     variables = value.getVariableList();
 
-                    // write `I' instance var signet if class is NOT a direct subclass of Object
-                    write(TYPE_IVAR);
+                    // check if any of those variables were actually set
+                    if (variables.size() > 0 || shouldMarshalEncoding(value)) {
+                        // write `I' instance var signet if class is NOT a direct subclass of Object
+                        write(TYPE_IVAR);
+                    } else {
+                        // no variables, no encoding
+                        variables = null;
+                    }
                 }
                 RubyClass type = value.getMetaClass();
                 switch(nativeClassIndex) {
