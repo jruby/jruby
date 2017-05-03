@@ -67,7 +67,13 @@ public class VariableTableManager {
     private volatile String[] variableNames = EMPTY_STRING_ARRAY;
 
     /** whether a slot has been allocated to object_id */
-    private volatile boolean hasObjectID = false;
+    private volatile int hasObjectID = 0;
+
+    /** whether a slot has been allocated to ffi */
+    private volatile int hasFFI = 0;
+
+    /** whether a slot has been allocated to objectspace_group */
+    private volatile int hasObjectspaceGroup = 0;
 
     /** whether objects associated with this table use fields */
     private volatile int fieldVariables = 0;
@@ -103,7 +109,7 @@ public class VariableTableManager {
      * @return true if object_id has been allocated; false otherwise
      */
     public boolean hasObjectID() {
-        return hasObjectID;
+        return hasObjectID == 1;
     }
 
     /**
@@ -114,16 +120,17 @@ public class VariableTableManager {
      * @return the object's object_id (possibly new)
      */
     public long getObjectId(RubyBasicObject self) {
-        VariableAccessor objectIdAccessor = getObjectIdAccessorField().getVariableAccessorForRead();
+        VariableAccessor objectIdAccessor = getObjectIdAccessorForRead();
         Long id = (Long)objectIdAccessor.get(self);
         if (id != null) return id;
 
         synchronized (self) {
-            objectIdAccessor = getObjectIdAccessorField().getVariableAccessorForRead();
+            objectIdAccessor = getObjectIdAccessorForRead();
             id = (Long)objectIdAccessor.get(self);
             if (id != null) return id;
 
-            return initObjectId(self, getObjectIdAccessorField().getVariableAccessorForWrite(this));
+            objectIdAccessor = getObjectIdAccessorForWrite();
+            return initObjectId(self, objectIdAccessor);
         }
     }
 
@@ -225,25 +232,28 @@ public class VariableTableManager {
     }
 
     /**
-     * Retrieve the lazy accessor (VariableAccessorField) for object_id.
+     * Retrieve the read accessor for object_id for reads. If no object_id has been prepared, this will return a dummy
+     * accessor that just returns null.
      *
-     * @return the lazy accessor for object_id
+     * @return the read accessor for object_id
      */
-    public VariableAccessorField getObjectIdAccessorField() {
-        return objectIdVariableAccessorField;
+    public VariableAccessor getObjectIdAccessorForRead() {
+        return objectIdVariableAccessorField.getVariableAccessorForRead();
     }
 
     /**
-     * Retrieve the lazy accessor (VariableAccessorField) for FFI handle.
+     * Retrieve the write accessor for object_id.
      *
-     * @return the lazy accessor for FFI handle
+     * @return the write accessor for object_id
      */
-    public VariableAccessorField getFFIHandleAccessorField() {
-        return ffiHandleVariableAccessorField;
+    public VariableAccessor getObjectIdAccessorForWrite() {
+        if (hasObjectID == 0) hasObjectID = 1;
+        return objectIdVariableAccessorField.getVariableAccessorForWrite(this);
     }
 
     /**
-     * Retrieve the read accessor for FFI handle.
+     * Retrieve the read accessor for FFI handle. If no object_id has been prepared, this will return a dummy
+     * accessor that just returns null.
      *
      * @return the read accessor for FFI handle
      */
@@ -257,20 +267,13 @@ public class VariableTableManager {
      * @return the write accessor for FFI handle
      */
     public VariableAccessor getFFIHandleAccessorForWrite() {
+        if (hasFFI == 0) hasFFI = 1;
         return ffiHandleVariableAccessorField.getVariableAccessorForWrite(this);
     }
 
     /**
-     * Retrieve the lazy accessor (VariableAccessorField) for object group.
-     *
-     * @return the lazy accessor for object group
-     */
-    public VariableAccessorField getObjectGroupAccessorField() {
-        return objectGroupVariableAccessorField;
-    }
-
-    /**
-     * Retrieve the read accessor for object group.
+     * Retrieve the read accessor for object group. If no object_id has been prepared, this will return a dummy
+     * accessor that just returns null.
      *
      * @return the read accessor for object group
      */
@@ -284,6 +287,7 @@ public class VariableTableManager {
      * @return the write accessor for object group
      */
     public VariableAccessor getObjectGroupAccessorForWrite() {
+        if (hasObjectspaceGroup == 0) hasObjectspaceGroup = 1;
         return objectGroupVariableAccessorField.getVariableAccessorForWrite(this);
     }
 
@@ -421,7 +425,8 @@ public class VariableTableManager {
     public boolean hasVariables(RubyBasicObject object) {
         // we check both to exclude object_id
         Object[] myVarTable;
-        return fieldVariables > 0 || getVariableTableSize() > 0 && (myVarTable = object.varTable) != null && myVarTable.length > 0;
+        return fieldVariables > 0 ||
+                (myVarTable = object.varTable) != null && myVarTable.length > hasObjectID + hasFFI + hasObjectspaceGroup;
     }
 
     public void serializeVariables(RubyBasicObject object, ObjectOutputStream oos) throws IOException {
@@ -616,5 +621,35 @@ public class VariableTableManager {
         variableNames = newVariableNames;
 
         return newVariableAccessor;
+    }
+
+    /**
+     * Retrieve the lazy accessor (VariableAccessorField) for object_id.
+     *
+     * @return the lazy accessor for object_id
+     * @deprecated Use {@link #getObjectIdAccessorForRead()} or {@link #getObjectIdAccessorForWrite()}
+     */
+    public VariableAccessorField getObjectIdAccessorField() {
+        return objectIdVariableAccessorField;
+    }
+
+    /**
+     * Retrieve the lazy accessor (VariableAccessorField) for FFI handle.
+     *
+     * @return the lazy accessor for FFI handle
+     * @deprecated Use {@link #getFFIHandleAccessorForRead()} or {@link #getFFIHandleAccessorForWrite()}
+     */
+    public VariableAccessorField getFFIHandleAccessorField() {
+        return ffiHandleVariableAccessorField;
+    }
+
+    /**
+     * Retrieve the lazy accessor (VariableAccessorField) for object group.
+     *
+     * @return the lazy accessor for object group
+     * @deprecated Use {@link #getObjectGroupAccessorForRead()} or {@link #getObjectGroupAccessorForWrite()}
+     */
+    public VariableAccessorField getObjectGroupAccessorField() {
+        return objectGroupVariableAccessorField;
     }
 }

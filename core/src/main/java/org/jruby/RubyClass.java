@@ -270,24 +270,12 @@ public class RubyClass extends RubyModule {
         return accessor;
     }
 
-    public VariableAccessorField getObjectIdAccessorField() {
-        return variableTableManager.getObjectIdAccessorField();
-    }
-
-    public VariableAccessorField getFFIHandleAccessorField() {
-        return variableTableManager.getFFIHandleAccessorField();
-    }
-
     public VariableAccessor getFFIHandleAccessorForRead() {
         return variableTableManager.getFFIHandleAccessorForRead();
     }
 
     public VariableAccessor getFFIHandleAccessorForWrite() {
         return variableTableManager.getFFIHandleAccessorForWrite();
-    }
-
-    public VariableAccessorField getObjectGroupAccessorField() {
-        return variableTableManager.getObjectGroupAccessorField();
     }
 
     public VariableAccessor getObjectGroupAccessorForRead() {
@@ -2312,6 +2300,21 @@ public class RubyClass extends RubyModule {
             return Helpers.callMethodMissing(context, self, method.getVisibility(), name, callType, arg0, arg1, arg2, Block.NULL_BLOCK);
         }
         return method.call(context, self, this, name, arg0, arg1, arg2);
+    }
+
+    @Deprecated
+    public VariableAccessorField getObjectIdAccessorField() {
+        return variableTableManager.getObjectIdAccessorField();
+    }
+
+    @Deprecated
+    public VariableAccessorField getFFIHandleAccessorField() {
+        return variableTableManager.getFFIHandleAccessorField();
+    }
+
+    @Deprecated
+    public VariableAccessorField getObjectGroupAccessorField() {
+        return variableTableManager.getObjectGroupAccessorField();
     }
 
     // OBJECT STATE
