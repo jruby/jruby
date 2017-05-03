@@ -375,9 +375,14 @@ public class MarshalStream extends FilterOutputStream {
         }
         RubyString marshaled = (RubyString)dumpResult;
 
-        boolean hasVars;
-        if (hasVars = marshaled.hasVariables()) {
-            write(TYPE_IVAR);
+        List<Variable<Object>> variables = null;
+        if (marshaled.hasVariables()) {
+            variables = marshaled.getVariableList();
+            if (variables.size() > 0) {
+                write(TYPE_IVAR);
+            } else {
+                variables = null;
+            }
         }
 
         write(TYPE_USERDEF);
@@ -387,8 +392,8 @@ public class MarshalStream extends FilterOutputStream {
 
         writeString(marshaled.getByteList());
 
-        if (hasVars) {
-            dumpVariables(marshaled.getVariableList());
+        if (variables != null) {
+            dumpVariables(variables);
         }
 
         registerLinkTarget(value);
