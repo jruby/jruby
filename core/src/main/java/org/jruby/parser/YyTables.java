@@ -1,3 +1,31 @@
+/*
+ ***** BEGIN LICENSE BLOCK *****
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2013-2017 The JRuby Team (jruby@jruby.org)
+ * 
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the EPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the EPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
 public class YyTables {
@@ -27,13 +55,13 @@ public class YyTables {
 
           305,  378,  308,   88,   88,  134,  134,  254,  257,  324, 
           250,  250,  250,  228,  427,  276,  250,  250,  230,  465, 
-          250,  418,  715,  420,  107,   83,   83,  260,  214,  635, 
+          250,  418,  715,  420,  107,   83,   83,  260,  215,  635, 
           642,  352,  714,  228,  487,  714,  302,  307,  230,  354, 
-          702,  215,  215,  292,  292,  440,   88,  292,  133,  133, 
+          702,  214,  214,  292,  292,  440,   88,  292,  133,  133, 
           350,  696,  250,  677,  631,  643,  675,  629,  133,  648, 
-          585,  715,  215,  288,  288,  661,  631,  288,  639,  642, 
+          585,  715,  214,  288,  288,  661,  631,  288,  639,  642, 
           387,  644,  691,  806,  360,  331,  335,  256,  417,  642, 
-          526,  291,  291,  642,  528,  291,  705,  215,  578,  826, 
+          526,  291,  291,  642,  528,  291,  705,  214,  578,  826, 
           739,  631,  435,  133,    8,  676,  724,  630,  642,  642, 
           350,  301,  870,  835,    8,  304,  576,  760,  762,  631, 
          1031,  639,  562,  330,   17,  570,  642,  431,  642,  387, 
@@ -78,7 +106,7 @@ public class YyTables {
            92,   92,  135,  135,   74,  250,  106,   88,  288,  228, 
           640,  713,  277,  722,  230,  576,  429, 1005,   88,  310, 
           982,  303,  288,  272,  441,  641,  272,  452,   73,   83, 
-           81,  596,  562,  697,  250,  570,  350,  455,  215,  274, 
+           81,  596,  562,  697,  250,  570,  350,  455,  214,  274, 
            91,  641,  274,   92,  640,  380,   75,  351,  547,  601, 
           732, 1050, 1052, 1053, 1054,  641,  462,  373,  106,  106, 
           106,  106,  106,  106,  106,  596,  536,  537,  378,  640, 
@@ -96,7 +124,7 @@ public class YyTables {
            84,   88,   82,  106,  803,  106, 1000,  642,  747,  228, 
            76,  676, 1002,  813,  230,  493,  106,  564,  565,  386, 
           133,   77,   95,   95,  812,  836, 1012,  103,  506,  250, 
-          785,  782,  106,  510,  278,  530,  511,  215,  215,  788, 
+          785,  782,  106,  510,  278,  530,  511,  214,  214,  788, 
           906,  558,  110,  642,  788,  860,  559,  515,  319,   88, 
           536,  537,   92,   82,  350,  521,  642,  539,  443,  443, 
           527,  102,  544,  529,  443,   95,  840,  860,  535,  888, 

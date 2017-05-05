@@ -2081,7 +2081,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, true);
         addInstr(new DefineInstanceMethodInstr(method));
         // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), ASCIIEncoding.INSTANCE);
+        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
@@ -2089,7 +2089,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, false);
         addInstr(new DefineClassMethodInstr(container, method));
         // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), ASCIIEncoding.INSTANCE);
+        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
     }
 
     protected LocalVariable getArgVariable(String name, int depth) {

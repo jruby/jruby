@@ -32,6 +32,7 @@ import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
@@ -2429,5 +2430,43 @@ public final class StringSupport {
 
     public static int encCoderangeClean(int cr) {
         return (cr ^ (cr >> 1)) & CR_7BIT;
+    }
+
+
+    /**
+     * This is a far from perfect method in that it will totally choke on anything not UTF-8.
+     * However virtually nothing which was represented internally as a String would work with
+     * any String which was not UTF-8 (and in some cases 7-bit ASCII).
+     *
+     * Note: Do not use unless you are core developer or at least acknowledge the issues with
+     * this method.
+     */
+    @Deprecated
+    public static ByteList stringAsByteList(String string) {
+        if (string == null) return null; // For UnnamedRestArgNode
+        return ByteList.create(string);
+    }
+
+    /**
+     * This is a far from perfect method in that it will totally choke on anything not UTF-8.
+     * However virtually nothing which was represented internally as a String would work with
+     * any String which was not UTF-8 (and in some cases 7-bit ASCII).
+     *
+     * Note: Do not use unless you are core developer or at least acknowledge the issues with
+     * this method.
+     */
+    @Deprecated
+    public static ByteList[] stringsAsByteLists(String[] strings) {
+        ByteList[] newList = new ByteList[strings.length];
+
+        for (int i = 0; i < strings.length; i++) {
+            newList[i] = stringAsByteList(strings[i]);
+        }
+
+        return newList;
+    }
+
+    public static String byteListAsString(ByteList bytes) {
+        return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize(), bytes.getEncoding().getCharset());
     }
 }

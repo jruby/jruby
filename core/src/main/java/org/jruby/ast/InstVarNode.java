@@ -37,16 +37,23 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /** 
  * Represents an instance variable accessor.
  */
 public class InstVarNode extends Node implements INameNode, SideEffectFree {
-    private String name;
+    private ByteList name;
 
-    public InstVarNode(ISourcePosition position, String name) {
+    public InstVarNode(ISourcePosition position, ByteList name) {
         super(position, false);
         this.name = name;
+    }
+
+    @Deprecated
+    public InstVarNode(ISourcePosition position, String name) {
+        this(position, StringSupport.stringAsByteList(name));
     }
 
     public NodeType getNodeType() {
@@ -66,14 +73,19 @@ public class InstVarNode extends Node implements INameNode, SideEffectFree {
      * @return Returns a String
      */
     public String getName() {
+        return StringSupport.byteListAsString(name);
+    }
+
+    public ByteList getByteName() {
         return name;
     }
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-    
+
+    @Deprecated
     public void setName(String name){
-        this.name = name;
+        this.name = StringSupport.stringAsByteList(name);
     }
 }
