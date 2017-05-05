@@ -1708,7 +1708,7 @@ public class RubyLexer extends LexingCommon {
         if (isBEG() || (isSpaceArg(c, spaceSeen) && arg_ambiguous())) {
             setState(EXPR_BEG);
             pushback(c);
-            yaccValue = MINUS;
+            yaccValue = MINUS_AT;
             if (Character.isDigit(c)) {
                 return Tokens.tUMINUS_NUM;
             }
@@ -1795,7 +1795,7 @@ public class RubyLexer extends LexingCommon {
                 c = '+';
                 return parseNumber(c);
             }
-            yaccValue = PLUS;
+            yaccValue = PLUS_AT;
             return Tokens.tUPLUS;
         }
 
