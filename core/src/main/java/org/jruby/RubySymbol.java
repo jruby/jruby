@@ -738,9 +738,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public RubySymbol fastGetSymbol(String internedName, boolean hard) {
             RubySymbol symbol = null;
+            int hash = javaStringHashCode(internedName);
 
-            for (SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode()); e != null; e = e.next) {
-                if (isSymbolMatch(internedName, e)) {
+            for (SymbolEntry e = getEntryFromTable(symbolTable, hash); e != null; e = e.next) {
+                if (isSymbolMatch(internedName, hash, e)) {
                     if (hard) e.setHardReference();
                     symbol = e.symbol.get();
                     break;
@@ -764,10 +765,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         private static boolean isSymbolMatch(ByteList bytes, int hash, SymbolEntry entry) {
             return hash == entry.hash && bytes.equals(entry.bytes);
-        }
-
-        private static boolean isSymbolMatch(String internedName, SymbolEntry entry) {
-            return internedName == entry.name;
         }
 
         private RubySymbol createSymbol(final String name, final ByteList value, final int hash, boolean hard) {
