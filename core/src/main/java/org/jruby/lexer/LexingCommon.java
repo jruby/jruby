@@ -49,7 +49,7 @@ public abstract class LexingCommon {
     public boolean commandStart;
     protected StackState conditionState = new StackState();
     protected StackState cmdArgumentState = new StackState();
-    private String current_arg;
+    private ByteList current_arg;
     private Encoding current_enc;
     protected boolean __end__seen = false;
     public boolean eofp = false;
@@ -79,6 +79,62 @@ public abstract class LexingCommon {
     public ISourcePosition tokline;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
+    protected ByteList identifier = null; // until we get rid of String + ByteList duality we have this as extra field.
+
+    public final ByteList BACKTICK = new ByteList(new byte[] {'`'}, USASCII_ENCODING);
+    public final ByteList EQ_EQ_EQ = new ByteList(new byte[] {'=', '=', '='}, USASCII_ENCODING);
+    public final ByteList EQ_EQ = new ByteList(new byte[] {'=', '='}, USASCII_ENCODING);
+    protected ByteList EQ_TILDE = new ByteList(new byte[] {'=', '~'}, USASCII_ENCODING);
+    protected ByteList EQ_GT = new ByteList(new byte[] {'=', '>'}, USASCII_ENCODING);
+    protected ByteList EQ = new ByteList(new byte[] {'='}, USASCII_ENCODING);
+    public static final ByteList AMPERSAND_AMPERSAND = new ByteList(new byte[] {'&', '&'}, USASCIIEncoding.INSTANCE);
+    protected ByteList AMPERSAND = new ByteList(new byte[] {'&'}, USASCII_ENCODING);
+    public ByteList AMPERSAND_DOT = new ByteList(new byte[] {'&', '.'}, USASCII_ENCODING);
+    public final ByteList BANG = new ByteList(new byte[] {'!'}, USASCII_ENCODING);
+    protected ByteList BANG_EQ = new ByteList(new byte[] {'!', '='}, USASCII_ENCODING);
+    protected ByteList BANG_TILDE = new ByteList(new byte[] {'!', '~'}, USASCII_ENCODING);
+    protected ByteList CARET = new ByteList(new byte[] {'^'}, USASCII_ENCODING);
+    protected ByteList COLON_COLON = new ByteList(new byte[] {':', ':'}, USASCII_ENCODING);
+    protected ByteList COLON = new ByteList(new byte[] {':'}, USASCII_ENCODING);
+    protected ByteList COMMA = new ByteList(new byte[] {','}, USASCII_ENCODING);
+    protected ByteList DOT_DOT_DOT = new ByteList(new byte[] {'.', '.', '.'}, USASCII_ENCODING);
+    protected ByteList DOT_DOT = new ByteList(new byte[] {'.', '.'}, USASCII_ENCODING);
+    public ByteList DOT = new ByteList(new byte[] {'.'}, USASCII_ENCODING);
+    protected ByteList GT_EQ = new ByteList(new byte[] {'>', '='}, USASCII_ENCODING);
+    protected ByteList GT_GT = new ByteList(new byte[] {'>', '>'}, USASCII_ENCODING);
+    protected ByteList GT = new ByteList(new byte[] {'>'}, USASCII_ENCODING);
+    protected ByteList LBRACKET_RBRACKET_EQ = new ByteList(new byte[] {'[', ']', '='}, USASCII_ENCODING);
+    public static ByteList LBRACKET_RBRACKET = new ByteList(new byte[] {'[', ']'}, USASCIIEncoding.INSTANCE);
+    protected ByteList LBRACKET = new ByteList(new byte[] {'['}, USASCII_ENCODING);
+    protected ByteList LCURLY = new ByteList(new byte[] {'{'}, USASCII_ENCODING);
+    protected ByteList LT_EQ_RT = new ByteList(new byte[] {'<', '=', '>'}, USASCII_ENCODING);
+    protected ByteList LT_EQ = new ByteList(new byte[] {'<', '='}, USASCII_ENCODING);
+    protected ByteList LT_LT = new ByteList(new byte[] {'<', '<'}, USASCII_ENCODING);
+    protected ByteList LT = new ByteList(new byte[] {'<'}, USASCII_ENCODING);
+    protected ByteList MINUS_AT = new ByteList(new byte[] {'-', '@'}, USASCII_ENCODING);
+    protected ByteList MINUS = new ByteList(new byte[] {'-'}, USASCII_ENCODING);
+    protected ByteList MINUS_GT = new ByteList(new byte[] {'-', '>'}, USASCII_ENCODING);
+    protected ByteList PERCENT = new ByteList(new byte[] {'%'}, USASCII_ENCODING);
+    public static final ByteList OR_OR = new ByteList(new byte[] {'|', '|'}, USASCIIEncoding.INSTANCE);
+    protected ByteList OR = new ByteList(new byte[] {'|'}, USASCII_ENCODING);
+    protected ByteList PLUS_AT = new ByteList(new byte[] {'+', '@'}, USASCII_ENCODING);
+    protected ByteList PLUS = new ByteList(new byte[] {'+'}, USASCII_ENCODING);
+    protected ByteList QUESTION = new ByteList(new byte[] {'?'}, USASCII_ENCODING);
+    protected ByteList RBRACKET = new ByteList(new byte[] {']'}, USASCII_ENCODING);
+    protected ByteList RCURLY = new ByteList(new byte[] {'}'}, USASCII_ENCODING);
+    protected ByteList RPAREN = new ByteList(new byte[] {')'}, USASCII_ENCODING);
+    protected ByteList Q = new ByteList(new byte[] {'\''}, USASCII_ENCODING);
+    protected ByteList SLASH = new ByteList(new byte[] {'/'}, USASCII_ENCODING);
+    protected ByteList STAR = new ByteList(new byte[] {'*'}, USASCII_ENCODING);
+    protected ByteList STAR_STAR = new ByteList(new byte[] {'*', '*'}, USASCII_ENCODING);
+    protected ByteList TILDE = new ByteList(new byte[] {'~'}, USASCII_ENCODING);
+    protected ByteList QQ = new ByteList(new byte[] {'"'}, USASCII_ENCODING);
+    protected ByteList SEMICOLON = new ByteList(new byte[] {';'}, USASCII_ENCODING);
+    protected ByteList BACKSLASH = new ByteList(new byte[] {'\\'}, USASCII_ENCODING);
+    public static final ByteList CALL = new ByteList(new byte[] {'c', 'a', 'l', 'l'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList DOLLAR_BANG = new ByteList(new byte[] {'$', '!'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList DOLLAR_UNDERSCORE = new ByteList(new byte[] {'$', '_'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList DOLLAR_DOT = new ByteList(new byte[] {'$', '_'}, USASCIIEncoding.INSTANCE);
 
     public int column() {
         return tokp - lex_pbeg;
@@ -111,7 +167,14 @@ public abstract class LexingCommon {
         return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start, getEncoding());
     }
 
+    public ByteList getIdentifier() {
+        return identifier;
+    }
+
     public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
+        // We copy because the source is typically an entire source line (it will appear leakish?).
+        identifier = new ByteList(bytes, start, length, encoding, true);
+
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
             Charset charset = getEncoding().getCharset();
@@ -170,7 +233,7 @@ public abstract class LexingCommon {
         return conditionState;
     }
 
-    public String getCurrentArg() {
+    public ByteList getCurrentArg() {
         return current_arg;
     }
 
@@ -414,7 +477,7 @@ public abstract class LexingCommon {
         return value;
     }
 
-    public void setCurrentArg(String current_arg) {
+    public void setCurrentArg(ByteList current_arg) {
         this.current_arg = current_arg;
     }
 
@@ -607,6 +670,36 @@ public abstract class LexingCommon {
         return false;
     }
 
+    public void validateFormalIdentifier(ByteList identifier) {
+        char first = identifier.charAt(0);
+
+        if (Character.isUpperCase(first)) {
+            compile_error("formal argument cannot be a constant");
+        }
+
+        switch(first) {
+            case '@':
+                if (identifier.charAt(1) == '@') {
+                    compile_error("formal argument cannot be a class variable");
+                } else {
+                    compile_error("formal argument cannot be an instance variable");
+                }
+                break;
+            case '$':
+                compile_error("formal argument cannot be a global variable");
+                break;
+            default:
+                // This mechanism feels a tad dicey but at this point we are dealing with a valid
+                // method name at least so we should not need to check the entire string...
+                char last = identifier.charAt(identifier.length() - 1);
+
+                if (last == '=' || last == '?' || last == '!') {
+                    compile_error("formal argument must be local variable");
+                }
+        }
+    }
+
+    @Deprecated
     public void validateFormalIdentifier(String identifier) {
         char first = identifier.charAt(0);
 

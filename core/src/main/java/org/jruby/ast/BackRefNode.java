@@ -33,8 +33,10 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 
 /**
@@ -49,14 +51,11 @@ public class BackRefNode extends Node {
      * the character which generated the back reference
      **/
     private final char type;
-    
-    /** ByteList for the name of this backref global */
-    private final DefinedMessage definedMessage;
 
     public BackRefNode(ISourcePosition position, int type) {
         super(position, false);
         this.type = (char) type;
-        this.definedMessage = DefinedMessage.byText("$" + (char)type);
+        DefinedMessage.byText("$" + (char)type);
     }
 
     public NodeType getNodeType() {
@@ -69,6 +68,10 @@ public class BackRefNode extends Node {
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitBackRefNode(this);
+    }
+
+    public ByteList getByteName() {
+        return new ByteList(new byte[] {'$', (byte) type}, USASCIIEncoding.INSTANCE);
     }
 
     /**

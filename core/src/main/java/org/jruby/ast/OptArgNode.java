@@ -31,6 +31,7 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -65,5 +66,9 @@ public class OptArgNode extends Node implements INameNode {
     public String getName() {
         // FIXME: When is this not a INameNode?
         return value instanceof INameNode ? ((INameNode) value).getName() : null;
+    }
+
+    public ByteList getByteName() {
+        return value instanceof INameNode ? ((INameNode) value).getByteName() : null;
     }
 }

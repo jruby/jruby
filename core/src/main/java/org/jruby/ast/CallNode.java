@@ -37,6 +37,8 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * A method or operator call.
@@ -45,7 +47,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     private final Node receiverNode;
     private Node argsNode;
     protected Node iterNode;
-    private String name;
+    private ByteList name;
     private final boolean isLazy;
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
@@ -53,12 +55,18 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         this(position, receiverNode, name, argsNode, iterNode, false);
     }
 
+    @Deprecated
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode,
+                    Node iterNode, boolean isLazy) {
+        this(position, receiverNode, StringSupport.stringAsByteList(name), argsNode, iterNode, isLazy);
+    }
+
+    public CallNode(ISourcePosition position, Node receiverNode, ByteList name, Node argsNode,
                     Node iterNode, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment() ||
                 argsNode != null && argsNode.containsVariableAssignment() ||
                 iterNode != null && iterNode.containsVariableAssignment());
-        
+
         assert receiverNode != null : "receiverNode is not null";
 
         this.name = name;
@@ -116,6 +124,10 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
      * @return name
      */
     public String getName() {
+        return StringSupport.byteListAsString(name);
+    }
+
+    public ByteList getByteName() {
         return name;
     }
 

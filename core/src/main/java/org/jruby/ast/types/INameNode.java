@@ -27,6 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.types;
 
+import org.jruby.util.ByteList;
+
 public interface INameNode {
     public String getName();
+    public ByteList getByteName();
 }

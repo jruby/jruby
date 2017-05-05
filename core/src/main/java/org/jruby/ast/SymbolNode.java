@@ -41,29 +41,29 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Represents a symbol (:symbol_name).
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
-    private final ByteList bytes;
+    private final ByteList name;
 
-    // Interned ident path (e.g. [':', ident]).
+    @Deprecated
     public SymbolNode(ISourcePosition position, String name, Encoding encoding, int cr) {
-        super(position, false);
-        this.bytes = new ByteList(name.getBytes(encoding.getCharset()), encoding);
+        this(position, new ByteList(name.getBytes(encoding.getCharset()), encoding));
     }
 
-    // String path (e.g. [':', str_beg, str_content, str_end])
     public SymbolNode(ISourcePosition position, ByteList value) {
         super(position, false);
-        this.bytes = value;
+
+        this.name = value;
     }
 
     public boolean equals(Object other) {
         return other instanceof SymbolNode &&
-                bytes.equals(((SymbolNode) other).bytes) &&
-                bytes.getEncoding() == ((SymbolNode) other).getEncoding();
+                name.equals(((SymbolNode) other).name) &&
+                name.getEncoding() == ((SymbolNode) other).getEncoding();
     }
 
     public NodeType getNodeType() {
@@ -79,11 +79,15 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
      * @return Returns a String
      */
     public String getName() {
-        return new String(bytes.unsafeBytes(), bytes.getEncoding().getCharset());
+        return StringSupport.byteListAsString(name);
     }
 
     public Encoding getEncoding() {
-        return bytes.getEncoding();
+        return name.getEncoding();
+    }
+
+    public ByteList getByteName() {
+        return name;
     }
 
     public List<Node> childNodes() {
@@ -91,6 +95,6 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
     }
 
     public ByteList getBytes() {
-        return bytes;
+        return name;
     }
 }

@@ -29,6 +29,7 @@
 package org.jruby.ast;
 
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /**
  * Represents a bare class declaration (e.g. class Foo/module Foo).  This is slightly misnamed
@@ -36,6 +37,11 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * In JRuby 2, we will rename this.
  */
 public class Colon2ImplicitNode extends Colon2Node {
+    public Colon2ImplicitNode(ISourcePosition position, ByteList name) {
+        super(position, null, name);
+    }
+
+    @Deprecated
     public Colon2ImplicitNode(ISourcePosition position, String name) {
         super(position, null, name);
     }

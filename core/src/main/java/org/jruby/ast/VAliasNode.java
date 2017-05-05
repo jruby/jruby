@@ -32,20 +32,28 @@
 package org.jruby.ast;
 
 import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /** 
  * Represents an alias of a global variable.
  */
 public class VAliasNode extends Node {
-    private String oldName;
-    private String newName;
+    private ByteList oldName;
+    private ByteList newName;
 
-    public VAliasNode(ISourcePosition position, String newName, String oldName) {
+    public VAliasNode(ISourcePosition position, ByteList newName, ByteList oldName) {
         super(position, false);
         this.oldName = oldName;
         this.newName = newName;
+    }
+
+    @Deprecated
+    public VAliasNode(ISourcePosition position, String newName, String oldName) {
+        this(position, StringSupport.stringAsByteList(newName), StringSupport.stringAsByteList(oldName));
     }
 
     public NodeType getNodeType() {
@@ -65,7 +73,7 @@ public class VAliasNode extends Node {
      * @return Returns a String
      */
     public String getNewName() {
-        return newName;
+        return StringSupport.byteListAsString(newName);
     }
 
     /**
@@ -73,7 +81,7 @@ public class VAliasNode extends Node {
      * @return Returns a String
      */
     public String getOldName() {
-        return oldName;
+        return StringSupport.byteListAsString(oldName);
     }
     
     public List<Node> childNodes() {

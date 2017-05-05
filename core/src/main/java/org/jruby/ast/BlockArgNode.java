@@ -36,22 +36,30 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  *	An explicit block argument (&amp;my_block) in parameter list.
  */
 public class BlockArgNode extends Node implements INameNode {
     private final int count;
-    private String name;
+    private ByteList name;
 
-    public BlockArgNode(ISourcePosition position, int count, String name) {
+    public BlockArgNode(ISourcePosition position, int count, ByteList name) {
         super(position, false);
         this.count = count;
         this.name = name;
     }
 
+    @Deprecated
+    public BlockArgNode(ISourcePosition position, int count, String name) {
+        this(position, count, StringSupport.stringAsByteList(name));
+    }
+
+
     public BlockArgNode(ArgumentNode argNode) {
-        this(argNode.getPosition(), argNode.getIndex(), argNode.getName());
+        this(argNode.getPosition(), argNode.getIndex(), argNode.getByteName());
     }
 
     public NodeType getNodeType() {
@@ -80,11 +88,16 @@ public class BlockArgNode extends Node implements INameNode {
      * @return it's name
      */
     public String getName() {
+        return StringSupport.byteListAsString(name);
+    }
+
+    public ByteList getByteName() {
         return name;
     }
 
+    @Deprecated
     public void setName(String name) {
-        this.name = name;
+        this.name = StringSupport.stringAsByteList(name);
     }
 	
     public List<Node> childNodes() {
