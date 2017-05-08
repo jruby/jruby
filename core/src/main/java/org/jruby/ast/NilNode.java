@@ -42,7 +42,7 @@ import org.jruby.util.ByteList;
  * represents 'nil'
  */
 public class NilNode extends Node implements INameNode, SideEffectFree {
-    ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
+    static final ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
 
     public NilNode(ISourcePosition position) {
         super(position, false);
