@@ -41,7 +41,7 @@ import org.jruby.util.ByteList;
  * Represents 'true'.
  */
 public class TrueNode extends Node implements INameNode, SideEffectFree {
-    ByteList TRUE = new ByteList(new byte[] {'t', 'r', 'u', 'e'});
+    static final ByteList TRUE = new ByteList(new byte[] {'t', 'r', 'u', 'e'});
 
     public TrueNode(ISourcePosition position) {
         super(position, false);

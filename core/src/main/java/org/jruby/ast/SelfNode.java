@@ -42,7 +42,7 @@ import org.jruby.util.ByteList;
  * Represents 'self' keyword
  */
 public class SelfNode extends Node implements INameNode, SideEffectFree {
-    ByteList SELF = new ByteList(new byte[] {'s', 'e', 'l', 'f'});
+    static final ByteList SELF = new ByteList(new byte[] {'s', 'e', 'l', 'f'});
 
     public SelfNode(ISourcePosition position) {
         super(position, false);
