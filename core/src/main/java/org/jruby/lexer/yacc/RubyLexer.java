@@ -1373,6 +1373,7 @@ public class RubyLexer extends LexingCommon {
         case '0':
             setState(EXPR_END);
 
+            identifier = new ByteList(new byte[] {'$', (byte) c}, USASCII_ENCODING);
             return identifierToken(Tokens.tGVAR, ("$" + (char) c).intern());
         default:
             if (!isIdentifierChar(c)) {
