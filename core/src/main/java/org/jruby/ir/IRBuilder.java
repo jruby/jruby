@@ -401,7 +401,6 @@ public class IRBuilder {
             case CLASSNODE: return buildClass((ClassNode) node);
             case CLASSVARNODE: return buildClassVar((ClassVarNode) node);
             case CLASSVARASGNNODE: return buildClassVarAsgn((ClassVarAsgnNode) node);
-            case CLASSVARDECLNODE: return buildClassVarDecl((ClassVarDeclNode) node);
             case COLON2NODE: return buildColon2((Colon2Node) node);
             case COLON3NODE: return buildColon3((Colon3Node) node);
             case COMPLEXNODE: return buildComplex((ComplexNode) node);
@@ -1402,17 +1401,6 @@ public class IRBuilder {
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode) {
         Operand val = build(classVarAsgnNode.getValueNode());
         addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getName(), val));
-        return val;
-    }
-
-    // ClassVarDecl node is assignment outside method/closure scope (top-level, class, module)
-    //
-    // class C
-    //   @@c = 1
-    // end
-    public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode) {
-        Operand val = build(classVarDeclNode.getValueNode());
-        addInstr(new PutClassVariableInstr(classVarDeclarationContainer(), classVarDeclNode.getName(), val));
         return val;
     }
 
