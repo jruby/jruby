@@ -33,8 +33,8 @@ else
     begin
 
       # Attempt to load the native Linux and BSD console logic
-      # require 'io/console/native_console'
-      # ready = true
+      require 'io/console/native_console'
+      ready = true
 
     rescue Exception => ex
 
