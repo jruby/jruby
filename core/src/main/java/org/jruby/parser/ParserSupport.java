@@ -39,6 +39,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.*;
@@ -1651,8 +1652,11 @@ public class ParserSupport {
         return new DefinedNode(position, something);
     }
 
+    public static final ByteList INTERNAL_ID = new ByteList(new byte[] {}, USASCIIEncoding.INSTANCE);
+
+    @Deprecated
     public String internalId() {
-        return "";
+        return INTERNAL_ID.toString();
     }
 
 }
