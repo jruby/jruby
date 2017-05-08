@@ -2518,7 +2518,7 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = $2;
                 }
                 | kwrest_mark {
-                    $$ = support.internalId();
+                    $$ = support.INTERNAL_ID;
                 }
 
 f_opt           : f_arg_asgn '=' arg_value {

@@ -5363,7 +5363,7 @@ states[585] = new ParserState() {
 };
 states[586] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.internalId();
+                    yyVal = support.INTERNAL_ID;
     return yyVal;
   }
 };
