@@ -42,7 +42,7 @@ import org.jruby.util.ByteList;
  * Represents a false literal.
  */
 public class FalseNode extends Node implements INameNode, SideEffectFree {
-    ByteList FALSE = new ByteList(new byte[] {'f', 'a', 'l', 's', 'e'});
+    static final ByteList FALSE = new ByteList(new byte[] {'f', 'a', 'l', 's', 'e'});
 
     public FalseNode(ISourcePosition position) {
         super(position, false);
