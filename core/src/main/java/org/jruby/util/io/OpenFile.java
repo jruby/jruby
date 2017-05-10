@@ -33,6 +33,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -2270,7 +2271,7 @@ public class OpenFile implements Finalizable {
         return fd.chWrite;
     }
 
-    public FileChannel seekChannel() {
+    public SeekableByteChannel seekChannel() {
         assert(fd != null);
         return fd.chSeek;
     }
