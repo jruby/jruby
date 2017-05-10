@@ -86,9 +86,6 @@ below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
    snakeyaml (https://github.com/asomov/snakeyaml)
    unsafe-fences (https://github.com/headius/unsafe-fences)
 
- Racc is distributed under the terms of the GNU Lesser General
- Public License version 2.
-
  racc (runtime only, https://github.com/tenderlove/racc) is
    distributed under the same license terms as the Ruby standard
    library. This includes all files under lib/ruby/stdlib/racc.
