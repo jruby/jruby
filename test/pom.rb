@@ -61,7 +61,7 @@ project 'JRuby Integration Tests' do
       'includeRubygemsInTestResources' => 'false' }
 
     if version =~ /-SNAPSHOT/
-      options[ 'jrubyVersion' ] = '1.7.12'
+      options[ 'jrubyVersion' ] = '9.1.8.0'
     else
       options[ 'libDirectory' ] = '${jruby.home}/lib'
       options[ 'jrubyJvmArgs' ] = '-Djruby.home=${jruby.home}'
