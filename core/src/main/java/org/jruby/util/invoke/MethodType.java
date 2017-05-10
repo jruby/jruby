@@ -1,7 +1,5 @@
 package org.jruby.util.invoke;
 
-import org.jruby.javasupport.ext.JavaLangReflect;
-
 import java.util.List;
 
 public class MethodType {
