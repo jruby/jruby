@@ -163,19 +163,6 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>racc</artifactId>
-      <version>${racc.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>jar-dependencies</artifactId>
-          <groupId>rubygems</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>net-telnet</artifactId>
       <version>0.1.1</version>
       <type>gem</type>

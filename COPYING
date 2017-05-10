@@ -89,6 +89,11 @@ below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
  Racc is distributed under the terms of the GNU Lesser General
  Public License version 2.
 
+ racc (runtime only, https://github.com/tenderlove/racc) is
+   distributed under the same license terms as the Ruby standard
+   library. This includes all files under lib/ruby/stdlib/racc.
+   See LICENSE.RUBY.
+
 The complete text of the Eclipse Public License is as follows:
 
   Eclipse Public License - v 1.0
