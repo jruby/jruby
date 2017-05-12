@@ -1776,10 +1776,24 @@ class DateTime < Date
   private_class_method :nth_kday
 
   def self.new_by_frags(elem, sg) # :nodoc:
-    elem = rewrite_frags(elem)
-    elem = complete_frags(elem)
-    unless (jd = valid_date_frags?(elem, sg)) &&
-           (fr = valid_time_frags?(elem))
+    if (!elem.key?(:jd) &&
+        !elem.key?(:yday) &&
+        elem.key?(:year) &&
+        elem.key?(:mon) &&
+        elem.key?(:mday))
+      jd = _valid_civil?(elem[:year],
+                         elem[:mon],
+                         elem[:mday], sg)
+      elem[:hour] ||= 0
+      elem[:min]  ||= 0
+      elem[:sec]  ||= 0
+    else
+      elem = rewrite_frags(elem)
+      elem = complete_frags(elem)
+      jd = valid_date_frags?(elem, sg)
+    end
+    
+    unless jd && (fr = valid_time_frags?(elem))
       raise ArgumentError, 'invalid date'
     end
     fr += (elem[:sec_fraction] || 0) / 86400
