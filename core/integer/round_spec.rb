@@ -4,9 +4,19 @@ require File.expand_path('../shared/to_i', __FILE__)
 describe "Integer#round" do
   it_behaves_like(:integer_to_i, :round)
 
-  it "rounds itself as a float if passed a positive precision" do
-    [2, -4, 10**70, -10**100].each do |v|
-      v.round(42).should eql(v.to_f)
+  ruby_version_is ""..."2.5" do
+    it "rounds itself as a float if passed a positive precision" do
+      [2, -4, 10**70, -10**100].each do |v|
+        v.round(42).should eql(v.to_f)
+      end
+    end
+  end
+
+  ruby_version_is "2.5" do
+    it "returns itself if passed a positive precision" do
+      [2, -4, 10**70, -10**100].each do |v|
+        v.round(42).should eql(v)
+      end
     end
   end
 
