@@ -113,7 +113,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :assembly, '2.4'
     plugin :install, '2.4'
     plugin :deploy, '2.7'
-    plugin :javadoc, '2.7'
+    plugin :javadoc, '2.10.4'
     plugin :resources, '2.6'
     plugin :clean, '2.5'
     plugin :dependency, '2.8'
@@ -267,8 +267,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'release' do
-    modules [ 'test', 'maven' ]
+    modules [ 'maven' ]
     properties 'invoker.skip' => true
+    plugin(:source) do
+      execute_goals('jar-no-fork', :id => 'attach-sources')
+    end
+    plugin(:javadoc) do
+      execute_goals('jar', :id => 'attach-javadocs')
+    end
   end
 
   profile 'snapshots' do

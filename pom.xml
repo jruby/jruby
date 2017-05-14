@@ -104,38 +104,38 @@ DO NOT MODIFIY - GENERATED CODE
     </site>
   </distributionManagement>
   <properties>
-    <jffi.version>1.2.15</jffi.version>
-    <rspec.version>3.4.0</rspec.version>
-    <jruby.basedir>${project.basedir}</jruby.basedir>
+    <rspec-core.version>3.4.4</rspec-core.version>
+    <polyglot.dump.readonly>true</polyglot.dump.readonly>
+    <racc.version>1.4.14</racc.version>
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
-    <rspec-mocks.version>3.4.1</rspec-mocks.version>
-    <main.basedir>${project.basedir}</main.basedir>
-    <invoker.skip>true</invoker.skip>
-    <version.jruby>${project.version}</version.jruby>
+    <jruby.basedir>${project.basedir}</jruby.basedir>
+    <minitest.version>5.4.1</minitest.version>
+    <ant.version>1.9.2</ant.version>
+    <diff-lcs.version>1.1.3</diff-lcs.version>
+    <jffi.version>1.2.15</jffi.version>
     <rake.version>10.4.2</rake.version>
+    <jruby-launcher.version>1.1.1</jruby-launcher.version>
+    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+    <asm.version>5.0.4</asm.version>
+    <rspec-expectations.version>3.4.0</rspec-expectations.version>
+    <its.osgi>osgi*/pom.xml</its.osgi>
     <base.javac.version>1.7</base.javac.version>
     <test-unit.version>3.1.1</test-unit.version>
-    <asm.version>5.0.4</asm.version>
-    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <rspec-core.version>3.4.4</rspec-core.version>
-    <power_assert.version>0.2.3</power_assert.version>
-    <minitest.version>5.4.1</minitest.version>
-    <base.java.version>1.7</base.java.version>
-    <rspec-support.version>3.4.1</rspec-support.version>
     <rdoc.version>4.2.0</rdoc.version>
-    <rspec-expectations.version>3.4.0</rspec-expectations.version>
-    <polyglot.dump.readonly>true</polyglot.dump.readonly>
-    <json.version>1.8.3</json.version>
-    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
-    <its.osgi>osgi*/pom.xml</its.osgi>
+    <rspec.version>3.4.0</rspec.version>
+    <base.java.version>1.7</base.java.version>
+    <rspec-mocks.version>3.4.1</rspec-mocks.version>
     <jruby.plugins.version>1.0.10</jruby.plugins.version>
-    <diff-lcs.version>1.1.3</diff-lcs.version>
-    <ant.version>1.9.2</ant.version>
-    <racc.version>1.4.14</racc.version>
-    <joda.time.version>2.8.2</joda.time.version>
-    <github.global.server>github</github.global.server>
+    <invoker.skip>true</invoker.skip>
+    <json.version>1.8.3</json.version>
     <jar-dependencies.version>0.3.10</jar-dependencies.version>
-    <jruby-launcher.version>1.1.1</jruby-launcher.version>
+    <power_assert.version>0.2.3</power_assert.version>
+    <version.jruby>${project.version}</version.jruby>
+    <main.basedir>${project.basedir}</main.basedir>
+    <github.global.server>github</github.global.server>
+    <joda.time.version>2.8.2</joda.time.version>
+    <rspec-support.version>3.4.1</rspec-support.version>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -237,7 +237,7 @@ DO NOT MODIFIY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.7</version>
+          <version>2.10.4</version>
         </plugin>
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
@@ -662,8 +662,8 @@ DO NOT MODIFIY - GENERATED CODE
         <module>maven</module>
       </modules>
       <properties>
-        <invoker.skip>false</invoker.skip>
         <its.osgi>no-excludes/pom.xml</its.osgi>
+        <invoker.skip>false</invoker.skip>
       </properties>
     </profile>
     <profile>
@@ -685,8 +685,8 @@ DO NOT MODIFIY - GENERATED CODE
         <module>maven</module>
       </modules>
       <properties>
-        <invoker.skip>false</invoker.skip>
         <its.j2ee>no-excludes/pom.xml</its.j2ee>
+        <invoker.skip>false</invoker.skip>
       </properties>
     </profile>
     <profile>
@@ -730,8 +730,33 @@ DO NOT MODIFIY - GENERATED CODE
     </profile>
     <profile>
       <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
       <modules>
-        <module>test</module>
         <module>maven</module>
       </modules>
       <properties>

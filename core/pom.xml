@@ -17,55 +17,55 @@ DO NOT MODIFIY - GENERATED CODE
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
   <properties>
-    <release.dir>release</release.dir>
     <version.ruby>2.3.3</version.ruby>
-    <version.ruby.revision>56859</version.ruby.revision>
-    <dest.lib.dir>${lib.dir}</dest.lib.dir>
-    <tzdata.version>2013d</tzdata.version>
-    <jruby.basedir>${basedir}/..</jruby.basedir>
-    <rubyspec.1.8.dir>${rubyspec.dir}/1.8</rubyspec.1.8.dir>
-    <main.basedir>${project.parent.basedir}</main.basedir>
-    <build.date>${maven.build.timestamp}</build.date>
-    <prawn.stable.version>0.4.1</prawn.stable.version>
-    <jruby.gem.home>lib/ruby/gems/shared</jruby.gem.home>
-    <spec.dir>spec</spec.dir>
-    <mspec.dir>${spec.dir}/mspec</mspec.dir>
-    <install4j.executable>/Applications/install4j 4/bin/install4jc</install4j.executable>
-    <jay.bin>jay</jay.bin>
-    <test.classes.dir>${test.dir}/target/test-classes</test.classes.dir>
-    <test.dir>test</test.dir>
-    <mspec.bin>${mspec.dir}/bin/mspec</mspec.bin>
-    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
-    <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
-    <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
-    <rails.dir>${test.dir}/rails</rails.dir>
-    <test.results.dir>${build.dir}/test-results</test.results.dir>
-    <jruby.compile.memory>2G</jruby.compile.memory>
-    <build.lib.dir>test/target</build.lib.dir>
-    <create.sources.jar>false</create.sources.jar>
-    <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
-    <jruby.launch.memory>1024M</jruby.launch.memory>
-    <jruby.win32ole.gem>jruby-win32ole</jruby.win32ole.gem>
-    <jflex.bin>jflex</jflex.bin>
-    <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
-    <installer.gems>${jruby.win32ole.gem}</installer.gems>
-    <version.ruby.major>2.3</version.ruby.major>
-    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-    <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
-    <version.ruby.minor>3</version.ruby.minor>
-    <mspec.tar.file>${build.dir}/mspec.tgz</mspec.tar.file>
-    <build.dir>target</build.dir>
-    <polyglot.dump.readonly>true</polyglot.dump.readonly>
-    <maven.test.skip>true</maven.test.skip>
-    <jruby.test.memory>3G</jruby.test.memory>
-    <lib.dir>lib</lib.dir>
-    <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
-    <tzdata.scope>provided</tzdata.scope>
-    <rake.args></rake.args>
-    <pkg.dir>${build.dir}/pkg</pkg.dir>
-    <rails.git.repo>git://github.com/rails/rails.git</rails.git.repo>
     <prawn.dir>${test.dir}/prawn</prawn.dir>
     <spec.tags.dir>${spec.dir}/tags</spec.tags.dir>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
+    <pkg.dir>${build.dir}/pkg</pkg.dir>
+    <spec.dir>spec</spec.dir>
+    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+    <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
+    <installer.gems>${jruby.win32ole.gem}</installer.gems>
+    <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
+    <version.ruby.minor>3</version.ruby.minor>
+    <tzdata.version>2013d</tzdata.version>
+    <install4j.executable>/Applications/install4j 4/bin/install4jc</install4j.executable>
+    <jay.bin>jay</jay.bin>
+    <polyglot.dump.readonly>true</polyglot.dump.readonly>
+    <dest.lib.dir>${lib.dir}</dest.lib.dir>
+    <rails.git.repo>git://github.com/rails/rails.git</rails.git.repo>
+    <build.dir>target</build.dir>
+    <maven.test.skip>true</maven.test.skip>
+    <rubyspec.1.8.dir>${rubyspec.dir}/1.8</rubyspec.1.8.dir>
+    <jruby.launch.memory>1024M</jruby.launch.memory>
+    <jruby.compile.memory>2G</jruby.compile.memory>
+    <version.ruby.major>2.3</version.ruby.major>
+    <release.dir>release</release.dir>
+    <create.sources.jar>false</create.sources.jar>
+    <lib.dir>lib</lib.dir>
+    <rails.dir>${test.dir}/rails</rails.dir>
+    <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
+    <jruby.basedir>${basedir}/..</jruby.basedir>
+    <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
+    <version.ruby.revision>56859</version.ruby.revision>
+    <jruby.test.memory>3G</jruby.test.memory>
+    <mspec.dir>${spec.dir}/mspec</mspec.dir>
+    <build.date>${maven.build.timestamp}</build.date>
+    <main.basedir>${project.parent.basedir}</main.basedir>
+    <tzdata.scope>provided</tzdata.scope>
+    <test.results.dir>${build.dir}/test-results</test.results.dir>
+    <prawn.stable.version>0.4.1</prawn.stable.version>
+    <mspec.tar.file>${build.dir}/mspec.tgz</mspec.tar.file>
+    <build.lib.dir>test/target</build.lib.dir>
+    <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
+    <rake.args></rake.args>
+    <test.dir>test</test.dir>
+    <jflex.bin>jflex</jflex.bin>
+    <jruby.win32ole.gem>jruby-win32ole</jruby.win32ole.gem>
+    <mspec.bin>${mspec.dir}/bin/mspec</mspec.bin>
+    <jruby.gem.home>lib/ruby/gems/shared</jruby.gem.home>
+    <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
+    <test.classes.dir>${test.dir}/target/test-classes</test.classes.dir>
   </properties>
   <dependencies>
     <dependency>

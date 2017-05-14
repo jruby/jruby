@@ -17,12 +17,12 @@ DO NOT MODIFIY - GENERATED CODE
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
   <properties>
-    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
-    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <gem.home>${basedir}/ruby/gems/shared</gem.home>
     <jruby.plugins.version>1.1.2</jruby.plugins.version>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
+    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
   </properties>
   <dependencies>
     <dependency>
