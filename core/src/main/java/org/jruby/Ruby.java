@@ -3689,6 +3689,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("ENETUNREACH"), null);
     }
 
+    public RaiseException newErrnoEMSGSIZEError() {
+        return newRaiseException(getErrno().getClass("EMSGSIZE"), null);
+    }
+
     public RaiseException newIndexError(String message) {
         return newRaiseException(getIndexError(), message);
     }
