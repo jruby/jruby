@@ -276,6 +276,7 @@ public class Helpers {
 
                 case "No space left on device" : return Errno.ENOSPC;
                 case "Too many open files" : return Errno.EMFILE;
+                case "Message too long" : return Errno.EMSGSIZE;
             }
             if (Platform.IS_WINDOWS && errorMessage.contains("connection was aborted")) return Errno.ECONNRESET;
         }
