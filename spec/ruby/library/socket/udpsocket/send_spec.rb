@@ -5,16 +5,19 @@ describe "UDPSocket.send" do
   before :each do
     @ready = false
     @server_thread = Thread.new do
-      @server = UDPSocket.open
-      @server.bind(nil, SocketSpecs.port)
-      @ready = true
       begin
-        @msg = @server.recvfrom_nonblock(64)
-      rescue IO::WaitReadable
-        IO.select([@server])
-        retry
+        @server = UDPSocket.open
+        @server.bind(nil, SocketSpecs.port)
+        @ready = true
+        begin
+          @msg = @server.recvfrom_nonblock(64)
+        rescue IO::WaitReadable
+          IO.select([@server])
+          retry
+        end
+      ensure
+        @server.close if @server && !@server.closed?
       end
-      @server.close
     end
     Thread.pass while @server_thread.status and !@ready
   end
@@ -54,5 +57,16 @@ describe "UDPSocket.send" do
     @msg[1][0].should == "AF_INET"
     @msg[1][1].should be_kind_of(Fixnum)
     @msg[1][3].should == "127.0.0.1"
+  end
+
+  it "raises EMSGSIZE if data is too too big" do
+    @socket = UDPSocket.open
+
+    lambda do
+      @socket.send('1' * 100_000, 0, SocketSpecs.hostname, SocketSpecs.str_port)
+    end.should raise_error(Errno::EMSGSIZE)
+
+    @socket.close
+    @server_thread.exit
   end
 end
