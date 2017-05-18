@@ -13,9 +13,6 @@ project 'JRuby Core' do
               'tzdata.version' => '2013d',
               'tzdata.scope' => 'provided',
 
-              'unsafe.version' => '8.92.1',
-              'unsafe.jar' => '${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar',
-
               'maven.build.timestamp.format' => 'yyyy-MM-dd',
               'maven.test.skip' => 'true',
               'build.date' => '${maven.build.timestamp}',
@@ -46,24 +43,23 @@ project 'JRuby Core' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.14', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.16', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.15', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.33', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.2'
+  jar 'com.github.jnr:jnr-unixsocket:0.17', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.37', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.8', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.1.4'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
   jar 'org.jruby.joni:joni:2.1.12-SNAPSHOT'
-  jar 'org.jruby.extras:bytelist:1.0.13'
+  jar 'org.jruby.extras:bytelist:1.0.15'
   jar 'org.jruby.jcodings:jcodings:1.0.18'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.7'
   jar 'com.headius:options:1.4'
-  jar 'com.headius:coro-mock:1.0', :scope => 'provided'
-  jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
+  jar 'com.headius:unsafe-fences:1.0'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
@@ -193,8 +189,6 @@ project 'JRuby Core' do
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
-                                       '-J-Xbootclasspath/p:${unsafe.jar}',
-                                       '-Xbootclasspath/p:${unsafe.jar}',
                                        '-J-Xmx${jruby.compile.memory}' ] )
     execute_goals( 'compile',
                    :id => 'populators',
@@ -203,8 +197,6 @@ project 'JRuby Core' do
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
-                                       '-J-Xbootclasspath/p:${unsafe.jar}',
-                                       '-Xbootclasspath/p:${unsafe.jar}',
                                        '-J-Xmx${jruby.compile.memory}' ],
                    'includes' => [ 'org/jruby/gen/**/*.java' ] )
     execute_goals( 'compile',

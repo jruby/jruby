@@ -1,6 +1,0 @@
-fails:The -K command line option sets __ENCODING__ to Encoding::ASCII_8BIT with -Ka
-fails:The -K command line option sets __ENCODING__ to Encoding::ASCII_8BIT with -KA
-fails:The -K command line option sets __ENCODING__ to Encoding::EUC_JP with -Ke
-fails:The -K command line option sets __ENCODING__ to Encoding::EUC_JP with -KE
-fails:The -K command line option sets __ENCODING__ to Encoding::Windows_31J with -Ks
-fails:The -K command line option sets __ENCODING__ to Encoding::Windows_31J with -KS

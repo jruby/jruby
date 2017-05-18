@@ -4,6 +4,7 @@ require 'socket'
 require 'timeout'
 require 'thread'
 require 'io/wait'
+require 'ipaddr'
 
 begin
   require 'securerandom'
@@ -25,7 +26,7 @@ end
 #
 #   Resolv::DNS.open do |dns|
 #     ress = dns.getresources "www.ruby-lang.org", Resolv::DNS::Resource::IN::A
-#     p ress.map { |r| r.address }
+#     p ress.map(&:address)
 #     ress = dns.getresources "ruby-lang.org", Resolv::DNS::Resource::IN::MX
 #     p ress.map { |r| [r.exchange.to_s, r.preference] }
 #   end
@@ -268,9 +269,7 @@ class Resolv
 
     def each_name(address, &proc)
       lazy_initialize
-      if @addr2name.include?(address)
-        @addr2name[address].each(&proc)
-      end
+      @addr2name[address]&.each(&proc)
     end
   end
 
@@ -726,9 +725,7 @@ class Resolv
       def close
         socks = @socks
         @socks = nil
-        if socks
-          socks.each {|sock| sock.close }
-        end
+        socks&.each(&:close)
       end
 
       class Sender # :nodoc:
@@ -768,13 +765,13 @@ class Resolv
 
         def recv_reply(readable_socks)
           reply, from = readable_socks[0].recvfrom(UDPSize)
-          return reply, [from[3],from[1]]
+          return reply, [IPAddr.new(from[3]),from[1]]
         end
 
         def sender(msg, data, host, port=Port)
           sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
           return nil if !sock
-          service = [host, port]
+          service = [IPAddr.new(host), port]
           id = DNS.allocate_request_id(host, port)
           request = msg.encode
           request[0,2] = [id].pack('n')
@@ -941,9 +938,7 @@ class Resolv
           f.each {|line|
             line.sub!(/[#;].*/, '')
             keyword, *args = line.split(/\s+/)
-            args.each { |arg|
-              arg.untaint
-            }
+            args.each(&:untaint)
             next unless keyword
             case keyword
             when 'nameserver'

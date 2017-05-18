@@ -72,12 +72,17 @@ public class JRubyPOSIXHandler implements POSIXHandler {
     @SuppressWarnings("unchecked")
     public String[] getEnv() {
         RubyHash hash = (RubyHash) runtime.getObject().getConstant("ENV");
-        int i=0;
 
         String[] env = new String[hash.size()];
+        if (env.length == 0) return env;
+
+        StringBuilder str = new StringBuilder(); int i=0;
+
         for (Iterator<Entry<Object, Object>> iter = hash.directEntrySet().iterator(); iter.hasNext(); i++) {
             Map.Entry<Object, Object> entry = iter.next();
-            env[i] = entry.getKey().toString() + "=" + entry.getValue().toString();
+            str.setLength(0);
+            str.append(entry.getKey()).append('=').append(entry.getValue());
+            env[i] = str.toString();
         }
 
         return env;

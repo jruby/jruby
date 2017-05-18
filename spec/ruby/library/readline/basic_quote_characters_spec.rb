@@ -1,10 +1,8 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../spec_helper', __FILE__)
 
 platform_is_not :darwin do
   process_is_foreground do
     with_feature :readline do
-      require 'readline'
-
       describe "Readline.basic_quote_characters" do
         it "returns not nil" do
           Readline.basic_quote_characters.should_not be_nil

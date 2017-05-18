@@ -6,9 +6,9 @@ describe "Module.constants" do
   it "returns an array of the names of all toplevel constants" do
     count = Module.constants.size
     module ConstantSpecsAdded
-      CS_CONST1 = 1
     end
     Module.constants.size.should == count + 1
+    Object.send(:remove_const, :ConstantSpecsAdded)
   end
 
   it "returns an array of Symbol names" do
@@ -34,6 +34,9 @@ describe "Module.constants" do
     end
     (Module.constants(false) - direct).should == [:MODULE_CONSTANTS_SPECS_DIRECT]
     (Module.constants(true) - indirect).sort.should == [:MODULE_CONSTANTS_SPECS_DIRECT, :MODULE_CONSTANTS_SPECS_INDIRECT]
+
+    Module.send(:remove_const, :MODULE_CONSTANTS_SPECS_DIRECT)
+    ConstantSpecsIncludedModule.send(:remove_const, :MODULE_CONSTANTS_SPECS_INDIRECT)
   end
 end
 

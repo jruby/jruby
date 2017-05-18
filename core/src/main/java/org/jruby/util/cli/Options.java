@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -113,6 +114,7 @@ public class Options {
     public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", JIT_THRESHOLD.load() != 0, "Run the JIT compiler in a background thread. Off if jit.threshold=0.");
     public static final Option<Boolean> JIT_KERNEL = bool(JIT, "jit.kernel", false, "Run the JIT compiler while the pure-Ruby kernel is booting.");
 
+    public static final Option<String> IR_DEBUG_IGV          = string(IR, "ir.debug.igv", (String) null, "Specify file:line of scope to jump to IGV");
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
     public static final Option<Boolean> IR_COMPILER_DEBUG    = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");
@@ -187,7 +189,7 @@ public class Options {
     public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
 
-    public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", true, "Try to set inaccessible Java methods to be accessible.");
+    public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", calculateSetAccessibleDefault(), "Try to set inaccessible Java methods to be accessible.");
     public static final Option<Boolean> JI_LOGCANSETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.logCanSetAccessible", false, "Log whether setAccessible is working.");
     public static final Option<Boolean> JI_UPPER_CASE_PACKAGE_NAME_ALLOWED = bool(JAVA_INTEGRATION, "ji.upper.case.package.name.allowed", false, "Allow Capitalized Java package names.");
     public static final Option<Boolean> INTERFACES_USEPROXY = bool(JAVA_INTEGRATION, "interfaces.useProxy", false, "Use java.lang.reflect.Proxy for interface impl.");
@@ -283,6 +285,15 @@ public class Options {
     private static boolean calculateInvokedynamicDefault() {
         // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
         return false;
+    }
+
+    /**
+     * Java 9 has much more restrictive reflection access to e.g. java.lang classes, and raises a Java 9-specific
+     * error. For now we default ji.setAccessible to false so we don't attempt it.
+     */
+    private static boolean calculateSetAccessibleDefault() {
+        String version = SafePropertyAccessor.getProperty("java.specification.version", "1.7");
+        return new BigDecimal(version).compareTo(new BigDecimal("1.9")) < 0;
     }
 
     private enum SearchMode { PREFIX,  CONTAINS }

@@ -57,6 +57,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -1633,19 +1634,43 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return match19(context, pattern, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "match", reads = BACKREF)
-    public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
-        RubyRegexp coercedPattern = getPattern(pattern);
-        IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this);
+    @JRubyMethod(name = "match", required = 1, reads = BACKREF)
+    public IRubyObject match19(ThreadContext context, IRubyObject _pattern, Block block) {
+        RubyRegexp pattern = getPattern(_pattern);
+        IRubyObject result = sites(context).match.call(context, pattern, pattern, this);
         return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
     }
 
-    @JRubyMethod(name = "match", required = 1, rest = true, reads = BACKREF)
+    @JRubyMethod(name = "match", reads = BACKREF)
+    public IRubyObject match19(ThreadContext context, IRubyObject _pattern, IRubyObject pos, Block block) {
+        RubyRegexp pattern = getPattern(_pattern);
+        IRubyObject result = sites(context).match.call(context, pattern, pattern, this, pos);
+        return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
+    }
+
+    @JRubyMethod(name = "match", required = 1, rest = true)
     public IRubyObject match19(ThreadContext context, IRubyObject[] args, Block block) {
+        if (args.length < 1) {
+            Arity.checkArgumentCount(context, args, 1, 2);
+        }
         RubyRegexp pattern = getPattern(args[0]);
         args[0] = this;
         IRubyObject result = sites(context).match.call(context, pattern, pattern, args);
         return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
+    }
+
+    @JRubyMethod(name = "match?")
+    public IRubyObject match_p(ThreadContext context, IRubyObject _pattern) {
+        RubyRegexp pattern = getPattern(_pattern);
+        IRubyObject result = sites(context).match_p.call(context, pattern, pattern, this);
+        return result;
+    }
+
+    @JRubyMethod(name = "match?")
+    public IRubyObject match_p(ThreadContext context, IRubyObject _pattern, IRubyObject pos) {
+        RubyRegexp pattern = getPattern(_pattern);
+        IRubyObject result = sites(context).match_p.call(context, pattern, pattern, this, pos);
+        return result;
     }
 
     /** rb_str_capitalize / rb_str_capitalize_bang
@@ -5631,8 +5656,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         IRubyObject buf = context.nil;
         byte[] repBytes;
         int rep;
-        int replen;
+        int replen = -1;
         boolean tainted = false;
+
+        if (block.isGiven()) {
+            if (!repl.isNil()) {
+                throw runtime.newArgumentError("both of block and replacement given");
+            }
+            replen = 0;
+        }
 
         if (cr == CR_7BIT || cr == CR_VALID)
             return context.nil;
@@ -5770,7 +5802,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int e = p + value.getRealSize();
             int p1 = p;
             int mbminlen = enc.minLength();
-            if (!repl.isNil()) {
+            if (block.isGiven()) {
+                repBytes = null;
+                rep = 0;
+                replen = 0;
+            }
+            else if (!repl.isNil()) {
                 repBytes = ((RubyString)repl).value.unsafeBytes();
                 rep = ((RubyString)repl).value.begin();
                 replen = ((RubyString)repl).value.getRealSize();
@@ -5831,7 +5868,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                         ((RubyString)buf).cat(repBytes, rep, replen);
                     }
                     else {
-                        repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, e-p, enc));
+                        repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, clen, enc));
                         repl = EncodingUtils.strCompatAndValid(context, repl, enc);
                         tainted |= repl.isTaint();
                         ((RubyString)buf).cat((RubyString)repl);

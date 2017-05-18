@@ -1,4 +1,0 @@
-fails:Kernel.Float for hexadecimal literals with binary exponent allows embedded _ in a number on either side of the p
-fails:Kernel.Float for hexadecimal literals with binary exponent allows embedded _ in a number on either side of the P
-fails:Kernel#Float for hexadecimal literals with binary exponent allows embedded _ in a number on either side of the p
-fails:Kernel#Float for hexadecimal literals with binary exponent allows embedded _ in a number on either side of the P

@@ -1,2 +1,0 @@
-fails:String#% when format string contains %<> formats should raise ArgumentError if no hash given
-fails:String#% pads with spaces for %E with Inf, -Inf, and NaN

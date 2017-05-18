@@ -130,7 +130,9 @@ public class PopenExecutor {
         }
         if (pid == -1) {
             context.setLastExitStatus(new RubyProcess.RubyStatus(runtime, runtime.getProcStatus(), 0x7f << 8, 0));
-            errno = Errno.valueOf(runtime.getPosix().errno());
+            if (errno == null || errno == Errno.__UNKNOWN_CONSTANT__) {
+                errno = Errno.valueOf(runtime.getPosix().errno());
+            }
         }
 
         execargRunOptions(context, runtime, sarg, null, errmsg);
@@ -163,6 +165,7 @@ public class PopenExecutor {
             errno = Errno.ENOENT;
             return -1;
         }
+
         status = runtime.getPosix().posix_spawnp(
                 prog,
                 eargp.fileActions,
@@ -691,19 +694,14 @@ public class PopenExecutor {
         long pgroup;
 
         pgroup = eargp.pgroup_pgid;
-        if (pgroup == -1)
-            pgroup = runtime.getPosix().getpgrp();
-
-        if (pgroup == 0) {
-            // not needed for posix_spawn
+        if (pgroup == -1) {
+            // inherit parent's process group (default behavior)
             return ret;
-//            pgroup = runtime.getPosix().getpid(); /* async-signal-safe */
         }
 
         eargp.attributes.add(SpawnAttribute.pgroup(pgroup));
-        // we can't setpgid in the parent
-//        ret = setpgid(getpid(), pgroup); /* async-signal-safe */
-//        if (ret == -1) ERRMSG("setpgid");
+        eargp.attributes.add(SpawnAttribute.flags((short)SpawnAttribute.SETPGROUP));
+
         return ret;
     }
 
@@ -1333,7 +1331,7 @@ public class PopenExecutor {
                     if (eargp.pgroup_given()) {
                         throw runtime.newArgumentError("pgroup option specified twice");
                     }
-                    if (val == null || val.isNil())
+                    if (val == null || !val.isTrue())
                         pgroup = -1; /* asis(-1) means "don't call setpgid()". */
                     else if (val == runtime.getTrue())
                         pgroup = 0; /* new process group. */

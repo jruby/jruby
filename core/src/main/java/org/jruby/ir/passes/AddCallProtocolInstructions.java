@@ -20,10 +20,17 @@ public class AddCallProtocolInstructions extends CompilerPass {
         return "Add Call Protocol Instructions (push/pop of dyn-scope, frame, impl-class values)";
     }
 
+    @Override
+    public String getShortLabel() {
+        return "Add Call Proto";
+    }
+
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod
-            || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
-            || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
+                || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
+                || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody)
+                || (scope instanceof IRScriptBody)
+        );
     }
 
     /*

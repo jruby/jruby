@@ -31,7 +31,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
 import org.jruby.runtime.ivars.VariableAccessor;
@@ -144,7 +143,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final String ERR_INSECURE_SET_INST_VAR  = "Insecure: can't modify instance variable";
 
     public static final int ALL_F = -1;
-    public static final int FALSE_F = Constants.FALSE_F;
+    public static final int FALSE_F = ObjectFlags.FALSE_F;
     /**
      * This flag is a bit funny. It's used to denote that this value
      * is nil. It's a bit counterintuitive for a Java programmer to
@@ -155,9 +154,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * final. It turns out using a flag for this actually gives us
      * better performance than having a polymorphic {@link #isNil()} method.
      */
-    public static final int NIL_F = Constants.NIL_F;
-    public static final int FROZEN_F = Constants.FROZEN_F;
-    public static final int TAINTED_F = Constants.TAINTED_F;
+    public static final int NIL_F = ObjectFlags.NIL_F;
+    public static final int FROZEN_F = ObjectFlags.FROZEN_F;
+    public static final int TAINTED_F = ObjectFlags.TAINTED_F;
 
     /**
      *  A value that is used as a null sentinel in among other places
@@ -881,7 +880,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject dup() {
         Ruby runtime = getRuntime();
 
-        if (isImmediate()) throw runtime.newTypeError("can't dup " + getMetaClass().getName());
+        if (isImmediate()) {
+            return this;
+        }
 
         IRubyObject dup = getMetaClass().getRealClass().allocate();
         if (isTaint()) dup.setTaint(true);
@@ -975,7 +976,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     private IRubyObject rbCloneInternal(ThreadContext context, boolean freeze) {
         Ruby runtime = context.runtime;
 
-        if (isImmediate()) throw runtime.newTypeError("can't clone " + getMetaClass().getName());
+        if (isImmediate()) {
+            if (!freeze) {
+                throw runtime.newArgumentError("can't unfreeze " + getType().getName());
+            }
+            return this;
+        }
 
         // We're cloning ourselves, so we know the result should be a RubyObject
         RubyBasicObject clone = (RubyBasicObject) getMetaClass().getRealClass().allocate();
@@ -1783,8 +1789,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     private Block setupBlock(Block block, EvalType evalType) {
-        // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
-        return block.cloneBlockForEval(this, evalType);
+        if (block.getProcObject() == null) {
+            // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
+            block = block.cloneBlockForEval(this, evalType);
+        } else {
+            block = block.deepCloneBlockForEval(this, evalType);
+        }
+
+        block.getBinding().setVisibility(PUBLIC);
+
+        return block;
     }
 
     /**
@@ -1799,18 +1813,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, Block block, EvalType evalType) {
         context.preExecuteUnder(this, under, block);
 
-        IRubyObject savedBindingSelf = block.getBinding().getSelf();
-        IRubyObject savedFrameSelf = block.getBinding().getFrame().getSelf();
-        Visibility savedVisibility = block.getBinding().getVisibility();
-        block.getBinding().setVisibility(PUBLIC);
-
         try {
             return setupBlock(block, evalType).yieldNonArray(context, this, this); //, context.getRubyClass());
         } finally {
-            block.getBinding().setVisibility(savedVisibility);
-            block.getBinding().setSelf(savedBindingSelf);
-            block.getBinding().getFrame().setSelf(savedFrameSelf);
-
             context.postExecuteUnder();
         }
     }

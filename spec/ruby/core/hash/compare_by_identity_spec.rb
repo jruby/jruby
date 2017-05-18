@@ -14,10 +14,27 @@ describe "Hash#compare_by_identity" do
     @h["a".dup].should be_nil
   end
 
+  it "rehashes internally so that old keys can be looked up" do
+    h = {}
+    (1..10).each { |k| h[k] = k }
+    o = Object.new
+    def o.hash; 123; end
+    h[o] = 1
+    h.compare_by_identity
+    h[o].should == 1
+  end
+
   it "returns self" do
     h = {}
     h[:foo] = :bar
-    h.compare_by_identity.should == h
+    h.compare_by_identity.should equal h
+  end
+
+  it "has no effect on an already compare_by_identity hash" do
+    @idh[:foo] = :bar
+    @idh.compare_by_identity.should equal @idh
+    @idh.compare_by_identity?.should == true
+    @idh[:foo].should == :bar
   end
 
   it "uses the semantics of BasicObject#equal? to determine key identity" do
@@ -72,7 +89,7 @@ describe "Hash#compare_by_identity" do
   end
 
   # Behaviour confirmed in bug #1871
-  it "perists over #dups" do
+  it "persists over #dups" do
     @idh['foo'] = :bar
     @idh['foo'] = :glark
     @idh.dup.should == @idh

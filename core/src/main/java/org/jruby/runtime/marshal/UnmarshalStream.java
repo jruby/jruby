@@ -77,6 +77,10 @@ public class UnmarshalStream extends InputStream {
     private final boolean taint;
 
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
+        assert runtime != null;
+        assert in != null;
+        assert proc != null;
+        
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
         this.proc = proc;
@@ -181,7 +185,7 @@ public class UnmarshalStream extends InputStream {
     }
 
     private IRubyObject doCallProcForLink(IRubyObject result, int type) {
-        if (proc != null && type != ';') {
+        if (!proc.isNil() && type != ';') {
             // return the result of the proc, but not for symbols
             return Helpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
         }
@@ -189,7 +193,7 @@ public class UnmarshalStream extends InputStream {
     }
 
     private IRubyObject doCallProcForObj(IRubyObject result) {
-        if (proc != null) {
+        if (!proc.isNil()) {
             // return the result of the proc, but not for symbols
             return Helpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
         }

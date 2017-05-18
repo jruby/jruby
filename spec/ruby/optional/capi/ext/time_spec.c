@@ -65,6 +65,15 @@ static VALUE time_spec_rb_time_timespec_new(VALUE self, VALUE sec, VALUE nsec, V
 }
 #endif
 
+#ifdef HAVE_RB_TIMESPEC_NOW
+static VALUE time_spec_rb_time_from_timspec_now(VALUE self, VALUE offset) {
+  struct timespec ts;
+  rb_timespec_now(&ts);
+
+  return rb_time_timespec_new(&ts, NUM2INT(offset));
+}
+#endif
+
 #ifdef HAVE_TIMET2NUM
 static VALUE time_spec_TIMET2NUM(VALUE self) {
   time_t t = 10;
@@ -106,6 +115,10 @@ void Init_time_spec(void) {
 
 #ifdef HAVE_RB_TIME_TIMESPEC_NEW
   rb_define_method(cls, "rb_time_timespec_new", time_spec_rb_time_timespec_new, 3);
+#endif
+
+#ifdef HAVE_RB_TIMESPEC_NOW
+  rb_define_method(cls, "rb_time_from_timespec", time_spec_rb_time_from_timspec_now, 1);
 #endif
 }
 

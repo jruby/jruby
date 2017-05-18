@@ -1,3 +1,0 @@
-fails:IO#set_encoding when passed nil, nil with 'r' mode sets the encodings to the current Encoding defaults
-fails:IO#set_encoding when passed nil, nil with 'r' mode allows the #external_encoding to change when Encoding.default_external is changed
-fails:IO#set_encoding when passed nil, nil with 'rb' mode returns Encoding.default_external

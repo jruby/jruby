@@ -1,1 +1,0 @@
-fails:Net::HTTP#open_timeout returns the seconds to wait till the connection is open

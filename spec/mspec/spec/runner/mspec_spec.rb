@@ -520,7 +520,7 @@ extended():\"Multi-line\\ntext\\ntag\"
     MSpec.delete_tag(@tag).should == true
     MSpec.delete_tag(SpecTag.new("incomplete:The#best method ever")).should == true
     MSpec.delete_tag(SpecTag.new("benchmark:The#fastest method today")).should == true
-    MSpec.delete_tag(SpecTag.new("extended:\"Multi-line\ntext\ntag\"")).should == true
+    MSpec.delete_tag(SpecTag.new('extended:"Multi-line\ntext\ntag"')).should == true
     File.exist?(tmp("tags.txt", false)).should == false
   end
 end

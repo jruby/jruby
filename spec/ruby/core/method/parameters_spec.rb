@@ -150,13 +150,9 @@ describe "Method#parameters" do
     m.parameters.should == [[:keyrest,:a]]
   end
 
-  ruby_version_is '2.1' do
-    require File.expand_path('../fixtures/classes21', __FILE__)
-
-    it "returns [[:keyreq,:a]] for a method with a single required keyword argument" do
-      m = MethodSpecs::Methods.instance_method(:one_keyreq)
-      m.parameters.should == [[:keyreq,:a]]
-    end
+  it "returns [[:keyreq,:a]] for a method with a single required keyword argument" do
+    m = MethodSpecs::Methods.instance_method(:one_keyreq)
+    m.parameters.should == [[:keyreq,:a]]
   end
 
   it "works with ->(){} as the value of an optional argument" do

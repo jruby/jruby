@@ -95,6 +95,14 @@ public abstract class LexingCommon {
         return true;
     }
 
+    public int getRubySourceline() {
+        return ruby_sourceline;
+    }
+
+    public void setRubySourceline(int line) {
+        ruby_sourceline = line;
+    }
+
     public ByteList createTokenByteList() {
         return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), false);
     }

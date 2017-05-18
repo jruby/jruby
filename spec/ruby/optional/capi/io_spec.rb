@@ -24,12 +24,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_addstr data")
 
       @o.rb_io_addstr(@io, obj)
-      @name.should have_data("rb_io_addstr data")
+      File.read(@name).should == "rb_io_addstr data"
     end
 
     it "writes the String to the IO" do
       @o.rb_io_addstr(@io, "rb_io_addstr data")
-      @name.should have_data("rb_io_addstr data")
+      File.read(@name).should == "rb_io_addstr data"
     end
 
     it "returns the io" do
@@ -43,7 +43,7 @@ describe "C-API IO function" do
       obj.should_receive(:to_str).and_return("%s")
 
       @o.rb_io_printf(@io, [obj, "rb_io_printf"])
-      @name.should have_data("rb_io_printf")
+      File.read(@name).should == "rb_io_printf"
     end
 
     it "calls #to_s to convert the object to a String" do
@@ -51,12 +51,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_printf")
 
       @o.rb_io_printf(@io, ["%s", obj])
-      @name.should have_data("rb_io_printf")
+      File.read(@name).should == "rb_io_printf"
     end
 
     it "writes the Strings to the IO" do
       @o.rb_io_printf(@io, ["%s_%s_%s", "rb", "io", "printf"])
-      @name.should have_data("rb_io_printf")
+      File.read(@name).should == "rb_io_printf"
     end
   end
 
@@ -66,12 +66,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_print")
 
       @o.rb_io_print(@io, [obj])
-      @name.should have_data("rb_io_print")
+      File.read(@name).should == "rb_io_print"
     end
 
     it "writes the Strings to the IO with no separator" do
       @o.rb_io_print(@io, ["rb_", "io_", "print"])
-      @name.should have_data("rb_io_print")
+      File.read(@name).should == "rb_io_print"
     end
   end
 
@@ -81,12 +81,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_puts")
 
       @o.rb_io_puts(@io, [obj])
-      @name.should have_data("rb_io_puts")
+      File.read(@name).should == "rb_io_puts\n"
     end
 
     it "writes the Strings to the IO separated by newlines" do
       @o.rb_io_puts(@io, ["rb", "io", "write"])
-      @name.should have_data("rb\nio\nwrite")
+      File.read(@name).should == "rb\nio\nwrite\n"
     end
   end
 
@@ -96,12 +96,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_write")
 
       @o.rb_io_write(@io, obj)
-      @name.should have_data("rb_io_write")
+      File.read(@name).should == "rb_io_write"
     end
 
     it "writes the String to the IO" do
       @o.rb_io_write(@io, "rb_io_write")
-      @name.should have_data("rb_io_write")
+      File.read(@name).should == "rb_io_write"
     end
   end
 end

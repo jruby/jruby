@@ -1,4 +1,0 @@
-fails:TCPServer#accept accepts a connection and returns a TCPSocket
-fails:TCPServer#accept can be interrupted by Thread#kill
-fails:TCPServer#accept can be interrupted by Thread#raise
-fails:TCPServer#accept raises an IOError if the socket is closed

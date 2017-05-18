@@ -1,3 +1,0 @@
-fails:Kernel.__callee__ returns method name even from eval
-fails:Kernel.__callee__ returns nil when not called from a method
-fails:Kernel.__callee__ returns nil from inside a class body

@@ -1,4 +1,0 @@
-fails:File.join respects the given separator if only one part has a boundary separator
-fails:File.join does not treat \ as a separator on non-Windows
-windows:File.join respects given separator if only one part has a boundary separator
-windows:File.join prefers the separator of the right part if both parts have separators

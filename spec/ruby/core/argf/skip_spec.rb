@@ -33,11 +33,10 @@ describe "ARGF.skip" do
     end
   end
 
-  # This is similar to the test above, but it uncovered one of the regressions
-  # documented in bug #1633. This has been fixed on 1.9 HEAD
-  it "has no effect when the current file is the last" do
-    argf [@file1_name] do
-      lambda { @argf.skip }.should_not raise_error
-    end
+  # This bypasses argf helper because the helper will call argf.file
+  # which as a side-effect calls argf.file which will initialize
+  # internals of ARGF enough for this to work.
+  it "has no effect when nothing has been processed yet" do
+    lambda { ARGF.class.new(@file1_name).skip }.should_not raise_error
   end
 end

@@ -1,3 +1,0 @@
-fails:Addrinfo#unix_path for an ipv4 socket raises an exception
-fails:Addrinfo#unix_path for an ipv6 socket raises an exception
-fails:Addrinfo#unix_path for a unix socket returns the socket path

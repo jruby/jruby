@@ -1137,7 +1137,7 @@ modes.each do |mode|
       '
 
       run(code) do |x|
-        x.should == :ok
+        expect(x).to eq(:ok)
       end
     end
 

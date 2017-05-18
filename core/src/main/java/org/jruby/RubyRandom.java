@@ -717,29 +717,60 @@ public class RubyRandom extends RubyObject {
         }
         return context.runtime.newString(new ByteList(bytes));
     }
-    
+
+    private static RandomType tryGetRandomType(ThreadContext context, IRubyObject obj) {
+        if (obj.equals(context.runtime.getRandomClass())) return getDefaultRand(context);
+        if (obj instanceof RubyRandom) return ((RubyRandom) obj).random;
+        return null;
+    }
+
+    // rb_random_ulong_limited
+    public static long randomLongLimited(ThreadContext context, IRubyObject obj, long limit) {
+        RandomType rnd = tryGetRandomType(context, obj);
+
+        if (rnd == null) {
+            RubyInteger v = Helpers.invoke(context, obj, "rand", context.runtime.newFixnum(limit + 1)).convertToInteger();
+            long r = RubyNumeric.num2long(v);
+            if (r < 0) throw context.runtime.newRangeError("random number too small " + r);
+            if (r > limit) throw context.runtime.newRangeError("random number too big " + r);
+
+            return r;
+        }
+
+        return randLimitedFixnumInner(rnd.mt, limit);
+    }
+
     // c: rb_random_real
     public static double randomReal(ThreadContext context, IRubyObject obj) {
-        RandomType random = null;
-        if (obj.equals(context.runtime.getRandomClass())) {
-            random = getDefaultRand(context);
-        }
-        if (obj instanceof RubyRandom) {
-            random = ((RubyRandom) obj).random;
-        }
-        if (random != null) {
-            return random.genrandReal();
-        }
+        RandomType random = tryGetRandomType(context, obj);
+
+        if (random != null) return random.genrandReal();
+
         double d = RubyNumeric.num2dbl(Helpers.invoke(context, obj, "rand"));
-        if (d < 0.0 || d >= 1.0) {
-            throw context.runtime.newRangeError("random number too big: " + d);
-        }
+
+        if (d < 0.0 || d >= 1.0) throw context.runtime.newRangeError("random number too big: " + d);
+
         return d;
     }
     
     @JRubyMethod(name = "new_seed", meta = true)
     public static IRubyObject newSeed(ThreadContext context, IRubyObject recv) {
         return randomSeed(context.runtime);
+    }
+
+    @JRubyMethod(name = "raw_seed", meta = true)
+    public static IRubyObject rawSeed(ThreadContext context, IRubyObject recv, IRubyObject num) {
+        Ruby runtime = context.runtime;
+        int n = num.convertToInteger().getIntValue();
+
+        if (n < 0) throw runtime.newArgumentError("negative string size (or size too big)");
+
+        if (n == 0) return runtime.newString();
+
+        byte[] seed = new byte[n];
+        runtime.getRandom().nextBytes(seed);
+
+        return RubyString.newString(runtime, seed);
     }
 
     private void setRandomType(RandomType random) {

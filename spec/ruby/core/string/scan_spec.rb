@@ -192,4 +192,12 @@ describe "String#scan with pattern and block" do
   it "taints the results when passed a Regexp argument if self is tainted" do
     "hello".taint.scan(/./).each { |m| m.tainted?.should be_true }
   end
+
+  it "passes block arguments as individual arguments when blocks are provided" do
+    "a b c\na b c\na b c".scan(/(\w*) (\w*) (\w*)/) do |first,second,third|
+      first.should == 'a';
+      second.should == 'b';
+      third.should == 'c';
+    end
+  end
 end

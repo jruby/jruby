@@ -60,6 +60,12 @@ describe "Hash#select!" do
     all_args_select.should == [[1, 2], [3, 4]]
   end
 
+  it "removes all entries if the block is false" do
+    h = { a: 1, b: 2, c: 3 }
+    h.select! { |k,v| false }.should equal(h)
+    h.should == {}
+  end
+
   it "returns nil if no changes were made" do
     { a: 1 }.select! { |k,v| v <= 1 }.should == nil
   end

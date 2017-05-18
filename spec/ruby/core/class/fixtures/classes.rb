@@ -1,17 +1,10 @@
 module CoreClassSpecs
   class Record
-    def self.called(sym)
-      @called = sym
-    end
-
-    def self.called?
-      @called
-    end
   end
 
   module M
     def inherited(klass)
-      ::CoreClassSpecs::Record.called(klass)
+      ScratchPad.record klass
       super
     end
   end
@@ -23,7 +16,7 @@ module CoreClassSpecs
 
   class A
     def self.inherited(klass)
-      ::CoreClassSpecs::Record.called(klass)
+      ScratchPad.record klass
     end
   end
 

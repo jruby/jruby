@@ -1,16 +1,20 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubyRational;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Literal Rational number.
  */
 public class Rational extends ImmutableLiteral {
-    private final long numerator;
-    private final long denominator;
+    private final ImmutableLiteral numerator;
+    private final ImmutableLiteral denominator;
 
-    public Rational(long numerator, long denominator) {
+    public Rational(ImmutableLiteral numerator, ImmutableLiteral denominator) {
         super();
 
         this.numerator = numerator;
@@ -24,7 +28,19 @@ public class Rational extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return context.runtime.newRational(numerator, denominator);
+        return RubyRational.newRationalRaw(context.runtime,
+                (IRubyObject) numerator.cachedObject(context), (IRubyObject) denominator.cachedObject(context));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        numerator.encode(e);
+        denominator.encode(e);
+    }
+
+    public static Rational decode(IRReaderDecoder d) {
+        return new Rational((ImmutableLiteral) d.decodeOperand(), (ImmutableLiteral) d.decodeOperand());
     }
 
     @Override
@@ -37,11 +53,11 @@ public class Rational extends ImmutableLiteral {
         visitor.Rational(this);
     }
 
-    public long getNumerator() {
+    public ImmutableLiteral getNumerator() {
         return numerator;
     }
 
-    public long getDenominator() {
+    public ImmutableLiteral getDenominator() {
         return denominator;
     }
 }

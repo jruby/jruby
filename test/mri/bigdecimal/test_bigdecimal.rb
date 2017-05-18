@@ -964,6 +964,13 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal([-1, "Infinity", 10, 0], BigDecimal.new("-Infinity").split)
   end
 
+  def test_round_infinity
+    assert_equal "Infinity", BigDecimal("Infinity").round(0).to_s
+    assert_raise(FloatDomainError) do
+      BigDecimal("Infinity").round
+    end
+  end
+
   def test_exponent
     x = BigDecimal.new('-123.45678901234567890')
     assert_equal(3, x.exponent)

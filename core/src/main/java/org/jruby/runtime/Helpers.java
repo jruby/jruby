@@ -260,14 +260,12 @@ public class Helpers {
             return Errno.EBADF;
         }
 
+        final String errorMessage = t.getMessage();
         // TODO: this is kinda gross
-        if(t.getMessage() != null) {
-            String errorMessage = t.getMessage();
-
+        if (errorMessage != null) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
-
             switch ( errorMessage ) {
                 case "Bad file descriptor":
                     return Errno.EBADF;
@@ -1020,9 +1018,10 @@ public class Helpers {
         if (klass == null) {
             if (name != null) {
                 throw context.runtime.newNameError("superclass method '" + name + "' disabled", name);
-            } else {
-                throw context.runtime.newNoMethodError("super called outside of method", null, context.nil);
             }
+        }
+        if (name == null) {
+            throw context.runtime.newNoMethodError("super called outside of method", null, context.nil);
         }
     }
 

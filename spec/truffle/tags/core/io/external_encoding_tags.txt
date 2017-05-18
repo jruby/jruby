@@ -1,2 +1,0 @@
-fails:IO#external_encoding with 'r' mode when Encoding.default_internal is nil returns Encoding.default_external if the external encoding is not set
-fails:IO#external_encoding with 'r' mode when Encoding.default_internal is nil returns Encoding.default_external when that encoding is changed after the instance is created

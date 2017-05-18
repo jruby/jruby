@@ -1,1 +1,0 @@
-fails:Range#== returns true if the endpoints are ==

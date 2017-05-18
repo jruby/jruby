@@ -1,2 +1,0 @@
-slow:Kernel#sleep accepts a Float
-slow:Kernel#sleep accepts a Rational

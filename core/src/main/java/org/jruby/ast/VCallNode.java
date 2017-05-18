@@ -48,6 +48,7 @@ public class VCallNode extends Node implements INameNode {
         super(position, false);
 
         this.name = name;
+        setNewline();
     }
 
     public NodeType getNodeType() {

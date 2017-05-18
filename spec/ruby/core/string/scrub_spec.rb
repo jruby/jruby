@@ -39,7 +39,7 @@ describe "String#scrub with a custom replacement" do
     "abc\u3042#{x81}".scrub("*").should == "abc\u3042*"
   end
 
-  it "replaces groups of sequences together with a single replacement" do
+  it "replaces an incomplete character at the end with a single replacement" do
     xE3x80 = [0xE3, 0x80].pack('CC').force_encoding 'utf-8'
     xE3x80.scrub("*").should == "*"
   end

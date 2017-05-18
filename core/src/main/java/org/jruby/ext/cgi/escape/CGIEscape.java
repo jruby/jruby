@@ -346,14 +346,14 @@ public class CGIEscape implements Library {
      *  Returns HTML-escaped string.
      *
      */
-    @JRubyMethod(name = "escapeHTML", module = true)
+    @JRubyMethod(name = "escapeHTML", module = true, frame = true)
     public static IRubyObject cgiesc_escape_html(ThreadContext context, IRubyObject self, IRubyObject _str) {
         RubyString str = _str.convertToString();
 
         if (str.getEncoding().isAsciiCompatible()) {
             return optimized_escape_html(context.runtime, str);
         } else {
-            return Helpers.invokeSuper(context, self, self.getMetaClass(), "escapeHTML", _str, Block.NULL_BLOCK);
+            return Helpers.invokeSuper(context, self, _str, Block.NULL_BLOCK);
         }
     }
 
@@ -364,14 +364,14 @@ public class CGIEscape implements Library {
      *  Returns HTML-unescaped string.
      *
      */
-    @JRubyMethod(name = "unescapeHTML", module = true)
+    @JRubyMethod(name = "unescapeHTML", module = true, frame = true)
     public static IRubyObject cgiesc_unescape_html(ThreadContext context, IRubyObject self, IRubyObject _str) {
         RubyString str = _str.convertToString();
 
         if (str.getEncoding().isAsciiCompatible()) {
             return optimized_unescape_html(context.runtime, str);
         } else {
-            return Helpers.invokeSuper(context, self, self.getMetaClass(), "unescapeHTML", _str, Block.NULL_BLOCK);
+            return Helpers.invokeSuper(context, self, _str, Block.NULL_BLOCK);
         }
     }
 
@@ -382,14 +382,14 @@ public class CGIEscape implements Library {
      *  Returns URL-escaped string.
      *
      */
-    @JRubyMethod(name = "escape", module = true)
+    @JRubyMethod(name = "escape", module = true, frame = true)
     public static IRubyObject cgiesc_escape(ThreadContext context, IRubyObject self, IRubyObject _str) {
         RubyString str = _str.convertToString();
 
         if (str.getEncoding().isAsciiCompatible()) {
             return optimized_escape(context.runtime, str);
         } else {
-            return Helpers.invokeSuper(context, self, self.getMetaClass(), "escape", _str, Block.NULL_BLOCK);
+            return Helpers.invokeSuper(context, self, _str, Block.NULL_BLOCK);
         }
     }
 
@@ -406,7 +406,7 @@ public class CGIEscape implements Library {
      *  Returns URL-unescaped string.
      *
      */
-    @JRubyMethod(name = "unescape", required = 1, optional = 1, module = true)
+    @JRubyMethod(name = "unescape", required = 1, optional = 1, module = true, frame = true)
     public static IRubyObject cgiesc_unescape(ThreadContext context, IRubyObject self, IRubyObject[] argv) {
         IRubyObject _str = argv[0];
 
@@ -416,7 +416,7 @@ public class CGIEscape implements Library {
             IRubyObject enc = accept_charset(argv, argv.length - 1, 1, self);
             return optimized_unescape(context.runtime, str, enc);
         } else {
-            return Helpers.invokeSuper(context, self, self.getMetaClass(), "unescape", argv, Block.NULL_BLOCK);
+            return Helpers.invokeSuper(context, self, argv, Block.NULL_BLOCK);
         }
     }
 
@@ -424,9 +424,9 @@ public class CGIEscape implements Library {
         RubyClass rb_cCGI = runtime.defineClass("CGI", runtime.getObject(), runtime.getObject().getAllocator());
         RubyModule rb_mEscape = rb_cCGI.defineModuleUnder("Escape");
         rb_mEscape.defineAnnotatedMethods(CGIEscape.class);
-        RubyModule rb_mUtil = rb_cCGI.defineModuleUnder("Util");
-        rb_mUtil.prependModule(rb_mEscape);
-        rb_cCGI.extend_object(rb_mEscape);
+        // We do this in cgi/util.rb to work around jruby/jruby#4531.
+//        rb_mUtil.prependModule(rb_mEscape);
+//        rb_mEscape.extend_object(rb_cCGI);
     }
 
     // PORTED FROM OTHER FILES IN MRI

@@ -1085,9 +1085,7 @@ public class ParserSupport {
     }
 
     public RationalNode negateRational(RationalNode rationalNode) {
-        return new RationalNode(rationalNode.getPosition(),
-                                -rationalNode.getNumerator(),
-                                rationalNode.getDenominator());
+        return (RationalNode) rationalNode.negate();
     }
     
     private Node checkForNilNode(Node node, ISourcePosition defaultPosition) {

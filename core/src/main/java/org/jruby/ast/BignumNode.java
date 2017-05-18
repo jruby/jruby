@@ -57,6 +57,11 @@ public class BignumNode extends NumericNode implements SideEffectFree {
         return iVisitor.visitBignumNode(this);
     }
 
+    @Override
+    public NumericNode negate() {
+        return new BignumNode(getPosition(), value.negate());
+    }
+
     /**
      * Gets the value.
      * @return Returns a BigInteger

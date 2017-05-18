@@ -24,7 +24,7 @@ The language specs are grouped by keyword while the core and standard library sp
 ruby/spec is known to be tested in these implementations for every commit:
 * [MRI](http://rubyci.org/) on 30 platforms and 4 versions
 * [JRuby](https://github.com/jruby/jruby/tree/master/spec/ruby) on Travis for both 1.7 and 9.x
-* [JRuby+Truffle](https://github.com/jruby/jruby/wiki/Truffle#rubyspec) on Travis
+* [TruffleRuby](https://github.com/graalvm/truffleruby) on Travis
 * [Opal](https://github.com/opal/opal/tree/master/spec) on Travis
 
 ### Running the specs

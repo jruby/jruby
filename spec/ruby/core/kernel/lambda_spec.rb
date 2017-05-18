@@ -11,6 +11,18 @@ describe "Kernel.lambda" do
     Kernel.should have_private_instance_method(:lambda)
   end
 
+  it "creates a lambda-style Proc if given a literal block" do
+    l = lambda { 42 }
+    l.lambda?.should be_true
+  end
+
+  it "returned the passed Proc if given an existing Proc" do
+    some_proc = proc {}
+    l = lambda(&some_proc)
+    l.should equal(some_proc)
+    l.lambda?.should be_false
+  end
+
   it "checks the arity of the call when no args are specified" do
     l = lambda { :called }
     l.call.should == :called
@@ -60,7 +72,7 @@ describe "Kernel.lambda" do
   it "returns from the lambda itself, not the creation site of the lambda" do
     @reached_end_of_method = nil
     def test
-      send(@method) { return }.call
+      send(:lambda) { return }.call
       @reached_end_of_method = true
     end
     test
@@ -68,7 +80,7 @@ describe "Kernel.lambda" do
   end
 
   it "allows long returns to flow through it" do
-    KernelSpecs::Lambda.new.outer(@method).should == :good
+    KernelSpecs::Lambda.new.outer.should == :good
   end
 end
 

@@ -85,8 +85,11 @@ public class SelectorPool {
      * @param selector the selector to put back
      */
     public void put(Selector selector) {
-        Iterator<SelectionKey> key_iterator = selector.keys().iterator();
-        while(key_iterator.hasNext()) key_iterator.next().cancel();
+        for (SelectionKey key : selector.keys()) {
+            if (key != null) {
+                key.cancel();
+            }
+        }
 
         try {
             selector.selectNow();

@@ -1,3 +1,0 @@
-fails:File.open opens a file with a file descriptor d and a block
-fails:File.open with a block propagates StandardErrors produced by close
-slow:File.open on a FIFO opens it as a normal file

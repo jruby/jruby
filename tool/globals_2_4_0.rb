@@ -17,6 +17,7 @@ STDLIB_FILES = %w[
   erb.rb
   fileutils.rb
   find.rb
+  forwardable
   forwardable.rb
   getoptlong.rb
   ipaddr.rb

@@ -1136,7 +1136,7 @@ public final class StructLayout extends Type {
                 ptr.getMemoryIO().putMemoryIO(m.offset, mem);
 
             } else if (value instanceof RubyInteger) {
-                ptr.getMemoryIO().putAddress(m.offset, Util.int64Value(ptr));
+                ptr.getMemoryIO().putAddress(m.offset, Util.int64Value(value));
 
             } else if (value.isNil()) {
                 ptr.getMemoryIO().putAddress(m.offset, 0L);

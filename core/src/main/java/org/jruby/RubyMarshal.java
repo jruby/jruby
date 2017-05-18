@@ -124,7 +124,7 @@ public class RubyMarshal {
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
         IRubyObject in = args[0];
-        IRubyObject proc = args.length == 2 ? args[1] : null;
+        IRubyObject proc = args.length == 2 ? args[1] : context.nil;
         
         try {
             InputStream rawInput;

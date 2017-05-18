@@ -167,7 +167,7 @@ public class HeredocTerm extends StrTerm {
                 Encoding enc[] = new Encoding[1];
                 enc[0] = lexer.getEncoding();
 
-                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, tok, enc)) == EOF) {
+                if ((c = new StringTerm(flags, '\0', '\n', lexer.getRubySourceline()).parseStringIntoBuffer(lexer, tok, enc)) == EOF) {
                     if (lexer.eofp) return error(lexer, len, str, eos);
                     return restore(lexer);
                 }
@@ -189,7 +189,7 @@ public class HeredocTerm extends StrTerm {
         }
 
         lexer.heredoc_restore(this);
-        lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
+        lexer.setStrTerm(new StringTerm(-1, '\0', '\0', lexer.getRubySourceline()));
         lexer.setValue(lexer.createStr(str, 0));
         return Tokens.tSTRING_CONTENT;
     }

@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-tool="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root="$(dirname "$tool")"
-
-exec mx -p "$root" ruby "$@";

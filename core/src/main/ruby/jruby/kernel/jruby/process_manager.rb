@@ -1,5 +1,3 @@
-require 'jruby'
-
 module JRuby
   # Implementations of key core process-launching methods using Java 7 process
   # launching APIs.

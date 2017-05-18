@@ -144,14 +144,14 @@ platform_is :windows do
       @io = new_io(@fname, "wt")
       @io.write "a\nb\nc"
       @io.close
-      @fname.should have_data("a\r\nb\r\nc")
+      File.binread(@fname).should == "a\r\nb\r\nc"
     end
 
     it "does not normalize line endings in binary mode" do
       @io = new_io(@fname, "wb")
       @io.write "a\r\nb\r\nc"
       @io.close
-      @fname.should have_data("a\r\nb\r\nc")
+      File.binread(@fname).should == "a\r\nb\r\nc"
     end
   end
 end

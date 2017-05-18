@@ -8,8 +8,6 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.instructions.ClosureAcceptingInstr;
-import org.jruby.ir.operands.WrappedIRClosure;
 
 import java.util.*;
 
@@ -17,6 +15,11 @@ public class LocalOptimizationPass extends CompilerPass {
     @Override
     public String getLabel() {
         return "Local Optimizations";
+    }
+
+    @Override
+    public String getShortLabel() {
+        return "Local Opts";
     }
 
     @Override
@@ -107,16 +110,6 @@ public class LocalOptimizationPass extends CompilerPass {
         return newInstr;
     }
 
-    private static boolean isDataflowBarrier(Instr i, IRScope s) {
-        boolean reset = false;
-        if (!i.isDead() && i instanceof ClosureAcceptingInstr) {
-            Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
-            reset = s.bindingHasEscaped() || (o != null && o instanceof WrappedIRClosure);
-        }
-
-        return reset;
-    }
-
     public static void runLocalOptsOnInstrArray(IRScope s, Instr[] instrs) {
         // Reset value map if this instruction is the start/end of a basic block
         Map<Operand,Operand> valueMap = new HashMap<>();
@@ -128,10 +121,21 @@ public class LocalOptimizationPass extends CompilerPass {
                 instrs[i] = newInstr;
             }
 
-            // Reset simplification info if this starts/ends a basic block
-            // or if the instr is a dataflow barrier.
+            // If the call has been optimized away in the previous step, it is no longer a hard boundary for opts!
+            //
+            // Right now, calls are considered hard boundaries for optimization and
+            // information cannot be propagated across them!
+            //
+            // SSS FIXME: Rather than treat all calls with a broad brush, what we need
+            // is to capture different attributes about a call :
+            //   - uses closures
+            //   - known call target
+            //   - can modify scope,
+            //   - etc.
+            //
+            // This information is present in instruction flags on CallBase. Use it!
             Operation iop = instr.getOperation();
-            if (iop.startsBasicBlock() || iop.endsBasicBlock() || isDataflowBarrier(instr, s)) {
+            if (iop.startsBasicBlock() || iop.endsBasicBlock() || (iop.isCall() && !instr.isDead())) {
                 valueMap = new HashMap<>();
                 simplificationMap = new HashMap<>();
             }
@@ -152,8 +156,21 @@ public class LocalOptimizationPass extends CompilerPass {
                 instrs.set(newInstr);
             }
 
-            // Reset simplification info if this is a dataflow barrier.
-            if (isDataflowBarrier(instr, s)) {
+            // If the call has been optimized away in the previous step, it is no longer a hard boundary for opts!
+            //
+            // Right now, calls are considered hard boundaries for optimization and
+            // information cannot be propagated across them!
+            //
+            // SSS FIXME: Rather than treat all calls with a broad brush, what we need
+            // is to capture different attributes about a call :
+            //   - uses closures
+            //   - known call target
+            //   - can modify scope,
+            //   - etc.
+            //
+            // This information is present in instruction flags on CallBase. Use it!
+            Operation iop = instr.getOperation();
+            if (iop.isCall() && !instr.isDead()) {
                 valueMap = new HashMap<>();
                 simplificationMap = new HashMap<>();
             }

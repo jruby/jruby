@@ -1,5 +1,6 @@
 package org.jruby.ir.passes;
 
+import java.util.EnumSet;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
@@ -65,7 +66,9 @@ public class LiveVariableAnalysis extends CompilerPass {
             // We have to conservatively assume that any dirtied variables
             // that belong to an outer scope are live on exit.
             Set<LocalVariable> nlVars = new HashSet<LocalVariable>();
-            collectNonLocalDirtyVars((IRClosure)scope, nlVars, scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) ? -1 : 0);
+            EnumSet<IRFlags> flags = scope.getExecutionContext().getFlags();
+
+            collectNonLocalDirtyVars((IRClosure)scope, nlVars, flags.contains(IRFlags.DYNSCOPE_ELIMINATED) ? -1 : 0);
 
             // Init DF vars from this set
             for (Variable v: nlVars) {

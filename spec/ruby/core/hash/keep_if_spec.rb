@@ -16,6 +16,12 @@ describe "Hash#keep_if" do
     h.should == { b: 2, d: 4 }
   end
 
+  it "removes all entries if the block is false" do
+    h = { a: 1, b: 2, c: 3 }
+    h.keep_if { |k,v| false }.should equal(h)
+    h.should == {}
+  end
+
   it "returns self even if unmodified" do
     h = { 1 => 2, 3 => 4 }
     h.keep_if { true }.should equal(h)

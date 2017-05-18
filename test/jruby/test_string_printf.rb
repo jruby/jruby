@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'test/unit'
 
 class TestStringPrintf < Test::Unit::TestCase
@@ -21,7 +22,7 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("+101", "%+b" % 5)
     assert_equal("101  ", "%-5b" % 5)
     assert_equal("0", "%b" % nil)
-    assert_raises(ArgumentError) {"%b" % {'A' => 1}}
+    assert_raises(TypeError) {"%b" % {'A' => 1}}
     assert_raises(ArgumentError) {"%b" % "a"}
     assert_raises(TypeError) {"%b" % true}
     assert_raises(TypeError) {"%b" % [[1, 2]]}

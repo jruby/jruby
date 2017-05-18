@@ -14,9 +14,4 @@ describe "Proc#hash" do
     body = proc { :foo }
     proc(&body).hash.should == proc(&body).hash
   end
-
-  it "does not depend on whether self is a proc or lambda" do
-    body = proc { :foo }
-    proc(&body).hash.should == lambda(&body).hash
-  end
 end

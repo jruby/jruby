@@ -26,8 +26,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     archives "https://github.com/jruby/jruby/wiki/MailingLists"
   end
 
-  license 'GPL 3', 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'
-  license 'LGPL 3', 'http://www.gnu.org/licenses/lgpl-3.0-standalone.html'
+  license 'GPL 2', 'http://www.gnu.org/licenses/gpl-2.0-standalone.html'
+  license 'LGPL 2.1', 'http://www.gnu.org/licenses/lgpl-2.1-standalone.html'
   license 'EPL', 'http://www.eclipse.org/legal/epl-v10.html'
 
   plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
@@ -80,13 +80,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
               'rdoc.version' => '5.0.0',
               'rake.version' => '10.4.2',
-              'jar-dependencies.version' => '0.3.5',
+              'jar-dependencies.version' => '0.3.10',
 
               'jruby-launcher.version' => '1.1.1',
               'ant.version' => '1.9.2',
               'asm.version' => '5.0.4',
-              'jffi.version' => '1.2.14',
-              'bouncy-castle.version' => '1.47',
+              'jffi.version' => '1.2.15',
               'joda.time.version' => '2.8.2' )
 
   plugin_management do
@@ -172,14 +171,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   modules [ 'core', 'lib' ]
 
-  # Truffle is by default only built if a JDK 8+ is available
-  profile 'truffle' do
-    activation do
-      jdk '[1.8,)' # 1.8+
-    end
-    modules [ 'truffle' ]
-  end
-
   build do
     default_goal 'install'
   end
@@ -255,7 +246,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'truffle', 'test', 'maven' ]
+  all_modules = [ 'test', 'maven' ]
 
   profile 'all' do
 
@@ -276,13 +267,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'release' do
-    modules [ 'truffle', 'test', 'maven' ]
+    modules [ 'test', 'maven' ]
     properties 'invoker.skip' => true
   end
 
   profile 'snapshots' do
 
-    modules [ 'truffle', 'maven' ]
+    modules [ 'maven' ]
 
     distribution_management do
       repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )

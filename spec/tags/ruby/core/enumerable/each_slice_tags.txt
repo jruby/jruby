@@ -1,1 +1,0 @@
-fails:Enumerable#each_slice raises an ArgumentError if there is not a single parameter > 0

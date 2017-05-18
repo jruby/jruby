@@ -319,6 +319,7 @@ public class LoadService {
 
     public void load(String file, boolean wrap) {
         long startTime = loadTimer.startLoad(file);
+        int currentLine = runtime.getCurrentLine();
         try {
             if(!runtime.getProfile().allowLoad(file)) {
                 throw runtime.newLoadError("no such file to load -- " + file, file);
@@ -345,12 +346,14 @@ public class LoadService {
                 throw newLoadErrorFromThrowable(runtime, file, e);
             }
         } finally {
+            runtime.setCurrentLine(currentLine);
             loadTimer.endLoad(file, startTime);
         }
     }
 
     public void loadFromClassLoader(ClassLoader classLoader, String file, boolean wrap) {
         long startTime = loadTimer.startLoad("classloader:" + file);
+        int currentLine = runtime.getCurrentLine();
         try {
             SearchState state = new SearchState(file);
             state.prepareLoadSearch(file);
@@ -371,6 +374,7 @@ public class LoadService {
                 throw newLoadErrorFromThrowable(runtime, file, e);
             }
         } finally {
+            runtime.setCurrentLine(currentLine);
             loadTimer.endLoad("classloader:" + file, startTime);
         }
     }

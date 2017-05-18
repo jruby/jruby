@@ -132,7 +132,7 @@ describe "File.open" do
     # even though the file permissions are r-r-r.
 
     File.open(@file, "w", 0444) { |f| f.write("test") }
-    @file.should have_data("test")
+    File.read(@file).should == "test"
   end
 
   platform_is_not :windows do
@@ -142,7 +142,7 @@ describe "File.open" do
       File.open(@file, "w", 0444) { |f| f.write("test") }
 
       File.stat(@file).mode.to_s(8).should == orig_perms
-      @file.should have_data("test")
+      File.read(@file).should == "test"
     end
   end
 
@@ -518,6 +518,31 @@ describe "File.open" do
     File.size(@file).should == 0
   end
 
+  ruby_version_is "2.3" do
+    platform_is :linux do
+      if defined?(File::TMPFILE)
+        it "creates an unnamed temporary file with File::TMPFILE" do
+          dir = tmp("").chomp("/")
+          rm_r @file
+          Dir["#{dir}/*"].should == []
+          begin
+            File.open(dir, "r+", flags: File::TMPFILE) do |io|
+              io.write("ruby")
+              io.flush
+              io.rewind
+              io.read.should == "ruby"
+              Dir["#{dir}/*"].should == []
+            end
+          rescue Errno::EOPNOTSUPP, Errno::EINVAL
+            # EOPNOTSUPP: no support from the filesystem
+            # EINVAL: presumably bug in glibc
+            1.should == 1
+          end
+        end
+      end
+    end
+  end
+
   it "raises a TypeError if passed a filename that is not a String or Integer type" do
     lambda { File.open(true)  }.should raise_error(TypeError)
     lambda { File.open(false) }.should raise_error(TypeError)
@@ -551,6 +576,24 @@ describe "File.open" do
     options.should_receive(:to_hash).and_return({ mode: "r" })
 
     @fh = File.open(@file, options)
+  end
+
+  ruby_version_is "2.3" do
+    it "accepts extra flags as a keyword argument and combine with a string mode" do
+      lambda {
+        File.open(@file, "w", flags: File::EXCL) { }
+      }.should raise_error(Errno::EEXIST)
+
+      lambda {
+        File.open(@file, mode: "w", flags: File::EXCL) { }
+      }.should raise_error(Errno::EEXIST)
+    end
+
+    it "accepts extra flags as a keyword argument and combine with an integer mode" do
+      lambda {
+        File.open(@file, File::WRONLY | File::CREAT, flags: File::EXCL) { }
+      }.should raise_error(Errno::EEXIST)
+    end
   end
 
   platform_is_not :windows do
@@ -612,7 +655,7 @@ describe "File.open when passed a file descriptor" do
     @file.fileno.should equal(@fd)
     @file.write @content
     @file.flush
-    @name.should have_data(@content)
+    File.read(@name).should == @content
   end
 
   it "opens a file when passed a block" do
@@ -622,7 +665,7 @@ describe "File.open when passed a file descriptor" do
       f.write @content
       f
     end
-    @name.should have_data(@content)
+    File.read(@name).should == @content
   end
 end
 

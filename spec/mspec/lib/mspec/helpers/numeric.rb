@@ -54,8 +54,7 @@ class Object
     def fixnum_min
       Fixnum::MIN
     end
-  elsif guard.implementation? :jruby
-    # Values from jruby/test/testFixnumBignumAutoconversion.rb
+  elsif guard.implementation?(:jruby) || guard.implementation?(:truffleruby)
     def fixnum_max
       9223372036854775807
     end

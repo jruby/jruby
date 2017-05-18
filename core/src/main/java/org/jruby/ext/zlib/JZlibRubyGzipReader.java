@@ -31,6 +31,7 @@ import com.jcraft.jzlib.GZIPInputStream;
 import com.jcraft.jzlib.Inflater;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyEnumerator;
 import org.jruby.RubyException;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
@@ -270,7 +271,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         if (0 == result.length() && -1 == ce) return getRuntime().getNil();
 
         line++;
-        position = result.length();
+        position += result.length();
 
         return newStr(getRuntime(), result);
     }
@@ -606,6 +607,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod(optional = 1)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", args);
+
         ByteList sep = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getByteList();
 
         if (args.length > 0 && !args[0].isNil()) {
@@ -625,6 +628,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod(optional = 1)
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_line", args);
+
         return each(context, args, block);
     }
 
@@ -659,6 +664,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod
     public IRubyObject each_byte(ThreadContext context, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte");
+
         try {
             int value = bufferedStream.read();
 

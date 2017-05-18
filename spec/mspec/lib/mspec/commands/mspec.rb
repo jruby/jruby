@@ -157,9 +157,9 @@ class MSpecMain < MSpecScript
       else
         cmd, *rest = config[:target].split(/\s+/)
         argv = rest + argv unless rest.empty?
+        $stderr.puts "$ #{cmd} #{argv.join(' ')}"
         exec cmd, *argv
       end
     end
   end
 end
-

@@ -1,4 +1,0 @@
-slow:Encoding#names returns an Array
-slow:Encoding#names returns names as Strings
-slow:Encoding#names returns #name as the first value
-slow:Encoding#names includes any aliases the encoding has
