@@ -178,7 +178,7 @@ public class CGIEscape implements Library {
                         overflow = clenOverflow[1] == 1;
                     } else continue;
                     i += clen;
-                    if (overflow || cc >= charlimit || cstrBytes[cstr + i] != ';') continue;
+                    if (overflow || cc >= charlimit || i >= len || cstrBytes[cstr + i] != ';') continue;
                     if (dest == null) {
                         dest = RubyString.newStringLight(runtime, len);
                     }

@@ -21,8 +21,10 @@ describe "Process.exec" do
     end
 
     platform_is :windows do
-      it "raises Errno::ENOEXEC when the file is not an executable file" do
-        lambda { Process.exec __FILE__ }.should raise_error(Errno::ENOEXEC)
+      it "raises Errno::EACCES or Errno::ENOEXEC when the file is not an executable file" do
+        lambda { Process.exec __FILE__ }.should raise_error(SystemCallError) { |e|
+          [Errno::EACCES, Errno::ENOEXEC].should include(e.class)
+        }
       end
     end
   end

@@ -29,14 +29,17 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A DynamicMethod wrapper that performs timed profiling for each call.
  */
-public class ProfilingDynamicMethod extends DelegatingDynamicMethod {
+public class ProfilingDynamicMethod extends DelegatingDynamicMethod implements IRMethodArgs {
 
     public ProfilingDynamicMethod(DynamicMethod delegate) {
         super(delegate);
@@ -155,5 +158,15 @@ public class ProfilingDynamicMethod extends DelegatingDynamicMethod {
     @Override
     public DynamicMethod dup() {
         return new ProfilingDynamicMethod(delegate.dup());
+    }
+
+    public Signature getSignature() {
+        return delegate instanceof IRMethodArgs ?
+                ((IRMethodArgs) delegate).getSignature() : Signature.from(delegate.getArity());
+    }
+
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return delegate instanceof IRMethodArgs ?
+                ((IRMethodArgs) delegate).getArgumentDescriptors() : Helpers.methodToArgumentDescriptors(delegate);
     }
 }

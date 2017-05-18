@@ -466,9 +466,23 @@ describe :kernel_require, shared: true do
       end
     end
 
-    ruby_version_is "2.3" do
+    ruby_version_is "2.3"..."2.5" do
       it "complex, enumerator, rational, thread and unicode_normalize are already required" do
         provided = %w[complex enumerator rational thread unicode_normalize]
+        features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
+        provided.each { |feature|
+          features.should =~ /\b#{feature}\.(rb|so|jar)$/
+        }
+
+        code = provided.map { |f| "puts require #{f.inspect}\n" }.join
+        required = ruby_exe(code, options: '--disable-gems')
+        required.should == "false\n" * provided.size
+      end
+    end
+
+    ruby_version_is "2.5" do
+      it "complex, enumerator, rational and thread are already required" do
+        provided = %w[complex enumerator rational thread]
         features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
         provided.each { |feature|
           features.should =~ /\b#{feature}\.(rb|so|jar)$/

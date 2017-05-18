@@ -17,3 +17,4 @@ fails:ObjectSpace.each_object finds an object stored in a thread local
 fails:ObjectSpace.each_object finds an object stored in a fiber local
 fails:ObjectSpace.each_object finds an object captured in an at_exit handler
 fails:ObjectSpace.each_object finds an object captured in finalizer
+fails:ObjectSpace.each_object finds an object stored in a local variable captured in by a method defined with a block

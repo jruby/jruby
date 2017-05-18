@@ -64,7 +64,6 @@ lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
-lib/ruby/stdlib/racc*
 lib/ruby/stdlib/rake*
 lib/ruby/stdlib/json*
 lib/ruby/stdlib/rdoc*
