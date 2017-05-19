@@ -2675,6 +2675,7 @@ public class RubyModule extends RubyObject {
 
         while ( ( sep = name.indexOf("::") ) != -1 ) {
             final String segment = name.substring(0, sep);
+            name = name.substring(sep + 2);
             IRubyObject obj = mod.getConstant(validateConstant(segment, symbol), inherit, inherit);
             if (obj instanceof RubyModule) {
                 mod = (RubyModule) obj;
