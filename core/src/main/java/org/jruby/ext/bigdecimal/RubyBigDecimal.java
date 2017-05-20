@@ -508,7 +508,9 @@ public class RubyBigDecimal extends RubyNumeric {
         if (mathContext.getPrecision() > RubyFloat.DIG + 1) throw runtime.newArgumentError("precision too large");
 
         double dblVal = arg.getDoubleValue();
-        if(Double.isInfinite(dblVal) || Double.isNaN(dblVal)) throw runtime.newFloatDomainError("NaN");
+
+        if(Double.isNaN(dblVal)) throw runtime.newFloatDomainError("NaN");
+        if(Double.isInfinite(dblVal)) return newInfinity(runtime, dblVal == Double.POSITIVE_INFINITY ? 1 : -1);
 
         return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(dblVal, mathContext));
     }
