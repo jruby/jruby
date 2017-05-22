@@ -117,9 +117,17 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
                     for (File f : tempDir.listFiles()) {
-                        f.delete();
+                        try {
+                            f.delete();
+                        } catch (Exception ex) {
+                            LOG.debug(ex);
+                        }
                     }
-                    tempDir.delete();
+                    try {
+                        tempDir.delete();
+                    } catch (Exception ex) {
+                        LOG.info("failed to delete temp dir " + tempDir + " : " + ex);
+                    }
                 }
             });
         }
