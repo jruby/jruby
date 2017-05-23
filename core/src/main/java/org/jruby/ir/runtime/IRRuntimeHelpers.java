@@ -1555,7 +1555,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static void pushExitBlock(ThreadContext context, Block blk) {
-        context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
+        context.runtime.pushEndBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
     }
 
     @JIT
