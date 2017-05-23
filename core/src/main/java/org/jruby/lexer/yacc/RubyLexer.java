@@ -1354,7 +1354,8 @@ public class RubyLexer extends LexingCommon {
             } while (Character.isDigit(c));
             pushback(c);
             if (isLexState(last_state, EXPR_FNAME)) {
-                yaccValue = createTokenString().intern();
+                createTokenString().intern();
+                yaccValue = getIdentifier();
                 return Tokens.tGVAR;
             }
 
