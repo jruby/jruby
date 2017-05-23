@@ -1143,6 +1143,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject op_plus19(ThreadContext context, IRubyObject arg) {
         RubyString str = arg.convertToString();
         Encoding enc = checkEncoding(str);
+        long len = (long) value.getRealSize() + str.value.getRealSize();
+
+        // we limit to int because ByteBuffer can only allocate int sizes
+        if (len > Integer.MAX_VALUE) throw context.runtime.newArgumentError("argument too big");
         RubyString resultStr = newStringNoCopy(context.runtime, StringSupport.addByteLists(value, str.value),
                 enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
         resultStr.infectBy(flags | str.flags);
