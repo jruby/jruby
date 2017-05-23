@@ -252,6 +252,15 @@ public class StaticScope implements Serializable {
      * @param name name of variable.
      * @return index of variable
      */
+    public int addNamedCaptureVariable(ByteList name) {
+        int index = addVariableThisScope(name);
+
+        growNamedCaptures(index);
+
+        return index;
+    }
+
+    @Deprecated
     public int addNamedCaptureVariable(String name) {
         int index = addVariableThisScope(name);
 

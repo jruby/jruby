@@ -39,6 +39,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.Map;
+
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.ast.BackRefNode;
@@ -204,7 +206,60 @@ public class RubyLexer extends LexingCommon {
             this.state = state;
         }
     }
-    
+
+    private static final Map<ByteList, Keyword> byteList2Keyword;
+
+    static {
+        byteList2Keyword = new HashMap<ByteList, Keyword>();
+
+        byteList2Keyword.put(Keyword.END.bytes, Keyword.END);
+        byteList2Keyword.put(Keyword.ELSE.bytes, Keyword.ELSE);
+        byteList2Keyword.put(Keyword.CASE.bytes, Keyword.CASE);
+        byteList2Keyword.put(Keyword.ENSURE.bytes, Keyword.ENSURE);
+        byteList2Keyword.put(Keyword.MODULE.bytes, Keyword.MODULE);
+        byteList2Keyword.put(Keyword.ELSIF.bytes, Keyword.ELSIF);
+        byteList2Keyword.put(Keyword.DEF.bytes, Keyword.DEF);
+        byteList2Keyword.put(Keyword.RESCUE.bytes, Keyword.RESCUE);
+        byteList2Keyword.put(Keyword.NOT.bytes, Keyword.NOT);
+        byteList2Keyword.put(Keyword.THEN.bytes, Keyword.THEN);
+        byteList2Keyword.put(Keyword.YIELD.bytes, Keyword.YIELD);
+        byteList2Keyword.put(Keyword.FOR.bytes, Keyword.FOR);
+        byteList2Keyword.put(Keyword.SELF.bytes, Keyword.SELF);
+        byteList2Keyword.put(Keyword.FALSE.bytes, Keyword.FALSE);
+        byteList2Keyword.put(Keyword.RETRY.bytes, Keyword.RETRY);
+        byteList2Keyword.put(Keyword.RETURN.bytes, Keyword.RETURN);
+        byteList2Keyword.put(Keyword.TRUE.bytes, Keyword.TRUE);
+        byteList2Keyword.put(Keyword.IF.bytes, Keyword.IF);
+        byteList2Keyword.put(Keyword.DEFINED_P.bytes, Keyword.DEFINED_P);
+        byteList2Keyword.put(Keyword.SUPER.bytes, Keyword.SUPER);
+        byteList2Keyword.put(Keyword.UNDEF.bytes, Keyword.UNDEF);
+        byteList2Keyword.put(Keyword.BREAK.bytes, Keyword.BREAK);
+        byteList2Keyword.put(Keyword.IN.bytes, Keyword.IN);
+        byteList2Keyword.put(Keyword.DO.bytes, Keyword.DO);
+        byteList2Keyword.put(Keyword.NIL.bytes, Keyword.NIL);
+        byteList2Keyword.put(Keyword.UNTIL.bytes, Keyword.UNTIL);
+        byteList2Keyword.put(Keyword.UNLESS.bytes, Keyword.UNLESS);
+        byteList2Keyword.put(Keyword.OR.bytes, Keyword.OR);
+        byteList2Keyword.put(Keyword.NEXT.bytes, Keyword.NEXT);
+        byteList2Keyword.put(Keyword.WHEN.bytes, Keyword.WHEN);
+        byteList2Keyword.put(Keyword.REDO.bytes, Keyword.REDO);
+        byteList2Keyword.put(Keyword.AND.bytes, Keyword.AND);
+        byteList2Keyword.put(Keyword.BEGIN.bytes, Keyword.BEGIN);
+        byteList2Keyword.put(Keyword.__LINE__.bytes, Keyword.__LINE__);
+        byteList2Keyword.put(Keyword.CLASS.bytes, Keyword.CLASS);
+        byteList2Keyword.put(Keyword.__FILE__.bytes, Keyword.__FILE__);
+        byteList2Keyword.put(Keyword.LEND.bytes, Keyword.LEND);
+        byteList2Keyword.put(Keyword.LBEGIN.bytes, Keyword.LBEGIN);
+        byteList2Keyword.put(Keyword.WHILE.bytes, Keyword.WHILE);
+        byteList2Keyword.put(Keyword.ALIAS.bytes, Keyword.ALIAS);
+        byteList2Keyword.put(Keyword.__ENCODING__.bytes, Keyword.__ENCODING__);
+    }
+
+    public static Keyword getKeyword(ByteList str) {
+        return (Keyword) byteList2Keyword.get(str);
+    }
+
+    @Deprecated
     public static Keyword getKeyword(String str) {
         return (Keyword) map.get(str);
     }
