@@ -300,7 +300,7 @@ public class StaticScope implements Serializable {
     public String[] getVariables() {
         String[] newVars = new String[variableNames.length];
         for (int i = 0; i < variableNames.length; i++) {
-            newVars[i] = variableNames[i].toString();
+            newVars[i] = StringSupport.byteListAsString(variableNames[i]);
         }
         return newVars;
     }
