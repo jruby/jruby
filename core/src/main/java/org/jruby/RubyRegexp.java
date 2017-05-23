@@ -72,6 +72,8 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
+
+import static org.jruby.util.StringSupport.EMPTY_BYTELIST_ARRAY;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import java.util.Iterator;
@@ -1427,6 +1429,21 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } while (true);
     }
 
+    public ByteList[] getByteNames() {
+        int nameLength = pattern.numberOfNames();
+        if (nameLength == 0) return EMPTY_BYTELIST_ARRAY;
+
+        ByteList[] names = new ByteList[nameLength];
+        int j = 0;
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            names[j++] = new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, pattern.getEncoding(), true);
+        }
+
+        return names;
+    }
+
+    @Deprecated
     public String[] getNames() {
         int nameLength = pattern.numberOfNames();
         if (nameLength == 0) return EMPTY_STRING_ARRAY;

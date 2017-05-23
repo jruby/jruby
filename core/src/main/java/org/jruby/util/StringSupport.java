@@ -80,6 +80,7 @@ public final class StringSupport {
 
     public static final int TRANS_SIZE = 256;
 
+    public static final ByteList[] EMPTY_BYTELIST_ARRAY = new ByteList[0];
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     /**

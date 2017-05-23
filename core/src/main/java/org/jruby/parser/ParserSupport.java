@@ -1384,7 +1384,7 @@ public class ParserSupport {
 
         if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
                 Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), "shadowing outer local variable - " + name);
+            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), "shadowing outer local variable - " + StringSupport.byteListAsString(name));
         }
 
         return name;
@@ -1459,7 +1459,7 @@ public class ParserSupport {
     private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
         RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
-        String[] names = pattern.getNames();
+        ByteList[] names = pattern.getByteNames();
         int length = names.length;
         List<Integer> locals = new ArrayList<Integer>();
         StaticScope scope = getCurrentScope();
@@ -1470,7 +1470,7 @@ public class ParserSupport {
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn
                     if (warnings.isVerbose() && !scope.isNamedCapture(slot)) {
-                        warn(ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), "named capture conflicts a local variable - " + names[i]);
+                        warn(ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), "named capture conflicts a local variable - " + StringSupport.byteListAsString(names[i]));
                     }
                     locals.add(slot);
                 } else {
