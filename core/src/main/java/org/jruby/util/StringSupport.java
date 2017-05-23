@@ -49,6 +49,8 @@ import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.io.EncodingUtils;
 import sun.misc.Unsafe;
 
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -2466,6 +2468,11 @@ public final class StringSupport {
     }
 
     public static String byteListAsString(ByteList bytes) {
-        return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize(), bytes.getEncoding().getCharset());
+        try {
+            Charset charset = bytes.getEncoding().getCharset();
+            if (charset != null) return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize(), charset);
+        } catch (UnsupportedCharsetException e) {}
+
+        return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
     }
 }
