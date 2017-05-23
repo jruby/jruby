@@ -2181,7 +2181,7 @@ sym             : fname
                     $$ = lexer.getIdentifier();
                 }
                 | tGVAR {
-                    $$ = lexer.getIdentifier();
+                    $$ = $1;
                 }
                 | tCVAR {
                     $$ = lexer.getIdentifier();

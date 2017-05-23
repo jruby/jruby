@@ -1385,7 +1385,8 @@ public class RubyLexer extends LexingCommon {
                 pushback('-');
                 return '$';
             }
-            yaccValue = createTokenString().intern();
+            createTokenString().intern();
+            yaccValue = getIdentifier();
             /* xxx shouldn't check if valid option variable */
             return Tokens.tGVAR;
 

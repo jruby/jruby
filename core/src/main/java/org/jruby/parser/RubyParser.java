@@ -4801,7 +4801,7 @@ states[500] = new ParserState() {
 };
 states[501] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = lexer.getIdentifier();
+                    yyVal = ((ByteList)yyVals[0+yyTop]);
     return yyVal;
   }
 };
