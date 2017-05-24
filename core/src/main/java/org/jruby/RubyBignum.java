@@ -240,16 +240,16 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    public IRubyObject ceil(ThreadContext context, IRubyObject args){
-        BigInteger ndigits = args.convertToInteger().getBigIntegerValue();
+    public IRubyObject ceil(ThreadContext context, IRubyObject arg){
+        int ndigits = arg.convertToInteger().getIntValue();
         BigInteger self = value;
-        if (ndigits.compareTo(BigInteger.ZERO) == 1){
+        if (ndigits > 0){
             return convertToFloat();
-        } else if (ndigits.compareTo(BigInteger.ZERO) == 0){
+        } else if (ndigits == 0){
             return this;
         } else {
-            BigInteger posdigits = ndigits.abs();
-            BigInteger exp = BigInteger.TEN.pow(posdigits.intValue());
+            int posdigits = Math.abs(ndigits);
+            BigInteger exp = BigInteger.TEN.pow(posdigits);
             BigInteger mod = self.mod(exp);
             BigInteger res = self;
             if (mod.compareTo(BigInteger.ZERO) != 0) {
@@ -263,16 +263,16 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    public IRubyObject floor(ThreadContext context, IRubyObject args){
-        BigInteger ndigits = args.convertToInteger().getBigIntegerValue();
+    public IRubyObject floor(ThreadContext context, IRubyObject arg){
+        int ndigits = arg.convertToInteger().getIntValue();
         BigInteger self = value;
-        if (ndigits.compareTo(BigInteger.ZERO) == 1){
+        if (ndigits > 0){
             return convertToFloat();
-        } else if (ndigits.compareTo(BigInteger.ZERO) == 0){
+        } else if (ndigits == 0){
             return this;
         } else {
-            BigInteger posdigits = ndigits.abs();
-            BigInteger exp = BigInteger.TEN.pow(posdigits.intValue());
+            int posdigits = Math.abs(ndigits);
+            BigInteger exp = BigInteger.TEN.pow(posdigits);
             BigInteger res = self.subtract(self.mod(exp));
             return newBignum(context.runtime, res);
         }
@@ -282,12 +282,12 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    public IRubyObject truncate(ThreadContext context, IRubyObject args){
+    public IRubyObject truncate(ThreadContext context, IRubyObject arg){
         BigInteger self = value;
         if (self.compareTo(BigInteger.ZERO) == 1){
-            return floor(context, args);
+            return floor(context, arg);
         } else if (self.compareTo(BigInteger.ZERO) == -1){
-            return ceil(context, args);
+            return ceil(context, arg);
         } else {
             return this;
         }

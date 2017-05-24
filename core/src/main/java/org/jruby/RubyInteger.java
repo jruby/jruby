@@ -405,7 +405,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @JRubyMethod(name = "ceil", required = 1)
-    public abstract IRubyObject ceil(ThreadContext context, IRubyObject args);
+    public abstract IRubyObject ceil(ThreadContext context, IRubyObject arg);
 
     @JRubyMethod(name = "floor")
     public IRubyObject floor(){
@@ -413,7 +413,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @JRubyMethod(name = "floor", required = 1)
-    public abstract IRubyObject floor(ThreadContext context, IRubyObject args);
+    public abstract IRubyObject floor(ThreadContext context, IRubyObject arg);
 
     @JRubyMethod(name = "truncate")
     public IRubyObject truncate(){
@@ -421,7 +421,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @JRubyMethod(name = "truncate", required = 1)
-    public abstract IRubyObject truncate(ThreadContext context, IRubyObject args);
+    public abstract IRubyObject truncate(ThreadContext context, IRubyObject arg);
 
     @Override
     public IRubyObject round() {
