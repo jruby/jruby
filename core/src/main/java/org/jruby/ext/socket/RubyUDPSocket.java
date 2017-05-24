@@ -430,6 +430,13 @@ public class RubyUDPSocket extends RubyIPSocket {
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "send: name or service not known");
         } catch (IOException e) { // SocketException
+            final String message = e.getMessage();
+            if (message != null) {
+                switch(message) {
+                case "Message too long":
+                    throw runtime.newErrnoEMSGSIZEError();
+                }
+            }
             throw runtime.newIOErrorFromException(e);
         }
         catch (RaiseException e) { throw e; }
