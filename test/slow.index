@@ -1,2 +1,3 @@
 jruby/test_command_line_switches
 jruby/test_launching_by_shell_script
+jruby/test_ffi_pointer_leak
