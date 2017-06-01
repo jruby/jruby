@@ -433,6 +433,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             final String message = e.getMessage();
             if (message != null) {
                 switch(message) {
+                case "Message too large": // Alpine Linux
                 case "Message too long":
                     throw runtime.newErrnoEMSGSIZEError();
                 }
