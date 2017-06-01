@@ -33,7 +33,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyEnumerator;
 import org.jruby.RubyException;
-import org.jruby.RubyIO;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -59,6 +58,7 @@ import java.io.PushbackInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.jruby.RubyIO.PARAGRAPH_SEPARATOR;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -249,8 +249,14 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     private IRubyObject internalSepGets(ByteList sep, int limit) throws IOException {
         ByteList result = newReadByteList();
+        boolean stripNewlines = false;
 
-        if (sep.getRealSize() == 0) sep = RubyIO.PARAGRAPH_SEPARATOR;
+        if (sep.getRealSize() == 0) {
+            sep = PARAGRAPH_SEPARATOR;
+            stripNewlines = true;
+        }
+
+        if (stripNewlines) skipNewlines();
 
         int ce = -1;
         
@@ -267,6 +273,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         
         fixBrokenTrailingCharacter(result);
 
+        if (stripNewlines) skipNewlines();
+
         // io.available() only returns 0 after EOF is encountered
         // so we need to differentiate between the empty string and EOF
         if (0 == result.length() && -1 == ce) return getRuntime().getNil();
@@ -275,6 +283,20 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         position += result.length();
 
         return newStr(getRuntime(), result);
+    }
+
+    private static final int NEWLINE = '\n';
+
+    private void skipNewlines() throws IOException {
+        while (true) {
+            int b = bufferedStream.read();
+            if (b == -1) break;
+
+            if (b != NEWLINE) {
+                bufferedStream.unread(b);
+                break;
+            }
+        }
     }
 
     public IRubyObject gets_18(ThreadContext context, IRubyObject[] args) {
