@@ -423,6 +423,20 @@ class TestFloat < Test::Unit::TestCase
     assert_raise(FloatDomainError) { inf.truncate }
   end
 
+  def test_floor_with_ndigits_positive
+    assert_equal(2.34, (2.3456).floor(2))
+    assert_equal(2.345, (2.3456).floor(3))
+    assert_equal(2.3456, (2.3456).floor(4))
+  end
+
+  def test_floor_with_ndigits_negative
+    assert_equal(34560, (34567.89).floor(-1))
+    assert_equal(34500, (34567.89).floor(-2))
+    assert_equal(34000, (34567.89).floor(-3))
+    assert_equal(30000, (34567.89).floor(-4))
+    assert_equal(0, (34567.89).floor(-5))
+  end
+
   def test_round_with_precision
     assert_equal(1.100, 1.111.round(1))
     assert_equal(1.110, 1.111.round(2))
