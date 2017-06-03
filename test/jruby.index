@@ -34,6 +34,7 @@ jruby/test_frame_self
 jruby/test_hash
 jruby/test_higher_javasupport
 jruby/test_ifaddr
+jruby/test_include_order
 jruby/test_included_in_object_space
 jruby/test_integer_overflows
 jruby/test_ivar_table_integrity
