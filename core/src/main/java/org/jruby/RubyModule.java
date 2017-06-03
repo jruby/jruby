@@ -3017,18 +3017,6 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * Is the given class a wrapper for the specified module?
-     *
-     * @param theClass The class to inspect
-     * @param theModule The module we're looking for
-     * @return true if the class is a wrapper for the module, false otherwise
-     */
-    private boolean doesTheClassWrapTheModule(RubyClass theClass, RubyModule theModule) {
-        return theClass.isIncluded() &&
-                theClass.getDelegate() == theModule.getDelegate();
-    }
-
-    /**
      * Gather all modules that would be included by including the given module.
      * The resulting list contains the given module and its (zero or more)
      * module-wrapping superclasses.
