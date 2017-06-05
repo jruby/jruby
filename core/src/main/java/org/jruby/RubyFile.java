@@ -1663,8 +1663,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             relativePath = relativePath.substring(offset);
 
             if (classloaderURI) {
-                String fakePrefix = "/THIS_IS_A_FAKE_PATH_FOR_JRUBY";
-                relativePath = canonicalizePath(fakePrefix + "/" + relativePath).substring(fakePrefix.length());
+                String fakePrefix = Platform.IS_WINDOWS ? "C:/FAKEPATH_PREFIX__" : "/FAKEPATH_PREFIX__";
+                relativePath = canonicalizePath(fakePrefix + '/' + relativePath).substring(fakePrefix.length());
             } else {
                 relativePath = canonicalizePath(relativePath);
             }
