@@ -46,6 +46,12 @@ class TestTime < Test::Unit::TestCase
     assert_false t1 == t2
   end
 
+  def test_far_future # GH-1779
+    now = Time.now
+    t1 = now + 80000000000
+    t2 = now + 90000000000
+    assert_false t1 == t2
+  end
 end
 
 class TestTimeNilOps < Test::Unit::TestCase

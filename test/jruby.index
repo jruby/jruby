@@ -74,9 +74,7 @@ jruby/test_thread
 # FIXME probably should figure this one out
 #test_thread_backtrace
 jruby/test_threaded_nonlocal_return
-jruby/test_time_add
-jruby/test_time_nil_ops
-jruby/test_time_tz
+jruby/test_time
 jruby/test_unmarshal
 jruby/test_vietnamese_charset
 jruby/test_win32
