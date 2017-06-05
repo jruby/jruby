@@ -28,6 +28,10 @@ describe "BigDecimal#>" do
 
     @infinity = BigDecimal("Infinity")
     @infinity_neg = BigDecimal("-Infinity")
+
+    @float_infinity = Float::INFINITY
+    @float_infinity_neg = -Float::INFINITY
+
     @nan = BigDecimal("NaN")
   end
 
@@ -57,6 +61,11 @@ describe "BigDecimal#>" do
       (@infinity > val).should == true
       (val > @infinity_neg).should == true
       (@infinity_neg > val).should == false
+
+      (val > @float_infinity).should == false
+      (@float_infinity > val).should == true
+      (val > @float_infinity_neg).should == true
+      (@float_infinity_neg > val).should == false
     }
     (@infinity > @infinity).should == false
     (@infinity_neg > @infinity_neg).should == false
