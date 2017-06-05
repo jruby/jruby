@@ -637,8 +637,8 @@ public class RubyTime extends RubyObject {
         }
         other = other.callMethod(context, "to_r");
 
-        long adjustNanos = (long)(RubyNumeric.num2dbl(other) * 1000000000);
-        return opPlusNanos(adjustNanos);
+        double adjustMillis = RubyNumeric.num2dbl(other) * 1000;
+        return opPlusMillis(adjustMillis);
     }
 
     @Deprecated
@@ -646,14 +646,12 @@ public class RubyTime extends RubyObject {
         return op_plus(context, other);
     }
 
-    private IRubyObject opPlusNanos(long adjustNanos) {
+    private IRubyObject opPlusMillis(double adjustMillis) {
         long currentMillis = getTimeInMillis();
 
-        long adjustMillis = adjustNanos/1000000;
-        long adjustNanosLeft = adjustNanos - (adjustMillis*1000000);
-
-        long newMillisPart = currentMillis + adjustMillis;
-        long newNanosPart = nsec + adjustNanosLeft;
+        long newMillisPart = currentMillis + (long)adjustMillis;
+        long adjustNanos = (long)((adjustMillis - Math.floor(adjustMillis)) * 1000000);
+        long newNanosPart =  nsec + adjustNanos;
 
         if (newNanosPart >= 1000000) {
             newNanosPart -= 1000000;
