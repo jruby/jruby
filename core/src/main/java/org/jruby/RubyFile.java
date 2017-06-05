@@ -109,21 +109,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         fileClass.kindOf = new RubyModule.JavaClassKindOf(RubyFile.class);
 
         // file separator constants
-        RubyString separator = runtime.newString("/");
+        RubyString separator = RubyString.newString(runtime, new ByteList(new byte[] { '/' }, false));
         separator.freeze(context);
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);
 
         if (File.separatorChar == '\\') {
-            RubyString altSeparator = runtime.newString("\\");
+            RubyString altSeparator = RubyString.newString(runtime, new ByteList(new byte[] { '\\' }, false));
             altSeparator.freeze(context);
             fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
         } else {
-            fileClass.defineConstant("ALT_SEPARATOR", runtime.getNil());
+            fileClass.defineConstant("ALT_SEPARATOR", context.nil);
         }
 
         // path separator
-        RubyString pathSeparator = runtime.newString(File.pathSeparator);
+        RubyString pathSeparator = RubyString.newString(runtime, new ByteList(new byte[] { (byte) File.pathSeparatorChar }, false));
         pathSeparator.freeze(context);
         fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
 
