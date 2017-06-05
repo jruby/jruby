@@ -41,8 +41,8 @@ class TestTime < Test::Unit::TestCase
   def test_nsec_rounding # GH-843
     t1 = Time.utc(2013,6,30,14,56,14,263031.604)
     t2 = Time.utc(2013,6,30,14,56,14,263031.605)
-    assert_equal t1.usec, t2,usec
-    assert_not_equal t1.nsec, t2,nsec
+    assert_equal t1.usec, t2.usec
+    assert_not_equal t1.nsec, t2.nsec
     assert_false t1 == t2
   end
 
