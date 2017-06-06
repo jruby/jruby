@@ -5,7 +5,7 @@
 #
 # It supports following secure random number generators.
 #
-# * Java's java.security.SecureRandom.
+# * Java's java.security.SecureRandom
 #
 # == Example
 #
@@ -31,12 +31,15 @@
 # p SecureRandom.random_bytes(10) #=> "\323U\030TO\234\357\020\a\337"
 # ...
 
+require 'jruby'
+org.jruby.ext.securerandom.SecureRandomLibrary.load JRuby.runtime
+
 module SecureRandom
   # SecureRandom.random_bytes generates a random binary string.
   #
-  # The argument n specifies the length of the result string.
+  # The argument _n_ specifies the length of the result string.
   #
-  # If n is not specified, 16 is assumed.
+  # If _n_ is not specified, 16 is assumed.
   # It may be larger in future.
   #
   # The result may contain any byte: "\x00" - "\xff".
@@ -47,16 +50,14 @@ module SecureRandom
   # If secure random number generator is not available,
   # NotImplementedError is raised.
   def self.random_bytes(n=nil)
-    # replaced below by native version
-    raise
-  end
+  end if false # JRuby native
 
   # SecureRandom.hex generates a random hex string.
   #
-  # The argument n specifies the length of the random length.
-  # The length of the result string is twice of n.
+  # The argument _n_ specifies the length of the random length.
+  # The length of the result string is twice of _n_.
   #
-  # If n is not specified, 16 is assumed.
+  # If _n_ is not specified, 16 is assumed.
   # It may be larger in future.
   #
   # The result may contain 0-9 and a-f.
@@ -67,16 +68,15 @@ module SecureRandom
   # If secure random number generator is not available,
   # NotImplementedError is raised.
   def self.hex(n=nil)
-    # replaced below by native version
-    raise
-  end
+    random_bytes(n).unpack("H*")[0]
+  end unless method_defined?(:hex) # JRuby native
 
   # SecureRandom.base64 generates a random base64 string.
   #
-  # The argument n specifies the length of the random length.
-  # The length of the result string is about 4/3 of n.
+  # The argument _n_ specifies the length of the random length.
+  # The length of the result string is about 4/3 of _n_.
   #
-  # If n is not specified, 16 is assumed.
+  # If _n_ is not specified, 16 is assumed.
   # It may be larger in future.
   #
   # The result may contain A-Z, a-z, 0-9, "+", "/" and "=".
@@ -87,12 +87,11 @@ module SecureRandom
   # If secure random number generator is not available,
   # NotImplementedError is raised.
   #
-  # See RFC 3548 for base64.
+  # See RFC 3548 for the definition of base64.
   def self.base64(n=nil)
     [random_bytes(n)].pack("m*").delete("\n")
-  end
+  end unless method_defined?(:base64)
 
-if RUBY_VERSION >= "1.9.0"
   # SecureRandom.urlsafe_base64 generates a random URL-safe base64 string.
   #
   # The argument _n_ specifies the length of the random length.
@@ -118,7 +117,7 @@ if RUBY_VERSION >= "1.9.0"
   # If secure random number generator is not available,
   # NotImplementedError is raised.
   #
-  # See RFC 3548 for URL-safe base64.
+  # See RFC 3548 for the definition of URL-safe base64.
   def self.urlsafe_base64(n=nil, padding=false)
     s = [random_bytes(n)].pack("m*")
     s.delete!("\n")
@@ -126,11 +125,10 @@ if RUBY_VERSION >= "1.9.0"
     s.delete!("=") if !padding
     s
   end
-end
 
   # SecureRandom.random_number generates a random number.
   #
-  # If an positive integer is given as n,
+  # If a positive integer is given as _n_,
   # SecureRandom.random_number returns an integer:
   # 0 <= SecureRandom.random_number(n) < n.
   #
@@ -138,7 +136,7 @@ end
   #   p SecureRandom.random_number(100) #=> 88
   #
   # If 0 is given or an argument is not given,
-  # SecureRandom.random_number returns an float:
+  # SecureRandom.random_number returns a float:
   # 0.0 <= SecureRandom.random_number() < 1.0.
   #
   #   p SecureRandom.random_number #=> 0.596506046187744
@@ -149,24 +147,22 @@ end
       hex = n.to_s(16)
       hex = '0' + hex if (hex.length & 1) == 1
       bin = [hex].pack("H*")
-      mask = string_ord_of_initial_byte(bin)
+      mask = bin[0].ord
       mask |= mask >> 1
       mask |= mask >> 2
       mask |= mask >> 4
       begin
         rnd = SecureRandom.random_bytes(bin.length)
-        rnd[0] = (string_ord_of_initial_byte(rnd) & mask).chr
+        rnd[0] = (rnd[0].ord & mask).chr
       end until rnd < bin
       rnd.unpack("H*")[0].hex
     else
       # assumption: Float::MANT_DIG <= 64
-      # i64 = SecureRandom.random_bytes(8).unpack("Q")[0]
-      # Math.ldexp(i64 >> (64-Float::MANT_DIG), -Float::MANT_DIG)
-      java.security.SecureRandom.new.nextDouble
+      i64 = SecureRandom.random_bytes(8).unpack("Q")[0]
+      Math.ldexp(i64 >> (64-Float::MANT_DIG), -Float::MANT_DIG)
     end
   end
 
-if RUBY_VERSION >= "1.9.0"
   # SecureRandom.uuid generates a v4 random UUID (Universally Unique IDentifier).
   #
   #   p SecureRandom.uuid #=> "2d931510-d99f-494a-8c67-87feb05e1594"
@@ -179,32 +175,10 @@ if RUBY_VERSION >= "1.9.0"
   # See RFC 4122 for details of UUID.
   #
   def self.uuid
-    # replaced below by native version
-    raise
-  end
+    ary = self.random_bytes(16).unpack("NnnnnN")
+    ary[2] = (ary[2] & 0x0fff) | 0x4000
+    ary[3] = (ary[3] & 0x3fff) | 0x8000
+    "%08x-%04x-%04x-%04x-%04x%08x" % ary
+  end unless method_defined?(:uuid) # JRuby native
 
-  # Following code is based on David Garamond's GUID library for Ruby.
-  def self.lastWin32ErrorMessage # :nodoc:
-    get_last_error = Win32API.new("kernel32", "GetLastError", '', 'L')
-    format_message = Win32API.new("kernel32", "FormatMessageA", 'LPLLPLPPPPPPPP', 'L')
-    format_message_ignore_inserts = 0x00000200
-    format_message_from_system    = 0x00001000
-
-    code = get_last_error.call
-    msg = "\0" * 1024
-    len = format_message.call(format_message_ignore_inserts + format_message_from_system, 0, code, 0, msg, 1024, nil, nil, nil, nil, nil, nil, nil, nil)
-    msg[0, len].tr("\r", '').chomp
-  end
-end
-
-  # Load the JRuby native ext
-  JRuby.reference(self).define_annotated_methods(org.jruby.ext.securerandom.SecureRandomLibrary)
-
-  class << self
-  private
-    # String[0].ord for both 1.8.7 & 1.9.2 compatible.
-    def string_ord_of_initial_byte(bin)
-      bin.bytes.first
-    end
-  end
 end
