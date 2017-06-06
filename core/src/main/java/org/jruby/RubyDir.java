@@ -315,7 +315,7 @@ public class RubyDir extends RubyObject {
             realPath = dir.canonicalPath();
         }
 
-        IRubyObject result = null;
+        IRubyObject result;
         if (block.isGiven()) {
             // FIXME: Don't allow multiple threads to do this at once
             runtime.setCurrentDirectory(realPath);
@@ -790,11 +790,11 @@ public class RubyDir extends RubyObject {
             String passwd;
             try {
                 FileInputStream stream = new FileInputStream("/etc/passwd");
-                int totalBytes = stream.available();
-                byte[] bytes = new byte[totalBytes];
-                stream.read(bytes);
+                int readBytes = stream.available();
+                byte[] bytes = new byte[readBytes];
+                readBytes = stream.read(bytes);
                 stream.close();
-                passwd = new String(bytes);
+                passwd = new String(bytes, 0, readBytes);
             } catch (IOException ioe) {
                 return runtime.getNil();
             }
