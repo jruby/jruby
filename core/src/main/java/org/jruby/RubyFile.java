@@ -1807,11 +1807,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static RubyString concatStrings(final Ruby runtime, String s1, String s2, String s3, Encoding enc) {
-        return RubyString.newString(runtime,
-                new StringBuilder(s1.length() + s2.length() + s3.length()).
-                        append(s1).append(s2).append(s3).toString(),
-                enc
-        );
+        StringBuilder str = new StringBuilder(s1.length() + s2.length() + s3.length())
+                            .append(s1).append(s2).append(s3);
+        return new RubyString(runtime, runtime.getString(), str, enc);
     }
 
     private static String canonicalizePath(String path) {
