@@ -493,11 +493,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public IRubyObject inspect() {
         StringBuilder val = new StringBuilder();
         val.append("#<File:").append(getPath());
-        if(!openFile.isOpen()) {
+        if (!openFile.isOpen()) {
             val.append(" (closed)");
         }
         val.append('>');
-        return getRuntime().newString(val.toString());
+        return RubyString.newString(getRuntime(), val);
     }
 
     private static final String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
