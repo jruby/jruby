@@ -1134,14 +1134,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(meta = true, optional = 1)
     public static IRubyObject umask(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        int oldMask = 0;
+        int oldMask;
         if (args.length == 0) {
             oldMask = PosixShim.umask(runtime.getPosix());
         } else if (args.length == 1) {
             int newMask = (int) args[0].convertToInteger().getLongValue();
             oldMask = PosixShim.umask(runtime.getPosix(), newMask);
         } else {
-            runtime.newArgumentError("wrong number of arguments");
+            throw runtime.newArgumentError("wrong number of arguments");
         }
 
         return runtime.newFixnum(oldMask);
@@ -1240,9 +1240,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // rb_file_size but not using stat
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
-        Ruby runtime = context.runtime;
         OpenFile fptr;
-        FileStat st;
         long size;
 
         fptr = getOpenFileChecked();
@@ -1252,7 +1250,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         size = fptr.posix.size(fptr.fd());
 
-        return RubyFixnum.newFixnum(runtime, size);
+        return RubyFixnum.newFixnum(context.runtime, size);
     }
 
     @JRubyMethod(meta = true)
