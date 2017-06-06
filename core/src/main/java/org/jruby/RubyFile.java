@@ -813,7 +813,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true)
     public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject... args) {
-        return expandPathInternal(context, recv, args, true, false);
+        return expandPathInternal(context, args, true, false);
     }
 
     @Deprecated
@@ -843,17 +843,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expandPathInternal(context, recv, args, false, false);
+        return expandPathInternal(context, args, false, false);
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return expandPathInternal(context, recv, args, false, true);
+        return expandPathInternal(context, args, false, true);
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject realpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject file = expandPathInternal(context, recv, args, false, true);
+        IRubyObject file = expandPathInternal(context, args, false, true);
         if (!RubyFileTest.exist_p(recv, file).isTrue()) {
             throw context.runtime.newErrnoENOENTError(file.toString());
         }
@@ -1452,6 +1452,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return "RubyFile(" + openFile.getPath() + ", " + openFile.getMode();
     }
 
+    @Deprecated // private
     public static ZipEntry getFileEntry(ZipFile zf, String path) throws IOException {
         ZipEntry entry = zf.getEntry(path);
         if (entry == null) {
@@ -1462,10 +1463,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return entry;
     }
 
+    @Deprecated // not-used
     public static ZipEntry getDirOrFileEntry(String jar, String path) throws IOException {
         return getDirOrFileEntry(new JarFile(jar), path);
     }
 
+    @Deprecated // private
     public static ZipEntry getDirOrFileEntry(ZipFile zf, String path) throws IOException {
         String dirPath = path + '/';
         ZipEntry entry = zf.getEntry(dirPath); // first try as directory
@@ -1586,7 +1589,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private static final Pattern PROTOCOL_PREFIX_PATTERN = Pattern.compile(URI_PREFIX_STRING);
 
-    private static IRubyObject expandPathInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean expandUser, boolean canonicalize) {
+    private static IRubyObject expandPathInternal(ThreadContext context, IRubyObject[] args, boolean expandUser, boolean canonicalize) {
         Ruby runtime = context.runtime;
 
         RubyString origPath = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
