@@ -657,7 +657,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newString(dirname(context, jfilename)).infectBy(filename);
     }
 
-    public static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
+    static final Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
+
     public static String dirname(ThreadContext context, String jfilename) {
         final Ruby runtime = context.runtime;
         final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
@@ -2153,7 +2154,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyInteger newLength = arg2.convertToInteger();
 
         File testFile ;
-        File childFile = new File(filename.getUnicodeValue() );
+        File childFile = new File(filename.getUnicodeValue());
         String filenameString = Helpers.decodeByteList(runtime, filename.getByteList());
 
         if ( childFile.isAbsolute() ) {
@@ -2202,7 +2203,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static final int FNM_SYSCASE = Platform.IS_WINDOWS ? FNM_CASEFOLD : 0;
 
     private static final String[] SLASHES = {"", "/", "//"};
-    private static Pattern URI_PREFIX = Pattern.compile("^(jar:)?[a-z]{2,}:(.*)");
+    private static final Pattern URI_PREFIX = Pattern.compile("^(jar:)?[a-z]{2,}:(.*)");
 
     @Deprecated
     protected String path;
