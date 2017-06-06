@@ -658,40 +658,35 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     static final Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
 
     public static String dirname(ThreadContext context, String jfilename) {
-        final Ruby runtime = context.runtime;
-        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
+        final RubyClass File = context.runtime.getFile();
+        final String separator = File.getConstant("SEPARATOR").toString();
         final char separatorChar = separator.charAt(0);
         String altSeparator = null;
         char altSeparatorChar = '\0';
-        final IRubyObject rbAltSeparator = runtime.getClass("File").getConstant("ALT_SEPARATOR");
+        final IRubyObject rbAltSeparator = File.getConstant("ALT_SEPARATOR");
         if (rbAltSeparator != context.nil) {
-          altSeparator = rbAltSeparator.toString();
-          altSeparatorChar = altSeparator.charAt(0);
+            altSeparator = rbAltSeparator.toString();
+            altSeparatorChar = altSeparator.charAt(0);
         }
         String name = jfilename;
         if (altSeparator != null) {
-          name = jfilename.replace(altSeparator, separator);
+            name = jfilename.replace(altSeparator, separator);
         }
         int minPathLength = 1;
         boolean trimmedSlashes = false;
 
         boolean startsWithSeparator = false;
-
         if (!name.isEmpty()) {
-          startsWithSeparator = name.charAt(0) == separatorChar;
+            startsWithSeparator = name.charAt(0) == separatorChar;
         }
 
         boolean startsWithUNCOnWindows = Platform.IS_WINDOWS && startsWith(name, separatorChar, separatorChar);
 
-        if (startsWithUNCOnWindows) {
-          minPathLength = 2;
-        }
+        if (startsWithUNCOnWindows) minPathLength = 2;
 
         boolean startsWithDriveLetterOnWindows = startsWithDriveLetterOnWindows(name);
 
-        if (startsWithDriveLetterOnWindows) {
-            minPathLength = 3;
-        }
+        if (startsWithDriveLetterOnWindows) minPathLength = 3;
 
         // jar like paths
         if (name.contains(".jar!" + separator)) {
