@@ -670,7 +670,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         String name = jfilename;
         if (altSeparator != null) {
-            name = jfilename.replace(altSeparator, separator);
+            name = replace(jfilename, altSeparator, separator);
         }
         int minPathLength = 1;
         boolean trimmedSlashes = false;
@@ -1447,16 +1447,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Override
     public String toString() {
-        return "RubyFile(" + openFile.getPath() + ", " + openFile.getMode();
+        return "RubyFile(" + openFile.getPath() + ", " + openFile.getMode() + ')';
     }
 
-    @Deprecated // private
-    public static ZipEntry getFileEntry(ZipFile zf, String path) throws IOException {
-        ZipEntry entry = zf.getEntry(path);
+    private static ZipEntry getFileEntry(ZipFile jar, String path, final String prefixForNoEntry) throws IOException {
+        ZipEntry entry = jar.getEntry(path);
         if (entry == null) {
             // try canonicalizing the path to eliminate . and .. (JRUBY-4760, JRUBY-4879)
-            String prefix = new File(".").getCanonicalPath();
-            entry = zf.getEntry(new File(path).getCanonicalPath().substring(prefix.length() + 1).replaceAll("\\\\", "/"));
+            path = new File(path).getCanonicalPath().substring(prefixForNoEntry.length() + 1);
+            entry = jar.getEntry(path.replaceAll("\\\\", "/"));
         }
         return entry;
     }
@@ -1466,21 +1465,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return getDirOrFileEntry(new JarFile(jar), path);
     }
 
-    @Deprecated // private
-    public static ZipEntry getDirOrFileEntry(ZipFile zf, String path) throws IOException {
+    @Deprecated // not-used
+    public static ZipEntry getDirOrFileEntry(ZipFile jar, String path) throws IOException {
         String dirPath = path + '/';
-        ZipEntry entry = zf.getEntry(dirPath); // first try as directory
+        ZipEntry entry = jar.getEntry(dirPath); // first try as directory
         if (entry == null) {
             if (dirPath.length() == 1) {
                 return new ZipEntry(dirPath);
             }
             // try canonicalizing the path to eliminate . and .. (JRUBY-4760, JRUBY-4879)
-            String prefix = new File(".").getCanonicalPath();
-            entry = zf.getEntry(new File(dirPath).getCanonicalPath().substring(prefix.length() + 1).replaceAll("\\\\", "/"));
+            final String prefix = new File(".").getCanonicalPath();
+            entry = jar.getEntry(new File(dirPath).getCanonicalPath().substring(prefix.length() + 1).replaceAll("\\\\", "/"));
 
             // JRUBY-6119
             if (entry == null) {
-                Enumeration<? extends ZipEntry> entries = zf.entries();
+                Enumeration<? extends ZipEntry> entries = jar.entries();
                 while (entries.hasMoreElements()) {
                     String zipEntry = entries.nextElement().getName();
                     if (zipEntry.startsWith(dirPath)) {
@@ -1489,9 +1488,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
             }
 
-            if (entry == null) {
-                // try as file
-                entry = getFileEntry(zf, path);
+            if (entry == null) { // try as file
+                entry = getFileEntry(jar, path, prefix);
             }
         }
         return entry;
@@ -1840,8 +1838,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     URL u = new URL(pathWithoutJarPrefix);
                     String pathPart = u.getPath();
                     return new String[] {path.substring(0, path.indexOf(pathPart)), pathPart};
-                } catch (Exception e2) {
-                }
+                } catch (MalformedURLException e2) { /* ignore */ }
             }
         }
         return null;
@@ -1917,7 +1914,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param stringToCheck
      * @return
      */
-    private static String countSlashes( String stringToCheck ) {
+    private static String countSlashes(String stringToCheck) {
         // Count number of extra slashes in the beginning of the string.
         int slashCount = 0;
         for (int i = 0; i < stringToCheck.length(); i++) {
@@ -2087,7 +2084,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    // FIXME: MRI and JRuby are both broken here since it does not actually look up
+    // NOTE: MRI and JRuby are both broken here since it does not actually look up
     // File::{SEPARATOR,ALT_SEPARATOR} but merely hardcodes depending on whether we are on Windows.
     private static boolean isDirSeparator(char c) {
         return c == '/' || Platform.IS_WINDOWS && c == '\\';
@@ -2138,6 +2135,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             index--;
         }
         return -1;
+    }
+
+    private static String replace(final String str, CharSequence target, CharSequence replace) {
+        if (target.length() == 1 && replace.length() == 1) {
+            return str.replace(target.charAt(0), replace.charAt(0));
+        }
+        return str.replace(target, replace);
     }
 
     private static IRubyObject truncateCommon(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
