@@ -35,14 +35,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import jnr.constants.platform.OpenFlags;
-import jnr.posix.POSIX;
-import org.jcodings.Encoding;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -61,13 +58,14 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import jnr.constants.platform.OpenFlags;
+import jnr.posix.POSIX;
+import jnr.posix.util.Platform;
+import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import jnr.posix.FileStat;
-import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.FileSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -264,7 +262,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // XXX This constructor is a hack to implement the __END__ syntax.
     //     Converting a reader back into an InputStream doesn't generally work.
-    public RubyFile(Ruby runtime, String path, final Reader reader) {
+    RubyFile(Ruby runtime, String path, final Reader reader) {
         this(runtime, path, new InputStream() {
             @Override
             public int read() throws IOException {
