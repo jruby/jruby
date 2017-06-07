@@ -1700,8 +1700,6 @@ public class RubyModule extends RubyObject {
 
         if (superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR) return true;
 
-        if (FIELD_ALLOCATOR_SET.contains(superClass.getAllocator())) return true;
-
         return false;
     }
 

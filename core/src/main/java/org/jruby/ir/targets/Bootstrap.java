@@ -50,18 +50,6 @@ public class Bootstrap {
     public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class);
     public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, int.class, String.class, int.class);
     public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, int.class, String.class, int.class);
-    public static final Class[] REIFIED_OBJECT_CLASSES = {
-        RubyObjectVar0.class,
-        RubyObjectVar1.class,
-        RubyObjectVar2.class,
-        RubyObjectVar3.class,
-        RubyObjectVar4.class,
-        RubyObjectVar5.class,
-        RubyObjectVar6.class,
-        RubyObjectVar7.class,
-        RubyObjectVar8.class,
-        RubyObjectVar9.class,
-    };
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
 
