@@ -1556,21 +1556,22 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public static boolean formatHasLeadingPlus(String format) {
-        return format.startsWith("+");
+        return format.length() > 0 && format.charAt(0) == '+';
     }
 
     public static boolean formatHasLeadingSpace(String format) {
-        return format.startsWith(" ");
+        return format.length() > 0 && format.charAt(0) == ' ';
     }
 
     public static boolean formatHasFloatingPointNotation(String format) {
-        return format.endsWith("F");
+        return format.length() > 0 && format.charAt(format.length()-1) == 'F';
     }
 
-    public static int formatFractionalDigitGroups(String format) {
-        Matcher m = Pattern.compile("(\\+| )?(\\d+)(E|F)?").matcher(format);
+    private static final Pattern FRACTIONAL_DIGIT_GROUPS = Pattern.compile("(\\+| )?(\\d+)(E|F)?");
 
-        return m.matches() ? Integer.parseInt(m.group(2)) : 0;
+    public static int formatFractionalDigitGroups(String format) {
+        Matcher match = FRACTIONAL_DIGIT_GROUPS.matcher(format);
+        return match.matches() ? Integer.parseInt(match.group(2)) : 0;
     }
 
     private static boolean posSpace(String arg) {
@@ -1579,10 +1580,6 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private static boolean posSign(String arg) {
         return arg == null ? false : (formatHasLeadingPlus(arg) || posSpace(arg));
-    }
-
-    private static boolean asEngineering(String arg) {
-        return arg == null ? true : ! formatHasFloatingPointNotation(arg);
     }
 
     private static int groups(String arg) {
@@ -1688,8 +1685,10 @@ public class RubyBigDecimal extends RubyNumeric {
         if ( isInfinity() ) return runtime.newString(infinityString());
         if ( isZero() ) return runtime.newString(zeroSign < 0 ? "-0.0" : "0.0");
 
+        boolean asEngineering = arg == null || ! formatHasFloatingPointNotation(arg);
+
         return RubyString.newString(runtime,
-            ( asEngineering(arg) ? engineeringValue(arg) : floatingPointValue(arg) )
+            ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) )
         );
     }
 
