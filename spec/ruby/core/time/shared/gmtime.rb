@@ -7,4 +7,8 @@ describe :time_gmtime, shared: true do
       t.should == Time.gm(2007, 1, 9, 12, 0, 0)
     end
   end
+
+  it "raises a RuntimeError on a frozen time" do
+    lambda { Time.new.freeze.send(@method) }.should raise_error(RuntimeError)
+  end
 end
