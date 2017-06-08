@@ -100,6 +100,8 @@ public class Platform {
             return OS_TYPE.DARWIN;
         } else if (startsWithIgnoreCase(osName, "sunos") || startsWithIgnoreCase(osName, "solaris")) {
             return OS_TYPE.SOLARIS;
+        } else if (startsWithIgnoreCase(osName, "os/400")) {
+            return OS_TYPE.AIX;
         }
         for (OS_TYPE os : OS_TYPE.values()) {
             if (startsWithIgnoreCase(osName, os.toString())) {
