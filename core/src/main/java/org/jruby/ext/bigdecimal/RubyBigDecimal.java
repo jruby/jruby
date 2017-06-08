@@ -1616,13 +1616,14 @@ public class RubyBigDecimal extends RubyNumeric {
         StringBuilder build = new StringBuilder();
         build.append( sign(arg, value.signum()) ).append("0.");
 
-        if (groups(arg) == 0) {
+        final int groups = groups(arg);
+        if (groups == 0) {
             build.append(s.isEmpty() ? "0" : s);
         } else {
             final int len = s.length();
             String sep = "";
-            for (int index = 0; index < len; index += groups(arg)) {
-                int next = index + groups(arg);
+            for (int index = 0; index < len; index += groups) {
+                int next = index + groups;
                 build.append(sep).append(s.substring(index, next > len ? len : next));
                 sep = " ";
             }
@@ -1633,37 +1634,38 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private CharSequence floatingPointValue(final String arg) {
         List<String> values = StringSupport.split(value.abs().stripTrailingZeros().toPlainString(), '.');
-        String whole = values.size() > 0 ? values.get(0) : "0";
-        String after = values.size() > 1 ? values.get(1) : "0";
+        final String whole = values.size() > 0 ? values.get(0) : "0";
+        final String after = values.size() > 1 ? values.get(1) : "0";
 
         StringBuilder build = new StringBuilder();
         build.append( sign(arg, value.signum()) );
 
-        if (groups(arg) == 0) {
+        final int groups = groups(arg);
+        if (groups == 0) {
             build.append(whole);
             if (after != null) build.append('.').append(after);
         } else {
-            int index = 0;
+            int index = 0, len = whole.length();
             String sep = "";
-            while (index < whole.length()) {
-                int next = index + groups(arg);
-                if (next > whole.length()) next = whole.length();
+            while (index < len) {
+                int next = index + groups;
+                if (next > len) next = len;
 
                 build.append(sep).append(whole.substring(index, next));
                 sep = " ";
-                index += groups(arg);
+                index += groups;
             }
-            if (null != after) {
+            if (after != null) {
                 build.append('.');
-                index = 0;
+                index = 0; len = after.length();
                 sep = "";
-                while (index < after.length()) {
-                    int next = index + groups(arg);
-                    if (next > after.length()) next = after.length();
+                while (index < len) {
+                    int next = index + groups;
+                    if (next > len) next = len;
 
                     build.append(sep).append(after.substring(index, next));
                     sep = " ";
-                    index += groups(arg);
+                    index += groups;
                 }
             }
         }
