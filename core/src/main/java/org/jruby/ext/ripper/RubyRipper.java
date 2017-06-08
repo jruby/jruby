@@ -312,9 +312,9 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject lineno(ThreadContext context) {
-        if (!parser.hasStarted()) context.runtime.newArgumentError("method called for uninitialized object");
+        if (!parser.hasStarted()) throw context.runtime.newArgumentError("method called for uninitialized object");
         
-        if (!parseStarted) return context.runtime.getNil();
+        if (!parseStarted) return context.nil;
             
         return context.runtime.newFixnum(parser.getLineno());
     }
