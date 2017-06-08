@@ -76,7 +76,7 @@ public class RubyObjectSpecializer {
 
         if (allocator != null) return allocator;
 
-        final String clsPath = "org/jruby/specialize/RubyObject" + size;
+        final String clsPath = "org/jruby/gen/RubyObject" + size;
         final String clsName = clsPath.replaceAll("/", ".");
 
         // try to load the class, in case we have parallel generation happening
