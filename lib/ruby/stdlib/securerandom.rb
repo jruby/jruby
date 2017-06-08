@@ -159,7 +159,8 @@ module Random::Formatter
   #
   def random_number(n=0)
     # implemented natively in JRuby (just like in MRI)
-  end if false
+    raise NotImplementedError("#{__method__}(#{n})")
+  end
 
   # SecureRandom.uuid generates a random v4 UUID (Universally Unique IDentifier).
   #
@@ -187,21 +188,10 @@ module Random::Formatter
   end
 end
 
-SecureRandom.extend(Random::Formatter) if false # JRuby natively implements most of these, missing pieces:
-SecureRandom.module_eval do
+SecureRandom.extend(Random::Formatter)
 
-  # @private ... since we do not extend(Random::Formatter)
-  def self.base64(n=nil) # :nodoc:
-    [random_bytes(n)].pack("m*").delete("\n")
-  end
-
-  # @private ... since we do not extend(Random::Formatter)
-  def self.urlsafe_base64(n=nil, padding=false) # :nodoc:
-    s = [random_bytes(n)].pack("m*")
-    s.delete!("\n")
-    s.tr!("+/", "-_")
-    s.delete!("=") if !padding
-    s
-  end
-
-end
+# NOTE: JRuby's SecureRandom native part implement some of the methods from Random::Formatter
+# - SecureRandom.random_bytes(n=nil)
+# - SecureRandom.hex(n=nil)
+# - SecureRandom.uuid
+# - SecureRandom.random_number(n=0)
