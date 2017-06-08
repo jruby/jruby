@@ -2643,7 +2643,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "mix", visibility = PRIVATE)
     public IRubyObject mix(ThreadContext context, IRubyObject mod, IRubyObject hash0) {
         Ruby runtime = context.runtime;
-        RubyHash methodNames = null;
+        RubyHash methodNames;
 
         if (!mod.isModule()) {
             throw runtime.newTypeError(mod, runtime.getModule());
