@@ -1539,20 +1539,20 @@ public class RubyBigDecimal extends RubyNumeric {
 
         int scale = value.scale();
         BigInteger numerator = value.scaleByPowerOfTen(scale).toBigInteger();
-        BigInteger denominator = BigInteger.valueOf((long)Math.pow(10, scale));
+        BigInteger denominator = BigInteger.valueOf((long) Math.pow(10, scale));
 
         return RubyRational.newInstance(context, context.runtime.getRational(), RubyBignum.newBignum(context.runtime, numerator), RubyBignum.newBignum(context.runtime, denominator));
     }
 
+    @Deprecated // not-used
     public IRubyObject to_int19() {
         return to_int();
     }
 
-    private String removeTrailingZeroes(String in) {
-        while(in.length() > 0 && in.charAt(in.length()-1)=='0') {
-            in = in.substring(0, in.length()-1);
-        }
-        return in;
+    private static String removeTrailingZeroes(final String str) {
+        int l = str.length();
+        while (l > 0 && str.charAt(l-1) == '0') l--;
+        return str.substring(0, l);
     }
 
     public static boolean formatHasLeadingPlus(String format) {
@@ -1573,30 +1573,20 @@ public class RubyBigDecimal extends RubyNumeric {
         return m.matches() ? Integer.parseInt(m.group(2)) : 0;
     }
 
-    private static String firstArgument(IRubyObject[] args) {
-        if ( args.length == 0 ) return null;
-        final IRubyObject arg = args[0];
-        return arg.isNil() ? null : arg.toString();
-    }
-
     private static boolean posSpace(String arg) {
-        if ( arg == null ) return false;
-        return formatHasLeadingSpace(arg);
+        return arg == null ? false : formatHasLeadingSpace(arg);
     }
 
     private static boolean posSign(String arg) {
-        if ( arg == null ) return false;
-        return formatHasLeadingPlus(arg) || posSpace(arg);
+        return arg == null ? false : (formatHasLeadingPlus(arg) || posSpace(arg));
     }
 
     private static boolean asEngineering(String arg) {
-        if ( arg == null ) return true;
-        return ! formatHasFloatingPointNotation(arg);
+        return arg == null ? true : ! formatHasFloatingPointNotation(arg);
     }
 
     private static int groups(String arg) {
-        if (arg == null) return 0;
-        return formatFractionalDigitGroups(arg);
+        return arg == null ? 0 : formatFractionalDigitGroups(arg);
     }
 
     private boolean isZero() {
@@ -1619,24 +1609,24 @@ public class RubyBigDecimal extends RubyNumeric {
         return value.abs().unscaledValue().toString();
     }
 
-    private String sign(String arg, int signum) {
+    private static String sign(String arg, int signum) {
         return signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : "");
     }
 
-    private CharSequence engineeringValue(String arg) {
+    private CharSequence engineeringValue(final String arg) {
+        final String s = removeTrailingZeroes(unscaledValue());
+
         StringBuilder build = new StringBuilder();
         build.append( sign(arg, value.signum()) ).append("0.");
-        String s = removeTrailingZeroes(unscaledValue());
 
         if (groups(arg) == 0) {
-            build.append("".equals(s) ? "0" : s);
+            build.append(s.isEmpty() ? "0" : s);
         } else {
-            int length = s.length();
+            final int len = s.length();
             String sep = "";
-
-            for (int index = 0; index < length; index += groups(arg)) {
+            for (int index = 0; index < len; index += groups(arg)) {
                 int next = index + groups(arg);
-                build.append(sep).append(s.substring(index, next > length ? length : next));
+                build.append(sep).append(s.substring(index, next > len ? len : next));
                 sep = " ";
             }
         }
@@ -1644,11 +1634,13 @@ public class RubyBigDecimal extends RubyNumeric {
         return build;
     }
 
-    private CharSequence floatingPointValue(String arg) {
+    private CharSequence floatingPointValue(final String arg) {
         List<String> values = StringSupport.split(value.abs().stripTrailingZeros().toPlainString(), '.');
         String whole = values.size() > 0 ? values.get(0) : "0";
         String after = values.size() > 1 ? values.get(1) : "0";
-        StringBuilder build = new StringBuilder().append(sign(arg, value.signum()));
+
+        StringBuilder build = new StringBuilder();
+        build.append( sign(arg, value.signum()) );
 
         if (groups(arg) == 0) {
             build.append(whole);
@@ -1681,17 +1673,29 @@ public class RubyBigDecimal extends RubyNumeric {
         return build;
     }
 
-    @JRubyMethod(optional = 1)
-    public IRubyObject to_s(IRubyObject[] args) {
-        if ( isNaN() ) return getRuntime().newString("NaN");
-        if ( isInfinity() ) return getRuntime().newString(infinityString());
-        if ( isZero() ) return getRuntime().newString(zeroSign < 0 ? "-0.0" : "0.0");
+    @JRubyMethod
+    public RubyString to_s(ThreadContext context) {
+        return toStringImpl(context.runtime, null);
+    }
 
-        String arg = firstArgument(args);
+    @JRubyMethod
+    public RubyString to_s(ThreadContext context, IRubyObject arg) {
+        return toStringImpl(context.runtime, arg.isNil() ? null : arg.toString());
+    }
 
-        return getRuntime().newString(
-            ( asEngineering(arg) ? engineeringValue(arg) : floatingPointValue(arg) ).toString()
+    private RubyString toStringImpl(final Ruby runtime, String arg) {
+        if ( isNaN() ) return runtime.newString("NaN");
+        if ( isInfinity() ) return runtime.newString(infinityString());
+        if ( isZero() ) return runtime.newString(zeroSign < 0 ? "-0.0" : "0.0");
+
+        return RubyString.newString(runtime,
+            ( asEngineering(arg) ? engineeringValue(arg) : floatingPointValue(arg) )
         );
+    }
+
+    @Deprecated
+    public IRubyObject to_s(IRubyObject[] args) {
+        return toStringImpl(getRuntime(), args.length == 0 ? null : (args[0].isNil() ? null : args[0].toString()));
     }
 
     // Note: #fix has only no-arg form, but truncate allows optional parameter.
@@ -1707,8 +1711,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
         int precision = value.precision() - value.scale() + arg;
 
-        if (precision > 0) return new RubyBigDecimal(getRuntime(),
+        if (precision > 0) {
+            return new RubyBigDecimal(getRuntime(),
                 value.round(new MathContext(precision, RoundingMode.DOWN)));
+        }
 
         return new RubyBigDecimal(getRuntime(), BigDecimal.ZERO); // FIXME: proper sign
     }
