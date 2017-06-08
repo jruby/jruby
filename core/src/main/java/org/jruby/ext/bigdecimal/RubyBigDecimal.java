@@ -1405,24 +1405,28 @@ public class RubyBigDecimal extends RubyNumeric {
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
     private static RoundingMode javaRoundingModeFromRubyRoundingMode(Ruby runtime, IRubyObject arg) {
         if (arg instanceof RubySymbol) {
-            RubySymbol roundingModeSymbol = (RubySymbol) arg;
-            String roundingModeString = roundingModeSymbol.asJavaString();
-            if (roundingModeString.equals("up")) {
-                return RoundingMode.UP;
-            } else if (roundingModeString.equals("down") || roundingModeString.equals("truncate")) {
-                return RoundingMode.DOWN;
-            } else if (roundingModeString.equals("half_up") || roundingModeString.equals("default")) {
-                return RoundingMode.HALF_UP;
-            } else if (roundingModeString.equals("half_down")) {
-                return RoundingMode.HALF_DOWN;
-            } else if (roundingModeString.equals("half_even") || roundingModeString.equals("banker")) {
-                return RoundingMode.HALF_EVEN;
-            } else if (roundingModeString.equals("ceiling") || roundingModeString.equals("ceil")) {
-                return RoundingMode.CEILING;
-            } else if (roundingModeString.equals("floor")) {
-                return RoundingMode.FLOOR;
-            } else {
-                throw runtime.newArgumentError("invalid rounding mode");
+            String roundingMode = ((RubySymbol) arg).asJavaString();
+            switch (roundingMode) {
+                case "up" :
+                    return RoundingMode.UP;
+                case "down" :
+                case "truncate" :
+                    return RoundingMode.DOWN;
+                case "half_up" :
+                case "default" :
+                    return RoundingMode.HALF_UP;
+                case "half_down" :
+                    return RoundingMode.HALF_DOWN;
+                case "half_even" :
+                case "banker" :
+                    return RoundingMode.HALF_EVEN;
+                case "ceiling" :
+                case "ceil" :
+                    return RoundingMode.CEILING;
+                case "floor" :
+                    return RoundingMode.FLOOR;
+                default :
+                    throw runtime.newArgumentError("invalid rounding mode");
             }
         } else {
             try {
