@@ -114,12 +114,11 @@ public class RubyIPSocket extends RubyBasicSocket {
         }
 
         IRubyObject addressArray = context.runtime.newArray(
-                new IRubyObject[]{
-                        runtime.newString("AF_INET"),
-                        runtime.newFixnum(port),
-                        runtime.newString(hostName),
-                        runtime.newString(hostAddress)
-                });
+                runtime.newString("AF_INET"),
+                runtime.newFixnum(port),
+                runtime.newString(hostName),
+                runtime.newString(hostAddress)
+        );
 
         return runtime.newArray(result, addressArray);
     }
