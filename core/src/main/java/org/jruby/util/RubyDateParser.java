@@ -3,6 +3,7 @@ package org.jruby.util;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyRational;
+import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 
 import java.util.HashMap;
@@ -27,17 +28,19 @@ public class RubyDateParser {
      * @see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/lib/ruby/stdlib/date/format.rb
      * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strptime.c
      */
-    public HashMap<String, Object> parse(ThreadContext context, final String format, final String text) {
-        final List<StrptimeToken> compiledPattern = strptimeParser.compilePattern(format);
-        final StrptimeParser.FormatBag bag = strptimeParser.parse(compiledPattern, text);
+
+    public HashMap<String, Object> parse(ThreadContext context, final RubyString format, final RubyString text) {
+        final boolean tainted = text.isTaint();
+        final List<StrptimeToken> compiledPattern = strptimeParser.compilePattern(format.asJavaString());
+        final StrptimeParser.FormatBag bag = strptimeParser.parse(compiledPattern, text.asJavaString());
         if (bag != null) {
-            return convertFormatBagToHash(context, bag);
+            return convertFormatBagToHash(context, bag, tainted);
         } else {
             return null;
         }
     }
 
-    private HashMap<String, Object> convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag) {
+    private HashMap<String, Object> convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag, boolean tainted) {
         final HashMap<String, Object> map = new HashMap<>();
 
         if (has(bag.getMDay())) {
@@ -80,7 +83,11 @@ public class RubyDateParser {
             map.put("wnum1", bag.getWNum1());
         }
         if (bag.getZone() != null) {
-            map.put("zone", bag.getZone());
+            final RubyString zone = RubyString.newString(context.getRuntime(), bag.getZone());
+            if (tainted) {
+                zone.taint(context);
+            }
+            map.put("zone", zone);
             int offset = TimeZoneConverter.dateZoneToDiff(bag.getZone());
             if (offset != Integer.MIN_VALUE) {
                 map.put("offset", offset);
@@ -107,7 +114,11 @@ public class RubyDateParser {
             map.put("_cent", bag.getCent());
         }
         if (bag.getLeftover() != null) {
-            map.put("leftover", bag.getLeftover());
+            final RubyString leftover = RubyString.newString(context.getRuntime(), bag.getLeftover());
+            if (tainted) {
+                leftover.taint(context);
+            }
+            map.put("leftover", leftover);
         }
 
         return map;
