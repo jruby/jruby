@@ -3,6 +3,7 @@ package org.jruby.util;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.math.BigInteger;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,25 +46,25 @@ public class StrptimeParser {
         private int cWDay = Integer.MIN_VALUE;
         private int yDay = Integer.MIN_VALUE;
         private int cWeek = Integer.MIN_VALUE;
-        private int cWYear = Integer.MIN_VALUE;
+        private BigInteger cWYear = null;
         private int min = Integer.MIN_VALUE;
         private int mon = Integer.MIN_VALUE;
         private int hour = Integer.MIN_VALUE;
-        private int year = Integer.MIN_VALUE;
+        private BigInteger year = null;
         private int sec = Integer.MIN_VALUE;
         private int wNum0 = Integer.MIN_VALUE;
         private int wNum1 = Integer.MIN_VALUE;
 
         private String zone = null;
 
-        private int secFraction = Integer.MIN_VALUE; // Rational
+        private BigInteger secFraction = null; // Rational
         private int secFractionSize = Integer.MIN_VALUE;
 
-        private long seconds = Long.MIN_VALUE; // long or Rational
+        private BigInteger seconds = null; // Bignum or Rational
         private int secondsSize = Integer.MIN_VALUE;
 
         private int merid = Integer.MIN_VALUE;
-        private int cent = Integer.MIN_VALUE;
+        private BigInteger cent = null;
 
         private boolean fail = false;
         private String leftover = null;
@@ -88,7 +89,7 @@ public class StrptimeParser {
             return cWeek;
         }
 
-        public int getCWYear() {
+        public BigInteger getCWYear() {
             return cWYear;
         }
 
@@ -104,7 +105,7 @@ public class StrptimeParser {
             return hour;
         }
 
-        public int getYear() {
+        public BigInteger getYear() {
             return year;
         }
 
@@ -124,7 +125,7 @@ public class StrptimeParser {
             return zone;
         }
 
-        public int getSecFraction() {
+        public BigInteger getSecFraction() {
             return secFraction;
         }
 
@@ -132,7 +133,7 @@ public class StrptimeParser {
             return secFractionSize;
         }
 
-        public long getSeconds() {
+        public BigInteger getSeconds() {
             return seconds;
         }
 
@@ -144,7 +145,7 @@ public class StrptimeParser {
             return merid;
         }
 
-        public int getCent() {
+        public BigInteger getCent() {
             return cent;
         }
 
@@ -156,12 +157,12 @@ public class StrptimeParser {
             return leftover;
         }
 
-        public boolean hasSeconds() {
-            return seconds != Long.MIN_VALUE;
-        }
-
         public static boolean has(int v) {
             return v != Integer.MIN_VALUE;
+        }
+
+        public static boolean has(BigInteger v) {
+            return v != null;
         }
     }
 
@@ -262,14 +263,14 @@ public class StrptimeParser {
 
         if (FormatBag.has(bag.cent)) {
             if (FormatBag.has(bag.cWYear)) {
-                bag.cWYear += bag.cent * 100;
+                bag.cWYear = bag.cWYear.add(bag.cent.multiply(BigInteger.valueOf(100)));
             }
             if (FormatBag.has(bag.year)) {
-                bag.year += bag.cent * 100;
+                bag.year = bag.year.add(bag.cent.multiply(BigInteger.valueOf(100)));
             }
 
             // delete bag._cent
-            bag.cent = Integer.MIN_VALUE;
+            bag.cent = null;
         }
 
         if (FormatBag.has(bag.merid)) {
@@ -351,13 +352,11 @@ public class StrptimeParser {
                         break;
                     }
                     case FORMAT_CENTURY: { // %C - year / 100 (round down.  20 in 2009)
-                        final long cent;
                         if (isNumberPattern(compiledPattern, tokenIndex)) {
-                            cent = readDigits(2);
+                            bag.cent = BigInteger.valueOf(readDigits(2));
                         } else {
-                            cent = readDigitsMax();
+                            bag.cent = readDigitsMax();
                         }
-                        bag.cent = (int)cent;
                         break;
                     }
                     case FORMAT_DAY: // %d, %Od - Day of the month, zero-padded (01..31)
@@ -377,13 +376,11 @@ public class StrptimeParser {
                         break;
                     }
                     case FORMAT_WEEKYEAR: { // %G - The week-based year
-                        final long year;
                         if (isNumberPattern(compiledPattern, tokenIndex)) {
-                            year = readDigits(4);
+                            bag.cWYear = BigInteger.valueOf(readDigits(4));
                         } else {
-                            year = readDigitsMax();
+                            bag.cWYear = readDigitsMax();
                         }
-                        bag.cWYear = (int)year;
                         break;
                     }
                     case FORMAT_WEEKYEAR_SHORT: { // %g - The last 2 digits of the week-based year (00..99)
@@ -391,9 +388,9 @@ public class StrptimeParser {
                         if (!validRange(v, 0, 99)) {
                             fail = true;
                         }
-                        bag.cWYear = (int)v;
+                        bag.cWYear = BigInteger.valueOf(v);
                         if (!bag.has(bag.cent)) {
-                            bag.cent = v >= 69 ? 19 : 20;
+                            bag.cent = BigInteger.valueOf((int)v >= 69 ? 19 : 20);
                         }
                         break;
                     }
@@ -445,19 +442,19 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final long v;
+                        final BigInteger v;
                         final int initPos = pos;
                         if (isNumberPattern(compiledPattern, tokenIndex)) {
                             if (token.getFormat() == StrptimeFormat.FORMAT_MILLISEC) {
-                                v = readDigits(3);
+                                v = BigInteger.valueOf(readDigits(3));
                             } else {
-                                v = readDigits(9);
+                                v = BigInteger.valueOf(readDigits(9));
                             }
                         } else {
                             v = readDigitsMax();
                         }
 
-                        bag.secFraction = (int)(!negative ? v : -v);
+                        bag.secFraction = !negative ? v : v.negate();
                         bag.secFractionSize = pos - initPos;
                         break;
                     }
@@ -495,8 +492,8 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final long sec = readDigitsMax();
-                        bag.seconds = !negative ? sec : -sec;
+                        final BigInteger sec = readDigitsMax();
+                        bag.seconds = !negative ? sec : sec.negate();
                         bag.secondsSize = 3;
                         break;
                     }
@@ -515,8 +512,8 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final long sec = readDigitsMax();
-                        bag.seconds = (int)(!negative ? sec : -sec);
+                        final BigInteger sec = readDigitsMax();
+                        bag.seconds = !negative ? sec : sec.negate();
                         break;
                     }
                     case FORMAT_WEEK_YEAR_S: // %U, %OU - Week number of the year.  The week starts with Sunday.  (00..53)
@@ -566,24 +563,23 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final long year;
+                        final BigInteger year;
                         if (isNumberPattern(compiledPattern, tokenIndex)) {
-                            year = readDigits(4);
+                            year = BigInteger.valueOf(readDigits(4));
                         } else {
                             year = readDigitsMax();
                         }
-
-                        bag.year = (int)(!negative ? year : -year);
+                        bag.year = !negative ? year : year.negate();
                         break;
                     }
                     case FORMAT_YEAR_SHORT: { // %y, %Ey, %Oy - year % 100 (00..99)
-                        final long y = readDigits(2);
-                        if (!validRange(y, 0, 99)) {
+                        final long year = readDigits(2);
+                        if (!validRange(year, 0, 99)) {
                             fail = true;
                         }
-                        bag.year = (int)y;
+                        bag.year = BigInteger.valueOf(year);
                         if (!bag.has(bag.cent)) {
-                            bag.cent = y >= 69 ? 19 : 20;
+                            bag.cent = BigInteger.valueOf((int)year >= 69 ? 19 : 20);
                         }
                         break;
                     }
@@ -662,8 +658,30 @@ public class StrptimeParser {
          * Ports READ_DIGITS_MAX from ext/date/date_strptime.c in MRI 2.3.1 under BSDL.
          * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
          */
-        private long readDigitsMax() {
-            return readDigits(Integer.MAX_VALUE);
+        private BigInteger readDigitsMax() {
+            char c;
+            BigInteger v = BigInteger.ZERO;
+            final int initPos = pos;
+
+            while (true) {
+                if (isEndOfText(text, pos)) {
+                    break;
+                }
+
+                c = text.charAt(pos);
+                if (!isDigit(c)) {
+                    break;
+                } else {
+                    v = v.multiply(BigInteger.TEN).add(new BigInteger(Integer.toString(toInt(c))));
+                }
+                pos += 1;
+            }
+
+            if (pos == initPos) {
+                fail = true;
+            }
+
+            return v;
         }
 
         /**

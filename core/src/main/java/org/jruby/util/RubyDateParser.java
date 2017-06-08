@@ -1,12 +1,14 @@
 package org.jruby.util;
 
+import org.jruby.RubyBignum;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyRational;
 import org.jruby.runtime.ThreadContext;
 
 import java.util.HashMap;
 import java.util.List;
 
 import static org.jruby.util.StrptimeParser.FormatBag.has;
-import static org.jruby.RubyRational.newRationalCanonicalize;
 
 /**
  * This class has {@code StrptimeParser} and provides methods that are calls from JRuby.
@@ -85,11 +87,15 @@ public class RubyDateParser {
             }
         }
         if (has(bag.getSecFraction())) {
-            map.put("sec_fraction", newRationalCanonicalize(context, bag.getSecFraction(), (long)Math.pow(10, bag.getSecFractionSize())));
+            final RubyBignum secFraction = RubyBignum.newBignum(context.getRuntime(), bag.getSecFraction());
+            final RubyFixnum secFractionSize = RubyFixnum.newFixnum(context.getRuntime(), (long)Math.pow(10, bag.getSecFractionSize()));
+            map.put("sec_fraction", RubyRational.newRationalCanonicalize(context, secFraction, secFractionSize));
         }
-        if (bag.hasSeconds()) {
+        if (bag.has(bag.getSeconds())) {
             if (has(bag.getSecondsSize())) {
-                map.put("seconds", newRationalCanonicalize(context, bag.getSeconds(), (long) Math.pow(10, bag.getSecondsSize())));
+                final RubyBignum seconds = RubyBignum.newBignum(context.getRuntime(), bag.getSeconds());
+                final RubyFixnum secondsSize = RubyFixnum.newFixnum(context.getRuntime(), (long)Math.pow(10, bag.getSecondsSize()));
+                map.put("seconds", RubyRational.newRationalCanonicalize(context, seconds, secondsSize));
             } else {
                 map.put("seconds", bag.getSeconds());
             }
