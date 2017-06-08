@@ -191,11 +191,9 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
     public IRubyObject readline(ThreadContext context) {
-        IRubyObject dst = gets_18(context, new IRubyObject[0]);
+        IRubyObject dst = gets(context, IRubyObject.NULL_ARRAY);
 
-        if (dst.isNil()) {
-            throw getRuntime().newEOFError();
-        }
+        if (dst.isNil()) throw context.runtime.newEOFError();
 
         return dst;
     }
@@ -299,6 +297,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
     }
 
+    @Deprecated
     public IRubyObject gets_18(ThreadContext context, IRubyObject[] args) {
         return gets(context, args);
     }
@@ -632,7 +631,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", args);
 
-        ByteList sep = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getByteList();
+        ByteList sep = ((RubyString) context.runtime.getGlobalVariables().get("$/")).getByteList();
 
         if (args.length > 0 && !args[0].isNil()) {
             sep = args[0].convertToString().getByteList();
@@ -643,10 +642,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 block.yield(context, result);
             }
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(optional = 1)
@@ -670,10 +669,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             bufferedStream.unread(bytes);
             position -= bytes.length;
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod
@@ -692,13 +691,13 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod(optional = 1)
     public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
-        List<IRubyObject> array = new ArrayList<IRubyObject>();
+        List<IRubyObject> array = new ArrayList<>();
 
         if (args.length != 0 && args[0].isNil()) {
-            array.add(read(context, new IRubyObject[0]));
+            array.add(read(context, IRubyObject.NULL_ARRAY));
 
         } else {
-            ByteList sep = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getByteList();
+            ByteList sep = ((RubyString) context.runtime.getGlobalVariables().get("$/")).getByteList();
 
             if (args.length > 0) sep = args[0].convertToString().getByteList();
 
@@ -707,7 +706,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                     array.add(result);
                 }
             } catch (IOException ioe) {
-                throw getRuntime().newIOErrorFromException(ioe);
+                throw context.runtime.newIOErrorFromException(ioe);
             }
         }
 
@@ -716,21 +715,22 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod
     public IRubyObject each_byte(ThreadContext context, Block block) {
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte");
+        final Ruby runtime = context.runtime;
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(runtime, this, "each_byte");
 
         try {
             int value = bufferedStream.read();
 
             while (value != -1) {
                 position++;
-                block.yield(context, getRuntime().newFixnum(value));
+                block.yield(context, runtime.newFixnum(value));
                 value = bufferedStream.read();
             }
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw runtime.newIOErrorFromException(ioe);
         }
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
