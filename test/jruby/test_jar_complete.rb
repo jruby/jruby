@@ -113,6 +113,43 @@ class JarCompleteTest < Test::Unit::TestCase
     assert_match /uri:classloader\:\/_file_constant_\.rb/, output
   end
 
+  def test_globing_with__dir__in_jar # GH-4611
+    mkdir_p tmp = File.join(TMP_DIR, __method__.to_s)
+    complete_jar = File.expand_path(File.join(tmp, 'jruby-complete.jar'))
+    cp COMPLETE_JAR, complete_jar
+
+    File.open(sample = File.join(TMP_DIR, 'sample.rb'), 'wb') do |f|
+      f.puts 'puts "sample " + __dir__'
+    end
+    File.open(_init_ = File.join(TMP_DIR, '_init_.rb'), 'wb') do |f|
+      f.puts 'puts __FILE__'
+      f.puts 'puts File.dirname(__FILE__)'
+      f.puts 'puts  __dir__'
+      f.puts 'Dir[ "#{__dir__}/*.rb" ].each { |f| require f }'
+    end
+    File.open(_jruby = File.join(TMP_DIR, '.jrubydir'), 'wb') do |f|
+      f.puts '.'
+      f.puts '_init_.rb'
+      f.puts 'sample.rb'
+      f.puts ''
+    end
+
+    Dir.chdir(File.dirname(_init_)) do
+      files = [sample, _init_, _jruby].map { |f| File.basename(f) }
+      system %{jar uf "#{complete_jar}" #{files.join(' ')}}
+    end
+    output = jruby_complete(complete_jar, %{-e "require '_init_'"}).chomp
+
+    puts output.inspect if $VERBOSE
+
+    output = output.split("\n")
+
+    assert_equal 'uri:classloader:/_init_.rb', output[0] # __FILE
+    assert_equal 'uri:classloader:/', output[1] # File.dirname(__FILE__)
+    assert_equal 'uri:classloader:/', output[2] # __dir__
+    assert_equal 'sample uri:classloader:/', output[3] # sample: ...
+  end
+
   def test_binscripts_can_be_run_from_classpath
     output = `java -cp \"#{COMPLETE_JAR}:test/jruby/dir with spaces/testgem.jar\" org.jruby.Main -S testgem`
 
