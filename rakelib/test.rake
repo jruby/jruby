@@ -61,7 +61,7 @@ namespace :test do
 
   max_meta_size = ENV_JAVA['java.specification.version'] > '1.7' ? '-XX:MaxMetaspaceSize' : '-XX:MaxPermSize'
   get_meta_size = proc do |default_size = 452|
-    ENV['JAVA_OPTS'].index(max_meta_size) || ENV['JRUBY_OPTS'].index(max_meta_size) ?
+    (ENV['JAVA_OPTS'] || '').index(max_meta_size) || (ENV['JRUBY_OPTS'] || '').index(max_meta_size) ?
         '' : "-J#{max_meta_size}=#{default_size}M"
   end
 
