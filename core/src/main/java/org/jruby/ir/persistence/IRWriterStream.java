@@ -150,8 +150,9 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         if (value == null) {
             encode(NULL_STRING);
         } else {
-            encode(value.length());
-            buf.put(value.getBytes());
+            byte[] bytes = value.getBytes();
+            encode(bytes.length);
+            buf.put(bytes);
         }
     }
 
