@@ -386,7 +386,7 @@ public class IRBuilder {
         }
     }
 
-    private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
+    private void determineIfWeNeedLineNumber(Node node) {
         if (node.isNewline()) {
             int currLineNum = node.getLine();
             if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
@@ -394,6 +394,10 @@ public class IRBuilder {
                 _lastProcessedLineNum = currLineNum;
             }
         }
+    }
+
+    private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
+        determineIfWeNeedLineNumber(node);
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -2700,6 +2704,7 @@ public class IRBuilder {
             }
         }
 
+        determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
         CallInstr callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
         receiveBreakException(block, callInstr);
         return result;
