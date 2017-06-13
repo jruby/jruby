@@ -300,6 +300,12 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    public Object getIdTest() {
+        Object idTest = this.idTest;
+        if (idTest != null) return idTest;
+        return this.idTest = Bootstrap.createIdTest(this);
+    }
+
     /** separate path for MetaClass construction
      *
      */
@@ -4495,7 +4501,7 @@ public class RubyModule extends RubyObject {
      * Pre-built test that takes ThreadContext, IRubyObject and checks that the object is a module with the
      * same ID as this one.
      */
-    private MethodHandle idTest;
+    private Object idTest;
 
     /**
      * The class/module within whose namespace this class/module resides.

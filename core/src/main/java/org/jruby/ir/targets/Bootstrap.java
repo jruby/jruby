@@ -1026,4 +1026,15 @@ public class Bootstrap {
 
         return nullToNil;
     }
+
+    /* Not the best place for this but better than tying RubyModule to indy. */
+    public static Object createIdTest(RubyModule module) {
+        return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
+                .insert(2, module.id)
+                .invoke(testModuleMatch);
+    }
+
+    private static final MethodHandle testModuleMatch = Binder
+            .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
+            .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
 }
