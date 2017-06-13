@@ -34,7 +34,10 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /** Represents an operator assignment to an element.
  * 
@@ -49,9 +52,9 @@ public class OpElementAsgnNode extends Node {
     private final Node receiverNode;
     private final Node argsNode;
     private final Node valueNode;
-    private final String operatorName;
+    private final ByteList operatorName;
 
-    public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
+    public OpElementAsgnNode(ISourcePosition position, Node receiverNode, ByteList operatorName, Node argsNode, Node valueNode) {
         super(position, receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
@@ -61,6 +64,11 @@ public class OpElementAsgnNode extends Node {
         this.argsNode = argsNode;
         this.valueNode = valueNode;
         this.operatorName = operatorName;
+    }
+
+    @Deprecated
+    public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
+        this(position, receiverNode, StringSupport.stringAsByteList(operatorName), argsNode, valueNode);
     }
 
     public NodeType getNodeType() {
@@ -88,7 +96,7 @@ public class OpElementAsgnNode extends Node {
      * @return Returns a String
      */
     public String getOperatorName() {
-        return operatorName;
+        return StringSupport.byteListAsString(operatorName);
     }
 
     /**
@@ -100,11 +108,11 @@ public class OpElementAsgnNode extends Node {
     }
     
     public boolean isOr() {
-        return getOperatorName() == "||";
+        return operatorName == LexingCommon.OR_OR;
     }
 
     public boolean isAnd() {
-        return getOperatorName() == "&&";
+        return operatorName == LexingCommon.AMPERSAND_AMPERSAND;
     }
 
     /**

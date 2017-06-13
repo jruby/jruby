@@ -39,6 +39,11 @@ public class UnnamedRestArgNode extends RestArgNode {
     }
 
     public boolean isStar() {
-        return getName() != null;
+        return getByteName() != null;
+    }
+
+    @Override
+    public String getName() {
+        return isStar() ? super.getName() : null;
     }
 }

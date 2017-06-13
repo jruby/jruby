@@ -3753,8 +3753,6 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstantFromNoConstMissing(String name, boolean includePrivate) {
-        assert name == name.intern() : name + " is not interned";
-
         final Ruby runtime = getRuntime();
         final RubyClass objectClass = runtime.getObject();
 

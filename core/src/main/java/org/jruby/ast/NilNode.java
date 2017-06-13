@@ -36,11 +36,14 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /**
  * represents 'nil'
  */
 public class NilNode extends Node implements INameNode, SideEffectFree {
+    static final ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
+
     public NilNode(ISourcePosition position) {
         super(position, false);
     }
@@ -62,6 +65,10 @@ public class NilNode extends Node implements INameNode, SideEffectFree {
      **/
     public String getName() {
         return "nil";
+    }
+
+    public ByteList getByteName() {
+        return NIL;
     }
     
     public List<Node> childNodes() {

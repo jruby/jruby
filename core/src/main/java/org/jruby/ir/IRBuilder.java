@@ -416,7 +416,6 @@ public class IRBuilder {
             case CLASSNODE: return buildClass((ClassNode) node);
             case CLASSVARNODE: return buildClassVar((ClassVarNode) node);
             case CLASSVARASGNNODE: return buildClassVarAsgn((ClassVarAsgnNode) node);
-            case CLASSVARDECLNODE: return buildClassVarDecl((ClassVarDeclNode) node);
             case COLON2NODE: return buildColon2((Colon2Node) node);
             case COLON3NODE: return buildColon3((Colon3Node) node);
             case COMPLEXNODE: return buildComplex((ComplexNode) node);
@@ -1420,17 +1419,6 @@ public class IRBuilder {
         return val;
     }
 
-    // ClassVarDecl node is assignment outside method/closure scope (top-level, class, module)
-    //
-    // class C
-    //   @@c = 1
-    // end
-    public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode) {
-        Operand val = build(classVarDeclNode.getValueNode());
-        addInstr(new PutClassVariableInstr(classVarDeclarationContainer(), classVarDeclNode.getName(), val));
-        return val;
-    }
-
     public Operand classVarDeclarationContainer() {
         return classVarContainer(true);
     }
@@ -2096,7 +2084,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, true);
         addInstr(new DefineInstanceMethodInstr(method));
         // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), ASCIIEncoding.INSTANCE);
+        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
@@ -2104,7 +2092,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, false);
         addInstr(new DefineClassMethodInstr(container, method));
         // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), ASCIIEncoding.INSTANCE);
+        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
     }
 
     protected LocalVariable getArgVariable(String name, int depth) {
