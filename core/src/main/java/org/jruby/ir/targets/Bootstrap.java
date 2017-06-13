@@ -1020,8 +1020,9 @@ public class Bootstrap {
     /* Not the best place for this but better than tying Ruby to indy. */
     public static Object createNullToNilHandle(Ruby runtime) {
         IRubyObject nilObject = runtime.getNil();
-        MethodHandle nullToNil = Binder.from(IRubyObject.class, IRubyObject.class)
+        MethodHandle nullToNil = Binder.from(IRubyObject.class, Object.class)
                 .append(nilObject)
+                .cast(IRubyObject.class, IRubyObject.class, IRubyObject.class)
                 .invokeStaticQuiet(lookup(), Helpers.class, "nullToNil");
 
         return nullToNil;
