@@ -197,8 +197,9 @@ public class RubyClass extends RubyModule {
      * constructor (Ruby, RubyClass) on the given class via a static
      * __allocate__ method intermediate.
      *
-     * @param clazz The class from which to grab a standard Ruby __allocate__
-     *            method.
+     * @param clazz The class from which to grab a standard Ruby __allocate__ method.
+     *
+     * @note Used with `jrubyc --java` generated (interoperability) class files.
      */
     public void setRubyStaticAllocator(final Class<?> clazz) {
         try {
