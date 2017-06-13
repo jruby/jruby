@@ -11,6 +11,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
+
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="FFI::Struct", parent="Object")
@@ -35,7 +37,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     public static RubyClass createStructClass(Ruby runtime, RubyModule module) {
         
         RubyClass structClass = runtime.defineClassUnder("Struct", runtime.getObject(),
-                RubyInstanceConfig.REIFY_RUBY_CLASSES ? new ReifyingAllocator(Struct.class): Allocator.INSTANCE, module);
+                Options.REIFY_FFI.load() ? new ReifyingAllocator(Struct.class): Allocator.INSTANCE, module);
         structClass.defineAnnotatedMethods(Struct.class);
         structClass.defineAnnotatedConstants(Struct.class);
         structClass.setReifiedClass(Struct.class);
