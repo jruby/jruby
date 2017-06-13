@@ -110,18 +110,18 @@ public class UnmarshalStream extends InputStream {
     }
 
     // introduced for keeping ivar read state recursively.
-    private static class MarshalState {
+    public static class MarshalState {
         private boolean ivarWaiting;
 
         MarshalState(boolean ivarWaiting) {
             this.ivarWaiting = ivarWaiting;
         }
 
-        boolean isIvarWaiting() {
+        public boolean isIvarWaiting() {
             return ivarWaiting;
         }
 
-        void setIvarWaiting(boolean ivarWaiting) {
+        public void setIvarWaiting(boolean ivarWaiting) {
             this.ivarWaiting = ivarWaiting;
         }
     }
@@ -232,7 +232,7 @@ public class UnmarshalStream extends InputStream {
                 rubyObj = unmarshalRegexp(state);
                 break;
             case ':' :
-                rubyObj = RubySymbol.unmarshalFrom(this);
+                rubyObj = RubySymbol.unmarshalFrom(this, state);
                 break;
             case '[' :
                 rubyObj = RubyArray.unmarshalFrom(this);
@@ -452,31 +452,13 @@ public class UnmarshalStream extends InputStream {
 
                 EncodingCapable strObj = (EncodingCapable)object;
 
-                if (key.asJavaString().equals(MarshalStream.SYMBOL_ENCODING_SPECIAL)) {
+                Encoding enc = getEncodingFromUnmarshaled(key);
 
-                    // special case for USASCII and UTF8
-                    if (unmarshalObject().isTrue()) {
-                        strObj.setEncoding(UTF8Encoding.INSTANCE);
-                    } else {
-                        strObj.setEncoding(USASCIIEncoding.INSTANCE);
-                    }
+                if (enc != null) {
+                    // got encoding, set it and forget it
+                    strObj.setEncoding(enc);
                     continue;
-
-                } else if (key.asJavaString().equals("encoding")) {
-
-                    IRubyObject encodingNameObj = unmarshalObject(false);
-                    String encodingNameStr = encodingNameObj.asJavaString();
-                    ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
-
-                    Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName);
-                    if (entry == null) {
-                        throw runtime.newArgumentError("invalid encoding in marshaling stream: " + encodingName);
-                    }
-                    Encoding encoding = entry.getEncoding();
-                    strObj.setEncoding(encoding);
-                    continue;
-
-                } // else fall through as normal ivar
+                }
             }
 
             String name = key.asJavaString();
@@ -484,6 +466,34 @@ public class UnmarshalStream extends InputStream {
 
             cls.getVariableAccessorForWrite(name).set(object, value);
         }
+    }
+
+    public Encoding getEncodingFromUnmarshaled(IRubyObject key) throws IOException {
+        Encoding enc = null;
+
+        if (key.asJavaString().equals(MarshalStream.SYMBOL_ENCODING_SPECIAL)) {
+
+            // special case for USASCII and UTF8
+            if (unmarshalObject().isTrue()) {
+                enc = UTF8Encoding.INSTANCE;
+            } else {
+                enc = USASCIIEncoding.INSTANCE;
+            }
+
+        } else if (key.asJavaString().equals("encoding")) {
+
+            IRubyObject encodingNameObj = unmarshalObject(false);
+            String encodingNameStr = encodingNameObj.asJavaString();
+            ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
+
+            Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName);
+            if (entry == null) {
+                throw runtime.newArgumentError("invalid encoding in marshaling stream: " + encodingName);
+            }
+            enc = entry.getEncoding();
+
+        }
+        return enc;
     }
 
     private IRubyObject uclassUnmarshall() throws IOException {

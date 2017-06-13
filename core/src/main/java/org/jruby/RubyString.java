@@ -257,15 +257,19 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public final int scanForCodeRange() {
         int cr = getCodeRange();
         if (cr == CR_UNKNOWN) {
-            Encoding enc = getEncoding();
-            if (enc.minLength() > 1 && enc.isDummy()) {
-                cr = CR_BROKEN;
-            } else {
-                cr = codeRangeScan(EncodingUtils.getActualEncoding(getEncoding(), value), value);
-            }
+            cr = scanForCodeRange(value);
             setCodeRange(cr);
         }
         return cr;
+    }
+
+    public static int scanForCodeRange(ByteList byteList) {
+        Encoding enc = byteList.getEncoding();
+        if (enc.minLength() > 1 && enc.isDummy()) {
+            return CR_BROKEN;
+        } else {
+            return codeRangeScan(EncodingUtils.getActualEncoding(enc, byteList), byteList);
+        }
     }
 
     final boolean singleByteOptimizable() {
