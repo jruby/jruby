@@ -349,4 +349,24 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         long encodedSignature = signature.encode();
         adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
     }
+
+    @Override
+    public void getGlobalVariable(String name, String file, int line) {
+        loadContext();
+        adapter.invokedynamic(
+                "get:" + JavaNameMangler.mangleMethodName(name),
+                sig(IRubyObject.class, ThreadContext.class),
+                Bootstrap.global(),
+                file, line);
+    }
+
+    @Override
+    public void setGlobalVariable(String name, String file, int line) {
+        loadContext();
+        adapter.invokedynamic(
+                "set:" + JavaNameMangler.mangleMethodName(name),
+                sig(void.class, IRubyObject.class, ThreadContext.class),
+                Bootstrap.global(),
+                file, line);
+    }
 }
