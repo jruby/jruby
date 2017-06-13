@@ -868,7 +868,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public RubySymbol lookup(long id) {
             SymbolEntry[] table = symbolTable;
-            RubySymbol symbol = null;
+            RubySymbol symbol;
 
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {

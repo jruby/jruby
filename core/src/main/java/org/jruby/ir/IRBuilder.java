@@ -280,6 +280,12 @@ public class IRBuilder {
 
     private int _lastProcessedLineNum = -1;
 
+    // We do not need n consecutive line num instrs but only the last one in the sequence.
+    // We set this flag to indicate that we need to emit a line number but have not yet.
+    // addInstr will then appropriately add line info when it is called (which will never be
+    // called by a linenum instr).
+    private boolean needsLineNumInfo = false;
+
     public boolean underscoreVariableSeen = false;
 
     public IRLoop getCurrentLoop() {
@@ -313,6 +319,17 @@ public class IRBuilder {
     }
 
     public void addInstr(Instr instr) {
+        if (needsLineNumInfo) {
+            needsLineNumInfo = false;
+            addInstr(manager.newLineNumber(_lastProcessedLineNum));
+            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), _lastProcessedLineNum));
+                if (needsCodeCoverage()) {
+                    addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), _lastProcessedLineNum));
+                }
+            }
+        }
+
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.empty()) {
@@ -369,20 +386,18 @@ public class IRBuilder {
         }
     }
 
-    private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
+    private void determineIfWeNeedLineNumber(Node node) {
         if (node.isNewline()) {
             int currLineNum = node.getLine();
             if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
-                addInstr(manager.newLineNumber(currLineNum));
-                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                    addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
-                    if (needsCodeCoverage()) {
-                        addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), currLineNum));
-                    }
-                }
+                needsLineNumInfo = true;
                 _lastProcessedLineNum = currLineNum;
             }
         }
+    }
+
+    private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
+        determineIfWeNeedLineNumber(node);
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -2689,6 +2704,7 @@ public class IRBuilder {
             }
         }
 
+        determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
         CallInstr callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
         receiveBreakException(block, callInstr);
         return result;

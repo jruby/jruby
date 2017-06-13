@@ -9,6 +9,10 @@ and/or modify it under the terms of the:
   GNU Lesser General Public License version 2.1
 
 bytelist (http://github.com/jruby/bytelist),
+jnr-posix (https://github.com/jnr/jnr-posix),
+jruby-openssl (https://github.com/jruby/jruby-openssl),
+jruby-readline (https://github.com/jruby/jruby-readline),
+psych (https://github.com/ruby/psych),
 yydebug (http://svn.codehaus.org/jruby/trunk/jay/yydebug)
 are released under the same copyright/license.
 
@@ -32,30 +36,64 @@ below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
 
    prototype.js is Copyright (c) 2005-2007 Sam Stephenson.
 
+ asm (http://asm.objectweb.org) is distributed under the BSD license and is
+
+   Copyright (c) 2000-2011 INRIA, France Telecom
+   All rights reserved.
+
+ jline2 (https://github.com/jline/jline2) is distributed under the BSD license:
+
+   Copyright (c) 2002-2012, the original author or authors.
+   All rights reserved.
+
+ jzlib (http://www.jcraft.com/jzlib/) is distributed under the BSD license:
+
+   Copyright (c) 2000-2011 ymnk, JCraft,Inc. All rights reserved.
+
  The "rake" library (http://rake.rubyforge.org/) is distributed under
  the MIT license, and has the following copyright:
    
    Copyright (c) 2003, 2004 Jim Weirich
 
- asm (http://asm.objectweb.org) is distributed under the BSD license.
-
  jcodings (http://github.com/jruby/jcodings) and
  joni (http://github.com/jruby/joni) are distributed
- under the MIT license.
+ under the MIT license without copyright.
 
- maven (http://maven.apache.org/),
- jnr-constants (http://github.com/jnr/jnr-constants),
- joda-time (http://joda-time.sourceforge.net),
- jffi (https://github.com/jnr/jffi),
- jnr-ffi (https://github.com/jnr/jnr-jffi),
- jnr-enxio (https://github.com/jnr/jnr-enxio),
- jnr-unixsocket (https://github.com/jnr/jnr-unixsocket),
- jnr-netdb (http://github.com/jnr/jnr-netdb), and
- nailgun (http://martiansoftware.com/nailgun) are distributed under the
- Apache License version 2.0.
+ Bouncycastle is released under the MIT license:
 
- Bouncycastle is released under the MIT license, and is Copyright (c)
- 2000 - 2006 The Legion Of The Bouncy Castle.
+   Copyright (c) 2000 - 2006 The Legion Of The Bouncy Castle.
+
+ jnr-x86asm (https://github.com/jnr/jnr-x86asm) is distributed under the MIT
+ license with the following copyright:
+
+   Copyright (C) 2010 Wayne Meissner
+   Copyright (c) 2008-2009, Petr Kobalicek <kobalicek.petr@gmail.com>
+
+ The following libraries are redistributed under the Apache Software
+ License v2.0, available below.
+   invokebinder (https://github.com/headius/invokebinder)
+   jffi (https://github.com/jnr/jffi)
+   jitescript (https://github.com/qmx/jitescript)
+   jnr-constants (http://github.com/jnr/jnr-constants)
+   jnr-enxio (https://github.com/jnr/jnr-enxio)
+   jnr-ffi (https://github.com/jnr/jnr-jffi)
+   jnr-netdb (http://github.com/jnr/jnr-netdb)
+   jnr-unixsocket (https://github.com/jnr/jnr-unixsocket)
+   joda-time (http://joda-time.sourceforge.net)
+   maven (http://maven.apache.org/)
+   nailgun (http://martiansoftware.com/nailgun)
+   options (https://github.com/headius/options)
+   snakeyaml (https://github.com/asomov/snakeyaml)
+   unsafe-fences (https://github.com/headius/unsafe-fences)
+
+ racc (runtime only, https://github.com/tenderlove/racc) is
+   distributed under the same license terms as the Ruby standard
+   library. This includes all files under lib/ruby/stdlib/racc.
+   See LICENSE.RUBY.
+
+ json-generator and json-parser (https://github.com/flori/json) native
+   extenstions under the same license terms as the Ruby standard library.
+   See LICENSE.RUBY
 
 The complete text of the Eclipse Public License is as follows:
 
@@ -1332,7 +1370,6 @@ Licenses listed below include:
 * GNU General Public License version 3
 * Apache 2.0 License
 * BSD License
-* Apache Software License Version 1.1
 * MIT License
 
 The complete text of the GNU General Public License version 3 is as follows:
@@ -2218,9 +2255,6 @@ The complete text of the Apache 2.0 License is as follows:
 
 The complete text of the BSD license can be is as follows:
 
-  Copyright (c) The Regents of the University of California.
-  All rights reserved.
-
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
   are met:
@@ -2233,75 +2267,17 @@ The complete text of the BSD license can be is as follows:
      may be used to endorse or promote products derived from this software
      without specific prior written permission.
 
-  THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-  ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-  SUCH DAMAGE.
-
-The complete text of the Apache Software License Version 1.1 is as follows:
-
- /*                                      
-  * ================================================================
-  *                   The Apache Software License, Version 1.1
-  * ================================================================
-  * 
-  *    Copyright (C) 2000-2002 The Apache Software Foundation. All
-  *    rights reserved.
-  * 
-  * Redistribution and use in source and binary forms, with or without 
-  * modification, are permitted provided that the following
-  * conditions are met:
-  * 
-  * 1. Redistributions of  source code must  retain the above copyright
-  *    notice, this list of conditions and the following disclaimer.
-  * 
-  * 2. Redistributions in binary form must reproduce the above copyright
-  *    notice, this list of conditions and the following disclaimer in
-  *    the documentation and/or other materials provided with the 
-  *    distribution.
-  * 
-  * 3. The end-user documentation included with the redistribution, if
-  *    any, must include  the following  acknowledgment:  "This product
-  *    includes  software developed  by the  Apache Software Foundation
-  *    (http://www.apache.org/)." Alternately, this  acknowledgment may
-  *    appear in the software itself, if and wherever such third-party
-  *    acknowledgments normally appear.
-  * 
-  * 4. The names "Ant" and  "Apache Software Foundation" must not be
-  *    used to endorse  or promote  products derived  from this software
-  *    without prior written permission. For written permission, please
-  *    contact apache@apache.org.
-  * 
-  * 5. Products derived from this software may not  be called "Apache",
-  *    nor may "Apache" appear  in their name,  without prior written
-  *    permission of the Apache Software Foundation.
-  * 
-  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
-  * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
-  * OF MERCHANTABILITY AND FITNESS  FOR A PARTICULAR PURPOSE ARE 
-  * DISCLAIMED. IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION
-  * OR ITS CONTRIBUTORS BE LIABLE FOR  ANY DIRECT, INDIRECT, INCIDENTAL,
-  * SPECIAL,  EXEMPLARY, OR CONSEQUENTIAL  DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-  * DATA, OR  PROFITS; OR BUSINESS  INTERRUPTION)  HOWEVER CAUSED AND ON
-  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-  * TORT (INCLUDING  NEGLIGENCE OR  OTHERWISE) ARISING IN ANY WAY OUT
-  * OF THE  USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
-  * OF SUCH DAMAGE.
-  * 
-  * This software  consists of voluntary contributions made by many
-  * individuals on behalf of the  Apache Software Foundation. For more
-  * information on the Apache Software Foundation, please see
-  * <http://www.apache.org/>.
-  *
-  */
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+  THE POSSIBILITY OF SUCH DAMAGE.
 
 The complete text of the MIT license is as follows:
 

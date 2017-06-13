@@ -214,7 +214,7 @@ public class Addrinfo extends RubyObject {
 
                 RubyString sockaddrString = sockaddr.convertToString();
 
-                InetAddress inetAddress = null;
+                InetAddress inetAddress;
 
                 inetAddress = getRubyInetAddress(sockaddr);
                 if (inetAddress == null) {

@@ -110,7 +110,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
         RubyGzipFile result = (RubyGzipFile) klass.allocate();
 
-        result.callInit(new IRubyObject[0], block);
+        result.callInit(IRubyObject.NULL_ARRAY, block);
 
         return result;
     }

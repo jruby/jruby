@@ -47,7 +47,6 @@ class MSpecScript
   # Enable features
   MSpec.enable_feature :fiber
   MSpec.enable_feature :fiber_library
-  MSpec.enable_feature :continuation_library
   MSpec.enable_feature :fork if respond_to?(:fork, true)
   MSpec.enable_feature :encoding
 end

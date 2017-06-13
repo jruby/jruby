@@ -1723,10 +1723,15 @@ lambda          : /* none */  {
                     support.pushBlockScope();
                     $$ = lexer.getLeftParenBegin();
                     lexer.setLeftParenBegin(lexer.incrementParenNest());
+                } {
+                    $$ = lexer.getCmdArgumentState().getStack();
+                    lexer.getCmdArgumentState().reset();
                 } f_larglist lambda_body {
-                    $$ = new LambdaNode($2.getPosition(), $2, $3, support.getCurrentScope());
+                    $$ = new LambdaNode($3.getPosition(), $3, $4, support.getCurrentScope());
                     support.popCurrentScope();
                     lexer.setLeftParenBegin($<Integer>1);
+                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
+
                 }
 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {

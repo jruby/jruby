@@ -376,6 +376,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return Helpers.invoke(getRuntime().getCurrentContext(), this, name, args);
     }
 
+    public final IRubyObject callMethod(String name, IRubyObject arg) {
+        return Helpers.invoke(getRuntime().getCurrentContext(), this, name, arg);
+    }
+
     public final IRubyObject callMethod(String name) {
         return Helpers.invoke(getRuntime().getCurrentContext(), this, name);
     }
@@ -2198,7 +2202,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     	from prog.rb:3
      */
     public IRubyObject freeze(ThreadContext context) {
-        Ruby runtime = context.runtime;
         if ((flags & FROZEN_F) == 0) {
             flags |= FROZEN_F;
         }

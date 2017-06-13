@@ -33,8 +33,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -130,6 +128,13 @@ public abstract class InvokeSite extends MutableCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, caller)) {
+            // Test thresholds so we don't do this forever (#4596)
+            if (testThresholds(selfClass) == CacheAction.FAIL) {
+                logFail();
+                bindToFail();
+            } else {
+                logMethodMissing();
+            }
             return callMethodMissing(entry, callType, context, self, methodName, args, block);
         }
 
@@ -318,74 +323,121 @@ public abstract class InvokeSite extends MutableCallSite {
      * with the site's original method type.
      */
     MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, DynamicMethod method, SwitchPoint switchPoint) {
-        if (target == null ||
-                tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
+        MethodHandle fallback;
+        MethodHandle gwt;
+        String bind = "bind";
+
+        CacheAction cacheAction = testThresholds(testClass);
+        switch (cacheAction) {
+            case FAIL:
+                logFail();
+                // bind to specific-arity fail method if available
+                return bindToFail();
+            case PIC:
+                // stack it up into a PIC
+                logPic(method);
+                fallback = getTarget();
+                break;
+            case REBIND:
+            case BIND:
+                // wipe out site with this new type and method
+                logBind(cacheAction);
+                fallback = this.fallback;
+                break;
+            default:
+                throw new RuntimeException("invalid cache action: " + cacheAction);
+        }
+
+        // Continue with logic for PIC, BIND, and REBIND
+        tracker.addType(testClass.id);
+
+        SmartHandle test;
+
+        if (self instanceof RubySymbol ||
+                self instanceof RubyFixnum ||
+                self instanceof RubyFloat ||
+                self instanceof RubyNil ||
+                self instanceof RubyBoolean.True ||
+                self instanceof RubyBoolean.False) {
+
+            test = SmartBinder
+                    .from(signature.asFold(boolean.class))
+                    .permute("self")
+                    .insert(1, "selfJavaType", self.getClass())
+                    .cast(boolean.class, Object.class, Class.class)
+                    .invoke(TEST_CLASS);
+
+        } else {
+
+            test = SmartBinder
+                    .from(signature.changeReturn(boolean.class))
+                    .permute("self")
+                    .insert(0, "selfClass", RubyClass.class, testClass)
+                    .invokeStaticQuiet(Bootstrap.LOOKUP, Bootstrap.class, "testType");
+        }
+
+        gwt = MethodHandles.guardWithTest(test.handle(), target, fallback);
+
+        // wrap in switchpoint for mutation invalidation
+        gwt = switchPoint.guardWithTest(gwt, fallback);
+
+        setTarget(gwt);
+
+        return target;
+    }
+
+    private void logMethodMissing() {
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
+            LOG.info(methodName + "\ttriggered site #" + siteID + " method_missing (" + file + ":" + line + ")");
+    }
+
+    private void logBind(CacheAction action) {
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
+            LOG.info(methodName + "\ttriggered site #" + siteID + " " + action + " (" + file + ":" + line + ")");
+    }
+
+    private void logPic(DynamicMethod method) {
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
+            LOG.info(methodName + "\tadded to PIC " + logMethod(method));
+    }
+
+    private void logFail() {
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+            if (tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load()) {
+                LOG.info(methodName + "\tat site #" + siteID + " failed more than " + Options.INVOKEDYNAMIC_MAXFAIL.load() + " times; bailing out (" + file + ":" + line + ")");
+            } else if (tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
+                LOG.info(methodName + "\tat site #" + siteID + " encountered more than " + Options.INVOKEDYNAMIC_MAXPOLY.load() + " types; bailing out (" + file + ":" + line + ")");
+            }
+        }
+    }
+
+    private MethodHandle bindToFail() {
+        MethodHandle target;
+        setTarget(target = prepareBinder(false).invokeVirtualQuiet(lookup(), "fail"));
+        return target;
+    }
+
+    enum CacheAction { FAIL, BIND, REBIND, PIC }
+
+    CacheAction testThresholds(RubyModule testClass) {
+        if (tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
                 (!tracker.hasSeenType(testClass.id)
                         && tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load())) {
-
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                if (tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load()) {
-                    LOG.info(methodName + "\tat site #" + siteID + " failed more than " + Options.INVOKEDYNAMIC_MAXFAIL.load() + " times; bailing out (" + file + ":" + line + ")");
-                } else if (tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
-                    LOG.info(methodName + "\tat site #" + siteID + " encountered more than " + Options.INVOKEDYNAMIC_MAXPOLY.load() + " types; bailing out (" + file + ":" + line + ")");
-                }
-            }
-            // bind to specific-arity fail method if available
-            setTarget(target = prepareBinder(false).invokeVirtualQuiet(lookup(), "fail"));
+            // Thresholds exceeded
+            return CacheAction.FAIL;
         } else {
-            MethodHandle fallback;
-            MethodHandle gwt;
-
             // if we've cached no types, and the site is bound and we haven't seen this new type...
             if (tracker.seenTypesCount() > 0 && getTarget() != null && !tracker.hasSeenType(testClass.id)) {
                 // stack it up into a PIC
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\tadded to PIC " + logMethod(method));
-                fallback = getTarget();
+                tracker.addType(testClass.id);
+                return CacheAction.PIC;
             } else {
                 // wipe out site with this new type and method
-                String bind = boundOnce ? "rebind" : "bind";
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\ttriggered site #" + siteID + " " + bind + " (" + file + ":" + line + ")");
-                fallback = this.fallback;
                 tracker.clearTypes();
+                tracker.addType(testClass.id);
+                return boundOnce ? CacheAction.REBIND : CacheAction.BIND;
             }
-
-            tracker.addType(testClass.id);
-
-            SmartHandle test;
-            SmartBinder selfTest = SmartBinder
-                    .from(signature.asFold(boolean.class))
-                    .permute("self");
-
-            if (self instanceof RubySymbol ||
-                    self instanceof RubyFixnum ||
-                    self instanceof RubyFloat ||
-                    self instanceof RubyNil ||
-                    self instanceof RubyBoolean.True ||
-                    self instanceof RubyBoolean.False) {
-
-                test = selfTest
-                        .insert(1, "selfJavaType", self.getClass())
-                        .cast(boolean.class, Object.class, Class.class)
-                        .invoke(TEST_CLASS);
-
-            } else {
-
-                test = SmartBinder
-                        .from(signature.changeReturn(boolean.class))
-                        .permute("self")
-                        .insert(0, "selfClass", RubyClass.class, testClass)
-                        .invokeStaticQuiet(Bootstrap.LOOKUP, Bootstrap.class, "testType");
-            }
-
-            gwt = MethodHandles.guardWithTest(test.handle(), target, fallback);
-
-            // wrap in switchpoint for mutation invalidation
-            gwt = switchPoint.guardWithTest(gwt, fallback);
-
-            setTarget(gwt);
         }
-
-        return target;
     }
 
     public RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {

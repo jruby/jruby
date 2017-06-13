@@ -79,7 +79,9 @@ public class UnmarshalStream extends InputStream {
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
         assert runtime != null;
         assert in != null;
-        assert proc != null;
+
+        // Older native java ext expects proc can be null (spymemcached.jruby at least).
+        if (proc == null) proc = runtime.getNil();
         
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
