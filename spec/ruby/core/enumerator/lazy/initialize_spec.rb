@@ -12,11 +12,11 @@ describe "Enumerator::Lazy#initialize" do
       yield 2
     end
 
-    @uninitialized = enumerator_class::Lazy.allocate
+    @uninitialized = Enumerator::Lazy.allocate
   end
 
   it "is a private method" do
-    enumerator_class::Lazy.should have_private_instance_method(:initialize, false)
+    Enumerator::Lazy.should have_private_instance_method(:initialize, false)
   end
 
   it "returns self" do

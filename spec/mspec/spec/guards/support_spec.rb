@@ -60,7 +60,7 @@ describe Object, "#not_supported_on" do
   end
 
   it "calls #unregister even when an exception is raised in the guard block" do
-    @guard.should_receive(:match?).and_return(true)
+    @guard.should_receive(:match?).and_return(false)
     @guard.should_receive(:unregister)
     lambda do
       not_supported_on(:rubinius) { raise Exception }

@@ -77,11 +77,6 @@ module MethodSpecs
     def two_req_one_opt_with_splat_and_block(a, b, c=nil, *d, &blk); end
     def one_req_two_opt_with_splat_and_block(a, b=nil, c=nil, *d, &blk); end
 
-    def one_key(a: 1); end
-    def one_keyrest(**a); end
-
-    def one_keyreq(a:); end
-
     define_method(:zero_defined_method, Proc.new {||})
     define_method(:zero_with_splat_defined_method, Proc.new {|*x|})
     define_method(:one_req_defined_method, Proc.new {|x|})
@@ -186,19 +181,4 @@ module MethodSpecs
     end
   end
 
-  class Methods
-    def one_splat_one_req(*a,b); end
-    def one_splat_two_req(*a,b,c); end
-    def one_splat_one_req_with_block(*a,b,&blk); end
-
-    def one_opt_with_stabby(a=->(b){true}); end
-
-    def one_unnamed_splat(*); end
-
-    def one_splat_one_block(*args, &block)
-      local_is_not_parameter = {}
-    end
-
-    define_method(:one_optional_defined_method) {|x = 1|}
-  end
 end

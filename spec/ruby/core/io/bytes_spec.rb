@@ -4,18 +4,16 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO#bytes" do
   before :each do
-    @kcode, $KCODE = $KCODE, "utf-8"
     @io = IOSpecs.io_fixture "lines.txt"
   end
 
   after :each do
     @io.close unless @io.closed?
-    $KCODE = @kcode
   end
 
   it "returns an enumerator of the next bytes from the stream" do
     enum = @io.bytes
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     @io.readline.should == "Voici la ligne une.\n"
     enum.first(5).should == [81, 117, 105, 32, 195]
   end

@@ -3,7 +3,7 @@ describe :strscan_eos, shared: true do
     @s = StringScanner.new("This is a test")
   end
 
-  it "Returns true if the scan pointer is at the end of the string" do
+  it "returns true if the scan pointer is at the end of the string" do
     @s.terminate
     @s.send(@method).should be_true
 
@@ -11,7 +11,7 @@ describe :strscan_eos, shared: true do
     s.send(@method).should be_true
   end
 
-  it "Returns false if the scan pointer is not at the end of the string" do
+  it "returns false if the scan pointer is not at the end of the string" do
     @s.send(@method).should be_false
   end
 end

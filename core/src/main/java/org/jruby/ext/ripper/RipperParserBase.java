@@ -139,7 +139,7 @@ public class RipperParserBase {
             return name;
         }
 
-        currentScope.assign(null, javaName.intern(), null);
+        currentScope.assign(lexer.getPosition(), javaName.intern(), null);
         
         return name;
     }
@@ -331,6 +331,7 @@ public class RipperParserBase {
     }
     
     public void compile_error(String message) {
+        System.out.println(getRuntime().newString(message));
         dispatch("on_parse_error", getRuntime().newString(message));
     }
 

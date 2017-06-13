@@ -17,19 +17,20 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
-    private final String missingConst;
+    private final ByteList missingConst;
 
-    public ConstMissingInstr(Variable result, Operand currentModule, String missingConst, boolean isPotentiallyRefined) {
+    public ConstMissingInstr(Variable result, Operand currentModule, ByteList missingConst, boolean isPotentiallyRefined) {
         // FIXME: Missing encoding knowledge of the constant name.
         super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, "const_missing", currentModule,
-                new Operand[]{new Symbol(missingConst, USASCIIEncoding.INSTANCE)}, null, isPotentiallyRefined);
+                new Operand[]{new Symbol(missingConst)}, null, isPotentiallyRefined);
 
         this.missingConst = missingConst;
     }
 
-    public String getMissingConst() {
+    public ByteList getMissingConst() {
         return missingConst;
     }
 
@@ -48,7 +49,7 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     }
 
     public static ConstMissingInstr decode(IRReaderDecoder d) {
-        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.getCurrentScope().maybeUsingRefinements());
+        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeByteList(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override
@@ -64,7 +65,7 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyModule module = (RubyModule) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
-        return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(missingConst));
+        return module.callMethod(context, "const_missing", context.runtime.newSymbol(missingConst));
     }
 
     @Override

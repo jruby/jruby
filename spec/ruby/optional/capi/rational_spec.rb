@@ -43,17 +43,15 @@ describe "CApiRationalSpecs" do
     it_behaves_like :rb_rational_new, :rb_rational_new2
   end
 
-  ruby_version_is "2.2" do
-    describe "rb_rational_num" do
-      it "returns the numerator of a Rational" do
-        @r.rb_rational_num(Rational(7, 2)).should == 7
-      end
+  describe "rb_rational_num" do
+    it "returns the numerator of a Rational" do
+      @r.rb_rational_num(Rational(7, 2)).should == 7
     end
+  end
 
-    describe "rb_rational_den" do
-      it "returns the denominator of a Rational" do
-        @r.rb_rational_den(Rational(7, 2)).should == 2
-      end
+  describe "rb_rational_den" do
+    it "returns the denominator of a Rational" do
+      @r.rb_rational_den(Rational(7, 2)).should == 2
     end
   end
 end

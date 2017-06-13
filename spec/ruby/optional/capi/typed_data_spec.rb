@@ -24,6 +24,11 @@ describe "CApiWrappedTypedStruct" do
     lambda { @s.typed_get_struct_other(a) }.should raise_error(TypeError)
   end
 
+  it "unwraps data for a parent type" do
+    a = @s.typed_wrap_struct(1024)
+    @s.typed_get_struct_parent(a).should == 1024
+  end
+
   it "allows for using NULL as the klass for Data_Wrap_Struct" do
     a = @s.typed_wrap_struct_null(1024)
     @s.typed_get_struct(a).should == 1024

@@ -22,7 +22,7 @@ describe "BigDecimal#split" do
     @arr.size.should == 4
   end
 
-  it "First value: 1 for numbers > 0" do
+  it "first value: 1 for numbers > 0" do
     @arr[0].should == 1
     @arr_big[0].should == 1
     @zero.split[0].should == 1
@@ -32,7 +32,7 @@ describe "BigDecimal#split" do
     @infinity.split[0].should == 1
   end
 
-  it "First value: -1 for numbers < 0" do
+  it "first value: -1 for numbers < 0" do
     @arr_neg[0].should == -1
     @arr_big_neg[0].should == -1
     @zero_neg.split[0].should == -1
@@ -40,11 +40,11 @@ describe "BigDecimal#split" do
     @infinity_neg.split[0].should == -1
   end
 
-  it "First value: 0 if BigDecimal is NaN" do
+  it "first value: 0 if BigDecimal is NaN" do
     BigDecimal("NaN").split[0].should == 0
   end
 
-  it "Second value: a string with the significant digits" do
+  it "second value: a string with the significant digits" do
     string = "314159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593014782083152134043"
     @arr[1].should == string
     @arr_big[1].should == @digits
@@ -57,7 +57,7 @@ describe "BigDecimal#split" do
     BigDecimal("-0").split[1].should == "0"
   end
 
-  it "Third value: the base (currently always ten)" do
+  it "third value: the base (currently always ten)" do
    @arr[2].should == 10
    @arr_neg[2].should == 10
    @arr_big[2].should == 10
@@ -70,7 +70,7 @@ describe "BigDecimal#split" do
    @zero_neg.split[2].should == 10
   end
 
-  it "Fourth value: The exponent" do
+  it "fourth value: the exponent" do
     @arr[3].should == 1
     @arr_neg[3].should == 1
     @arr_big[3].should == 54

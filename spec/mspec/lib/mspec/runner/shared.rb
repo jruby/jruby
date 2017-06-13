@@ -7,6 +7,6 @@ class Object
       @object = obj
     end
 
-    send :it_should_behave_like, desc.to_s, meth, obj
+    send :it_should_behave_like, desc.to_s
   end
 end

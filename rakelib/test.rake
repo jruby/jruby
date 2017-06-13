@@ -58,14 +58,20 @@ namespace :test do
       t.ruby_opts << '--disable-gems'
     end
   end
-  
+
+  max_meta_size = ENV_JAVA['java.specification.version'] > '1.7' ? '-XX:MaxMetaspaceSize' : '-XX:MaxPermSize'
+  get_meta_size = proc do |default_size = 452|
+    (ENV['JAVA_OPTS'] || '').index(max_meta_size) || (ENV['JRUBY_OPTS'] || '').index(max_meta_size) ?
+        '' : "-J#{max_meta_size}=#{default_size}M"
+  end
+
   compile_flags = {
     :default => :int,
     :int => ["-X-C"],
     # Note: jit.background=false is implied by jit.threshold=0, but we add it here to be sure
     :fullint => ["-X-C", "-Xjit.threshold=0", "-Xjit.background=false"],
-    :jit => ["-Xjit.threshold=0", "-Xjit.background=false", "-J-XX:MaxPermSize=512M"],
-    :aot => ["-X+C", "-J-XX:MaxPermSize=512M"],
+    :jit => ["-Xjit.threshold=0", "-Xjit.background=false", get_meta_size.call()],
+    :aot => ["-X+C", get_meta_size.call()],
     :all => [:int, :jit, :aot]
   }
 
@@ -81,22 +87,22 @@ namespace :test do
   namespace :mri do
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
     task :int do
-      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -Xdebug.fullTrace -X-C'
+      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -X-C"
       ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :fullint do
-      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -Xdebug.fullTrace -X-C -Xjit.threshold=0 -Xjit.background=false'
+      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -X-C -Xjit.threshold=0 -Xjit.background=false"
       ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :jit do
-      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -Xdebug.fullTrace -J-XX:MaxPermSize=512M -Xjit.threshold=0 -Xjit.background=false'
+      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -Xjit.threshold=0 -Xjit.background=false #{get_meta_size.call()}"
       ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
     task :aot do
-      ENV['JRUBY_OPTS'] = ENV['JRUBY_OPTS'].to_s + ' -Xbacktrace.style=mri -Xdebug.fullTrace -J-XX:MaxPermSize=512M -X+C -Xjit.background=false'
+      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -X+C -Xjit.background=false #{get_meta_size.call()}"
       ruby "-r ./test/mri_test_env.rb test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} -q -- #{mri_test_files}"
     end
 
@@ -178,7 +184,7 @@ namespace :test do
     
     desc "Run the main JUnit test suite"
     task :main => 'test:compile' do
-      junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite", :maxmemory => '512M' do
+      junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite", :maxmemory => '500M' do
         jvmarg :line => '-ea'
       end
     end

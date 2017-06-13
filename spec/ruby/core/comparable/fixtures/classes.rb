@@ -1,7 +1,5 @@
 module ComparableSpecs
-  class Weird
-    include Comparable
-
+  class WithOnlyCompareDefined
     attr_reader :value
 
     def initialize(value)
@@ -11,6 +9,10 @@ module ComparableSpecs
     def <=>(other)
       self.value <=> other.value
     end
+  end
+
+  class Weird < WithOnlyCompareDefined
+    include Comparable
   end
 
   class WithoutCompareDefined

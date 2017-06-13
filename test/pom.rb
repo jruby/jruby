@@ -61,7 +61,7 @@ project 'JRuby Integration Tests' do
       'includeRubygemsInTestResources' => 'false' }
 
     if version =~ /-SNAPSHOT/
-      options[ 'jrubyVersion' ] = '1.7.12'
+      options[ 'jrubyVersion' ] = '9.1.8.0'
     else
       options[ 'libDirectory' ] = '${jruby.home}/lib'
       options[ 'jrubyJvmArgs' ] = '-Djruby.home=${jruby.home}'
@@ -138,11 +138,11 @@ project 'JRuby Integration Tests' do
     jar 'org.jruby:jruby-complete', '${project.version}', :scope => :provided
 
     plugin :antrun do
-      [ 'jruby','objectspace', 'slow' ].each do |index|
-        files = ""
-        File.open(File.join(basedir, index + '.index')) do |f|
-          f.each_line.each do |line|
-            next if line =~ /^#/ or line.strip.empty?
+      [ 'jruby', 'objectspace', 'slow' ].each do |index|
+        files = []
+        File.open(File.join(basedir, index + '.index')) do |file|
+          file.each_line do |line|
+            next if line =~ /^#/ || line.strip.empty?
             filename = "mri/#{line.chomp}"
             filename = "jruby/#{line.chomp}.rb" unless File.exist? File.join(basedir, filename)
             filename = "#{line.chomp}.rb" unless File.exist? File.join(basedir, filename)
@@ -152,9 +152,10 @@ project 'JRuby Integration Tests' do
             files << "<arg value='test/#{filename}'/>"
           end
         end
+        files = files.join('')
 
         execute_goals( 'run',
-                       :id => 'jruby_complete_jar_' + index,
+                       :id => "jruby_complete_jar_#{index}",
                        :phase => 'test',
                        :configuration => [ xml( "<target><exec dir='${jruby.home}' executable='java' failonerror='true'><arg value='-cp'/><arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/><arg value='-Djruby.aot.loadClasses=true'/><arg value='org.jruby.Main'/><arg value='-I.'/><arg value='-Itest/mri/ruby'/><arg value='-Itest/mri'/><arg value='-Itest'/><arg value='-rtest/mri_test_env'/><arg value='lib/ruby/stdlib/rake/rake_test_loader.rb'/>#{files}<arg value='-v'/></exec></target>" ) ] )
       end

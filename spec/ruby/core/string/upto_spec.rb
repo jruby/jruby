@@ -83,7 +83,7 @@ describe "String#upto" do
   describe "when no block is given" do
     it "returns an enumerator" do
       enum = "aaa".upto("baa", true)
-      enum.should be_an_instance_of(enumerator_class)
+      enum.should be_an_instance_of(Enumerator)
       enum.count.should == 26**2
     end
 

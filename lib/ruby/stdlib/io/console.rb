@@ -21,343 +21,47 @@
 
 require 'rbconfig'
 
-# Methods common to all backend impls
-class IO
-  def getch(*)
-    raw do
-      getc
+require 'io/console/common'
+
+# If Windows, always use the stub version
+if RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
+  require 'io/console/stub_console'
+else
+
+  # If Linux or BSD, try to load the native version
+  if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
+    begin
+
+      # Attempt to load the native Linux and BSD console logic
+      require 'io/console/native_console'
+      ready = true
+
+    rescue Exception => ex
+
+      warn "failed to load native console support: #{ex}" if $VERBOSE
+      ready = false
+
     end
   end
 
-  def getpass(prompt = nil)
-    wio = self == $stdin ? $stderr : self
-    wio.write(prompt) if prompt
+  # Native failed, try to use stty
+  if !ready
     begin
-      str = nil
-      noecho do
-        str = gets
-      end
-    ensure
-      puts($/)
-    end
-    str.chomp
-  end
-end
 
-# attempt to call stty; if failure, fall back on stubbed version
+      require 'io/console/stty_console'
+      ready = true
 
-if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
-
-  result = begin
-    if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd/
-      require File.join(File.dirname(__FILE__), 'bsd_console')
-
-    elsif RbConfig::CONFIG['host_os'].downcase =~ /linux/
-      require File.join(File.dirname(__FILE__), 'linux_console')
-
-    else
-      raise LoadError.new("no native io/console support")
-    end
-
-    class IO
-      def ttymode
-        termios = LibC::Termios.new
-        if LibC.tcgetattr(self.fileno, termios) != 0
-          raise SystemCallError.new("tcgetattr", FFI.errno)
-        end
-
-        if block_given?
-          yield tmp = termios.dup
-          if LibC.tcsetattr(self.fileno, LibC::TCSADRAIN, tmp) != 0
-            raise SystemCallError.new("tcsetattr", FFI.errno)
-          end
-        end
-        termios
-      end
-      private :ttymode
-
-      def ttymode_yield(block, &setup)
-        begin
-          orig_termios = ttymode { |t| setup.call(t) }
-          block.call(self)
-        ensure
-          if orig_termios && LibC.tcsetattr(self.fileno, LibC::TCSADRAIN, orig_termios) != 0
-            raise SystemCallError.new("tcsetattr", FFI.errno)
-          end
-        end
-      end
-      private :ttymode_yield
-
-      TTY_RAW = Proc.new do |t|
-        LibC.cfmakeraw(t)
-        t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
-      end
-
-      def raw(*, &block)
-        ttymode_yield(block, &TTY_RAW)
-      end
-
-      def raw!(*)
-        ttymode(&TTY_RAW)
-      end
-
-      TTY_COOKED = Proc.new do |t|
-        t[:c_iflag] |= (LibC::BRKINT|LibC::ISTRIP|LibC::ICRNL|LibC::IXON)
-        t[:c_oflag] |= LibC::OPOST
-        t[:c_lflag] |= (LibC::ECHO|LibC::ECHOE|LibC::ECHOK|LibC::ECHONL|LibC::ICANON|LibC::ISIG|LibC::IEXTEN)
-      end
-
-      def cooked(*, &block)
-        ttymode_yield(block, &TTY_COOKED)
-      end
-
-      def cooked!(*)
-        ttymode(&TTY_COOKED)
-      end
-
-      TTY_ECHO = LibC::ECHO | LibC::ECHOE | LibC::ECHOK | LibC::ECHONL
-      def echo=(echo)
-        ttymode do |t|
-          if echo
-            t[:c_lflag] |= TTY_ECHO
-          else
-            t[:c_lflag] &= ~TTY_ECHO
-          end
-        end
-      end
-
-      def echo?
-        (ttymode[:c_lflag] & (LibC::ECHO | LibC::ECHONL)) != 0
-      end
-
-      def noecho(&block)
-        ttymode_yield(block) { |t| t[:c_lflag] &= ~(TTY_ECHO) }
-      end
-
-      def winsize
-        ws = LibC::Winsize.new
-        if LibC.ioctl(self.fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
-          raise SystemCallError.new("ioctl(TIOCGWINSZ)", FFI.errno)
-        end
-        [ ws[:ws_row], ws[:ws_col] ]
-      end
-
-      def winsize=(size)
-        ws = LibC::Winsize.new
-        if LibC.ioctl(self.fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
-          raise SystemCallError.new("ioctl(TIOCGWINSZ)", FFI.errno)
-        end
-
-        ws[:ws_row] = size[0]
-        ws[:ws_col] = size[1]
-        if LibC.ioctl(self.fileno, LibC::TIOCSWINSZ, :pointer, ws.pointer) != 0
-          raise SystemCallError.new("ioctl(TIOCSWINSZ)", FFI.errno)
-        end
-      end
-
-      def iflush
-        raise SystemCallError.new("tcflush(TCIFLUSH)", FFI.errno) unless LibC.tcflush(self.fileno, LibC::TCIFLUSH) == 0
-      end
-
-      def oflush
-        raise SystemCallError.new("tcflush(TCOFLUSH)", FFI.errno) unless LibC.tcflush(self.fileno, LibC::TCOFLUSH) == 0
-      end
-
-      def ioflush
-        raise SystemCallError.new("tcflush(TCIOFLUSH)", FFI.errno) unless LibC.tcflush(self.fileno, LibC::TCIOFLUSH) == 0
-      end
-
-      # TODO: Windows version uses "conin$" and "conout$" instead of /dev/tty
-      def self.console(sym = nil, *args)
-        raise TypeError, "expected Symbol, got #{sym.class}" unless sym.nil? || sym.kind_of?(Symbol)
-
-        # klass = self == IO ? File : self
-        if defined?(@console) # using ivar instead of hidden const as in MRI
-          con = @console
-          # MRI checks IO internals : (!RB_TYPE_P(con, T_FILE) || (!(fptr = RFILE(con)->fptr) || GetReadFD(fptr) == -1))
-          if !con.kind_of?(File) || (con.kind_of?(IO) && (con.closed? || !FileTest.readable?(con)))
-            remove_instance_variable :@console
-            con = nil
-          end
-        end
-
-        if sym
-          if sym == :close
-            if con
-              con.close
-              remove_instance_variable :@console if defined?(@console)
-            end
-            return nil
-          end
-        end
-
-        if !con && $stdin.tty?
-          con = File.open('/dev/tty', 'r+')
-          con.sync = true
-          @console = con
-        end
-
-        return con.send(sym, *args) if sym
-        return con
-      end
-    end
-    true
-  rescue Exception => ex
-    warn "failed to load native console support: #{ex}" if $VERBOSE
-    begin
-      `stty 2> /dev/null`
-      $?.exitstatus != 0
     rescue Exception
-      nil
+
+      warn "failed to load stty console support: #{ex}" if $VERBOSE
+      ready = false
+
     end
   end
-elsif RbConfig::CONFIG['host_os'] !~ /(mswin)|(win32)|(ming)/
-  result = begin
-    old_stderr = $stderr.dup
-    $stderr.reopen('/dev/null')
-    `stty -a`
-    $?.exitstatus != 0
-  rescue Exception
-    nil
-  ensure
-    $stderr.reopen(old_stderr)
-  end
-end
 
-if !result || RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
-  warn "io/console not supported; tty will not be manipulated" if $VERBOSE
-
-  # Windows version is always stubbed for now
-  class IO
-    def raw(*)
-      yield self
-    end
-
-    def raw!(*)
-    end
-
-    def cooked(*)
-      yield self
-    end
-
-    def cooked!(*)
-    end
-
-    def echo=(echo)
-    end
-
-    def echo?
-      true
-    end
-
-    def noecho
-      yield self
-    end
-
-    def winsize
-      [25, 80]
-    end
-
-    def winsize=(size)
-    end
-
-    def iflush
-    end
-
-    def oflush
-    end
-
-    def ioflush
-    end
-  end
-elsif !IO.private_method_defined? :ttymode
-  warn "io/console on JRuby shells out to stty for most operations"
-
-  # Non-Windows assumes stty command is available
-  class IO
-    if RbConfig::CONFIG['host_os'].downcase =~ /linux/ && File.exists?("/proc/#{Process.pid}/fd")
-      def stty(*args)
-        `stty #{args.join(' ')} < /proc/#{Process.pid}/fd/#{fileno}`
-      end
-    else
-      def stty(*args)
-        `stty #{args.join(' ')}`
-      end
-    end
-
-    def raw(*)
-      saved = stty('-g')
-      stty('raw')
-      yield self
-    ensure
-      stty(saved)
-    end
-
-    def raw!(*)
-      stty('raw')
-    end
-
-    def cooked(*)
-      saved = stty('-g')
-      stty('-raw')
-      yield self
-    ensure
-      stty(saved)
-    end
-
-    def cooked!(*)
-      stty('-raw')
-    end
-
-    def echo=(echo)
-      stty(echo ? 'echo' : '-echo')
-    end
-
-    def echo?
-      (stty('-a') =~ / -echo /) ? false : true
-    end
-
-    def noecho
-      saved = stty('-g')
-      stty('-echo')
-      yield self
-    ensure
-      stty(saved)
-    end
-
-    # Not all systems return same format of stty -a output
-    IEEE_STD_1003_2 = '(?<rows>\d+) rows; (?<columns>\d+) columns'
-    UBUNTU = 'rows (?<rows>\d+); columns (?<columns>\d+)'
-
-    def winsize
-      match = stty('-a').match(/#{IEEE_STD_1003_2}|#{UBUNTU}/)
-      [match[:rows].to_i, match[:columns].to_i]
-    end
-
-    def winsize=(size)
-      stty("rows #{size[0]} cols #{size[1]}")
-    end
-
-    def iflush
-    end
-
-    def oflush
-    end
-
-    def ioflush
-    end
-  end
-end
-
-module IO::GenericReadable
-  def getch(*)
-    getc
+  # If still not ready, just use stubbed version
+  if !ready
+    require 'io/console/stub_console'
   end
 
-  def getpass(prompt = nil)
-    write(prompt) if prompt
-    str = gets.chomp
-    puts($/)
-    str
-  end
 end

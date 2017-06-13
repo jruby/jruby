@@ -6,7 +6,7 @@ describe :date_commercial, shared: true do
     d.day.should == 1
   end
 
-  it "Creates a Date for the monday in the year and week given" do
+  it "creates a Date for the monday in the year and week given" do
     d = Date.send(@method, 2000, 1)
     d.year.should == 2000
     d.month.should == 1
@@ -14,7 +14,7 @@ describe :date_commercial, shared: true do
     d.cwday.should == 1
   end
 
-  it "Creates a Date for the correct day given the year, week and day number" do
+  it "creates a Date for the correct day given the year, week and day number" do
     d = Date.send(@method, 2004, 1, 1)
     d.year.should == 2003
     d.month.should == 12

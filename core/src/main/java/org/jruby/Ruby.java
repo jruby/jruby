@@ -648,7 +648,7 @@ public final class Ruby implements Constantizable {
     public IRubyObject runWithGetsLoop(RootNode scriptNode, boolean printing, boolean processLineEnds, boolean split) {
         ThreadContext context = getCurrentContext();
 
-        // We do not want special scope types in IR so we ammend the AST tree to contain the elements representing
+        // We do not want special scope types in IR so we amend the AST tree to contain the elements representing
         // a while gets; ...your code...; end
         scriptNode = addGetsLoop(scriptNode, printing, processLineEnds, split);
 
@@ -3136,6 +3136,26 @@ public final class Ruby implements Constantizable {
         return proc;
     }
 
+    /**
+     * It is possible for looping or repeated execution to encounter the same END
+     * block multiple times.  Rather than store extra runtime state we will just
+     * make sure it is not already registered.  at_exit by contrast can push the
+     * same block many times (and should use pushExistBlock).
+     */
+    public void pushEndBlock(RubyProc proc) {
+        if (alreadyRegisteredEndBlock(proc) != null) return;
+        pushExitBlock(proc);
+    }
+
+    private RubyProc alreadyRegisteredEndBlock(RubyProc newProc) {
+        Block block = newProc.getBlock();
+
+        for (RubyProc proc: atExitBlocks) {
+            if (block.equals(proc.getBlock())) return proc;
+        }
+        return null;
+    }
+
     // use this for JRuby-internal finalizers
     public void addInternalFinalizer(Finalizable finalizer) {
         synchronized (internalFinalizersMutex) {
@@ -3702,6 +3722,10 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newErrnoENETUNREACHError() {
         return newRaiseException(getErrno().getClass("ENETUNREACH"), null);
+    }
+
+    public RaiseException newErrnoEMSGSIZEError() {
+        return newRaiseException(getErrno().getClass("EMSGSIZE"), null);
     }
 
     public RaiseException newIndexError(String message) {

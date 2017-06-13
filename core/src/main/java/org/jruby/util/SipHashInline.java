@@ -42,7 +42,7 @@ public class SipHashInline {
             // MSGROUND {
                 v3 ^= m;
 
-                /* SIPROUND wih hand reordering
+                /* SIPROUND with hand reordering
                  *
                  * SIPROUND in siphash24.c:
                  *   A: v0 += v1;

@@ -94,7 +94,7 @@ describe "BigDecimal#divmod" do
     BigDecimal('-2').divmod(BigDecimal('1')).should == [-2, 0]
   end
 
-  it "Can be reversed with * and +" do
+  it "can be reversed with * and +" do
     # Example taken from BigDecimal documentation
     a = BigDecimal.new("42")
     b = BigDecimal.new("9")

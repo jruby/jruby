@@ -34,7 +34,7 @@ with_feature :encoding do
       end
     end
 
-    platform_is os: [:bsd, :darwin, :linux] do
+    platform_is :bsd, :darwin, :linux do
       it "is unaffected by assigning to ENV['LC_ALL'] in the same process" do
         old_charmap = Encoding.locale_charmap
         old_lc_all = ENV['LC_ALL']

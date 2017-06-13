@@ -105,13 +105,7 @@ describe "Net::HTTP::Options" do
   end
 
   it "has no Respone Body" do
-    ruby_version_is ''...'2.2' do
-      Net::HTTP::Options::RESPONSE_HAS_BODY.should be_false
-    end
-
-    ruby_version_is '2.2' do
-      Net::HTTP::Options::RESPONSE_HAS_BODY.should be_true
-    end
+    Net::HTTP::Options::RESPONSE_HAS_BODY.should be_true
   end
 end
 

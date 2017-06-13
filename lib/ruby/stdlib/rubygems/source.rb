@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'uri'
+autoload :URI, 'uri'
 require 'fileutils'
 
 ##
@@ -67,7 +67,11 @@ class Gem::Source
 
       return -1 if !other.uri
 
-      @uri.to_s <=> other.uri.to_s
+      # Returning 1 here ensures that when sorting a list of sources, the
+      # original ordering of sources supplied by the user is preserved.
+      return 1 unless @uri.to_s == other.uri.to_s
+
+      0
     else
       nil
     end
@@ -232,4 +236,3 @@ require 'rubygems/source/specific_file'
 require 'rubygems/source/local'
 require 'rubygems/source/lock'
 require 'rubygems/source/vendor'
-

@@ -41,11 +41,13 @@ describe "Enumerable#find_index" do
   end
 
   it "ignores the block if an argument is given" do
-    @numerous.find_index(-1) {|e| true }.should == nil
+    -> {
+      @numerous.find_index(-1) {|e| true }.should == nil
+    }.should complain(/given block not used/)
   end
 
   it "returns an Enumerator if no block given" do
-    @numerous.find_index.should be_an_instance_of(enumerator_class)
+    @numerous.find_index.should be_an_instance_of(Enumerator)
   end
 
   it "uses #== for testing equality" do

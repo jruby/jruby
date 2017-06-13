@@ -71,11 +71,6 @@ describe MSpecRun, "#options" do
     @script.options @argv
   end
 
-  it "enables the background option" do
-    @options.should_receive(:background)
-    @script.options @argv
-  end
-
   it "enables the unguarded option" do
     @options.should_receive(:unguarded)
     @script.options @argv
@@ -156,6 +151,7 @@ describe MSpecRun, "#run" do
       @spec_dir+"/one_spec.rb",
       @spec_dir+"/two_spec.rb"]
     @script.options @file_patterns
+    MSpec.stub :process
   end
 
   it "registers the tags patterns" do

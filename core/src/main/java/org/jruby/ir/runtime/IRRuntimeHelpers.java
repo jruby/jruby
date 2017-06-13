@@ -15,6 +15,8 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRMetaClassBody;
+import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Interp;
@@ -38,8 +40,6 @@ import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
-import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
@@ -49,6 +49,7 @@ import org.objectweb.asm.Type;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
 import java.util.Map;
 
 public class IRRuntimeHelpers {
@@ -79,74 +80,53 @@ public class IRRuntimeHelpers {
         return blockType == Block.Type.PROC;
     }
 
-    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean maybeLambda, Block.Type blockType) {
-        if (IRRuntimeHelpers.inLambda(blockType)) return;
+    // FIXME: ENEBO: If we inline this instr then dynScope will be for the inlined dynscope and that scope could be many things.
+    //   CheckForLJEInstr.clone should convert this as appropriate based on what it is being inlined into.
+    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean definedWithinMethod, Block.Type blockType) {
+        if (inLambda(blockType)) return; // break/return in lambda unconditionally a return.
 
-        StaticScope scope = dynScope.getStaticScope();
-        IRScopeType scopeType = scope.getScopeType();
-        boolean inDefineMethod = false;
-        while (dynScope != null) {
-            StaticScope ss = dynScope.getStaticScope();
-            // SSS FIXME: Why is scopeType empty? Looks like this static-scope
-            // was not associated with the AST scope that got converted to IR.
-            //
-            // Ruby code: lambda { Thread.new { return }.join }.call
-            //
-            // To be investigated.
-            IRScopeType ssType = ss.getScopeType();
-            if (ssType != null) {
-                if (ssType.isMethodType()) {
-                    break;
-                } else if (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) {
-                    inDefineMethod = true;
-                    break;
-                }
-            }
-            dynScope = dynScope.getParentScope();
-        }
+        dynScope = getContainingMethodsDynamicScope(dynScope);
+        boolean inDefineMethod = dynScope != null &&  dynScope.getStaticScope().isArgumentScope() && dynScope.getStaticScope().getScopeType().isBlock();
 
-        // SSS FIXME: Why is scopeType empty? Looks like this static-scope
-        // was not associated with the AST scope that got converted to IR.
-        //
-        // Ruby code: lambda { Thread.new { return }.join }.call
-        //
-        // To be investigated.
-        if (   (scopeType == null || (!inDefineMethod && scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT))
-            && (maybeLambda || !context.scopeExistsOnCallStack(dynScope)))
-        {
-            // Cannot return from the call that we have long since exited.
+        // Is our proc in something unreturnable (e.g. module/class) or has it migrated (lexical parent method not in stack any more)?
+        if (!definedWithinMethod && !inDefineMethod || !context.scopeExistsOnCallStack(dynScope)) {
             throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
     }
 
-    /*
-     * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
-     */
+    // Create a jump for a non-local return which will return from nearest lambda (which may be itself) or method.
     public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, IRubyObject returnValue) {
         if (IRRuntimeHelpers.inLambda(blockType)) throw new IRWrappedLambdaReturnValue(returnValue);
 
-        // If not in a lambda, check if this was a non-local return
-        while (dynScope != null) {
-            StaticScope ss = dynScope.getStaticScope();
-            // SSS FIXME: Why is scopeType empty? Looks like this static-scope
-            // was not associated with the AST scope that got converted to IR.
-            //
-            // Ruby code: lambda { Thread.new { return }.join }.call
-            //
-            // To be investigated.
-            IRScopeType ssType = ss.getScopeType();
-            if (ssType != null) {
-                if (ssType.isMethodType() ||
-                        (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) ||
-                        (ssType.isClosureType() && dynScope.isLambda())) {
-                    break;
-                }
-            }
-            dynScope = dynScope.getParentScope();
+        throw IRReturnJump.create(getContainingMethodOrLambdasDynamicScope(dynScope), returnValue);
+    }
+
+    // Finds dynamicscope method this proc exists in or null if it is not within one.
+    private static DynamicScope getContainingMethodsDynamicScope(DynamicScope dynScope) {
+        for (; dynScope != null; dynScope = dynScope.getParentScope()) {
+            StaticScope scope = dynScope.getStaticScope();
+            IRScopeType scopeType = scope.getScopeType();
+
+            // We hit a method boundary (actual method or a define_method closure).
+            if (scopeType.isMethodType() || scopeType.isBlock() && scope.isArgumentScope()) return dynScope;
         }
 
-        // methodtoReturnFrom will not be -1 for explicit returns from class/module/sclass bodies
-        throw IRReturnJump.create(dynScope, returnValue);
+        return null;
+    }
+
+    // Finds dynamicscope method or lambda this proc exists in or null if it is not within one.
+    private static DynamicScope getContainingMethodOrLambdasDynamicScope(DynamicScope dynScope) {
+        // If not in a lambda, check if this was a non-local return
+        for (; dynScope != null; dynScope = dynScope.getParentScope()) {
+            StaticScope staticScope = dynScope.getStaticScope();
+            IRScope scope = staticScope.getIRScope();
+
+            // 1) method 2) lambda 3) closure (define_method) for zsuper
+            if (scope instanceof IRMethod ||
+                    (scope instanceof IRClosure && (dynScope.isLambda() || staticScope.isArgumentScope()))) return dynScope;
+        }
+
+        return null;
     }
 
     @JIT
@@ -157,9 +137,9 @@ public class IRRuntimeHelpers {
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
-            // If we are in the method scope we are supposed to return from, stop propagating.
+            // If we are in the method scope we are supposed to return from, stop p<ropagating.
             if (rj.methodToReturnFrom == dynScope) {
-                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope + " matching dynscope? " + (rj.methodToReturnFrom == dynScope));
+                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
                 return (IRubyObject) rj.returnValue;
             }
 
@@ -168,52 +148,46 @@ public class IRRuntimeHelpers {
         }
     }
 
+    // Is the current dynamicScope we pass in representing a closure (or eval which is impld internally as closure)?
+    private static IRScopeType ensureScopeIsClosure(ThreadContext context, DynamicScope dynamicScope) {
+        IRScopeType scopeType = dynamicScope.getStaticScope().getScopeType();
+
+        // Error -- breaks can only be initiated in closures
+        if (!scopeType.isClosureType()) throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+
+        return scopeType;
+    }
+
+    // FIXME: When we recompile lambdas we can eliminate this binary code path and we can emit as a NONLOCALRETURN directly.
     public static IRubyObject initiateBreak(ThreadContext context, DynamicScope dynScope, IRubyObject breakValue, Block.Type blockType) throws RuntimeException {
-        if (inLambda(blockType)) {
-            // Wrap the return value in an exception object
-            // and push it through the break exception paths so
-            // that ensures are run, frames/scopes are popped
-            // from runtime stacks, etc.
-            throw new IRWrappedLambdaReturnValue(breakValue);
-        } else {
-            StaticScope scope = dynScope.getStaticScope();
-            IRScopeType scopeType = scope.getScopeType();
-            if (!scopeType.isClosureType()) {
-                // Error -- breaks can only be initiated in closures
-                throw IRException.BREAK_LocalJumpError.getException(context.runtime);
-            }
+        // Wrap the return value in an exception object and push it through the break exception
+        // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
+        if (inLambda(blockType)) throw new IRWrappedLambdaReturnValue(breakValue);
 
-            IRBreakJump bj = IRBreakJump.create(dynScope.getParentScope(), breakValue);
-            if (scopeType == IRScopeType.EVAL_SCRIPT) {
-                // If we are in an eval, record it so we can account for it
-                bj.breakInEval = true;
-            }
+        IRScopeType scopeType = ensureScopeIsClosure(context, dynScope);
 
-            // Start the process of breaking through the intermediate scopes
-            throw bj;
-        }
+        // Raise a break jump so we can bubble back down the stack to the appropriate place to break from.
+        throw IRBreakJump.create(dynScope.getParentScope(), breakValue, scopeType.isEval()); // weirdly evals are impld as closures...yes yes.
+    }
+
+    // Are we within the scope where we want to return the value we are passing down the stack?
+    private static boolean inReturnScope(Block.Type blockType, IRReturnJump exception, DynamicScope dynScope) {
+        // blockType == null is any non-block scope but in this case it is always a method based on how we emit instrs.
+        return (blockType == null || inLambda(blockType)) && exception.methodToReturnFrom == dynScope;
     }
 
     @JIT
     public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
         if (exc instanceof IRWrappedLambdaReturnValue) {
-            // Wrap the return value in an exception object
-            // and push it through the nonlocal return exception paths so
-            // that ensures are run, frames/scopes are popped
-            // from runtime stacks, etc.
-            return ((IRWrappedLambdaReturnValue)exc).returnValue;
-        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
-            try {
-                // Ignore non-local return processing in non-lambda blocks.
-                // Methods have a null blocktype
-                return handleNonlocalReturn(scope, dynScope, exc, blockType);
-            } catch (Throwable e) {
-                context.setSavedExceptionInLambda(e);
-                return null;
-            }
+            // Wrap the return value in an exception object and push it through the nonlocal return exception
+            // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
+            return ((IRWrappedLambdaReturnValue) exc).returnValue;
+        } else if (exc instanceof IRReturnJump && inReturnScope(blockType, (IRReturnJump) exc, dynScope)) {
+            if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
+            return (IRubyObject) ((IRReturnJump) exc).returnValue;
         } else {
             // Propagate the exception
-            context.setSavedExceptionInLambda((Throwable)exc);
+            context.setSavedExceptionInLambda((Throwable) exc);
             return null;
         }
     }
@@ -242,16 +216,11 @@ public class IRRuntimeHelpers {
 
         IRBreakJump bj = (IRBreakJump)bjExc;
         if (bj.breakInEval) {
-            // If the break was in an eval, we pretend as if it was in the containing scope
-            StaticScope scope = dynScope.getStaticScope();
-            IRScopeType scopeType = scope.getScopeType();
-            if (!scopeType.isClosureType()) {
-                // Error -- breaks can only be initiated in closures
-                throw IRException.BREAK_LocalJumpError.getException(context.runtime);
-            } else {
-                bj.breakInEval = false;
-                throw bj;
-            }
+            // If the break was in an eval, we pretend as if it was in the containing scope.
+            ensureScopeIsClosure(context, dynScope);
+
+            bj.breakInEval = false;
+            throw bj;
         } else if (bj.scopeToReturnTo == dynScope) {
             // Done!! Hurray!
             if (isDebug()) System.out.println("---> Break reached target in scope: " + dynScope);
@@ -587,17 +556,49 @@ public class IRRuntimeHelpers {
     }
 
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
-        keywordArgs.visitAll(context, CheckUnwantedKeywordsVisitor, scope);
+        // we do an inexpensive non-gathering scan first to see if there's a bad keyword
+        try {
+            keywordArgs.visitAll(context, CheckUnwantedKeywordsVisitor, scope);
+        } catch (InvalidKeyException ike) {
+            // there's a bad keyword; perform more expensive scan to gather all bad names
+            GatherUnwantedKeywordsVisitor visitor = new GatherUnwantedKeywordsVisitor();
+            keywordArgs.visitAll(context, visitor, scope);
+            visitor.raiseIfError(context);
+        }
     }
 
+    private static class InvalidKeyException extends RuntimeException {}
+    private static final InvalidKeyException INVALID_KEY_EXCEPTION = new InvalidKeyException();
     private static final RubyHash.VisitorWithState<StaticScope> CheckUnwantedKeywordsVisitor = new RubyHash.VisitorWithState<StaticScope>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
-            if (!scope.keywordExists(key.asJavaString())) {
-                throw context.runtime.newArgumentError("unknown keyword: " + key.asJavaString());
+            String javaName = key.asJavaString();
+            if (!scope.keywordExists(javaName)) {
+                throw INVALID_KEY_EXCEPTION;
             }
         }
     };
+
+    private static class GatherUnwantedKeywordsVisitor extends RubyHash.VisitorWithState<StaticScope> {
+        ArrayList invalidKwargs;
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
+            String javaName = key.asJavaString();
+            if (!scope.keywordExists(javaName)) {
+                if (invalidKwargs == null) invalidKwargs = new ArrayList();
+                invalidKwargs.add(javaName);
+            }
+        }
+
+        public void raiseIfError(ThreadContext context) {
+            if (invalidKwargs != null) {
+                String invalidKwargs = this.invalidKwargs.toString();
+                throw context.runtime.newArgumentError(
+                        (this.invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ")
+                                + invalidKwargs.substring(1, invalidKwargs.length() - 1));
+            }
+        }
+    }
 
     public static IRubyObject match3(ThreadContext context, RubyRegexp regexp, IRubyObject argValue) {
         if (argValue instanceof RubyString) {
@@ -695,14 +696,10 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
-        boolean flag = false;
+        boolean defined = frameName != null && frameClass != null &&
+                Helpers.findImplementerIfNecessary(receiver.getMetaClass(), frameClass).getSuperClass().isMethodBound(frameName, false);
 
-        if (frameName != null) {
-            if (frameClass != null) {
-                flag = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), frameClass).getSuperClass().isMethodBound(frameName, false);
-            }
-        }
-        return flag ? definedMessage : context.nil;
+        return defined ? definedMessage : context.nil;
     }
 
     public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
@@ -1558,7 +1555,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static void pushExitBlock(ThreadContext context, Block blk) {
-        context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
+        context.runtime.pushEndBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
     }
 
     @JIT

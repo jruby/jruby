@@ -39,7 +39,7 @@ describe "ObjectSpace.each_object" do
     new_obj = klass.new
 
     counter = ObjectSpace.each_object(klass)
-    counter.should be_an_instance_of(enumerator_class)
+    counter.should be_an_instance_of(Enumerator)
     counter.each{}.should == 1
     # this is needed to prevent the new_obj from being GC'd too early
     new_obj.should_not == nil

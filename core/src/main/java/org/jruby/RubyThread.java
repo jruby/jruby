@@ -669,6 +669,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return rubyThread;
     }
 
+    protected static RubyThread startWaiterThread(final Ruby runtime, int pid, Block block) {
+        final IRubyObject waiter = runtime.getClassFromPath("Process::Waiter");
+        final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) waiter);
+        rubyThread.op_aset(runtime.newSymbol("pid"), runtime.newFixnum(pid));
+        rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
+        return rubyThread;
+    }
+
     public synchronized void cleanTerminate(IRubyObject result) {
         finalResult = result;
     }
@@ -1781,7 +1789,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             synchronized (selectable.blockingLock()) {
                 boolean oldBlocking = selectable.isBlocking();
 
-                SelectionKey key = null;
+                SelectionKey key;
                 try {
                     selectable.configureBlocking(false);
 

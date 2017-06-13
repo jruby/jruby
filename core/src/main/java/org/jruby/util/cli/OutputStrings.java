@@ -95,7 +95,7 @@ public class OutputStrings {
         "  -X+CIR        force compilation and use IR runtime\n" +
         "  -X+JIR        JIT compilation and use IR runtime\n" +
         "  -Xsubstring?  list options that contain substring in their name\n" +
-        "  -Xprefix...   list options that are prefixed wtih prefix\n" ;
+        "  -Xprefix...   list options that are prefixed with prefix\n" ;
     }
 
     public static String getPropertyHelp() {

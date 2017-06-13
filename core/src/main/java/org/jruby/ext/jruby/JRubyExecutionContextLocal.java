@@ -82,7 +82,6 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
             return context.runtime.getNil();
         }
     }
-    private static final IRubyObject[] EMPTY_ARGS = new IRubyObject[]{};
 
     @JRubyMethod(name = "value", required = 0)
     public IRubyObject getValue(ThreadContext context) {
@@ -96,7 +95,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
             // pre-set for the sake of terminating recursive calls
             contextVariables.put(this, context.runtime.getNil());
             final IRubyObject new_value;
-            new_value = default_proc.call(context, EMPTY_ARGS, null, Block.NULL_BLOCK);
+            new_value = default_proc.call(context, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
             contextVariables.put(this, new_value);
             return new_value;
         } else {

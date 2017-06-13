@@ -201,7 +201,9 @@ describe 'Optional variable assignments' do
 
     it 'with &&= assignments' do
       Object::A = 20
-      Object::A &&= 10
+      -> {
+        Object::A &&= 10
+      }.should complain(/already initialized constant/)
       Object::A.should == 10
     end
 
@@ -211,7 +213,9 @@ describe 'Optional variable assignments' do
 
     it 'with operator assignments' do
       Object::A = 20
-      Object::A += 10
+      -> {
+        Object::A += 10
+      }.should complain(/already initialized constant/)
       Object::A.should == 30
     end
 

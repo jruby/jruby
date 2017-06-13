@@ -42,7 +42,7 @@ describe "Vector.each2" do
 
     it "returns an enumerator if no block given" do
       enum = @v.each2(@v2)
-      enum.should be_an_instance_of(enumerator_class)
+      enum.should be_an_instance_of(Enumerator)
       enum.to_a.should == [[1, 4], [2, 5], [3, 6]]
     end
   end

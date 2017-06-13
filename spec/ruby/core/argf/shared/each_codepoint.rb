@@ -28,7 +28,7 @@ describe :argf_each_codepoint, shared: true do
 
   it "returns an Enumerator when passed no block" do
     argf @filenames do
-      @argf.send(@method).should be_an_instance_of(enumerator_class)
+      @argf.send(@method).should be_an_instance_of(Enumerator)
     end
   end
 
@@ -41,7 +41,7 @@ describe :argf_each_codepoint, shared: true do
   describe "when no block is given" do
     it "returns an Enumerator" do
       argf @filenames do
-        @argf.send(@method).should be_an_instance_of(enumerator_class)
+        @argf.send(@method).should be_an_instance_of(Enumerator)
       end
     end
 

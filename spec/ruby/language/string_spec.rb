@@ -9,13 +9,7 @@ describe "Ruby character strings" do
   before :each do
     @ip = 'xxx' # used for interpolation
     $ip = 'xxx'
-    @@ip = 'xxx'
   end
-
-  after :all do
-    Object.__send__(:remove_class_variable, :@@ip)
-  end
-
 
   it "don't get interpolated when put in single quotes" do
     '#{@ip}'.should == '#{@ip}'
@@ -31,10 +25,6 @@ describe "Ruby character strings" do
 
   it "interpolate global variables just with the # character" do
     "#$ip".should == 'xxx'
-  end
-
-  it "interpolate class variables just with the # character" do
-    "#@@ip".should == 'xxx'
   end
 
   it "allows underscore as part of a variable name in a simple interpolation" do
@@ -58,9 +48,6 @@ describe "Ruby character strings" do
     @ip.taint
     "#@ip".tainted?.should be_true
 
-    @@ip.taint
-    "#@@ip".tainted?.should be_true
-
     $ip.taint
     "#$ip".tainted?.should be_true
   end
@@ -70,9 +57,6 @@ describe "Ruby character strings" do
 
     @ip.untrust
     "#@ip".untrusted?.should be_true
-
-    @@ip.untrust
-    "#@@ip".untrusted?.should be_true
 
     $ip.untrust
     "#$ip".untrusted?.should be_true

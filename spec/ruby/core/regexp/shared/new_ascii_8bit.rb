@@ -98,24 +98,30 @@ describe :regexp_new_string_ascii_8bit, shared: true do
   end
 
   it "ignores the third argument if it is 'e' or 'euc' (case-insensitive)" do
-    Regexp.send(@method, 'Hi', nil, 'e').encoding.should == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'euc').encoding.should == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'E').encoding.should == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'EUC').encoding.should == Encoding::US_ASCII
+    lambda {
+      Regexp.send(@method, 'Hi', nil, 'e').encoding.should == Encoding::US_ASCII
+      Regexp.send(@method, 'Hi', nil, 'euc').encoding.should == Encoding::US_ASCII
+      Regexp.send(@method, 'Hi', nil, 'E').encoding.should == Encoding::US_ASCII
+      Regexp.send(@method, 'Hi', nil, 'EUC').encoding.should == Encoding::US_ASCII
+    }.should complain(/encoding option is ignored/)
   end
 
   it "ignores the third argument if it is 's' or 'sjis' (case-insensitive)" do
-    Regexp.send(@method, 'Hi', nil, 's').encoding.should == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'sjis').encoding.should == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'S').encoding.should == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'SJIS').encoding.should == Encoding::US_ASCII
+    lambda {
+      Regexp.send(@method, 'Hi', nil, 's').encoding.should == Encoding::US_ASCII
+      Regexp.send(@method, 'Hi', nil, 'sjis').encoding.should == Encoding::US_ASCII
+      Regexp.send(@method, 'Hi', nil, 'S').encoding.should == Encoding::US_ASCII
+      Regexp.send(@method, 'Hi', nil, 'SJIS').encoding.should == Encoding::US_ASCII
+    }.should complain(/encoding option is ignored/)
   end
 
   it "ignores the third argument if it is 'u' or 'utf8' (case-insensitive)" do
-    Regexp.send(@method, 'Hi', nil, 'u').encoding.should == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'utf8').encoding.should == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'U').encoding.should == Encoding::US_ASCII
-    Regexp.send(@method, 'Hi', nil, 'UTF8').encoding.should == Encoding::US_ASCII
+    lambda {
+      Regexp.send(@method, 'Hi', nil, 'u').encoding.should == Encoding::US_ASCII
+      Regexp.send(@method, 'Hi', nil, 'utf8').encoding.should == Encoding::US_ASCII
+      Regexp.send(@method, 'Hi', nil, 'U').encoding.should == Encoding::US_ASCII
+      Regexp.send(@method, 'Hi', nil, 'UTF8').encoding.should == Encoding::US_ASCII
+    }.should complain(/encoding option is ignored/)
   end
 
   it "uses US_ASCII encoding if third argument is 'n' or 'none' (case insensitive) and only ascii characters" do
@@ -516,7 +522,10 @@ describe :regexp_new_regexp_ascii_8bit, shared: true do
   end
 
   it "does not honour options given as additional arguments" do
-    r = Regexp.send @method, /hi/, Regexp::IGNORECASE
+    r = nil
+    lambda {
+      r = Regexp.send @method, /hi/, Regexp::IGNORECASE
+    }.should complain(/flags ignored/)
     (r.options & Regexp::IGNORECASE).should == 0
   end
 

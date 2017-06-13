@@ -338,19 +338,16 @@ ripper/test_scanner_events.rb
 scanf/test_scanf.rb
 scanf/test_scanfblocks.rb
 
-# No AddrInfo
-#socket/test_addrinfo.rb
+socket/test_addrinfo.rb
 # No Socket::AncillaryData
 #socket/test_ancdata.rb
 socket/test_basicsocket.rb
 socket/test_nonblock.rb
 socket/test_socket.rb
-# No Socket::Option
-#socket/test_sockopt.rb
-# 100% fail
-#socket/test_tcp.rb
-#socket/test_udp.rb
-#socket/test_unix.rb
+socket/test_sockopt.rb
+socket/test_tcp.rb
+socket/test_udp.rb
+socket/test_unix.rb
 
 stringio/test_stringio.rb
 

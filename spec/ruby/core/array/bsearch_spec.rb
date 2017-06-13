@@ -3,7 +3,7 @@ require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Array#bsearch" do
   it "returns an Enumerator when not passed a block" do
-    [1].bsearch.should be_an_instance_of(enumerator_class)
+    [1].bsearch.should be_an_instance_of(Enumerator)
   end
 
   it_behaves_like :enumeratorized_with_unknown_size, :bsearch, [1,2,3]

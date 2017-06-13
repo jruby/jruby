@@ -7,19 +7,14 @@ describe "StringScanner#peep" do
 
   it "warns in verbose mode that the method is obsolete" do
     s = StringScanner.new("abc")
-    begin
-      old = $VERBOSE
-      lambda {
-        $VERBOSE = true
-        s.peep(1)
-      }.should complain(/peep.*obsolete.*peek/)
+    lambda {
+      $VERBOSE = true
+      s.peep(1)
+    }.should complain(/peep.*obsolete.*peek/)
 
-      lambda {
-        $VERBOSE = false
-        s.peep(1)
-      }.should_not complain
-    ensure
-      $VERBOSE = old
-    end
+    lambda {
+      $VERBOSE = false
+      s.peep(1)
+    }.should_not complain
   end
 end

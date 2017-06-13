@@ -263,6 +263,12 @@ VALUE string_spec_rb_str_plus(VALUE self, VALUE str1, VALUE str2) {
 }
 #endif
 
+#ifdef HAVE_RB_STR_TIMES
+VALUE string_spec_rb_str_times(VALUE self, VALUE str, VALUE times) {
+  return rb_str_times(str, times);
+}
+#endif
+
 #ifdef HAVE_RB_STR_RESIZE
 VALUE string_spec_rb_str_resize(VALUE self, VALUE str, VALUE size) {
   return rb_str_resize(str, FIX2INT(size));
@@ -356,10 +362,8 @@ VALUE string_spec_StringValue(VALUE self, VALUE str) {
 static VALUE string_spec_rb_str_hash(VALUE self, VALUE str) {
   st_index_t val = rb_str_hash(str);
 
-#if SIZEOF_LONG == SIZEOF_VOIDP
+#if SIZEOF_LONG == SIZEOF_VOIDP || SIZEOF_LONG_LONG == SIZEOF_VOIDP
   return LONG2FIX((long)val);
-#elif SIZEOF_LONG_LONG == SIZEOF_VOIDP
-  return LL2NUM((LONG_LONG)val);
 #else
 # error unsupported platform
 #endif
@@ -422,6 +426,12 @@ static VALUE string_spec_rb_usascii_str_new(VALUE self, VALUE str, VALUE len) {
 #ifdef HAVE_RB_USASCII_STR_NEW_CSTR
 static VALUE string_spec_rb_usascii_str_new_cstr(VALUE self, VALUE str) {
   return rb_usascii_str_new_cstr(RSTRING_PTR(str));
+}
+#endif
+
+#ifdef HAVE_RB_STRING
+static VALUE string_spec_rb_String(VALUE self, VALUE val) {
+  return rb_String(val);
 }
 #endif
 
@@ -558,6 +568,10 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_str_plus", string_spec_rb_str_plus, 2);
 #endif
 
+#ifdef HAVE_RB_STR_TIMES
+  rb_define_method(cls, "rb_str_times", string_spec_rb_str_times, 2);
+#endif
+
 #ifdef HAVE_RB_STR_RESIZE
   rb_define_method(cls, "rb_str_resize", string_spec_rb_str_resize, 2);
   rb_define_method(cls, "rb_str_resize_RSTRING_LEN",
@@ -636,6 +650,10 @@ void Init_string_spec(void) {
 
 #ifdef HAVE_RB_USASCII_STR_NEW_CSTR
   rb_define_method(cls, "rb_usascii_str_new_cstr", string_spec_rb_usascii_str_new_cstr, 1);
+#endif
+
+#ifdef HAVE_RB_STRING
+  rb_define_method(cls, "rb_String", string_spec_rb_String, 1);
 #endif
 }
 

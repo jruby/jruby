@@ -4,7 +4,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 
 describe "Enumerator::Lazy" do
   it "is a subclass of Enumerator" do
-    enumerator_class::Lazy.superclass.should equal(enumerator_class)
+    Enumerator::Lazy.superclass.should equal(Enumerator)
   end
 end
 

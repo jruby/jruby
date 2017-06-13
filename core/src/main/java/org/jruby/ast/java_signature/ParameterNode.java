@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.java_signature;
 
-// Fixme: varargs and variableNames with [] on them should ammend type on construction to save
+// Fixme: varargs and variableNames with [] on them should amend type on construction to save
 // consumer the effort.
 public class ParameterNode {
     private final TypeNode type;

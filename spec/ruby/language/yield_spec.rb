@@ -69,15 +69,7 @@ describe "The yield call" do
         }.should raise_error(ArgumentError)
       end
 
-      ruby_bug "#12705", "2.5" do
-        it "should not destructure an Array into multiple arguments" do
-          lambda {
-            @y.s([1, 2], &lambda { |a,b| [a,b] })
-          }.should raise_error(ArgumentError)
-        end
-      end
-
-      ruby_version_is ""..."2.2" do # above is a regression since 2.2
+      ruby_bug "#12705", "2.2"..."2.5" do
         it "should not destructure an Array into multiple arguments" do
           lambda {
             @y.s([1, 2], &lambda { |a,b| [a,b] })

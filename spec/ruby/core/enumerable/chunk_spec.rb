@@ -17,14 +17,14 @@ describe "Enumerable#chunk" do
   ruby_version_is "2.4" do
     it "returns an Enumerator if called without a block" do
       chunk = EnumerableSpecs::Numerous.new(1, 2, 3, 1, 2).chunk
-      chunk.should be_an_instance_of(enumerator_class)
+      chunk.should be_an_instance_of(Enumerator)
       result = chunk.with_index {|elt, i| elt - i }.to_a
       result.should == [[1, [1, 2, 3]], [-2, [1, 2]]]
     end
   end
 
   it "returns an Enumerator if given a block" do
-    EnumerableSpecs::Numerous.new.chunk {}.should be_an_instance_of(enumerator_class)
+    EnumerableSpecs::Numerous.new.chunk {}.should be_an_instance_of(Enumerator)
   end
 
   it "yields the current element and the current chunk to the block" do

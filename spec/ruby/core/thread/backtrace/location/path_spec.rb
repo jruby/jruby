@@ -22,13 +22,17 @@ describe 'Thread::Backtrace::Location#path' do
 
       context 'when using a relative script path' do
         it 'returns a path relative to the working directory' do
-          ruby_exe('main.rb', dir: @directory).should == 'main.rb'
+          Dir.chdir(@directory) {
+            ruby_exe('main.rb')
+          }.should == 'main.rb'
         end
       end
 
       context 'when using an absolute script path' do
         it 'returns an absolute path' do
-          ruby_exe(@script, dir: @directory).should == @script
+          Dir.chdir(@directory) {
+            ruby_exe(@script)
+          }.should == @script
         end
       end
     end
@@ -38,8 +42,9 @@ describe 'Thread::Backtrace::Location#path' do
         it 'returns a path relative to the working directory' do
           path      = 'fixtures/main.rb'
           directory = File.dirname(__FILE__)
-
-          ruby_exe(path, dir: directory).should == path
+          Dir.chdir(directory) {
+            ruby_exe(path)
+          }.should == path
         end
       end
 
@@ -70,7 +75,9 @@ describe 'Thread::Backtrace::Location#path' do
 
       context 'when using a relative script path' do
         it 'returns a path relative to the working directory' do
-          ruby_exe('../main.rb', dir: @sub_dir).should == '../main.rb'
+          Dir.chdir(@sub_dir) {
+            ruby_exe('../main.rb')
+          }.should == '../main.rb'
         end
       end
 

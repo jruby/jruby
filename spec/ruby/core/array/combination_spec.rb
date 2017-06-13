@@ -6,7 +6,7 @@ describe "Array#combination" do
   end
 
   it "returns an enumerator when no block is provided" do
-    @array.combination(2).should be_an_instance_of(enumerator_class)
+    @array.combination(2).should be_an_instance_of(Enumerator)
   end
 
   it "returns self when a block is given" do

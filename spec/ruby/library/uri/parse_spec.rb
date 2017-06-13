@@ -196,17 +196,8 @@ describe "URI.parse" do
     file.should be_kind_of(URI::Generic)
   end
 
-  ruby_version_is ''...'2.2' do
-    it "raises errors on URIs which has underscore in reg_name" do
-      lambda { URI.parse('http://a_b:80/') }.should raise_error(URI::InvalidURIError)
-      lambda { URI.parse('http://a_b/') }.should raise_error(URI::InvalidURIError)
-    end
-  end
-
-  ruby_version_is '2.2' do
-    it "doesn't raise errors on URIs which has underscore in reg_name" do
-      URI.parse('http://a_b:80/').host.should == "a_b"
-      URI.parse('http://a_b/').host.should == "a_b"
-    end
+  it "doesn't raise errors on URIs which has underscore in reg_name" do
+    URI.parse('http://a_b:80/').host.should == "a_b"
+    URI.parse('http://a_b/').host.should == "a_b"
   end
 end

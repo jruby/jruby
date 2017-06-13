@@ -22,7 +22,7 @@ describe "ENV.reject!" do
   end
 
   it "returns an Enumerator if called without a block" do
-    ENV.reject!.should be_an_instance_of(enumerator_class)
+    ENV.reject!.should be_an_instance_of(Enumerator)
   end
 
   it "doesn't raise if empty" do
@@ -60,7 +60,7 @@ describe "ENV.reject" do
   end
 
   it "returns an Enumerator if called without a block" do
-    ENV.reject.should be_an_instance_of(enumerator_class)
+    ENV.reject.should be_an_instance_of(Enumerator)
   end
 
   it "doesn't raise if empty" do

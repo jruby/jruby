@@ -204,7 +204,7 @@ public class RubyFileTest {
         return runtime.newBoolean(fileResource(filename).canRead());
     }
 
-    // Not exposed by filetest, but so similiar in nature that it is stored here
+    // Not exposed by filetest, but so similar in nature that it is stored here
     public static IRubyObject rowned_p(IRubyObject recv, IRubyObject filename) {
         FileStat stat = fileResource(filename).stat();
 

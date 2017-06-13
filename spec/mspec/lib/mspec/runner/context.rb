@@ -11,7 +11,6 @@
 #++
 class ContextState
   attr_reader :state, :parent, :parents, :children, :examples, :to_s
-  attr_accessor :shared_method
 
   def initialize(mod, options=nil)
     @to_s = mod.to_s
@@ -32,7 +31,6 @@ class ContextState
     @parent   = nil
     @parents  = [self]
     @children = []
-    @shared_method = nil
 
     @mock_verify         = Proc.new { Mock.verify_count }
     @mock_cleanup        = Proc.new { Mock.cleanup }
@@ -149,24 +147,11 @@ class ContextState
 
   # Injects the before/after blocks and examples from the shared
   # describe block into this +ContextState+ instance.
-  def it_should_behave_like(desc, meth = nil, obj = nil)
+  def it_should_behave_like(desc)
     return if MSpec.guarded?
 
     unless state = MSpec.retrieve_shared(desc)
       raise Exception, "Unable to find shared 'describe' for #{desc}"
-    end
-
-    if Symbol === meth and m = find_method(obj, meth)
-      if shared_method = state.shared_method
-        if same_implementation?(m, shared_method)
-          it "behaves the same as #{method_to_s(shared_method)} since it is an alias" do
-            true.should == true
-          end
-          return
-        end
-      else
-        state.shared_method = m
-      end
     end
 
     state.before(:all).each { |b| before :all, &b }
@@ -183,62 +168,6 @@ class ContextState
     state.children.each do |child|
       child.dup.adopt self
     end
-  end
-
-  def find_method(obj, name)
-    if obj.respond_to?(name)
-      obj.method(name)
-    else
-      if mod = @to_s[/^([A-Z]\w+)\./, 1] and Object.const_defined?(mod)
-        mod = Object.const_get(mod)
-        if Module === mod and mod.respond_to?(name)
-          mod.method(name)
-        end
-      elsif mod = @to_s[/^([A-Z]\w+)#/, 1] and Object.const_defined?(mod)
-        mod = Object.const_get(mod)
-        if Module === mod and mod.method_defined?(name)
-          mod.instance_method(name)
-        end
-      end
-    end
-  end
-
-  def method_to_s(meth)
-    if Method === meth and Module === meth.receiver
-      "#{meth.receiver}.#{meth.name}"
-    else
-      "#{meth.owner}##{meth.name}"
-    end
-  end
-  private :method_to_s
-
-  def same_implementation?(meth1, meth2)
-    return true if meth1 == meth2
-
-    file1, line1 = meth1.source_location
-    file2, line2 = meth2.source_location
-
-    # No source_location available
-    return false if !file1 && !file2
-
-    # Assume the same if they are defined on the same line
-    return true if file1 == file2 and line1 == line2
-
-    calls_other = -> meth, file, line, other {
-      if file and File.readable?(file)
-        lines = File.readlines(file)
-        method_def, call, method_end = lines[line-1..line+1].map(&:strip)
-        if method_def == "def #{meth.name}(*args)" and method_end == "end"
-          if Method === other and Module === other.receiver
-            call == "#{other.receiver}.#{other.name}(*args)"
-          else
-            meth.owner == other.owner and call == "#{other.name}(*args)"
-          end
-        end
-      end
-    }
-
-    calls_other.call(meth1, file1, line1, meth2) or calls_other.call(meth2, file2, line2, meth1)
   end
 
   # Evaluates each block in +blocks+ using the +MSpec.protect+ method
@@ -261,7 +190,7 @@ class ContextState
       MSpec.actions :tagged, ex
     end
 
-    not @examples.empty?
+    !@examples.empty?
   end
 
   # Evaluates the examples in a +ContextState+. Invokes the MSpec events
@@ -285,7 +214,7 @@ class ContextState
               if example
                 passed = protect nil, example
                 MSpec.actions :example, state, example
-                protect nil, @expectation_missing unless MSpec.expectation? or not passed
+                protect nil, @expectation_missing unless MSpec.expectation? or !passed
               end
             end
             protect "after :each", post(:each)

@@ -39,7 +39,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.RegexpOptions;
 
 /**
- * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
+ * A regexp which contains some expressions which will need to be evaluated every time the regexp 
  * is used for a match.
  */
 public class DRegexpNode extends DNode implements ILiteralNode {

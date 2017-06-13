@@ -22,6 +22,10 @@ describe "Time#localtime" do
     t.utc_offset.should == 3630
   end
 
+  it "raises a RuntimeError on a frozen time" do
+    lambda { Time.new.freeze.localtime }.should raise_error(RuntimeError)
+  end
+
   describe "with an argument that responds to #to_int" do
     it "coerces using #to_int" do
       o = mock('integer')

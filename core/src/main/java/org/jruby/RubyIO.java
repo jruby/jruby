@@ -892,7 +892,24 @@ public class RubyIO extends RubyObject implements IOEncodable {
             fd = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
 
             if (fd == null) {
-                fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
+                if (Platform.IS_WINDOWS) {
+                    // Native channels don't work quite right on Windows yet. See jruby/jruby#3625
+                    switch (fileno) {
+                        case 0:
+                            fd = new ChannelFD(Channels.newChannel(runtime.getIn()), runtime.getPosix(), runtime.getFilenoUtil());
+                            break;
+                        case 1:
+                            fd = new ChannelFD(Channels.newChannel(runtime.getOut()), runtime.getPosix(), runtime.getFilenoUtil());
+                            break;
+                        case 2:
+                            fd = new ChannelFD(Channels.newChannel(runtime.getErr()), runtime.getPosix(), runtime.getFilenoUtil());
+                            break;
+                        default:
+                            throw runtime.newErrnoEBADFError("Windows does not support wrapping native file descriptor: " + fileno);
+                    }
+                } else {
+                    fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
+                }
             }
         } else {
             ChannelFD descriptor = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
@@ -4713,7 +4730,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 tmp = prepStdio(runtime, runtime.getOut(), Channels.newChannel(runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
                 break;
             case ERR:
-                tmp = prepStdio(runtime, runtime.getIn(), Channels.newChannel(runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+                tmp = prepStdio(runtime, runtime.getErr(), Channels.newChannel(runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
                 break;
         }
 

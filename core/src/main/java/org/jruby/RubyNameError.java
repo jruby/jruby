@@ -99,7 +99,7 @@ public class RubyNameError extends RubyException {
             } else {
                 String description = null;
                 String separator;
-                String className = null;
+                String className;
                 boolean singleton = false;
 
                 if (object.isNil()) {

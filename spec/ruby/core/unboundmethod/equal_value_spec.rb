@@ -72,8 +72,8 @@ describe "UnboundMethod#==" do
   end
 
   it "returns false if both have identical body but are not the same" do
-    (@original_name == @identical_body).should == false
-    (@identical_body == @original_name).should == false
+    (@original_body == @identical_body).should == false
+    (@identical_body == @original_body).should == false
   end
 
   it "returns false if same method but one extracted from a subclass" do

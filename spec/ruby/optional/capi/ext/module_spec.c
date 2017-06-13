@@ -64,6 +64,12 @@ static VALUE module_specs_rb_alias(VALUE self, VALUE obj,
 }
 #endif
 
+#ifdef HAVE_RB_DEFINE_MODULE
+static VALUE module_specs_rb_define_module(VALUE self, VALUE name) {
+  return rb_define_module(RSTRING_PTR(name));
+}
+#endif
+
 #ifdef HAVE_RB_DEFINE_MODULE_UNDER
 static VALUE module_specs_rb_define_module_under(VALUE self, VALUE outer, VALUE name) {
   return rb_define_module_under(outer, RSTRING_PTR(name));
@@ -181,6 +187,10 @@ void Init_module_spec(void) {
 
 #ifdef HAVE_RB_ALIAS
   rb_define_method(cls, "rb_alias", module_specs_rb_alias, 3);
+#endif
+
+#ifdef HAVE_RB_DEFINE_MODULE
+  rb_define_method(cls, "rb_define_module", module_specs_rb_define_module, 1);
 #endif
 
 #ifdef HAVE_RB_DEFINE_MODULE_UNDER

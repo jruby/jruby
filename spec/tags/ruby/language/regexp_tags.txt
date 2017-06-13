@@ -1,0 +1,1 @@
+fails:Literal Regexps matches against $_ (last input) in a conditional if no explicit matchee provided

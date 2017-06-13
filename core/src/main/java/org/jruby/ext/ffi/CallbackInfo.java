@@ -110,6 +110,10 @@ public class CallbackInfo extends Type {
                     + returnType.getMetaClass().getName() + " (expected FFI::Type)");
         }
 
+        if (returnType instanceof MappedType) {
+            returnType = ((MappedType) returnType).getRealType();
+        }
+
         if (!(paramTypes instanceof RubyArray)) {
             throw context.runtime.newTypeError("wrong argument type "
                     + paramTypes.getMetaClass().getName() + " (expected Array)");

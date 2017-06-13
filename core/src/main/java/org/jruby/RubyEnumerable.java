@@ -1098,7 +1098,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            return this.block.call(context, packEnumValues(context, iargs), context.runtime.newFixnum(index++));
+            return this.block.yieldSpecific(context, packEnumValues(context, iargs), context.runtime.newFixnum(index++));
         }
     }
 
@@ -1183,7 +1183,7 @@ public class RubyEnumerable {
     public static IRubyObject each_entryCommon(ThreadContext context, final IRubyObject self, final IRubyObject[] args, final Block block) {
         callEach(context.runtime, context, self, args, Signature.OPTIONAL, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                return block.yieldSpecific(ctx, packEnumValues(ctx, largs));
+                return block.yield(ctx, packEnumValues(ctx, largs));
             }
         });
         return self;

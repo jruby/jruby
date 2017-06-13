@@ -130,6 +130,18 @@ describe "Class#new" do
     klass.new(1, 2, 3).args.should == [1, 2, 3]
   end
 
+  it "uses the internal allocator and does not call #allocate" do
+    klass = Class.new do
+      def self.allocate
+        raise "allocate should not be called"
+      end
+    end
+
+    instance = klass.new
+    instance.should be_kind_of klass
+    instance.class.should equal klass
+  end
+
   it "passes the block to #initialize" do
     klass = Class.new do
       def initialize

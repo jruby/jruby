@@ -1,1 +1,1 @@
-fails:BigDecimal#divmod Can be reversed with * and +
+fails:BigDecimal#divmod can be reversed with * and +

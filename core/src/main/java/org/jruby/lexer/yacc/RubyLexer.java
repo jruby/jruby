@@ -142,8 +142,9 @@ public class RubyLexer extends LexingCommon {
     }
     
     protected void ambiguousOperator(String op, String syn) {
-        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getPosition(), "`" + op + "' after local variable or literal is interpreted as binary operator");
-        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getPosition(), "even though it seems like " + syn);
+        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline,
+                "`" + op + "' after local variable or literal is interpreted as binary operator");
+        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "even though it seems like " + syn);
     }
    
     public enum Keyword {
@@ -450,7 +451,7 @@ public class RubyLexer extends LexingCommon {
         try {
             d = SafeDoubleParser.parseDouble(number);
         } catch (NumberFormatException e) {
-            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
+            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getFile(), ruby_sourceline, "Float " + number + " out of range.");
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
@@ -665,7 +666,7 @@ public class RubyLexer extends LexingCommon {
     
     private boolean arg_ambiguous() {
         if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
-            warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
+            warnings.warning(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "Ambiguous first argument; make sure.");
         }
         return true;
     }
@@ -1103,7 +1104,7 @@ public class RubyLexer extends LexingCommon {
         ISourcePosition tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
             if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                warnings.warning(ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
+                warnings.warning(ID.ARGUMENT_AS_PREFIX, getFile(), tmpPosition.getLine(), "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
             c = Tokens.tAMPER;
@@ -1839,7 +1840,7 @@ public class RubyLexer extends LexingCommon {
                     break;
                 }
                 if (c2 != 0) {
-                    warnings.warn(ID.INVALID_CHAR_SEQUENCE, getPosition(), "invalid character syntax; use ?\\" + c2);
+                    warnings.warn(ID.INVALID_CHAR_SEQUENCE, getFile(), ruby_sourceline, "invalid character syntax; use ?\\" + c2);
                 }
             }
             pushback(c);
@@ -1969,7 +1970,7 @@ public class RubyLexer extends LexingCommon {
 
             if (isSpaceArg(c, spaceSeen)) {
                 if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`**' interpreted as argument prefix");
+                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getFile(), ruby_sourceline, "`**' interpreted as argument prefix");
                 c = Tokens.tDSTAR;
             } else if (isBEG()) {
                 c = Tokens.tDSTAR;
@@ -1986,7 +1987,7 @@ public class RubyLexer extends LexingCommon {
             pushback(c);
             if (isSpaceArg(c, spaceSeen)) {
                 if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
+                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getFile(), ruby_sourceline, "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {
                 c = Tokens.tSTAR;
@@ -2020,7 +2021,7 @@ public class RubyLexer extends LexingCommon {
      *  Parse a number from the input stream.
      *
      *@param c The first character of the number.
-     *@return A int constant wich represents a token.
+     *@return An int constant which represents a token.
      */
     private int parseNumber(int c) throws IOException {
         setState(EXPR_END);

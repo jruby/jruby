@@ -748,6 +748,7 @@ reswords        : k__LINE__ | k__FILE__ | k__ENCODING__ | klBEGIN | klEND
                 | kFOR | kIN | kMODULE | kNEXT | kNIL | kNOT
                 | kOR | kREDO | kRESCUE | kRETRY | kRETURN | kSELF | kSUPER
                 | kTHEN | kTRUE | kUNDEF | kWHEN | kYIELD
+                | kIF | kUNLESS | kWHILE | kUNTIL
                 | kIF_MOD | kUNLESS_MOD | kWHILE_MOD | kUNTIL_MOD | kRESCUE_MOD
 
 arg             : lhs '=' arg {
@@ -1392,10 +1393,14 @@ lambda          : /* none */  {
                     p.pushBlockScope();
                     $$ = p.getLeftParenBegin();
                     p.setLeftParenBegin(p.incrementParenNest());
+                } {
+                    $$ = p.getCmdArgumentState().getStack();
+                    p.getCmdArgumentState().reset();
                 } f_larglist lambda_body {
-                    $$ = p.dispatch("on_lambda", $2, $3);
+                    $$ = p.dispatch("on_lambda", $3, $4);
                     p.popCurrentScope();
                     p.setLeftParenBegin($<Integer>1);
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                 }
 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {

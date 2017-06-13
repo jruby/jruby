@@ -79,7 +79,7 @@ public class RubyDir extends RubyObject {
 
     private final static Encoding UTF8 = UTF8Encoding.INSTANCE;
 
-    private static Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
+    private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
 
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);

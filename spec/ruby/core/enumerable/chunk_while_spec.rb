@@ -12,7 +12,7 @@ ruby_version_is "2.3" do
 
     context "when given a block" do
       it "returns an enumerator" do
-        @result.should be_an_instance_of(enumerator_class)
+        @result.should be_an_instance_of(Enumerator)
       end
 
       it "splits chunks between adjacent elements i and j where the block returns false" do

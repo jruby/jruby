@@ -63,7 +63,7 @@ describe "IO.foreach" do
 
   describe "when no block is given" do
     it "returns an Enumerator" do
-      IO.foreach(@name).should be_an_instance_of(enumerator_class)
+      IO.foreach(@name).should be_an_instance_of(Enumerator)
       IO.foreach(@name).to_a.should == IOSpecs.lines
     end
 

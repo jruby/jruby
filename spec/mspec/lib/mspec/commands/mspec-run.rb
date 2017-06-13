@@ -36,7 +36,6 @@ class MSpecRun < MSpecScript
     options.randomize
     options.repeat
     options.pretend
-    options.background
     options.interrupt
 
     options.doc "\n How to modify the guard behavior"
@@ -75,21 +74,7 @@ class MSpecRun < MSpecScript
     options.doc ""
 
     patterns = options.parse argv
-
-    unless $0.end_with?("_spec.rb")
-      if patterns.empty?
-        patterns = config[:files]
-      end
-      if patterns.empty? and File.directory? "./spec"
-        patterns = ["spec/"]
-      end
-      if patterns.empty?
-        puts options
-        puts "No files specified."
-        exit 1
-      end
-    end
-    @files = files patterns
+    @files = files_from_patterns(patterns)
   end
 
   def run
@@ -100,4 +85,3 @@ class MSpecRun < MSpecScript
     exit MSpec.exit_code
   end
 end
-

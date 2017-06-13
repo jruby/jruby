@@ -268,15 +268,6 @@ describe "Proc#arity" do
         @a.arity.should == 3
         @b.arity.should == 3
       end
-
-      evaluate <<-ruby do
-          @a = lambda { |a, b, c:, d: 1| }
-          @b = lambda { |a, b, c:, d: 1, **k, &l| }
-        ruby
-
-        @a.arity.should == 3
-        @b.arity.should == 3
-      end
     end
 
     context "returns negative values" do
@@ -520,15 +511,6 @@ describe "Proc#arity" do
 
         @a.arity.should == 2
         @b.arity.should == 2
-      end
-
-      evaluate <<-ruby do
-          @a = proc { |a, b, c:, d: 1| }
-          @b = proc { |a, b, c:, d: 1, **k, &l| }
-      ruby
-
-        @a.arity.should == 3
-        @b.arity.should == 3
       end
 
       evaluate <<-ruby do

@@ -57,7 +57,8 @@ import org.jruby.util.log.LoggerFactory;
  * ChannelDescriptor provides an abstraction similar to the concept of a
  * "file descriptor" on any POSIX system. In our case, it's a numbered object
  * (fileno) enclosing a Channel (@see java.nio.channels.Channel), FileDescriptor
- * (@see java.io.FileDescriptor), and flags under which the original open occured
+ * (@see java.io.FileDescriptor), and flags under which the original open
+ * occurred
  * (@see org.jruby.util.io.ModeFlags). Several operations you would normally
  * expect to use with a POSIX file descriptor are implemented here and used by
  * higher-level classes to implement higher-level IO behavior.

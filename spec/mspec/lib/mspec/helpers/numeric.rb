@@ -1,4 +1,4 @@
-require 'mspec/guards/guard'
+require 'mspec/guards/platform'
 
 class Object
   def nan_value
@@ -18,10 +18,8 @@ class Object
   # this boundary is implementation-dependent, we use these helpers to write
   # specs based on the relationship between values rather than specific
   # values.
-  guard = SpecGuard.new
-
-  if guard.standard? or guard.implementation? :topaz
-    if guard.wordsize? 32
+  if PlatformGuard.standard? or PlatformGuard.implementation? :topaz
+    if PlatformGuard.wordsize? 32
       def fixnum_max
         (2**30) - 1
       end
@@ -29,7 +27,7 @@ class Object
       def fixnum_min
         -(2**30)
       end
-    elsif guard.wordsize? 64
+    elsif PlatformGuard.wordsize? 64
       def fixnum_max
         (2**62) - 1
       end
@@ -38,7 +36,7 @@ class Object
         -(2**62)
       end
     end
-  elsif guard.implementation? :opal
+  elsif PlatformGuard.implementation? :opal
     def fixnum_max
       Integer::MAX
     end
@@ -46,7 +44,7 @@ class Object
     def fixnum_min
       Integer::MIN
     end
-  elsif guard.implementation? :rubinius
+  elsif PlatformGuard.implementation? :rubinius
     def fixnum_max
       Fixnum::MAX
     end
@@ -54,7 +52,7 @@ class Object
     def fixnum_min
       Fixnum::MIN
     end
-  elsif guard.implementation?(:jruby) || guard.implementation?(:truffleruby)
+  elsif PlatformGuard.implementation?(:jruby) || PlatformGuard.implementation?(:truffleruby)
     def fixnum_max
       9223372036854775807
     end

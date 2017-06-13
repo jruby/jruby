@@ -363,33 +363,32 @@ describe "Module#define_method" do
 
   it "returns its symbol" do
     class DefineMethodSpecClass
-      method = define_method("return_test") { || true }
+      method = define_method("return_test") { true }
       method.should == :return_test
     end
   end
 
   it "allows an UnboundMethod from a module to be defined on a class" do
-    DestinationClass = Class.new {
+    klass = Class.new {
       define_method :bar, ModuleSpecs::UnboundMethodTest.instance_method(:foo)
     }
-    DestinationClass.new.should respond_to(:bar)
+    klass.new.should respond_to(:bar)
   end
 
   it "allows an UnboundMethod from a parent class to be defined on a child class" do
-    Parent = Class.new { define_method(:foo) { :bar } }
-    ChildClass = Class.new(Parent) {
-      define_method :baz, Parent.instance_method(:foo)
+    parent = Class.new { define_method(:foo) { :bar } }
+    child = Class.new(parent) {
+      define_method :baz, parent.instance_method(:foo)
     }
-    ChildClass.new.should respond_to(:baz)
+    child.new.should respond_to(:baz)
   end
 
   it "allows an UnboundMethod from a module to be defined on another unrelated module" do
-    DestinationModule = Module.new {
+    mod = Module.new {
       define_method :bar, ModuleSpecs::UnboundMethodTest.instance_method(:foo)
     }
-    DestinationClass = Class.new { include DestinationModule }
-
-    DestinationClass.new.should respond_to(:bar)
+    klass = Class.new { include mod }
+    klass.new.should respond_to(:bar)
   end
 
   it "raises a TypeError when an UnboundMethod from a child class is defined on a parent class" do

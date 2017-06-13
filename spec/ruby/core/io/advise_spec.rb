@@ -4,13 +4,11 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO#advise" do
   before :each do
-    @kcode, $KCODE = $KCODE, "utf-8"
     @io = IOSpecs.io_fixture "lines.txt"
   end
 
   after :each do
     @io.close unless @io.closed?
-    $KCODE = @kcode
   end
 
   it "raises a TypeError if advise is not a Symbol" do
@@ -76,16 +74,17 @@ describe "IO#advise" do
   end
 
   platform_is :linux do
-    require 'etc'
-    uname = if Etc.respond_to?(:uname)
-              Etc.uname[:release]
-            else
-              `uname -r`.chomp
-            end
-    if (uname.split('.').map(&:to_i) <=> [3,6]) < 0
-      # [ruby-core:65355] tmpfs is not supported
-    else
-      it "supports the willneed advice type" do
+    it "supports the willneed advice type" do
+      require 'etc'
+      uname = if Etc.respond_to?(:uname)
+                Etc.uname[:release]
+              else
+                `uname -r`.chomp
+              end
+      if (uname.split('.').map(&:to_i) <=> [3,6]) < 0
+        # [ruby-core:65355] tmpfs is not supported
+        1.should == 1
+      else
         @io.advise(:willneed).should be_nil
       end
     end

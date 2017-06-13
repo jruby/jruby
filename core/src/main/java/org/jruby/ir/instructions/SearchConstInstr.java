@@ -18,7 +18,7 @@ import org.jruby.runtime.opto.Invalidator;
 
 // Const search:
 // - looks up lexical scopes
-// - then inheritance hierarcy if lexical search fails
+// - then inheritance hierarchy if lexical search fails
 // - then invokes const_missing if inheritance search fails
 public class SearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final String   constName;

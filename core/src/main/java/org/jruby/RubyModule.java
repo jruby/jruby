@@ -1340,7 +1340,7 @@ public class RubyModule extends RubyObject {
     }
 
     private CacheEntry cacheHit(String name) {
-        CacheEntry cacheEntry = getCachedMethods().get(name);
+        CacheEntry cacheEntry = methodLocation.getCachedMethods().get(name);
 
         if (cacheEntry != null) {
             if (cacheEntry.token == getGeneration()) {
@@ -1847,6 +1847,7 @@ public class RubyModule extends RubyObject {
         public RespondToMissingMethod(RubyModule implClass, Visibility vis, String methodName) {
             super(implClass, vis);
 
+            setParameterList(REST);
             site = new FunctionalCachingCallSite(methodName);
         }
         @Override
@@ -1908,17 +1909,14 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
-        Visibility visibility = getVisibilityForDefineMethod(context);
+        Visibility visibility = getCurrentVisibilityForDefineMethod(context);
 
         return defineMethodFromBlock(context, arg0, block, visibility);
     }
 
-    private Visibility getVisibilityForDefineMethod(ThreadContext context) {
-        Visibility visibility = PUBLIC;
-
+    private Visibility getCurrentVisibilityForDefineMethod(ThreadContext context) {
         // These checks are similar to rb_vm_cref_in_context from MRI.
-        if (context.getCurrentFrame().getSelf() == this) visibility = context.getCurrentVisibility();
-        return visibility;
+        return context.getCurrentFrame().getSelf() == this ? context.getCurrentVisibility() : PUBLIC;
     }
 
     public IRubyObject defineMethodFromBlock(ThreadContext context, IRubyObject arg0, Block block, Visibility visibility) {
@@ -1962,7 +1960,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        Visibility visibility = getVisibilityForDefineMethod(context);
+        Visibility visibility = getCurrentVisibilityForDefineMethod(context);
 
         return defineMethodFromCallable(context, arg0, arg1, visibility);
     }
@@ -2645,7 +2643,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "mix", visibility = PRIVATE)
     public IRubyObject mix(ThreadContext context, IRubyObject mod, IRubyObject hash0) {
         Ruby runtime = context.runtime;
-        RubyHash methodNames = null;
+        RubyHash methodNames;
 
         if (!mod.isModule()) {
             throw runtime.newTypeError(mod, runtime.getModule());
@@ -2938,14 +2936,17 @@ public class RubyModule extends RubyObject {
             // nextClass.isIncluded() && nextClass.getNonIncludedClass() == nextModule.getNonIncludedClass();
             // scan class hierarchy for module
             for (RubyClass nextClass = methodLocation.getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
-                if (doesTheClassWrapTheModule(nextClass, nextModule)) {
-                    // next in hierarchy is an included version of the module we're attempting,
-                    // so we skip including it
+                if (nextClass.isIncluded()) {
+                    // does the class equal the module
+                    if (nextClass.getDelegate() == nextModule.getDelegate()) {
+                        // next in hierarchy is an included version of the module we're attempting,
+                        // so we skip including it
 
-                    // if we haven't encountered a real superclass, use the found module as the new inclusion point
-                    if (!superclassSeen) currentInclusionPoint = nextClass;
+                        // if we haven't encountered a real superclass, use the found module as the new inclusion point
+                        if (!superclassSeen) currentInclusionPoint = nextClass;
 
-                    continue ModuleLoop;
+                        continue ModuleLoop;
+                    }
                 } else {
                     superclassSeen = true;
                 }
@@ -2994,34 +2995,25 @@ public class RubyModule extends RubyObject {
             boolean superclassSeen = false;
 
             // scan class hierarchy for module
-            for (RubyClass nextClass = this.getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
-                if (doesTheClassWrapTheModule(nextClass, nextModule)) {
-                    // next in hierarchy is an included version of the module we're attempting,
-                    // so we skip including it
+            for (RubyClass nextClass = methodLocation.getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
+                if (nextClass.isIncluded()) {
+                    // does the class equal the module
+                    if (nextClass.getDelegate() == nextModule.getDelegate()) {
+                        // next in hierarchy is an included version of the module we're attempting,
+                        // so we skip including it
 
-                    // if we haven't encountered a real superclass, use the found module as the new inclusion point
-                    if (!superclassSeen) currentInclusionPoint = nextClass;
+                        // if we haven't encountered a real superclass, use the found module as the new inclusion point
+                        if (!superclassSeen) currentInclusionPoint = nextClass;
 
-                    continue ModuleLoop;
+                        continue ModuleLoop;
+                    }
                 } else {
                     superclassSeen = true;
                 }
             }
 
-            currentInclusionPoint = proceedWithPrepend(currentInclusionPoint, nextModule);
+            currentInclusionPoint = proceedWithPrepend(currentInclusionPoint, nextModule.getDelegate());
         }
-    }
-
-    /**
-     * Is the given class a wrapper for the specified module?
-     *
-     * @param theClass The class to inspect
-     * @param theModule The module we're looking for
-     * @return true if the class is a wrapper for the module, false otherwise
-     */
-    private boolean doesTheClassWrapTheModule(RubyClass theClass, RubyModule theModule) {
-        return theClass.isIncluded() &&
-                theClass.getDelegate() == theModule.getDelegate();
     }
 
     /**

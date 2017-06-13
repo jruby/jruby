@@ -82,10 +82,11 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     @Override
+    @Deprecated
     public void warn(ID id, ISourcePosition position, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        warn(id, position.getFile(), position.getLine() + 1, message);
+        warn(id, position.getFile(), position.getLine(), message);
     }
 
     /**
@@ -97,7 +98,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         StringBuilder buffer = new StringBuilder(100);
 
-        buffer.append(fileName).append(':').append(lineNumber).append(": ");
+        buffer.append(fileName).append(':').append(lineNumber + 1).append(": ");
         buffer.append("warning: ").append(message).append('\n');
         RubyString errorString = runtime.newString(buffer.toString());
 
@@ -131,13 +132,14 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         if (stack.length == 0) {
             file = "(unknown)";
-            line = -1;
+            line = 0;
         } else {
             file = stack[0].getFileName();
             line = stack[0].getLineNumber();
         }
 
-        warn(id, file, line, message);
+        // 1 is subtracted here because getRubyStackTrace is 1-indexed.
+        warn(id, file, line - 1, message);
     }
 
     public void warnOnce(ID id, String message) {
@@ -186,8 +188,9 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, only in verbose mode.
      */
     @Override
+    @Deprecated
     public void warning(ID id, ISourcePosition position, String message) {
-        warning(id, position.getFile(), position.getLine() + 1, message);
+        warning(id, position.getFile(), position.getLine(), message);
     }
 
     /**

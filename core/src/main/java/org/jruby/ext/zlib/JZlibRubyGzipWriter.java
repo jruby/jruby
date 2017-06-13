@@ -275,12 +275,13 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "puts", rest = true)
     public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
-        StringIO sio = (StringIO) getRuntime().getClass("StringIO").newInstance(context, new IRubyObject[0], Block.NULL_BLOCK);
+        final RubyClass StringIO = context.runtime.getClass("StringIO");
+        StringIO sio = (StringIO) StringIO.newInstance(context, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         
         sio.puts(context, args);
         write(sio.string(context));
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @Override

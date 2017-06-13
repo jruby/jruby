@@ -1,11 +1,7 @@
-require 'mspec/matchers/stringsymboladapter'
-
 class MethodMatcher
-  include StringSymbolAdapter
-
   def initialize(method, include_super=true)
     @include_super = include_super
-    @method = convert_name method
+    @method = method.to_sym
   end
 
   def matches?(mod)

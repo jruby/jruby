@@ -702,7 +702,7 @@ public class RubyProcess {
     // MRI: rlimit_resource_name2int
     private static int rlimitResourceName2int(String name, int casetype) {
         RLIMIT resource;
-            
+
         OUTER: while (true) {
             switch (Character.toUpperCase(name.charAt(0))) {
                 case 'A':
@@ -1367,9 +1367,9 @@ public class RubyProcess {
             }
         };
 
-        return RubyThread.newInstance(
-                runtime.getThread(),
-                IRubyObject.NULL_ARRAY,
+        return RubyThread.startWaiterThread(
+                runtime,
+                pid,
                 CallBlock.newCallClosure(recv, (RubyModule)recv, Signature.NO_ARGUMENTS, callback, context));
     }
 

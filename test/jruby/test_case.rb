@@ -104,6 +104,41 @@ class TestCase < Test::Unit::TestCase
     end
   end
 
+  def test_big_case_with_holes
+    params = [0, 1, 2, 4, 5, 10, 11, 18, 19, 20, 21, 22, -1,  -2]
+    expect = [1, 0, 3, 5, 4,  9, 10, 17, 18, 21, 20, 21, nil, -3]
+    assert_equal expect, params.map { |p| case_01359_21(p) }
+  end
+
+  def case_01359_21(p)
+    case p + 1
+      when 0 then nil
+      when 1 then 1
+      when 3 then 3
+      when 5 then 5
+      when 9 then 9
+      when 21
+        return 21
+      else p - 1
+    end
+  end
+
+  def test_multi_case_with_holes
+    params = [  0, 1, 2, 3, 4, 5, 8, 9, 10, 12, 13, 14, 15, 16, 17]
+    expect = [nil, 0, 1, 3, 1, 5, 1, 9, 10, 12, 13, 14, 15,  2, 17]
+    assert_equal expect, params.map { |p| case_2481632(p) }
+  end
+
+  def case_2481632(p)
+    case p % 100
+      when 0 then nil
+      when 1 then 0
+      when 2, 4, 8 then 1
+      when 16, 32 then 2
+      else p % 31
+    end
+  end
+
   def test_case_no_match_returns_nil
     x = case nil
     when String then "HEH1"

@@ -7,7 +7,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.ir.instructions.*;
@@ -281,6 +280,12 @@ public class IRBuilder {
 
     private int _lastProcessedLineNum = -1;
 
+    // We do not need n consecutive line num instrs but only the last one in the sequence.
+    // We set this flag to indicate that we need to emit a line number but have not yet.
+    // addInstr will then appropriately add line info when it is called (which will never be
+    // called by a linenum instr).
+    private boolean needsLineNumInfo = false;
+
     public boolean underscoreVariableSeen = false;
 
     public IRLoop getCurrentLoop() {
@@ -314,6 +319,17 @@ public class IRBuilder {
     }
 
     public void addInstr(Instr instr) {
+        if (needsLineNumInfo) {
+            needsLineNumInfo = false;
+            addInstr(manager.newLineNumber(_lastProcessedLineNum));
+            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), _lastProcessedLineNum));
+                if (needsCodeCoverage()) {
+                    addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), _lastProcessedLineNum));
+                }
+            }
+        }
+
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.empty()) {
@@ -370,20 +386,18 @@ public class IRBuilder {
         }
     }
 
-    private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
+    private void determineIfWeNeedLineNumber(Node node) {
         if (node.isNewline()) {
             int currLineNum = node.getLine();
             if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
-                addInstr(manager.newLineNumber(currLineNum));
-                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                    addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
-                    if (needsCodeCoverage()) {
-                        addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), currLineNum));
-                    }
-                }
+                needsLineNumInfo = true;
                 _lastProcessedLineNum = currLineNum;
             }
         }
+    }
+
+    private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
+        determineIfWeNeedLineNumber(node);
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -1025,7 +1039,7 @@ public class IRBuilder {
         // Frozen string optimization: check for "string".freeze
         if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
             StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange(), asString.getPosition().getFile(), asString.getPosition().getLine());
+            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFileName(), asString.getPosition().getLine());
         }
 
         // The receiver has to be built *before* call arguments are built
@@ -1043,7 +1057,7 @@ public class IRBuilder {
                 !scope.maybeUsingRefinements() &&
                 callNode.getIterNode() == null) {
             StrNode keyNode = (StrNode) argsAry.get(0);
-            addInstr(ArrayDerefInstr.create(result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), keyNode.getPosition().getFile(), keyNode.getLine())));
+            addInstr(ArrayDerefInstr.create(result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFileName(), keyNode.getLine())));
             return result;
         }
 
@@ -2690,6 +2704,7 @@ public class IRBuilder {
             }
         }
 
+        determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
         CallInstr callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
         receiveBreakException(block, callInstr);
         return result;
@@ -3230,7 +3245,7 @@ public class IRBuilder {
 
             // set attr
             addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
-            // Returning writerValue is incorrect becuase the assignment method
+            // Returning writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
             if (!opAsgnNode.isLazy()) return setValue;
 
@@ -3691,12 +3706,14 @@ public class IRBuilder {
         Operand retVal = build(returnNode.getValueNode());
 
         if (scope instanceof IRClosure) {
-            // If 'm' is a block scope, a return returns from the closest enclosing method.
-            // If this happens to be a module body, the runtime throws a local jump error if the
-            // closure is a proc. If the closure is a lambda, then this becomes a normal return.
-            boolean maybeLambda = scope.getNearestMethod() == null;
-            addInstr(new CheckForLJEInstr(maybeLambda));
-            addInstr(new NonlocalReturnInstr(retVal, maybeLambda ? "--none--" : scope.getNearestMethod().getName()));
+            // Closures return behavior has several cases (which depend on runtime state):
+            // 1. closure in method (return). !method (error) except if in define_method (return)
+            // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
+            // 3. migrated closure (LJE) [dynamic]
+            // 4. eval/for (return) [static]
+            boolean definedWithinMethod = scope.getNearestMethod() != null;
+            if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) addInstr(new CheckForLJEInstr(definedWithinMethod));
+            addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getName() : "--none--" ));
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
@@ -3771,11 +3788,11 @@ public class IRBuilder {
     public Operand buildStrRaw(StrNode strNode) {
         if (strNode instanceof FileNode) return new Filename();
 
-        ISourcePosition pos = strNode.getPosition();
+        int line = strNode.getLine();
 
-        if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), pos.getFile(), pos.getLine());
+        if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFileName(), line);
 
-        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), pos.getFile(), pos.getLine());
+        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), scope.getFileName(), line);
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {
@@ -3819,7 +3836,7 @@ public class IRBuilder {
     public Operand buildSymbol(SymbolNode node) {
         // Since symbols are interned objects, no need to copyAndReturnValue(...)
         // SSS FIXME: Premature opt?
-        return new Symbol(node.getName(), node.getEncoding());
+        return new Symbol(node.getBytes());
     }
 
     public Operand buildTrue() {
@@ -3907,7 +3924,8 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), node.getPosition().getFile(), node.getPosition().getLine())}));
+        return addResultInstr(new BacktickInstr(createTemporaryVariable(),
+                new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFileName(), node.getLine())}));
     }
 
     public Operand buildYield(YieldNode node, Variable result) {

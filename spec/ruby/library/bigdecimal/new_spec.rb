@@ -18,7 +18,7 @@ describe "BigDecimal.new" do
     }
   end
 
-  it "Number of significant digits >= given precision" do
+  it "accepts significant digits >= given precision" do
     BigDecimal.new("3.1415923", 10).precs[1].should >= 10
   end
 

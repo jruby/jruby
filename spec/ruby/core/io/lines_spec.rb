@@ -12,12 +12,12 @@ describe "IO#lines" do
   end
 
   it "returns an Enumerator" do
-    @io.lines.should be_an_instance_of(enumerator_class)
+    @io.lines.should be_an_instance_of(Enumerator)
   end
 
   describe "when no block is given" do
     it "returns an Enumerator" do
-      @io.lines.should be_an_instance_of(enumerator_class)
+      @io.lines.should be_an_instance_of(Enumerator)
     end
 
     describe "returned Enumerator" do

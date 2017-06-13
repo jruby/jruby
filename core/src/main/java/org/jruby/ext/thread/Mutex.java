@@ -146,7 +146,7 @@ public class Mutex extends RubyObject {
     public IRubyObject synchronize(ThreadContext context, Block block) {
         lock(context);
         try {
-            return block.call(context);
+            return block.yieldSpecific(context);
         } finally {
             unlock(context);
         }

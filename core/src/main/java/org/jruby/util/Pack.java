@@ -915,14 +915,14 @@ public class Pack {
 
                         result.append(RubyString.newString(runtime, new ByteList(potential, 0, t, ASCIIEncoding.INSTANCE, false)));
 
-                        // In case when the number of occurences is
+                        // When the number of occurrences is
                         // explicitly specified, we have to read up
                         // the remaining garbage after the '\0' to
                         // satisfy the requested pattern.
                         if (!isStar) {
                             if (t < occurrences) {
                                 // We encountered '\0' when
-                                // were reading the buffer above,
+                                // reading the buffer above,
                                 // increment the number of read bytes.
                                 t++;
                             }

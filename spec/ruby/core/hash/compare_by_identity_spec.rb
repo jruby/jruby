@@ -8,10 +8,10 @@ describe "Hash#compare_by_identity" do
   end
 
   it "causes future comparisons on the receiver to be made by identity" do
-    @h["a"] = :a
-    @h["a"].should == :a
+    @h[[1]] = :a
+    @h[[1]].should == :a
     @h.compare_by_identity
-    @h["a".dup].should be_nil
+    @h[[1].dup].should be_nil
   end
 
   it "rehashes internally so that old keys can be looked up" do
@@ -44,10 +44,7 @@ describe "Hash#compare_by_identity" do
     :bar.should equal(:bar)
     @idh[:bar] = :e
     @idh[:bar] = :f
-    "bar".should_not equal('bar')
-    @idh["bar"] = :g
-    @idh["bar".dup] = :h
-    @idh.values.should == [:c, :d, :f, :g, :h]
+    @idh.values.should == [:c, :d, :f]
   end
 
   it "uses #equal? semantics, but doesn't actually call #equal? to determine identity" do
@@ -65,15 +62,15 @@ describe "Hash#compare_by_identity" do
   end
 
   it "regards #dup'd objects as having different identities" do
-    str = 'foo'
-    @idh[str.dup] = :str
-    @idh[str].should be_nil
+    key = ['foo']
+    @idh[key.dup] = :str
+    @idh[key].should be_nil
   end
 
   it "regards #clone'd objects as having different identities" do
-    str = 'foo'
-    @idh[str.clone] = :str
-    @idh[str].should be_nil
+    key = ['foo']
+    @idh[key.clone] = :str
+    @idh[key].should be_nil
   end
 
   it "regards references to the same object as having the same identity" do
@@ -109,6 +106,15 @@ describe "Hash#compare_by_identity" do
     @idh[foo] = true
     @idh.size.should == 1
     @idh.keys.first.object_id.should == foo.object_id
+  end
+
+  ruby_bug "#12855", "2.2.0"..."2.4.1" do
+    it "gives different identity for string literals" do
+      @idh['foo'] = 1
+      @idh['foo'] = 2
+      @idh.values.should == [1, 2]
+      @idh.size.should == 2
+    end
   end
 end
 

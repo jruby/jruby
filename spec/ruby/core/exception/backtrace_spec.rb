@@ -56,4 +56,13 @@ describe "Exception#backtrace" do
 
     exception.backtrace.first.should =~ /backtrace_spec/
   end
+
+  it "returns an Array that can be updated" do
+    begin
+      raise
+    rescue RuntimeError => e
+      e.backtrace.unshift "backtrace first"
+      e.backtrace[0].should == "backtrace first"
+    end
+  end
 end

@@ -8,7 +8,7 @@ describe "Matrix#find_index without any argument" do
 
   it "returns an Enumerator when called without a block" do
     enum = @m.find_index
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.to_a.should == [1, 2, 3, 4, 5, 6, 7, 8]
   end
 
@@ -48,7 +48,7 @@ describe "Matrix#find_index with a subselection argument" do
     it "returns an Enumerator when called without a block" do
       @tests.each do |matrix, h|
         h.each do |selector, result|
-          matrix.find_index(selector).should be_an_instance_of(enumerator_class)
+          matrix.find_index(selector).should be_an_instance_of(Enumerator)
         end
       end
     end

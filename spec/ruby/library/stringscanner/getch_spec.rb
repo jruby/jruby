@@ -4,14 +4,6 @@ require File.expand_path('../shared/extract_range', __FILE__)
 require 'strscan'
 
 describe "StringScanner#getch" do
-  before :each do
-    @kcode = $KCODE
-  end
-
-  after :each do
-    $KCODE = @kcode
-  end
-
   it "scans one character and returns it" do
     s = StringScanner.new('abc')
     s.getch.should == "a"
@@ -20,8 +12,6 @@ describe "StringScanner#getch" do
   end
 
   it "is multi-byte character sensitive" do
-    $KCODE = 'EUC'
-
     # Japanese hiragana "A" in EUC-JP
     src = "\244\242".force_encoding("euc-jp")
 

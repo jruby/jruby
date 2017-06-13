@@ -1,4 +1,5 @@
 require 'mspec/guards/guard'
+require 'mspec/utils/warnings'
 
 # MSpecScript provides a skeleton for all the MSpec runner scripts.
 
@@ -50,6 +51,7 @@ class MSpecScript
     config[:astrings]  = []
     config[:ltags]     = []
     config[:abort]     = true
+    @loaded = []
   end
 
   # Returns the config object maintained by the instance's class.
@@ -70,7 +72,13 @@ class MSpecScript
     names.each do |name|
       config[:path].each do |dir|
         file = File.expand_path name, dir
-        return Kernel.load(file) if File.exist? file
+        if @loaded.include?(file)
+          return true
+        elsif File.exist? file
+          value = Kernel.load(file)
+          @loaded << file
+          return value
+        end
       end
     end
 
@@ -177,7 +185,7 @@ class MSpecScript
 
     patterns.each do |pattern|
       expanded = File.expand_path(pattern)
-      if File.file?(expanded)
+      if File.file?(expanded) && expanded.end_with?('.rb')
         return [expanded]
       elsif File.directory?(expanded)
         return Dir["#{expanded}/**/*_spec.rb"].sort
@@ -210,6 +218,27 @@ class MSpecScript
     end
   end
 
+  def files_from_patterns(patterns)
+    unless $0.end_with?("_spec.rb")
+      if patterns.empty?
+        patterns = config[:files]
+      end
+      if patterns.empty? and File.directory? "./spec"
+        patterns = ["spec/"]
+      end
+      if patterns.empty?
+        puts "No files specified."
+        exit 1
+      end
+    end
+    files patterns
+  end
+
+  def cores
+    require 'etc'
+    Etc.nprocessors
+  end
+
   def setup_env
     ENV['MSPEC_RUNNER'] = '1'
 
@@ -225,7 +254,6 @@ class MSpecScript
   # Instantiates an instance and calls the series of methods to
   # invoke the script.
   def self.main
-    $VERBOSE = nil unless ENV['OUTPUT_WARNINGS']
     script = new
     script.load_default
     script.try_load '~/.mspecrc'

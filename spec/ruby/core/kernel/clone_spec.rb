@@ -16,6 +16,18 @@ describe "Kernel#clone" do
     ScratchPad.recorded.should == clone.object_id
   end
 
+  it "uses the internal allocator and does not call #allocate" do
+    klass = Class.new
+    instance = klass.new
+
+    def klass.allocate
+      raise "allocate should not be called"
+    end
+
+    clone = instance.clone
+    clone.class.should equal klass
+  end
+
   it "copies frozen state from the original" do
     o2 = @obj.clone
     @obj.freeze

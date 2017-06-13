@@ -254,22 +254,26 @@ describe "A lambda literal -> () { }" do
       result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
     end
 
-    ruby_version_is "2.2" do
-      describe "with circular optional argument reference" do
-        it "shadows an existing local with the same name as the argument" do
-          a = 1
-          -> (a=a) { a }.call.should == nil
-        end
+    describe "with circular optional argument reference" do
+      it "shadows an existing local with the same name as the argument" do
+        a = 1
+        -> {
+          @proc = eval "-> (a=a) { a }"
+        }.should complain(/circular argument reference/)
+        @proc.call.should == nil
+      end
 
-        it "shadows an existing method with the same name as the argument" do
-          def a; 1; end
-          -> (a=a) { a }.call.should == nil
-        end
+      it "shadows an existing method with the same name as the argument" do
+        def a; 1; end
+        -> {
+          @proc = eval "-> (a=a) { a }"
+        }.should complain(/circular argument reference/)
+        @proc.call.should == nil
+      end
 
-        it "calls an existing method with the same name as the argument if explicitly using ()" do
-          def a; 1; end
-          -> (a=a()) { a }.call.should == 1
-        end
+      it "calls an existing method with the same name as the argument if explicitly using ()" do
+        def a; 1; end
+        -> (a=a()) { a }.call.should == 1
       end
     end
   end
@@ -307,7 +311,10 @@ describe "A lambda expression 'lambda { ... }'" do
     end
 
     it "can be created" do
-      implicit_lambda = meth { 1 }
+      implicit_lambda = nil
+      -> {
+        implicit_lambda = meth { 1 }
+      }.should complain(/tried to create Proc object without a block/)
 
       implicit_lambda.lambda?.should be_true
       implicit_lambda.call.should == 1

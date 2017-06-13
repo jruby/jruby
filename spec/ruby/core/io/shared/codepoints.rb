@@ -13,7 +13,7 @@ describe :io_codepoints, shared: true do
 
   describe "when no block is given" do
     it "returns an Enumerator" do
-      @enum.should be_an_instance_of(enumerator_class)
+      @enum.should be_an_instance_of(Enumerator)
     end
 
     describe "returned Enumerator" do

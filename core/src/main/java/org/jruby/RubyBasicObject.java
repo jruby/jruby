@@ -946,7 +946,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * The internal helper that ensures a RubyString instance is returned
      * so dangerous casting can be omitted
-     * Prefered over callMethod(context, "inspect")
+     * Preferred over callMethod(context, "inspect")
      */
     static RubyString inspect(ThreadContext context, IRubyObject object) {
         return RubyString.objAsString(context, invokedynamic(context, object, INSPECT));
@@ -2228,7 +2228,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     	from prog.rb:3
      */
     public IRubyObject freeze(ThreadContext context) {
-        Ruby runtime = context.runtime;
         if ((flags & FROZEN_F) == 0) {
             flags |= FROZEN_F;
         }

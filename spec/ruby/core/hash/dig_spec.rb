@@ -57,5 +57,12 @@ ruby_version_is '2.3' do
       h[:foo].should_receive(:dig).with(:bar, :baz).and_return(42)
       h.dig(:foo, :bar, :baz).should == 42
     end
+
+    it "respects Hash's default" do
+      default = {bar: 42}
+      h = Hash.new(default)
+      h.dig(:foo).should equal default
+      h.dig(:foo, :bar).should == 42
+    end
   end
 end

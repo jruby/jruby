@@ -60,7 +60,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private Runnable unloader;
 
-    private File tempDir;
+    private static volatile File tempDir;
 
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
@@ -76,7 +76,6 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             InputStream in = null; OutputStream out = null;
             try {
                 File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());
-                f.deleteOnExit();
                 out = new BufferedOutputStream( new FileOutputStream( f ) );
                 in = new BufferedInputStream( url.openStream() );
                 int i = in.read();
@@ -110,15 +109,29 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         super.addURL( url );
     }
 
-    private File getTempDir() {
-        File tempDir = this.tempDir;
+    private static synchronized File getTempDir() {
         if (tempDir != null) return tempDir;
 
         tempDir = new File(systemTmpDir(), tempDirName());
         if (tempDir.mkdirs()) {
-            tempDir.deleteOnExit();
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    for (File f : tempDir.listFiles()) {
+                        try {
+                            f.delete();
+                        } catch (Exception ex) {
+                            LOG.debug(ex);
+                        }
+                    }
+                    try {
+                        tempDir.delete();
+                    } catch (Exception ex) {
+                        LOG.info("failed to delete temp dir " + tempDir + " : " + ex);
+                    }
+                }
+            });
         }
-        return this.tempDir = tempDir;
+        return tempDir;
     }
 
     private static final String TEMP_DIR_PREFIX = "jruby-";

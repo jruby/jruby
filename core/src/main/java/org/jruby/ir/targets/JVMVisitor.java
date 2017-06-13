@@ -860,6 +860,11 @@ public class JVMVisitor extends IRVisitor {
 
     }
 
+    // max (case) values span that generates a tableswitch instruction
+    //   case 0, 2, 4, 8, 16, 32 still generates a tableswitch (filling in holes)
+    //   case 0, 10, 100 fallbacks to generating a lookupswitch
+    private static final int MAX_TABLE_SWITCH_SIZE = 32 + 1;
+
     public void BSwitchInstr(BSwitchInstr bswitchinstr) {
         visit(bswitchinstr.getCaseOperand());
         jvmAdapter().dup();
@@ -872,7 +877,7 @@ public class JVMVisitor extends IRVisitor {
         Label[] targets = bswitchinstr.getTargets();
         org.objectweb.asm.Label[] jvmTargets = new org.objectweb.asm.Label[targets.length];
         for (int i = 0; i < targets.length; i++) jvmTargets[i] = getJVMLabel(targets[i]);
-
+        org.objectweb.asm.Label defaultTarget = getJVMLabel(bswitchinstr.getElseTarget());
         // if jump table is all contiguous values, use a tableswitch
         int[] jumps = bswitchinstr.getJumps(); // always ordered e.g. [2, 3, 4]
 
@@ -880,9 +885,24 @@ public class JVMVisitor extends IRVisitor {
         int high = jumps[jumps.length - 1]; // 4
         int span = high - low + 1;
         if (span == jumps.length) { // perfectly compact - no "holes"
-            jvmAdapter().tableswitch(low, high, getJVMLabel(bswitchinstr.getElseTarget()), jvmTargets);
+            jvmAdapter().tableswitch(low, high, defaultTarget, jvmTargets);
+        } else if (span <= MAX_TABLE_SWITCH_SIZE) { // an imperfect switch
+            org.objectweb.asm.Label[] realTargets = jvmTargets;
+            jvmTargets = new org.objectweb.asm.Label[span];
+            jvmTargets[0] = realTargets[0]; int p = jumps[0] + 1; int t = 1;
+            for (int i = 1; i < jumps.length; i++) {
+                int cj = jumps[i];
+                if (cj == p) {
+                    jvmTargets[t++] = realTargets[i]; p = cj + 1;
+                }
+                else { // fill in holes with cases to jump to else part
+                    while (cj > p++) jvmTargets[t++] = defaultTarget;
+                    jvmTargets[t++] = realTargets[i];
+                }
+            }
+            jvmAdapter().tableswitch(low, high, defaultTarget, jvmTargets);
         } else {
-            jvmAdapter().lookupswitch(getJVMLabel(bswitchinstr.getElseTarget()), bswitchinstr.getJumps(), jvmTargets);
+            jvmAdapter().lookupswitch(defaultTarget, bswitchinstr.getJumps(), jvmTargets);
         }
         jvmAdapter().label(notFixnum);
         jvmAdapter().pop();
@@ -1134,7 +1154,7 @@ public class JVMVisitor extends IRVisitor {
     public void CheckForLJEInstr(CheckForLJEInstr checkForljeinstr) {
         jvmMethod().loadContext();
         jvmLoadLocal(DYNAMIC_SCOPE);
-        jvmAdapter().ldc(checkForljeinstr.maybeLambda());
+        jvmAdapter().ldc(checkForljeinstr.isDefinedWithinMethod());
         jvmMethod().loadBlockType();
         jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkForLJE", sig(void.class, ThreadContext.class, DynamicScope.class, boolean.class, Block.Type.class));
     }
@@ -1156,8 +1176,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().checkcast("org/jruby/RubyModule");
         jvmMethod().loadContext();
         jvmAdapter().ldc("const_missing");
-        // FIXME: This has lost it's encoding info by this point
-        jvmMethod().pushSymbol(constmissinginstr.getMissingConst(), USASCIIEncoding.INSTANCE);
+        jvmMethod().pushSymbol(constmissinginstr.getMissingConst());
         jvmMethod().invokeVirtual(Type.getType(RubyModule.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject callMethod(org.jruby.runtime.ThreadContext, java.lang.String, org.jruby.runtime.builtin.IRubyObject)"));
         jvmStoreLocal(constmissinginstr.getResult());
     }
@@ -2524,7 +2543,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Symbol(Symbol symbol) {
-        jvmMethod().pushSymbol(symbol.getName(), symbol.getEncoding());
+        jvmMethod().pushSymbol(symbol.getBytes());
     }
 
     @Override

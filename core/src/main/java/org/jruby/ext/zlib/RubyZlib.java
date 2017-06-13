@@ -82,9 +82,7 @@ public class RubyZlib {
             field.setAccessible(true);
             field.setInt(new CRC32(), 1);
             return field;
-        } catch(NoSuchFieldException nsfe) {
-            return null;
-        } catch(IllegalAccessException iae) {
+        } catch(Exception e) {
             return null;
         }
     }

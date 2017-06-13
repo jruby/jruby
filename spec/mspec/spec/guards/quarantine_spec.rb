@@ -2,8 +2,8 @@ require 'spec_helper'
 require 'mspec/guards'
 
 describe QuarantineGuard, "#match?" do
-  it "returns false" do
-    QuarantineGuard.new.match?.should == false
+  it "returns true" do
+    QuarantineGuard.new.match?.should == true
   end
 end
 
@@ -26,7 +26,7 @@ describe Object, "#quarantine!" do
   end
 
   it "calls #unregister even when an exception is raised in the guard block" do
-    @guard.should_receive(:match?).and_return(true)
+    @guard.should_receive(:match?).and_return(false)
     @guard.should_receive(:unregister)
     lambda do
       quarantine! { raise Exception }

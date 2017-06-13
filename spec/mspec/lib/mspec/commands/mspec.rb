@@ -10,7 +10,9 @@ require 'mspec/runner/actions/timer'
 
 class MSpecMain < MSpecScript
   def initialize
-    config[:includes] = []
+    super
+
+    config[:loadpath] = []
     config[:requires] = []
     config[:target]   = ENV['RUBY'] || 'ruby'
     config[:flags]    = []
@@ -35,10 +37,6 @@ class MSpecMain < MSpecScript
 
     options.targets
 
-    options.on("-A", "--valgrind", "Run under valgrind") do
-      config[:use_valgrind] = true
-    end
-
     options.on("--warnings", "Don't supress warnings") do
       config[:flags] << '-w'
       ENV['OUTPUT_WARNINGS'] = '1'
@@ -46,7 +44,6 @@ class MSpecMain < MSpecScript
 
     options.on("-j", "--multi", "Run multiple (possibly parallel) subprocesses") do
       config[:multi] = true
-      config[:options] << "-fy"
     end
 
     options.version MSpec::VERSION do
@@ -79,87 +76,90 @@ class MSpecMain < MSpecScript
     options.doc "   example: $ mspec run -h\n"
 
     options.on_extra { |o| config[:options] << o }
-    config[:options].concat options.parse(argv)
+    options.parse(argv)
+
+    if config[:multi]
+      options = MSpecOptions.new "mspec", 30, config
+      options.all
+      patterns = options.parse(config[:options])
+      @files = files_from_patterns(patterns)
+    end
   end
 
   def register; end
 
-  def parallel
-    @parallel ||= !(Object.const_defined?(:JRUBY_VERSION) ||
-                  /(mswin|mingw)/ =~ RUBY_PLATFORM)
-  end
-
-  def fork(&block)
-    parallel ? Kernel.fork(&block) : block.call
-  end
-
-  def report(files, timer)
-    require 'yaml'
-
-    exceptions = []
-    tally = Tally.new
-
-    files.each do |file|
-      d = File.open(file, "r") { |f| YAML.load f }
-      File.delete file
-
-      exceptions += Array(d['exceptions'])
-      tally.files!        d['files']
-      tally.examples!     d['examples']
-      tally.expectations! d['expectations']
-      tally.errors!       d['errors']
-      tally.failures!     d['failures']
-    end
-
-    print "\n"
-    exceptions.each_with_index do |exc, index|
-      print "\n#{index+1})\n", exc, "\n"
-    end
-    print "\n#{timer.format}\n\n#{tally.format}\n"
-  end
-
   def multi_exec(argv)
-    timer = TimerAction.new
-    timer.start
+    MSpec.register_files @files
 
-    files = config[:ci_files].inject([]) do |list, item|
-      name = tmp "mspec-ci-multi-#{list.size}"
-
-      rest = argv + ["-o", name, item]
-      fork { system [config[:target], *rest].join(" ") }
-
-      list << name
+    require 'mspec/runner/formatters/multi'
+    formatter = MultiFormatter.new
+    if config[:formatter]
+      warn "formatter options is ignored due to multi option"
     end
 
-    Process.waitall
-    timer.finish
-    report files, timer
+    output_files = []
+    processes = [cores, @files.size].min
+    children = processes.times.map { |i|
+      name = tmp "mspec-multi-#{i}"
+      output_files << name
+
+      env = {
+        "SPEC_TEMP_DIR" => "rubyspec_temp_#{i}",
+        "MSPEC_MULTI" => i.to_s
+      }
+      command = argv + ["-fy", "-o", name]
+      $stderr.puts "$ #{command.join(' ')}" if $MSPEC_DEBUG
+      IO.popen([env, *command], "rb+")
+    }
+
+    puts children.map { |child| child.gets }.uniq
+    formatter.start
+
+    until @files.empty?
+      IO.select(children)[0].each { |io|
+        reply = io.read(1)
+        case reply
+        when '.'
+          formatter.unload
+        when nil
+          raise "Worker died!"
+        else
+          while chunk = (io.read_nonblock(4096) rescue nil)
+            reply += chunk
+          end
+          raise reply
+        end
+        io.puts @files.shift unless @files.empty?
+      }
+    end
+
+    ok = true
+    children.each { |child|
+      child.puts "QUIT"
+      Process.wait(child.pid)
+      ok &&= $?.success?
+    }
+
+    formatter.aggregate_results(output_files)
+    formatter.finish
+    ok
   end
 
   def run
-    argv = []
+    argv = config[:target].split(/\s+/)
 
     argv.concat config[:launch]
     argv.concat config[:flags]
-    argv.concat config[:includes]
+    argv.concat config[:loadpath]
     argv.concat config[:requires]
-    argv << "-v"
     argv << "#{MSPEC_HOME}/bin/mspec-#{ config[:command] || "run" }"
     argv.concat config[:options]
 
-    if config[:multi] and config[:command] == "ci"
-      multi_exec argv
+    if config[:multi]
+      exit multi_exec(argv)
     else
-      if config[:use_valgrind]
-        more = ["--child-silent-after-fork=yes",
-                config[:target]] + argv
-        exec "valgrind", *more
-      else
-        cmd, *rest = config[:target].split(/\s+/)
-        argv = rest + argv unless rest.empty?
-        $stderr.puts "$ #{cmd} #{argv.join(' ')}"
-        exec cmd, *argv
-      end
+      $stderr.puts "$ #{argv.join(' ')}"
+      exec(*argv)
     end
   end
 end

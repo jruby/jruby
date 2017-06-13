@@ -13,7 +13,7 @@ describe "ENV.delete_if" do
   end
 
   it "returns an Enumerator if no block given" do
-    ENV.delete_if.should be_an_instance_of(enumerator_class)
+    ENV.delete_if.should be_an_instance_of(Enumerator)
   end
 
   it "deletes pairs through enumerator" do

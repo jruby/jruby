@@ -2,7 +2,6 @@ package org.jruby.ir.runtime;
 
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.cli.Options;
 
 // This class is just a thin wrapper around a return value
 // from nonlocal-return and break instructions.

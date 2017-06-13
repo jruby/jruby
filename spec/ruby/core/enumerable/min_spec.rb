@@ -86,40 +86,38 @@ describe "Enumerable#min" do
     multi.min.should == [1, 2]
   end
 
-  ruby_version_is "2.2" do
-    context "when called with an argument n" do
-      context "without a block" do
-        it "returns an array containing the minimum n elements" do
-          result = @e_ints.min(2)
-          result.should == [22, 333]
-        end
-      end
-
-      context "with a block" do
-        it "returns an array containing the minimum n elements" do
-          result = @e_ints.min(2) { |a, b| a * 2 <=> b * 2 }
-          result.should == [22, 333]
-        end
-      end
-
-      context "on a enumerable of length x where x < n" do
-        it "returns an array containing the minimum n elements of length x" do
-          result = @e_ints.min(500)
-          result.length.should == 5
-        end
-      end
-
-      context "that is negative" do
-        it "raises an ArgumentError" do
-          lambda { @e_ints.min(-1) }.should raise_error(ArgumentError)
-        end
+  context "when called with an argument n" do
+    context "without a block" do
+      it "returns an array containing the minimum n elements" do
+        result = @e_ints.min(2)
+        result.should == [22, 333]
       end
     end
 
-    context "that is nil" do
-      it "returns the minimum element" do
-        @e_ints.min(nil).should == 22
+    context "with a block" do
+      it "returns an array containing the minimum n elements" do
+        result = @e_ints.min(2) { |a, b| a * 2 <=> b * 2 }
+        result.should == [22, 333]
       end
+    end
+
+    context "on a enumerable of length x where x < n" do
+      it "returns an array containing the minimum n elements of length x" do
+        result = @e_ints.min(500)
+        result.length.should == 5
+      end
+    end
+
+    context "that is negative" do
+      it "raises an ArgumentError" do
+        lambda { @e_ints.min(-1) }.should raise_error(ArgumentError)
+      end
+    end
+  end
+
+  context "that is nil" do
+    it "returns the minimum element" do
+      @e_ints.min(nil).should == 22
     end
   end
 end

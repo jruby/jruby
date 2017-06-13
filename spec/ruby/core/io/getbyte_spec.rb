@@ -4,13 +4,11 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO#getbyte" do
   before :each do
-    @kcode, $KCODE = $KCODE, "utf-8"
     @io = IOSpecs.io_fixture "lines.txt"
   end
 
   after :each do
     @io.close if @io
-    $KCODE = @kcode
   end
 
   it "returns the next byte from the stream" do

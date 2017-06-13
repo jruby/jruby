@@ -94,7 +94,7 @@ public class GlobalVariable extends AbstractVariable {
         for ( final String name : globalVars.getNames() ) {
             if ( isPredefined(name) ) continue;
             IRubyObject value = globalVars.get(name);
-            // reciever of gvar should to topSelf always
+            // receiver of gvar should to topSelf always
             updateGlobalVar(vars, getTopSelf(receiver), name, value);
         }
     }
