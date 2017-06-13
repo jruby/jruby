@@ -252,12 +252,7 @@ public final class Ruby implements Constantizable {
 
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
-
-        if (config.getCompileMode().shouldJIT()) {
-            this.jitCompiler = new JITCompiler(this);
-        } else {
-            this.jitCompiler = null;
-        }
+        this.jitCompiler = new JITCompiler(this);
 
         this.parserStats        = new ParserStats(this);
 

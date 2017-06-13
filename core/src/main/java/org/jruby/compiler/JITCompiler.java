@@ -41,7 +41,6 @@ import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import java.lang.invoke.MethodHandles;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -180,8 +179,6 @@ public class JITCompiler implements JITCompilerMBean {
             throw new NotCompilableException(e);
         }
     }
-
-    static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup().in(Ruby.class);
 
     public static String getHashForString(String str) {
         return getHashForBytes(RubyEncoding.encodeUTF8(str));
