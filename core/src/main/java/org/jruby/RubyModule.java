@@ -1674,7 +1674,7 @@ public class RubyModule extends RubyObject {
 
             if (allocator == null) {
                 if (isReifiable(runtime, superClazz)) {
-                    if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
+                    if (Options.REIFY_CLASSES.load()) {
                         allocator = REIFYING_OBJECT_ALLOCATOR;
                     } else if (Options.REIFY_VARIABLES.load()) {
                         allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
