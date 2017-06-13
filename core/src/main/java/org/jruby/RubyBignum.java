@@ -236,6 +236,63 @@ public class RubyBignum extends RubyInteger {
      *  ================
      */
 
+    /** rb_big_ceil
+     *
+     */
+    @Override
+    public IRubyObject ceil(ThreadContext context, IRubyObject arg){
+        int ndigits = arg.convertToInteger().getIntValue();
+        BigInteger self = value;
+        if (ndigits > 0){
+            return convertToFloat();
+        } else if (ndigits == 0){
+            return this;
+        } else {
+            int posdigits = Math.abs(ndigits);
+            BigInteger exp = BigInteger.TEN.pow(posdigits);
+            BigInteger mod = self.mod(exp);
+            BigInteger res = self;
+            if (mod.compareTo(BigInteger.ZERO) != 0) {
+                res = self.add( exp.subtract(mod) );// self + (exp - (mod));
+            }
+            return newBignum(context.runtime, res);
+        }
+    }
+
+    /** rb_big_floor
+     *
+     */
+    @Override
+    public IRubyObject floor(ThreadContext context, IRubyObject arg){
+        int ndigits = arg.convertToInteger().getIntValue();
+        BigInteger self = value;
+        if (ndigits > 0){
+            return convertToFloat();
+        } else if (ndigits == 0){
+            return this;
+        } else {
+            int posdigits = Math.abs(ndigits);
+            BigInteger exp = BigInteger.TEN.pow(posdigits);
+            BigInteger res = self.subtract(self.mod(exp));
+            return newBignum(context.runtime, res);
+        }
+    }
+
+    /** rb_big_truncate
+     *
+     */
+    @Override
+    public IRubyObject truncate(ThreadContext context, IRubyObject arg){
+        BigInteger self = value;
+        if (self.compareTo(BigInteger.ZERO) == 1){
+            return floor(context, arg);
+        } else if (self.compareTo(BigInteger.ZERO) == -1){
+            return ceil(context, arg);
+        } else {
+            return this;
+        }
+    }
+
     /** rb_big_digits
      *
      */

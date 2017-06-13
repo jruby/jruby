@@ -301,6 +301,63 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         }
         return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
     }
+    /** rb_fix_ceil
+     *
+     */
+    @Override
+    public IRubyObject ceil(ThreadContext context, IRubyObject arg){
+        long ndigits = arg.convertToInteger().getLongValue();
+        long self = getLongValue();
+        if (ndigits > 0) {
+            return convertToFloat();
+        } else if (ndigits == 0){
+            return this;
+        } else {
+            long posdigits = Math.abs(ndigits);
+            long exp = (long) Math.pow(10, posdigits);
+            long mod = (self % exp + exp) % exp;
+            long res = self;
+            if (mod != 0) {
+                res = self + (exp - (mod));
+            }
+            return newFixnum(context.runtime, res);
+        }
+    }
+
+    /** rb_fix_floor
+     *
+     */
+    @Override
+    public IRubyObject floor(ThreadContext context, IRubyObject arg){
+        long ndigits = (arg).convertToInteger().getLongValue();
+        long self = getLongValue();
+        if (ndigits > 0) {
+            return convertToFloat();
+        } else if (ndigits == 0){
+            return this;
+        } else {
+            long posdigits = Math.abs(ndigits);
+            long exp = (long) Math.pow(10, posdigits);
+            long mod = (self % exp + exp) % exp;
+            long res = self - mod;
+            return newFixnum(context.runtime, res);
+        }
+    }
+
+    /** rb_fix_truncate
+     *
+     */
+    @Override
+    public IRubyObject truncate(ThreadContext context, IRubyObject arg) {
+        long self = getLongValue();
+        if (self > 0){
+            return floor(context, arg);
+        } else if (self < 0){
+            return ceil(context, arg);
+        } else {
+            return this;
+        }
+    }
 
     /** rb_fix_digits
      *
@@ -349,6 +406,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
         return res;
     }
+
 
     /** fix_to_s
      *
