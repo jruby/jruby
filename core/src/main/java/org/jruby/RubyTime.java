@@ -509,6 +509,9 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"gmtime", "utc"})
     public RubyTime gmtime() {
+        if (isFrozen()) {
+          throw getRuntime().newFrozenError("Time", true);
+        }
         dt = dt.withZone(DateTimeZone.UTC);
         return this;
     }
@@ -519,6 +522,9 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "localtime", optional = 1)
     public RubyTime localtime19(ThreadContext context, IRubyObject[] args) {
+        if (isFrozen()) {
+          throw getRuntime().newFrozenError("Time", true);
+        }
         DateTimeZone newDtz;
         if (args.length == 0) {
             newDtz = getLocalTimeZone(context.runtime);
@@ -799,8 +805,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     @Override
     public RubyArray to_a() {
-        return RubyArray.newArrayMayCopy(getRuntime(), new IRubyObject[]{sec(), min(), hour(), mday(), month(),
-                year(), wday(), yday(), isdst(), zone()});
+        return RubyArray.newArrayMayCopy(getRuntime(), sec(), min(), hour(), mday(), month(), year(), wday(), yday(), isdst(), zone());
     }
 
     @JRubyMethod

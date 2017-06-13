@@ -35,25 +35,27 @@ module JRuby::Compiler
   module VisitorBuilder
     def visit(name, &block)
       define_method :"visit_#{name}_node" do |node|
-        log "entering: #{node.node_type}"
-        with_node(node) do
-          instance_eval(&block)
-        end
+        log "visit: #{node.node_type} - #{node}"
+        with_node(node) { instance_eval(&block) }
       end
     end
 
     def visit_default(&block)
       define_method :method_missing do |name, node|
-        super unless name.to_s =~ /^visit/
-
-        with_node(node) do
-          block.call
+        if name.to_s.start_with?('visit')
+          log "visit: (default) #{node.node_type} - #{node}"
+          block.call(node)
+        else
+          super
         end
       end
     end
   end
 
   class ClassNodeWalker
+
+    LOG = $VERBOSE # whether to generate verbose output
+
     AST = org.jruby.ast
 
     include AST::visitor::NodeVisitor
@@ -64,7 +66,8 @@ module JRuby::Compiler
 
     extend VisitorBuilder
 
-    attr_accessor :class_stack, :method_stack, :signature, :script, :annotations, :node
+    attr_reader :script
+    attr_accessor :class_stack, :method_stack, :signature, :annotations, :node
 
     def initialize(script_name = nil)
       @script = RubyScript.new(script_name)
@@ -100,10 +103,10 @@ module JRuby::Compiler
     end
 
     def new_class(name)
-      cls = @script.new_class(name, @annotations)
+      klass = @script.new_class(name, @annotations)
       @annotations = []
 
-      class_stack.push(cls)
+      class_stack.push(klass)
     end
 
     def current_class
@@ -141,6 +144,22 @@ module JRuby::Compiler
       method_stack.pop
     end
 
+    def private_methods(names)
+      names.each { |name| current_class.private_method(name) }
+    end
+
+    def protected_methods(names)
+      names.each { |name| current_class.protected_method(name) }
+    end
+
+    def public_methods(names)
+      names.each { |name| current_class.public_method(name) }
+    end
+
+    def set_method_visibility(visibility)
+      current_class.method_visibility = visibility
+    end
+
     def build_signature(signature)
       if signature.kind_of? String
         bytes = signature.to_java_bytes
@@ -160,21 +179,20 @@ module JRuby::Compiler
     end
 
     def build_args_signature(params)
-      sig = ["Object"]
+      sig = ['Object']
       param_strings = params.child_nodes.map do |param|
         if param.respond_to? :type_node
           type_node = param.type_node
           next name_or_value(type_node)
         end
-        raise 'unknown signature element: ' + param.to_s
+        raise "unknown signature element: #{param}"
       end
       sig.concat(param_strings)
-
       sig
     end
 
     def add_requires(*requires)
-      requires.each {|r| @script.add_require(name_or_value(r))}
+      requires.each { |req| @script.add_require name_or_value(req) }
     end
 
     def set_package(package)
@@ -184,7 +202,7 @@ module JRuby::Compiler
     def name_or_value(node)
       return node.name if defined? node.name
       return node.value if defined? node.value
-      raise "unknown node :" + node.to_s
+      raise "unknown node: #{node.inspect}"
     end
 
     def with_node(node)
@@ -202,7 +220,7 @@ module JRuby::Compiler
     end
 
     def log(str)
-      puts "[jrubyc] #{str}" if $VERBOSE
+      puts "[jrubyc] #{str}" if LOG
     end
 
     visit :args do
@@ -228,7 +246,7 @@ module JRuby::Compiler
 
       # if method still has no signature, generate one
       unless current_method.java_signature
-        args_string = current_method.args.map{|a| "Object #{a}"}.join(",")
+        args_string = current_method.args.map { |arg| "Object #{arg}" }.join(',')
         sig_string = "Object #{current_method.name}(#{args_string})"
         current_method.java_signature = build_signature(sig_string)
       end
@@ -264,17 +282,34 @@ module JRuby::Compiler
         add_annotation(node.args_node.child_nodes)
       when 'java_implements'
         add_interface(*node.args_node.child_nodes)
-      when "java_require"
+      when 'java_require'
         add_requires(*node.args_node.child_nodes)
-      when "java_package"
+      when 'java_package'
         set_package(*node.args_node.child_nodes)
-      when "java_field"
+      when 'java_field'
         add_field(node.args_node.child_nodes[0].value)
+      when 'private'
+        private_methods(node.args_node.child_nodes.map(&:name))
+      when 'protected'
+        protected_methods(node.args_node.child_nodes.map(&:name))
+      when 'public'
+        public_methods(node.args_node.child_nodes.map(&:name))
+      end
+    end
+
+    visit :vcall do
+      case node.name
+      when 'private' # visibility modifier without args
+        set_method_visibility :private
+      when 'protected'
+        set_method_visibility :protected
+      when 'public'
+        set_method_visibility :public
       end
     end
 
     visit :block do
-      node.child_nodes.each {|n| n.accept self}
+      node.child_nodes.each { |node| node.accept self }
     end
 
     visit :newline do
@@ -308,10 +343,11 @@ module JRuby::Compiler
       @script_name = script_name
       @imports = imports.dup
       @requires = []
-      @package = ""
+      @package = ''
     end
 
-    attr_accessor :classes, :imports, :script_name, :requires, :package
+    attr_reader :classes, :imports, :script_name, :requires
+    attr_accessor :package
 
     def add_import(name)
       @imports << name
@@ -322,13 +358,11 @@ module JRuby::Compiler
     end
 
     def new_class(name, annotations = [])
-      cls = RubyClass.new(name, imports, script_name, annotations, requires, package)
-      @classes << cls
-      cls
+      RubyClass.new(name, imports, script_name, annotations, requires, package).tap { |klass| @classes << klass }
     end
 
     def to_s
-      str = ""
+      str = ''
       @classes.each do |cls|
         str << cls.to_s
       end
@@ -337,7 +371,10 @@ module JRuby::Compiler
   end
 
   class RubyClass
-    def initialize(name, imports = [], script_name = nil, annotations = [], requires = [], package = "")
+
+    include_package 'org.jruby.ast.java_signature'
+
+    def initialize(name, imports = [], script_name = nil, annotations = [], requires = [], package = '')
       @name = name
       @imports = imports
       @script_name = script_name
@@ -347,13 +384,13 @@ module JRuby::Compiler
       @interfaces = []
       @requires = requires
       @package = package
-      @has_constructor = false;
     end
 
-    attr_accessor :methods, :name, :script_name, :fields, :annotations, :interfaces, :requires, :package, :sourcefile
+    attr_reader :name, :script_name
+    attr_accessor :methods, :fields, :annotations, :interfaces, :requires, :package, :sourcefile
 
-    def constructor?
-      @has_constructor
+    def has_constructor?
+      !!methods.find { |method| constructor?(method.name, method.java_signature) }
     end
 
     def new_field(java_signature, annotations = [])
@@ -361,30 +398,47 @@ module JRuby::Compiler
     end
 
     def new_method(name, java_signature = nil, annotations = [])
-      is_constructor = name == "initialize" ||
-          java_signature.is_a?(Java::OrgJrubyAstJava_signature::ConstructorSignatureNode)
-      @has_constructor ||= is_constructor
-
-      if is_constructor
-        method = RubyConstructor.new(self, java_signature, annotations)
+      if constructor?(name, java_signature)
+        method = RubyConstructor.new(self, java_signature, annotations, method_visibility)
       else
-        method = RubyMethod.new(self, name, java_signature, annotations)
+        method = RubyMethod.new(self, name, java_signature, annotations, method_visibility)
       end
 
       methods << method
       method
     end
 
+    attr_reader :method_visibility # current (Ruby) method modifier e.g. protected
+    def method_visibility=(visibility); @method_visibility = visibility end
+
+    def private_method(name)
+      return if name.to_s.eql?('initialize')
+      method = methods.find { |method| method.name == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method.visibility = :private
+    end
+
+    def protected_method(name)
+      method = methods.find { |method| method.name == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method.visibility = :protected
+    end
+
+    def public_method(name)
+      method = methods.find { |method| method.name == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method.visibility = :public
+    end
+
+    def constructor?(name, java_signature = nil)
+      name.eql?('initialize') || java_signature.is_a?(ConstructorSignatureNode)
+    end
+    private :constructor?
+
     def add_interface(ifc)
       @interfaces << ifc
     end
 
     def interface_string
-      if @interfaces.size > 0
-        "implements " + @interfaces.join(', ')
-      else
-        ""
-      end
+      return '' if @interfaces.empty?
+      "implements #{@interfaces.join(', ')}"
     end
 
     def static_init
@@ -400,13 +454,11 @@ JAVA
     end
 
     def annotations_string
-      annotations.map do |a|
-        "@" + a
-      end.join("\n")
+      annotations.map { |anno| "@#{anno}" }.join("\n")
     end
 
-    def methods_string
-      methods.map(&:to_s).join("\n")
+    def methods_string # skip methods marked as (Ruby) private
+      methods.select { |method| method.visibility != :private }.map(&:to_s).join("\n")
     end
 
     def requires_string
@@ -428,11 +480,8 @@ JAVA
     end
 
     def package_string
-      if package.empty?
-        ""
-      else
-        "package #{package};"
-      end
+      return '' if package.empty?
+      "package #{package};"
     end
 
     def constructor_string
@@ -460,7 +509,7 @@ JAVA
     }
 JAVA
 
-      unless @has_constructor
+      unless has_constructor?
         str << <<JAVA
 
     /**
@@ -507,11 +556,8 @@ JAVA
 
     def fields_string
       @fields.map do |field|
-        signature = field[0]
-        annotations = field[1]
-        annotations_string = annotations.map do |a|
-          "@" + a
-        end.join("\n")
+        signature, annotations = field[0], field[1]
+        annotations_string = annotations.map { |anno| "@#{anno}" }.join("\n")
         "    #{annotations_string}\n    #{signature};\n"
       end.join("\n\n")
     end
@@ -521,16 +567,21 @@ JAVA
     # How many arguments we can invoke without needing to box arguments
     MAX_UNBOXED_ARITY_LENGTH = 3
 
-    def initialize(ruby_class, name, java_signature = nil, annotations = [])
+    def initialize(ruby_class, name, java_signature = nil, annotations = [], visibility = nil)
       @ruby_class = ruby_class
       @name = name
       @java_signature = java_signature
       @static = false
       @args = []
       @annotations = annotations
+      @visibility = visibility
     end
 
-    attr_accessor :args, :name, :java_signature, :static, :annotations
+    attr_accessor :args, :name, :java_signature, :static, :annotations, :visibility
+
+    def private?
+      visibility == :private
+    end
 
     def constructor?
       false
@@ -560,7 +611,7 @@ JAVA
     end
 
     def annotations_string
-      annotations.map { |a| "@" + a }.join("\n")
+      annotations.map { |anno| "@#{anno}" }.join("\n")
     end
 
     def conversion_string(var_names)
@@ -590,11 +641,11 @@ JAVA
       visibilities = modifiers.keys.to_a.grep(/public|private|protected/)
       if visibilities.size > 0
         visibility_str = "#{visibilities[0]}"
-      else
-        visibility_str = 'public'
+      else # explicit java_signature takes precedence over Ruby visibility
+        visibility_str = visibility || 'public'
       end
 
-      annotations = java_signature.modifiers.select(&:annotation?).map(&:to_s).join(" ")
+      annotations = java_signature.modifiers.select(&:annotation?).map(&:to_s).join(' ')
 
       "#{annotations}#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
     end
@@ -602,23 +653,22 @@ JAVA
     def typed_args
       return @typed_args if @typed_args
 
-      i = 0;
+      i = 0
       @typed_args = java_signature.parameters.map do |a|
         type = a.type.name
         if a.variable_name
           var_name = a.variable_name
         else
-          var_name = args[i]
-          i+=1
+          var_name = args[i]; i += 1
         end
 
-        {:name => var_name, :type => type}
+        { :name => var_name, :type => type }
       end
     end
 
     def throws_exceptions
       if java_signature.throws && !java_signature.throws.empty?
-        'throws ' + java_signature.throws.join(', ') + ' '
+        "throws #{java_signature.throws.join(', ')} "
       else
         ''
       end
@@ -636,47 +686,45 @@ JAVA
       return @passed_args if @passed_args
 
       if arity <= MAX_UNBOXED_ARITY_LENGTH
-        @passed_args = var_names.map {|a| "ruby_arg_#{a}"}.join(', ')
+        @passed_args = var_names.map { |var| "ruby_arg_#{var}" }.join(', ')
         @passed_args = ', ' + @passed_args if args.size > 0
       else
-        @passed_args = ", ruby_args";
+        @passed_args = ', ruby_args'
       end
     end
 
     def return_type
-      if java_signature
-        java_signature.return_type
-      else
-        raise "no java_signature has been set for method #{name}"
-      end
+      has_java_signature!
+      java_signature.return_type
     end
 
     def return_string
-      if java_signature
-        if return_type.void?
-          "return;"
-        else
-          # Can't return wrapped array as primitive array
-          cast_to = return_type.is_array ? return_type.fully_typed_name : return_type.wrapper_name
-          "return (#{cast_to})ruby_result.toJava(#{return_type.name}.class);"
-        end
+      has_java_signature!
+      if return_type.void?
+        "return;"
       else
-        raise "no java_signature has been set for method #{name}"
+        # Can't return wrapped array as primitive array
+        cast_to = return_type.is_array ? return_type.fully_typed_name : return_type.wrapper_name
+        "return (#{cast_to})ruby_result.toJava(#{return_type.name}.class);"
       end
     end
 
     def java_name
-      if java_signature
-        java_signature.name
-      else
-        raise "no java_signature has been set for method #{name}"
-      end
+      has_java_signature!
+      java_signature.name
     end
+
+    private
+
+    def has_java_signature!
+      raise "no java_signature has been set for method #{name}" unless java_signature
+    end
+
   end
 
   class RubyConstructor < RubyMethod
-    def initialize(ruby_class, java_signature = nil, annotations = [])
-      super(ruby_class, 'initialize', java_signature, annotations)
+    def initialize(ruby_class, java_signature = nil, annotations = [], visibility = nil)
+      super(ruby_class, 'initialize', java_signature, annotations, visibility)
     end
 
     def constructor?

@@ -1393,10 +1393,14 @@ lambda          : /* none */  {
                     p.pushBlockScope();
                     $$ = p.getLeftParenBegin();
                     p.setLeftParenBegin(p.incrementParenNest());
+                } {
+                    $$ = p.getCmdArgumentState().getStack();
+                    p.getCmdArgumentState().reset();
                 } f_larglist lambda_body {
-                    $$ = p.dispatch("on_lambda", $2, $3);
+                    $$ = p.dispatch("on_lambda", $3, $4);
                     p.popCurrentScope();
                     p.setLeftParenBegin($<Integer>1);
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                 }
 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {

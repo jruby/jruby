@@ -1753,7 +1753,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             synchronized (selectable.blockingLock()) {
                 boolean oldBlocking = selectable.isBlocking();
 
-                SelectionKey key = null;
+                SelectionKey key;
                 try {
                     selectable.configureBlocking(false);
 

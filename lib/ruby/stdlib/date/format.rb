@@ -376,31 +376,9 @@ class Date
   private_class_method :_strptime_i
 
   def self._strptime(str, fmt='%F')
-    str = str.dup
-    e = Format::Bag.new
-    return unless _strptime_i(str, fmt, e)
-
-    if e._cent
-      if e.cwyear
-        e.cwyear += e._cent * 100
-      end
-      if e.year
-        e.  year += e._cent * 100
-      end
-    end
-
-    if e._merid
-      if e.hour
-        e.hour %= 12
-        e.hour += e._merid
-      end
-    end
-
-    unless str.empty?
-      e.leftover = str
-    end
-
-    e.to_hash
+    parser = org.jruby.util.RubyDateParser.new
+    map = parser.parse(JRuby.runtime.current_context, fmt, str)
+    return map.nil? ? nil : map.to_hash.inject({}){|hash,(k,v)| hash[k.to_sym] = v; hash}
   end
 
   def self.s3e(e, y, m, d, bc=false)
