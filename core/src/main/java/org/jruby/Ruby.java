@@ -56,15 +56,13 @@ import org.jruby.ext.thread.ThreadLibrary;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.targets.Bootstrap;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.MRIRecursionGuard;
-import org.jruby.util.invoke.MethodHandles;
-import org.jruby.util.invoke.MethodType;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -4648,6 +4646,19 @@ public final class Ruby implements Constantizable {
         return baseNewMethod;
     }
 
+    /**
+     * Get the "nullToNil" method handle filter for this runtime.
+     *
+     * @return a method handle suitable for filtering a single IRubyObject value from null to nil
+     */
+    public Object getNullToNilHandle() {
+        Object nullToNil = this.nullToNil;
+
+        if (nullToNil != null) return nullToNil;
+
+        return this.nullToNil = Bootstrap.createNullToNilHandle(this);
+    }
+
     // Parser stats methods
     private void addLoadParseToStats() {
         if (parserStats != null) parserStats.addLoadParse();
@@ -5104,6 +5115,11 @@ public final class Ruby implements Constantizable {
      * The built-in Class#new method, so we can bind more directly to allocate and initialize.
      */
     private DynamicMethod baseNewMethod;
+
+    /**
+     * The nullToNil filter for this runtime.
+     */
+    private Object nullToNil;
 
     public final org.jruby.util.collections.ClassValue<TypePopulator> POPULATORS = new MapBasedClassValue<TypePopulator>(new ClassValueCalculator<TypePopulator>() {
         @Override

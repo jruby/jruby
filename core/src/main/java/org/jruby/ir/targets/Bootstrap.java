@@ -23,10 +23,7 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.GlobalSite;
-import org.jruby.runtime.invokedynamic.InvocationLinker;
-import org.jruby.runtime.invokedynamic.MathLinker;
-import org.jruby.runtime.invokedynamic.VariableSite;
+import org.jruby.runtime.invokedynamic.*;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
@@ -664,10 +661,7 @@ public class Bootstrap {
         VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name());
 
         // produce nil if the variable has not been initialize
-        IRubyObject nilObject = self.getRuntime().getNil();
-        MethodHandle nullToNil = lookup().findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        nullToNil = MethodHandles.insertArguments(nullToNil, 1, nilObject);
-        nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
+        MethodHandle nullToNil = (MethodHandle) self.getRuntime().getNullToNilHandle();
 
         // get variable value and filter with nullToNil
         MethodHandle getValue;
@@ -1021,5 +1015,15 @@ public class Bootstrap {
     private static final MethodHandle CONSTRUCT_BLOCK = Binder.from(Block.class, Binding.class, CompiledIRBlockBody.class).invokeStaticQuiet(LOOKUP, Bootstrap.class, "constructBlock");
     public static Block constructBlock(Binding binding, CompiledIRBlockBody body) throws Throwable {
         return new Block(body, binding);
+    }
+
+    /* Not the best place for this but better than tying Ruby to indy. */
+    public static Object createNullToNilHandle(Ruby runtime) {
+        IRubyObject nilObject = runtime.getNil();
+        MethodHandle nullToNil = Binder.from(IRubyObject.class, IRubyObject.class)
+                .append(nilObject)
+                .invokeStaticQuiet(lookup(), Helpers.class, "nullToNil");
+
+        return nullToNil;
     }
 }
