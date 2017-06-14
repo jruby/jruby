@@ -526,6 +526,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         // compatible behavior.
         byte[] bytes = new byte[16];
         int read = bufferedStream.read(bytes, 0, bytes.length);
+
+        // We are already at EOF.
+        if (read == -1) return true;
+
         bufferedStream.unread(bytes, 0, read);
 
         return bufferedStream.available() == 0;
