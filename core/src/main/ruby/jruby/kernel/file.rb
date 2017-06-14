@@ -57,6 +57,8 @@ if org.jruby.platform.Platform::IS_WINDOWS
             attach_pfunc :PathRemoveExtensionW, [:buffer_in], :void
             attach_pfunc :PathStripToRootW, [:buffer_in], :bool
 
+            ffi_lib :kernel32
+
             # We use the presence or absence of this method to indicate everything bound successfully (jruby/jruby#3998)
             attach_pfunc :CreateSymbolicLinkW, [:buffer_in, :buffer_in, :dword], :bool
           rescue FFI::NotFoundError
