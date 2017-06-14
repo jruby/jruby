@@ -28,7 +28,7 @@ os:
 
 env:
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn36M -Xmx512M -Djava.security.egd=file:/dev/./urandom"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn36M -Xmx1G -Djava.security.egd=file:/dev/./urandom"
     - MALLOC_ARENA_MAX=2
   matrix:
     - PHASE='-Ptest'
