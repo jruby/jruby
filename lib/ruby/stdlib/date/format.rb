@@ -376,8 +376,7 @@ class Date
   private_class_method :_strptime_i
 
   def self._strptime(str, fmt='%F')
-    parser = org.jruby.util.RubyDateParser.new
-    map = parser.parse(JRuby.runtime.current_context, fmt, str)
+    map = JRuby.runtime.current_context.getRubyDateParser.parse(JRuby.runtime.current_context, fmt, str)
     return map.nil? ? nil : map.to_hash.inject({}){|hash,(k,v)| hash[k.to_sym] = v; hash}
   end
 
