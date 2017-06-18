@@ -25,14 +25,19 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.jruby.util.StrptimeParser.FormatBag.has;
 
@@ -63,6 +68,10 @@ public class RubyDateParser {
         } else {
             return null;
         }
+    }
+
+    public IRubyObject parseAndCreateHash(ThreadContext context, final RubyString format, final RubyString text) {
+        return createHash(context, parse(context, format, text));
     }
 
     private HashMap<String, Object> convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag, boolean tainted) {
@@ -147,5 +156,24 @@ public class RubyDateParser {
         }
 
         return map;
+    }
+
+    private IRubyObject createHash(ThreadContext context, HashMap<String, Object> map) {
+        final Ruby runtime = context.getRuntime();
+        if (map == null) {
+            return runtime.getNil();
+        }
+
+        final RubyHash hash = RubyHash.newHash(runtime);
+        if (map.isEmpty()) {
+            return hash;
+        }
+
+        for (final Map.Entry<String, Object> entry : map.entrySet()) {
+            final RubySymbol sym = RubySymbol.newSymbol(runtime, entry.getKey());
+            final Object value = entry.getValue();
+            hash.put(sym, value);
+        }
+        return hash;
     }
 }
