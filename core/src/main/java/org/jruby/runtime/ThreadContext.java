@@ -63,6 +63,7 @@ import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RubyDateFormatter;
+import org.jruby.util.RubyDateParser;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -107,6 +108,7 @@ public final class ThreadContext {
     private ThreadFiber rootFiber; // hard anchor for root threads' fibers
     // Cache format string because it is expensive to create on demand
     private RubyDateFormatter dateFormatter;
+    private RubyDateParser dateParser;
 
     private Frame[] frameStack = new Frame[INITIAL_FRAMES_SIZE];
     private int frameIndex = -1;
@@ -358,6 +360,12 @@ public final class ThreadContext {
         if (dateFormatter == null)
             dateFormatter = new RubyDateFormatter(this);
         return dateFormatter;
+    }
+
+    public RubyDateParser getRubyDateParser() {
+        if (dateParser == null)
+            dateParser = new RubyDateParser();
+        return dateParser;
     }
 
     public void setThread(RubyThread thread) {
