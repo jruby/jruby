@@ -1948,4 +1948,6 @@ class DateTime < Date
   private_class_method :today
   public_class_method  :now
 
+  # Adds native implemented methods...
+  org.jruby.ext.date.DateLibrary.new.load JRuby.runtime, false
 end

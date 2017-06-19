@@ -375,12 +375,6 @@ class Date
 
   private_class_method :_strptime_i
 
-  def self._strptime(str, fmt='%F')
-    parser = org.jruby.util.RubyDateParser.new
-    map = parser.parse(JRuby.runtime.current_context, fmt, str)
-    return map.nil? ? nil : map.to_hash.inject({}){|hash,(k,v)| hash[k.to_sym] = v; hash}
-  end
-
   def self.s3e(e, y, m, d, bc=false)
     unless String === m
       m = m.to_s
