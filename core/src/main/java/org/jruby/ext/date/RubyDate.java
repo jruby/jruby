@@ -30,9 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.date;
 
-import org.jruby.RubyHash;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.ThreadContext;
@@ -40,8 +38,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateParser;
 import org.jruby.util.TypeConverter;
-
-import java.util.Map;
 
 @JRubyModule(name = "Date")
 public class RubyDate {
@@ -55,18 +51,7 @@ public class RubyDate {
         RubyString stringString = (RubyString) TypeConverter.checkStringType(context.runtime, string);
         RubyString formatString = (RubyString) TypeConverter.checkStringType(context.runtime, format);
 
-        Map<String, Object> map = new RubyDateParser().parse(context, formatString, stringString);
-        // FIXME: Remove null as return
-        if (map == null) return context.nil;
-
-        RubyHash hash = RubyHash.newHash(context.runtime);
-
-        for (Map.Entry<String, Object> pair: map.entrySet()) {
-            // FIXME: This is using JI for object coercion so we should return ruby types in value
-            hash.put(RubySymbol.newSymbol(context.runtime, pair.getKey()), pair.getValue());
-        }
-
-        return hash;
+        return new RubyDateParser().parse(context, formatString, stringString);
     }
 
     @JRubyMethod(meta = true, required = 1, optional = 1)
