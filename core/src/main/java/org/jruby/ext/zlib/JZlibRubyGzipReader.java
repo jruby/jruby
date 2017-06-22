@@ -363,7 +363,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 throw getRuntime().newArgumentError("negative length " + len + " given");
             }
 
-            if (args.length > 1) {
+            if (args.length > 1 && !args[1].isNil()) {
                 if (!(args[1] instanceof RubyString)) {
                     throw getRuntime().newTypeError(
                             "wrong argument type " + args[1].getMetaClass().getName()
