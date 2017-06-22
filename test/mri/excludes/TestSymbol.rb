@@ -4,4 +4,4 @@ exclude :test_to_proc_arg, "we have plans to do different caching here, see 6966
 exclude :test_to_proc_binding, "needs investigation #4303"
 exclude :test_to_proc_iseq, "needs investigation #4303"
 exclude :test_symbol_encoding, "needs investigation"
-exclude :test_symbol_fstr_leak, "assert_no_memory_leak fails due an unexpected nil"
+#exclude :test_symbol_fstr_leak, "works but Test::Unit's assert_no_memory_leak spawns a sub-Ruby"
