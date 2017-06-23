@@ -234,36 +234,40 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
     public IRubyObject inspect() {
-        StringBuilder buf = new StringBuilder("#<");
-        char delimeter = '#';
+        StringBuilder str = new StringBuilder(24).append("#<");
+        char sharp = '#';
         
-        buf.append(getMetaClass().getRealClass().getName()).append(": ");
-        
+        str.append(getMetaClass().getRealClass().getName()).append(": ");
+
         if (implementationModule.isSingleton()) {
             IRubyObject attached = ((MetaClass) implementationModule).getAttached();
             if (receiver == null) {
-                buf.append(implementationModule.inspect().toString());
+                str.append(implementationModule.inspect().toString());
             } else if (receiver == attached) {
-                buf.append(attached.inspect().toString());
-                delimeter = '.';
+                str.append(attached.inspect().toString());
+                sharp = '.';
             } else {
-                buf.append(receiver.inspect().toString());
-                buf.append('(').append(attached.inspect().toString()).append(')');
-                delimeter = '.';
+                str.append(receiver.inspect().toString());
+                str.append('(').append(attached.inspect().toString()).append(')');
+                sharp = '.';
             }
         } else {
-            buf.append(originModule.getName());
-            
+            str.append(originModule.getName());
             if (implementationModule != originModule) {
-                buf.append('(').append(implementationModule.getName()).append(')');
+                str.append('(').append(implementationModule.getName()).append(')');
             }
         }
+
+        str.append(sharp).append(methodName);
+        final String realName= method.getRealMethod().getName();
+        if ( realName != null && ! methodName.equals(realName) ) {
+            str.append('(').append(realName).append(')');
+        }
+        str.append('>');
         
-        buf.append(delimeter).append(methodName).append('>');
-        
-        RubyString str = RubyString.newString(getRuntime(), buf);
-        str.setTaint(isTaint());
-        return str;
+        RubyString res = RubyString.newString(getRuntime(), str);
+        res.setTaint(isTaint());
+        return res;
     }
 
     @JRubyMethod

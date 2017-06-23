@@ -114,5 +114,17 @@ class TestMethod < Test::Unit::TestCase
     assert_not_equal([0].method(:map).hash, [].method(:map).hash)
   end
 
+  def test_inspect
+    c = Class.new do
+      def foo; end; alias bar foo
+    end
+    m = c.new.method(:foo)
+    assert_equal("#<Method: #{c.inspect}#foo>", m.inspect)
+    m = c.instance_method(:foo)
+    assert_equal("#<UnboundMethod: #{c.inspect}#foo>", m.inspect)
+
+    m = c.new.method(:bar)
+    assert_equal("#<Method: #{c.inspect}#bar(foo)>", m.inspect)
+  end
 
 end
