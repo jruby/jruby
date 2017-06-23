@@ -473,13 +473,13 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @JRubyMethod(rest = true, notImplemented = true)
-    public IRubyObject readmsg(ThreadContext context, IRubyObject[] args) {
-        throw context.runtime.newNotImplementedError("readmsg is not implemented");
+    public IRubyObject recvmsg(ThreadContext context, IRubyObject[] args) {
+        throw context.runtime.newNotImplementedError("recvmsg is not implemented");
     }
 
     @JRubyMethod(rest = true, notImplemented = true)
-    public IRubyObject readmsg_nonblock(ThreadContext context, IRubyObject[] args) {
-        throw context.runtime.newNotImplementedError("readmsg_nonblock is not implemented");
+    public IRubyObject recvmsg_nonblock(ThreadContext context, IRubyObject[] args) {
+        throw context.runtime.newNotImplementedError("recvmsg_nonblock is not implemented");
     }
 
     protected ByteList doRead(ThreadContext context, final ByteBuffer buffer) {
