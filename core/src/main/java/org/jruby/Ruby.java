@@ -2857,13 +2857,15 @@ public final class Ruby implements Constantizable {
         }
     }
 
+    static final String ROOT_FRAME_NAME = "(root)";
+
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
         ThreadContext context = getCurrentContext();
         String file = context.getFile();
 
         try {
-            ThreadContext.pushBacktrace(context, "(root)", file, 0);
+            ThreadContext.pushBacktrace(context, ROOT_FRAME_NAME, file, 0);
             context.preNodeEval(self);
             ParseResult parseResult = parseFile(scriptName, in, null);
             RootNode root = (RootNode) parseResult;
@@ -2886,7 +2888,7 @@ public final class Ruby implements Constantizable {
         String file = context.getFile();
 
         try {
-            ThreadContext.pushBacktrace(context, "(root)", file, 0);
+            ThreadContext.pushBacktrace(context, ROOT_FRAME_NAME, file, 0);
             context.preNodeEval(self);
 
             if (wrap) {

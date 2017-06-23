@@ -1773,7 +1773,7 @@ public class RubyKernel {
     @JRubyMethod(name = { "__method__", "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
     public static IRubyObject __method__(ThreadContext context, IRubyObject recv) {
         String frameName = context.getFrameName();
-        if (frameName == null) {
+        if (frameName == null || frameName == Ruby.ROOT_FRAME_NAME) {
             return context.nil;
         }
         return context.runtime.newSymbol(frameName);
