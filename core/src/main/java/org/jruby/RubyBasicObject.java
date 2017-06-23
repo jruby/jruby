@@ -2298,13 +2298,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k.methods.length   #=> 42
      */
     public IRubyObject methods(ThreadContext context, IRubyObject[] args) {
-        return methods(context, args, false);
-    }
-    public IRubyObject methods19(ThreadContext context, IRubyObject[] args) {
         return methods(context, args, true);
     }
 
-    public IRubyObject methods(ThreadContext context, IRubyObject[] args, boolean useSymbols) {
+    @Deprecated
+    public IRubyObject methods19(ThreadContext context, IRubyObject[] args) {
+        return methods(context, args);
+    }
+
+    public final IRubyObject methods(ThreadContext context, IRubyObject[] args, boolean useSymbols) {
         boolean all = args.length == 1 ? args[0].isTrue() : true;
         Ruby runtime = getRuntime();
         RubyArray methods = runtime.newArray();
@@ -2337,8 +2339,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(args, PUBLIC, true, false);
     }
 
+    @Deprecated
     public IRubyObject public_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().instanceMethods(args, PUBLIC, true, false);
+        return public_methods(context, args);
     }
 
     /** rb_obj_protected_methods
@@ -2357,8 +2360,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(args, PROTECTED, true, false);
     }
 
+    @Deprecated
     public IRubyObject protected_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().instanceMethods(args, PROTECTED, true, false);
+        return protected_methods(context, args);
     }
 
     /** rb_obj_private_methods
@@ -2377,8 +2381,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(args, PRIVATE, true, false);
     }
 
+    @Deprecated
     public IRubyObject private_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().instanceMethods(args, PRIVATE, true, false);
+        return private_methods(context, args);
     }
 
     /** rb_obj_singleton_methods
@@ -2481,12 +2486,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     m.call   #=> "Hello, @iv = Fred"
      */
     public IRubyObject method(IRubyObject name) {
-        return getMetaClass().newMethod(this, name.asJavaString(), true, null);
-    }
-
-    public IRubyObject method19(IRubyObject name) {
         final RubySymbol symbol = TypeConverter.checkID(name);
         return getMetaClass().newMethod(this, symbol.asJavaString(), true, null, true);
+    }
+
+    @Deprecated
+    public IRubyObject method19(IRubyObject name) {
+        return method(name);
     }
 
     /** rb_any_to_s
