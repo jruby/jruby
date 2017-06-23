@@ -68,6 +68,7 @@ jruby/test_string_java_bytes
 jruby/test_string_printf
 jruby/test_string_to_number
 jruby/test_super_call_site_caching
+jruby/test_symbol
 jruby/test_system
 jruby/test_system_error
 jruby/test_timeout
