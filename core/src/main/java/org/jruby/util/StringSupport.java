@@ -983,7 +983,7 @@ public final class StringSupport {
         }
 
         int s = nth(enc, srcBytes, srcBeg, srcBeg + srcLen, pos);
-
+        
         return strRindex(srcBytes, srcBeg, srcLen, subString.getUnsafeBytes(), subString.getBegin(), subLen, s, pos, enc);
     }
 
@@ -993,8 +993,8 @@ public final class StringSupport {
 
         final int e = strBeg + strLen;
 
-        while (s >= strBeg && s + subLen <= e) {
-            if (ByteList.memcmp(strBytes, s, subBytes, subBeg, subLen) == 0) {
+        while (s >= strBeg) {
+            if (s + subLen <= e && ByteList.memcmp(strBytes, s, subBytes, subBeg, subLen) == 0) {
                 return pos;
             }
             if (pos == 0) break; pos--;
