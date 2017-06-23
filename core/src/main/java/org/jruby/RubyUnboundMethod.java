@@ -82,19 +82,32 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return newClass;
     }
 
-    @JRubyMethod(name = "==", required = 1)
     @Override
+    @JRubyMethod(name = "==", required = 1)
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof AbstractRubyMethod)) {
-            return context.runtime.getFalse();
-        }
+        return context.runtime.newBoolean( equals(other) );
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof AbstractRubyMethod)) return false;
         if (method instanceof ProcMethod) {
-            return context.runtime.newBoolean(((ProcMethod) method).isSame(((AbstractRubyMethod) other).getMethod()));
+            return ((ProcMethod) method).isSame(((AbstractRubyMethod) other).getMethod());
         }
-        AbstractRubyMethod otherMethod = (AbstractRubyMethod)other;
-        return context.runtime.newBoolean(
-                originModule == otherMethod.originModule &&
-                method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber());
+        AbstractRubyMethod otherMethod = (AbstractRubyMethod) other;
+        return originModule == otherMethod.originModule &&
+               method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber();
+    }
+
+    @JRubyMethod
+    public RubyFixnum hash(ThreadContext context) {
+        return context.runtime.newFixnum(hashCode());
+    }
+
+    @Override
+    public int hashCode() {
+        long serial = method.getRealMethod().getSerialNumber();
+        return 997 * ((int) (serial >> 32) ^ (int) serial & 0xFF);
     }
 
     @JRubyMethod
@@ -116,7 +129,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @Override
     public IRubyObject inspect() {
         StringBuilder buf = new StringBuilder("#<");
-        char delimeter = '#';
+        char delimiter = '#';
 
         buf.append(getMetaClass().getRealClass().getName()).append(": ");
 
@@ -130,9 +143,9 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
             }
         }
 
-        buf.append(delimeter).append(methodName).append('>');
+        buf.append(delimiter).append(methodName).append('>');
 
-        RubyString str = getRuntime().newString(buf.toString());
+        RubyString str = RubyString.newString(getRuntime(), buf);
         str.setTaint(isTaint());
         return str;
     }

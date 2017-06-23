@@ -143,34 +143,51 @@ public class RubyMethod extends AbstractRubyMethod {
         return getRuntime().newFixnum(value);
     }
 
+    @JRubyMethod(name = "eql?", required = 1)
+    public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
+        return op_equal(context, other);
+    }
+
     @Override
     @JRubyMethod(name = "==", required = 1)
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
+        return context.runtime.newBoolean( equals(other) );
+    }
+
+    @Override
+    public boolean equals(Object other) {
         if (!(other instanceof RubyMethod)) {
-            return context.runtime.getFalse();
+            return false;
         }
         if (method instanceof ProcMethod) {
-            return context.runtime.newBoolean(((ProcMethod) method).isSame(((RubyMethod) other).getMethod()));
+            return ((ProcMethod) method).isSame(((RubyMethod) other).getMethod());
         }
         RubyMethod otherMethod = (RubyMethod)other;
-        return context.runtime.newBoolean(receiver == otherMethod.receiver &&
-                originModule == otherMethod.originModule &&
-                (isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) || isSerialMatch(otherMethod.getMethod().getRealMethod()))
-        );
+        return receiver == otherMethod.receiver && originModule == otherMethod.originModule &&
+            ( isSerialMatch(otherMethod.method) || isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) );
     }
 
     private boolean isMethodMissingMatch(DynamicMethod other) {
         return (method.getRealMethod() instanceof RubyModule.RespondToMissingMethod) &&
-                ((RubyModule.RespondToMissingMethod)method.getRealMethod()).equals(other);
+                ((RubyModule.RespondToMissingMethod) method.getRealMethod()).equals(other);
     }
 
     private boolean isSerialMatch(DynamicMethod otherMethod) {
         return method.getRealMethod().getSerialNumber() == otherMethod.getRealMethod().getSerialNumber();
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
-        return op_equal(context, other);
+    @JRubyMethod
+    public RubyFixnum hash(ThreadContext context) {
+        return context.runtime.newFixnum(hashCodeImpl());
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) hashCodeImpl();
+    }
+
+    private long hashCodeImpl() {
+        return receiver.hashCode() * method.getRealMethod().getSerialNumber();
     }
 
     @JRubyMethod(name = "clone")
