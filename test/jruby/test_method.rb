@@ -74,4 +74,22 @@ class TestMethod < Test::Unit::TestCase
     assert_nil(eval("class TestCallee; __callee__; end"))
   end
 
+  def test_eq # (modified) part from *mri/ruby/test_method.rb*
+    o = Object.new
+    class << o
+      def foo; end
+      alias muu foo
+      def baz; end
+      alias bar baz
+    end
+    assert_not_equal(o.method(:foo), nil)
+    m = o.method(:foo)
+    def o.foo; end
+    assert_not_equal(o.method(:foo), m)
+    assert_equal(o.method(:foo), o.method(:foo))
+    assert_equal(o.method(:baz), o.method(:bar))
+    assert_not_equal(o.method(:foo), o.method(:baz))
+    assert_not_equal(o.method(:foo), o.method(:muu))
+  end
+
 end
