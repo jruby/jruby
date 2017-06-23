@@ -1631,22 +1631,37 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     @JRubyMethod(name = "singleton_method_added", module = true, visibility = PRIVATE)
-    public static IRubyObject singleton_method_added19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
-        return context.runtime.getNil();
+    public static IRubyObject singleton_method_added(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return context.nil;
     }
 
     @JRubyMethod(name = "singleton_method_removed", module = true, visibility = PRIVATE)
-    public static IRubyObject singleton_method_removed19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
-        return context.runtime.getNil();
+    public static IRubyObject singleton_method_removed(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return context.nil;
     }
 
     @JRubyMethod(name = "singleton_method_undefined", module = true, visibility = PRIVATE)
+    public static IRubyObject singleton_method_undefined(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return context.nil;
+    }
+
+    @Deprecated
+    public static IRubyObject singleton_method_added19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return singleton_method_added(context, recv, symbolId, block);
+    }
+
+    @Deprecated
+    public static IRubyObject singleton_method_removed19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return singleton_method_removed(context, recv, symbolId, block);
+    }
+
+    @Deprecated
     public static IRubyObject singleton_method_undefined19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
-        return context.runtime.getNil();
+        return singleton_method_undefined(context, recv, symbolId, block);
     }
 
     @JRubyMethod(name = "method_missing", rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject method_missing19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
 
@@ -1655,6 +1670,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         return RubyKernel.methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args);
+    }
+
+    @Deprecated
+    public static IRubyObject method_missing19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return method_missing(context, recv, args, block);
     }
 
     @JRubyMethod(name = "__send__", omit = true)
