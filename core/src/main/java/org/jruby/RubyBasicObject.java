@@ -1658,25 +1658,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     @JRubyMethod(name = "__send__", omit = true)
-    public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
+    public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, block);
     }
     @JRubyMethod(name = "__send__", omit = true)
-    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, arg1, block);
     }
     @JRubyMethod(name = "__send__", omit = true)
-    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
     @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true)
-    public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         String name = RubySymbol.objectToSymbolString(args[0]);
 
         final int length = args.length - 1;
@@ -2664,21 +2664,26 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @return the result of invoking the method identified by aSymbol.
      */
+    @Deprecated
     public IRubyObject send(ThreadContext context, Block block) {
         throw context.runtime.newArgumentError(0, 1);
     }
-    public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
-        return send19(context, arg0, block);
+    @Deprecated
+    public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
+        return send(context, arg0, block);
     }
-    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return send19(context, arg0, arg1, block);
+    @Deprecated
+    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return send(context, arg0, arg1, block);
     }
-    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return send19(context, arg0, arg1, arg2, block);
+    @Deprecated
+    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return send(context, arg0, arg1, arg2, block);
     }
-    public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
-        if (args.length == 0) return send(context, block);
-        return send19(context, args, block);
+    @Deprecated
+    public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
+        if (args.length == 0) throw context.runtime.newArgumentError(0, 1);
+        return send(context, args, block);
     }
 
     /** rb_false
