@@ -1,8 +1,7 @@
-require 'socket'
-require 'timeout'
-
 describe "Thread#status behavior while blocking IO: JRUBY-5238" do
   before(:each) do
+    require 'socket'; require 'timeout'
+
     @server = TCPServer.new('127.0.0.1', 0)
     port = @server.addr[1]
     @client = TCPSocket.new('127.0.0.1', port)
