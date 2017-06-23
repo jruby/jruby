@@ -2766,39 +2766,40 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return pos + offset;
     }
 
+    @Deprecated
+    public IRubyObject rindex19(ThreadContext context, IRubyObject arg0) {
+        return rindex(context, arg0);
+    }
+
+    @Deprecated
+    public IRubyObject rindex19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return rindex(context, arg0, arg1);
+    }
+
     /** rb_str_rindex_m
      *
      */
+    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
-        return rindex19(context, arg0);
+        return rindexCommon(context, arg0, strLength());
     }
 
+    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return rindex19(context, arg0, arg1);
-    }
-
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
-    public IRubyObject rindex19(ThreadContext context, IRubyObject arg0) {
-        return rindexCommon19(context.runtime, context, arg0, strLength());
-    }
-
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
-    public IRubyObject rindex19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
-        Ruby runtime = context.runtime;
         int length = strLength();
         if (pos < 0) {
             pos += length;
             if (pos < 0) {
-                if (arg0 instanceof RubyRegexp) context.setBackRef(runtime.getNil());
-                return runtime.getNil();
+                if (arg0 instanceof RubyRegexp) context.setBackRef(context.nil);
+                return context.nil;
             }
         }
         if (pos > length) pos = length;
-        return rindexCommon19(runtime, context, arg0, pos);
+        return rindexCommon(context, arg0, pos);
     }
 
-    private IRubyObject rindexCommon19(Ruby runtime, ThreadContext context, final IRubyObject sub, int pos) {
+    private IRubyObject rindexCommon(ThreadContext context, final IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
             RubyRegexp regSub = (RubyRegexp) sub;
             pos = StringSupport.offset(
@@ -2809,25 +2810,24 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 pos = subLength(pos);
             }
         } else if (sub instanceof RubyString) {
-            Encoding enc = this.checkEncoding((RubyString) sub);
-            pos = StringSupport.rindex(
-                    value,
-                    StringSupport.strLengthFromRubyString(
-                            this,
-                            enc),
-                    StringSupport.strLengthFromRubyString(
-                            ((RubyString) sub),
-                            enc),
-                    pos,
-                    (RubyString) sub,
-                    this.checkEncoding((RubyString) sub));
+            Encoding enc = checkEncoding((RubyString) sub);
+            pos = StringSupport.rindex(value,
+                    StringSupport.strLengthFromRubyString(this, enc),
+                    StringSupport.strLengthFromRubyString(((RubyString) sub), enc),
+                    pos, (RubyString) sub, enc
+            );
         } else {
             IRubyObject tmp = sub.checkStringType();
-            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
-            pos = StringSupport.rindex(value, StringSupport.strLengthFromRubyString(this, this.checkEncoding((RubyString) tmp)), StringSupport.strLengthFromRubyString(((RubyString) tmp), this.checkEncoding((RubyString) tmp)), pos, (RubyString) tmp, this.checkEncoding((RubyString) tmp));
+            if (tmp.isNil()) throw context.runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
+            Encoding enc = checkEncoding((RubyString) tmp);
+            pos = StringSupport.rindex(value,
+                    StringSupport.strLengthFromRubyString(this, enc),
+                    StringSupport.strLengthFromRubyString(((RubyString) tmp), enc),
+                    pos, (RubyString) tmp, enc
+            );
         }
-        if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
-        return runtime.getNil();
+        if (pos >= 0) return RubyFixnum.newFixnum(context.runtime, pos);
+        return context.nil;
     }
 
     @Deprecated
