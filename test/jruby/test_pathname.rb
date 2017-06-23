@@ -68,7 +68,8 @@ class TestPathname < Test::Unit::TestCase
   def test_unicode_name
     x = "joe"
     y = "joe/⸀䐀攀氀攀琀攀䴀攀/fred"
-    puts Pathname.new(y).relative_path_from(Pathname.new(x))
+    p = Pathname.new(y).relative_path_from(Pathname.new(x))
+    assert_equal "⸀䐀攀氀攀琀攀䴀攀/fred", p.to_s
   end
 
 end
