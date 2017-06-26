@@ -44,6 +44,7 @@ import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
+import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.IllegalBlockingModeException;
@@ -188,6 +189,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
         catch (BindException e) {
             throw runtime.newErrnoEADDRFromBindException(e);
+        }
+        catch (AlreadyBoundException abe) {
+            throw runtime.newErrnoEINVALError("bind");
         }
         catch (SocketException e) {
             final String message = e.getMessage();
