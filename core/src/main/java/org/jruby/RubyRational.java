@@ -1073,7 +1073,7 @@ public class RubyRational extends RubyNumeric {
 
             r.num = num;
             r.den = den;
-            
+
             return r;
         }
     };
