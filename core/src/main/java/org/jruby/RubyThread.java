@@ -251,7 +251,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     if (status.get() == Status.SLEEP) {
                         exitSleep();
                     }
-                    RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[]{err, RubyHash.newKwargs(runtime, "cause", ((RubyException) err).cause)}, Block.NULL_BLOCK);
+                    // if it's a Ruby exception, force the cause through
+                    IRubyObject[] args;
+                    if (err instanceof RubyException) {
+                        args = Helpers.arrayOf(err, RubyHash.newKwargs(runtime, "cause", ((RubyException) err).cause));
+                    } else {
+                        args = Helpers.arrayOf(err);
+                    }
+                    RubyKernel.raise(context, runtime.getKernel(), args, Block.NULL_BLOCK);
                 }
             }
 
