@@ -13,7 +13,7 @@ class TestMethod < Test::Unit::TestCase
     def obj.broken_method
       break # TODO this is a SyntaxError on MRI 2.2.2
     end
-    assert_raise(LocalJumpError){obj.broken_method}
+    assert_raise(LocalJumpError){ obj.broken_method }
   end
 
   module Methods
@@ -72,6 +72,61 @@ class TestMethod < Test::Unit::TestCase
       assert_equal(:m, o.m, mesg)
     end
     assert_nil(eval("class TestCallee; __callee__; end"))
+  end
+
+  def test_eq # (modified) part from *mri/ruby/test_method.rb*
+    o = Object.new
+    class << o
+      def foo; end
+      alias muu foo
+      def baz; end
+      alias bar baz
+    end
+    assert_not_equal(o.method(:foo), nil)
+    m = o.method(:foo)
+    def o.foo; end
+    assert_not_equal(o.method(:foo), m)
+    assert_equal(o.method(:foo), o.method(:foo))
+    assert_equal(o.method(:baz), o.method(:bar))
+    assert_not_equal(o.method(:foo), o.method(:baz))
+    assert_not_equal(o.method(:foo), o.method(:muu))
+
+    assert_equal(String.instance_method(:to_s), String.instance_method(:to_str))
+
+    assert_not_equal([0].method(:map), [].method(:map))
+  end
+
+  def test_hash
+    o = Object.new
+    def o.foo; end
+    class << o
+      alias bar foo
+    end
+
+    hash = o.method(:foo).hash
+    assert_kind_of(Integer, hash)
+    assert_equal(hash, o.method(:bar).hash)
+
+    hash = String.instance_method(:to_s).hash
+    assert_kind_of(Integer, hash)
+    assert_equal(hash, String.instance_method(:to_str).hash)
+
+    assert_not_equal([0].method(:map).hash, [].method(:map).hash)
+  end
+
+  def test_inspect
+    c = Class.new do
+      def foo; end; alias bar foo
+    end
+    m = c.new.method(:foo)
+    assert_equal("#<Method: #{c.inspect}#foo>", m.inspect)
+    m = c.instance_method(:foo)
+    assert_equal("#<UnboundMethod: #{c.inspect}#foo>", m.inspect)
+
+    m = c.new.method(:bar)
+    assert_equal("#<Method: #{c.inspect}#bar(foo)>", m.inspect)
+    m = c.instance_method(:bar)
+    assert_equal("#<UnboundMethod: #{c.inspect}#bar(foo)>", m.inspect)
   end
 
 end

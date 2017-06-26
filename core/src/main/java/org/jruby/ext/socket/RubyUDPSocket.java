@@ -47,7 +47,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.NotYetConnectedException;
 
 import jnr.constants.platform.AddressFamily;
@@ -190,8 +189,8 @@ public class RubyUDPSocket extends RubyIPSocket {
         catch (BindException e) {
             throw runtime.newErrnoEADDRFromBindException(e);
         }
-        catch (AlreadyBoundException abe) {
-            throw runtime.newErrnoEINVALError("bind");
+        catch (AlreadyBoundException e) {
+            throw runtime.newErrnoEINVALError("bind(2) for " + host.inspect() + " port " + port);
         }
         catch (SocketException e) {
             final String message = e.getMessage();

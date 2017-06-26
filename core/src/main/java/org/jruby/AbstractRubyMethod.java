@@ -83,7 +83,12 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
-        return op_equal(context, other);
+        return context.runtime.newBoolean( equals(other) );
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return this == other;
     }
 
     public abstract AbstractRubyMethod rbClone();
@@ -111,7 +116,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
             return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     public String getFilename() {

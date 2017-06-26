@@ -1952,7 +1952,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "methods", optional = 1)
     public static IRubyObject methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return ((RubyBasicObject)self).methods19(context, args);
+        return ((RubyBasicObject)self).methods(context, args);
     }
 
     @JRubyMethod(name = "object_id")
@@ -1962,17 +1962,17 @@ public class RubyKernel {
 
     @JRubyMethod(name = "public_methods", optional = 1)
     public static IRubyObject public_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return ((RubyBasicObject)self).public_methods19(context, args);
+        return ((RubyBasicObject)self).public_methods(context, args);
     }
 
     @JRubyMethod(name = "protected_methods", optional = 1)
     public static IRubyObject protected_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return ((RubyBasicObject)self).protected_methods19(context, args);
+        return ((RubyBasicObject)self).protected_methods(context, args);
     }
 
     @JRubyMethod(name = "private_methods", optional = 1)
     public static IRubyObject private_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return ((RubyBasicObject)self).private_methods19(context, args);
+        return ((RubyBasicObject)self).private_methods(context, args);
     }
 
     @JRubyMethod(name = "singleton_methods", optional = 1)
@@ -1982,7 +1982,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "method", required = 1)
     public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
-        return ((RubyBasicObject)self).method19(symbol);
+        return ((RubyBasicObject)self).method(symbol);
     }
 
     @JRubyMethod(name = "to_s")
@@ -1997,19 +1997,19 @@ public class RubyKernel {
 
     @JRubyMethod(name = {"send"}, omit = true)
     public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
-        return ((RubyBasicObject)self).send19(context, arg0, block);
+        return ((RubyBasicObject)self).send(context, arg0, block);
     }
     @JRubyMethod(name = {"send"}, omit = true)
     public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return ((RubyBasicObject)self).send19(context, arg0, arg1, block);
+        return ((RubyBasicObject)self).send(context, arg0, arg1, block);
     }
     @JRubyMethod(name = {"send"}, omit = true)
     public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return ((RubyBasicObject)self).send19(context, arg0, arg1, arg2, block);
+        return ((RubyBasicObject)self).send(context, arg0, arg1, arg2, block);
     }
     @JRubyMethod(name = {"send"}, required = 1, rest = true, omit = true)
     public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return ((RubyBasicObject)self).send19(context, args, block);
+        return ((RubyBasicObject)self).send(context, args, block);
     }
 
     @JRubyMethod(name = "nil?")

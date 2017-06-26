@@ -1661,22 +1661,37 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     @JRubyMethod(name = "singleton_method_added", module = true, visibility = PRIVATE)
-    public static IRubyObject singleton_method_added19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
-        return context.runtime.getNil();
+    public static IRubyObject singleton_method_added(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return context.nil;
     }
 
     @JRubyMethod(name = "singleton_method_removed", module = true, visibility = PRIVATE)
-    public static IRubyObject singleton_method_removed19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
-        return context.runtime.getNil();
+    public static IRubyObject singleton_method_removed(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return context.nil;
     }
 
     @JRubyMethod(name = "singleton_method_undefined", module = true, visibility = PRIVATE)
+    public static IRubyObject singleton_method_undefined(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return context.nil;
+    }
+
+    @Deprecated
+    public static IRubyObject singleton_method_added19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return singleton_method_added(context, recv, symbolId, block);
+    }
+
+    @Deprecated
+    public static IRubyObject singleton_method_removed19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
+        return singleton_method_removed(context, recv, symbolId, block);
+    }
+
+    @Deprecated
     public static IRubyObject singleton_method_undefined19(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
-        return context.runtime.getNil();
+        return singleton_method_undefined(context, recv, symbolId, block);
     }
 
     @JRubyMethod(name = "method_missing", rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject method_missing19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
 
@@ -1687,26 +1702,31 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return RubyKernel.methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args);
     }
 
+    @Deprecated
+    public static IRubyObject method_missing19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return method_missing(context, recv, args, block);
+    }
+
     @JRubyMethod(name = "__send__", omit = true)
-    public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
+    public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, block);
     }
     @JRubyMethod(name = "__send__", omit = true)
-    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, arg1, block);
     }
     @JRubyMethod(name = "__send__", omit = true)
-    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
 
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
     @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true)
-    public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         String name = RubySymbol.objectToSymbolString(args[0]);
 
         final int length = args.length - 1;
@@ -2328,13 +2348,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k.methods.length   #=> 42
      */
     public IRubyObject methods(ThreadContext context, IRubyObject[] args) {
-        return methods(context, args, false);
-    }
-    public IRubyObject methods19(ThreadContext context, IRubyObject[] args) {
         return methods(context, args, true);
     }
 
-    public IRubyObject methods(ThreadContext context, IRubyObject[] args, boolean useSymbols) {
+    @Deprecated
+    public IRubyObject methods19(ThreadContext context, IRubyObject[] args) {
+        return methods(context, args);
+    }
+
+    public final IRubyObject methods(ThreadContext context, IRubyObject[] args, boolean useSymbols) {
         boolean all = args.length == 1 ? args[0].isTrue() : true;
         Ruby runtime = getRuntime();
         RubyArray methods = runtime.newArray();
@@ -2367,8 +2389,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(args, PUBLIC, true, false);
     }
 
+    @Deprecated
     public IRubyObject public_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().instanceMethods(args, PUBLIC, true, false);
+        return public_methods(context, args);
     }
 
     /** rb_obj_protected_methods
@@ -2387,8 +2410,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(args, PROTECTED, true, false);
     }
 
+    @Deprecated
     public IRubyObject protected_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().instanceMethods(args, PROTECTED, true, false);
+        return protected_methods(context, args);
     }
 
     /** rb_obj_private_methods
@@ -2407,8 +2431,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(args, PRIVATE, true, false);
     }
 
+    @Deprecated
     public IRubyObject private_methods19(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().instanceMethods(args, PRIVATE, true, false);
+        return private_methods(context, args);
     }
 
     /** rb_obj_singleton_methods
@@ -2511,12 +2536,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     m.call   #=> "Hello, @iv = Fred"
      */
     public IRubyObject method(IRubyObject name) {
-        return getMetaClass().newMethod(this, name.asJavaString(), true, null);
-    }
-
-    public IRubyObject method19(IRubyObject name) {
         final RubySymbol symbol = TypeConverter.checkID(name);
         return getMetaClass().newMethod(this, symbol.asJavaString(), true, null, true);
+    }
+
+    @Deprecated
+    public IRubyObject method19(IRubyObject name) {
+        return method(name);
     }
 
     /** rb_any_to_s
@@ -2688,21 +2714,26 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @return the result of invoking the method identified by aSymbol.
      */
+    @Deprecated
     public IRubyObject send(ThreadContext context, Block block) {
         throw context.runtime.newArgumentError(0, 1);
     }
-    public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
-        return send19(context, arg0, block);
+    @Deprecated
+    public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
+        return send(context, arg0, block);
     }
-    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return send19(context, arg0, arg1, block);
+    @Deprecated
+    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return send(context, arg0, arg1, block);
     }
-    public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return send19(context, arg0, arg1, arg2, block);
+    @Deprecated
+    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return send(context, arg0, arg1, arg2, block);
     }
-    public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
-        if (args.length == 0) return send(context, block);
-        return send19(context, args, block);
+    @Deprecated
+    public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
+        if (args.length == 0) throw context.runtime.newArgumentError(0, 1);
+        return send(context, args, block);
     }
 
     /** rb_false

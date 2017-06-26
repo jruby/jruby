@@ -1404,24 +1404,28 @@ public class RubyBigDecimal extends RubyNumeric {
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
     private static RoundingMode javaRoundingModeFromRubyRoundingMode(Ruby runtime, IRubyObject arg) {
         if (arg instanceof RubySymbol) {
-            RubySymbol roundingModeSymbol = (RubySymbol) arg;
-            String roundingModeString = roundingModeSymbol.asJavaString();
-            if (roundingModeString.equals("up")) {
-                return RoundingMode.UP;
-            } else if (roundingModeString.equals("down") || roundingModeString.equals("truncate")) {
-                return RoundingMode.DOWN;
-            } else if (roundingModeString.equals("half_up") || roundingModeString.equals("default")) {
-                return RoundingMode.HALF_UP;
-            } else if (roundingModeString.equals("half_down")) {
-                return RoundingMode.HALF_DOWN;
-            } else if (roundingModeString.equals("half_even") || roundingModeString.equals("banker")) {
-                return RoundingMode.HALF_EVEN;
-            } else if (roundingModeString.equals("ceiling") || roundingModeString.equals("ceil")) {
-                return RoundingMode.CEILING;
-            } else if (roundingModeString.equals("floor")) {
-                return RoundingMode.FLOOR;
-            } else {
-                throw runtime.newArgumentError("invalid rounding mode");
+            String roundingMode = ((RubySymbol) arg).asJavaString();
+            switch (roundingMode) {
+                case "up" :
+                    return RoundingMode.UP;
+                case "down" :
+                case "truncate" :
+                    return RoundingMode.DOWN;
+                case "half_up" :
+                case "default" :
+                    return RoundingMode.HALF_UP;
+                case "half_down" :
+                    return RoundingMode.HALF_DOWN;
+                case "half_even" :
+                case "banker" :
+                    return RoundingMode.HALF_EVEN;
+                case "ceiling" :
+                case "ceil" :
+                    return RoundingMode.CEILING;
+                case "floor" :
+                    return RoundingMode.FLOOR;
+                default :
+                    throw runtime.newArgumentError("invalid rounding mode");
             }
         } else {
             try {
@@ -1534,64 +1538,51 @@ public class RubyBigDecimal extends RubyNumeric {
 
         int scale = value.scale();
         BigInteger numerator = value.scaleByPowerOfTen(scale).toBigInteger();
-        BigInteger denominator = BigInteger.valueOf((long)Math.pow(10, scale));
+        BigInteger denominator = BigInteger.valueOf((long) Math.pow(10, scale));
 
         return RubyRational.newInstance(context, context.runtime.getRational(), RubyBignum.newBignum(context.runtime, numerator), RubyBignum.newBignum(context.runtime, denominator));
     }
 
+    @Deprecated // not-used
     public IRubyObject to_int19() {
         return to_int();
     }
 
-    private String removeTrailingZeroes(String in) {
-        while(in.length() > 0 && in.charAt(in.length()-1)=='0') {
-            in = in.substring(0, in.length()-1);
-        }
-        return in;
+    private static String removeTrailingZeroes(final String str) {
+        int l = str.length();
+        while (l > 0 && str.charAt(l-1) == '0') l--;
+        return str.substring(0, l);
     }
 
     public static boolean formatHasLeadingPlus(String format) {
-        return format.startsWith("+");
+        return format.length() > 0 && format.charAt(0) == '+';
     }
 
     public static boolean formatHasLeadingSpace(String format) {
-        return format.startsWith(" ");
+        return format.length() > 0 && format.charAt(0) == ' ';
     }
 
     public static boolean formatHasFloatingPointNotation(String format) {
-        return format.endsWith("F");
+        return format.length() > 0 && format.charAt(format.length()-1) == 'F';
     }
+
+    private static final Pattern FRACTIONAL_DIGIT_GROUPS = Pattern.compile("(\\+| )?(\\d+)(E|F)?");
 
     public static int formatFractionalDigitGroups(String format) {
-        Matcher m = Pattern.compile("(\\+| )?(\\d+)(E|F)?").matcher(format);
-
-        return m.matches() ? Integer.parseInt(m.group(2)) : 0;
-    }
-
-    private static String firstArgument(IRubyObject[] args) {
-        if ( args.length == 0 ) return null;
-        final IRubyObject arg = args[0];
-        return arg.isNil() ? null : arg.toString();
+        Matcher match = FRACTIONAL_DIGIT_GROUPS.matcher(format);
+        return match.matches() ? Integer.parseInt(match.group(2)) : 0;
     }
 
     private static boolean posSpace(String arg) {
-        if ( arg == null ) return false;
-        return formatHasLeadingSpace(arg);
+        return arg == null ? false : formatHasLeadingSpace(arg);
     }
 
     private static boolean posSign(String arg) {
-        if ( arg == null ) return false;
-        return formatHasLeadingPlus(arg) || posSpace(arg);
-    }
-
-    private static boolean asEngineering(String arg) {
-        if ( arg == null ) return true;
-        return ! formatHasFloatingPointNotation(arg);
+        return arg == null ? false : (formatHasLeadingPlus(arg) || posSpace(arg));
     }
 
     private static int groups(String arg) {
-        if (arg == null) return 0;
-        return formatFractionalDigitGroups(arg);
+        return arg == null ? 0 : formatFractionalDigitGroups(arg);
     }
 
     private boolean isZero() {
@@ -1614,24 +1605,25 @@ public class RubyBigDecimal extends RubyNumeric {
         return value.abs().unscaledValue().toString();
     }
 
-    private String sign(String arg, int signum) {
+    private static String sign(String arg, int signum) {
         return signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : "");
     }
 
-    private CharSequence engineeringValue(String arg) {
+    private CharSequence engineeringValue(final String arg) {
+        final String s = removeTrailingZeroes(unscaledValue());
+
         StringBuilder build = new StringBuilder();
         build.append( sign(arg, value.signum()) ).append("0.");
-        String s = removeTrailingZeroes(unscaledValue());
 
-        if (groups(arg) == 0) {
-            build.append("".equals(s) ? "0" : s);
+        final int groups = groups(arg);
+        if (groups == 0) {
+            build.append(s.isEmpty() ? "0" : s);
         } else {
-            int length = s.length();
+            final int len = s.length();
             String sep = "";
-
-            for (int index = 0; index < length; index += groups(arg)) {
-                int next = index + groups(arg);
-                build.append(sep).append(s.substring(index, next > length ? length : next));
+            for (int index = 0; index < len; index += groups) {
+                int next = index + groups;
+                build.append(sep).append(s.substring(index, next > len ? len : next));
                 sep = " ";
             }
         }
@@ -1639,54 +1631,71 @@ public class RubyBigDecimal extends RubyNumeric {
         return build;
     }
 
-    private CharSequence floatingPointValue(String arg) {
+    private CharSequence floatingPointValue(final String arg) {
         List<String> values = StringSupport.split(value.abs().stripTrailingZeros().toPlainString(), '.');
-        String whole = values.size() > 0 ? values.get(0) : "0";
-        String after = values.size() > 1 ? values.get(1) : "0";
-        StringBuilder build = new StringBuilder().append(sign(arg, value.signum()));
+        final String whole = values.size() > 0 ? values.get(0) : "0";
+        final String after = values.size() > 1 ? values.get(1) : "0";
 
-        if (groups(arg) == 0) {
+        StringBuilder build = new StringBuilder();
+        build.append( sign(arg, value.signum()) );
+
+        final int groups = groups(arg);
+        if (groups == 0) {
             build.append(whole);
             if (after != null) build.append('.').append(after);
         } else {
-            int index = 0;
+            int index = 0, len = whole.length();
             String sep = "";
-            while (index < whole.length()) {
-                int next = index + groups(arg);
-                if (next > whole.length()) next = whole.length();
+            while (index < len) {
+                int next = index + groups;
+                if (next > len) next = len;
 
                 build.append(sep).append(whole.substring(index, next));
                 sep = " ";
-                index += groups(arg);
+                index += groups;
             }
-            if (null != after) {
+            if (after != null) {
                 build.append('.');
-                index = 0;
+                index = 0; len = after.length();
                 sep = "";
-                while (index < after.length()) {
-                    int next = index + groups(arg);
-                    if (next > after.length()) next = after.length();
+                while (index < len) {
+                    int next = index + groups;
+                    if (next > len) next = len;
 
                     build.append(sep).append(after.substring(index, next));
                     sep = " ";
-                    index += groups(arg);
+                    index += groups;
                 }
             }
         }
         return build;
     }
 
-    @JRubyMethod(optional = 1)
-    public IRubyObject to_s(IRubyObject[] args) {
-        if ( isNaN() ) return getRuntime().newString("NaN");
-        if ( isInfinity() ) return getRuntime().newString(infinityString());
-        if ( isZero() ) return getRuntime().newString(zeroSign < 0 ? "-0.0" : "0.0");
+    @JRubyMethod
+    public RubyString to_s(ThreadContext context) {
+        return toStringImpl(context.runtime, null);
+    }
 
-        String arg = firstArgument(args);
+    @JRubyMethod
+    public RubyString to_s(ThreadContext context, IRubyObject arg) {
+        return toStringImpl(context.runtime, arg.isNil() ? null : arg.toString());
+    }
 
-        return getRuntime().newString(
-            ( asEngineering(arg) ? engineeringValue(arg) : floatingPointValue(arg) ).toString()
+    private RubyString toStringImpl(final Ruby runtime, String arg) {
+        if ( isNaN() ) return runtime.newString("NaN");
+        if ( isInfinity() ) return runtime.newString(infinityString());
+        if ( isZero() ) return runtime.newString(zeroSign < 0 ? "-0.0" : "0.0");
+
+        boolean asEngineering = arg == null || ! formatHasFloatingPointNotation(arg);
+
+        return RubyString.newString(runtime,
+            ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) )
         );
+    }
+
+    @Deprecated
+    public IRubyObject to_s(IRubyObject[] args) {
+        return toStringImpl(getRuntime(), args.length == 0 ? null : (args[0].isNil() ? null : args[0].toString()));
     }
 
     // Note: #fix has only no-arg form, but truncate allows optional parameter.
@@ -1702,8 +1711,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
         int precision = value.precision() - value.scale() + arg;
 
-        if (precision > 0) return new RubyBigDecimal(getRuntime(),
+        if (precision > 0) {
+            return new RubyBigDecimal(getRuntime(),
                 value.round(new MathContext(precision, RoundingMode.DOWN)));
+        }
 
         return new RubyBigDecimal(getRuntime(), BigDecimal.ZERO); // FIXME: proper sign
     }

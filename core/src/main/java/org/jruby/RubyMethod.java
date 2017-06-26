@@ -143,34 +143,51 @@ public class RubyMethod extends AbstractRubyMethod {
         return getRuntime().newFixnum(value);
     }
 
+    @JRubyMethod(name = "eql?", required = 1)
+    public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
+        return op_equal(context, other);
+    }
+
     @Override
     @JRubyMethod(name = "==", required = 1)
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
+        return context.runtime.newBoolean( equals(other) );
+    }
+
+    @Override
+    public boolean equals(Object other) {
         if (!(other instanceof RubyMethod)) {
-            return context.runtime.getFalse();
+            return false;
         }
         if (method instanceof ProcMethod) {
-            return context.runtime.newBoolean(((ProcMethod) method).isSame(((RubyMethod) other).getMethod()));
+            return ((ProcMethod) method).isSame(((RubyMethod) other).getMethod());
         }
         RubyMethod otherMethod = (RubyMethod)other;
-        return context.runtime.newBoolean(receiver == otherMethod.receiver &&
-                originModule == otherMethod.originModule &&
-                (isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) || isSerialMatch(otherMethod.getMethod().getRealMethod()))
-        );
+        return receiver == otherMethod.receiver && originModule == otherMethod.originModule &&
+            ( isSerialMatch(otherMethod.method) || isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) );
     }
 
     private boolean isMethodMissingMatch(DynamicMethod other) {
         return (method.getRealMethod() instanceof RubyModule.RespondToMissingMethod) &&
-                ((RubyModule.RespondToMissingMethod)method.getRealMethod()).equals(other);
+                ((RubyModule.RespondToMissingMethod) method.getRealMethod()).equals(other);
     }
 
     private boolean isSerialMatch(DynamicMethod otherMethod) {
         return method.getRealMethod().getSerialNumber() == otherMethod.getRealMethod().getSerialNumber();
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
-        return op_equal(context, other);
+    @JRubyMethod
+    public RubyFixnum hash(ThreadContext context) {
+        return context.runtime.newFixnum(hashCodeImpl());
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) hashCodeImpl();
+    }
+
+    private long hashCodeImpl() {
+        return receiver.hashCode() * method.getRealMethod().getSerialNumber();
     }
 
     @JRubyMethod(name = "clone")
@@ -217,36 +234,40 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
     public IRubyObject inspect() {
-        StringBuilder buf = new StringBuilder("#<");
-        char delimeter = '#';
+        StringBuilder str = new StringBuilder(24).append("#<");
+        char sharp = '#';
         
-        buf.append(getMetaClass().getRealClass().getName()).append(": ");
-        
+        str.append(getMetaClass().getRealClass().getName()).append(": ");
+
         if (implementationModule.isSingleton()) {
             IRubyObject attached = ((MetaClass) implementationModule).getAttached();
             if (receiver == null) {
-                buf.append(implementationModule.inspect().toString());
+                str.append(implementationModule.inspect().toString());
             } else if (receiver == attached) {
-                buf.append(attached.inspect().toString());
-                delimeter = '.';
+                str.append(attached.inspect().toString());
+                sharp = '.';
             } else {
-                buf.append(receiver.inspect().toString());
-                buf.append('(').append(attached.inspect().toString()).append(')');
-                delimeter = '.';
+                str.append(receiver.inspect().toString());
+                str.append('(').append(attached.inspect().toString()).append(')');
+                sharp = '.';
             }
         } else {
-            buf.append(originModule.getName());
-            
+            str.append(originModule.getName());
             if (implementationModule != originModule) {
-                buf.append('(').append(implementationModule.getName()).append(')');
+                str.append('(').append(implementationModule.getName()).append(')');
             }
         }
+
+        str.append(sharp).append(methodName); // (real-name) if alias
+        final String realName= method.getRealMethod().getName();
+        if ( realName != null && ! methodName.equals(realName) ) {
+            str.append('(').append(realName).append(')');
+        }
+        str.append('>');
         
-        buf.append(delimeter).append(methodName).append('>');
-        
-        RubyString str = RubyString.newString(getRuntime(), buf);
-        str.setTaint(isTaint());
-        return str;
+        RubyString res = RubyString.newString(getRuntime(), str);
+        res.setTaint(isTaint());
+        return res;
     }
 
     @JRubyMethod
