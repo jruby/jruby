@@ -542,7 +542,7 @@ public class RubyTime extends RubyObject {
             case 0: return localtime(context);
             case 1: return localtime(context, args[0]);
         }
-        throw new IllegalArgumentException(java.util.Arrays.toString(args));
+        throw new AssertionError(java.util.Arrays.toString(args));
     }
 
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
@@ -555,23 +555,43 @@ public class RubyTime extends RubyObject {
         return newTime(getRuntime(), dt.withZone(DateTimeZone.UTC), nsec);
     }
 
-    public RubyTime getlocal() {
-        return getlocal19(getRuntime().getCurrentContext(), NULL_ARRAY);
+    public final RubyTime getlocal() {
+        return getlocal(getRuntime().getCurrentContext());
     }
 
-    @JRubyMethod(name = "getlocal", optional = 1)
-    public RubyTime getlocal19(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0 || args[0].isNil()) {
-            return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())), nsec);
-        } else {
-            DateTimeZone dtz = getTimeZoneFromUtcOffset(context.runtime, args[0]);
-            return newTime(getRuntime(), dt.withZone(dtz), nsec);
+    @JRubyMethod(name = "getlocal")
+    public RubyTime getlocal(ThreadContext context) {
+        return newTime(context.runtime, dt.withZone(getLocalTimeZone(context.runtime)), nsec);
+    }
+
+    @JRubyMethod(name = "getlocal")
+    public RubyTime getlocal(ThreadContext context, IRubyObject arg) {
+        if (arg.isNil()) {
+            return newTime(context.runtime, dt.withZone(getLocalTimeZone(context.runtime)), nsec);
         }
+        DateTimeZone dtz = getTimeZoneFromUtcOffset(context.runtime, arg);
+        return newTime(context.runtime, dt.withZone(dtz), nsec);
+    }
+
+    @Deprecated
+    public RubyTime getlocal19(ThreadContext context, IRubyObject[] args) {
+        switch(args.length) {
+            case 0: return getlocal(context);
+            case 1: return getlocal(context, args[0]);
+        }
+        throw new AssertionError(java.util.Arrays.toString(args));
+    }
+
+    /**
+     * @see #strftime(ThreadContext, IRubyObject)
+     */
+    public RubyString strftime(IRubyObject format) {
+        return strftime(getRuntime().getCurrentContext(), format);
     }
 
     @JRubyMethod(required = 1)
-    public RubyString strftime(IRubyObject format) {
-        final RubyDateFormatter rdf = getRuntime().getCurrentContext().getRubyDateFormatter();
+    public RubyString strftime(ThreadContext context, IRubyObject format) {
+        final RubyDateFormatter rdf = context.getRubyDateFormatter();
         return rdf.compileAndFormat(format.convertToString(), false, dt, nsec, null);
     }
 
@@ -627,7 +647,7 @@ public class RubyTime extends RubyObject {
     private int cmp(RubyTime other) {
         long millis = getTimeInMillis();
 		long millis_other = other.getTimeInMillis();
-        // ignore < usec on 1.8
+
         long nsec = this.nsec;
         long nsec_other = other.nsec;
 
