@@ -1255,7 +1255,7 @@ public class RubyTime extends RubyObject {
         if (args.length == 0) return newInstance(context, recv);
 
         if (args.length == 7) {
-          Ruby runtime = context.getRuntime();
+          Ruby runtime = context.runtime;
 
           // 7th argument can be the symbol :dst instead of an offset, so needs to be special cased
           final RubySymbol dstSymbol = RubySymbol.newSymbol(runtime, "dst");
@@ -1426,16 +1426,6 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    private static final String[] MONTHS = {"jan", "feb", "mar", "apr", "may", "jun",
-                                            "jul", "aug", "sep", "oct", "nov", "dec"};
-
-    private static final Map<String, Integer> MONTHS_MAP = new HashMap<String, Integer>();
-    static {
-        for (int i = 0; i < MONTHS.length; i++) {
-            MONTHS_MAP.put(MONTHS[i], i + 1);
-        }
-    }
-
     private static final int ARG_SIZE = 7;
 
     private static RubyTime createTime(ThreadContext context, RubyClass klass, IRubyObject[] args, boolean gmt, boolean utcOffset) {
@@ -1445,7 +1435,7 @@ public class RubyTime extends RubyObject {
         boolean setTzRelative = false;
         long nanos = 0;
 
-        DateTimeZone dtz;
+        final DateTimeZone dtz;
         if (gmt) {
             dtz = DateTimeZone.UTC;
         } else if (args.length == 10 && args[9] instanceof RubyString) {
@@ -1465,7 +1455,7 @@ public class RubyTime extends RubyObject {
         if (args.length == 10) {
             if (args[8] instanceof RubyBoolean) isDst = args[8].isTrue();
 
-            args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0], runtime.getNil() };
+            args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0], context.nil };
         } else {
             // MRI accepts additional wday argument which appears to be ignored.
             len = args.length;
@@ -1488,53 +1478,29 @@ public class RubyTime extends RubyObject {
 
         if (len > 1) {
             if (!args[1].isNil()) {
-                IRubyObject tmp = args[1].checkStringType();
-                if (!tmp.isNil()) {
-                    String monthString = tmp.toString().toLowerCase();
-                    Integer monthInt = MONTHS_MAP.get(monthString);
-
-                    if (monthInt != null) {
-                        month = monthInt;
-                    } else {
-                        try {
-                            month = Integer.parseInt(monthString);
-                        } catch (NumberFormatException nfExcptn) {
-                            throw runtime.newArgumentError("Argument out of range.");
-                        }
-                    }
-                } else {
-                    month = (int) RubyNumeric.num2long(args[1]);
-                }
+                month = parseMonth(context, args[1]);
             }
             if (1 > month || month > 12) {
                 throw runtime.newArgumentError("Argument out of range: for month: " + month);
             }
         }
 
-        int[] int_args = { 1, 0, 0, 0, 0, 0 };
-
-        for (int i = 0; int_args.length >= i + 2; i++) {
-            if (!args[i + 2].isNil()) {
-                if (!(args[i + 2] instanceof RubyNumeric)) {
-                    if (args[i + 2].respondsTo("to_int")) {
-                        args[i + 2] = args[i + 2].callMethod(context, "to_int");
-                    } else {
-                        args[i + 2] = args[i + 2].callMethod(context, "to_i");
-                    }
-                }
-
-                int_args[i] = RubyNumeric.num2int(args[i + 2]);
-            }
-        }
+        // int_args = { 1, 0, 0, 0, 0, 0 };
+        int i_args0 = argToInt(context, args, 0 + 2, 1);
+        int i_args1 = argToInt(context, args, 1 + 2, 0);
+        int i_args2 = argToInt(context, args, 2 + 2, 0);
+        int i_args3 = argToInt(context, args, 3 + 2, 0);
+        int i_args4 = argToInt(context, args, 4 + 2, 0);
+        //int i_args5 = argToInt(context, args, 5 + 2, 0);
 
         // Validate the times
         // Complying with MRI behavior makes it a little bit complicated. Logic copied from:
         // https://github.com/ruby/ruby/blob/trunk/time.c#L2609
-        if (   (int_args[0] < 1 || int_args[0] > 31)
-            || (int_args[1] < 0 || int_args[1] > 24)
-            || (int_args[1] == 24 && (int_args[2] > 0 || int_args[3] > 0))
-            || (int_args[2] < 0 || int_args[2] > 59)
-            || (int_args[3] < 0 || int_args[3] > 60)) {
+        if (   (i_args0 < 1 || i_args0 > 31)
+            || (i_args1 < 0 || i_args1 > 24)
+            || (i_args1 == 24 && (i_args2 > 0 || i_args3 > 0))
+            || (i_args2 < 0 || i_args2 > 59)
+            || (i_args3 < 0 || i_args3 > 60)) {
             throw runtime.newArgumentError("argument out of range.");
         }
 
@@ -1544,10 +1510,10 @@ public class RubyTime extends RubyObject {
             dt = new DateTime(year, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC);
 
             dt = dt.plusMonths(month - 1)
-                    .plusDays(int_args[0] - 1)
-                    .plusHours(int_args[1])
-                    .plusMinutes(int_args[2])
-                    .plusSeconds(int_args[3]);
+                    .plusDays(i_args0 - 1)
+                    .plusHours(i_args1)
+                    .plusMinutes(i_args2)
+                    .plusSeconds(i_args3);
 
             // 1.9 will observe fractional seconds *if* not given usec
             if (!args[5].isNil() && args[6].isNil()) {
@@ -1584,10 +1550,10 @@ public class RubyTime extends RubyObject {
                 time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
                 nanos = (long) Math.rint((micros * 1000) % 1000000);
             } else {
-                int usec = int_args[4] % 1000;
-                int msec = int_args[4] / 1000;
+                int usec = i_args4 % 1000;
+                int msec = i_args4 / 1000;
 
-                if (int_args[4] < 0) {
+                if (i_args4 < 0) {
                     msec -= 1;
                     usec += 1000;
                 }
@@ -1602,6 +1568,51 @@ public class RubyTime extends RubyObject {
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         time.setIsTzRelative(setTzRelative);
         return time;
+    }
+
+    private static int argToInt(final ThreadContext context, IRubyObject[] args, final int i, final int def) {
+        IRubyObject arg = args[i];
+        if (arg != context.nil) {
+            if (!(arg instanceof RubyNumeric)) {
+                if (arg.respondsTo("to_int")) {
+                    arg = args[i] = arg.callMethod(context, "to_int");
+                } else {
+                    arg = args[i] = arg.callMethod(context, "to_i"); // TODO setting args[i] necessary?
+                }
+            }
+            return RubyNumeric.num2int(arg);
+        }
+        return def;
+    }
+
+    private static int parseMonth(final ThreadContext context, IRubyObject arg) {
+        IRubyObject tmp = arg.checkStringType();
+        if (tmp != context.nil) {
+            String monthStr = tmp.toString().toLowerCase();
+            if (monthStr.length() == 3) {
+                switch (monthStr) {
+                    case "jan" : return  1;
+                    case "feb" : return  2;
+                    case "mar" : return  3;
+                    case "apr" : return  4;
+                    case "may" : return  5;
+                    case "jun" : return  6;
+                    case "jul" : return  7;
+                    case "aug" : return  8;
+                    case "sep" : return  9;
+                    case "oct" : return 10;
+                    case "nov" : return 11;
+                    case "dec" : return 12;
+                }
+            }
+            try {
+                return Integer.parseInt(monthStr);
+            } catch (NumberFormatException ex) {
+                throw context.runtime.newArgumentError("Argument out of range.");
+            }
+        } else {
+            return (int) RubyNumeric.num2long(arg);
+        }
     }
 
     private static TimeSites sites(ThreadContext context) {
