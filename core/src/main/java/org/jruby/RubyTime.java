@@ -509,30 +509,40 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"gmtime", "utc"})
     public RubyTime gmtime() {
+        return adjustTimeZone(getRuntime(), DateTimeZone.UTC);
+    }
+
+    public final RubyTime localtime() {
+        return localtime(getRuntime().getCurrentContext());
+    }
+
+    @JRubyMethod(name = "localtime")
+    public RubyTime localtime(ThreadContext context) {
+        return adjustTimeZone(context.runtime, getLocalTimeZone(context.runtime));
+    }
+
+    @JRubyMethod(name = "localtime")
+    public RubyTime localtime(ThreadContext context, IRubyObject arg) {
+        final DateTimeZone zone = getTimeZoneFromUtcOffset(context.runtime, arg);
+        return adjustTimeZone(context.runtime, zone);
+    }
+
+    private RubyTime adjustTimeZone(Ruby runtime, final DateTimeZone zone) {
+        if (zone.equals(dt.getZone())) return this;
         if (isFrozen()) {
-          throw getRuntime().newFrozenError("Time", true);
+            throw runtime.newFrozenError("Time", true);
         }
-        dt = dt.withZone(DateTimeZone.UTC);
+        dt = dt.withZone(zone);
         return this;
     }
 
-    public RubyTime localtime() {
-        return localtime19(getRuntime().getCurrentContext(), NULL_ARRAY);
-    }
-
-    @JRubyMethod(name = "localtime", optional = 1)
-    public RubyTime localtime19(ThreadContext context, IRubyObject[] args) {
-        if (isFrozen()) {
-          throw getRuntime().newFrozenError("Time", true);
+    @Deprecated
+    public final RubyTime localtime19(ThreadContext context, IRubyObject[] args) {
+        switch(args.length) {
+            case 0: return localtime(context);
+            case 1: return localtime(context, args[0]);
         }
-        DateTimeZone newDtz;
-        if (args.length == 0) {
-            newDtz = getLocalTimeZone(context.runtime);
-        } else {
-            newDtz = getTimeZoneFromUtcOffset(context.runtime, args[0]);
-        }
-        dt = dt.withZone(newDtz);
-        return this;
+        throw new IllegalArgumentException(java.util.Arrays.toString(args));
     }
 
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
@@ -733,7 +743,7 @@ public class RubyTime extends RubyObject {
             return context.runtime.newBoolean(RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
         }
 
-        return context.getRuntime().getFalse();
+        return context.runtime.getFalse();
     }
 
     @JRubyMethod(name = "<=>", required = 1)
