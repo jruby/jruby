@@ -237,10 +237,17 @@ public class RubyKernel {
     public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, boolean dropFirst) {
         Ruby runtime = context.runtime;
 
+        boolean privateCall = false;
+        if (lastCallType == CallType.VARIABLE || lastCallType == CallType.FUNCTIONAL) {
+            privateCall = true;
+        } else if (lastVis == PUBLIC) {
+            privateCall = true;
+        }
+
         if (lastCallType != CallType.VARIABLE) {
-            throw runtime.newNoMethodError(getMethodMissingFormat(lastVis, lastCallType), recv, name, RubyArray.newArrayMayCopy(runtime, args, dropFirst ? 1 : 0));
+            throw runtime.newNoMethodError(getMethodMissingFormat(lastVis, lastCallType), recv, name, RubyArray.newArrayMayCopy(runtime, args, dropFirst ? 1 : 0), privateCall);
         } else {
-            throw runtime.newNameError(getMethodMissingFormat(lastVis, lastCallType), recv, name);
+            throw runtime.newNameError(getMethodMissingFormat(lastVis, lastCallType), recv, name, privateCall);
         }
     }
 

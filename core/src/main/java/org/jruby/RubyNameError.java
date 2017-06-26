@@ -46,6 +46,7 @@ import org.jruby.util.Sprintf;
 public class RubyNameError extends RubyException {
     private IRubyObject name;
     private IRubyObject receiver;
+    protected boolean privateCall;
 
     /**
      * Nested class whose instances act as thunks reacting to to_str method
@@ -194,7 +195,7 @@ public class RubyNameError extends RubyException {
 
     @JRubyMethod(name = "exception", meta = true)
     public static RubyException exception(ThreadContext context, IRubyObject recv, IRubyObject message, IRubyObject name) {
-        return newNameError(recv, message, name);
+        return newNameError(recv, message, name, false);
     }
 
     private static RubyException newNameError(IRubyObject recv, IRubyObject[] args) {
@@ -206,11 +207,13 @@ public class RubyNameError extends RubyException {
         return newError;
     }
 
-    static RubyException newNameError(IRubyObject recv, IRubyObject message, IRubyObject name) {
+    static RubyException newNameError(IRubyObject recv, IRubyObject message, IRubyObject name, boolean privateCall) {
         final RubyClass klass = (RubyClass) recv;
-        RubyException newError = (RubyException) klass.allocate();
+        RubyNameError newError = (RubyNameError) klass.allocate();
 
         newError.callInit(message, name, Block.NULL_BLOCK);
+
+        newError.privateCall = privateCall;
 
         return newError;
     }
@@ -251,10 +254,19 @@ public class RubyNameError extends RubyException {
         throw context.runtime.newArgumentError("no receiver is available");
     }
 
+    @JRubyMethod(name = "private_call?")
+    public IRubyObject private_call_p(ThreadContext context) {
+        return context.runtime.newBoolean(isPrivateCall());
+    }
+
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         super.copySpecialInstanceVariables(clone);
         RubyNameError exception = (RubyNameError)clone;
         exception.name = name;
+    }
+
+    public boolean isPrivateCall() {
+        return privateCall;
     }
 }

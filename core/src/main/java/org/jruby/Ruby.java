@@ -3864,6 +3864,13 @@ public final class Ruby implements Constantizable {
     }
 
     /**
+     * @see Ruby#newNameError(String, IRubyObject, IRubyObject, boolean)
+     */
+    public RaiseException newNameError(String message, IRubyObject recv, IRubyObject name) {
+        return newNameError(message, recv, name, false);
+    }
+
+    /**
      * Construct a NameError that formats its message with an sprintf format string.
      *
      * The arguments given to sprintf are as follows:
@@ -3880,11 +3887,12 @@ public final class Ruby implements Constantizable {
      * @param message an sprintf format string for the message
      * @param recv the receiver object
      * @param name the name that failed
+     * @param privateCall whether the failure was due to method visibility
      * @return a new NameError
      */
-    public RaiseException newNameError(String message, IRubyObject recv, IRubyObject name) {
+    public RaiseException newNameError(String message, IRubyObject recv, IRubyObject name, boolean privateCall) {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
-        RubyException err = RubyNameError.newNameError(getNameError(), msg, name);
+        RubyException err = RubyNameError.newNameError(getNameError(), msg, name, privateCall);
 
         return new RaiseException(err);
     }
@@ -3897,8 +3905,19 @@ public final class Ruby implements Constantizable {
      * @see Ruby#newNameError(String, IRubyObject, IRubyObject)
      */
     public RaiseException newNameError(String message, IRubyObject recv, String name) {
+        return newNameError(message, recv, name, false);
+    }
+
+    /**
+     * Construct a NameError that formats its message with an sprintf format string and has private_call? set to given.
+     *
+     * This version just accepts a java.lang.String for the name.
+     *
+     * @see Ruby#newNameError(String, IRubyObject, IRubyObject)
+     */
+    public RaiseException newNameError(String message, IRubyObject recv, String name, boolean privateCall) {
         RubySymbol nameSym = newSymbol(name);
-        return newNameError(message, recv, nameSym);
+        return newNameError(message, recv, nameSym, privateCall);
     }
 
     /**
@@ -3955,6 +3974,13 @@ public final class Ruby implements Constantizable {
     }
 
     /**
+     * @see Ruby#newNoMethodError(String, IRubyObject, String, RubyArray, boolean)
+     */
+    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args) {
+        return newNoMethodError(message, recv, name, args, false);
+    }
+
+    /**
      * Construct a NoMethodError that formats its message with an sprintf format string.
      *
      * This works like {@link #newNameError(String, IRubyObject, IRubyObject)} but accepts
@@ -3964,10 +3990,10 @@ public final class Ruby implements Constantizable {
      *
      * @return a new NoMethodError
      */
-    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args) {
+    public RaiseException newNoMethodError(String message, IRubyObject recv, String name, RubyArray args, boolean privateCall) {
         RubySymbol nameStr = newSymbol(name);
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
-        RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args);
+        RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args, privateCall);
 
         return new RaiseException(err);
     }

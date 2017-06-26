@@ -72,6 +72,18 @@ public class RubyNoMethodError extends RubyNameError {
         return newError;
     }
 
+    public static RubyException newNoMethodError(IRubyObject recv, IRubyObject message, IRubyObject name, IRubyObject args, boolean privateCall) {
+        RubyClass klass = (RubyClass)recv;
+
+        RubyNoMethodError newError = (RubyNoMethodError) klass.allocate();
+
+        newError.callInit(message, name, args, Block.NULL_BLOCK);
+
+        newError.privateCall = privateCall;
+
+        return newError;
+    }
+
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
