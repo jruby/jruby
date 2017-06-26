@@ -98,7 +98,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
  * all users must synchronize externally with writers.
  *
  */
-@JRubyClass(name="Array")
+@JRubyClass(name="Array", include = { "Enumerable" })
 public class RubyArray extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
 
@@ -1624,28 +1624,30 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     protected IRubyObject inspectAry(ThreadContext context) {
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
-        EncodingUtils.strBufCat(runtime, str, OPEN_BRACKET);
+        str.cat((byte) '[');
         boolean tainted = isTaint();
 
         for (int i = 0; i < realLength; i++) {
 
             RubyString s = inspect(context, safeArrayRef(runtime, values, begin + i));
             if (s.isTaint()) tainted = true;
-            if (i > 0) EncodingUtils.strBufCat(runtime, str, COMMA_SPACE);
-            else str.setEncoding(s.getEncoding());
+            if (i > 0) {
+                ByteList bytes = str.getByteList();
+                bytes.ensure(2 + s.size() + 1);
+                bytes.append((byte) ',').append((byte) ' ');
+            }
+            else {
+                str.setEncoding(s.getEncoding());
+            }
             str.cat19(s);
         }
-        EncodingUtils.strBufCat(runtime, str, CLOSE_BRACKET);
+        str.cat((byte) ']');
 
         if (tainted) str.setTaint(true);
 
         return str;
     }
-
-    protected static final ByteList OPEN_BRACKET = new ByteList(new byte[]{(byte)'['}, USASCIIEncoding.INSTANCE);
-    protected static final ByteList CLOSE_BRACKET = new ByteList(new byte[]{(byte)']'}, USASCIIEncoding.INSTANCE);
-    protected static final ByteList COMMA_SPACE = new ByteList(new byte[]{(byte)',', (byte)' '}, USASCIIEncoding.INSTANCE);
-
+    
     /** rb_ary_inspect
     *
     */
