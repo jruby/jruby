@@ -2012,8 +2012,10 @@ public class RubyEnumerable {
 
     @JRubyMethod
     public static IRubyObject chunk(ThreadContext context, IRubyObject self, final Block block) {
+        final Ruby runtime = context.runtime;
+
         if(!block.isGiven()) {
-            return enumeratorize(context.runtime, self, "chunk");
+            return enumeratorizeWithSize(context, self, "chunk", enumSizeFn(context, self));
         }
 
         IRubyObject enumerator = context.runtime.getEnumerator().allocate();
