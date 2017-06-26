@@ -233,13 +233,10 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     private static IRubyObject canonicalizeInternal(ThreadContext context, IRubyObject clazz, IRubyObject num, IRubyObject den) {
-        Ruby runtime = context.runtime;
-        IRubyObject res = f_cmp(context, den, RubyFixnum.zero(runtime));
-        if (res == RubyFixnum.minus_one(runtime)) {
+        // MRI: nurat_canonicalize, negation part
+        if (canonicalizeShouldNegate(context, num, den)) {
             num = f_negate(context, num);
             den = f_negate(context, den);
-        } else if (res == RubyFixnum.zero(runtime)) {
-            throw runtime.newZeroDivisionError();
         }
 
         IRubyObject gcd = f_gcd(context, num, den);
@@ -257,13 +254,10 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     private static IRubyObject canonicalizeInternalNoReduce(ThreadContext context, IRubyObject clazz, IRubyObject num, IRubyObject den) {
-        Ruby runtime = context.runtime;
-        IRubyObject res = f_cmp(context, den, RubyFixnum.zero(runtime));
-        if (res == RubyFixnum.minus_one(runtime)) {
+        // MRI: nurat_canonicalize, negation part
+        if (canonicalizeShouldNegate(context, num, den)) {
             num = f_negate(context, num);
             den = f_negate(context, den);
-        } else if (res == RubyFixnum.zero(runtime)) {
-            throw runtime.newZeroDivisionError();            
         }
 
         if (Numeric.CANON && canonicalization && f_one_p(context, den)) {
@@ -271,6 +265,18 @@ public class RubyRational extends RubyNumeric {
         }
 
         return new RubyRational(context.runtime, clazz, num, den);
+    }
+
+    // MRI: nurat_canonicalize, value check part
+    private static boolean canonicalizeShouldNegate(ThreadContext context, IRubyObject num, IRubyObject den) {
+        Ruby runtime = context.runtime;
+        IRubyObject res = f_cmp(context, den, RubyFixnum.zero(runtime));
+        if (res == RubyFixnum.minus_one(runtime)) {
+            return true;
+        } else if (res == RubyFixnum.zero(runtime)) {
+            throw runtime.newZeroDivisionError();
+        }
+        return false;
     }
     
     /** nurat_s_new
@@ -1021,12 +1027,21 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "marshal_load")
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
-        num = load.size() > 0 ? load.eltInternal(0) : context.runtime.getNil();
-        den = load.size() > 1 ? load.eltInternal(1) : context.runtime.getNil();
+        IRubyObject num = load.size() > 0 ? load.eltInternal(0) : context.nil;
+        IRubyObject den = load.size() > 1 ? load.eltInternal(1) : context.nil;
 
-        if (f_zero_p(context, den)) {
-            throw context.runtime.newZeroDivisionError();
+        intCheck(context, num);
+        intCheck(context, den);
+
+        // MRI: nurat_canonicalize, negation part
+        if (canonicalizeShouldNegate(context, num, den)) {
+            num = f_negate(context, num);
+            den = f_negate(context, den);
         }
+
+        this.num = num;
+        this.den = den;
+
         if (load.hasVariables()) syncVariables((IRubyObject)load);
         return this;
     }
@@ -1041,9 +1056,24 @@ public class RubyRational extends RubyNumeric {
         @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     UnmarshalStream unmarshalStream) throws IOException {
+            ThreadContext context = runtime.getCurrentContext();
+
             RubyRational r = (RubyRational) RubyClass.DEFAULT_OBJECT_MARSHAL.unmarshalFrom(runtime, type, unmarshalStream);
-            r.num = r.removeInstanceVariable("@numerator");
-            r.den = r.removeInstanceVariable("@denominator");
+            IRubyObject num = r.removeInstanceVariable("@numerator");
+            IRubyObject den = r.removeInstanceVariable("@denominator");
+
+            intCheck(context, num);
+            intCheck(context, den);
+
+            // MRI: nurat_canonicalize, negation part
+            if (canonicalizeShouldNegate(context, num, den)) {
+                num = f_negate(context, num);
+                den = f_negate(context, den);
+            }
+
+            r.num = num;
+            r.den = den;
+            
             return r;
         }
     };
