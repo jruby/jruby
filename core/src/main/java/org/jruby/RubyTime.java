@@ -89,19 +89,15 @@ public class RubyTime extends RubyObject {
     public static final String UTC = "UTC";
     public static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
     public static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
-    public static final BigInteger ONE_MILLION_BI = BigInteger.valueOf(1000000);
-    public static final BigDecimal ONE_THOUSAND_BD = BigDecimal.valueOf(1000);
+
     private DateTime dt;
     private long nsec;
 
     private final static DateTimeFormatter ONE_DAY_CTIME_FORMATTER = DateTimeFormat.forPattern("EEE MMM  d HH:mm:ss yyyy").withLocale(Locale.ENGLISH);
     private final static DateTimeFormatter TWO_DAY_CTIME_FORMATTER = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss yyyy").withLocale(Locale.ENGLISH);
 
-    private final static DateTimeFormatter TO_S_FORMATTER = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss Z yyyy").withLocale(Locale.ENGLISH);
-    private final static DateTimeFormatter TO_S_UTC_FORMATTER = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss 'UTC' yyyy").withLocale(Locale.ENGLISH);
-
-    private final static DateTimeFormatter TO_S_FORMATTER_19 = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss Z").withLocale(Locale.ENGLISH);
-    private final static DateTimeFormatter TO_S_UTC_FORMATTER_19 = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withLocale(Locale.ENGLISH);
+    private final static DateTimeFormatter TO_S_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss Z").withLocale(Locale.ENGLISH);
+    private final static DateTimeFormatter TO_S_UTC_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withLocale(Locale.ENGLISH);
     // There are two different popular TZ formats: legacy (AST+3:00:00, GMT-3), and
     // newer one (US/Pacific, America/Los_Angeles). This pattern is to detect
     // the legacy TZ format in order to convert it to the newer format
@@ -800,13 +796,13 @@ public class RubyTime extends RubyObject {
     }
 
     @Override
+    @JRubyMethod(name = {"to_s", "inspect"})
     public IRubyObject to_s() {
-        return to_s19();
+        return inspectCommon(TO_S_FORMATTER, TO_S_UTC_FORMATTER);
     }
 
-    @JRubyMethod(name = {"to_s", "inspect"})
-    public IRubyObject to_s19() {
-        return inspectCommon(TO_S_FORMATTER_19, TO_S_UTC_FORMATTER_19);
+    public final IRubyObject to_s19() {
+        return to_s();
     }
 
     private IRubyObject inspectCommon(DateTimeFormatter formatter, DateTimeFormatter utcFormatter) {
