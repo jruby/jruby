@@ -545,6 +545,7 @@ public class RubyNumeric extends RubyObject {
     /** rb_num_coerce_bin
      *  coercion taking two arguments
      */
+    @Deprecated
     protected final IRubyObject coerceBin(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, true);
         return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
@@ -553,7 +554,7 @@ public class RubyNumeric extends RubyObject {
     protected final IRubyObject coerceBin(ThreadContext context, CallSite site, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, true);
         IRubyObject car = ary.eltInternal(0);
-        return site.call(context, car, car, ary.eltInternal(1));
+        return numFuncall(context, car, site, ary.eltInternal(1));
     }
 
     /** rb_num_coerce_bit
@@ -584,9 +585,9 @@ public class RubyNumeric extends RubyObject {
                     && !(y instanceof RubyFixnum) && !(y instanceof RubyBignum)) {
                 coerceFailed(context, other);
             }
-            return site.call(context, x, x, y);
+            return numFuncall(context, x, site, y);
         }
-        return site.call(context, this, this, other);
+        return numFuncall(context, this, site, other);
     }
 
     /** rb_num_coerce_cmp
@@ -709,7 +710,7 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject op_uminus(ThreadContext context) {
         RubyArray ary = RubyFixnum.zero(context.runtime).doCoerce(context, this, true);
         IRubyObject car = ary.eltInternal(0);
-        return sites(context).op_minus.call(context, car, car, ary.eltInternal(1));
+        return numFuncall(context, car, sites(context).op_minus, ary.eltInternal(1));
     }
 
     /** num_cmp
@@ -732,41 +733,36 @@ public class RubyNumeric extends RubyObject {
         return equalInternal(context, this, other) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    /** num_quo (1.8)
-     * quo and fdiv in 1.8 just invokes "/"
+    /** num_quo
      */
-    public IRubyObject quo(ThreadContext context, IRubyObject other) {
-        return sites(context).op_quo.call(context, this, this, other);
-    }
-
-    /** num_quo (1.9)
-    *
-    */
     @JRubyMethod(name = "quo")
-    public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
+    public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return RubyRational.numericQuo(context, this, other);
     }
 
-    /** num_div
-     *
-     */
-    public IRubyObject div(ThreadContext context, IRubyObject other) {
-        return div19(context, other);
+    @Deprecated
+    public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
+        return quo(context, other);
     }
 
     /** num_div
      *
      */
     @JRubyMethod(name = "div")
-    public IRubyObject div19(ThreadContext context, IRubyObject other) {
+    public IRubyObject div(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyNumeric) {
             RubyNumeric numeric = (RubyNumeric) other;
             if (numeric.zero_p(context).isTrue()) {
                 throw context.runtime.newZeroDivisionError();
             }
         }
-        IRubyObject quotient = sites(context).op_quo.call(context, this, this, other);
+        IRubyObject quotient = numFuncall(context, this, sites(context).op_quo, other);
         return sites(context).floor.call(context, quotient, quotient);
+    }
+
+    @Deprecated
+    public IRubyObject div19(ThreadContext context, IRubyObject other) {
+        return div(context, other);
     }
 
     /** num_divmod
@@ -794,18 +790,19 @@ public class RubyNumeric extends RubyObject {
     /** num_modulo
      *
      */
+    @JRubyMethod(name = "modulo")
     public IRubyObject modulo(ThreadContext context, IRubyObject other) {
-        return modulo19(context, other);
+        IRubyObject div = numFuncall(context, this, sites(context).div, other);
+        IRubyObject product = sites(context).op_times.call(context, other, other, div);
+        return sites(context).op_minus.call(context, this, this, product);
     }
 
     /** num_modulo
      *
      */
-    @JRubyMethod(name = "modulo")
+    @Deprecated
     public IRubyObject modulo19(ThreadContext context, IRubyObject other) {
-        IRubyObject div = sites(context).div.call(context, this, this, other);
-        IRubyObject product = sites(context).op_times.call(context, other, other, div);
-        return sites(context).op_minus.call(context, this, this, product);
+        return modulo(context, other);
     }
 
     /** num_remainder
@@ -813,7 +810,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
-        IRubyObject z = sites(context).op_mod.call(context, this, this, dividend);
+        IRubyObject z = numFuncall(context, this, sites(context).op_mod, dividend);
         IRubyObject x = this;
         RubyFixnum zero = RubyFixnum.zero(getRuntime());
 
@@ -834,7 +831,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "abs")
     public IRubyObject abs(ThreadContext context) {
         if (sites(context).op_lt.call(context, this, this, RubyFixnum.zero(getRuntime())).isTrue()) {
-            return sites(context).op_uminus.call(context, this, this);
+            return numFuncall(context, this, sites(context).op_uminus);
         }
         return this;
     }
@@ -852,7 +849,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "to_int")
     public IRubyObject to_int(ThreadContext context) {
-        return sites(context).to_i.call(context, this, this);
+        return numFuncall(context, this, sites(context).to_i);
     }
 
     /** num_real_p
@@ -884,8 +881,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "nonzero?")
     public IRubyObject nonzero_p(ThreadContext context) {
-        if (sites(context).zero.call(context, this, this).isTrue()) {
-            return getRuntime().getNil();
+        if (numFuncall(context, this, sites(context).zero).isTrue()) {
+            return context.nil;
         }
         return this;
     }
@@ -1212,7 +1209,7 @@ public class RubyNumeric extends RubyObject {
         // it won't hurt fixnums
         if (this == other)  return getRuntime().getTrue();
 
-        return sites(context).op_equals.call(context, other, other, this);
+        return numFuncall(context, other, sites(context).op_equals, this);
     }
 
     /** num_numerator
@@ -1365,6 +1362,52 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "infinite?")
     public IRubyObject infinite_p(ThreadContext context) {
         return context.runtime.getNil();
+    }
+
+    public static IRubyObject numFuncall(ThreadContext context, IRubyObject x, CallSite site) {
+        return context.safeRecurse(new NumFuncall0(), site, x, site.methodName, true);
+    }
+
+    public static IRubyObject numFuncall(ThreadContext context, final IRubyObject x, CallSite site, final IRubyObject value) {
+        return context.safeRecurse(new NumFuncall1(value), site, x, site.methodName, true);
+    }
+
+    private static class NumFuncall1 implements ThreadContext.RecursiveFunctionEx<CallSite> {
+        private final IRubyObject value;
+
+        public NumFuncall1(IRubyObject value) {
+            this.value = value;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, CallSite site, IRubyObject obj, boolean recur) {
+            if (recur) {
+                String name = site.methodName;
+                if (name.length() > 0 && Character.isLetterOrDigit(name.charAt(0))) {
+                    throw context.runtime.newNameError(name, obj, name);
+                } else {
+                    throw context.runtime.newNameError(name, obj, name);
+                }
+            }
+            return site.call(context, obj, obj, value);
+        }
+    }
+
+    private static class NumFuncall0 implements ThreadContext.RecursiveFunctionEx<CallSite> {
+        @Override
+        public IRubyObject call(ThreadContext context, CallSite site, IRubyObject obj, boolean recur) {
+            if (recur) {
+                String name = site.methodName;
+                if (name.length() > 0 && Character.isLetterOrDigit(name.charAt(0))) {
+                    throw context.runtime.newNameError(name, obj, name);
+                } else if (name.length() == 2 && name.charAt(1) == '@') {
+                    throw context.runtime.newNameError(name, obj, name.substring(0,1));
+                } else {
+                    throw context.runtime.newNameError(name, obj, name);
+                }
+            }
+            return site.call(context, obj, obj);
+        }
     }
 
     private static JavaSites.NumericSites sites(ThreadContext context) {

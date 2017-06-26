@@ -293,7 +293,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (this instanceof RubyFixnum) {
             return ((RubyFixnum) this).op_plus_one(context);
         } else {
-            return sites(context).op_plus.call(context, this, this, RubyFixnum.one(context.runtime));
+            return numFuncall(context, this, sites(context).op_plus, RubyFixnum.one(context.runtime));
         }
     }
 
@@ -508,7 +508,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "pred")
     public IRubyObject pred(ThreadContext context) {
-        return sites(context).op_minus.call(context, this, this, RubyFixnum.one(context.runtime));
+        return numFuncall(context, this, sites(context).op_minus, RubyFixnum.one(context.runtime));
     }
 
     /** rb_gcd

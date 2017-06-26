@@ -341,8 +341,8 @@ public class RubyFloat extends RubyNumeric {
     *
     */
     @JRubyMethod(name = "quo")
-        public IRubyObject magnitude(ThreadContext context, IRubyObject other) {
-        return sites(context).op_quo.call(context, this, this, other);
+    public IRubyObject quo(ThreadContext context, IRubyObject other) {
+        return numFuncall(context, this, sites(context).op_quo, other);
     }
 
     /** flo_mod

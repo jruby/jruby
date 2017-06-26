@@ -685,6 +685,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return op_minus_one(context);
     }
 
+    @Deprecated
     public IRubyObject idiv(ThreadContext context, IRubyObject other, String method) {
         if (other instanceof RubyFixnum) {
             return idivLong(context, value, ((RubyFixnum) other).value);
@@ -864,7 +865,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             double d_other = ((RubyNumeric) other).getDoubleValue();
             if (value < 0 && (d_other != Math.round(d_other))) {
                 RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
-                return sites(context).op_exp_complex.call(context, complex, complex, other);
+                return numFuncall(context, complex, sites(context).op_exp_complex, other);
             }
             if (other instanceof RubyFixnum) {
                 return powerFixnum19(context, other);
@@ -879,7 +880,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         if (other instanceof RubyBignum) {
             if (sites(context).op_lt_bignum.call(context, other, other, RubyFixnum.zero(runtime)).isTrue()) {
                 RubyRational rational = RubyRational.newRationalRaw(runtime, this);
-                return sites(context).op_exp_rational.call(context, rational, rational, other);
+                return numFuncall(context, rational, sites(context).op_exp_rational, other);
             }
             if (a == 0) return RubyFixnum.zero(runtime);
             if (a == 1) return RubyFixnum.one(runtime);
@@ -902,7 +903,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         long b = ((RubyFixnum) other).value;
         if (b < 0) {
             RubyRational rational = RubyRational.newRationalRaw(runtime, this);
-            return sites(context).op_exp_rational.call(context, rational, rational, other);
+            return numFuncall(context, rational, sites(context).op_exp_rational, other);
         }
         if (b == 0) {
             return RubyFixnum.one(runtime);
