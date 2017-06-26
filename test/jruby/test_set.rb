@@ -46,8 +46,8 @@ class TestSet < Test::Unit::TestCase
     assert_equal "\x04\b{\x00".force_encoding('ASCII-8BIT'), Marshal.dump(Hash.new)
 
     # MRI internally uses a @hash with a default: `Hash.new(false)'
-    #empty_set = "\x04\bo:\bSet\x06:\n@hash}\x00F".force_encoding('ASCII-8BIT')
-    #assert_equal empty_set, Marshal.dump(Set.new)
+    empty_set = "\x04\bo:\bSet\x06:\n@hash}\x00F".force_encoding('ASCII-8BIT')
+    assert_equal empty_set, Marshal.dump(Set.new)
 
     dump = Marshal.dump(Set.new)
     assert_equal Set.new, Marshal.load(dump)
@@ -116,6 +116,6 @@ class TestSet < Test::Unit::TestCase
     assert set.is_a?(java.util.Set)
     assert set.is_a?(java.util.SortedSet)
     assert_equal java.util.TreeSet.new([1, 2]), set
-  end
+  end if defined? JRUBY_VERSION
 
 end

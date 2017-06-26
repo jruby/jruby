@@ -114,12 +114,15 @@ public class RubySet extends RubyObject implements Set {
         allocHash(hash);
     } */
 
+    // since MRI uses Hash.new(false) we'll (initially) strive for maximum compatibility
+    // ... this is important with Rails using Sprockets at its marshalling Set instances
+
     final void allocHash(final Ruby runtime) {
-        setHash(new RubyHash(runtime));
+        setHash(new RubyHash(runtime, runtime.getFalse()));
     }
 
     final void allocHash(final Ruby runtime, final int size) {
-        setHash(new RubyHash(runtime, size));
+        setHash(new RubyHash(runtime, runtime.getFalse(), size));
     }
 
     final void setHash(final RubyHash hash) {
