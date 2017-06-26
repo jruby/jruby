@@ -9,8 +9,9 @@ cache:
 before_install:
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=180M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=180M -XX:CompressedClassSpaceSize=180M"; fi
-  - export MAVEN_OPTS="-Xmx500M $MAVEN_OPTS"
+  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=120M"; else export MAVEN_OPTS="-XX:CompressedClassSpaceSize=96M -XX:MaxMetaspaceSize=120M"; fi
+  - export MAVEN_OPTS="-Xmn52M -Xmx504M $MAVEN_OPTS"
+  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export JAVA_OPTS="$JAVA_OPTS -XX:MaxPermSize=96M"; else export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=72M -XX:MaxMetaspaceSize=96M"; fi
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
@@ -28,7 +29,7 @@ os:
 
 env:
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn36M -Xmx512M"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn36M -Xmx768M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
     - MALLOC_ARENA_MAX=2
   matrix:
     - PHASE='-Ptest'

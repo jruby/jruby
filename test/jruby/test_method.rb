@@ -53,4 +53,25 @@ class TestMethod < Test::Unit::TestCase
     assert_equal [[:req, :a1], [:rest, :a2], [:req, :a3], [:key, :foo], [:keyrest, :bar]], lambda { |a1, *a2, a3, foo: 1, **bar| }.parameters
   end
 
+  def test_callee # (passing) part from *mri/ruby/test_method.rb*
+    assert_equal(:test_callee, __method__)
+    assert_equal(:m, Class.new {def m; __method__; end}.new.m)
+    assert_equal(:m, Class.new {def m; tap{return __method__}; end}.new.m)
+    assert_equal(:m, Class.new {define_method(:m) {__method__}}.new.m)
+    assert_equal(:m, Class.new {define_method(:m) {tap{return __method__}}}.new.m)
+    assert_nil(eval("class TestCallee; __method__; end"))
+
+    assert_equal(:test_callee, __callee__)
+    [
+        ["method",              Class.new {def m; __callee__; end},],
+        ["block",               Class.new {def m; tap{return __callee__}; end},],
+        ["define_method",       Class.new {define_method(:m) {__callee__}}],
+        ["define_method block", Class.new {define_method(:m) {tap{return __callee__}}}],
+    ].each do |mesg, c|
+      o = c.new
+      assert_equal(:m, o.m, mesg)
+    end
+    assert_nil(eval("class TestCallee; __callee__; end"))
+  end
+
 end

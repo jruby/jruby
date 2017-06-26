@@ -363,7 +363,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 throw getRuntime().newArgumentError("negative length " + len + " given");
             }
 
-            if (args.length > 1) {
+            if (args.length > 1 && !args[1].isNil()) {
                 if (!(args[1] instanceof RubyString)) {
                     throw getRuntime().newTypeError(
                             "wrong argument type " + args[1].getMetaClass().getName()
@@ -526,6 +526,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         // compatible behavior.
         byte[] bytes = new byte[16];
         int read = bufferedStream.read(bytes, 0, bytes.length);
+
+        // We are already at EOF.
+        if (read == -1) return true;
+
         bufferedStream.unread(bytes, 0, read);
 
         return bufferedStream.available() == 0;

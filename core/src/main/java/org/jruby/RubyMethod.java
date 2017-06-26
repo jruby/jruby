@@ -143,8 +143,8 @@ public class RubyMethod extends AbstractRubyMethod {
         return getRuntime().newFixnum(value);
     }
 
-    @JRubyMethod(name = "==", required = 1)
     @Override
+    @JRubyMethod(name = "==", required = 1)
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyMethod)) {
             return context.runtime.getFalse();
@@ -169,7 +169,7 @@ public class RubyMethod extends AbstractRubyMethod {
     }
 
     @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject op_eql19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         return op_equal(context, other);
     }
 
@@ -244,7 +244,7 @@ public class RubyMethod extends AbstractRubyMethod {
         
         buf.append(delimeter).append(methodName).append('>');
         
-        RubyString str = getRuntime().newString(buf.toString());
+        RubyString str = RubyString.newString(getRuntime(), buf);
         str.setTaint(isTaint());
         return str;
     }

@@ -972,48 +972,40 @@ public final class StringSupport {
 
         final ByteList subString = subStringCodeRangeable.getByteList();
 
-        int sourceSize = source.realSize();
-        int subSize = subString.realSize();
+        final int srcLen = source.getRealSize();
+        final int subLen = subString.getRealSize();
 
-        if (sourceChars < subChars || sourceSize < subSize) return -1;
+        if (sourceChars < subChars || srcLen < subLen) return -1;
         if (sourceChars - pos < subChars) pos = sourceChars - subChars;
         if (sourceChars == 0) return pos;
 
-        byte[] sourceBytes = source.getUnsafeBytes();
-        int sbeg = source.getBegin();
-        int end = sbeg + source.getRealSize();
+        byte[] srcBytes = source.getUnsafeBytes();
+        final int srcBeg = source.getBegin();
 
         if (pos == 0) {
-            if (ByteList.memcmp(sourceBytes, sbeg, subString.getUnsafeBytes(), subString.begin(), subString.getRealSize()) == 0) {
+            if (ByteList.memcmp(srcBytes, srcBeg, subString.getUnsafeBytes(), subString.getBegin(), subLen) == 0) {
                 return 0;
-            } else {
-                return -1;
             }
+            return -1;
         }
 
-        int s = nth(enc, sourceBytes, sbeg, end, pos);
-
-        return strRindex(source, subString, s, pos, enc);
+        int s = nth(enc, srcBytes, srcBeg, srcBeg + srcLen, pos);
+        
+        return strRindex(srcBytes, srcBeg, srcLen, subString.getUnsafeBytes(), subString.getBegin(), subLen, s, pos, enc);
     }
 
-    private static int strRindex(ByteList str, ByteList sub, int s, int pos, Encoding enc) {
-        int slen;
-        byte[] strBytes = str.unsafeBytes();
-        byte[] subBytes = sub.unsafeBytes();
-        int sbeg, e, t;
+    private static int strRindex(final byte[] strBytes, final int strBeg, final int strLen,
+                                 final byte[] subBytes, final int subBeg, final int subLen,
+                                 int s, int pos, final Encoding enc) {
 
-        sbeg = str.begin();
-        e = str.begin() + str.realSize();
-        t = sub.begin();
-        slen = sub.realSize();
+        final int e = strBeg + strLen;
 
-        while (s >= sbeg && s + slen <= sbeg + str.realSize()) {
-            if (ByteList.memcmp(strBytes, s, subBytes, t, slen) == 0) {
+        while (s >= strBeg) {
+            if (s + subLen <= e && ByteList.memcmp(strBytes, s, subBytes, subBeg, subLen) == 0) {
                 return pos;
             }
-            if (pos == 0) break;
-            pos--;
-            s = enc.prevCharHead(strBytes, sbeg, s, e);
+            if (pos == 0) break; pos--;
+            s = enc.prevCharHead(strBytes, strBeg, s, e);
         }
 
         return -1;
