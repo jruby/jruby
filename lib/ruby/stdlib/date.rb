@@ -1875,7 +1875,7 @@ end
 class Time
 
   def to_time
-    getlocal
+    self
   end
 
   def to_date
