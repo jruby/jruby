@@ -1,0 +1,1 @@
+exclude :test_nonpositive_linenumber, "requires RubyVM to compile iseq"

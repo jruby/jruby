@@ -71,12 +71,13 @@ public class CoverageData {
 
         for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
             String key = entry.getKey();
-            if (key.equals(CoverageData.STARTED)) continue; // ignore our hidden marker
 
             // on reset we do not reset files where no execution ever happened but we do reset
             // any files visited to be an empty array.  Why?  I don't know.  Matching MRI.
             if (hasCodeBeenPartiallyCovered(entry.getValue())) coverage.put(key, SVALUE);
         }
+
+        this.coverage = null;
 
         return coverage;
     }
