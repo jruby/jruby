@@ -394,7 +394,7 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            return case_aware_op_aref(context, key, false);
+            return asTainted(case_aware_op_aref(context, key, false));
         }
 
         @Override
@@ -417,6 +417,10 @@ public class RubyGlobal {
           return to_hash();
         }
 
+        private IRubyObject asTainted(IRubyObject obj) {
+            obj.setTaint(true);
+            return obj;
+        }
 
     }
 
