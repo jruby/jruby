@@ -1,0 +1,1 @@
+fails:String#downcase works for all of Unicode

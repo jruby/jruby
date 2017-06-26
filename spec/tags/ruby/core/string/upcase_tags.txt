@@ -1,0 +1,1 @@
+fails:String#upcase works for all of Unicode

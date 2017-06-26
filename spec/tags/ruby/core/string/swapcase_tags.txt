@@ -1,0 +1,1 @@
+fails:String#swapcase works for all of Unicode
