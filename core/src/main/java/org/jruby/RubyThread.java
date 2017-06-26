@@ -251,7 +251,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     if (status.get() == Status.SLEEP) {
                         exitSleep();
                     }
-                    RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[]{err}, Block.NULL_BLOCK);
+                    RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[]{err, RubyHash.newKwargs(runtime, "cause", ((RubyException) err).cause)}, Block.NULL_BLOCK);
                 }
             }
 
@@ -1291,42 +1291,50 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
         if (args.length == 0) {
-            IRubyObject lastException = errorInfo;
-            if (lastException.isNil()) {
+            if (errorInfo.isNil()) {
                 return new RaiseException(runtime, runtime.getRuntimeError(), "", false).getException();
             }
-            return lastException;
+            return errorInfo;
         }
 
         final ThreadContext context = runtime.getCurrentContext();
         final IRubyObject arg = args[0];
 
-        final IRubyObject exception;
+        IRubyObject tmp;
+        final RubyException exception;
         if (args.length == 1) {
             if (arg instanceof RubyString) {
-                return runtime.getRuntimeError().newInstance(context, args, block);
+                tmp = runtime.getRuntimeError().newInstance(context, args, block);
             }
-            if (arg instanceof ConcreteJavaProxy ) {
+            else if (arg instanceof ConcreteJavaProxy ) {
                 return arg;
             }
-            if ( ! arg.respondsTo("exception") ) {
-                return runtime.newTypeError("exception class/object expected").getException();
+            else if ( ! arg.respondsTo("exception") ) {
+                throw runtime.newTypeError("exception class/object expected");
+            } else {
+                tmp = arg.callMethod(context, "exception");
             }
-            exception = arg.callMethod(context, "exception");
         } else {
             if ( ! arg.respondsTo("exception") ) {
-                return runtime.newTypeError("exception class/object expected").getException();
+                throw runtime.newTypeError("exception class/object expected");
             }
 
-            exception = arg.callMethod(context, "exception", args[1]);
+            tmp = arg.callMethod(context, "exception", args[1]);
         }
 
-        if (!runtime.getException().isInstance(exception)) {
-            return runtime.newTypeError("exception object expected").getException();
+        if (!runtime.getException().isInstance(tmp)) {
+            throw runtime.newTypeError("exception object expected");
         }
+
+        exception = (RubyException) tmp;
 
         if (args.length == 3) {
-            ((RubyException) exception).set_backtrace(args[2]);
+            exception.set_backtrace(args[2]);
+        }
+
+        IRubyObject cause = context.getErrorInfo();
+        if (cause != exception) {
+            exception.setCause(cause);
         }
 
         return exception;

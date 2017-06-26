@@ -211,6 +211,12 @@ public class RubyHash extends RubyObject implements Map {
         return new RubyHash(runtime, 1);
     }
 
+    public static RubyHash newKwargs(Ruby runtime, String key, IRubyObject value) {
+        RubyHash kwargs = newSmallHash(runtime);
+        kwargs.fastASetSmall(runtime.newSymbol(key), value);
+        return kwargs;
+    }
+
     /** rb_hash_new
      *
      */
