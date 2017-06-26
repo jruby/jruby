@@ -125,6 +125,8 @@ class TestMethod < Test::Unit::TestCase
 
     m = c.new.method(:bar)
     assert_equal("#<Method: #{c.inspect}#bar(foo)>", m.inspect)
+    m = c.instance_method(:bar)
+    assert_equal("#<UnboundMethod: #{c.inspect}#bar(foo)>", m.inspect)
   end
 
 end

@@ -258,7 +258,7 @@ public class RubyMethod extends AbstractRubyMethod {
             }
         }
 
-        str.append(sharp).append(methodName);
+        str.append(sharp).append(methodName); // (real-name) if alias
         final String realName= method.getRealMethod().getName();
         if ( realName != null && ! methodName.equals(realName) ) {
             str.append('(').append(realName).append(')');

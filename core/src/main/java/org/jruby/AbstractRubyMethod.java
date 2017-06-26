@@ -116,7 +116,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
             return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     public String getFilename() {
