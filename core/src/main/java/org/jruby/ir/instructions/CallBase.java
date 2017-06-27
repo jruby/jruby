@@ -425,6 +425,14 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         IRubyObject[] values = prepareArguments(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
 
+        if (getClosureArg() != null) {
+            try {
+                return callSite.call(context, self, object, values, preparedBlock);
+            } finally {
+                preparedBlock.escape();
+            }
+        }
+
         return callSite.call(context, self, object, values, preparedBlock);
     }
 

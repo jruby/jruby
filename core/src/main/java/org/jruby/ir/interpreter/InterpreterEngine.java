@@ -433,7 +433,7 @@ public class InterpreterEngine {
                 // This assumes that scopes with break instr. have a frame / dynamic scope
                 // pushed so that we can get to its static scope. For-loops now always have
                 // a dyn-scope pushed onto stack which makes this work in all scenarios.
-                return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, blockType);
+                return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, block, blockType);
             }
             case NONLOCAL_RETURN: {
                 NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;

@@ -500,7 +500,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 break;
         }
 
-        adapter2.invokevirtual(p(CachingCallSite.class), "call", outgoingSig);
+        adapter2.invokevirtual(p(CachingCallSite.class), hasClosure ? "callIter" : "call", outgoingSig);
         adapter2.areturn();
         adapter2.end();
 
