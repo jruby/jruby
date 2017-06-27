@@ -712,21 +712,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return RubyArray.newArray(runtime, integerDiv, fixMod);
     }
 
-    /** fix_quo
-     *
-     */
-    @Deprecated
-    @Override
-    public IRubyObject quo(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) {
-            return RubyFloat.newFloat(context.runtime, (double) value / (double) ((RubyFixnum) other).value);
-        }
-        if (other instanceof RubyBignum) {
-            return RubyFloat.newFloat(context.runtime, (double) value / ((RubyBignum) other).getDoubleValue());
-        }
-        return coerceBin(context, sites(context).quo, other);
-    }
-
     /** fix_pow
      *
      */
