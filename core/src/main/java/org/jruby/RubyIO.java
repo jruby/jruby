@@ -3392,7 +3392,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 _timeout = sites(context).to_f.call(context, _timeout, _timeout);
             }
             catch (RaiseException e) {
-                TypeConverter.handleUncoercibleObject(true, _timeout, context.runtime.getFloat());
+                TypeConverter.handleUncoercibleObject(context.runtime, _timeout, context.runtime.getFloat(), true);
                 throw e; // won't happen
             }
             final double t = _timeout.convertToFloat().getDoubleValue();
@@ -4074,7 +4074,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             } else if (arg1 instanceof RubyIO) {
                 io1 = (RubyIO) arg1;
             } else if (sites.to_path_checked1.respond_to_X.respondsTo(context, arg1, arg1)) {
-                RubyString path = (RubyString) TypeConverter.convertToType19(context, arg1, runtime.getString(), sites.to_path_checked1);
+                RubyString path = (RubyString) TypeConverter.convertToType(context, arg1, runtime.getString(), sites.to_path_checked1);
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path}, Block.NULL_BLOCK);
                 close1 = true;
             } else if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
@@ -4093,7 +4093,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             } else if (arg2 instanceof RubyIO) {
                 io2 = (RubyIO) arg2;
             } else if (sites.to_path_checked2.respond_to_X.respondsTo(context, arg2, arg2)) {
-                RubyString path = (RubyString) TypeConverter.convertToType19(context, arg2, runtime.getString(), sites.to_path_checked2);
+                RubyString path = (RubyString) TypeConverter.convertToType(context, arg2, runtime.getString(), sites.to_path_checked2);
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newString("w")}, Block.NULL_BLOCK);
                 close2 = true;
             } else if (sites.respond_to_write.respondsTo(context, arg2, arg2, true)) {

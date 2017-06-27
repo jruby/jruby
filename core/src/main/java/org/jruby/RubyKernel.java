@@ -405,7 +405,7 @@ public class RubyKernel {
         } else {
             ThreadContext context = runtime.getCurrentContext();
             KernelSites sites = sites(context);
-            return (RubyFloat)TypeConverter.convertToType19(context, object, runtime.getFloat(), sites.to_f_checked);
+            return (RubyFloat)TypeConverter.convertToType(context, object, runtime.getFloat(), sites.to_f_checked);
         }
     }
 
@@ -453,7 +453,7 @@ public class RubyKernel {
 
         IRubyObject tmp = TypeConverter.checkStringType(context, sites.to_str_checked, object, runtime.getString());
         if (tmp.isNil()) {
-            tmp = TypeConverter.convertToType19(context, object, runtime.getString(), sites(context).to_s_checked);
+            tmp = TypeConverter.convertToType(context, object, runtime.getString(), sites(context).to_s_checked);
         }
         return tmp;
     }

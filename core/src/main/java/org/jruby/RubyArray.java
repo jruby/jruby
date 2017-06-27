@@ -3684,7 +3684,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         arrays[0] = this;
         RubyClass array = runtime.getArray();
         JavaSites.CheckedSites to_ary_checked = sites(context).to_ary_checked;
-        for (int i = 1; i < n; i++) arrays[i] = (RubyArray) TypeConverter.convertToType19(context, args[i - 1], array, to_ary_checked);
+        for (int i = 1; i < n; i++) arrays[i] = (RubyArray) TypeConverter.convertToType(context, args[i - 1], array, to_ary_checked);
 
         int resultLen = 1;
         for (int i = 0; i < n; i++) {
