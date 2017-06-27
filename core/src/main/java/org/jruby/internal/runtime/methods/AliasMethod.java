@@ -124,11 +124,4 @@ public class AliasMethod extends DynamicMethod {
         return oldMethod.getSerialNumber();
     }
 
-    @Override
-    public RubyModule getDefinedClass() {
-        RubyModule definedClass = this.definedClass;
-        if (definedClass != null) return definedClass;
-        return oldMethod.getDefinedClass();
-    }
-
 }
