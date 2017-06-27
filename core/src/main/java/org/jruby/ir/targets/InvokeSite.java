@@ -56,7 +56,7 @@ public abstract class InvokeSite extends MutableCallSite {
     protected final String file;
     protected final int line;
     private boolean boundOnce;
-    private boolean closure;
+    private boolean literalClosure;
     CacheEntry cache = CacheEntry.NULL_CACHE;
 
     private static final Logger LOG = LoggerFactory.getLogger(InvokeSite.class);
@@ -68,9 +68,14 @@ public abstract class InvokeSite extends MutableCallSite {
     public final CallType callType;
 
     public InvokeSite(MethodType type, String name, CallType callType, String file, int line) {
+        this(type, name, callType, false, file, line);
+    }
+
+    public InvokeSite(MethodType type, String name, CallType callType, boolean literalClosure, String file, int line) {
         super(type);
         this.methodName = name;
         this.callType = callType;
+        this.literalClosure = literalClosure;
         this.file = file;
         this.line = line;
 
@@ -99,7 +104,6 @@ public abstract class InvokeSite extends MutableCallSite {
             }
             startSig = startSig.appendArg("block", Block.class);
             fullSignature = signature = startSig;
-            closure = true;
         } else {
             arity = type.parameterCount() - argOffset;
 
@@ -145,7 +149,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         MethodHandle mh = getHandle(self, selfClass, method);
 
-        if (closure) {
+        if (literalClosure) {
             mh = Binder.from(mh.type())
                     .tryFinally(getBlockEscape(signature))
                     .invoke(mh);
@@ -153,7 +157,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
 
-        if (closure) {
+        if (literalClosure) {
             try {
                 return method.call(context, self, selfClass, methodName, args, block);
             } finally {
@@ -314,7 +318,7 @@ public abstract class InvokeSite extends MutableCallSite {
     MethodHandle getHandle(IRubyObject self, RubyClass dispatchClass, DynamicMethod method) throws Throwable {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
-        MethodHandle mh = buildNewInstanceHandle(method, self, blockGiven);
+        MethodHandle mh = buildNewInstanceHandle(method, self);
         if (mh == null) mh = Bootstrap.buildNativeHandle(this, method, blockGiven);
         if (mh == null) mh = Bootstrap.buildIndyHandle(this, method, method.getImplementationClass());
         if (mh == null) mh = Bootstrap.buildJittedHandle(this, method, blockGiven);
@@ -326,14 +330,14 @@ public abstract class InvokeSite extends MutableCallSite {
         return mh;
     }
 
-    MethodHandle buildNewInstanceHandle(DynamicMethod method, IRubyObject self, boolean blockGiven) {
+    MethodHandle buildNewInstanceHandle(DynamicMethod method, IRubyObject self) {
         MethodHandle mh = null;
 
         if (method == self.getRuntime().getBaseNewMethod()) {
             RubyClass recvClass = (RubyClass) self;
 
             // Bind a second site as a dynamic invoker to guard against changes in new object's type
-            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type(), file, line);
+            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type(), literalClosure ? 1 : 0, file, line);
             MethodHandle initHandle = initSite.dynamicInvoker();
 
             MethodHandle allocFilter = Binder.from(IRubyObject.class, IRubyObject.class)

@@ -361,9 +361,10 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      * @param arity arity of the call
-     * @param hasClosure whether a closure will be on the stack for passing
+     * @param receivesClosure whether a closure will be on the stack for passing
+     * @param literalClosure whether the closure is passed directly as a literal block
      */
-    public abstract void invokeOther(String file, int line, String name, int arity, boolean hasClosure, boolean isPotentiallyRefined);
+    public abstract void invokeOther(String file, int line, String name, int arity, boolean receivesClosure, boolean literalClosure, boolean isPotentiallyRefined);
 
     /**
      * Invoke the array dereferencing method ([]) on an object other than self.
@@ -405,9 +406,10 @@ public abstract class IRBytecodeAdapter {
      * @param name name of the method to invoke
      * @param arity arity of the call
      * @param hasClosure whether a closure will be on the stack for passing
+     * @param literalClosure whether the passed closure is a literal block
      * @param callType
      */
-    public abstract void invokeSelf(String file, int line, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined);
+    public abstract void invokeSelf(String file, int line, String name, int arity, boolean hasClosure, boolean literalClosure, CallType callType, boolean isPotentiallyRefined);
 
     /**
      * Invoke a superclass method from an instance context.

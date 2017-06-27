@@ -382,8 +382,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         });
     }
 
-    public void invokeOther(String file, int line, String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
-        invoke(file, line, name, arity, hasClosure, CallType.NORMAL, isPotentiallyRefined);
+    public void invokeOther(String file, int line, String name, int arity, boolean receivesClosure, boolean literalClosure, boolean isPotentiallyRefined) {
+        invoke(file, line, name, arity, receivesClosure, literalClosure, CallType.NORMAL, isPotentiallyRefined);
     }
 
     public void invokeArrayDeref(String file, int line) {
@@ -410,14 +410,14 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invoke(String file, int lineNumber, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
+    public void invoke(String file, int lineNumber, String name, int arity, boolean receivesClosure, boolean literalClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
         SkinnyMethodAdapter adapter2;
         String incomingSig;
         String outgoingSig;
 
-        if (hasClosure) {
+        if (receivesClosure) {
             switch (arity) {
                 case -1:
                     incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class));
@@ -478,29 +478,29 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             case -1:
             case 1:
                 adapter2.aload(3);
-                if (hasClosure) adapter2.aload(4);
+                if (receivesClosure) adapter2.aload(4);
                 break;
             case 0:
-                if (hasClosure) adapter2.aload(3);
+                if (receivesClosure) adapter2.aload(3);
                 break;
             case 2:
                 adapter2.aload(3);
                 adapter2.aload(4);
-                if (hasClosure) adapter2.aload(5);
+                if (receivesClosure) adapter2.aload(5);
                 break;
             case 3:
                 adapter2.aload(3);
                 adapter2.aload(4);
                 adapter2.aload(5);
-                if (hasClosure) adapter2.aload(6);
+                if (receivesClosure) adapter2.aload(6);
                 break;
             default:
                 buildArrayFromLocals(adapter2, 3, arity);
-                if (hasClosure) adapter2.aload(3 + arity);
+                if (receivesClosure) adapter2.aload(3 + arity);
                 break;
         }
 
-        adapter2.invokevirtual(p(CachingCallSite.class), hasClosure ? "callIter" : "call", outgoingSig);
+        adapter2.invokevirtual(p(CachingCallSite.class), literalClosure ? "callIter" : "call", outgoingSig);
         adapter2.areturn();
         adapter2.end();
 
@@ -533,9 +533,9 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         if (!MethodIndex.hasFastFixnumOps(name)) {
             pushFixnum(fixnum);
             if (callType == CallType.NORMAL) {
-                invokeOther(file, line, name, 1, false, false);
+                invokeOther(file, line, name, 1, false, false,false);
             } else {
-                invokeSelf(file, line, name, 1, false, callType, false);
+                invokeSelf(file, line, name, 1, false, false, callType, false);
             }
             return;
         }
@@ -589,9 +589,9 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         if (!MethodIndex.hasFastFloatOps(name)) {
             pushFloat(flote);
             if (callType == CallType.NORMAL) {
-                invokeOther(file, line, name, 1, false, false);
+                invokeOther(file, line, name, 1, false, false, false);
             } else {
-                invokeSelf(file, line, name, 1, false, callType, false);
+                invokeSelf(file, line, name, 1, false, false, callType, false);
             }
             return;
         }
@@ -641,10 +641,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeSelf(String file, int line, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
+    public void invokeSelf(String file, int line, String name, int arity, boolean receivesClosure, boolean literalClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
-        invoke(file, line, name, arity, hasClosure, callType, isPotentiallyRefined);
+        invoke(file, line, name, arity, receivesClosure, literalClosure, callType, isPotentiallyRefined);
     }
 
     public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {

@@ -572,6 +572,7 @@ public class JVMVisitor extends IRVisitor {
                 callArgs.length,
                 null,
                 false,
+                false,
                 attrAssignInstr.getReceiver() instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL,
                 null,
                 attrAssignInstr.isPotentiallyRefined());
@@ -829,7 +830,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().invokeinterface(p(IRubyObject.class), "setFrozen", sig(void.class, boolean.class));
 
         // invoke the "`" method on self
-        jvmMethod().invokeSelf(file, lastLine, "`", 1, false, CallType.FUNCTIONAL, false);
+        jvmMethod().invokeSelf(file, lastLine, "`", 1, false, false, CallType.FUNCTIONAL, false);
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1067,14 +1068,14 @@ public class JVMVisitor extends IRVisitor {
         Operand receiver = callInstr.getReceiver();
         int numArgs = args.length;
         Operand closure = callInstr.getClosureArg(null);
-        boolean hasClosure = closure != null;
+        boolean receivesClosure = closure != null;
         CallType callType = callInstr.getCallType();
         Variable result = callInstr.getResult();
 
-        compileCallCommon(m, name, args, receiver, numArgs, closure, hasClosure, callType, result, callInstr.isPotentiallyRefined());
+        compileCallCommon(m, name, args, receiver, numArgs, closure, receivesClosure, callInstr.hasLiteralClosure(), callType, result, callInstr.isPotentiallyRefined());
     }
 
-    private void compileCallCommon(IRBytecodeAdapter m, String name, Operand[] args, Operand receiver, int numArgs, Operand closure, boolean hasClosure, CallType callType, Variable result, boolean isPotentiallyRefined) {
+    private void compileCallCommon(IRBytecodeAdapter m, String name, Operand[] args, Operand receiver, int numArgs, Operand closure, boolean receivesClosure, boolean literalClosure, CallType callType, Variable result, boolean isPotentiallyRefined) {
         m.loadContext();
         m.loadSelf(); // caller
         visit(receiver);
@@ -1092,7 +1093,7 @@ public class JVMVisitor extends IRVisitor {
             }
         }
 
-        if (hasClosure) {
+        if (receivesClosure) {
             m.loadContext();
             visit(closure);
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
@@ -1100,13 +1101,13 @@ public class JVMVisitor extends IRVisitor {
 
         switch (callType) {
             case FUNCTIONAL:
-                m.invokeSelf(file, lastLine, name, arity, hasClosure, CallType.FUNCTIONAL, isPotentiallyRefined);
+                m.invokeSelf(file, lastLine, name, arity, receivesClosure, literalClosure, CallType.FUNCTIONAL, isPotentiallyRefined);
                 break;
             case VARIABLE:
-                m.invokeSelf(file, lastLine, name, arity, hasClosure, CallType.VARIABLE, isPotentiallyRefined);
+                m.invokeSelf(file, lastLine, name, arity, receivesClosure, literalClosure, CallType.VARIABLE, isPotentiallyRefined);
                 break;
             case NORMAL:
-                m.invokeOther(file, lastLine, name, arity, hasClosure, isPotentiallyRefined);
+                m.invokeOther(file, lastLine, name, arity, receivesClosure, literalClosure, isPotentiallyRefined);
                 break;
         }
 
@@ -1511,7 +1512,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void MatchInstr(MatchInstr matchInstr) {
-        compileCallCommon(jvmMethod(), "=~", matchInstr.getCallArgs(), matchInstr.getReceiver(), 1, null, false, CallType.NORMAL, matchInstr.getResult(), false);
+        compileCallCommon(jvmMethod(), "=~", matchInstr.getCallArgs(), matchInstr.getReceiver(), 1, null, false, false, CallType.NORMAL, matchInstr.getResult(), false);
     }
 
     @Override
@@ -1533,10 +1534,10 @@ public class JVMVisitor extends IRVisitor {
         Operand receiver = noResultCallInstr.getReceiver();
         int numArgs = args.length;
         Operand closure = noResultCallInstr.getClosureArg(null);
-        boolean hasClosure = closure != null;
+        boolean receivesClosure = closure != null;
         CallType callType = noResultCallInstr.getCallType();
 
-        compileCallCommon(m, name, args, receiver, numArgs, closure, hasClosure, callType, null, noResultCallInstr.isPotentiallyRefined());
+        compileCallCommon(m, name, args, receiver, numArgs, closure, receivesClosure, noResultCallInstr.hasLiteralClosure(), callType, null, noResultCallInstr.isPotentiallyRefined());
     }
 
     public void oneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) {

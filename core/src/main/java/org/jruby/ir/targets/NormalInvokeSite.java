@@ -24,15 +24,16 @@ import static org.jruby.util.CodegenUtils.sig;
 public class NormalInvokeSite extends InvokeSite {
     CacheEntry cache;
 
-    public NormalInvokeSite(MethodType type, String name, String file, int line) {
-        super(type, name, CallType.NORMAL, file, line);
+    public NormalInvokeSite(MethodType type, String name, boolean literalClosure, String file, int line) {
+        super(type, name, CallType.NORMAL, literalClosure, file, line);
     }
 
-    public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(NormalInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class));
+    public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(NormalInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, String.class, int.class));
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String file, int line) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, String file, int line) {
+        boolean literalClosure = closureInt != 0;
         String methodName = StringSupport.split(name, ':').get(1);
-        InvokeSite site = new NormalInvokeSite(type, JavaNameMangler.demangleMethodName(methodName), file, line);
+        InvokeSite site = new NormalInvokeSite(type, JavaNameMangler.demangleMethodName(methodName), literalClosure, file, line);
 
         return InvokeSite.bootstrap(site, lookup);
     }
