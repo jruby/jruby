@@ -864,8 +864,6 @@ public class RubySet extends RubyObject implements Set {
         return context.runtime.getFalse();
     }
 
-    // TODO Java (Collection) equals !
-
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         if ( other instanceof RubySet ) {
@@ -886,14 +884,8 @@ public class RubySet extends RubyObject implements Set {
     @Override
     @JRubyMethod
     public RubyFixnum hash() { // @hash.hash
-        return getRuntime().newFixnum(hashCode());
+        return hash.hash();
     }
-
-    @Override
-    public int hashCode() {
-        return hash.hashCode();
-    }
-
 
     @JRubyMethod(name = "classify")
     public IRubyObject classify(ThreadContext context, final Block block) {
