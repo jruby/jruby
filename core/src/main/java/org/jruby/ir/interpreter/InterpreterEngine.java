@@ -329,7 +329,7 @@ public class InterpreterEngine {
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
-                result = call.getCallSite().call(context, self, r, o, preparedBlock);
+                result = call.getCallSite().callIter(context, self, r, o, preparedBlock);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }
