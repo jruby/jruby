@@ -63,6 +63,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.MRIRecursionGuard;
+import org.jruby.util.StrptimeParser;
+import org.jruby.util.StrptimeToken;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -4417,6 +4419,17 @@ public final class Ruby implements Constantizable {
         return runtimeCache;
     }
 
+    public List<StrptimeToken> getCachedStrptimePattern(String pattern) {
+        List<StrptimeToken> tokens = strptimeFormatCache.get(pattern);
+
+        if (tokens == null) {
+            tokens = new StrptimeParser().compilePattern(pattern);
+            strptimeFormatCache.put(pattern, tokens);
+        }
+
+        return tokens;
+    }
+
     /**
      * Add a method, so it can be printed out later.
      *
@@ -5152,4 +5165,9 @@ public final class Ruby implements Constantizable {
     public final JavaSites sites = new JavaSites();
 
     private volatile MRIRecursionGuard mriRecursionGuard;
+
+    // For strptime processing we cache the parsed format strings since most applications
+    // reuse the same formats over and over.  This is also unbounded (for now) since all applications
+    // I know of use very few of them.  Even if there are many the size of these lists are modest.
+    private Map<String, List<StrptimeToken>> strptimeFormatCache = new ConcurrentHashMap<>();
 }

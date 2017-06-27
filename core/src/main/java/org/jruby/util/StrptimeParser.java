@@ -195,12 +195,6 @@ public class StrptimeParser {
         }
     }
 
-    private final StrptimeLexer lexer;
-
-    public StrptimeParser() {
-        this.lexer = new StrptimeLexer((Reader) null);
-    }
-
     /**
      * Ported from RubyDateFormatter#addToPattern in JRuby 9.1.5.0.
      * see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/core/src/main/java/org/jruby/util/RubyDateFormatter.java
@@ -223,7 +217,7 @@ public class StrptimeParser {
     public List<StrptimeToken> compilePattern(final String pattern) {
         final List<StrptimeToken> compiledPattern = new LinkedList<>();
         final Reader reader = new StringReader(pattern); // TODO Use try-with-resource statement
-        lexer.yyreset(reader);
+        StrptimeLexer lexer = new StrptimeLexer(reader);
 
         StrptimeToken token;
         try {
