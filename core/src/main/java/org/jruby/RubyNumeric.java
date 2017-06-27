@@ -554,7 +554,7 @@ public class RubyNumeric extends RubyObject {
     protected final IRubyObject coerceBin(ThreadContext context, CallSite site, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, true);
         IRubyObject car = ary.eltInternal(0);
-        return numFuncall(context, car, site, ary.eltInternal(1));
+        return site.call(context, car, car, ary.eltInternal(1));
     }
 
     /** rb_num_coerce_bit
