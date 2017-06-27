@@ -33,6 +33,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -53,6 +56,7 @@ public abstract class InvokeSite extends MutableCallSite {
     protected final String file;
     protected final int line;
     private boolean boundOnce;
+    private boolean closure;
     CacheEntry cache = CacheEntry.NULL_CACHE;
 
     private static final Logger LOG = LoggerFactory.getLogger(InvokeSite.class);
@@ -95,6 +99,7 @@ public abstract class InvokeSite extends MutableCallSite {
             }
             startSig = startSig.appendArg("block", Block.class);
             fullSignature = signature = startSig;
+            closure = true;
         } else {
             arity = type.parameterCount() - argOffset;
 
@@ -140,9 +145,39 @@ public abstract class InvokeSite extends MutableCallSite {
 
         MethodHandle mh = getHandle(self, selfClass, method);
 
+        if (closure) {
+            mh = Binder.from(mh.type())
+                    .tryFinally(getBlockEscape(signature))
+                    .invoke(mh);
+        }
+
         updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
 
+        if (closure) {
+            try {
+                return method.call(context, self, selfClass, methodName, args, block);
+            } finally {
+                block.escape();
+            }
+        }
+
         return method.call(context, self, selfClass, methodName, args, block);
+    }
+
+    private static final MethodHandle ESCAPE_BLOCK = Binder.from(void.class, Block.class).invokeVirtualQuiet(lookup(), "escape");
+    private static final Map<Signature, MethodHandle> BLOCK_ESCAPES = Collections.synchronizedMap(new HashMap<Signature, MethodHandle>());
+
+    private static MethodHandle getBlockEscape(Signature signature) {
+        Signature voidSignature = signature.changeReturn(void.class);
+        MethodHandle escape = BLOCK_ESCAPES.get(voidSignature);
+        if (escape == null) {
+            escape = SmartBinder.from(voidSignature)
+                    .permute("block")
+                    .invoke(ESCAPE_BLOCK)
+                    .handle();
+            BLOCK_ESCAPES.put(voidSignature, escape);
+        }
+        return escape;
     }
 
     /**
