@@ -134,12 +134,10 @@ public class TypeConverter {
 
     // MRI: rb_to_float 1.9
     public static RubyNumeric toFloat(Ruby runtime, IRubyObject obj) {
-        RubyClass Float = runtime.getFloat();
-
-        if (Float.isInstance(obj)) return (RubyNumeric) obj;
+        if (obj instanceof RubyFloat) return (RubyNumeric) obj;
         if (!runtime.getNumeric().isInstance(obj)) throw runtime.newTypeError(obj, "Float");
 
-        return (RubyNumeric) convertToType(obj, Float, "to_f", true);
+        return (RubyNumeric) convertToType(obj, runtime.getFloat(), "to_f", true);
     }
     /**
      * Checks that this object is of type DATA and then returns it, otherwise raises failure (MRI: Check_Type(obj, T_DATA))
