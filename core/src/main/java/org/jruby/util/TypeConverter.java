@@ -29,7 +29,6 @@ package org.jruby.util;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyArray;
-import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
@@ -203,7 +202,13 @@ public class TypeConverter {
      * @return the converted value
      */
     public static IRubyObject convertToTypeWithCheck(IRubyObject obj, RubyClass target, String convertMethod) {
-        return convertToTypeWithCheck19(obj, target, convertMethod);
+        if (target.isInstance(obj)) return obj;
+        IRubyObject val = convertToType(obj, target, convertMethod, false);
+        if (val.isNil()) return val;
+        if (!target.isInstance(val)) {
+            throw newTypeError(obj, target, convertMethod, val);
+        }
+        return val;
     }
 
     /**
@@ -216,46 +221,23 @@ public class TypeConverter {
      * @return the converted value
      */
     public static IRubyObject convertToTypeWithCheck(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
-        return convertToTypeWithCheck19(context, obj, target, sites);
-    }
-
-    /**
-     * Higher level conversion utility similar to convertToType but it can throw an
-     * additional TypeError during conversion (MRI: rb_check_convert_type).
-     *
-     * @param obj the object to convert
-     * @param target is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @return the converted value
-     */
-    public static IRubyObject convertToTypeWithCheck19(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, false);
-        if (val.isNil()) return val;
-        if (!target.isInstance(val)) {
-            throw newTypeError(obj, target, convertMethod, val);
-        }
-        return val;
-    }
-
-    /**
-     * Higher level conversion utility similar to convertToType but it can throw an
-     * additional TypeError during conversion (MRI: rb_check_convert_type).
-     *
-     * @param context the current context
-     * @param obj the object to convert
-     * @param target is the type we are trying to convert to
-     * @param sites is the CheckedSites call sites to be used for coersion
-     * @return the converted value
-     */
-    public static IRubyObject convertToTypeWithCheck19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType(context, obj, target, sites, false);
+        IRubyObject val = convertToType(context, obj, target, sites, false);
         if (val.isNil()) return val;
         if (!target.isInstance(val)) {
             throw newTypeError(context.runtime, obj, target, sites.methodName, val);
         }
         return val;
+    }
+
+    @Deprecated
+    public static IRubyObject convertToTypeWithCheck19(IRubyObject obj, RubyClass target, String convertMethod) {
+        return convertToTypeWithCheck(obj, target, convertMethod);
+    }
+
+    @Deprecated
+    public static IRubyObject convertToTypeWithCheck19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
+        return convertToTypeWithCheck(context, obj, target, sites);
     }
 
     public static RaiseException newTypeError(IRubyObject obj, RubyClass target, String convertMethod, IRubyObject val) {
@@ -273,7 +255,7 @@ public class TypeConverter {
 
         TypeConverterSites sites = sites(context);
 
-        IRubyObject conv = TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getInteger(), sites.to_int_checked);
+        IRubyObject conv = convertToTypeWithCheck(context, obj, context.runtime.getInteger(), sites.to_int_checked);
 
         return conv instanceof RubyInteger ? conv : context.nil;
     }
@@ -287,7 +269,7 @@ public class TypeConverter {
             ThreadContext context = runtime.getCurrentContext();
             TypeConverterSites sites = sites(context);
 
-            IRubyObject conv = TypeConverter.convertToTypeWithCheck(context, obj, runtime.getInteger(), sites.to_i_checked);
+            IRubyObject conv = convertToTypeWithCheck(context, obj, runtime.getInteger(), sites.to_i_checked);
             return conv instanceof RubyInteger ? conv : runtime.getNil();
         }
 
@@ -363,7 +345,7 @@ public class TypeConverter {
     public static IRubyObject checkArrayType(IRubyObject self) {
         Ruby runtime = self.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
-        return TypeConverter.convertToTypeWithCheck19(context, self, runtime.getArray(), sites(context).to_ary_checked);
+        return TypeConverter.convertToTypeWithCheck(context, self, runtime.getArray(), sites(context).to_ary_checked);
     }
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) {
@@ -381,22 +363,14 @@ public class TypeConverter {
     }
 
     // rb_check_type and Check_Type
-    public static void checkType(ThreadContext context, IRubyObject x, RubyModule t) {
-        ClassIndex xt;
+    public static void checkType(ThreadContext context, IRubyObject x, final RubyModule type) {
+        assert x != RubyBasicObject.UNDEF;
 
-        if (x == RubyBasicObject.UNDEF) {
-            throw context.runtime.newRuntimeError("bug: undef leaked to the Ruby space");
-        }
-
-        xt = x.getMetaClass().getClassIndex();
+        ClassIndex xt = x.getMetaClass().getClassIndex();
 
         // MISSING: special error for T_DATA of a certain type
-        if (xt != t.getClassIndex()) {
-            String tname = x.getMetaClass().toString();
-            if (tname != null) {
-                throw context.runtime.newTypeError("wrong argument type " + tname + " (expected " + t.getName() + ")");
-            }
-            throw context.runtime.newRuntimeError("bug: unknown type " + t.getClassIndex() + " (" + xt + " given)");
+        if (xt != type.getClassIndex()) {
+            throw context.runtime.newTypeError("wrong argument type " + x.getMetaClass() + " (expected " + type.getName() + ')');
         }
     }
 
@@ -408,12 +382,11 @@ public class TypeConverter {
         for (;;) {
             if (val instanceof RubyFloat) {
                 if (base != 0) raiseIntegerBaseError(context);
-                double value = ((RubyFloat)val).getValue();
-                if (value <= RubyFixnum.MAX ||
-                        value >= RubyFixnum.MIN) {
+                double value = ((RubyFloat) val).getValue();
+                if (value <= RubyFixnum.MAX || value >= RubyFixnum.MIN) {
                     return RubyNumeric.dbl2num(context.runtime, value);
                 }
-            } else if (val instanceof RubyFixnum || val instanceof RubyBignum) {
+            } else if (val instanceof RubyInteger) {
                 if (base != 0) raiseIntegerBaseError(context);
                 return val;
             } else if (val instanceof RubyString) {
@@ -447,7 +420,7 @@ public class TypeConverter {
 
         if (tmp.isNil()) {
             TypeConverterSites sites = sites(context);
-            tmp = convertToTypeWithCheck19(context, val, context.runtime.getArray(), sites.to_a_checked);
+            tmp = convertToTypeWithCheck(context, val, context.runtime.getArray(), sites.to_a_checked);
             if (tmp.isNil()) {
                 return context.runtime.newArray(val);
             }
