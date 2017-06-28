@@ -3298,8 +3298,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 s++;
             }
 
-            IRubyObject b = stringToInum19(10, false);
-            IRubyObject e = end.stringToInum19(10, false);
+            IRubyObject b = stringToInum(10);
+            IRubyObject e = end.stringToInum(10);
 
             RubyArray argsArr = RubyArray.newArray(runtime, RubyFixnum.newFixnum(runtime, value.length()), context.nil);
 
@@ -3399,88 +3399,91 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_to_i
      *
      */
+    @JRubyMethod(name = "to_i")
     public IRubyObject to_i() {
-        return to_i19();
+        return stringToInum(10);
     }
 
     /** rb_str_to_i
      *
      */
+    @JRubyMethod(name = "to_i")
     public IRubyObject to_i(IRubyObject arg0) {
-        return to_i19(arg0);
-    }
-
-    @JRubyMethod(name = "to_i")
-    public IRubyObject to_i19() {
-        return stringToInum19(10, false);
-    }
-
-    @JRubyMethod(name = "to_i")
-    public IRubyObject to_i19(IRubyObject arg0) {
-        long base = checkBase(arg0);
-        return stringToInum19((int) base, false);
-    }
-
-    private long checkBase(IRubyObject arg0) {
-        long base = arg0.convertToInteger().getLongValue();
-        if(base < 0) {
+        int base = (int) arg0.convertToInteger().getLongValue();
+        if (base < 0) {
             throw getRuntime().newArgumentError("illegal radix " + base);
         }
-        return base;
+        return stringToInum(base);
+    }
+
+    @Deprecated
+    public IRubyObject to_i19() {
+        return to_i();
+    }
+
+    @Deprecated
+    public IRubyObject to_i19(IRubyObject arg0) {
+        return to_i(arg0);
     }
 
     /** rb_str_to_inum
      *
      */
-    @Deprecated
     public IRubyObject stringToInum(int base, boolean badcheck) {
-        ByteList s = this.value;
-        return ConvertBytes.byteListToInum(getRuntime(), s, base, badcheck);
-    }
-
-    public IRubyObject stringToInum19(int base, boolean badcheck) {
-        ByteList s = this.value;
-        if (!s.getEncoding().isAsciiCompatible()) {
-            throw getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + s.getEncoding());
+        final ByteList str = this.value;
+        if (!str.getEncoding().isAsciiCompatible()) {
+            throw getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + str.getEncoding());
         }
 
-        return ConvertBytes.byteListToInum19(getRuntime(), s, base, badcheck);
+        return ConvertBytes.byteListToInum(getRuntime(), str, base, badcheck);
+    }
+
+    public final IRubyObject stringToInum(int base) {
+        return stringToInum(base, false);
+    }
+
+    @Deprecated
+    public final IRubyObject stringToInum19(int base, boolean badcheck) {
+        return stringToInum(base, badcheck);
     }
 
     /** rb_str_oct
      *
      */
+    @JRubyMethod(name = "oct")
     public IRubyObject oct(ThreadContext context) {
-        return oct19(context);
+        return stringToInum(-8, false);
     }
 
-    @JRubyMethod(name = "oct")
+    @Deprecated
     public IRubyObject oct19(ThreadContext context) {
-        return stringToInum19(-8, false);
+        return oct(context);
     }
 
     /** rb_str_hex
      *
      */
+    @JRubyMethod(name = "hex")
     public IRubyObject hex(ThreadContext context) {
-        return hex19(context);
+        return stringToInum(16, false);
     }
 
-    @JRubyMethod(name = "hex")
+    @Deprecated
     public IRubyObject hex19(ThreadContext context) {
-        return stringToInum19(16, false);
+        return hex(context);
     }
 
     /** rb_str_to_f
      *
      */
+    @JRubyMethod(name = "to_f")
     public IRubyObject to_f() {
-        return to_f19();
+        return RubyNumeric.str2fnum(getRuntime(), this, false);
     }
 
-    @JRubyMethod(name = "to_f")
+    @Deprecated
     public IRubyObject to_f19() {
-        return RubyNumeric.str2fnum(getRuntime(), this, false);
+        return to_f();
     }
 
     /** rb_str_split_m
