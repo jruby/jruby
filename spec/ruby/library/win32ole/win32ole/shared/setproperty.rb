@@ -1,9 +1,15 @@
+require File.expand_path('../../../fixtures/classes', __FILE__)
+
 platform_is :windows do
   require 'win32ole'
 
   describe :win32ole_setproperty, shared: true do
     before :each do
-      @ie = WIN32OLE.new("InternetExplorer.application")
+      @ie = WIN32OLESpecs.new_ole('InternetExplorer.Application')
+    end
+
+    after :each do
+      @ie.Quit
     end
 
     it "raises ArgumentError if no argument is given" do
@@ -15,7 +21,5 @@ platform_is :windows do
       result = @ie.send(@method, 'Height', height)
       result.should == nil
     end
-
   end
-
 end

@@ -1,2 +1,0 @@
-fails:Time#getlocal returns a Time with a UTC offset of the specified number of Rational seconds
-fails:Time#getlocal with an argument that responds to #to_r coerces using #to_r

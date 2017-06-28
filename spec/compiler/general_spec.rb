@@ -326,6 +326,12 @@ modes.each do |mode|
       expect{run("def foo(a, b=(c=1));[a,b,c];end;foo(1,2,3)")}.to raise_error(ArgumentError)
     end
 
+    it "compiles accesses of uninitialized variables" do
+      run("def foo(a); if a; b = 1; end; b.inspect; end; foo(false)") {|result| expect(result).to eq("nil") }
+      run("def foo(a); a ||= (b = 1); b.inspect; end; foo(1)") {|result| expect(result).to eq("nil")}
+      run("def foo(a); a &&= (b = 1); b.inspect; end; foo(nil)") {|result| expect(result).to eq("nil")}
+    end
+
     it "compiles grouped and intra-list rest args" do
       run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)") do |result|
         expect(result).to eq([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12])
@@ -1131,7 +1137,7 @@ modes.each do |mode|
       '
 
       run(code) do |x|
-        x.should == :ok
+        expect(x).to eq(:ok)
       end
     end
 
@@ -1141,6 +1147,49 @@ modes.each do |mode|
 
     it "compiles calls with one float arg that do not have optimized paths" do
       run('ary = []; ary.push(1.0)') {|x| expect(x).to eq([1.0]) }
+    end
+
+    # jruby/jruby#4148
+    it "binds variable-arity calls to attributes properly" do
+      run('a_class = Class.new do; attr_accessor :foo; end; a = a_class.new; a.foo = 1; ary = []; a.foo(*ary)') do |x|
+        expect(x).to eq(1)
+      end
+    end
+
+    it "handles defined? super forms" do
+      run('a = Class.new { def a; end }; b = Class.new(a) { def a; [defined? super, defined? super()]; end }.new; b.a') do |x|
+        expect(x).to eq(["super", "super"])
+      end
+    end
+
+    it "handles defined? method forms" do
+      run('a = Class.new { def a; [defined? a, defined? a()]; end }.new; [a.a, defined? a.a]') do |x|
+        expect(x).to eq([["method", "method"], "method"])
+      end
+    end
+
+    it "handles defined? a.b= forms" do
+      run('a = Class.new { attr_writer :b; def []=(_,_); end; def a; [defined? self.b=0, defined? self[0]=0]; end }.new; [a.a, defined? a.b = 0, defined? a[0] = 0]') do |x|
+        expect(x).to eq([["assignment", "assignment"], "assignment", "assignment"])
+      end
+    end
+
+    it "handles defined? Foo::xxx forms" do
+      run('DefinedConstant ||= 1; o = Object.new; def o.foo; end; [defined? Object::DefinedConstant, defined? o::foo]') do |x|
+        expect(x).to eq(["constant", "method"])
+      end
+    end
+
+    it "handles defined? $~ forms" do
+      run('/(foo)/ =~ "barfoobaz"; [defined? $~, defined? $1, defined? $`, defined? $\', defined? $&, defined? $+]') do |x|
+        expect(x).to eq(%w[global-variable] * 6)
+      end
+    end
+
+    it "handles defined? $global" do
+      run('defined? $"') do |x|
+        expect(x).to eq("global-variable")
+      end
     end
   end
 end

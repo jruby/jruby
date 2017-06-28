@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import java.nio.channels.SeekableByteChannel;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.enxio.channels.NativeDeviceChannel;
@@ -229,20 +230,8 @@ class RegularFileResource extends AbstractFileResource {
     }
 
     private Channel createChannel(ModeFlags flags) throws ResourceException {
-        FileChannel fileChannel;
+        SeekableByteChannel fileChannel;
 
-        /* Because RandomAccessFile does not provide a way to pass append
-         * mode, we must manually seek if using RAF. FileOutputStream,
-         * however, does properly honor append mode at the lowest levels,
-         * reducing append write costs when we're only doing writes.
-         *
-         * The code here will use a FileOutputStream if we're only writing,
-         * setting isInAppendMode to true to disable our manual seeking.
-         *
-         * RandomAccessFile does not handle append for us, so if we must
-         * also be readable we pass false for isInAppendMode to indicate
-         * we need manual seeking.
-         */
         try{
             if (flags.isWritable() && !flags.isReadable()) {
                 FileOutputStream fos = new FileOutputStream(file, flags.isAppendable());
@@ -250,6 +239,11 @@ class RegularFileResource extends AbstractFileResource {
             } else {
                 RandomAccessFile raf = new RandomAccessFile(file, flags.toJavaModeString());
                 fileChannel = raf.getChannel();
+
+                // O_APPEND specifies that all writes will always be at the end of the open file
+                // (even if we happened to have seek'd away from the end of the file o_O). RAF
+                // does not have these semantics so we wrap it to support this unusual case.
+                if (flags.isAppendable()) fileChannel = new AppendModeChannel((FileChannel) fileChannel);
             }
         } catch (FileNotFoundException fnfe) {
             // Jave throws FileNotFoundException both if the file doesn't exist or there were
@@ -257,8 +251,6 @@ class RegularFileResource extends AbstractFileResource {
             throw file.exists() ?
                     new ResourceException.PermissionDenied(absolutePath()) :
                     new ResourceException.NotFound(absolutePath());
-        } catch (IOException ioe) {
-            throw new ResourceException.IOError(ioe);
         }
 
         try {

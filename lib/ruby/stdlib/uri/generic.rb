@@ -428,7 +428,7 @@ module URI
 
       if parser.regexp[:USERINFO] !~ v
         raise InvalidComponentError,
-          "bad component(expected user component): #{v}"
+          "bad password component"
       end
 
       return true
@@ -1341,7 +1341,7 @@ module URI
     # Constructs String from URI
     #
     def to_s
-      str = String.new
+      str = ''.dup
       if @scheme
         str << @scheme
         str << ':'

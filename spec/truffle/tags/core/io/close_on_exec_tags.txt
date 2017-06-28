@@ -1,5 +1,0 @@
-fails:IO#close_on_exec? returns true by default
-fails(windows):IO#close_on_exec= returns false from #respond_to?
-fails(windows):IO#close_on_exec= raises a NotImplementedError when called
-fails(windows):IO#close_on_exec? returns false from #respond_to?
-fails(windows):IO#close_on_exec? raises a NotImplementedError when called

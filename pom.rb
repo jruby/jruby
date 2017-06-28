@@ -23,11 +23,11 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   issue_management 'https://github.com/jruby/jruby/issues', 'GitHub'
 
   mailing_list "jruby" do
-    archives "http://blade.nagaokaut.ac.jp/ruby/jruby/index.shtml"
+    archives "https://github.com/jruby/jruby/wiki/MailingLists"
   end
 
-  license 'GPL 3', 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'
-  license 'LGPL 3', 'http://www.gnu.org/licenses/lgpl-3.0-standalone.html'
+  license 'GPL 2', 'http://www.gnu.org/licenses/gpl-2.0-standalone.html'
+  license 'LGPL 2.1', 'http://www.gnu.org/licenses/lgpl-2.1-standalone.html'
   license 'EPL', 'http://www.eclipse.org/legal/epl-v10.html'
 
   plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
@@ -75,18 +75,16 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'test-unit.version' => '3.1.1',
               'power_assert.version' => '0.2.3',
               'diff-lcs.version' => '1.1.3',
-              'racc.version' => '1.4.13',
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
               'rdoc.version' => '4.2.0',
               'rake.version' => '10.4.2',
-              'jar-dependencies.version' => '0.3.2',
+              'jar-dependencies.version' => '0.3.10',
 
               'jruby-launcher.version' => '1.1.1',
               'ant.version' => '1.9.2',
               'asm.version' => '5.0.4',
-              'jffi.version' => '1.2.12',
-              'bouncy-castle.version' => '1.47',
+              'jffi.version' => '1.2.16',
               'joda.time.version' => '2.8.2' )
 
   plugin_management do
@@ -114,7 +112,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :assembly, '2.4'
     plugin :install, '2.4'
     plugin :deploy, '2.7'
-    plugin :javadoc, '2.7'
+    plugin :javadoc, '2.10.4'
     plugin :resources, '2.6'
     plugin :clean, '2.5'
     plugin :dependency, '2.8'
@@ -123,7 +121,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
     unless model.version =~ /-SNAPSHOT/
-       #rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
+       rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
     end
     plugin :enforcer, '1.4' do
       execute_goal :enforce, :rules => rules
@@ -171,14 +169,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   modules [ 'core', 'lib' ]
-
-  # Truffle is by default only built if a JDK 8+ is available
-  profile 'truffle' do
-    activation do
-      jdk '[1.8,)' # 1.8+
-    end
-    modules [ 'truffle' ]
-  end
 
   build do
     default_goal 'install'
@@ -255,7 +245,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'truffle', 'test', 'maven' ]
+  all_modules = [ 'test', 'maven' ]
 
   profile 'all' do
 
@@ -276,13 +266,19 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'release' do
-    modules [ 'truffle', 'test', 'maven' ]
+    modules [ 'maven' ]
     properties 'invoker.skip' => true
+    plugin(:source) do
+      execute_goals('jar-no-fork', :id => 'attach-sources')
+    end
+    plugin(:javadoc) do
+      execute_goals('jar', :id => 'attach-javadocs')
+    end
   end
 
   profile 'snapshots' do
 
-    modules [ 'truffle', 'maven' ]
+    modules [ 'maven' ]
 
     distribution_management do
       repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )

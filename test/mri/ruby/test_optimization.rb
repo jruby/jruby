@@ -230,49 +230,93 @@ class TestRubyOptimization < Test::Unit::TestCase
     assert_equal true, MyObj.new == nil
   end
 
+  def self.tailcall(klass, src, file = nil, path = nil, line = nil)
+    unless file
+      loc, = caller_locations(1, 1)
+      file = loc.path
+      line ||= loc.lineno
+    end
+    RubyVM::InstructionSequence.new("proc {|_|_.class_eval {#{src}}}",
+                                    file, (path || file), line,
+                                    tailcall_optimization: true,
+                                    trace_instruction: false)
+      .eval[klass]
+  end
+
+  def tailcall(*args)
+    self.class.tailcall(singleton_class, *args)
+  end
+
   def test_tailcall
     bug4082 = '[ruby-core:33289]'
 
-    option = {
-      tailcall_optimization: true,
-      trace_instruction: false,
-    }
-    RubyVM::InstructionSequence.new(<<-EOF, "Bug#4082", bug4082, nil, option).eval
-      class #{self.class}::Tailcall
-        def fact_helper(n, res)
-          if n == 1
-            res
-          else
-            fact_helper(n - 1, n * res)
-          end
-        end
-        def fact(n)
-          fact_helper(n, 1)
+    tailcall(<<-EOF)
+      def fact_helper(n, res)
+        if n == 1
+          res
+        else
+          fact_helper(n - 1, n * res)
         end
       end
+      def fact(n)
+        fact_helper(n, 1)
+      end
     EOF
-    assert_equal(9131, Tailcall.new.fact(3000).to_s.size, bug4082)
+    assert_equal(9131, fact(3000).to_s.size, bug4082)
   end
 
   def test_tailcall_with_block
     bug6901 = '[ruby-dev:46065]'
 
-    option = {
-      tailcall_optimization: true,
-      trace_instruction: false,
-    }
-    RubyVM::InstructionSequence.new(<<-EOF, "Bug#6901", bug6901, nil, option).eval
-  def identity(val)
-    val
-  end
+    tailcall(<<-EOF)
+      def identity(val)
+        val
+      end
 
-  def delay
-    -> {
-      identity(yield)
-    }
-  end
+      def delay
+        -> {
+          identity(yield)
+        }
+      end
     EOF
     assert_equal(123, delay { 123 }.call, bug6901)
+  end
+
+  def just_yield
+    yield
+  end
+
+  def test_tailcall_inhibited_by_block
+    tailcall(<<-EOF)
+      def yield_result
+        just_yield {:ok}
+      end
+    EOF
+    assert_equal(:ok, yield_result)
+  end
+
+  def do_raise
+    raise "should be rescued"
+  end
+
+  def errinfo
+    $!
+  end
+
+  def test_tailcall_inhibited_by_rescue
+    bug12082 = '[ruby-core:73871] [Bug #12082]'
+
+    tailcall(<<-'end;')
+      def to_be_rescued
+        return do_raise
+        1 + 2
+      rescue
+        errinfo
+      end
+    end;
+    result = to_be_rescued
+    assert_instance_of(RuntimeError, result, bug12082)
+    assert_equal("should be rescued", result.message, bug12082)
   end
 
   class Bug10557
@@ -373,5 +417,10 @@ class TestRubyOptimization < Test::Unit::TestCase
                inf.to_i rescue nil
              end
     assert_nil result, '[ruby-dev:49423] [Bug #11804]'
+  end
+
+  def test_nil_safe_conditional_assign
+    bug11816 = '[ruby-core:74993] [Bug #11816]'
+    assert_ruby_status([], 'nil&.foo &&= false', bug11816)
   end
 end

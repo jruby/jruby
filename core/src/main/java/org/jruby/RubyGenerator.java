@@ -34,6 +34,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 public class RubyGenerator extends RubyObject {
     public static void createGeneratorClass(Ruby runtime) {
@@ -95,11 +96,7 @@ public class RubyGenerator extends RubyObject {
     // generator_each
     @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        newArgs[0] = RubyYielder.newYielder(context, block);
-        if (args.length > 0) System.arraycopy(args, 0, newArgs, 1, args.length);
-
-        return ((RubyProc)proc).call19(context, newArgs, Block.NULL_BLOCK);
+        return ((RubyProc) proc).call19(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args), Block.NULL_BLOCK);
     }
 
 

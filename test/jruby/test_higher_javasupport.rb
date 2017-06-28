@@ -454,20 +454,81 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal [ 2, 1 ], [ [], [ 0 ] ].dimensions
   end
 
-  def test_void
-    assert Java::void
-    assert Java::Void
+  def test_primitives
+    assert_equal 'short', Java::short.java_class.name
+    assert_equal 'double', Java::double.java_class.name
+    assert_equal 'float', Java::float.java_class.name
+    assert Java::float.is_a?(Class)
+    assert Java::byte.is_a?(Class)
+    assert_false Java::org.is_a?(Class)
     begin
-      Java::void[1].new
-      fail "expected to raise"
-    rescue ArgumentError => e
-      assert_equal "Java package 'void' does not have a method `[]' with 1 argument", e.message
+      Class.new(Java::long); fail 'extended a primitive type!'
+    rescue TypeError => e
+      assert /can not extend .* long/.match(e.message)
     end
-    assert Java::Void == Java::void
-    assert Java::void.equal? Java::Void
+
+    begin
+      Java::double.new; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::short.synchronized {}; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::float.java_object; fail "expected to raise"
+    rescue NoMethodError
+    end
+
+    assert Java::byte.hash != Java::float.hash
+    assert_false Java::byte == Java::float
+    assert_true Java::byte == Java::byte
+    assert_true Java::long.eql? Java::long
+    assert_false Java::int.eql? Java::long
+
+    assert_equal 2, Java::short.new_array(2).length
+  end
+
+  def test_void
+    assert Java::void.is_a?(Class)
+    assert_equal 'void', Java::void.java_class.name
+
+    begin
+      Class.new(Java::void); fail 'extended void type!'
+    rescue TypeError => e
+      assert /can not extend .* void/.match(e.message)
+    end
+
+    # NOTE: Java::Void is simply a package stub -
+    # has nothing to do with java.lang.Void.class just like Java::Float
+    assert Java::Void
+
+    assert Java::Void != Java::void
+    assert_false Java::void.equal? Java::Void
     quiet do
       p Java
       p Java::void
+    end
+
+    begin
+      Java::void.new; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::void[1].new; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::void[].new; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::void.new_array; fail "expected to raise"
+    rescue NoMethodError
+    end
+    begin
+      Java::void.synchronized; fail "expected to raise"
+    rescue NoMethodError
     end
   end
 
@@ -653,6 +714,94 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_make_sure_we_are_not_writing_class_methods_to_the_same_place
     assert_nothing_raised { AlphaSingleton.getInstance.alpha }
+  end
+
+  def test_conflicting_getter_aliasing
+    assert BetaSingleton.instance.respond_to?(:beta)
+    assert BetaSingleton.instance.respond_to?(:beta?)
+    assert BetaSingleton.respond_to?(:betac)
+    assert BetaSingleton.respond_to?(:betac?)
+
+    instance = BetaSingleton.instance
+    assert_equal 'Beta', instance.getBeta
+    assert_equal 'Beta', instance.get_beta
+    assert_equal 'beta', instance.beta
+    assert_equal true,   instance.beta?
+
+    assert_equal 'Beta2', instance.getBeta2
+    assert_equal 'Beta2', instance.get_beta2
+    assert_equal 'Beta2', instance.beta2
+    assert_equal true,   instance.beta2?
+
+    assert_equal 'Beta3', instance.getBeta3
+    assert_equal 'Beta3', instance.get_beta3
+    assert_equal 'Beta3', instance.beta3
+    assert_equal true,   instance.beta3?
+
+    assert_equal 'Beta4', instance.getBeta4
+    assert_equal 'Beta4', instance.get_beta4
+    assert_equal true,    instance.beta4
+
+    assert_equal 'Beta5', instance.getBeta5
+    assert_equal 'Beta5', instance.get_beta5
+    assert_equal true,    instance.beta5(nil)
+
+    assert_equal 'beta6', instance.beta6
+    assert_equal true,    instance.beta6?
+
+    assert_equal nil , instance.beta7
+    assert_equal true, instance.beta7?
+
+    assert_equal 'BetaCased', instance.getBetaCased
+    assert_equal 'BetaCased', instance.get_beta_cased
+    assert_equal 'betaCased', instance.betaCased
+    assert_equal 'betaCased', instance.beta_cased
+    assert_equal true,        instance.beta_cased?
+    assert_equal true,        instance.isBetaCased
+    assert_equal true,        instance.is_beta_cased
+    assert_equal true,        instance.is_beta_cased?
+
+    assert_equal 'BetaCased2', instance.betaCased2
+    assert_equal 'BetaCased2', instance.beta_cased2
+    assert_equal true,         instance.beta_cased2?
+
+    assert_equal 'BetaCased3', instance.betaCased3
+    assert_equal 'BetaCased3', instance.beta_cased3
+    assert_equal true,         instance.beta_cased3?
+
+    #
+
+    assert_equal 'BetaCasedc', instance.class.getBetaCasedc
+    assert_equal 'BetaCasedc', instance.class.get_beta_casedc
+    assert_equal 'betaCasedc', instance.class.betaCasedc
+    assert_equal 'betaCasedc', instance.class.beta_casedc
+    assert_equal true,         instance.class.beta_casedc?
+    assert_equal true,         instance.class.isBetaCasedc
+    assert_equal true,         instance.class.is_beta_casedc?
+
+    assert_equal 'BetaCasedc2', instance.class.betaCasedc2
+    assert_equal 'BetaCasedc2', instance.class.beta_casedc2
+    assert_equal true,          instance.class.beta_casedc2?
+
+    assert_equal 'BetaCasedc3', instance.class.betaCasedc3
+    assert_equal 'BetaCasedc3', instance.class.beta_casedc3
+    assert_equal true,          instance.class.beta_casedc3?
+
+    klass = BetaSingleton
+    assert_equal 'BetaClass', klass.getBetac
+    assert_equal 'BetaClass', klass.get_betac
+    assert_equal 'betaClass', klass.betac
+    assert_equal true,        klass.betac?
+
+    assert_equal 'BetaClass2', klass.betac2
+    assert_equal true,         klass.betac2?
+
+    assert_equal 'BetaClass3', klass.betac3
+    assert_equal true,         klass.betac3?
+
+    assert_equal 'betaClass4', klass.betac4
+    assert_equal 'BetaClass4', klass.get_betac4
+    assert_raises(NoMethodError) { klass.betac4? }
   end
 
   java_import 'org.jruby.javasupport.test.Color'
@@ -1398,6 +1547,21 @@ CLASSDEF
     x = java.util.ArrayList.new
     def x.foo; end
     assert(x.java_class.kind_of?Java::JavaClass)
+  end
+
+  java_import 'org.jruby.javasupport.test.name.Sample'
+
+  def test_native_ruby_array_java_argument
+    assert_equal '10', Sample.test(16)
+    assert_equal 3, Sample.test([1, 2.0, 3])
+  end
+
+  def test_ruby_object_java_argument
+    assert_equal 'RubyString',  Sample.rubyObj('s')
+    assert_equal 'RubyInteger', Sample.rubyObj(100)
+    assert_equal 'RubyObject',  Sample.rubyObj([1])
+    # undefined territory as nil gets into null early
+    #assert_equal 'RubyObject',  Sample.rubyObj(nil)
   end
 
   # JRUBY-4524

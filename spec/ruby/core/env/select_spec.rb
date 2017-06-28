@@ -18,7 +18,7 @@ describe "ENV.select!" do
   end
 
   it "returns an Enumerator if called without a block" do
-    ENV.select!.should be_an_instance_of(enumerator_class)
+    ENV.select!.should be_an_instance_of(Enumerator)
   end
 
   it_behaves_like :enumeratorized_with_origin_size, :select!, ENV
@@ -32,7 +32,7 @@ describe "ENV.select" do
   end
 
   it "returns an Enumerator when no block is given" do
-    ENV.select.should be_an_instance_of(enumerator_class)
+    ENV.select.should be_an_instance_of(Enumerator)
   end
 
   it_behaves_like :enumeratorized_with_origin_size, :select, ENV

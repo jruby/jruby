@@ -21,7 +21,7 @@ describe "Struct#select" do
   describe "without block" do
     it "returns an instance of Enumerator" do
       struct = Struct.new(:foo).new
-      struct.select.should be_an_instance_of(enumerator_class)
+      struct.select.should be_an_instance_of(Enumerator)
     end
   end
 

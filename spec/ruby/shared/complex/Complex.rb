@@ -62,6 +62,13 @@ describe :kernel_Complex, shared: true do
     it "needs to be reviewed for spec completeness"
   end
 
+  describe "when passed an Objectc which responds to #to_c" do
+    it "returns the passed argument" do
+      obj = Object.new; def obj.to_c; 1i end
+      Complex(obj).should == Complex(0, 1)
+    end
+  end
+
   describe "when passed a Numeric which responds to #real? with false" do
     it "returns the passed argument" do
       n = mock_numeric("unreal")

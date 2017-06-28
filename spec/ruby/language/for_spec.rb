@@ -65,9 +65,11 @@ describe "The for expression" do
     class OFor
       m = [1,2,3]
       n = 0
-      for CONST in m
-        n += 1
-      end
+      -> {
+        for CONST in m
+          n += 1
+        end
+      }.should complain(/already initialized constant/)
       CONST.should == 3
       n.should == 3
     end

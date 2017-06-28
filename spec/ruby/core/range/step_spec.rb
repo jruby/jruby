@@ -7,7 +7,7 @@ describe "Range#step" do
 
   it "returns an enumerator when no block is given" do
     enum = (1..10).step(4)
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.to_a.should eql([1, 5, 9])
   end
 

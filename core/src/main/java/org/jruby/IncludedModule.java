@@ -9,6 +9,9 @@ public class IncludedModule extends RubyClass {
         super(runtime, superClass, false);
         this.origin = origin;
         this.metaClass = origin.metaClass;
+        if (superClass != null) {
+            setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+        }
     }
 
     @Override

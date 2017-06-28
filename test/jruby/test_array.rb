@@ -36,4 +36,30 @@ class TestArray < Test::Unit::TestCase
       assert_no_match(/Enumerable/, [].method(method).to_s)
     }
   end
+
+  # GH-4021
+  def test_range_to_a
+    assert_equal [ '2202702806' ], ("2202702806".."2202702806").to_a
+    str = '12345678900000'; assert (str..str).include?(str)
+    str = '2202702806'; assert_equal true, (str..str).member?(str)
+    str = '2202702806'; assert_equal false, (str..str).member?(str.to_i)
+  end
+
+  def test_collect_concurrency
+    arr = []
+
+    Thread.new do ; times = 0
+      loop { arr << Time.now.to_f; break if (times += 1) == 1000 }
+    end
+
+    1000.times do
+      begin
+        arr.collect { |f| f.to_i }.size
+        # expected not to raise a Java AIOoBE
+      rescue ConcurrencyError => e
+        puts "#{__method__} : #{e}" if $VERBOSE
+      end
+    end
+  end
+
 end

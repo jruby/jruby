@@ -38,13 +38,17 @@ package org.jruby.runtime;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -59,14 +63,19 @@ import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RubyDateFormatter;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+
+import static org.jruby.RubyBasicObject.NEVER;
 
 public final class ThreadContext {
 
@@ -85,6 +94,8 @@ public final class ThreadContext {
     // runtime, nil, and runtimeCache cached here for speed of access from any thread
     public final Ruby runtime;
     public final IRubyObject nil;
+    public final RubyBoolean tru;
+    public final RubyBoolean fals;
     public final RuntimeCache runtimeCache;
 
     // Is this thread currently with in a function trace?
@@ -140,24 +151,40 @@ public final class ThreadContext {
     @Deprecated
     public transient SecureRandom secureRandom;
 
+    private static boolean tryPreferredPRNG = true;
     private static boolean trySHA1PRNG = true;
 
-    @SuppressWarnings("deprecated")
+    public final JavaSites sites;
+
+    @SuppressWarnings("deprecation")
     public SecureRandom getSecureRandom() {
         SecureRandom secureRandom = this.secureRandom;
-        if (secureRandom == null) {
-            if (trySHA1PRNG) {
-                try {
-                    secureRandom = SecureRandom.getInstance("SHA1PRNG");
-                } catch (Exception e) {
-                    trySHA1PRNG = false;
-                }
+
+        // Try preferred PRNG, which defaults to NativePRNGNonBlocking
+        if (secureRandom == null && tryPreferredPRNG) {
+            try {
+                secureRandom = SecureRandom.getInstance(Options.PREFERRED_PRNG.load());
+            } catch (Exception e) {
+                tryPreferredPRNG = false;
             }
-            if (secureRandom == null) {
-                secureRandom = new SecureRandom();
-            }
-            this.secureRandom = secureRandom;
         }
+
+        // Try SHA1PRNG
+        if (secureRandom == null && trySHA1PRNG) {
+            try {
+                secureRandom = SecureRandom.getInstance("SHA1PRNG");
+            } catch (Exception e) {
+                trySHA1PRNG = false;
+            }
+        }
+
+        // Just let JDK do whatever it does
+        if (secureRandom == null) {
+            secureRandom = new SecureRandom();
+        }
+
+        this.secureRandom = secureRandom;
+
         return secureRandom;
     }
 
@@ -169,6 +196,8 @@ public final class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();
+        this.tru = runtime.getTrue();
+        this.fals = runtime.getFalse();
         this.currentBlockType = Block.Type.NORMAL;
         this.savedExcInLambda = null;
 
@@ -177,6 +206,7 @@ public final class ThreadContext {
         }
 
         this.runtimeCache = runtime.getRuntimeCache();
+        this.sites = runtime.sites;
 
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
@@ -349,6 +379,13 @@ public final class ThreadContext {
 
     public void setFiber(ThreadFiber fiber) {
         this.fiber = new WeakReference<ThreadFiber>(fiber);
+    }
+
+    /**
+     * Fibers must use the same recursion guards as their parent thread.
+     */
+    public void useRecursionGuardsFrom(ThreadContext context) {
+        this.symToGuards = context.symToGuards;
     }
 
     public void setRootFiber(ThreadFiber rootFiber) {
@@ -682,7 +719,7 @@ public final class ThreadContext {
             traceArray[i] = new RubyString(runtime, stringClass, fullTrace[i + level].mriStyleString());
         }
 
-        RubyArray backTrace = RubyArray.newArrayNoCopy(runtime, traceArray);
+        RubyArray backTrace = RubyArray.newArrayMayCopy(runtime, traceArray);
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
         return backTrace;
     }
@@ -1104,6 +1141,86 @@ public final class ThreadContext {
 
     public void setExceptionRequiresBacktrace(boolean exceptionRequiresBacktrace) {
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
+    }
+
+    private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;
+
+    private static class RecursiveError extends Error implements Unrescuable {
+        public RecursiveError(Object tag) {
+            this.tag = tag;
+        }
+        public final Object tag;
+
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
+    }
+
+    public interface RecursiveFunctionEx<T> {
+        IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
+    }
+
+    public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, T state, IRubyObject obj, String name, boolean outer) {
+        Map<IRubyObject, IRubyObject> guards = safeRecurseGetGuards(name);
+
+        boolean outermost = outer && !guards.containsKey(NEVER);
+
+        // check guards
+        if (guards.containsKey(obj)) {
+            if (outer && !outermost) {
+                throw new RecursiveError(guards);
+            }
+            return func.call(this, state, obj, true);
+        } else {
+            if (outermost) {
+                return safeRecurseOutermost(func, state, obj, guards);
+            } else {
+                return safeRecurseInner(func, state, obj, guards);
+            }
+        }
+    }
+
+    private <T> IRubyObject safeRecurseOutermost(RecursiveFunctionEx<T> func, T state, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
+        boolean recursed = false;
+        guards.put(NEVER, NEVER);
+
+        try {
+            return safeRecurseInner(func, state, obj, guards);
+        } catch (RecursiveError re) {
+            if (re.tag != guards) {
+                throw re;
+            }
+            recursed = true;
+            guards.remove(NEVER);
+            return func.call(this, state, obj, true);
+        } finally {
+            if (!recursed) guards.remove(NEVER);
+        }
+    }
+
+    private Map<IRubyObject, IRubyObject> safeRecurseGetGuards(String name) {
+        Map<String, Map<IRubyObject, IRubyObject>> symToGuards = this.symToGuards;
+        if (symToGuards == null) {
+            this.symToGuards = symToGuards = new HashMap<>();
+        }
+
+        Map<IRubyObject, IRubyObject> guards = symToGuards.get(name);
+        if (guards == null) {
+            guards = new IdentityHashMap<>();
+            symToGuards.put(name, guards);
+        }
+
+        return guards;
+    }
+
+    private <T> IRubyObject safeRecurseInner(RecursiveFunctionEx<T> func, T state, IRubyObject obj, Map<IRubyObject, IRubyObject> guards) {
+        try {
+            guards.put(obj, obj);
+            return func.call(this, state, obj, false);
+        } finally {
+            guards.remove(obj);
+        }
     }
 
     private Set<RecursiveComparator.Pair> recursiveSet;

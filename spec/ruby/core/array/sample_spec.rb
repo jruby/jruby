@@ -2,6 +2,19 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Array#sample" do
+  it "samples evenly" do
+    ary = [0, 1, 2, 3]
+    3.times do |i|
+      counts = [0, 0, 0, 0]
+      4000.times do
+        counts[ary.sample(3)[i]] += 1
+      end
+      counts.each do |count|
+        (800..1200).should include(count)
+      end
+    end
+  end
+
   it "returns nil for an empty Array" do
     [].sample.should be_nil
   end
@@ -76,10 +89,10 @@ describe "Array#sample" do
       [1, 2].sample(random: obj).should be_an_instance_of(Fixnum)
     end
 
-    it "ignores an Object passed for the RNG if it does not define #rand" do
-      obj = mock("array_sample_random")
+    it "raises a NoMethodError if an object passed for the RNG does not define #rand" do
+      obj = BasicObject.new
 
-      [1, 2].sample(random: obj).should be_an_instance_of(Fixnum)
+      lambda { [1, 2].sample(random: obj) }.should raise_error(NoMethodError)
     end
 
     describe "when the object returned by #rand is a Fixnum" do

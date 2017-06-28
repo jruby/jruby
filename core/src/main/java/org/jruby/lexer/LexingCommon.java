@@ -35,6 +35,7 @@ public abstract class LexingCommon {
     public static final int EXPR_CLASS   = 1<<9;
     public static final int EXPR_LABEL   = 1<<10;
     public static final int EXPR_LABELED = 1<<11;
+    public static final int EXPR_FITEM = 1<<12;
     public static final int EXPR_VALUE = EXPR_BEG;
     public static final int EXPR_BEG_ANY = EXPR_BEG | EXPR_MID | EXPR_CLASS;
     public static final int EXPR_ARG_ANY = EXPR_ARG | EXPR_CMDARG;
@@ -94,6 +95,14 @@ public abstract class LexingCommon {
         return true;
     }
 
+    public int getRubySourceline() {
+        return ruby_sourceline;
+    }
+
+    public void setRubySourceline(int line) {
+        ruby_sourceline = line;
+    }
+
     public ByteList createTokenByteList() {
         return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), false);
     }
@@ -122,7 +131,7 @@ public abstract class LexingCommon {
         return createTokenString(tokp);
     }
 
-    protected int dedent_string(ByteList string, int width) {
+    public static int dedent_string(ByteList string, int width) {
         long len = string.realSize();
         int i, col = 0;
         byte[] str = string.unsafeBytes();

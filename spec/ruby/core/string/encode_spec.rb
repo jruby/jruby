@@ -30,7 +30,8 @@ with_feature :encoding do
       end
 
       it "encodes an ascii substring of a binary string to UTF-8" do
-        str = "\x82foo".force_encoding("ascii-8bit")[1..-1].encode("utf-8")
+        x82 = [0x82].pack('C')
+        str =  "#{x82}foo".force_encoding("ascii-8bit")[1..-1].encode("utf-8")
         str.should == "foo".force_encoding("utf-8")
         str.encoding.should equal(Encoding::UTF_8)
       end
@@ -63,9 +64,13 @@ with_feature :encoding do
     end
 
     describe "when passed to, from" do
-      it "returns a copy when both encodings are the same" do
+      it "returns a copy in the destination encoding when both encodings are the same" do
         str = "あ"
-        str.encode("utf-8", "utf-8").should_not equal(str)
+        str.force_encoding("ascii-8bit")
+        encoded = str.encode("utf-8", "utf-8")
+
+        encoded.should_not equal(str)
+        encoded.encoding.should == Encoding::UTF_8
       end
 
       it "returns the transcoded string" do

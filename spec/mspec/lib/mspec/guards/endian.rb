@@ -16,26 +16,10 @@ class BigEndianGuard < EndianGuard
   end
 end
 
-class LittleEndianGuard < EndianGuard
-  def match?
-    pattern[-1] == ?\000
-  end
+def big_endian(&block)
+  BigEndianGuard.new.run_if(:big_endian, &block)
 end
 
-class Object
-  def big_endian
-    g = BigEndianGuard.new
-    g.name = :big_endian
-    yield if g.yield?
-  ensure
-    g.unregister
-  end
-
-  def little_endian
-    g = LittleEndianGuard.new
-    g.name = :little_endian
-    yield if g.yield?
-  ensure
-    g.unregister
-  end
+def little_endian(&block)
+  BigEndianGuard.new.run_unless(:little_endian, &block)
 end

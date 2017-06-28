@@ -123,4 +123,5 @@ public class AliasMethod extends DynamicMethod {
     public long getSerialNumber() {
         return oldMethod.getSerialNumber();
     }
+
 }

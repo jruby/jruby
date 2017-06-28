@@ -53,10 +53,12 @@ describe "Module#include" do
     ModuleSpecs::C.constants.should include(:CONSTANT_A, :CONSTANT_B)
   end
 
-  it "shadows constants from outer scopes" do
-    ModuleSpecs::ShadowingOuter::Foo.get.should == 123
-    ModuleSpecs::ShadowingOuter::Foo.include(ModuleSpecs::ShadowingOuter::N)
-    ModuleSpecs::ShadowingOuter::Foo.get.should == 456
+  it "shadows constants from ancestors" do
+    klass = Class.new
+    klass.include ModuleSpecs::ShadowingOuter::M
+    klass::SHADOW.should == 123
+    klass.include ModuleSpecs::ShadowingOuter::N
+    klass::SHADOW.should == 456
   end
 
   it "does not override existing constants in modules and classes" do
@@ -163,12 +165,24 @@ describe "Module#include" do
     }.should raise_error(ArgumentError)
   end
 
-  it "accepts no-arguments" do
-    lambda {
-      Module.new do
-        include
-      end
-    }.should_not raise_error
+  ruby_version_is ''...'2.4' do
+    it "accepts no-arguments" do
+      lambda {
+        Module.new do
+          include
+        end
+      }.should_not raise_error
+    end
+  end
+
+  ruby_version_is '2.4' do
+    it "doesn't accept no-arguments" do
+      lambda {
+        Module.new do
+          include
+        end
+      }.should raise_error(ArgumentError)
+    end
   end
 
   it "returns the class it's included into" do
@@ -228,6 +242,8 @@ describe "Module#include" do
       end
 
       c.get.should == :m2
+
+      remove_const :C
     end
   end
 end

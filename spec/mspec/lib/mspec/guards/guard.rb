@@ -1,8 +1,6 @@
 require 'mspec/runner/mspec'
 require 'mspec/runner/actions/tally'
 
-require 'rbconfig'
-
 class SpecGuard
   def self.report
     @report ||= Hash.new { |h,k| h[k] = [] }
@@ -32,54 +30,39 @@ class SpecGuard
     @guards = []
   end
 
-  @@ruby_version_override = nil
-
-  def self.ruby_version_override=(version)
-    @@ruby_version_override = version
-  end
-
-  def self.ruby_version_override
-    @@ruby_version_override
-  end
-
-  # Returns a partial Ruby version string based on +which+. For example,
-  # if RUBY_VERSION = 8.2.3 and RUBY_PATCHLEVEL = 71:
+  # Returns a partial Ruby version string based on +which+.
+  # For example, if RUBY_VERSION = 8.2.3:
   #
   #  :major  => "8"
   #  :minor  => "8.2"
   #  :tiny   => "8.2.3"
   #  :teeny  => "8.2.3"
-  #  :full   => "8.2.3.71"
+  #  :full   => "8.2.3"
   def self.ruby_version(which = :minor)
     case which
     when :major
       n = 1
     when :minor
       n = 2
-    when :tiny, :teeny
+    when :tiny, :teeny, :full
       n = 3
-    else
-      n = 4
     end
 
-    patch = RUBY_PATCHLEVEL.to_i
-    patch = 0 if patch < 0
-    version = "#{ruby_version_override || RUBY_VERSION}.#{patch}"
-    version.split('.')[0,n].join('.')
+    RUBY_VERSION.split('.')[0,n].join('.')
   end
 
-  attr_accessor :name, :parameters
+  attr_accessor :name
 
   def initialize(*args)
-    self.parameters = @args = args
+    @parameters = args
   end
 
-  def yield?(invert=false)
+  def yield?(invert = false)
     return true if MSpec.mode? :unguarded
 
     allow = match? ^ invert
 
-    if not allow and reporting?
+    if !allow and reporting?
       MSpec.guard
       MSpec.register :finish, SpecGuard
       MSpec.register :add,    self
@@ -91,8 +74,18 @@ class SpecGuard
     allow
   end
 
-  def ===(other)
-    true
+  def run_if(name, &block)
+    @name = name
+    yield if yield?(false)
+  ensure
+    unregister
+  end
+
+  def run_unless(name, &block)
+    @name = name
+    yield if yield?(true)
+  ensure
+    unregister
   end
 
   def reporting?
@@ -101,7 +94,7 @@ class SpecGuard
   end
 
   def report_key
-    "#{name} #{parameters.join(", ")}"
+    "#{name} #{@parameters.join(", ")}"
   end
 
   def record(description)
@@ -118,62 +111,7 @@ class SpecGuard
     MSpec.unregister :add, self
   end
 
-  def implementation?(*args)
-    args.any? do |name|
-      !!case name
-      when :rubinius
-        RUBY_NAME =~ /^rbx/
-      when :ruby
-        RUBY_NAME =~ /^ruby/
-      when :jruby
-        RUBY_NAME =~ /^jruby/
-      when :ironruby
-        RUBY_NAME =~ /^ironruby/
-      when :macruby
-        RUBY_NAME =~ /^macruby/
-      when :maglev
-        RUBY_NAME =~ /^maglev/
-      when :topaz
-        RUBY_NAME =~ /^topaz/
-      when :opal
-        RUBY_NAME =~ /^opal/
-      else
-        false
-      end
-    end
-  end
-
-  def standard?
-    implementation? :ruby
-  end
-
-  def windows?(sym, key)
-    sym == :windows && !key.match(/(mswin|mingw)/).nil?
-  end
-
-  def platform?(*args)
-    args.any? do |platform|
-      if platform != :java && RUBY_PLATFORM.match('java') && os?(platform)
-        true
-      else
-        RUBY_PLATFORM.match(platform.to_s) || windows?(platform, RUBY_PLATFORM)
-      end
-    end
-  end
-
-  def wordsize?(size)
-    size == 8 * 1.size
-  end
-
-  def os?(*oses)
-    oses.any? do |os|
-      host_os = RbConfig::CONFIG['host_os'] || RUBY_PLATFORM
-      host_os.downcase!
-      host_os.match(os.to_s) || windows?(os, host_os)
-    end
-  end
-
   def match?
-    implementation?(*@args) or platform?(*@args)
+    raise "must be implemented by the subclass"
   end
 end

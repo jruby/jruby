@@ -120,12 +120,12 @@ public abstract class JavaSupport {
     /**
      * a replacement for {@link #getJavaProxyClassCache()} API
      */
-    abstract JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey);
+    protected abstract JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey);
 
     /**
      * a replacement for {@link #getJavaProxyClassCache()} API
      */
-    abstract JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass);
+    protected abstract JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass);
 
     /**
      * @note Internal API - subject to change!

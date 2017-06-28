@@ -4,6 +4,7 @@ require 'socket'
 require 'timeout'
 require 'thread'
 require 'io/wait'
+require 'ipaddr'
 
 begin
   require 'securerandom'
@@ -576,13 +577,13 @@ class Resolv
     def extract_resources(msg, name, typeclass) # :nodoc:
       if typeclass < Resource::ANY
         n0 = Name.create(name)
-        msg.each_answer {|n, ttl, data|
+        msg.each_resource {|n, ttl, data|
           yield data if n0 == n
         }
       end
       yielded = false
       n0 = Name.create(name)
-      msg.each_answer {|n, ttl, data|
+      msg.each_resource {|n, ttl, data|
         if n0 == n
           case data
           when typeclass
@@ -594,7 +595,7 @@ class Resolv
         end
       }
       return if yielded
-      msg.each_answer {|n, ttl, data|
+      msg.each_resource {|n, ttl, data|
         if n0 == n
           case data
           when typeclass
@@ -768,13 +769,13 @@ class Resolv
 
         def recv_reply(readable_socks)
           reply, from = readable_socks[0].recvfrom(UDPSize)
-          return reply, [from[3],from[1]]
+          return reply, [IPAddr.new(from[3]),from[1]]
         end
 
         def sender(msg, data, host, port=Port)
           sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
           return nil if !sock
-          service = [host, port]
+          service = [IPAddr.new(host), port]
           id = DNS.allocate_request_id(host, port)
           request = msg.encode
           request[0,2] = [id].pack('n')
@@ -2455,14 +2456,14 @@ class Resolv
       when IPv6
         return arg
       when String
-        address = ''
+        address = ''.b
         if Regex_8Hex =~ arg
           arg.scan(/[0-9A-Fa-f]+/) {|hex| address << [hex.hex].pack('n')}
         elsif Regex_CompressedHex =~ arg
           prefix = $1
           suffix = $2
-          a1 = ''
-          a2 = ''
+          a1 = ''.b
+          a2 = ''.b
           prefix.scan(/[0-9A-Fa-f]+/) {|hex| a1 << [hex.hex].pack('n')}
           suffix.scan(/[0-9A-Fa-f]+/) {|hex| a2 << [hex.hex].pack('n')}
           omitlen = 16 - a1.length - a2.length
@@ -2478,8 +2479,8 @@ class Resolv
         elsif Regex_CompressedHex4Dec =~ arg
           prefix, suffix, a, b, c, d = $1, $2, $3.to_i, $4.to_i, $5.to_i, $6.to_i
           if (0..255) === a && (0..255) === b && (0..255) === c && (0..255) === d
-            a1 = ''
-            a2 = ''
+            a1 = ''.b
+            a2 = ''.b
             prefix.scan(/[0-9A-Fa-f]+/) {|hex| a1 << [hex.hex].pack('n')}
             suffix.scan(/[0-9A-Fa-f]+/) {|hex| a2 << [hex.hex].pack('n')}
             omitlen = 12 - a1.length - a2.length

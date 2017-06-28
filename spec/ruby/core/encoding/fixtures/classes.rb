@@ -1,3 +1,4 @@
+# -*- encoding: binary -*-
 module EncodingSpecs
   class UndefinedConversionError
     def self.exception

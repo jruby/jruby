@@ -39,7 +39,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.NullMethod;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -207,9 +206,8 @@ public class JavaPackage extends RubyModule {
 
     private IRubyObject respond_to(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
         String name = mname.asJavaString();
-        if ( getMetaClass().isMethodBound(name, !includePrivate, true) ) {
-            return context.runtime.getTrue();
-        }
+
+        if (getMetaClass().respondsToMethod(name, !includePrivate)) return context.runtime.getTrue();
         /*
         if ( ( name = BlankSlateWrapper.handlesMethod(name) ) != null ) {
             RubyBoolean bound = checkMetaClassBoundMethod(context, name, includePrivate);

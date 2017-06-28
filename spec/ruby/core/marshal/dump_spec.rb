@@ -1,4 +1,4 @@
-# -*- encoding: us-ascii -*-
+# -*- encoding: binary -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/marshal_data', __FILE__)
 
@@ -70,18 +70,9 @@ describe "Marshal.dump" do
       ].should be_computed_by(:dump)
     end
 
-    ruby_version_is ""..."2.2" do
-      it "dumps a binary encoded Symbol" do
-        s = "\u2192".force_encoding("binary").to_sym
-        Marshal.dump(s).should == "\x04\bI:\b\xE2\x86\x92\x00"
-      end
-    end
-
-    ruby_version_is "2.2" do
-      it "dumps a binary encoded Symbol" do
-        s = "\u2192".force_encoding("binary").to_sym
-        Marshal.dump(s).should == "\x04\b:\b\xE2\x86\x92"
-      end
+    it "dumps a binary encoded Symbol" do
+      s = "\u2192".force_encoding("binary").to_sym
+      Marshal.dump(s).should == "\x04\b:\b\xE2\x86\x92"
     end
 
   end
@@ -220,7 +211,7 @@ describe "Marshal.dump" do
     it "dumps a String with instance variables" do
       str = ""
       str.instance_variable_set("@foo", "bar")
-      Marshal.dump(str.force_encoding("binary")).should == "\x04\bI\"\x00\x06:\t@fooI\"\bbar\x06:\x06EF"
+      Marshal.dump(str.force_encoding("binary")).should == "\x04\bI\"\x00\x06:\t@foo\"\bbar"
     end
 
     with_feature :encoding do
@@ -360,11 +351,13 @@ describe "Marshal.dump" do
       st = Struct.new("Thick").new
       st.instance_variable_set(:@ivar, 1)
       Marshal.dump(st).should == "\004\bIS:\022Struct::Thick\000\006:\n@ivari\006"
+      Struct.send(:remove_const, :Thick)
     end
 
     it "dumps an extended Struct" do
       st = Struct.new("Extended", :a, :b).new
       Marshal.dump(st.extend(Meths)).should == "\004\be:\nMethsS:\025Struct::Extended\a:\006a0:\006b0"
+      Struct.send(:remove_const, :Extended)
     end
   end
 
@@ -388,6 +381,20 @@ describe "Marshal.dump" do
       obj.instance_variable_set(:@ivar, 1)
       obj.send(:remove_instance_variable, :@ivar)
       Marshal.dump(obj).should == "\004\bo:\x0BObject\x00"
+    end
+
+    it "dumps an Object if it has a singleton class but no singleton methods" do
+      obj = Object.new
+      obj.singleton_class
+      Marshal.dump(obj).should == "\004\bo:\x0BObject\x00"
+    end
+
+    it "raises if an Object has a singleton class and singleton methods" do
+      obj = Object.new
+      def obj.foo; end
+      lambda {
+        Marshal.dump(obj)
+      }.should raise_error(TypeError, "singleton can't be dumped")
     end
 
     it "dumps a BasicObject subclass if it defines respond_to?" do
@@ -430,39 +437,19 @@ describe "Marshal.dump" do
       Encoding.default_internal = @internal
     end
 
-    ruby_version_is ""..."2.2" do
-      it "dumps the zone and the offset" do
-        with_timezone 'AST', 3 do
-          dump = Marshal.dump(@t)
-          base = "\x04\bIu:\tTime\r#{@t_dump}\a"
-          offset = ":\voffseti\x020*"
-          zone = ":\tzoneI\"\bAST\x06:\x06ET" # Last is 'T' (UTF-8)
-          [ "#{base}#{offset}#{zone}", "#{base}#{zone}#{offset}" ].should include(dump)
-        end
+    it "dumps the zone and the offset" do
+      with_timezone 'AST', 3 do
+        dump = Marshal.dump(@t)
+        base = "\x04\bIu:\tTime\r#{@t_dump}\a"
+        offset = ":\voffseti\x020*"
+        zone = ":\tzoneI\"\bAST\x06:\x06EF" # Last is 'F' (US-ASCII)
+        [ "#{base}#{offset}#{zone}", "#{base}#{zone}#{offset}" ].should include(dump)
       end
 
       it "dumps the zone, but not the offset if zone is UTC" do
         dump = Marshal.dump(@utc)
-        zone = ":\tzoneI\"\bUTC\x06:\x06ET" # Last is 'T' (UTF-8)
+        zone = ":\tzoneI\"\bUTC\x06:\x06EF" # Last is 'F' (US-ASCII)
         dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06#{zone}"
-      end
-    end
-
-    ruby_version_is "2.2" do
-      it "dumps the zone and the offset" do
-        with_timezone 'AST', 3 do
-          dump = Marshal.dump(@t)
-          base = "\x04\bIu:\tTime\r#{@t_dump}\a"
-          offset = ":\voffseti\x020*"
-          zone = ":\tzoneI\"\bAST\x06:\x06EF" # Last is 'F' (US-ASCII)
-          [ "#{base}#{offset}#{zone}", "#{base}#{zone}#{offset}" ].should include(dump)
-        end
-
-        it "dumps the zone, but not the offset if zone is UTC" do
-          dump = Marshal.dump(@utc)
-          zone = ":\tzoneI\"\bUTC\x06:\x06EF" # Last is 'F' (US-ASCII)
-          dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06#{zone}"
-        end
       end
     end
 
@@ -474,13 +461,13 @@ describe "Marshal.dump" do
     end
 
     it "dumps the message for the exception" do
-      Marshal.dump(Exception.new("foo")).should == "\x04\bo:\x0EException\a:\tmesgI\"\bfoo\x06:\x06EF:\abt0"
+      Marshal.dump(Exception.new("foo")).should == "\x04\bo:\x0EException\a:\tmesg\"\bfoo:\abt0"
     end
 
     it "contains the filename in the backtrace" do
       obj = Exception.new("foo")
       obj.set_backtrace(["foo/bar.rb:10"])
-      Marshal.dump(obj).should == "\x04\bo:\x0EException\a:\tmesgI\"\bfoo\x06:\x06EF:\abt[\x06I\"\x12foo/bar.rb:10\x06;\aF"
+      Marshal.dump(obj).should == "\x04\bo:\x0EException\a:\tmesg\"\bfoo:\abt[\x06\"\x12foo/bar.rb:10"
     end
   end
 
@@ -557,7 +544,7 @@ describe "Marshal.dump" do
   end
 
   it "raises a TypeError if dumping a MatchData instance" do
-    lambda { Marshal.dump /(.)/.match("foo") }.should raise_error(TypeError)
+    lambda { Marshal.dump(/(.)/.match("foo")) }.should raise_error(TypeError)
   end
 
   it "returns an untainted string if object is untainted" do

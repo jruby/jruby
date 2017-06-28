@@ -30,6 +30,7 @@ package org.jruby.runtime;
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 /**
  * A Block implemented using a Java-based BlockCallback implementation. For
@@ -57,14 +58,22 @@ public class CallBlock extends BlockBody {
         this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
     }
 
+    private IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
+        Signature signature = block.getSignature();
+        int required = signature.required();
+        if (signature.isFixed() && required  > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
+
+        return args;
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        return callback.call(context, args, Block.NULL_BLOCK);
+        return callback.call(context, adjustArgs(block, args), Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        return callback.call(context, args, blockArg);
+        return callback.call(context, adjustArgs(block, args), blockArg);
     }
 
     @Override
@@ -84,7 +93,7 @@ public class CallBlock extends BlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        return callback.call(context, args, Block.NULL_BLOCK);
+        return callback.call(context, adjustArgs(block, args), Block.NULL_BLOCK);
     }
 
     public StaticScope getStaticScope() {

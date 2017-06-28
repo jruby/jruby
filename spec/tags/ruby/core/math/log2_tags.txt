@@ -1,0 +1,1 @@
+fails:Math.log2 returns the natural logarithm of the argument

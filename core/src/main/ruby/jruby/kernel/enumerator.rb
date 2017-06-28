@@ -106,6 +106,21 @@ class Enumerator
       end.__set_inspect :grep, [pattern]
     end
 
+    def grep_v(pattern)
+      if block_given?
+        # Split for performance
+        Lazy.new(self) do |yielder, *values|
+          values = values.first unless values.size > 1
+          yielder.yield(yield(values)) unless pattern === values
+        end
+      else
+        Lazy.new(self) do |yielder, *values|
+          values = values.first unless values.size > 1
+          yielder.yield(values) unless pattern === values
+        end
+      end.__set_inspect :grep_v, [pattern]
+    end
+
     def drop(n)
       n = JRuby::Type.coerce_to_int(n)
       Lazy.new(self) do |yielder, *values|

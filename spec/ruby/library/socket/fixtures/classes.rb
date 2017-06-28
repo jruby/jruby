@@ -23,31 +23,9 @@ module SocketSpecs
     Socket.getaddrinfo(host, nil)[0][3]
   end
 
-  def self.find_available_port
-    begin
-      s = TCPServer.open(0)
-      port = s.addr[1]
-      s.close
-      port
-    rescue
-      43191
-    end
-  end
-
-  def self.port
-    @@_port ||= find_available_port
-  end
-
-  def self.str_port
-    port.to_s
-  end
-
-  def self.local_port
-    @base ||= $$
-    @base += 1
-    local_port = (@base % (0xffff-1024)) + 1024
-    local_port += 1 if local_port == port
-    local_port
+  def self.reserved_unused_port
+    # https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
+    0
   end
 
   def self.sockaddr_in(port, host)
@@ -55,35 +33,36 @@ module SocketSpecs
   end
 
   def self.socket_path
-    tmp("unix_server_spec.socket", false)
+    path = tmp("unix.sock", false)
+    # Check for too long unix socket path (max 108 bytes including \0 => 107)
+    # Note that Linux accepts not null-terminated paths but the man page advises against it.
+    if path.bytesize > 107
+      path = "/tmp/unix_server_spec.socket"
+    end
+    rm_socket(path)
+    path
+  end
+
+  def self.rm_socket(path)
+    File.delete(path) if File.exist?(path)
   end
 
   # TCPServer echo server accepting one connection
   class SpecTCPServer
-    def self.start(host=nil, port=nil, logger=nil)
-      new(host, port, logger).start
-    end
+    attr_reader :hostname, :port
 
-    attr_accessor :hostname, :port, :logger
+    def initialize
+      @hostname = SocketSpecs.hostname
+      @server = TCPServer.new @hostname, 0
+      @port = @server.addr[1]
 
-    def initialize(host=nil, port=nil, logger=nil)
-      @hostname = host || SocketSpecs.hostname
-      @port = port || SocketSpecs.port
-      @logger = logger
-
-      start
-    end
-
-    def start
       log "SpecTCPServer starting on #{@hostname}:#{@port}"
-      @server = TCPServer.new @hostname, @port
 
       @thread = Thread.new do
         socket = @server.accept
         log "SpecTCPServer accepted connection: #{socket}"
         service socket
       end
-      self
     end
 
     def service(socket)

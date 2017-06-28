@@ -1,4 +1,4 @@
-# -*- encoding: us-ascii -*-
+# -*- encoding: binary -*-
 
 require File.expand_path('../../spec_helper', __FILE__)
 
@@ -9,13 +9,7 @@ describe "Ruby character strings" do
   before :each do
     @ip = 'xxx' # used for interpolation
     $ip = 'xxx'
-    @@ip = 'xxx'
   end
-
-  after :all do
-    Object.__send__(:remove_class_variable, :@@ip)
-  end
-
 
   it "don't get interpolated when put in single quotes" do
     '#{@ip}'.should == '#{@ip}'
@@ -31,10 +25,6 @@ describe "Ruby character strings" do
 
   it "interpolate global variables just with the # character" do
     "#$ip".should == 'xxx'
-  end
-
-  it "interpolate class variables just with the # character" do
-    "#@@ip".should == 'xxx'
   end
 
   it "allows underscore as part of a variable name in a simple interpolation" do
@@ -58,9 +48,6 @@ describe "Ruby character strings" do
     @ip.taint
     "#@ip".tainted?.should be_true
 
-    @@ip.taint
-    "#@@ip".tainted?.should be_true
-
     $ip.taint
     "#$ip".tainted?.should be_true
   end
@@ -70,9 +57,6 @@ describe "Ruby character strings" do
 
     @ip.untrust
     "#@ip".untrusted?.should be_true
-
-    @@ip.untrust
-    "#@@ip".untrusted?.should be_true
 
     $ip.untrust
     "#$ip".untrusted?.should be_true
@@ -129,51 +113,6 @@ describe "Ruby character strings" do
   it "backslashes follow the same rules as interpolation" do
     "\t\n\r\f\b\a\e\s\075\x62\cx".should == "\t\n\r\f\b\a\e =b\030"
     '\t\n\r\f\b\a\e =b\030'.should == "\\t\\n\\r\\f\\b\\a\\e =b\\030"
-  end
-
-  it "allows HEREDOC with <<identifier, interpolated" do
-    s = <<HERE
-foo bar#{@ip}
-HERE
-    s.should == "foo barxxx\n"
-  end
-
-  it 'allow HEREDOC with <<"identifier", interpolated' do
-    s = <<"HERE"
-foo bar#{@ip}
-HERE
-    s.should == "foo barxxx\n"
-  end
-
-  it "allows HEREDOC with <<'identifier', no interpolation" do
-    s = <<'HERE'
-foo bar#{@ip}
-HERE
-    s.should == 'foo bar#{@ip}' + "\n"
-  end
-
-  it "allows HEREDOC with <<-identifier, allowing to indent identifier, interpolated" do
-    s = <<-HERE
-    foo bar#{@ip}
-    HERE
-
-    s.should == "    foo barxxx\n"
-  end
-
-  it 'allow HEREDOC with <<-"identifier", allowing to indent identifier, interpolated' do
-    s = <<-"HERE"
-    foo bar#{@ip}
-    HERE
-
-    s.should == "    foo barxxx\n"
-  end
-
-  it "allows HEREDOC with <<-'identifier', allowing to indent identifier, no interpolation" do
-    s = <<-'HERE'
-    foo bar#{@ip}
-    HERE
-
-    s.should == '    foo bar#{@ip}' + "\n"
   end
 
   it "calls #to_s when the object is not a String" do
@@ -245,13 +184,13 @@ HERE
     end
 
     # TODO: spec other source encodings
-    describe "with US-ASCII source encoding" do
+    describe "with ASCII_8BIT source encoding" do
       it "produces an ASCII string when escaping ASCII characters via \\u" do
-        "\u0000".encoding.should == Encoding::US_ASCII
+        "\u0000".encoding.should == Encoding::ASCII_8BIT
       end
 
       it "produces an ASCII string when escaping ASCII characters via \\u{}" do
-        "\u{0000}".encoding.should == Encoding::US_ASCII
+        "\u{0000}".encoding.should == Encoding::ASCII_8BIT
       end
 
       it "produces a UTF-8-encoded string when escaping non-ASCII characters via \\u" do

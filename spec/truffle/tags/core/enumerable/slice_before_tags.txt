@@ -1,2 +1,0 @@
-fails:Enumerable#slice_before when given a block does not accept arguments
-fails:Enumerable#slice_before when an iterator method yields more than one value processes all yielded values

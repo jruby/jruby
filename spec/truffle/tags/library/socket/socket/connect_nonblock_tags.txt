@@ -1,3 +1,0 @@
-fails:Socket#connect_nonblock connects the socket to the remote side
-fails:Socket#connect_nonblock raises Errno::EINPROGRESS when the connect would block
-fails:Socket#connect_nonblock raises Errno::EINPROGRESS with IO::WaitWritable mixed in when the connect would block

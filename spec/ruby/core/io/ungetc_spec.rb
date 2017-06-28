@@ -81,18 +81,6 @@ describe "IO#ungetc" do
     @io.pos.should == pos - 1
   end
 
-  # TODO: file MRI bug
-  # Another specified behavior that MRI doesn't follow:
-  # "Has no effect with unbuffered reads (such as IO#sysread)."
-  #
-  #it "has no effect with unbuffered reads" do
-  #  length = File.size(@io_name)
-  #  content = @io.sysread(length)
-  #  @io.rewind
-  #  @io.ungetc(100)
-  #  @io.sysread(length).should == content
-  #end
-
   it "makes subsequent unbuffered operations to raise IOError" do
     @io.getc
     @io.ungetc(100)

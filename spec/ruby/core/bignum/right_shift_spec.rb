@@ -59,16 +59,8 @@ describe "Bignum#>> with n >> m" do
     (@bignum >> 68).should == 0
   end
 
-  not_compliant_on :rubinius do
-    it "returns 0 when m is a Bignum" do
-      (@bignum >> bignum_value).should == 0
-    end
-  end
-
-  deviates_on :rubinius do
-    it "raises a RangeError when m is a Bignum" do
-      lambda { @bignum >> bignum_value }.should raise_error(RangeError)
-    end
+  it "returns 0 when m is a Bignum" do
+    (@bignum >> bignum_value).should == 0
   end
 
   it "returns a Fixnum == fixnum_max when (fixnum_max * 2) >> 1 and n > 0" do

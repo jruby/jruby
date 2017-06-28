@@ -190,19 +190,27 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     }
     
     public void invokestatic(String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3);
+        getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3, false);
+    }
+
+    public void invokestatic(String arg1, String arg2, String arg3, boolean iface) {
+        getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3, iface);
     }
     
     public void invokespecial(String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(INVOKESPECIAL, arg1, arg2, arg3);
+        getMethodVisitor().visitMethodInsn(INVOKESPECIAL, arg1, arg2, arg3, false);
+    }
+
+    public void invokespecial(String arg1, String arg2, String arg3, boolean iface) {
+        getMethodVisitor().visitMethodInsn(INVOKESPECIAL, arg1, arg2, arg3, iface);
     }
     
     public void invokevirtual(String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(INVOKEVIRTUAL, arg1, arg2, arg3);
+        getMethodVisitor().visitMethodInsn(INVOKEVIRTUAL, arg1, arg2, arg3, false);
     }
     
     public void invokeinterface(String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, arg1, arg2, arg3);
+        getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, arg1, arg2, arg3, true);
     }
 
     public void invokedynamic(String arg0, String arg1, Handle arg2, Object... arg3) {
@@ -555,33 +563,41 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
         getMethodVisitor().visitCode();
         getMethodVisitor().visitLabel(start);
     }
-    
+
+    static final Runnable NO_LOCALS = new Runnable() { public void run() { /* no-op */ } };
+
     public void end() {
-        end(new Runnable() {
-            public void run() {
-            }
-        });
+        end(NO_LOCALS);
     }
 
     public void end(Runnable locals) {
-        if (DEBUG) {
-            PrintWriter pw = new PrintWriter(System.out);
-            String className = "(unknown class)";
-            if (cv instanceof ClassWriter) {
-                className = new ClassReader(((ClassWriter)cv).toByteArray()).getClassName();
-            }
-            if (name != null) {
-                pw.write("*** Dumping " + className + "." + name + " ***\n");
-            } else {
-                pw.write("*** Dumping ***\n");
-            }
-            printer.print(pw);
-            pw.flush();
-        }
+        if (DEBUG) printByteCode(getClassName());
         getMethodVisitor().visitLabel(end);
         locals.run();
         getMethodVisitor().visitMaxs(1, 1);
         getMethodVisitor().visitEnd();
+    }
+
+    private String getClassName() {
+        if (cv instanceof ClassWriter) {
+            return new ClassReader(((ClassWriter) cv).toByteArray()).getClassName();
+        }
+        return "(unknown class)";
+    }
+
+    private PrintWriter outDebugWriter() {
+        return new PrintWriter(System.out);
+    }
+
+    private void printByteCode(final String className) {
+        PrintWriter pw = outDebugWriter();
+        if (name != null) {
+            pw.write("*** Dumping " + className + '.' + name + " ***\n");
+        } else {
+            pw.write("*** Dumping ***\n");
+        }
+        if (printer != null) printer.print(pw);
+        pw.flush();
     }
 
     public void local(int index, String name, Class type) {
@@ -791,7 +807,7 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     }
     
     public void f2i() {
-        getMethodVisitor().visitInsn(F2D);
+        getMethodVisitor().visitInsn(F2I);
     }
     
     public void f2l() {
@@ -919,8 +935,15 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
     }
 
     @Override
+    @Deprecated
     public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3) {
         getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3);
+    }
+
+    @Override
+    @Deprecated
+    public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3, boolean arg4) {
+        getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3, arg4);
     }
     
     @Override

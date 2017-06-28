@@ -33,8 +33,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -48,11 +46,12 @@ public abstract class InvokeSite extends MutableCallSite {
     final int arity;
     protected final String methodName;
     final MethodHandle fallback;
-    private final Set<Integer> seenTypes = new HashSet<Integer>();
-    private int clearCount;
+    private final SiteTracker tracker = new SiteTracker();
     private static final AtomicLong SITE_ID = new AtomicLong(1);
     private final long siteID = SITE_ID.getAndIncrement();
     private final int argOffset;
+    protected final String file;
+    protected final int line;
     private boolean boundOnce;
     CacheEntry cache = CacheEntry.NULL_CACHE;
 
@@ -64,10 +63,12 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public final CallType callType;
 
-    public InvokeSite(MethodType type, String name, CallType callType) {
+    public InvokeSite(MethodType type, String name, CallType callType, String file, int line) {
         super(type);
         this.methodName = name;
         this.callType = callType;
+        this.file = file;
+        this.line = line;
 
         Signature startSig;
 
@@ -111,7 +112,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         this.arity = arity;
 
-        this.fallback = prepareBinder().invokeVirtualQuiet(Bootstrap.LOOKUP, "invoke");
+        this.fallback = prepareBinder(true).invokeVirtualQuiet(Bootstrap.LOOKUP, "invoke");
     }
 
     public static CallSite bootstrap(InvokeSite site, MethodHandles.Lookup lookup) {
@@ -127,6 +128,13 @@ public abstract class InvokeSite extends MutableCallSite {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, caller)) {
+            // Test thresholds so we don't do this forever (#4596)
+            if (testThresholds(selfClass) == CacheAction.FAIL) {
+                logFail();
+                bindToFail();
+            } else {
+                logMethodMissing();
+            }
             return callMethodMissing(entry, callType, context, self, methodName, args, block);
         }
 
@@ -160,17 +168,101 @@ public abstract class InvokeSite extends MutableCallSite {
         return entry.method.call(context, self, selfClass, name, args, block);
     }
 
-    public Binder prepareBinder() {
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
+        return fail(context, caller, self, IRubyObject.NULL_ARRAY, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, arg0, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry, caller)) {
+            return callMethodMissing(entry, callType, context, self, name, arg0, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, selfClass, name, arg0, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry, caller)) {
+            return callMethodMissing(entry, callType, context, self, name, arg0, arg1, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
+    }
+
+    /**
+     * Failover version uses a monomorphic cache and DynamicMethod.call, as in non-indy.
+     */
+    public IRubyObject fail(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String name = methodName;
+        CacheEntry entry = cache;
+
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
+        }
+
+        entry = selfClass.searchWithCache(name);
+
+        if (methodMissing(entry, caller)) {
+            return callMethodMissing(entry, callType, context, self, name, arg0, arg1, arg2, block);
+        }
+
+        cache = entry;
+
+        return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
+    }
+
+    /**
+     * Prepare a binder for this call site's target, forcing varargs if specified
+     *
+     * @param varargs whether to only call an arg-boxed variable arity path
+     * @return the prepared binder
+     */
+    public Binder prepareBinder(boolean varargs) {
         SmartBinder binder = SmartBinder.from(signature);
 
-        // prepare arg[]
-        if (arity == -1) {
-            // do nothing, already have IRubyObject[] in args
-        } else if (arity == 0) {
-            binder = binder.insert(argOffset, "args", IRubyObject.NULL_ARRAY);
-        } else {
-            binder = binder
-                    .collect("args", "arg[0-9]+");
+        if (varargs || arity > 3) {
+            // we know we want to call varargs path always, so prepare args[] here
+            if (arity == -1) {
+                // do nothing, already have IRubyObject[] in args
+            } else if (arity == 0) {
+                binder = binder.insert(argOffset, "args", IRubyObject.NULL_ARRAY);
+            } else {
+                binder = binder
+                        .collect("args", "arg[0-9]+");
+            }
         }
 
         // add block if needed
@@ -206,7 +298,7 @@ public abstract class InvokeSite extends MutableCallSite {
             RubyClass recvClass = (RubyClass) self;
 
             // Bind a second site as a dynamic invoker to guard against changes in new object's type
-            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type());
+            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type(), file, line);
             MethodHandle initHandle = initSite.dynamicInvoker();
 
             MethodHandle allocFilter = Binder.from(IRubyObject.class, IRubyObject.class)
@@ -227,69 +319,125 @@ public abstract class InvokeSite extends MutableCallSite {
 
     /**
      * Update the given call site using the new target, wrapping with appropriate
-     * guard and argument-juggling logic. Return a handle suitable for invoking
+     * bind and argument-juggling logic. Return a handle suitable for invoking
      * with the site's original method type.
      */
     MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, DynamicMethod method, SwitchPoint switchPoint) {
-        if (target == null ||
-                clearCount > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
-                (!hasSeenType(testClass.id)
-                        && seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load())) {
-            setTarget(target = prepareBinder().invokeVirtualQuiet(lookup(), "fail"));
-        } else {
-            MethodHandle fallback;
-            MethodHandle gwt;
+        MethodHandle fallback;
+        MethodHandle gwt;
+        String bind = "bind";
 
-            // if we've cached no types, and the site is bound and we haven't seen this new type...
-            if (seenTypesCount() > 0 && getTarget() != null && !hasSeenType(testClass.id)) {
+        CacheAction cacheAction = testThresholds(testClass);
+        switch (cacheAction) {
+            case FAIL:
+                logFail();
+                // bind to specific-arity fail method if available
+                return bindToFail();
+            case PIC:
                 // stack it up into a PIC
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\tadded to PIC " + logMethod(method));
+                logPic(method);
                 fallback = getTarget();
-            } else {
+                break;
+            case REBIND:
+            case BIND:
                 // wipe out site with this new type and method
-                String bind = boundOnce ? "rebind" : "bind";
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(methodName + "\ttriggered site #" + siteID + " " + bind);// + " (" + file() + ":" + line() + ")");
+                logBind(cacheAction);
                 fallback = this.fallback;
-                clearTypes();
-            }
-
-            addType(testClass.id);
-
-            SmartHandle test;
-            SmartBinder selfTest = SmartBinder
-                    .from(signature.asFold(boolean.class))
-                    .permute("self");
-
-            if (self instanceof RubySymbol ||
-                    self instanceof RubyFixnum ||
-                    self instanceof RubyFloat ||
-                    self instanceof RubyNil ||
-                    self instanceof RubyBoolean.True ||
-                    self instanceof RubyBoolean.False) {
-
-                test = selfTest
-                        .insert(1, "selfJavaType", self.getClass())
-                        .cast(boolean.class, Object.class, Class.class)
-                        .invoke(TEST_CLASS);
-
-            } else {
-
-                test = SmartBinder
-                        .from(signature.changeReturn(boolean.class))
-                        .permute("self")
-                        .insert(0, "selfClass", RubyClass.class, testClass)
-                        .invokeStaticQuiet(Bootstrap.LOOKUP, Bootstrap.class, "testType");
-            }
-
-            gwt = MethodHandles.guardWithTest(test.handle(), target, fallback);
-
-            // wrap in switchpoint for mutation invalidation
-            gwt = switchPoint.guardWithTest(gwt, fallback);
-
-            setTarget(gwt);
+                break;
+            default:
+                throw new RuntimeException("invalid cache action: " + cacheAction);
         }
 
+        // Continue with logic for PIC, BIND, and REBIND
+        tracker.addType(testClass.id);
+
+        SmartHandle test;
+
+        if (self instanceof RubySymbol ||
+                self instanceof RubyFixnum ||
+                self instanceof RubyFloat ||
+                self instanceof RubyNil ||
+                self instanceof RubyBoolean.True ||
+                self instanceof RubyBoolean.False) {
+
+            test = SmartBinder
+                    .from(signature.asFold(boolean.class))
+                    .permute("self")
+                    .insert(1, "selfJavaType", self.getClass())
+                    .cast(boolean.class, Object.class, Class.class)
+                    .invoke(TEST_CLASS);
+
+        } else {
+
+            test = SmartBinder
+                    .from(signature.changeReturn(boolean.class))
+                    .permute("self")
+                    .insert(0, "selfClass", RubyClass.class, testClass)
+                    .invokeStaticQuiet(Bootstrap.LOOKUP, Bootstrap.class, "testType");
+        }
+
+        gwt = MethodHandles.guardWithTest(test.handle(), target, fallback);
+
+        // wrap in switchpoint for mutation invalidation
+        gwt = switchPoint.guardWithTest(gwt, fallback);
+
+        setTarget(gwt);
+
         return target;
+    }
+
+    private void logMethodMissing() {
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
+            LOG.info(methodName + "\ttriggered site #" + siteID + " method_missing (" + file + ":" + line + ")");
+    }
+
+    private void logBind(CacheAction action) {
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
+            LOG.info(methodName + "\ttriggered site #" + siteID + " " + action + " (" + file + ":" + line + ")");
+    }
+
+    private void logPic(DynamicMethod method) {
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
+            LOG.info(methodName + "\tadded to PIC " + logMethod(method));
+    }
+
+    private void logFail() {
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+            if (tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load()) {
+                LOG.info(methodName + "\tat site #" + siteID + " failed more than " + Options.INVOKEDYNAMIC_MAXFAIL.load() + " times; bailing out (" + file + ":" + line + ")");
+            } else if (tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
+                LOG.info(methodName + "\tat site #" + siteID + " encountered more than " + Options.INVOKEDYNAMIC_MAXPOLY.load() + " types; bailing out (" + file + ":" + line + ")");
+            }
+        }
+    }
+
+    private MethodHandle bindToFail() {
+        MethodHandle target;
+        setTarget(target = prepareBinder(false).invokeVirtualQuiet(lookup(), "fail"));
+        return target;
+    }
+
+    enum CacheAction { FAIL, BIND, REBIND, PIC }
+
+    CacheAction testThresholds(RubyModule testClass) {
+        if (tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
+                (!tracker.hasSeenType(testClass.id)
+                        && tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load())) {
+            // Thresholds exceeded
+            return CacheAction.FAIL;
+        } else {
+            // if we've cached no types, and the site is bound and we haven't seen this new type...
+            if (tracker.seenTypesCount() > 0 && getTarget() != null && !tracker.hasSeenType(testClass.id)) {
+                // stack it up into a PIC
+                tracker.addType(testClass.id);
+                return CacheAction.PIC;
+            } else {
+                // wipe out site with this new type and method
+                tracker.clearTypes();
+                tracker.addType(testClass.id);
+                return boundOnce ? CacheAction.REBIND : CacheAction.BIND;
+            }
+        }
     }
 
     public RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
@@ -308,27 +456,36 @@ public abstract class InvokeSite extends MutableCallSite {
         super.setTarget(target);
     }
 
-    public synchronized boolean hasSeenType(int typeCode) {
-        return seenTypes.contains(typeCode);
-    }
-
-    public synchronized void addType(int typeCode) {
-        seenTypes.add(typeCode);
-    }
-
-    public synchronized int seenTypesCount() {
-        return seenTypes.size();
-    }
-
-    public synchronized void clearTypes() {
-        seenTypes.clear();
-        clearCount++;
-    }
-
     public abstract boolean methodMissing(CacheEntry entry, IRubyObject caller);
 
+    /**
+     * Variable arity method_missing invocation. Arity zero also passes through here.
+     */
     public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) {
         return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, args, block);
+    }
+
+    /**
+     * Arity one method_missing invocation
+     */
+    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, Block block) {
+        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, block);
+    }
+
+
+    /**
+     * Arity two method_missing invocation
+     */
+    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, block);
+    }
+
+
+    /**
+     * Arity three method_missing invocation
+     */
+    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, arg2, block);
     }
 
     private static String logMethod(DynamicMethod method) {
@@ -343,6 +500,10 @@ public abstract class InvokeSite extends MutableCallSite {
     @JIT
     public static boolean testClass(Object object, Class clazz) {
         return object.getClass() == clazz;
+    }
+
+    public String toString() {
+        return "InvokeSite[name=" + name() + ",arity=" + arity + ",type=" + type() + ",file=" + file + ",line=" + line + "]";
     }
 
     private static final MethodHandle TEST_CLASS = Binder

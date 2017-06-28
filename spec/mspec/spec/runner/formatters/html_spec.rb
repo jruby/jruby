@@ -1,5 +1,4 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
-require 'mspec/utils/ruby_name'
 require 'mspec/guards/guard'
 require 'mspec/runner/formatters/html'
 require 'mspec/runner/mspec'
@@ -32,14 +31,14 @@ describe HtmlFormatter, "#start" do
 
   it "prints the HTML head" do
     @formatter.start
-    ruby_name = RUBY_NAME
-    ruby_name.should =~ /^#{ruby_name}/
+    ruby_engine = RUBY_ENGINE
+    ruby_engine.should =~ /^#{ruby_engine}/
     @out.should ==
 %[<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
     "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-<title>Spec Output For #{ruby_name} (#{RUBY_VERSION})</title>
+<title>Spec Output For #{ruby_engine} (#{RUBY_VERSION})</title>
 <style type="text/css">
 ul {
   list-style: none;
@@ -167,7 +166,7 @@ describe HtmlFormatter, "#finish" do
     exc = ExceptionState.new @state, nil, @exception
     @formatter.exception exc
     @formatter.finish
-    @out.should =~ %r[<p>describe it ERROR</p>]
+    @out.should include "<p>describe it ERROR</p>"
   end
 
   it "prints a backtrace for an exception" do
@@ -181,13 +180,13 @@ describe HtmlFormatter, "#finish" do
   it "prints a summary of elapsed time" do
     @timer.should_receive(:format).and_return("Finished in 2.0 seconds")
     @formatter.finish
-    @out.should =~ %r[<p>Finished in 2.0 seconds</p>\n]
+    @out.should include "<p>Finished in 2.0 seconds</p>\n"
   end
 
   it "prints a tally of counts" do
     @tally.should_receive(:format).and_return("1 example, 0 failures")
     @formatter.finish
-    @out.should =~ %r[<p class="pass">1 example, 0 failures</p>]
+    @out.should include '<p class="pass">1 example, 0 failures</p>'
   end
 
   it "prints errors, backtraces, elapsed time, and tallies" do

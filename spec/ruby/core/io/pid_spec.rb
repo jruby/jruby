@@ -17,7 +17,7 @@ end
 
 describe "IO#pid" do
   before :each do
-    @io = IO.popen RUBY_EXE, "r+"
+    @io = IO.popen ruby_cmd('STDIN.read'), "r+"
   end
 
   after :each do

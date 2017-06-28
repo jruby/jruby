@@ -349,7 +349,7 @@ class IPAddr
 
   # Returns a hash value used by Hash, Set, and Array classes
   def hash
-    return ([@addr, @mask_addr].hash << 1) | (ipv4? ? 0 : 1)
+    return [@addr, @mask_addr].hash ^ (ipv4? ? 0 : 1)
   end
 
   # Creates a Range object for the network address.

@@ -135,9 +135,18 @@ describe "Kernel#eval" do
   it "includes file and line information in syntax error" do
     expected = 'speccing.rb'
     lambda {
-      eval('if true',TOPLEVEL_BINDING,expected)
+      eval('if true',TOPLEVEL_BINDING, expected)
     }.should raise_error(SyntaxError) { |e|
       e.message.should =~ /#{expected}:1:.+/
+    }
+  end
+
+  it "evaluates string with given filename and negative linenumber" do
+    expected_file = 'speccing.rb'
+    lambda {
+      eval('if true',TOPLEVEL_BINDING, expected_file, -100)
+    }.should raise_error(SyntaxError) { |e|
+      e.message.should =~ /#{expected_file}:-100:.+/
     }
   end
 

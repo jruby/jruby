@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 
 describe "Enumerator::Generator#each" do
   before :each do
-    @generator = enumerator_class::Generator.new do |y, *args|
+    @generator = Enumerator::Generator.new do |y, *args|
       y << 3 << 2 << 1
       y << args unless args.empty?
       :block_returned
@@ -29,7 +29,7 @@ describe "Enumerator::Generator#each" do
   end
 
   it "requires multiple arguments" do
-    enumerator_class::Generator.instance_method(:each).arity.should < 0
+    Enumerator::Generator.instance_method(:each).arity.should < 0
   end
 
   it "appends given arguments to receiver.each" do

@@ -1,6 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/enumeratorize', __FILE__)
+require File.expand_path('../shared/delete_if', __FILE__)
 require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Array#reject" do
@@ -99,7 +100,7 @@ describe "Array#reject!" do
   end
 
   it "returns an Enumerator if no block given, and the array is frozen" do
-    ArraySpecs.frozen_array.reject!.should be_an_instance_of(enumerator_class)
+    ArraySpecs.frozen_array.reject!.should be_an_instance_of(Enumerator)
   end
 
   it "raises a RuntimeError on a frozen array" do
@@ -112,4 +113,5 @@ describe "Array#reject!" do
 
   it_behaves_like :enumeratorize, :reject!
   it_behaves_like :enumeratorized_with_origin_size, :reject!, [1,2,3]
+  it_behaves_like :delete_if, :reject!
 end

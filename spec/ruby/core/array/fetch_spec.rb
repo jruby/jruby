@@ -37,7 +37,10 @@ describe "Array#fetch" do
   end
 
   it "gives precedence to the default block over the default argument" do
-    [1, 2, 3].fetch(9, :foo) { |i| i * i }.should == 81
+    lambda {
+      @result = [1, 2, 3].fetch(9, :foo) { |i| i * i }
+    }.should complain(/block supersedes default value argument/)
+    @result.should == 81
   end
 
   it "tries to convert the passed argument to an Integer using #to_int" do

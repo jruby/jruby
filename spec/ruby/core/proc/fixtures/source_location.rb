@@ -39,17 +39,17 @@ module ProcSpecs
 
     def self.my_detached_proc
       body = proc { true }
-      proc &body
+      proc(&body)
     end
 
     def self.my_detached_lambda
       body = lambda { true }
-      lambda &body
+      lambda(&body)
     end
 
     def self.my_detached_proc_new
       body = Proc.new { true }
-      Proc.new &body
+      Proc.new(&body)
     end
   end
 end

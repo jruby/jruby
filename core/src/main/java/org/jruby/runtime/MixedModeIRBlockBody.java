@@ -40,8 +40,8 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     public void setEvalType(EvalType evalType) {
-        if (jittedBody == null) this.evalType.set(evalType);
-        else jittedBody.setEvalType(evalType);
+        super.setEvalType(evalType); // so that getEvalType is correct
+        if (jittedBody != null) jittedBody.setEvalType(evalType);
     }
 
     @Override
@@ -166,7 +166,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         if (callCount >= 0) {
             // ensure we've got code ready for JIT
             ensureInstrsReady();
-            closure.prepareForCompilation();
+            closure.getNearestTopLocalVariableScope().prepareForCompilation();
 
             // if we don't have an explicit protocol, disable JIT
             if (!closure.hasExplicitCallProtocol()) {

@@ -1,8 +1,8 @@
 # -*- coding: iso-8859-1 -*-
 begin
   require 'ant'
-rescue LoadError
-  warn 'could not load ant'
+rescue Exception => ex
+  warn "could not load ant: #{ex.inspect}"
 end
 require 'rbconfig'
 

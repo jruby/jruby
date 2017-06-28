@@ -3,11 +3,9 @@ platform_is_not :windows do
   require 'syslog'
 
   describe "Syslog::Constants" do
-    platform_is_not :windows, :solaris do
-
+    platform_is_not :windows, :solaris, :aix do
       before :all do
-
-      @constants = %w(LOG_AUTHPRIV LOG_USER LOG_LOCAL2 LOG_NOTICE LOG_NDELAY
+        @constants = %w(LOG_AUTHPRIV LOG_USER LOG_LOCAL2 LOG_NOTICE LOG_NDELAY
                       LOG_SYSLOG LOG_ALERT LOG_FTP LOG_LOCAL5 LOG_ERR LOG_AUTH
                       LOG_LOCAL1 LOG_ODELAY LOG_NEWS LOG_DAEMON LOG_LOCAL4
                       LOG_CRIT LOG_INFO LOG_PERROR LOG_LOCAL0 LOG_CONS LOG_LPR
@@ -21,7 +19,6 @@ platform_is_not :windows do
           Syslog::Constants.should have_constant(c)
         end
       end
-
     end
 
     # The masks are defined in <syslog.h>

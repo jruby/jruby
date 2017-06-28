@@ -26,26 +26,14 @@ describe "File.split" do
     end
   end
 
-  platform_is_not os: :windows do
-    not_compliant_on :jruby do
-      it "does not split a string that contains '\\'" do
-        File.split(@backslash).should == [".", "C:\\foo\\bar\\baz"]
-        File.split(@backslash_ext).should ==  [".", "C:\\foo\\bar\\baz.rb"]
-      end
-    end
-
-    deviates_on :jruby do
-      it "splits the string at the last '\\' when the last component does not have an extension" do
-        File.split(@backslash).should == ["C:\\foo\\bar", "baz"]
-      end
-
-      it "splits the string at the last '\\' when the last component has an extension" do
-        File.split(@backslash_ext).should ==  ["C:\\foo\\bar", "baz.rb"]
-      end
+  platform_is_not :windows do
+    it "does not split a string that contains '\\'" do
+      File.split(@backslash).should == [".", "C:\\foo\\bar\\baz"]
+      File.split(@backslash_ext).should ==  [".", "C:\\foo\\bar\\baz.rb"]
     end
   end
 
-  platform_is os: :windows do
+  platform_is :windows do
     it "splits the string at the last '\\' when the last component does not have an extension" do
       File.split(@backslash).should == ["C:\\foo\\bar", "baz"]
     end

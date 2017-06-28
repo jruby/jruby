@@ -82,6 +82,9 @@ public abstract class Platform {
         if (osname.startsWith("windows")) {
             return WINDOWS;
         }
+        if (osname.startsWith("sunos")) {
+            return SOLARIS;
+        }
         return osname;
     }
     private static String initArchitecture() {

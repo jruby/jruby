@@ -118,9 +118,6 @@ else
         if [ "$j" == "$JRUBY_HOME"/lib/jruby.jar ]; then
           continue
         fi
-        if [ "$j" == "$JRUBY_HOME"/lib/jruby-truffle.jar ]; then
-          continue
-        fi
         if [ "$j" == "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
           continue
         fi
@@ -243,6 +240,8 @@ do
         # Start up as Nailgun server
         java_class=$JAVA_CLASS_NGSERVER
         VERIFY_JRUBY=true ;;
+     --no-bootclasspath)
+        NO_BOOTCLASSPATH=true ;;
      --ng)
         # Use native Nailgun client to toss commands to server
         process_special_opts "--ng" ;;
@@ -280,7 +279,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [ "$VERIFY_JRUBY" != "" ]; then
+if [ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
   fi

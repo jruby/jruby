@@ -1,3 +1,4 @@
+# -*- encoding: binary -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../shared/codepoints', __FILE__)
 require File.expand_path('../shared/each_codepoint_without_block', __FILE__)

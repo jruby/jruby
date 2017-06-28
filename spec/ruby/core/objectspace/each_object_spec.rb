@@ -3,11 +3,11 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "ObjectSpace.each_object" do
   it "calls the block once for each living, non-immediate object in the Ruby process" do
-    class ObjectSpaceSpecEachObject; end
-    new_obj = ObjectSpaceSpecEachObject.new
+    klass = Class.new
+    new_obj = klass.new
 
     yields = 0
-    count = ObjectSpace.each_object(ObjectSpaceSpecEachObject) do |obj|
+    count = ObjectSpace.each_object(klass) do |obj|
       obj.should == new_obj
       yields += 1
     end
@@ -19,10 +19,10 @@ describe "ObjectSpace.each_object" do
   end
 
   it "calls the block once for each class, module in the Ruby process" do
-    class ObjectSpaceSpecEachClass; end
-    module ObjectSpaceSpecEachModule; end
+    klass = Class.new
+    mod = Module.new
 
-    [ObjectSpaceSpecEachClass, ObjectSpaceSpecEachModule].each do |k|
+    [klass, mod].each do |k|
       yields = 0
       got_it = false
       count = ObjectSpace.each_object(k.class) do |obj|
@@ -35,11 +35,11 @@ describe "ObjectSpace.each_object" do
   end
 
   it "returns an enumerator if not given a block" do
-    class ObjectSpaceSpecEachOtherObject; end
-    new_obj = ObjectSpaceSpecEachOtherObject.new
+    klass = Class.new
+    new_obj = klass.new
 
-    counter = ObjectSpace.each_object(ObjectSpaceSpecEachOtherObject)
-    counter.should be_an_instance_of(enumerator_class)
+    counter = ObjectSpace.each_object(klass)
+    counter.should be_an_instance_of(Enumerator)
     counter.each{}.should == 1
     # this is needed to prevent the new_obj from being GC'd too early
     new_obj.should_not == nil
@@ -133,6 +133,7 @@ describe "ObjectSpace.each_object" do
     thread = Thread.new {}
     thread.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
     ObjectSpaceFixtures.to_be_found_symbols.should include(:thread_local)
+    thread.join
   end
 
   it "finds an object stored in a fiber local" do

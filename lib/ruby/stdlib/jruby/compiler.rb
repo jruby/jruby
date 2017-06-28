@@ -56,10 +56,6 @@ module JRuby::Compiler
         options[:javac_options] << o
       end
 
-      #opts.on("-5"," --jdk5", "Generate JDK 5 classes (version 49)") do |x|
-      #  options[:jdk5] = true
-      #end
-
       opts.on("--java", "Generate Java classes (.java) for a script containing Ruby class definitions") do
         options[:java] = true
       end
@@ -146,7 +142,7 @@ module JRuby::Compiler
 
             FileUtils.mkdir_p java_dir
 
-            java_src = File.join(java_dir, cls.name + ".java")
+            java_src = File.join(java_dir, "#{cls.name}.java")
             puts "Generating Java class #{cls.name} to #{java_src}" if options[:verbose]
 
             files << java_src

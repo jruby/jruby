@@ -23,13 +23,13 @@ describe "Regexps with modifers" do
 
   it "invokes substitutions for /o only once" do
     ScratchPad.record []
-    to_s_callback = Proc.new do
-      ScratchPad << :to_s_callback
+    o = Object.new
+    def o.to_s
+      ScratchPad << :to_s
       "class_with_to_s"
     end
-    o = LanguageSpecs::ClassWith_to_s.new(to_s_callback)
-    2.times { /#{o}/o }
-    ScratchPad.recorded.should == [:to_s_callback]
+    eval "2.times { /#{o}/o }"
+    ScratchPad.recorded.should == [:to_s]
   end
 
   it "supports modifier combinations" do

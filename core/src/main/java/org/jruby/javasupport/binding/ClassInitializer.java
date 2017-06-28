@@ -16,23 +16,16 @@ import java.util.Map;
 /**
 * Created by headius on 2/26/15.
 */
-public class ClassInitializer extends Initializer {
-    public ClassInitializer(Ruby runtime, Class<?> javaClass) {
+final class ClassInitializer extends Initializer {
+
+    ClassInitializer(Ruby runtime, Class<?> javaClass) {
         super(runtime, javaClass);
     }
 
     @Override
-    public RubyModule initialize(RubyModule proxy) {
-        RubyClass proxyClass = (RubyClass)proxy;
-        Class<?> superclass = javaClass.getSuperclass();
-
-        final State state = new State(runtime, superclass);
-
-        proxyClass.setReifiedClass(javaClass);
-
-        if ( javaClass.isArray() || javaClass.isPrimitive() ) {
-            return proxy;
-        }
+    public RubyClass initialize(final RubyModule proxy) {
+        final RubyClass proxyClass = (RubyClass) proxy;
+        final State state = new State(runtime, javaClass.getSuperclass());
 
         setupClassFields(javaClass, state);
         setupClassMethods(javaClass, state);
@@ -84,9 +77,9 @@ public class ClassInitializer extends Initializer {
         installClassConstructors(proxyClass, state);
         installClassClasses(javaClass, proxyClass);
 
-        proxy.getName(); // trigger calculateName()
+        proxyClass.getName(); // trigger calculateName()
 
-        return proxy;
+        return proxyClass;
     }
 
     private static void installClassInstanceMethods(final RubyClass proxy, final Initializer.State state) {
@@ -122,7 +115,8 @@ public class ClassInitializer extends Initializer {
         // TODO: protected methods.  this is going to require a rework of some of the mechanism.
         final Map<String, List<Method>> nameMethods = getMethods(javaClass);
 
-        for (List<Method> methods : nameMethods.values()) {
+        for (Map.Entry<String, List<Method>> entry : nameMethods.entrySet()) {
+            final List<Method> methods = entry.getValue();
             for (int i = methods.size(); --i >= 0; ) {
                 // we need to collect all methods, though we'll only
                 // install the ones that are named in this class
@@ -163,13 +157,13 @@ public class ClassInitializer extends Initializer {
     }
 
     private void prepareInstanceMethod(Class<?> javaClass, State state, Method method, String name) {
-        AssignedName assignedName = state.instanceNames.get(name);
-
         // For JRUBY-4505, restore __method methods for reserved names
         if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
             setupInstanceMethods(state.instanceInstallers, javaClass, method, name + METHOD_MANGLE);
             return;
         }
+
+        AssignedName assignedName = state.instanceNames.get(name);
 
         if (assignedName == null) {
             state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
@@ -194,15 +188,16 @@ public class ClassInitializer extends Initializer {
     }
 
     private static void assignInstanceAliases(State state) {
-        for (Map.Entry<String, NamedInstaller> entry : state.instanceInstallers.entrySet()) {
+        final Map<String, NamedInstaller> installers = state.instanceInstallers;
+        for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
             if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD) {
                 MethodInstaller methodInstaller = (MethodInstaller)entry.getValue();
 
                 // no aliases for __method methods
-                if (entry.getKey().endsWith("__method")) continue;
+                if (entry.getKey().endsWith(METHOD_MANGLE)) continue;
 
                 if (methodInstaller.hasLocalMethod()) {
-                    assignAliases(methodInstaller, state.instanceNames);
+                    assignAliases(methodInstaller, state.instanceNames, installers);
                 }
 
                 // JRUBY-6967: Types with java.lang.Comparable were using Ruby Comparable#== instead of dispatching directly to

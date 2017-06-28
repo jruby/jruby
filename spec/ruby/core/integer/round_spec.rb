@@ -4,9 +4,19 @@ require File.expand_path('../shared/to_i', __FILE__)
 describe "Integer#round" do
   it_behaves_like(:integer_to_i, :round)
 
-  it "rounds itself as a float if passed a positive precision" do
-    [2, -4, 10**70, -10**100].each do |v|
-      v.round(42).should eql(v.to_f)
+  ruby_version_is ""..."2.5" do
+    it "rounds itself as a float if passed a positive precision" do
+      [2, -4, 10**70, -10**100].each do |v|
+        v.round(42).should eql(v.to_f)
+      end
+    end
+  end
+
+  ruby_version_is "2.5" do
+    it "returns itself if passed a positive precision" do
+      [2, -4, 10**70, -10**100].each do |v|
+        v.round(42).should eql(v)
+      end
     end
   end
 
@@ -19,13 +29,16 @@ describe "Integer#round" do
   # redmine:5228
   it "returns itself rounded if passed a negative value" do
     +249.round(-2).should eql(+200)
-    +250.round(-2).should eql(+300)
     -249.round(-2).should eql(-200)
+    (+25 * 10**70 - 1).round(-71).should eql(+20 * 10**70)
+    (-25 * 10**70 + 1).round(-71).should eql(-20 * 10**70)
+  end
+
+  it "returns itself rounded to nearest if passed a negative value" do
+    +250.round(-2).should eql(+300)
     -250.round(-2).should eql(-300)
     (+25 * 10**70).round(-71).should eql(+30 * 10**70)
     (-25 * 10**70).round(-71).should eql(-30 * 10**70)
-    (+25 * 10**70 - 1).round(-71).should eql(+20 * 10**70)
-    (-25 * 10**70 + 1).round(-71).should eql(-20 * 10**70)
   end
 
   platform_is_not wordsize: 32 do

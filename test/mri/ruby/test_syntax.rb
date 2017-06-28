@@ -2,10 +2,18 @@
 require 'test/unit'
 
 class TestSyntax < Test::Unit::TestCase
+  using Module.new {
+    refine(Object) do
+      def `(s) #`
+        s
+      end
+    end
+  }
+
   def assert_syntax_files(test)
     srcdir = File.expand_path("../../..", __FILE__)
     srcdir = File.join(srcdir, test)
-    assert_separately(%W[--disable-gems - #{srcdir}],
+    assert_separately(%W[--disable-gem - #{srcdir}],
                       __FILE__, __LINE__, <<-'eom', timeout: Float::INFINITY)
       dir = ARGV.shift
       for script in Dir["#{dir}/**/*.rb"].sort
@@ -352,6 +360,13 @@ WARN
     assert_valid_syntax("{label: <<~DOC\n""DOC\n""}", bug11849)
   end
 
+  def test_cmdarg_kwarg_lvar_clashing_method
+    bug12073 = '[ruby-core:73816] [Bug#12073]'
+    a = 1
+    assert_valid_syntax("a b: 1")
+    assert_valid_syntax("a = 1; a b: 1", bug12073)
+  end
+
   def test_duplicated_arg
     assert_syntax_error("def foo(a, a) end", /duplicated argument name/)
     assert_nothing_raised { def foo(_, _) end }
@@ -492,92 +507,108 @@ e"
     assert_equal(expected, actual, "#{Bug7559}: ")
   end
 
+  def assert_dedented_heredoc(expect, result, mesg = "")
+    all_assertions(mesg) do |a|
+      %w[eos "eos" 'eos' `eos`].each do |eos|
+        a.for(eos) do
+          assert_equal(eval("<<-#{eos}\n#{expect}eos\n"),
+                       eval("<<~#{eos}\n#{result}eos\n"))
+        end
+      end
+    end
+  end
+
   def test_dedented_heredoc_without_indentation
-    assert_equal(" y\nz\n", <<~eos)
- y
-z
-    eos
+    result = " y\n" \
+             "z\n"
+    expect = result
+    assert_dedented_heredoc(expect, result)
   end
 
   def test_dedented_heredoc_with_indentation
-    assert_equal(" a\nb\n", <<~eos)
-     a
-    b
-    eos
+    result = "     a\n" \
+             "    b\n"
+    expect = " a\n" \
+             "b\n"
+    assert_dedented_heredoc(expect, result)
   end
 
   def test_dedented_heredoc_with_blank_less_indented_line
     # the blank line has two leading spaces
-    result = eval("<<~eos\n" \
-                  "    a\n" \
-                  "  \n" \
-                  "    b\n" \
-                  "    eos\n")
-    assert_equal("a\n\nb\n", result)
+    result = "    a\n" \
+             "  \n" \
+             "    b\n"
+    expect = "a\n" \
+             "\n" \
+             "b\n"
+    assert_dedented_heredoc(expect, result)
   end
 
   def test_dedented_heredoc_with_blank_less_indented_line_escaped
-    result = eval("<<~eos\n" \
-                  "    a\n" \
-                  "\\ \\ \n" \
-                  "    b\n" \
-                  "    eos\n")
-    assert_equal("    a\n  \n    b\n", result)
+    result = "    a\n" \
+             "\\ \\ \n" \
+             "    b\n"
+    expect = result
+    assert_dedented_heredoc(expect, result)
   end
 
   def test_dedented_heredoc_with_blank_more_indented_line
     # the blank line has six leading spaces
-    result = eval("<<~eos\n" \
-                  "    a\n" \
-                  "      \n" \
-                  "    b\n" \
-                  "    eos\n")
-    assert_equal("a\n  \nb\n", result)
+    result = "    a\n" \
+             "      \n" \
+             "    b\n"
+    expect = "a\n" \
+             "  \n" \
+             "b\n"
+    assert_dedented_heredoc(expect, result)
   end
 
   def test_dedented_heredoc_with_blank_more_indented_line_escaped
-    result = eval("<<~eos\n" \
-                  "    a\n" \
-                  "\\ \\ \\ \\ \\ \\ \n" \
-                  "    b\n" \
-                  "    eos\n")
-    assert_equal("    a\n      \n    b\n", result)
+    result = "    a\n" \
+             "\\ \\ \\ \\ \\ \\ \n" \
+             "    b\n"
+    expect = result
+    assert_dedented_heredoc(expect, result)
   end
 
   def test_dedented_heredoc_with_empty_line
-result = eval("<<~eos\n" \
-              "      This would contain specially formatted text.\n" \
-              "\n" \
-              "      That might span many lines\n" \
-              "    eos\n")
-    assert_equal(<<-eos, result)
-This would contain specially formatted text.
-
-That might span many lines
-    eos
+    result = "      This would contain specially formatted text.\n" \
+             "\n" \
+             "      That might span many lines\n"
+    expect = 'This would contain specially formatted text.'"\n" \
+             ''"\n" \
+             'That might span many lines'"\n"
+    assert_dedented_heredoc(expect, result)
   end
 
   def test_dedented_heredoc_with_interpolated_expression
-    result = eval(" <<~eos\n" \
-                  "  #{1}a\n" \
-                  " zy\n" \
-                  "      eos\n")
-      assert_equal(<<-eos, result)
- #{1}a
-zy
-      eos
+    result = '  #{1}a'"\n" \
+             " zy\n"
+    expect = ' #{1}a'"\n" \
+             "zy\n"
+    assert_dedented_heredoc(expect, result)
   end
 
   def test_dedented_heredoc_with_interpolated_string
     w = ""
-    result = eval("<<~eos\n" \
-                  " \#{w} a\n" \
-                  "  zy\n" \
-                  "    eos\n")
-    assert_equal(<<-eos, result)
-#{w} a
- zy
-    eos
+    result = " \#{mesg} a\n" \
+             "  zy\n"
+    expect = '#{mesg} a'"\n" \
+             ' zy'"\n"
+    assert_dedented_heredoc(expect, result)
+  end
+
+  def test_dedented_heredoc_with_concatenation
+    bug11990 = '[ruby-core:72857] [Bug #11990] concatenated string should not be dedented'
+    %w[eos "eos" 'eos'].each do |eos|
+      assert_equal("x\n  y",
+                   eval("<<~#{eos} '  y'\n  x\neos\n"),
+                   "#{bug11990} with #{eos}")
+    end
+    %w[eos "eos" 'eos' `eos`].each do |eos|
+      _, expect = eval("[<<~#{eos}, '  x']\n""  y\n""eos\n")
+      assert_equal('  x', expect, bug11990)
+    end
   end
 
   def test_lineno_after_heredoc
@@ -747,6 +778,30 @@ eom
     end
     assert_warning("") do
       eval("''||raise;nil")
+    end
+  end
+
+  def test_alias_symbol
+    bug8851 = '[ruby-dev:47681] [Bug #8851]'
+    formats = ['%s', ":'%s'", ':"%s"', '%%s(%s)']
+    all_assertions(bug8851) do |all|
+      formats.product(formats) do |form1, form2|
+        all.for(code = "alias #{form1 % 'a'} #{form2 % 'p'}") do
+          assert_valid_syntax(code)
+        end
+      end
+    end
+  end
+
+  def test_undef_symbol
+    bug8851 = '[ruby-dev:47681] [Bug #8851]'
+    formats = ['%s', ":'%s'", ':"%s"', '%%s(%s)']
+    all_assertions(bug8851) do |all|
+      formats.product(formats) do |form1, form2|
+        all.for(code = "undef #{form1 % 'a'}, #{form2 % 'p'}") do
+          assert_valid_syntax(code)
+        end
+      end
     end
   end
 

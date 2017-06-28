@@ -19,13 +19,13 @@ describe :rb_file_open, shared: true do
     @file = @s.send(@method, @name, "w")
     @file.write "writable"
     @file.flush
-    @name.should have_data("writable")
+    File.read(@name).should == "writable"
   end
 
   it "truncates an existing file with 'w'" do
     touch(@name) { |f| f.puts "existing" }
     @file = @s.send(@method, @name, "w")
-    @name.should have_data("")
+    File.read(@name).should == ""
   end
 end
 

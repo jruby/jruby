@@ -64,19 +64,26 @@ describe "Predefined global $~" do
     def obj.foo; yield; end
     def obj.foo2(&proc); proc.call; end
 
-    match = /foo/.match "foo"
+    match2 = nil
+    match3 = nil
+    match4 = nil
 
-    obj.foo { match = /bar/.match("bar") }
+    match1 = /foo/.match "foo"
 
-    $~.should == match
+    obj.foo { match2 = /bar/.match("bar") }
 
-    eval 'match = /baz/.match("baz")'
+    match2.should_not == nil
+    $~.should == match2
 
-    $~.should == match
+    eval 'match3 = /baz/.match("baz")'
 
-    obj.foo2 { match = /qux/.match("qux") }
+    match3.should_not == nil
+    $~.should == match3
 
-    $~.should == match
+    obj.foo2 { match4 = /qux/.match("qux") }
+
+    match4.should_not == nil
+    $~.should == match4
   end
 
   it "raises an error if assigned an object not nil or instanceof MatchData" do
@@ -832,7 +839,7 @@ describe "Global variable $?" do
   end
 
   it "is thread-local" do
-    system("#{RUBY_EXE} -e 'exit 0'")
+    system(ruby_cmd('exit 0'))
     Thread.new { $?.should be_nil }.join
   end
 end
@@ -1035,19 +1042,44 @@ TRUE                 TrueClass   Synonym for true.
 =end
 
 describe "The predefined global constants" do
-  it "includes TRUE" do
-    Object.const_defined?(:TRUE).should == true
-    TRUE.should equal(true)
+  ruby_version_is ""..."2.4" do
+    it "includes TRUE" do
+      Object.const_defined?(:TRUE).should == true
+      TRUE.should equal(true)
+    end
+
+    it "includes FALSE" do
+      Object.const_defined?(:FALSE).should == true
+      FALSE.should equal(false)
+    end
+
+    it "includes NIL" do
+      Object.const_defined?(:NIL).should == true
+      NIL.should equal(nil)
+    end
   end
 
-  it "includes FALSE" do
-    Object.const_defined?(:FALSE).should == true
-    FALSE.should equal(false)
-  end
+  ruby_version_is "2.4" do
+    it "includes TRUE" do
+      Object.const_defined?(:TRUE).should == true
+      -> {
+        TRUE.should equal(true)
+      }.should complain(/constant ::TRUE is deprecated/)
+    end
 
-  it "includes NIL" do
-    Object.const_defined?(:NIL).should == true
-    NIL.should equal(nil)
+    it "includes FALSE" do
+      Object.const_defined?(:FALSE).should == true
+      -> {
+        FALSE.should equal(false)
+      }.should complain(/constant ::FALSE is deprecated/)
+    end
+
+    it "includes NIL" do
+      Object.const_defined?(:NIL).should == true
+      -> {
+        NIL.should equal(nil)
+      }.should complain(/constant ::NIL is deprecated/)
+    end
   end
 
   it "includes STDIN" do

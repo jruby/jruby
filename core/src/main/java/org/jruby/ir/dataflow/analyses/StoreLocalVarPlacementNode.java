@@ -82,8 +82,8 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
             // At this site, a binding will get allocated if it has not been already!
             if (o != null && o instanceof WrappedIRClosure) {
                 // In this first pass, the current scope and the call's closure are considered
-                // independent of each other which means any variable that is used by the variable
-                // will get spilled into the binding.  This is clearly conservative, but simplifies
+                // independent of each other which means any variable that is used by the closure
+                // will get spilled into the binding. This is clearly conservative, but simplifies
                 // the analysis.
                 IRClosure cl = ((WrappedIRClosure) o).getClosure();
 

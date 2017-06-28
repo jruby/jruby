@@ -2,5 +2,3 @@ fails:Coverage.result gives the covered files as a hash with arrays of count or 
 fails:Coverage.result no requires/loads should give empty hash
 fails:Coverage.result second run without load/require should give empty hash
 fails:Coverage.result second Coverage.start does nothing
-fails:Coverage.result should list coverage for the required file starting coverage
-fails:Coverage.result should list coverage for the loaded file starting coverage

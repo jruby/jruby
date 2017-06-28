@@ -3,7 +3,7 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe "Socket::BasicSocket#close_write" do
   before :each do
-    @server = TCPServer.new(SocketSpecs.port)
+    @server = TCPServer.new(0)
   end
 
   after :each do
@@ -24,6 +24,11 @@ describe "Socket::BasicSocket#close_write" do
   it "does not close the socket" do
     @server.close_write
     @server.closed?.should be_false
+  end
+
+  it "does not prevent reading" do
+    @server.close_write
+    @server.read(0).should == ""
   end
 
   it "fully closes the socket if it was already closed for reading" do

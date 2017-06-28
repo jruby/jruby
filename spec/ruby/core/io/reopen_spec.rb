@@ -107,7 +107,7 @@ describe "IO#reopen with a String" do
     # TODO Should this work on Windows?
     it "affects exec/system/fork performed after it" do
       ruby_exe fixture(__FILE__, "reopen_stdout.rb"), args: @tmp_file
-      @tmp_file.should have_data("from system\nfrom exec", "r")
+      File.read(@tmp_file).should == "from system\nfrom exec\n"
     end
   end
 
@@ -141,8 +141,8 @@ describe "IO#reopen with a String" do
     @io.print "new data"
     @io.flush
 
-    @name.should have_data("original data")
-    @other_name.should have_data("new data")
+    File.read(@name).should == "original data"
+    File.read(@other_name).should == "new data"
   end
 
   it "closes the file descriptor obtained by opening the new file" do
@@ -190,6 +190,34 @@ describe "IO#reopen with a String" do
   it "raises an Errno::ENOENT if the file does not exist and the IO is not opened in write mode" do
     @io = new_io @name, "r"
     lambda { @io.reopen(@other_name) }.should raise_error(Errno::ENOENT)
+  end
+end
+
+describe "IO#reopen with an IO at EOF" do
+  before :each do
+    @name = tmp("io_reopen.txt")
+    touch(@name) { |f| f.puts "a line" }
+    @other_name = tmp("io_reopen_other.txt")
+    touch(@other_name) do |f|
+      f.puts "Line 1"
+      f.puts "Line 2"
+    end
+
+    @io = new_io @name, "r"
+    @other_io = new_io @other_name, "r"
+    @io.read
+  end
+
+  after :each do
+    @io.close unless @io.closed?
+    @other_io.close unless @other_io.closed?
+    rm_r @name, @other_name
+  end
+
+  it "resets the EOF status to false" do
+    @io.eof?.should be_true
+    @io.reopen @other_io
+    @io.eof?.should be_false
   end
 end
 
@@ -254,12 +282,12 @@ describe "IO#reopen with an IO" do
   end
 
   it "associates the IO instance with the other IO's stream" do
-    @other_name.should have_data("")
+    File.read(@other_name).should == ""
     @io.reopen @other_io
     @io.print "io data"
     @io.flush
-    @name.should have_data("")
-    @other_name.should have_data("io data")
+    File.read(@name).should == ""
+    File.read(@other_name).should == "io data"
   end
 
   it "may change the class of the instance" do

@@ -295,6 +295,12 @@ describe MSpec, ".process" do
     MSpec.stub(:files)
     MSpec.store :start, []
     MSpec.store :finish, []
+    STDOUT.stub(:puts)
+  end
+
+  it "prints the RUBY_DESCRIPTION" do
+    STDOUT.should_receive(:puts).with(RUBY_DESCRIPTION)
+    MSpec.process
   end
 
   it "calls all start actions" do
@@ -520,7 +526,7 @@ extended():\"Multi-line\\ntext\\ntag\"
     MSpec.delete_tag(@tag).should == true
     MSpec.delete_tag(SpecTag.new("incomplete:The#best method ever")).should == true
     MSpec.delete_tag(SpecTag.new("benchmark:The#fastest method today")).should == true
-    MSpec.delete_tag(SpecTag.new("extended:\"Multi-line\ntext\ntag\"")).should == true
+    MSpec.delete_tag(SpecTag.new('extended:"Multi-line\ntext\ntag"')).should == true
     File.exist?(tmp("tags.txt", false)).should == false
   end
 end

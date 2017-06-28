@@ -4,7 +4,18 @@ module Process
     class << self
       private :new
     end
-    
+
+    def pid
+      self[:pid]
+    end
+  end
+
+  class Waiter < Thread
+    # only created from Java and used for Process.detach right now
+    class << self
+      private :new
+    end
+
     def pid
       self[:pid]
     end

@@ -67,11 +67,12 @@ public class CFGInliner {
     private BasicBlock findCallsiteBB(CallBase call) {
         for (BasicBlock bb: cfg.getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
+                // FIXME: This code will be replaced by landing of inliner branch so commenting out ipc for now
                 // System.out.println("IPC " + i.getIPC() + " = " + i);
-                if (i.getIPC() == call.getIPC()) {
+                //if (i.getIPC() == call.getIPC()) {
                     // System.out.println("Found it!!!! -- " + call);
-                    return bb;
-                }
+                 //   return bb;
+                //}
             }
         }
 
@@ -79,7 +80,7 @@ public class CFGInliner {
     }
 
     private void printInlineDebugPrologue(IRScope methodScope, CallBase call) {
-        System.out.println("Looking for: " + call.getIPC() + ": " + call);
+        //System.out.println("Looking for: " + call.getIPC() + ": " + call);
         System.out.println("host cfg   :" + cfg.toStringGraph());
         System.out.println("host instrs:" + cfg.toStringInstrs());
         System.out.println("source cfg   :" + methodScope.getCFG().toStringGraph());

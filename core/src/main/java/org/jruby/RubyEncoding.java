@@ -341,7 +341,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     @JRubyMethod(name = "list", meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
-        return RubyArray.newArrayNoCopy(runtime, runtime.getEncodingService().getEncodingList(), 0);
+        return RubyArray.newArrayMayCopy(runtime, runtime.getEncodingService().getEncodingList());
     }
 
     @JRubyMethod(name = "locale_charmap", meta = true)

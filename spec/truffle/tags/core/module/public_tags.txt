@@ -1,1 +1,0 @@
-fails:Module#public on a superclass method calls the redefined method

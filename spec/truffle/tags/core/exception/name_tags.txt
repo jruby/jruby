@@ -1,2 +1,0 @@
-fails:NameError#name returns the first argument passed to the method when a NameError is raised from #instance_variable_get
-fails:NameError#name returns the first argument passed to the method when a NameError is raised from #class_variable_get

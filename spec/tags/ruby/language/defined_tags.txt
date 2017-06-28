@@ -1,1 +1,7 @@
 fails(jruby/jruby#3903):The defined? keyword for a scoped constant returns nil when a constant is scoped to an undefined constant
+fails:The defined? keyword for an expression with logical connectives returns nil for an expression with '!' and an unset class variable
+fails:The defined? keyword for an expression with logical connectives returns nil for an expression with 'not' and an unset class variable
+fails:The defined? keyword for a variable scoped constant returns nil if the scoped constant is not defined
+fails:The defined? keyword for a variable scoped constant returns 'constant' if the constant is defined in the scope of the variable reference
+fails:The defined? keyword for a variable scoped constant returns nil if the class scoped constant is not defined
+fails:The defined? keyword for a variable scoped constant returns 'constant' if the constant is defined in the scope of the class variable

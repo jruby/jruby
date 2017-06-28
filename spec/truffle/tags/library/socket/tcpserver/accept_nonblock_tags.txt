@@ -1,2 +1,0 @@
-fails:Socket::TCPServer.accept_nonblock accepts non blocking connections
-fails:Socket::TCPServer.accept_nonblock raises an IOError if the socket is closed

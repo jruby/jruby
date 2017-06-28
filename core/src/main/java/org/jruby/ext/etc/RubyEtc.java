@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -108,12 +109,12 @@ public class RubyEtc {
         for(int i = 0; i<arr.length; i++) {
             arr[i] = runtime.newString(members[i]);
         }
-        return runtime.newArrayNoCopy(arr);
+        return RubyArray.newArrayMayCopy(runtime, arr);
     }
 
 
     @JRubyMethod(optional=1, module = true)
-    public static IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
+    public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
@@ -142,7 +143,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(required=1, module = true)
-    public static IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
+    public static synchronized IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
         try {
@@ -165,7 +166,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject passwd(IRubyObject recv, Block block) {
+    public static synchronized IRubyObject passwd(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
         try {
@@ -205,7 +206,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject getlogin(IRubyObject recv) {
+    public static synchronized IRubyObject getlogin(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
 
         try {
@@ -227,7 +228,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject endpwent(IRubyObject recv) {
+    public static synchronized IRubyObject endpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             runtime.getPosix().endpwent();
@@ -240,7 +241,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject setpwent(IRubyObject recv) {
+    public static synchronized IRubyObject setpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             runtime.getPosix().setpwent();
@@ -253,7 +254,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject getpwent(IRubyObject recv) {
+    public static synchronized IRubyObject getpwent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             Passwd passwd = runtime.getPosix().getpwent();
@@ -271,7 +272,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(required=1, module = true)
-    public static IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
+    public static synchronized IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
         try {
@@ -294,7 +295,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(optional=1, module = true)
-    public static IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
+    public static synchronized IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
 
@@ -319,7 +320,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject endgrent(IRubyObject recv) {
+    public static synchronized IRubyObject endgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             runtime.getPosix().endgrent();
@@ -332,7 +333,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject setgrent(IRubyObject recv) {
+    public static synchronized IRubyObject setgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
             runtime.getPosix().setgrent();
@@ -345,7 +346,7 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject group(IRubyObject recv, Block block) {
+    public static synchronized IRubyObject group(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
 
@@ -390,10 +391,17 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject getgrent(IRubyObject recv) {
+    public static synchronized IRubyObject getgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
-            Group gr = runtime.getPosix().getgrent();
+            Group gr;
+
+            // We synchronize on this class so at least all JRuby instances in this classloader are safe.
+            // See jruby/jruby#4057
+            synchronized (RubyEtc.class) {
+                gr = runtime.getPosix().getgrent();
+            }
+
             if (gr != null) {
                 return setupGroup(recv.getRuntime(), gr);
             } else {
@@ -408,7 +416,7 @@ public class RubyEtc {
     }
     
     @JRubyMethod(module = true)
-    public static IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
+    public static synchronized IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(System.getProperty("java.io.tmpdir")); // default for all platforms except Windows
         if (Platform.IS_WINDOWS) {
@@ -422,7 +430,7 @@ public class RubyEtc {
     }
     
     @JRubyMethod(module = true)
-    public static IRubyObject sysconfdir(ThreadContext context, IRubyObject recv) {
+    public static synchronized IRubyObject sysconfdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(RbConfigLibrary.getSysConfDir(runtime)); // default for all platforms except Windows
         
@@ -438,13 +446,13 @@ public class RubyEtc {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject nprocessors(ThreadContext context, IRubyObject recv) {
+    public static synchronized IRubyObject nprocessors(ThreadContext context, IRubyObject recv) {
         int nprocs = Runtime.getRuntime().availableProcessors();
         return RubyFixnum.newFixnum(context.getRuntime(), nprocs);
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject uname(ThreadContext context, IRubyObject self) {
+    public static synchronized IRubyObject uname(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
         RubyHash uname = RubyHash.newHash(runtime);
 

@@ -28,16 +28,16 @@ public abstract class SuperInvokeSite extends SelfInvokeSite {
     protected final String superName;
     protected final boolean[] splatMap;
 
-    public SuperInvokeSite(MethodType type, String superName, String splatmapString) {
-        super(type, superName, CallType.SUPER);
+    public SuperInvokeSite(MethodType type, String superName, String splatmapString, String file, int line) {
+        super(type, superName, CallType.SUPER, file, line);
 
         this.superName = superName;
         this.splatMap = IRRuntimeHelpers.decodeSplatmap(splatmapString);
     }
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SuperInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class));
+    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SuperInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class));
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String splatmapString) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String splatmapString, String file, int line) {
         List<String> targetAndMethod = StringSupport.split(name, ':');
         String superName = JavaNameMangler.demangleMethodName(targetAndMethod.get(1));
 
@@ -45,16 +45,16 @@ public abstract class SuperInvokeSite extends SelfInvokeSite {
 
         switch (targetAndMethod.get(0)) {
             case "invokeInstanceSuper":
-                site = new InstanceSuperInvokeSite(type, superName, splatmapString);
+                site = new InstanceSuperInvokeSite(type, superName, splatmapString, file, line);
                 break;
             case "invokeClassSuper":
-                site = new ClassSuperInvokeSite(type, superName, splatmapString);
+                site = new ClassSuperInvokeSite(type, superName, splatmapString, file, line);
                 break;
             case "invokeUnresolvedSuper":
-                site = new UnresolvedSuperInvokeSite(type, superName, splatmapString);
+                site = new UnresolvedSuperInvokeSite(type, superName, splatmapString, file, line);
                 break;
             case "invokeZSuper":
-                site = new ZSuperInvokeSite(type, superName, splatmapString);
+                site = new ZSuperInvokeSite(type, superName, splatmapString, file, line);
                 break;
             default:
                 throw new RuntimeException("invalid super call: " + name);

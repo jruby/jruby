@@ -3,13 +3,15 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Literal Regexps" do
   it "matches against $_ (last input) in a conditional if no explicit matchee provided" do
-    $_ = nil
+    -> {
+      eval <<-EOR
+      $_ = nil
+      (true if /foo/).should_not == true
 
-    (true if /foo/).should_not == true
-
-    $_ = "foo"
-
-    (true if /foo/).should == true
+      $_ = "foo"
+      (true if /foo/).should == true
+      EOR
+    }.should complain(/regex literal in condition/)
   end
 
   it "yields a Regexp" do
@@ -19,7 +21,6 @@ describe "Literal Regexps" do
   it "caches the Regexp object" do
     rs = []
     2.times do |i|
-      x = 1
       rs << /foo/
     end
     rs[0].should equal(rs[1])
@@ -127,5 +128,23 @@ describe "Literal Regexps" do
     /fooA++Abar/.match("fooAAAbar").should be_nil
     /fooA?+Abar/.match("fooAAAbar").should be_nil
     /fooA*+Abar/.match("fooAAAbar").should be_nil
+  end
+
+  it "supports conditional regular expressions with positional capture groups" do
+    pattern = /\A(foo)?(?(1)(T)|(F))\z/
+
+    pattern.should =~ 'fooT'
+    pattern.should =~ 'F'
+    pattern.should_not =~ 'fooF'
+    pattern.should_not =~ 'T'
+  end
+
+  it "supports conditional regular expressions with named capture groups" do
+    pattern = /\A(?<word>foo)?(?(<word>)(T)|(F))\z/
+
+    pattern.should =~ 'fooT'
+    pattern.should =~ 'F'
+    pattern.should_not =~ 'fooF'
+    pattern.should_not =~ 'T'
   end
 end

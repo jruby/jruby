@@ -1,12 +1,11 @@
 package org.jruby.ir.interpreter;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
@@ -31,7 +30,6 @@ public class InterpreterContext {
     private boolean receivesKeywordArguments;
     private boolean metaClassBodyScope;
 
-    private final static InterpreterEngine BODY_INTERPRETER = new BodyInterpreterEngine();
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
     private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
     private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
@@ -87,16 +85,6 @@ public class InterpreterContext {
         this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
         this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
         this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
-    }
-
-    private InterpreterEngine determineInterpreterEngine(IRScope scope) {
-        if (scope instanceof IRModuleBody) {
-            return BODY_INTERPRETER;
-        } else if (scope instanceof IRMethod && scope.getFlags().contains(IRFlags.SIMPLE_METHOD)) {
-            return SIMPLE_METHOD_INTERPRETER; // ENEBO: Playing with unboxable and subset instruction sets
-        } else {
-            return DEFAULT_INTERPRETER;
-        }
     }
 
     private Instr[] prepareBuildInstructions(List<Instr> instructions) {
@@ -253,5 +241,9 @@ public class InterpreterContext {
         this.engine = engine;
 
         retrieveFlags();
+    }
+
+    public EnumSet<IRFlags> getFlags() {
+        return scope.getFlags();
     }
 }

@@ -9,9 +9,20 @@ describe "File.ctime" do
     @file = nil
   end
 
-  it "Returns the change time for the named file (the time at which directory information about the file was changed, not the file itself)." do
+  it "returns the change time for the named file (the time at which directory information about the file was changed, not the file itself)." do
     File.ctime(@file)
     File.ctime(@file).should be_kind_of(Time)
+  end
+
+  platform_is :linux do
+    it "returns the change time for the named file (the time at which directory information about the file was changed, not the file itself) with microseconds." do
+      supports_subseconds = Integer(`stat -c%z '#{__FILE__}'`[/\.(\d+)/, 1], 10)
+      if supports_subseconds != 0
+        File.ctime(__FILE__).usec.should > 0
+      else
+        File.ctime(__FILE__).usec.should == 0
+      end
+    end
   end
 
   it "accepts an object that has a #to_path method" do
@@ -33,7 +44,7 @@ describe "File#ctime" do
     @file = nil
   end
 
-  it "Returns the change time for the named file (the time at which directory information about the file was changed, not the file itself)." do
+  it "returns the change time for the named file (the time at which directory information about the file was changed, not the file itself)." do
     @file.ctime
     @file.ctime.should be_kind_of(Time)
   end

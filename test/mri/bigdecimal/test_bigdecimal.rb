@@ -75,6 +75,7 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_global_new_with_rational
+    assert_equal(BigDecimal("0.3333333333333333E0"), BigDecimal(Rational(1, 3), 0))
     assert_equal(BigDecimal("0.333333333333333333333"), BigDecimal(1.quo(3), 21))
     assert_equal(BigDecimal("-0.333333333333333333333"), BigDecimal(-1.quo(3), 21))
     assert_raise(ArgumentError) { BigDecimal(1.quo(3)) }
@@ -943,6 +944,13 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal([0, "NaN", 10, 0], BigDecimal.new("NaN").split)
     assert_equal([1, "Infinity", 10, 0], BigDecimal.new("Infinity").split)
     assert_equal([-1, "Infinity", 10, 0], BigDecimal.new("-Infinity").split)
+  end
+
+  def test_round_infinity
+    assert_equal "Infinity", BigDecimal("Infinity").round(0).to_s
+    assert_raise(FloatDomainError) do
+      BigDecimal("Infinity").round
+    end
   end
 
   def test_exponent

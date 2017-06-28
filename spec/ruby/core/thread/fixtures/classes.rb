@@ -148,7 +148,7 @@ module ThreadSpecs
   end
 
   def self.dying_thread_ensures(kill_method_name=:kill)
-    t = Thread.new do
+    Thread.new do
       begin
         Thread.current.send(kill_method_name)
       ensure
@@ -158,7 +158,7 @@ module ThreadSpecs
   end
 
   def self.dying_thread_with_outer_ensure(kill_method_name=:kill)
-    t = Thread.new do
+    Thread.new do
       begin
         begin
           Thread.current.send(kill_method_name)
@@ -216,27 +216,27 @@ module ThreadSpecs
     end
   end
 
-  def self.critical_thread1()
+  def self.critical_thread1
     Thread.critical = true
     Thread.current.key?(:thread_specs).should == false
   end
 
-  def self.critical_thread2(isThreadStop)
+  def self.critical_thread2(is_thread_stop)
     Thread.current[:thread_specs].should == 101
-    Thread.critical.should == !isThreadStop
-    if not isThreadStop
+    Thread.critical.should == !is_thread_stop
+    unless is_thread_stop
       Thread.critical = false
     end
   end
 
-  def self.main_thread1(critical_thread, isThreadSleep, isThreadStop)
+  def self.main_thread1(critical_thread, is_thread_sleep, is_thread_stop)
     # Thread.stop resets Thread.critical. Also, with native threads, the Thread.Stop may not have executed yet
     # since the main thread will race with the critical thread
-    if not isThreadStop
+    unless is_thread_stop
       Thread.critical.should == true
     end
     critical_thread[:thread_specs] = 101
-    if isThreadSleep or isThreadStop
+    if is_thread_sleep or is_thread_stop
       # Thread#wakeup calls are not queued up. So we need to ensure that the thread is sleeping before calling wakeup
       Thread.pass while critical_thread.status and critical_thread.status != "sleep"
       critical_thread.wakeup
@@ -249,7 +249,7 @@ module ThreadSpecs
     Thread.critical.should == false
   end
 
-  def self.critical_thread_yields_to_main_thread(isThreadSleep=false, isThreadStop=false)
+  def self.critical_thread_yields_to_main_thread(is_thread_sleep=false, is_thread_stop=false)
     @@after_first_sleep = false
 
     critical_thread = Thread.new do
@@ -259,32 +259,29 @@ module ThreadSpecs
       yield
       Thread.pass while @@after_first_sleep != true # Need to ensure that the next statement does not see the first sleep itself
       Thread.pass while Thread.main.status and Thread.main.status != "sleep"
-      critical_thread2(isThreadStop)
+      critical_thread2(is_thread_stop)
       Thread.main.wakeup
     end
 
     sleep 5
     @@after_first_sleep = true
-    main_thread1(critical_thread, isThreadSleep, isThreadStop)
+    main_thread1(critical_thread, is_thread_sleep, is_thread_stop)
     sleep 5
     main_thread2(critical_thread)
   end
 
-  def self.create_critical_thread()
-    critical_thread = Thread.new do
+  def self.create_critical_thread
+    Thread.new do
       Thread.critical = true
       yield
       Thread.critical = false
     end
-    return critical_thread
   end
 
-  def self.create_and_kill_critical_thread(passAfterKill=false)
-    critical_thread = ThreadSpecs.create_critical_thread do
+  def self.create_and_kill_critical_thread(pass_after_kill=false)
+    ThreadSpecs.create_critical_thread do
       Thread.current.kill
-      if passAfterKill
-        Thread.pass
-      end
+      Thread.pass if pass_after_kill
       ScratchPad.record("status=" + Thread.current.status)
     end
   end

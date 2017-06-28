@@ -1,7 +1,0 @@
-fails:Socket.getnameinfo gets the name information and don't resolve it
-fails:Socket.getnameinfo gets the name information and resolve the host
-fails:Socket.getnameinfo gets the name information and resolves the service
-fails:Socket.getnameinfo gets a 3-element array and doesn't resolve hostname
-fails:Socket.getnameinfo gets a 3-element array and resolves the service
-fails:Socket.getnameinfo gets a 4-element array and doesn't resolve hostname
-fails:Socket.getnameinfo gets a 4-element array and resolves the service

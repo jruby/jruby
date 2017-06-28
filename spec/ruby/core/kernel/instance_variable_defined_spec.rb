@@ -32,4 +32,10 @@ describe "Kernel#instance_variable_defined?" do
       @instance.instance_variable_defined? obj
     end.should raise_error(TypeError)
   end
+
+  it "returns false if the instance variable is not defined for different types" do
+    [nil, false, true, 1, 2.0, :test, "test"].each do |obj|
+      obj.instance_variable_defined?("@goodbye").should be_false
+    end
+  end
 end

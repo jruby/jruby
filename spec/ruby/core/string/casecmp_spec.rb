@@ -19,25 +19,25 @@ describe "String#casecmp independent of case" do
   end
 
   it "tries to convert other to string using to_str" do
-    other = mock('abc')
-    def other.to_str() "abc" end
+    other = mock('x')
+    other.should_receive(:to_str).and_return("abc")
+
     "abc".casecmp(other).should == 0
   end
 
-  it "raises a TypeError if other can't be converted to a string" do
-    lambda { "abc".casecmp(mock('abc')) }.should raise_error(TypeError)
+  ruby_version_is ""..."2.5" do
+    it "raises a TypeError if other can't be converted to a string" do
+      lambda { "abc".casecmp(mock('abc')) }.should raise_error(TypeError)
+    end
+  end
+
+  ruby_version_is "2.5" do
+    it "returns nil if other can't be converted to a string" do
+      "abc".casecmp(mock('abc')).should be_nil
+    end
   end
 
   describe "in UTF-8 mode" do
-    before :each do
-      @kcode = $KCODE
-      $KCODE = "utf-8"
-    end
-
-    after :each do
-      $KCODE = @kcode
-    end
-
     describe "for non-ASCII characters" do
       before :each do
         @upper_a_tilde  = "\xc3\x83"

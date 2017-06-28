@@ -10,7 +10,7 @@ describe "Array#sort_by!" do
   end
 
   it "returns an Enumerator if not given a block" do
-    (1..10).to_a.sort_by!.should be_an_instance_of(enumerator_class)
+    (1..10).to_a.sort_by!.should be_an_instance_of(Enumerator)
   end
 
   it "completes when supplied a block that always returns the same result" do
@@ -42,6 +42,10 @@ describe "Array#sort_by!" do
       ary
     }
     partially_sorted.any?{|ary| ary != [1, 2, 3, 4, 5]}.should be_true
+  end
+
+  it "changes nothing when called on a single element array" do
+    [1].sort_by!(&:to_s).should == [1]
   end
 
   it_behaves_like :enumeratorized_with_origin_size, :sort_by!, [1,2,3]

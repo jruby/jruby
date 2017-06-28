@@ -19,10 +19,10 @@ describe "The redo statement" do
       order << x
       begin
         processed << x
-        if(exist.include?(x))
+        if exist.include?(x)
           raise StandardError, "included"
         end
-      rescue StandardError => e
+      rescue StandardError
         exist.delete(x)
         redo
       end

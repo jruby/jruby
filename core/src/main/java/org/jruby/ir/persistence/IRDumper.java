@@ -91,15 +91,9 @@ public class IRDumper extends IRVisitor {
     public void visit(IRScope scope, boolean full, boolean recurse) {
         println("begin " + scope.getScopeType().name() + "<" + scope.getName() + ">");
 
-        println("flags: " + scope.getFlags());
+        InterpreterContext ic = full ? scope.getFullInterpreterContext() : scope.getInterpreterContext();
 
-        InterpreterContext ic;
-
-        if (full) {
-            ic = scope.getFullInterpreterContext();
-        } else {
-            ic = scope.getInterpreterContext();
-        }
+        println("flags: " + ic.getFlags());
 
         if (ic.getStaticScope().getSignature() == null) {
             println(Signature.NO_ARGUMENTS);
@@ -330,7 +324,7 @@ public class IRDumper extends IRVisitor {
     public void StandardError(StandardError standarderror) {  }
     public void StringLiteral(StringLiteral stringliteral) { print(stringliteral.getByteList()); }
     public void SValue(SValue svalue) { visit(svalue.getArray()); }
-    public void Symbol(Symbol symbol) { symbol.getName(); }
+    public void Symbol(Symbol symbol) { print(symbol.getBytes()); }
     public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getName()); }
     public void TemporaryVariable(TemporaryVariable temporaryvariable) { print(temporaryvariable.getName()); }
     public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { TemporaryVariable(temporarylocalvariable); }
@@ -378,7 +372,24 @@ public class IRDumper extends IRVisitor {
     }
 
     private void print(Object obj) {
-        stream.print(obj);
+        if (obj.getClass().isArray()) {
+            if (obj.getClass().getComponentType().isPrimitive()) {
+                switch (obj.getClass().getName().charAt(0)) {
+                    case 'B': stream.print(Arrays.toString((boolean[]) obj)); break;
+                    case 'S': stream.print(Arrays.toString((short[]) obj)); break;
+                    case 'C': stream.print(Arrays.toString((char[]) obj)); break;
+                    case 'I': stream.print(Arrays.toString((int[]) obj)); break;
+                    case 'J': stream.print(Arrays.toString((long[]) obj)); break;
+                    case 'F': stream.print(Arrays.toString((float[]) obj)); break;
+                    case 'D': stream.print(Arrays.toString((double[]) obj)); break;
+                    case 'Z': stream.print(Arrays.toString((boolean[]) obj)); break;
+                }
+            } else {
+                stream.print(Arrays.toString((Object[]) obj));
+            }
+        } else {
+            stream.print(obj);
+        }
     }
 
     private void println(Object... objs) {

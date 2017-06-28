@@ -10,3 +10,4 @@ fails:Signal.trap accepts short names as Symbols
 fails:Signal.trap accepts 'SIG_DFL' in place of a proc
 fails:Signal.trap accepts 'DEFAULT' in place of a proc
 windows:Signal.trap accepts a block in place of a proc/command argument
+fails:Signal.trap is possible to create a new Thread when the handler runs

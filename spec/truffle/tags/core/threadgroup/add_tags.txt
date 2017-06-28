@@ -1,2 +1,0 @@
-fails:ThreadGroup#add adds the given thread to a group and returns self
-fails:ThreadGroup#add removes itself from any other threadgroup

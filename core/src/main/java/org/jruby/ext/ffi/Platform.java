@@ -84,6 +84,7 @@ public class Platform {
         SPARCV9,
         S390X,
         ARM,
+        AARCH64,
         UNKNOWN;
         @Override
         public String toString() { return name().toLowerCase(LOCALE); }
@@ -145,6 +146,8 @@ public class Platform {
             return CPU.S390X;
         } else if ("arm".equals(archString)) {
             return CPU.ARM;
+        } else if ("aarch64".equals(archString)) {
+            return CPU.AARCH64;
         } else if ("universal".equals(archString)) {
             // OS X OpenJDK7 builds report "universal" right now
             String bits = SafePropertyAccessor.getProperty("sun.arch.data.model");
@@ -203,6 +206,7 @@ public class Platform {
                 case POWERPC64LE:
                 case SPARCV9:
                 case S390X:
+                case AARCH64:
                     dataModel = 64;
                     break;
                 default:
@@ -232,8 +236,11 @@ public class Platform {
         try {
             String versionString = System.getProperty("java.version");
             if (versionString != null) {
+                // remove additional version identifiers, e.g. -ea
+                versionString = versionString.split("-|\\+")[0];
                 String[] v = versionString.split("\\.");
-                version = Integer.valueOf(v[1]);
+                // starting from JDK 9, there is no leading "1." in java.version
+                version = Integer.valueOf(v.length > 1 ? v[1] : v[0]);
             }
         } catch (Exception ex) {
             version = 0;

@@ -63,10 +63,12 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
@@ -82,6 +84,12 @@ import static org.jruby.util.Numeric.safe_mul;
 public class RubyComplex extends RubyNumeric {
 
     public static RubyClass createComplexClass(Ruby runtime) {
+        final String[] UNDEFINED = new String[]{
+                "<", "<=", "<=>", ">", ">=",
+                "between?", "divmod", "floor", "ceil", "modulo",
+                "round", "step", "truncate", "positive?", "negative?"
+        };
+
         RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
         runtime.setComplex(complexc);
 
@@ -95,10 +103,7 @@ public class RubyComplex extends RubyNumeric {
         complexc.getSingletonClass().undefineMethod("allocate");
         complexc.getSingletonClass().undefineMethod("new");
 
-        String[]undefined = {"<", "<=", "<=>", ">", ">=", "between?", "divmod",
-                             "floor", "ceil", "modulo", "round", "step", "truncate"};
-
-        for (String undef : undefined) {
+        for (String undef : UNDEFINED) {
             complexc.undefineMethod(undef);
         }
 
@@ -291,9 +296,9 @@ public class RubyComplex extends RubyNumeric {
         case RATIONAL:
             break;
         default:
-             if (!(num instanceof RubyNumeric ) || !f_real_p(context, num).isTrue()) {
+            if (!(num instanceof RubyNumeric ) || !f_real_p(context, num).isTrue()) {
                  throw context.runtime.newTypeError("not a real");
-             }
+            }
         }
     }
 
@@ -308,15 +313,16 @@ public class RubyComplex extends RubyNumeric {
                     canonicalization)
                     return real;
         }
-        if (f_real_p(context, real).isTrue() &&
-                   f_real_p(context, image).isTrue()) {
+        if (f_real_p(context, real).isTrue() && f_real_p(context, image).isTrue()) {
             return new RubyComplex(context.runtime, clazz, real, image);
-        } else if (f_real_p(context, real).isTrue()) {
+        }
+        if (f_real_p(context, real).isTrue()) {
             RubyComplex complex = (RubyComplex)image;
             return new RubyComplex(context.runtime, clazz,
                                    f_sub(context, real, complex.image),
                                    f_add(context, RubyFixnum.zero(context.runtime), complex.real));
-        } else if (f_real_p(context, image).isTrue()) {
+        }
+        if (f_real_p(context, image).isTrue()) {
             RubyComplex complex = (RubyComplex)real;
             return new RubyComplex(context.runtime, clazz,
                                    complex.real,
@@ -428,33 +434,41 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1) {
-        return convertCommon(context, recv, a1, context.runtime.getNil());
+    public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return convertCommon(context, recv, arg, context.nil, true);
     }
+
+    private static boolean responds_to_to_c(ThreadContext context, IRubyObject obj) {
+        return respond_to_to_c.respondsTo(context, obj, obj);
+    }
+
+    // TODO: wasn't sure whether to put this on NumericSites, here for now - should move
+    static final RespondToCallSite respond_to_to_c = new RespondToCallSite("to_c");
 
     /** nucomp_s_convert
      * 
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
-        return convertCommon(context, recv, a1, a2);
+        return convertCommon(context, recv, a1, a2, false);
     }
     
-    private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
+    private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv,
+        IRubyObject a1, IRubyObject a2, final boolean singleArg) {
         if (a1 instanceof RubyString) a1 = str_to_c_strict(context, a1);
         if (a2 instanceof RubyString) a2 = str_to_c_strict(context, a2);
 
         if (a1 instanceof RubyComplex) {
-            RubyComplex a1Complex = (RubyComplex)a1;
-            if (k_exact_p(a1Complex.image) && f_zero_p(context, a1Complex.image)) {
-                a1 = a1Complex.real;
+            RubyComplex a1c = (RubyComplex) a1;
+            if (k_exact_p(a1c.image) && f_zero_p(context, a1c.image)) {
+                a1 = a1c.real;
             }
         }
 
         if (a2 instanceof RubyComplex) {
-            RubyComplex a2Complex = (RubyComplex)a2;
-            if (k_exact_p(a2Complex.image) && f_zero_p(context, a2Complex.image)) {
-                a2 = a2Complex.real;
+            RubyComplex a2c = (RubyComplex) a2;
+            if (k_exact_p(a2c.image) && f_zero_p(context, a2c.image)) {
+                a2 = a2c.real;
             }
         }
 
@@ -463,7 +477,12 @@ public class RubyComplex extends RubyNumeric {
         }
 
         if (a2.isNil()) {
-            if (a1 instanceof RubyNumeric && !f_real_p(context, a1).isTrue()) return a1;
+            if (a1 instanceof RubyNumeric) {
+                if (!f_real_p(context, a1).isTrue()) return a1;
+            }
+            else if (singleArg && ! a1.isNil() && responds_to_to_c(context, a1)) {
+                return a1.callMethod(context, "to_c");
+            }
             return newInstance(context, recv, a1);
         } else {
             if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
@@ -514,7 +533,7 @@ public class RubyComplex extends RubyNumeric {
         } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
             return newComplex(context, getMetaClass(), f_add(context, real, other), image);
         }
-        return coerceBin(context, "+", other);
+        return coerceBin(context, sites(context).op_plus, other);
     }
 
     /** nucomp_sub
@@ -530,7 +549,7 @@ public class RubyComplex extends RubyNumeric {
         } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
             return newComplex(context, getMetaClass(), f_sub(context, real, other), image);
         }
-        return coerceBin(context, "-", other);
+        return coerceBin(context, sites(context).op_minus, other);
     }
 
     /** nucomp_mul
@@ -557,7 +576,7 @@ public class RubyComplex extends RubyNumeric {
                     f_mul(context, real, other),
                     f_mul(context, image, other));
         }
-        return coerceBin(context, "*", other);
+        return coerceBin(context, sites(context).op_times, other);
     }
     
     /** nucomp_div / nucomp_quo
@@ -586,7 +605,7 @@ public class RubyComplex extends RubyNumeric {
                 return RubyRational.newInstance(context, context.runtime.getRational(), coercedOther.first(), coercedOther.last());
             }
         }
-        return coerceBin(context, "/", other);
+        return coerceBin(context, sites(context).op_quo, other);
     }
 
     /** nucomp_fdiv
@@ -660,7 +679,7 @@ public class RubyComplex extends RubyNumeric {
             IRubyObject theta = a.eltInternal(1);
             return f_complex_polar(context, getMetaClass(), f_expt(context, r, other), f_mul(context, theta, other));
         }
-        return coerceBin(context, "**", other);
+        return coerceBin(context, sites(context).op_exp, other);
     }
 
     /** nucomp_equal_p
@@ -1052,5 +1071,9 @@ public class RubyComplex extends RubyNumeric {
             throw context.runtime.newArgumentError("invalid value for convert(): " + s.convertToString());
         }
         return a.eltInternal(0);
-    }    
+    }
+
+    private static JavaSites.ComplexSites sites(ThreadContext context) {
+        return context.sites.Complex;
+    }
 }

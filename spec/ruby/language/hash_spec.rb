@@ -43,9 +43,11 @@ describe "Hash literal" do
   end
 
   it "checks duplicated keys on initialization" do
-    h = {foo: :bar, foo: :foo}
-    h.keys.size.should == 1
-    h.should == {foo: :foo}
+    -> {
+      @h = eval "{foo: :bar, foo: :foo}"
+    }.should complain(/key :foo is duplicated|duplicated key/)
+    @h.keys.size.should == 1
+    @h.should == {foo: :foo}
   end
 
   it "accepts a hanging comma" do
@@ -55,8 +57,8 @@ describe "Hash literal" do
   end
 
   it "recognizes '=' at the end of the key" do
-    eval("{:a==>1}").should   == {:"a=" => 1}
-    eval("{:a= =>1}").should  == {:"a=" => 1}
+    eval("{:a==>1}").should == {:"a=" => 1}
+    eval("{:a= =>1}").should == {:"a=" => 1}
     eval("{:a= => 1}").should == {:"a=" => 1}
   end
 
@@ -81,11 +83,9 @@ describe "Hash literal" do
     {a: 1, b: 2, "c" => 3}.should == h
   end
 
-  ruby_version_is "2.2" do
-    it "accepts mixed 'key: value', 'key => value' and '\"key\"': value' syntax" do
-      h = {:a => 1, :b => 2, "c" => 3, :d => 4}
-      eval('{a: 1, :b => 2, "c" => 3, "d": 4}').should == h
-    end
+  it "accepts mixed 'key: value', 'key => value' and '\"key\"': value' syntax" do
+    h = {:a => 1, :b => 2, "c" => 3, :d => 4}
+    eval('{a: 1, :b => 2, "c" => 3, "d": 4}').should == h
   end
 
   it "expands an '**{}' element into the containing Hash literal initialization" do
@@ -99,26 +99,26 @@ describe "Hash literal" do
     {a: 1, **h, c: 4}.should == {a: 1, b: 2, c: 4}
   end
 
-  ruby_version_is ""..."2.2" do
-    it "expands an '**{}' element with containing Hash literal keys taking precedence" do
-      {a: 1, **{a: 2, b: 3, c: 1}, c: 3}.should == {a: 1, b: 3, c: 3}
-    end
-
-    it "merges multiple nested '**obj' in Hash literals" do
-      h = {a: 1, **{a: 2, **{b: 3, **{c: 4}}, **{d: 5}, }, **{d: 6}}
-      h.should == {a: 1, b: 3, c: 4, d: 5}
-    end
+  it "expands a BasicObject using ** into the containing Hash literal initialization" do
+    h = BasicObject.new
+    def h.to_hash; {:b => 2, :c => 3}; end
+    {**h, a: 1}.should == {b: 2, c: 3, a: 1}
+    {a: 1, **h}.should == {a: 1, b: 2, c: 3}
+    {a: 1, **h, c: 4}.should == {a: 1, b: 2, c: 4}
   end
 
-  ruby_version_is "2.2" do
-    it "expands an '**{}' element with the last key/value pair taking precedence" do
-      {a: 1, **{a: 2, b: 3, c: 1}, c: 3}.should == {a: 2, b: 3, c: 3}
-    end
+  it "expands an '**{}' element with the last key/value pair taking precedence" do
+    -> {
+      @h = eval "{a: 1, **{a: 2, b: 3, c: 1}, c: 3}"
+    }.should complain(/key :a is duplicated|duplicated key/)
+    @h.should == {a: 2, b: 3, c: 3}
+  end
 
-    it "merges multiple nested '**obj' in Hash literals" do
-      h = {a: 1, **{a: 2, **{b: 3, **{c: 4}}, **{d: 5}, }, **{d: 6}}
-      h.should == {a: 2, b: 3, c: 4, d: 6}
-    end
+  it "merges multiple nested '**obj' in Hash literals" do
+    -> {
+      @h = eval "{a: 1, **{a: 2, **{b: 3, **{c: 4}}, **{d: 5}, }, **{d: 6}}"
+    }.should complain(/key :a is duplicated|duplicated key/)
+    @h.should == {a: 2, b: 3, c: 4, d: 6}
   end
 
   it "calls #to_hash to expand an '**obj' element" do
@@ -126,6 +126,11 @@ describe "Hash literal" do
     obj.should_receive(:to_hash).and_return({b: 2, d: 4})
 
     {a: 1, **obj, c: 3}.should == {a:1, b: 2, c: 3, d: 4}
+  end
+
+  it "raises a TypeError if any splatted elements keys are not symbols" do
+    h = {1 => 2, b: 3}
+    lambda { {a: 1, **h} }.should raise_error(TypeError)
   end
 
   it "raises a TypeError if #to_hash does not return a Hash" do

@@ -1,5 +1,5 @@
 describe :syslog_log, shared: true do
-  platform_is_not [:windows, :darwin] do
+  platform_is_not :windows, :darwin, :solaris, :aix do
     before :each do
       Syslog.opened?.should be_false
     end
@@ -38,4 +38,3 @@ describe :syslog_log, shared: true do
     end
   end
 end
-

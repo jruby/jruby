@@ -86,13 +86,13 @@ public abstract class JavaLang {
             if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
                 return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("each"));
             }
-            java.lang.Iterable iterable = unwrapJavaObject(self);
+            java.lang.Iterable iterable = unwrapIfJavaObject(self);
             java.util.Iterator iterator = iterable.iterator();
             while ( iterator.hasNext() ) {
                 final Object value = iterator.next();
                 block.yield(context, convertJavaToUsableRubyObject(runtime, value));
             }
-            return context.nil;
+            return self;
         }
 
         @JRubyMethod
@@ -101,7 +101,7 @@ public abstract class JavaLang {
             if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each)
                 return runtime.getEnumerator().callMethod("new", self, runtime.newSymbol("each_with_index"));
             }
-            java.lang.Iterable iterable = unwrapJavaObject(self);
+            java.lang.Iterable iterable = unwrapIfJavaObject(self);
             java.util.Iterator iterator = iterable.iterator();
             final boolean arity2 = block.getSignature().arity() == Arity.TWO_ARGUMENTS;
             int i = 0; while ( iterator.hasNext() ) {
@@ -114,7 +114,56 @@ public abstract class JavaLang {
                     block.yield(context, RubyArray.newArray(runtime, rValue, index));
                 }
             }
-            return context.nil;
+            return self;
+        }
+
+        @JRubyMethod(name = { "to_a", "entries" }) // @override Enumerable#to_a
+        public static IRubyObject to_a(final ThreadContext context, final IRubyObject self, final Block block) {
+            final Ruby runtime = context.runtime;
+            final RubyArray ary = runtime.newArray();
+            java.lang.Iterable iterable = unwrapIfJavaObject(self);
+            java.util.Iterator iterator = iterable.iterator();
+            while ( iterator.hasNext() ) {
+                final Object value = iterator.next();
+                ary.append( convertJavaToUsableRubyObject(runtime, value) );
+            }
+            return ary;
+        }
+
+        @JRubyMethod(name = "count") // @override Enumerable#count
+        public static IRubyObject count(final ThreadContext context, final IRubyObject self, final Block block) {
+            final Ruby runtime = context.runtime;
+            java.lang.Iterable iterable = unwrapIfJavaObject(self);
+            if ( block.isGiven() ) {
+                return countBlock(context, iterable.iterator(), block);
+            }
+            if ( iterable instanceof java.util.Collection ) {
+                return RubyFixnum.newFixnum(runtime, ((java.util.Collection) iterable).size());
+            }
+            int count = 0;
+            for( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) { it.next(); count++; }
+            return RubyFixnum.newFixnum(runtime, count);
+        }
+
+        static RubyFixnum countBlock(final ThreadContext context, final java.util.Iterator it, final Block block) {
+            final Ruby runtime = context.runtime;
+            int count = 0; while ( it.hasNext() ) {
+                IRubyObject next = convertJavaToUsableRubyObject( runtime, it.next() );
+                if ( block.yield( context, next ).isTrue() ) count++;
+            }
+            return RubyFixnum.newFixnum(runtime, count);
+        }
+
+        @JRubyMethod(name = "count") // @override Enumerable#count
+        public static IRubyObject count(final ThreadContext context, final IRubyObject self, final IRubyObject obj, final Block unused) {
+            // unused block due DescriptorInfo not (yet) supporting if a method receives block and an override doesn't
+            final Ruby runtime = context.runtime;
+            java.lang.Iterable iterable = unwrapIfJavaObject(self);
+            int count = 0; for ( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) {
+                IRubyObject next = convertJavaToUsableRubyObject( runtime, it.next() );
+                if ( RubyObject.equalInternal(context, next, obj) ) count++;
+            }
+            return RubyFixnum.newFixnum(runtime, count);
         }
 
     }
@@ -131,7 +180,7 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "<=>")
         public static IRubyObject cmp(final ThreadContext context, final IRubyObject self, final IRubyObject other) {
-            java.lang.Comparable comparable = unwrapJavaObject(self);
+            java.lang.Comparable comparable = unwrapIfJavaObject(self);
             if ( other.isNil() ) return context.nil;
 
             final java.lang.Object otherComp = unwrapIfJavaObject(other);
@@ -160,7 +209,7 @@ public abstract class JavaLang {
         @JRubyMethod // stackTrace => backtrace
         public static IRubyObject backtrace(final ThreadContext context, final IRubyObject self) {
             final Ruby runtime = context.runtime;
-            java.lang.Throwable throwable = unwrapJavaObject(self);
+            java.lang.Throwable throwable = unwrapIfJavaObject(self);
             // TODO instead this should get aligned with NativeException !?!
             StackTraceElement[] stackTrace = throwable.getStackTrace();
             if ( stackTrace == null ) return context.nil; // never actually happens
@@ -170,7 +219,7 @@ public abstract class JavaLang {
             for ( int i=0; i < len; i++ ) {
                 backtrace[i] = RubyString.newString(runtime, stackTrace[i].toString());
             }
-            return RubyArray.newArrayNoCopy(runtime, backtrace);
+            return RubyArray.newArrayMayCopy(runtime, backtrace);
         }
 
         @JRubyMethod // can not set backtrace for a java.lang.Throwable
@@ -180,7 +229,7 @@ public abstract class JavaLang {
 
         @JRubyMethod
         public static IRubyObject message(final ThreadContext context, final IRubyObject self) {
-            java.lang.Throwable throwable = unwrapJavaObject(self);
+            java.lang.Throwable throwable = unwrapIfJavaObject(self);
             final String msg = throwable.getLocalizedMessage(); // does getMessage
             return msg == null ? RubyString.newEmptyString(context.runtime) : RubyString.newString(context.runtime, msg);
         }
@@ -192,7 +241,7 @@ public abstract class JavaLang {
 
         @JRubyMethod
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            java.lang.Throwable throwable = unwrapJavaObject(self);
+            java.lang.Throwable throwable = unwrapIfJavaObject(self);
             return RubyString.newString(context.runtime, throwable.toString());
         }
 
@@ -221,7 +270,7 @@ public abstract class JavaLang {
         @JRubyMethod
         public static IRubyObject to_proc(final ThreadContext context, final IRubyObject self) {
             final Ruby runtime = context.runtime;
-            final java.lang.Runnable runnable = unwrapJavaObject(self);
+            final java.lang.Runnable runnable = unwrapIfJavaObject(self);
             final Block block = new Block(new RunBody(runtime, runnable));
             return new RubyProc(runtime, runtime.getProc(), block, null, -1);
         }
@@ -456,21 +505,21 @@ public abstract class JavaLang {
 
         @JRubyMethod
         public static IRubyObject resource_as_url(final ThreadContext context, final IRubyObject self, final IRubyObject name) {
-            final java.lang.ClassLoader loader = unwrapJavaObject(self);
+            final java.lang.ClassLoader loader = unwrapIfJavaObject(self);
             final String resName = name.convertToString().toString();
             return convertJavaToUsableRubyObject(context.runtime, loader.getResource(resName));
         }
 
         @JRubyMethod
         public static IRubyObject resource_as_stream(final ThreadContext context, final IRubyObject self, final IRubyObject name) {
-            final java.lang.ClassLoader loader = unwrapJavaObject(self);
+            final java.lang.ClassLoader loader = unwrapIfJavaObject(self);
             final String resName = name.convertToString().toString();
             return convertJavaToUsableRubyObject(context.runtime, loader.getResourceAsStream(resName));
         }
 
         @JRubyMethod
         public static IRubyObject resource_as_string(final ThreadContext context, final IRubyObject self, final IRubyObject name) {
-            final java.lang.ClassLoader loader = unwrapJavaObject(self);
+            final java.lang.ClassLoader loader = unwrapIfJavaObject(self);
             final String resName = name.convertToString().toString();
             return new RubyIO(context.runtime, loader.getResourceAsStream(resName)).read(context);
         }

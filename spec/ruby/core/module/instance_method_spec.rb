@@ -43,12 +43,12 @@ describe "Module#instance_method" do
     @parent_um.inspect.should =~ /\bfoo\b/
     @parent_um.inspect.should =~ /\bModuleSpecs::InstanceMeth\b/
     @parent_um.inspect.should =~ /\bModuleSpecs::InstanceMeth\b/
-    @child_um.inspect.should  =~ /\bfoo\b/
-    @child_um.inspect.should  =~ /\bModuleSpecs::InstanceMeth\b/
-    @child_um.inspect.should  =~ /\bModuleSpecs::InstanceMethChild\b/
-    @mod_um.inspect.should    =~ /\bbar\b/
-    @mod_um.inspect.should    =~ /\bModuleSpecs::InstanceMethMod\b/
-    @mod_um.inspect.should    =~ /\bModuleSpecs::InstanceMethChild\b/
+    @child_um.inspect.should =~ /\bfoo\b/
+    @child_um.inspect.should =~ /\bModuleSpecs::InstanceMeth\b/
+    @child_um.inspect.should =~ /\bModuleSpecs::InstanceMethChild\b/
+    @mod_um.inspect.should =~ /\bbar\b/
+    @mod_um.inspect.should =~ /\bModuleSpecs::InstanceMethMod\b/
+    @mod_um.inspect.should =~ /\bModuleSpecs::InstanceMethChild\b/
   end
 
   it "raises a TypeError if not passed a symbol" do
@@ -62,11 +62,12 @@ describe "Module#instance_method" do
   end
 
   it "raises a NameError if the method has been undefined" do
-    ModuleSpecs::InstanceMethChild.send :undef_method, :foo
+    child = Class.new(ModuleSpecs::InstanceMeth)
+    child.send :undef_method, :foo
     um = ModuleSpecs::InstanceMeth.instance_method(:foo)
     um.should == @parent_um
     lambda do
-      ModuleSpecs::InstanceMethChild.instance_method(:foo)
+      child.instance_method(:foo)
     end.should raise_error(NameError)
   end
 

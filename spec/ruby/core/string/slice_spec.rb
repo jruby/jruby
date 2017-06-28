@@ -158,9 +158,9 @@ describe "String#slice! with index, length" do
     end
 
     it "treats invalid bytes as single bytes" do
-      "a\xE6\xCBb".send(@method, 1, 2).should == "\xe6\xcb"
+      xE6xCB = [0xE6,0xCB].pack('CC').force_encoding('utf-8')
+      "a#{xE6xCB}b".send(@method, 1, 2).should == xE6xCB
     end
-
   end
 end
 

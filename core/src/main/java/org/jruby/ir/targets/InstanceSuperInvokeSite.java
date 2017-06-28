@@ -22,8 +22,8 @@ import static org.jruby.ir.runtime.IRRuntimeHelpers.splatArguments;
 * Created by headius on 10/23/14.
 */
 public class InstanceSuperInvokeSite extends ResolvedSuperInvokeSite {
-    public InstanceSuperInvokeSite(MethodType type, String name, String splatmapString) {
-        super(type, name, splatmapString);
+    public InstanceSuperInvokeSite(MethodType type, String name, String splatmapString, String file, int line) {
+        super(type, name, splatmapString, file, line);
     }
 
     @Override

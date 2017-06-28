@@ -12,3 +12,6 @@ windows:Process.exec with multiple arguments does not subject the arguments to s
 windows:Process.exec (environment variables) sets environment variables in the child environment
 windows:Process.exec (environment variables) unsets environment variables whose value is nil
 windows:Process.exec (environment variables) coerces environment argument using to_hash
+fails:Process.exec (environment variables) sets environment variables in the child environment
+fails:Process.exec (environment variables) unsets environment variables whose value is nil
+fails:Process.exec (environment variables) coerces environment argument using to_hash

@@ -18,7 +18,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
-import org.jruby.RubyHash.Visitor;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -113,14 +112,14 @@ public class JavaProxy extends RubyObject {
     }
 
     static JavaClass java_class(final ThreadContext context, final RubyModule module) {
-        return (JavaClass) Helpers.invoke(context, module, "java_class");
+        return (JavaClass) JavaClass.java_class(context, module);
     }
 
     @JRubyMethod(meta = true, frame = true) // framed for invokeSuper
     public static IRubyObject inherited(ThreadContext context, IRubyObject recv, IRubyObject subclass) {
-        IRubyObject subJavaClass = Helpers.invoke(context, subclass, "java_class");
+        IRubyObject subJavaClass = JavaClass.java_class(context, (RubyClass) subclass);
         if (subJavaClass.isNil()) {
-            subJavaClass = Helpers.invoke(context, recv, "java_class");
+            subJavaClass = JavaClass.java_class(context, (RubyClass) recv);
             Helpers.invoke(context, subclass, "java_class=", subJavaClass);
         }
         return Helpers.invokeSuper(context, recv, subclass, Block.NULL_BLOCK);
@@ -180,18 +179,13 @@ public class JavaProxy extends RubyObject {
     /**
      * Create a name/newname map of fields to be exposed as methods.
      */
-    private static Map<String, String> getFieldListFromArgs(final IRubyObject[] args) {
+    private static Map<String, String> getFieldListFromArgs(ThreadContext context, IRubyObject[] args) {
         final HashMap<String, String> map = new HashMap<>(args.length, 1);
         // Get map of all fields we want to define.
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
             if ( arg instanceof RubyHash ) {
-                ((RubyHash) arg).visitAll(new Visitor() {
-                    @Override
-                    public void visit(IRubyObject key, IRubyObject value) {
-                        map.put(key.asString().toString(), value.asString().toString());
-                    }
-                });
+                ((RubyHash) arg).visitAll(context, MapPopulatorVisitor, map);
             } else {
                 String value = arg.asString().toString();
                 map.put(value, value);
@@ -199,6 +193,13 @@ public class JavaProxy extends RubyObject {
         }
         return map;
     }
+
+    private static final RubyHash.VisitorWithState<Map> MapPopulatorVisitor = new RubyHash.VisitorWithState<Map>() {
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Map map) {
+            map.put(key.asString().toString(), value.asString().toString());
+        }
+    };
 
     // Look through all mappings to find a match entry for this field
     private static void installField(final ThreadContext context,
@@ -212,44 +213,58 @@ public class JavaProxy extends RubyObject {
             final Map.Entry<String,String> entry = iter.next();
             if ( entry.getKey().equals( fieldName ) ) {
 
-                if ( Ruby.isSecurityRestricted() && ! Modifier.isPublic(field.getModifiers()) ) {
-                    throw context.runtime.newSecurityError("Cannot change accessibility on fields in a restricted mode: field '" + fieldName + "'");
-                }
+                installField(context, entry.getValue(), field, module, asReader, asWriter);
 
-                String asName = entry.getValue();
-
-                if ( Modifier.isStatic(field.getModifiers()) ) {
-                    if ( asReader ) {
-                        module.getSingletonClass().addMethod(asName, new StaticFieldGetter(fieldName, module, field));
-                    }
-                    if ( asWriter ) {
-                        if ( Modifier.isFinal(field.getModifiers()) ) {
-                            throw context.runtime.newSecurityError("Cannot change final field '" + fieldName + "'");
-                        }
-                        module.getSingletonClass().addMethod(asName + '=', new StaticFieldSetter(fieldName, module, field));
-                    }
-                } else {
-                    if ( asReader ) {
-                        module.addMethod(asName, new InstanceFieldGetter(fieldName, module, field));
-                    }
-                    if ( asWriter ) {
-                        if ( Modifier.isFinal(field.getModifiers()) ) {
-                            throw context.runtime.newSecurityError("Cannot change final field '" + fieldName + "'");
-                        }
-                        module.addMethod(asName + '=', new InstanceFieldSetter(fieldName, module, field));
-                    }
-                }
-
-                iter.remove();
-                break;
+                iter.remove(); break;
             }
         }
+    }
+
+    private static void installField(final ThreadContext context,
+        final String asName, final Field field, final RubyModule target,
+        boolean asReader, Boolean asWriter) {
+
+        if ( Ruby.isSecurityRestricted() && ! Modifier.isPublic(field.getModifiers()) ) {
+            throw context.runtime.newSecurityError("Cannot change accessibility on field in restricted mode  '" + field + "'");
+        }
+
+        final String fieldName = field.getName();
+
+        if ( Modifier.isStatic(field.getModifiers()) ) {
+            if ( asReader ) {
+                target.getSingletonClass().addMethod(asName, new StaticFieldGetter(fieldName, target, field));
+            }
+            if ( asWriter == null || asWriter ) {
+                if ( Modifier.isFinal(field.getModifiers()) ) {
+                    if ( asWriter == null ) return;
+                    // e.g. Cannot change final field 'private final char[] java.lang.String.value'
+                    throw context.runtime.newSecurityError("Cannot change final field '" + field + "'");
+                }
+                target.getSingletonClass().addMethod(asName + '=', new StaticFieldSetter(fieldName, target, field));
+            }
+        } else {
+            if ( asReader ) {
+                target.addMethod(asName, new InstanceFieldGetter(fieldName, target, field));
+            }
+            if ( asWriter == null || asWriter ) {
+                if ( Modifier.isFinal(field.getModifiers()) ) {
+                    if ( asWriter == null ) return;
+                    throw context.runtime.newSecurityError("Cannot change final field '" + field + "'");
+                }
+                target.addMethod(asName + '=', new InstanceFieldSetter(fieldName, target, field));
+            }
+        }
+    }
+
+    public static void installField(final ThreadContext context,
+        final String asName, final Field field, final RubyModule target) {
+        installField(context, asName, field, target, true, null);
     }
 
     private static void findFields(final ThreadContext context,
         final RubyModule topModule, final IRubyObject[] args,
         final boolean asReader, final boolean asWriter) {
-        final Map<String, String> fieldMap = getFieldListFromArgs(args);
+        final Map<String, String> fieldMap = getFieldListFromArgs(context, args);
 
         for (RubyModule module = topModule; module != null; module = module.getSuperClass()) {
             final Class<?> javaClass = JavaClass.getJavaClassIfProxy(context, module);
@@ -264,8 +279,7 @@ public class JavaProxy extends RubyObject {
 
         // We could not find all of them print out first one (we could print them all?)
         if ( ! fieldMap.isEmpty() ) {
-            throw JavaClass.undefinedFieldError(context.runtime,
-                    topModule.getName(), fieldMap.keySet().iterator().next());
+            throw JavaClass.undefinedFieldError(context.runtime, topModule.getName(), fieldMap.keySet().iterator().next());
         }
 
     }

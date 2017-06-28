@@ -11,6 +11,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope;
@@ -98,6 +99,14 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     }
 
     @Override
+    public void encode(int[] value) {
+        encode(value.length);
+        for (int i = 0; i < value.length; i++) {
+            encode(value[i]);
+        }
+    }
+
+    @Override
     public void encode(long value) {
         if (value >= 0 && value <= 127) {
             encode((byte) value);
@@ -141,8 +150,9 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         if (value == null) {
             encode(NULL_STRING);
         } else {
-            encode(value.length());
-            buf.put(value.getBytes());
+            byte[] bytes = value.getBytes();
+            encode(bytes.length);
+            buf.put(bytes);
         }
     }
 

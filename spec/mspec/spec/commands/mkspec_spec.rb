@@ -146,13 +146,13 @@ describe MkSpec, "#create_directory" do
 
   it "creates the directory if it does not exist" do
     File.should_receive(:exist?).and_return(false)
-    FileUtils.should_receive(:mkdir_p).with("spec/class")
+    @script.should_receive(:mkdir_p).with("spec/class")
     @script.create_directory("Class").should == "spec/class"
   end
 
   it "creates the directory for a namespaced module if it does not exist" do
     File.should_receive(:exist?).and_return(false)
-    FileUtils.should_receive(:mkdir_p).with("spec/struct/tms")
+    @script.should_receive(:mkdir_p).with("spec/struct/tms")
     @script.create_directory("Struct::Tms").should == "spec/struct/tms"
   end
 end
@@ -189,29 +189,29 @@ describe MkSpec, "#write_spec" do
     @script.stub(:puts)
 
     @response = double("system command response")
-    @response.stub(:=~).and_return(false)
+    @response.stub(:include?).and_return(false)
     @script.stub(:`).and_return(@response)
   end
 
   it "checks if specs exist for the method if the spec file exists" do
     name = Regexp.escape(@script.ruby)
     @script.should_receive(:`).with(
-        %r"#{name} #{MSPEC_HOME}/bin/mspec-run --dry-run -fs -e 'Object#inspect' spec/core/tcejbo/inspect_spec.rb")
+        %r"#{name} #{MSPEC_HOME}/bin/mspec-run --dry-run --unguarded -fs -e 'Object#inspect' spec/core/tcejbo/inspect_spec.rb")
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true)
   end
 
-  it "escapes the Regexp when checking for method name in the spec file output" do
-    Regexp.should_receive(:escape).with("Array#[]=")
+  it "checks for the method name in the spec file output" do
+    @response.should_receive(:include?).with("Array#[]=")
     @script.write_spec("spec/core/yarra/element_set_spec.rb", "Array#[]=", true)
   end
 
   it "returns nil if the spec file exists and contains a spec for the method" do
-    @response.stub(:=~).and_return(true)
+    @response.stub(:include?).and_return(true)
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true).should == nil
   end
 
   it "does not print the spec file name if it exists and contains a spec for the method" do
-    @response.stub(:=~).and_return(true)
+    @response.stub(:include?).and_return(true)
     @script.should_not_receive(:puts)
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true)
   end
@@ -228,7 +228,7 @@ describe MkSpec, "#write_spec" do
   end
 
   it "writes a template spec to the file if it exists but contains no spec for the method" do
-    @response.should_receive(:=~).and_return(false)
+    @response.should_receive(:include?).and_return(false)
     @file.should_receive(:puts).twice
     @script.should_receive(:puts).with("spec/core/tcejbo/inspect_spec.rb")
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true)

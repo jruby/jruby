@@ -1,1 +1,0 @@
-fails:Numeric#singleton_method_added raises a TypeError when trying to define a singleton method on a Numeric

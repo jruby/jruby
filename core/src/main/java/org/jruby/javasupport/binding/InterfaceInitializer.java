@@ -13,9 +13,9 @@ import java.util.Map;
 /**
 * Created by headius on 2/26/15.
 */
-public class InterfaceInitializer extends Initializer {
+final class InterfaceInitializer extends Initializer {
 
-    public InterfaceInitializer(Ruby runtime, Class<?> javaClass) {
+    InterfaceInitializer(Ruby runtime, Class<?> javaClass) {
         super(runtime, javaClass);
     }
 
@@ -45,19 +45,16 @@ public class InterfaceInitializer extends Initializer {
         handleScalaSingletons(javaClass, state);
 
         // Now add all aliases for the static methods (fields) as appropriate
-        for (Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet()) {
+        final Map<String, NamedInstaller> installers = state.staticInstallers;
+        for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
             final NamedInstaller installer = entry.getValue();
             if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
-                assignAliases((MethodInstaller) installer, state.staticNames);
+                assignAliases((MethodInstaller) installer, state.staticNames, installers);
             }
         }
 
         runtime.getJavaSupport().getStaticAssignedNames().get(javaClass).putAll(state.staticNames);
         runtime.getJavaSupport().getInstanceAssignedNames().get(javaClass).clear();
-
-        // flag the class as a Java class proxy.
-        proxy.setJavaProxy(true);
-        proxy.getSingletonClass().setJavaProxy(true);
 
         installClassFields(proxy, state);
         installClassStaticMethods(proxy, state);

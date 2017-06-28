@@ -2,15 +2,16 @@ describe :file_zero, shared: true do
   before :each do
     @zero_file    = tmp("test.txt")
     @nonzero_file = tmp("test2.txt")
+    @dir = tmp("dir")
 
-    @dir = tmp("")
-
+    Dir.mkdir @dir
     touch @zero_file
     touch(@nonzero_file) { |f| f.puts "hello" }
   end
 
   after :each do
     rm_r @zero_file, @nonzero_file
+    rm_r @dir
   end
 
   it "returns true if the file is empty" do

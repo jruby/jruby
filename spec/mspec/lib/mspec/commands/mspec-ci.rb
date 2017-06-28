@@ -22,9 +22,7 @@ class MSpecCI < MSpecScript
     options.chdir
     options.prefix
     options.configure { |f| load f }
-    options.name
     options.pretend
-    options.background
     options.interrupt
 
     options.doc "\n How to modify the guard behavior"
@@ -70,6 +68,7 @@ class MSpecCI < MSpecScript
     tags = ["fails", "critical", "unstable", "incomplete", "unsupported"]
     tags += Array(config[:ci_xtags])
 
+    require 'mspec/runner/filters/tag'
     filter = TagFilter.new(:exclude, *tags)
     filter.register
 

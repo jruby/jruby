@@ -16,7 +16,7 @@ describe "BigDecimal#to_s" do
   end
 
   it "the default format looks like 0.xxxxEnn" do
-    @bigdec.to_s.should  =~ /^0\.[0-9]*E[0-9]*$/
+    @bigdec.to_s.should =~ /^0\.[0-9]*E[0-9]*$/i
   end
 
   it "takes an optional argument" do
@@ -29,9 +29,10 @@ describe "BigDecimal#to_s" do
   end
 
   it "inserts a space every n chars, if integer n is supplied" do
-    str =\
-      "0.314 159 265 358 979 323 846 264 338 327 950 288 419 716 939 937E1"
-    @bigdec.to_s(3).should == str
+    re =\
+      /\A0\.314 159 265 358 979 323 846 264 338 327 950 288 419 716 939 937E1\z/i
+    @bigdec.to_s(3).should =~ re
+
     str1 = '-123.45678 90123 45678 9'
     BigDecimal.new("-123.45678901234567890").to_s('5F').should ==  str1
     # trailing zeroes removed
@@ -58,7 +59,7 @@ describe "BigDecimal#to_s" do
   end
 
   it "can use engineering notation" do
-    @bigdec.to_s("E").should =~ /^0\.[0-9]*E[0-9]*$/
+    @bigdec.to_s("E").should =~ /^0\.[0-9]*E[0-9]*$/i
   end
 
   it "can use conventional floating point notation" do

@@ -284,7 +284,7 @@ public class ArgumentProcessor {
                 case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
-                    config.setKCode(KCode.create(null, eArg));
+                    config.setKCode(KCode.create(eArg));
 
                     // source encoding
                     config.setSourceEncoding(config.getKCode().getEncoding().toString());
@@ -399,14 +399,6 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
-                    } else if (extendedOption.equals("classic")) {
-                        throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
-                    } else if (extendedOption.equals("+T")) {
-                        Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
-                        config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-                        // Make the static option consistent with the compile mode.
-                        Options.COMPILE_MODE.force("TRUFFLE");
-                        config.setDisableGems(true);
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
                         config.setShouldRunInterpreter(false);
@@ -814,6 +806,12 @@ public class ArgumentProcessor {
                     if (entry.getKey().equals("all")) continue; // skip self
                     entry.getValue().apply(processor, enable);
                 }
+                return true;
+            }
+        });
+        features.put("gem", new Function2<Boolean, ArgumentProcessor, Boolean>() {
+            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+                processor.config.setDisableGems(!enable);
                 return true;
             }
         });

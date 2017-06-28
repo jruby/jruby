@@ -56,5 +56,15 @@ platform_is_not :windows do
       lambda { Etc.getgrgid("foo") }.should raise_error(TypeError)
       lambda { Etc.getgrgid(nil)   }.should raise_error(TypeError)
     end
+
+    it "can be called safely by multiple threads" do
+      20.times.map do
+        Thread.new do
+          100.times do
+            Etc.getgrgid(@gid).gid.should == @gid
+          end
+        end
+      end.each(&:join)
+    end
   end
 end

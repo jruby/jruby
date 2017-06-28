@@ -11,10 +11,7 @@ platform_is_not :windows do
 
       after :each do
         Syslog.opened?.should be_false
-      end
-
-      # make sure we return the mask to the default value
-      after :all do
+        # make sure we return the mask to the default value
         Syslog.open { |s| s.mask = 255 }
       end
 
@@ -81,10 +78,7 @@ platform_is_not :windows do
 
       after :each do
         Syslog.opened?.should be_false
-      end
-
-      # make sure we return the mask to the default value
-      after :all do
+        # make sure we return the mask to the default value
         Syslog.open { |s| s.mask = 255 }
       end
 

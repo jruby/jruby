@@ -26,17 +26,15 @@ describe "Hash#reject" do
     h.reject { false }.to_a.should == [[1, 2]]
   end
 
-  ruby_version_is "2.2" do
-    context "with extra state" do
-      it "returns Hash instance for subclasses" do
-        HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should be_kind_of(Hash)
-        HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_kind_of(Hash)
-      end
+  context "with extra state" do
+    it "returns Hash instance for subclasses" do
+      HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should be_kind_of(Hash)
+      HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_kind_of(Hash)
+    end
 
-      it "does not taint the resulting hash" do
-        h = { a: 1 }.taint
-        h.reject {false}.tainted?.should == false
-      end
+    it "does not taint the resulting hash" do
+      h = { a: 1 }.taint
+      h.reject {false}.tainted?.should == false
     end
   end
 
@@ -61,6 +59,12 @@ describe "Hash#reject!" do
     (1 .. 10).each { |k| hsh[k] = (k % 2 == 0) }
     hsh.reject! { |k,v| v }
     hsh.keys.sort.should == [1,3,5,7,9]
+  end
+
+  it "removes all entries if the block is true" do
+    h = { a: 1, b: 2, c: 3 }
+    h.reject! { |k,v| true }.should equal(h)
+    h.should == {}
   end
 
   it "is equivalent to delete_if if changes are made" do

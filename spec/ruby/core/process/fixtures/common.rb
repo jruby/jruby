@@ -13,7 +13,7 @@ module ProcessSpecs
     end
 
     def wait_for_daemon
-      sleep 0.1 until File.exist?(@data) and File.size?(@data)
+      sleep 0.001 until File.exist?(@data) and File.size?(@data)
     end
 
     def invoke(behavior, arguments=[])
@@ -33,20 +33,23 @@ module ProcessSpecs
   class Signalizer
     attr_reader :pid_file, :pid
 
-    def initialize(scenario=nil, ruby_exe=nil)
+    def initialize(scenario=nil)
       platform_is :windows do
         fail "not supported on windows"
       end
       @script = fixture __FILE__, "kill.rb"
+      @pid = nil
       @pid_file = tmp("process_kill_signal_file")
       rm_r @pid_file
 
       @thread = Thread.new do
-        args = [@pid_file, scenario, ruby_exe]
+        Thread.current.abort_on_exception = true
+        args = [@pid_file]
+        args << scenario if scenario
         @result = ruby_exe @script, args: args
       end
-      Thread.pass until File.exist? @pid_file
-      while @pid.nil? || @pid == 0
+      Thread.pass while @thread.status and !File.exist?(@pid_file)
+      while @thread.status && (@pid.nil? || @pid == 0)
         @pid = IO.read(@pid_file).chomp.to_i
       end
     end
@@ -54,7 +57,7 @@ module ProcessSpecs
     def wait_on_result
       # Ensure the process exits
       begin
-        Process.kill :TERM, pid
+        Process.kill :TERM, pid if pid
       rescue Errno::ESRCH
         # Ignore the process not existing
       end

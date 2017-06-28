@@ -184,6 +184,20 @@ describe "C-API Kernel function" do
     it "raises LocalJumpError when no block is given" do
       lambda { @s.rb_yield(1) }.should raise_error(LocalJumpError)
     end
+
+    it "rb_yield to a block that breaks does not raise an error" do
+      @s.rb_yield(1) { break }.should == nil
+    end
+
+    it "rb_yield to a block that breaks with a value returns the value" do
+      @s.rb_yield(1) { break 73 }.should == 73
+    end
+
+    platform_is_not :"solaris2.10" do # NOTE: i386-pc-solaris2.10
+      it "rb_yield through a callback to a block that breaks with a value returns the value" do
+        @s.rb_yield_indirected(1) { break 73 }.should == 73
+      end
+    end
   end
 
   describe "rb_yield_values" do
@@ -215,6 +229,36 @@ describe "C-API Kernel function" do
 
     it "raises LocalJumpError when no block is given" do
       lambda { @s.rb_yield_splat([1, 2]) }.should raise_error(LocalJumpError)
+    end
+  end
+
+  describe "rb_protect" do
+    it "will run a function with an argument" do
+      proof = [] # Hold proof of work performed after the yield.
+      res = @s.rb_protect_yield(7, proof) { |x| x + 1 }
+      res.should == 8
+      proof[0].should == 23
+    end
+
+    it "will allow cleanup code to run after break" do
+      proof = [] # Hold proof of work performed after the yield.
+      @s.rb_protect_yield(7, proof) { |x| break }
+      proof[0].should == 23
+    end
+
+    it "will allow cleanup code to run after break with value" do
+      proof = [] # Hold proof of work performed after the yield.
+      res = @s.rb_protect_yield(7, proof) { |x| break x + 1 }
+      res.should == 8
+      proof[0].should == 23
+    end
+
+    it "will allow cleanup code to run after a raise" do
+      proof = [] # Hold proof of work performed after the yield.
+      lambda do
+        @s.rb_protect_yield(7, proof) { |x| raise NameError}
+      end.should raise_error(NameError)
+      proof[0].should == 23
     end
   end
 
@@ -389,23 +433,25 @@ describe "C-API Kernel function" do
     end
   end
 
-  describe "rb_set_end_proc" do
-    before :each do
-      @r, @w = IO.pipe
-    end
+  platform_is_not :windows do
+    describe "rb_set_end_proc" do
+      before :each do
+        @r, @w = IO.pipe
+      end
 
-    after :each do
-      @r.close
-      @w.close
-      Process.wait @pid
-    end
+      after :each do
+        @r.close
+        @w.close
+        Process.wait @pid
+      end
 
-    it "runs a C function on shutdown" do
-      @pid = fork {
-        @s.rb_set_end_proc(@w)
-      }
+      it "runs a C function on shutdown" do
+        @pid = fork {
+          @s.rb_set_end_proc(@w)
+        }
 
-      @r.read(1).should == "e"
+        @r.read(1).should == "e"
+      end
     end
   end
 

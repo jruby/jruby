@@ -29,13 +29,21 @@ public enum Visibility {
     PUBLIC, PROTECTED, PRIVATE, MODULE_FUNCTION;
 
     private static final Visibility[] VALUES = values();
-    
-    public boolean isPrivate() {
-        return this == PRIVATE;
+
+    public boolean isPublic() {
+        return this == PUBLIC;
     }
     
     public boolean isProtected() {
         return this == PROTECTED;
+    }
+
+    public boolean isPrivate() {
+        return this == PRIVATE;
+    }
+
+    public boolean isModuleFunction() {
+        return this == MODULE_FUNCTION;
     }
 
     public static Visibility[] getValues() {

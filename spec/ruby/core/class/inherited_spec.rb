@@ -4,7 +4,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 describe "Class.inherited" do
 
   before :each do
-    ::CoreClassSpecs::Record.called(nil)
+    ScratchPad.record nil
   end
 
   it "is invoked with the child Class when self is subclassed" do
@@ -35,39 +35,53 @@ describe "Class.inherited" do
   end
 
   it "is called when marked as a private class method" do
-    CoreClassSpecs::A.private_class_method :inherited
-    CoreClassSpecs::Record.called?.should == nil
-    module ::CoreClassSpecs; class B < A; end; end
-    ::CoreClassSpecs::Record.called?.should == ::CoreClassSpecs::B
+    a = Class.new do
+      def self.inherited(klass)
+        ScratchPad.record klass
+      end
+    end
+    a.private_class_method :inherited
+    ScratchPad.recorded.should == nil
+    b = Class.new(a)
+    ScratchPad.recorded.should == b
   end
 
   it "is called when marked as a protected class method" do
-    class << ::CoreClassSpecs::A
+    a = Class.new
+    class << a
+      def inherited(klass)
+        ScratchPad.record klass
+      end
       protected :inherited
     end
-    ::CoreClassSpecs::Record.called?.should == nil
-    module ::CoreClassSpecs; class C < A; end; end
-    ::CoreClassSpecs::Record.called?.should == ::CoreClassSpecs::C
+    ScratchPad.recorded.should == nil
+    b = Class.new(a)
+    ScratchPad.recorded.should == b
   end
 
   it "is called when marked as a public class method" do
-    ::CoreClassSpecs::A.public_class_method :inherited
-    ::CoreClassSpecs::Record.called?.should == nil
-    module ::CoreClassSpecs; class D < A; end; end
-    ::CoreClassSpecs::Record.called?.should == ::CoreClassSpecs::D
+    a = Class.new do
+      def self.inherited(klass)
+        ScratchPad.record klass
+      end
+    end
+    a.public_class_method :inherited
+    ScratchPad.recorded.should == nil
+    b = Class.new(a)
+    ScratchPad.recorded.should == b
   end
 
   it "is called by super from a method provided by an included module" do
-    ::CoreClassSpecs::Record.called?.should == nil
-    module ::CoreClassSpecs; class E < F; end; end
-    ::CoreClassSpecs::Record.called?.should == ::CoreClassSpecs::E
+    ScratchPad.recorded.should == nil
+    e = Class.new(CoreClassSpecs::F)
+    ScratchPad.recorded.should == e
   end
 
   it "is called by super even when marked as a private class method" do
-    ::CoreClassSpecs::Record.called?.should == nil
-    ::CoreClassSpecs::H.private_class_method :inherited
-    module ::CoreClassSpecs; class I < H; end; end
-    ::CoreClassSpecs::Record.called?.should == ::CoreClassSpecs::I
+    ScratchPad.recorded.should == nil
+    CoreClassSpecs::H.private_class_method :inherited
+    i = Class.new(CoreClassSpecs::H)
+    ScratchPad.recorded.should == i
   end
 
   it "will be invoked by child class regardless of visibility" do

@@ -13,27 +13,35 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 
 public class CheckForLJEInstr extends NoOperandInstr {
-    private boolean maybeLambda;
+    // We know the proc/lambda was not lexically made within a method scope.  If it is a lambda
+    // then it will not matter but if it is a proc and it is not found to be within a define_method
+    // closure then we will raise an LJE if this true.
+    private boolean definedWithinMethod;
 
-    public CheckForLJEInstr(boolean maybeLambda) {
+    public CheckForLJEInstr(boolean notDefinedWithinMethod) {
         super(Operation.CHECK_FOR_LJE);
 
-        this.maybeLambda = maybeLambda;
+        this.definedWithinMethod = notDefinedWithinMethod;
     }
 
+    @Deprecated
     public boolean maybeLambda() {
-        return maybeLambda;
+        return !definedWithinMethod;
+    }
+
+    public boolean isDefinedWithinMethod() {
+        return definedWithinMethod;
     }
 
     @Override
     public Instr clone(CloneInfo info) {
-        return new CheckForLJEInstr(maybeLambda);
+        return new CheckForLJEInstr(definedWithinMethod);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(maybeLambda());
+        e.encode(isDefinedWithinMethod());
     }
 
     public static CheckForLJEInstr decode(IRReaderDecoder d) {
@@ -46,11 +54,11 @@ public class CheckForLJEInstr extends NoOperandInstr {
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "maybe_lambda: " + maybeLambda};
+        return new String[] { "definedWithinMethod: " + definedWithinMethod};
     }
 
     public void check(ThreadContext context, DynamicScope dynamicScope, Block.Type blockType) {
-        IRRuntimeHelpers.checkForLJE(context, dynamicScope, maybeLambda, blockType);
+        IRRuntimeHelpers.checkForLJE(context, dynamicScope, definedWithinMethod, blockType);
     }
 
     @Override

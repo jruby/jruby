@@ -1,7 +1,0 @@
-fails:CApiRationalSpecs rb_Rational creates a new Rational with numerator and denominator
-fails:CApiRationalSpecs rb_Rational2 creates a new Rational with numerator and denominator
-fails:CApiRationalSpecs rb_Rational1 creates a new Rational with numerator and denominator of 1
-fails:CApiRationalSpecs rb_rational_new creates a normalized Rational
-fails:CApiRationalSpecs rb_rational_new2 creates a normalized Rational
-fails:CApiRationalSpecs rb_rational_num returns the numerator of a Rational
-fails:CApiRationalSpecs rb_rational_den returns the denominator of a Rational

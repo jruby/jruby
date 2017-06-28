@@ -320,7 +320,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
             values[i++] = m.get(context, this, getMemory());
         }
 
-        return RubyArray.newArrayNoCopy(context.runtime, values);
+        return RubyArray.newArrayMayCopy(context.runtime, values);
     }
 
     @JRubyMethod(name = "offsets")

@@ -3,7 +3,7 @@ describe :strscan_rest_size, shared: true do
     @s = StringScanner.new('This is a test')
   end
 
-  it "Returns the length of the rest of the string" do
+  it "returns the length of the rest of the string" do
     @s.send(@method).should == 14
     @s.scan(/This/)
     @s.send(@method).should == 10

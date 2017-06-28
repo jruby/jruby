@@ -49,7 +49,7 @@ module ArraySpecs
     [
       'bar',
       'báz',
-      "\xFF".force_encoding('ASCII-8BIT')
+      [255].pack('C').force_encoding('ASCII-8BIT')
     ]
   end
 
@@ -63,7 +63,7 @@ module ArraySpecs
   def self.array_with_usascii_and_ascii8bit_strings
     [
       'bar'.force_encoding('US-ASCII'),
-      "\xFF".force_encoding('ASCII-8BIT')
+      [255].pack('C').force_encoding('ASCII-8BIT')
     ]
   end
 end

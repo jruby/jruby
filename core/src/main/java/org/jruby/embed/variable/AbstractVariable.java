@@ -111,6 +111,7 @@ abstract class AbstractVariable implements BiVariable {
     protected void updateRubyObject(final IRubyObject rubyObject) {
         if ( rubyObject == null ) return;
         this.irubyObject = rubyObject;
+        this.javaType = null;
         // NOTE: quite weird - but won't pass tests otherwise !?!
         //this.javaObject = null;
         // delays updating javaObject for performance.

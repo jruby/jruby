@@ -16,6 +16,14 @@
 *.tokens
 *.su
 *.ll
+*.bc
+extconf.h
+mkmf.log
+Makefile
+cext-output.txt
+bench-results.json
+bench-results-processed.json
+failures
 
 .DS_Store
 .debug.properties
@@ -24,9 +32,6 @@
 build
 build.properties
 build_graph.png
-mx*/*pyc
-mx*/env
-mxbuild
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
 dev_null
@@ -46,9 +51,7 @@ lib/jruby*.jar
 lib/native
 lib/ruby/cext/
 lib/ruby/gems
-lib/ruby/stdlib/*jopenssl*.jar
-lib/ruby/stdlib/bcpkix-jdk15on-*.jar
-lib/ruby/stdlib/bcprov-jdk15on-*.jar
+lib/ruby/stdlib/*.jar
 lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/gauntlet_rdoc.rb
 lib/ruby/stdlib/jar*
@@ -59,17 +62,18 @@ lib/ruby/stdlib/net-telnet.rb
 lib/ruby/stdlib/net/telnet*
 lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
-lib/ruby/stdlib/readline/*readline*.jar
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
-lib/ruby/stdlib/racc*
 lib/ruby/stdlib/rake*
+lib/ruby/stdlib/json*
 lib/ruby/stdlib/rdoc*
 lib/ruby/stdlib/test*
 lib/ruby/stdlib/hoe*
+lib/ruby/stdlib/readline*
 lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/power_assert*
 lib/ruby/stdlib/psych*
+lib/ruby/stdlib/**/maven-metadata-local.xml
 release.properties
 share
 spaces test
@@ -78,8 +82,6 @@ test/pom.xml
 test/prawn
 test/rails
 test/testapp/testapp
-test/truffle/*.methods
-test/truffle/integration/gem-testing
 tool/nailgun/Makefile
 tool/nailgun/config.log
 tool/nailgun/config.status
@@ -87,8 +89,6 @@ tool/nailgun/ng
 reference.txt
 rubyspec_temp
 .polyglot.pom.rb
-tool/truffle/jruby_truffle_runner/jruby+truffle_runner-*.gem
-test/truffle/cexts/**/Makefile
 
 # binaries
 !bin/gem
@@ -118,12 +118,17 @@ nbproject/private
 .classpath
 .project
 .settings
+.factorypath
 build.eclipse
 
-# Truffle findbugs
-truffle-findbugs-report.html
-findbugs-noUpdateChecks-3.0.0.tar.gz
-findbugs-3.0.0
+# mx
+/mx.jruby/*pyc
+/mx.jruby/env
+/mx.jruby/eclipse-launches/
+/mxbuild
+/mx.imports
+/RUBY.dist
+/RUBY-TEST.dist
 
 # Vagrant
 .vagrant

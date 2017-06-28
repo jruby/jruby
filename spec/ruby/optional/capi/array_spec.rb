@@ -2,6 +2,16 @@ require File.expand_path('../spec_helper', __FILE__)
 
 load_extension("array")
 
+describe :rb_ary_new2, shared: true do
+  it "returns an empty array" do
+    @s.send(@method, 5).should == []
+  end
+
+  it "raises an ArgumentError when the given argument is negative" do
+    lambda { @s.send(@method, -1) }.should raise_error(ArgumentError)
+  end
+end
+
 describe "C-API Array function" do
   before :each do
     @s = CApiArraySpecs.new
@@ -31,9 +41,11 @@ describe "C-API Array function" do
   end
 
   describe "rb_ary_new2" do
-    it "returns an empty array" do
-      @s.rb_ary_new2(5).should == []
-    end
+    it_behaves_like :rb_ary_new2, :rb_ary_new2
+  end
+
+  describe "rb_ary_new_capa" do
+    it_behaves_like :rb_ary_new2, :rb_ary_new_capa
   end
 
   describe "rb_ary_new3" do
@@ -49,14 +61,30 @@ describe "C-API Array function" do
   end
 
   describe "rb_ary_new4" do
-    it "returns returns an array with the passed values" do
+    it "returns an array with the passed values" do
       @s.rb_ary_new4(1,2,3).should == [1,2,3]
+    end
+  end
+
+  describe "rb_ary_new_from_values" do
+    it "returns an array with the passed values" do
+      @s.rb_ary_new_from_values(1,2,3).should == [1,2,3]
     end
   end
 
   describe "rb_ary_push" do
     it "adds an element to the array" do
       @s.rb_ary_push([], 4).should == [4]
+    end
+  end
+
+  describe "rb_ary_cat" do
+    it "pushes the given objects onto the end of the array" do
+      @s.rb_ary_cat([1, 2], 3, 4).should == [1, 2, 3, 4]
+    end
+
+    it "raises a RuntimeError if the array is frozen" do
+      lambda { @s.rb_ary_cat([].freeze, 1) }.should raise_error(RuntimeError)
     end
   end
 
@@ -93,6 +121,17 @@ describe "C-API Array function" do
     it "returns the original array" do
       a = [1,2,3]
       @s.rb_ary_reverse(a).should equal(a)
+    end
+  end
+
+  describe "rb_ary_rotate" do
+    it "rotates the array so that the element at the specified position comes first" do
+      @s.rb_ary_rotate([1, 2, 3, 4], 2).should == [3, 4, 1, 2]
+      @s.rb_ary_rotate([1, 2, 3, 4], -3).should == [2, 3, 4, 1]
+    end
+
+    it "raises a RuntimeError if the array is frozen" do
+      lambda { @s.rb_ary_rotate([].freeze, 1) }.should raise_error(RuntimeError)
     end
   end
 
@@ -164,9 +203,8 @@ describe "C-API Array function" do
       a.should == [1, 2, 5]
     end
 
-    it "raises on IndexError if the negative index is greater than the length" do
+    it "raises an IndexError if the negative index is greater than the length" do
       a = [1, 2, 3]
-
       lambda { @s.rb_ary_store(a, -10, 5) }.should raise_error(IndexError)
     end
 
@@ -174,6 +212,11 @@ describe "C-API Array function" do
       a = []
       @s.rb_ary_store(a, 2, 7)
       a.should == [nil, nil, 7]
+    end
+
+    it "raises a RuntimeError if the array is frozen" do
+      a = [1, 2, 3].freeze
+      lambda { @s.rb_ary_store(a, 1, 5) }.should raise_error(RuntimeError)
     end
   end
 

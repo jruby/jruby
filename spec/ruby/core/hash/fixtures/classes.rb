@@ -39,6 +39,21 @@ module HashSpecs
     end
   end
 
+  class ByValueKey
+    attr_reader :n
+    def initialize(n)
+      @n = n
+    end
+
+    def hash
+      n
+    end
+
+    def eql? other
+      ByValueKey === other and @n == other.n
+    end
+  end
+
   def self.empty_frozen_hash
     @empty ||= {}
     @empty.freeze

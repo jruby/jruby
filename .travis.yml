@@ -7,14 +7,18 @@ cache:
    - $HOME/.m2
 
 before_install:
+  - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=240M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=240M -XX:CompressedClassSpaceSize=240M"; fi
-  - export MAVEN_OPTS="-Xmx512M $MAVEN_OPTS"
+  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=120M"; else export MAVEN_OPTS="-XX:CompressedClassSpaceSize=96M -XX:MaxMetaspaceSize=120M"; fi
+  - export MAVEN_OPTS="-Xmn52M -Xmx504M $MAVEN_OPTS"
+  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export JAVA_OPTS="$JAVA_OPTS -XX:MaxPermSize=96M"; else export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=72M -XX:MaxMetaspaceSize=96M"; fi
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - export PATH="`pwd`/bin:$PATH"
   - echo $HOME
+  - echo $JAVA_OPTS
+  - echo $MAVEN_OPTS
 
 jdk:
   - openjdk7
@@ -25,13 +29,14 @@ os:
 
 env:
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn48M -Xmx512M"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn36M -Xmx768M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
     - MALLOC_ARENA_MAX=2
   matrix:
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
     - PHASE='-Prake -Dtask=test:jruby:fullint'
     - PHASE='-Prake -Dtask=test:jruby:jit'
+    - PHASE='-Prake -Dtask=test:jruby:aot'
     - PHASE='-Prake -Dtask=test:mri'
     - PHASE='-Prake -Dtask=test:mri:fullint'
     - PHASE='-Prake -Dtask=test:mri:jit'
@@ -71,42 +76,9 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
-    # JRuby+Truffle needs Java 8
-    - env: JT='test specs :command_line'
-      jdk: oraclejdk8
-    - env: JT='test specs :language'
-      jdk: oraclejdk8
-    - env: JT='test specs :core'
-      jdk: oraclejdk8
-    - env: JT='test specs :library'
-      jdk: oraclejdk8
-    - env: JT='test specs :truffle'
-      jdk: oraclejdk8
-    - env: JT='test integration'
-      jdk: oraclejdk8
-    - env:
-      - COMMAND=test/truffle/gems/install-gems.sh
-      - JT='test gems'
-      jdk: oraclejdk8
-    - env:
-      - JAVA_OPTS="$JAVA_OPTS -Xmx512m"
-      - HAS_REDIS=true
-      - JT='test ecosystem'
-      jdk: oraclejdk8
-    - env: JT='test tck'
-      jdk: oraclejdk8
-    - env:
-      - JT=check_ambiguous_arguments
-      - SKIP_BUILD=true
-      jdk: oraclejdk8
-    - env:
-      - USE_BUILD_PACK=yes
-      - JT='test fast'
-      jdk: oraclejdk8
   allow_failures:
-    - env: PHASE='-Prake -Dtask=test:mri:fullint'
-    - env: JT='test mri'
-      jdk: oraclejdk8
+    #- env: PHASE='-Pj2ee'
+    #  jdk: oraclejdk7
     # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
     #- env: PHASE='-Pmain'
     #  sudo: required
@@ -127,10 +99,6 @@ notifications:
       - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
     skip_join: true
 
-  # update jruby-head installed on Travis CI
-  webhooks:
-    urls:
-      - "https://rubies.travis-ci.org/rebuild/jruby-head"
 # we are on a branch
     on_success: always
     on_failure: never

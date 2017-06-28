@@ -52,14 +52,14 @@ describe "A Java primitive Array of type" do
       expect(arr[0]).to be_falsey
       expect(arr[1]).to be_falsey
       expect(arr[2]).to be_falsey
-      expect(arr[3]).to be_truthy
-      expect(arr[4]).to be_falsey
+      expect(arr[3]).to be true
+      expect(arr[4]).to be false
     end
 
     it "should be possible to get values from primitive array" do
       arr = [false, true, false].to_java :boolean
-      expect(arr[0]).to be_falsey
-      expect(arr[1]).to be_truthy
+      expect(arr[0]).to be false
+      expect(arr[1]).to be true
       expect(arr[2]).to be_falsey
     end
 
@@ -180,6 +180,24 @@ describe "A Java primitive Array of type" do
       expect([86, 87].to_java(:byte).to_s).to eq("VW")
     end
 
+    it "detects element using include?" do
+      arr = Java::byte[3].new
+      arr[0] = 1
+      arr[1] = 127
+      arr[2] = -128
+
+      expect(arr.include?(1)).to be true
+      expect(arr.include?(0)).to be false
+      expect(arr.include?(10000)).to be false
+      expect(arr.include?(127)).to be true
+      expect(arr.include?(-128)).to be true
+      expect(arr.include?(-127)).to be false
+      expect(arr.include?(-1)).to be false
+      expect(arr.include?(-200)).to be false
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
+    end
+
     it "clones" do
       arr = Java::byte[10].new
       arr[1] = 1
@@ -283,6 +301,21 @@ describe "A Java primitive Array of type" do
       arr = [100, 101, 102].to_java :char
       expect(arr.to_s).to match(/\[C@[0-9a-f]+$/)
     end
+
+    it "detects element using include?" do
+      arr = Java::char[3].new
+      arr[0] = 1
+      arr[1] = 0
+      arr[2] = 64
+
+      expect(arr.include?(1)).to be true
+      expect(arr.include?(0)).to be true
+      expect(arr.include?(10)).to be false
+      expect(arr.include?(64)).to be true
+      expect(arr.include?(-128)).to be false
+      expect(arr.include?(-1)).to be false
+      expect(arr.include?('z')).to be false
+    end
   end
 
   describe "double" do
@@ -370,6 +403,22 @@ describe "A Java primitive Array of type" do
     it "inspects to show type and contents" do
       arr = [1.0, 1.1, 1.2].to_java :double
       expect(arr.inspect).to match(/^double\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/)
+    end
+
+    it "detects element using include?" do
+      arr = Java::double[3].new
+      arr[0] = 111
+      arr[1] = 0.001
+      arr[2] = -1234560000.789
+
+      expect(arr.include?(111)).to be true
+      expect(arr.include?(111.1)).to be false
+      expect(arr.include?(0.0011)).to be false
+      expect(arr.include?(0.001)).to be true
+      expect(arr.include?(-1234560000.789)).to be true
+      expect(arr.include?(-1234560000.79)).to be false
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
     end
   end
 
@@ -468,6 +517,23 @@ describe "A Java primitive Array of type" do
       arr = [1.0, 1.1, 1.2].to_java :float
       expect(arr.inspect).to match(/^float\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/)
     end
+
+    it "detects element using include?" do
+      arr = Java::float[3].new
+      arr[0] = 111
+      arr[1] = 0.001
+      arr[2] = -123456.789
+
+      expect(arr.include?(111)).to be true
+      expect(arr.include?(111.1)).to be false
+      expect(arr.include?(0.0011)).to be false
+      expect(arr.include?(0.001)).to be true
+      expect(arr.include?(-123456.789)).to be true
+      # expect(arr.include?(-123456.79)).to be false
+      expect(arr.include?(-123456.8)).to be false
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
+    end
   end
 
   describe "int" do
@@ -559,6 +625,25 @@ describe "A Java primitive Array of type" do
     it "inspects to show type and contents" do
       arr = [13, 42, 120].to_java :int
       expect(arr.inspect).to match(/^int\[13, 42, 120\]@[0-9a-f]+$/)
+    end
+
+    it "detects element using include?" do
+      arr = Java::int[8].new
+      arr[0] = -1
+      arr[1] = 22
+      arr[3] = 2147483647
+      arr[6] = -111111111
+
+      expect(arr.include?(0)).to be true
+      expect(arr.include?(1)).to be false
+      expect(arr.include?(22)).to be true
+      expect(arr.include?(-111111111)).to be true
+      expect(arr.include?(-1111111111111)).to be false
+      expect(arr.include?(2147483648)).to be false
+      expect(arr.include?(2147483646)).to be false
+      expect(arr.include?(2147483647)).to be true
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
     end
   end
 
@@ -655,6 +740,24 @@ describe "A Java primitive Array of type" do
       expect( dup.object_id ).to_not eql arr.object_id
       dup[1] = 11
       expect(arr[1]).to eq(1)
+    end
+
+    it "detects element using include?" do
+      arr = Java::long[8].new
+      arr[0] = -1
+      arr[1] = 22
+      arr[3] = 2147483647000
+      arr[6] = -111111111000
+
+      expect(arr.include?(0)).to be true
+      expect(arr.include?(1)).to be false
+      expect(arr.include?(22)).to be true
+      expect(arr.include?(-111111111)).to be false
+      expect(arr.include?(-111111111000)).to be true
+      expect(arr.include?(2147483647001)).to be false
+      expect(arr.include?(2147483647000)).to be true
+      expect(arr.include?(nil)).to be false
+      expect(arr.include?('x')).to be false
     end
   end
 
@@ -1084,13 +1187,18 @@ describe "ArrayJavaProxy" do
 
   it "to_a coerces nested Java arrays to Ruby arrays" do
     arr = [[1],[2]].to_java(Java::byte[]).to_a
-    expect(arr.first).to eq([1])
+    expect(arr.first).to eql [1]
     expect(arr.first.first).to be_kind_of(Fixnum)
   end
 
   it "returns a new array from to_a" do
     j_arr = [ 1, 2 ].to_java
     r_arr = j_arr.to_a
+    j_arr[0] = 3
+    expect( r_arr[0] ).to eql 1
+
+    j_arr = [1, 2].to_java(:int)
+    r_arr = j_arr.entries
     j_arr[0] = 3
     expect( r_arr[0] ).to eql 1
   end
@@ -1100,6 +1208,79 @@ describe "ArrayJavaProxy" do
     r_arr = j_arr.to_ary
     j_arr[0] = 3
     expect( r_arr[0] ).to eql 1
+  end
+
+  it 'supports #first (Enumerable)' do
+    arr = [ '1', '2', '3' ].to_java('java.lang.String')
+    expect( arr.first ).to eql '1'
+    expect( arr.first(2) ).to eql [ '1', '2' ]
+
+    arr = [ 1, 2, 3 ].to_java(:int)
+    expect( arr.first ).to eql 1
+    expect( arr.first(1) ).to eql [ 1 ]
+    expect( arr.first(5) ).to eql [ 1, 2, 3 ]
+
+    arr = Java::byte[0].new
+    expect( arr.first ).to be nil
+    expect( arr.first(1) ).to eql []
+  end
+
+  it 'supports #last (like Ruby Array)' do
+    arr = [ '1', '2', '3' ].to_java('java.lang.String')
+    expect( arr.last ).to eql '3'
+    expect( arr.last(2) ).to eql [ '2', '3' ]
+
+    arr = [ 1, 2, 3 ].to_java(:int)
+    expect( arr.last ).to eql 3
+    expect( arr.last(1) ).to eql [ 3 ]
+    expect( arr.last(8) ).to eql [ 1, 2, 3 ]
+
+    arr = Java::byte[0].new
+    expect( arr.last ).to be nil
+    expect( arr.last(1) ).to eql []
+  end
+
+  it 'counts' do
+    arr = [ '1', '2', '3' ].to_java('java.lang.String')
+    expect( arr.count ).to eql 3
+    expect( arr.count('2') ).to eql 1
+    expect( arr.count(1) ).to eql 0
+
+    arr = [ 1, 2, 2 ].to_java(:int)
+    expect( arr.count { |e| e > 0 } ).to eql 3
+    expect( arr.count(2) ).to eql 2
+
+    arr = Java::byte[0].new
+    expect( arr.count ).to eql 0
+  end
+
+  it 'each return self' do
+    arr = Java::int[5].new
+    expect( arr.each { |i| i } ).to be arr
+    arr = [].to_java
+    expect( arr.each { |i| i } ).to be arr
+  end
+
+  it 'each without block' do
+    arr = Java::float[5].new; arr[1] = 1.0
+    expect( enum = arr.each ).to be_a Enumerator
+    expect( enum.next ).to eql 0.0
+    expect( enum.next ).to eql 1.0
+  end
+
+  it 'each with index' do
+    arr = Java::byte[5].new
+    counter = 0
+    ret = arr.each_with_index { |el, i| expect(el).to eql 0; expect(i).to eql(counter); counter += 1 }
+    expect( counter ).to eql 5
+    expect( ret ).to eql arr
+
+    arr = Java::long[4].new; arr[1] = 1; arr[2] = 1; arr[3] = 3
+    expect( enum = arr.each_with_index ).to be_a Enumerator
+    expect( enum.next ).to eql [0, 0]
+    expect( enum.next ).to eql [1, 1]
+    expect( enum.next ).to eql [1, 2]
+    expect( enum.next ).to eql [3, 3]
   end
 
   describe "#dig" do

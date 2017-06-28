@@ -11,23 +11,30 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final String fileName;
     protected final int lineNumber;
     protected final IRClosure closure;
-    protected ThreadLocal<EvalType> evalType;
+    protected ThreadLocal<EvalType> evalType; // null is treated as NONE (@see getEvalType())
 
     public IRBlockBody(IRScope closure, Signature signature) {
         super(closure.getStaticScope(), signature);
         this.closure = (IRClosure) closure;
         this.fileName = closure.getFileName();
         this.lineNumber = closure.getLineNumber();
+        // null (not set) by default to avoid having many thread-local values initialized
+        // servers such as Tomcat tend to do thread-local checks when un-deploying apps,
+        // for JRuby leads to 100s of SEVERE warnings for a mid-size (booted) Rails app
         this.evalType = new ThreadLocal();
-        this.evalType.set(EvalType.NONE);
     }
 
-    public EvalType getEvalType() {
-        return this.evalType.get();
+    public final EvalType getEvalType() {
+        final EvalType type = this.evalType.get();
+        return type == null ? EvalType.NONE : type;
     }
 
-    public void setEvalType(EvalType evalType) {
-        this.evalType.set(evalType);
+    public void setEvalType(final EvalType type) {
+        if (type == null || type == EvalType.NONE) {
+            this.evalType.remove();
+        } else {
+            this.evalType.set(type);
+        }
     }
 
     @Override
@@ -84,7 +91,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         if (canCallDirect()) {
             if (arg0 instanceof RubyArray) {
                 // Unwrap the array arg
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arityValue(), true);
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature, true);
             } else {
                 args = new IRubyObject[] { arg0 };
             }
@@ -92,9 +99,9 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         } else {
             if (arg0 instanceof RubyArray) {
                 // Unwrap the array arg
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature.arityValue(), true);
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature, true);
 
-                // FIXME: arity error is aginst new args but actual error shows arity of original args.
+                // FIXME: arity error is against new args but actual error shows arity of original args.
                 if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
 
                 return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
@@ -107,7 +114,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, Block block, IRubyObject[] args) {
         int blockArity = getSignature().arityValue();
         if (blockArity == 1) {
-            args = new IRubyObject[] { RubyArray.newArrayNoCopy(context.runtime, args) };
+            args = new IRubyObject[] { RubyArray.newArrayMayCopy(context.runtime, args) };
         }
 
         if (canCallDirect()) {
@@ -170,7 +177,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         IRubyObject[] args;
         if (value == null) { // no args case from BlockBody.yieldSpecific
             args = IRubyObject.NULL_ARRAY;
-        } else if (blockArity >= -1 && blockArity <= 1) {
+        } else if (!getSignature().hasKwargs() && blockArity >= -1 && blockArity <= 1) {
             args = new IRubyObject[] { value };
         } else {
             args = toAry(context, value);

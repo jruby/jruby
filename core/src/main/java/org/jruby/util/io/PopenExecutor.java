@@ -130,7 +130,9 @@ public class PopenExecutor {
         }
         if (pid == -1) {
             context.setLastExitStatus(new RubyProcess.RubyStatus(runtime, runtime.getProcStatus(), 0x7f << 8, 0));
-            errno = Errno.valueOf(runtime.getPosix().errno());
+            if (errno == null || errno == Errno.__UNKNOWN_CONSTANT__) {
+                errno = Errno.valueOf(runtime.getPosix().errno());
+            }
         }
 
         execargRunOptions(context, runtime, sarg, null, errmsg);
@@ -163,6 +165,7 @@ public class PopenExecutor {
             errno = Errno.ENOENT;
             return -1;
         }
+
         status = runtime.getPosix().posix_spawnp(
                 prog,
                 eargp.fileActions,
@@ -691,19 +694,14 @@ public class PopenExecutor {
         long pgroup;
 
         pgroup = eargp.pgroup_pgid;
-        if (pgroup == -1)
-            pgroup = runtime.getPosix().getpgrp();
-
-        if (pgroup == 0) {
-            // not needed for posix_spawn
+        if (pgroup == -1) {
+            // inherit parent's process group (default behavior)
             return ret;
-//            pgroup = runtime.getPosix().getpid(); /* async-signal-safe */
         }
 
         eargp.attributes.add(SpawnAttribute.pgroup(pgroup));
-        // we can't setpgid in the parent
-//        ret = setpgid(getpid(), pgroup); /* async-signal-safe */
-//        if (ret == -1) ERRMSG("setpgid");
+        eargp.attributes.add(SpawnAttribute.flags((short)SpawnAttribute.SETPGROUP));
+
         return ret;
     }
 
@@ -1333,7 +1331,7 @@ public class PopenExecutor {
                     if (eargp.pgroup_given()) {
                         throw runtime.newArgumentError("pgroup option specified twice");
                     }
-                    if (val == null || val.isNil())
+                    if (val == null || !val.isTrue())
                         pgroup = -1; /* asis(-1) means "don't call setpgid()". */
                     else if (val == runtime.getTrue())
                         pgroup = 0; /* new process group. */
@@ -1382,7 +1380,7 @@ public class PopenExecutor {
                     else {
                         softlim = hardlim = val.convertToInteger();
                     }
-                    tmp = runtime.newArray(runtime.newFixnum(rtype), softlim, hardlim);
+                    tmp = RubyArray.newArray(runtime, runtime.newFixnum(rtype), softlim, hardlim);
                     ((RubyArray)ary).push(tmp);
                 }
                 else
@@ -1548,8 +1546,10 @@ public class PopenExecutor {
                     flags = runtime.newFixnum(intFlags);
                     perm = ((RubyArray)val).entry(2);
                     perm = perm.isNil() ? runtime.newFixnum(0644) : perm.convertToInteger();
-                    param = runtime.newArray(((RubyString)path).strDup(runtime).export(context),
-                            flags, perm);
+                    param = RubyArray.newArray(runtime,
+                            ((RubyString)path).strDup(runtime).export(context),
+                            flags,
+                            perm);
                     eargp.fd_open = checkExecRedirect1(runtime, eargp.fd_open, key, param);
                 }
                 break;
@@ -1564,8 +1564,10 @@ public class PopenExecutor {
                 else
                     flags = runtime.newFixnum(OpenFlags.O_RDONLY.intValue());
                 perm = runtime.newFixnum(0644);
-                param = runtime.newArray(((RubyString)path).strDup(runtime).export(context),
-                        flags, perm);
+                param = RubyArray.newArray(runtime,
+                        ((RubyString)path).strDup(runtime).export(context),
+                        flags,
+                        perm);
                 eargp.fd_open = checkExecRedirect1(runtime, eargp.fd_open, key, param);
                 break;
 
@@ -1576,6 +1578,7 @@ public class PopenExecutor {
                     val = checkExecRedirectFd(runtime, val, false);
                     param = val;
                     eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
+                    break;
                 }
                 throw runtime.newArgumentError("wrong exec redirect action");
         }
@@ -1725,6 +1728,7 @@ public class PopenExecutor {
         return prog;
     }
 
+    private static final int posix_sh_cmd_length = 8;
     private static final String posix_sh_cmds[] = {
             "!",		/* reserved */
             ".",		/* special built-in */
@@ -1781,7 +1785,7 @@ public class PopenExecutor {
 
         // restructure command as a single string if chdir and has args
         if (eargp.chdir_given() && argc > 1) {
-            RubyArray array = RubyArray.newArrayNoCopy(runtime, argv);
+            RubyArray array = RubyArray.newArrayMayCopy(runtime, argv);
             prog = (RubyString)array.join(context, RubyString.newString(runtime, " "));
         }
 
@@ -1851,7 +1855,7 @@ public class PopenExecutor {
                 }
                 if (!has_meta && first.getUnsafeBytes() != DUMMY_ARRAY) {
                     if (first.length() == 0) first.setRealSize(p - first.getBegin());
-                    if (first.length() > 0 && first.length() <= posix_sh_cmds[0].length() &&
+                    if (first.length() > 0 && first.length() <= posix_sh_cmd_length &&
                         Arrays.binarySearch(posix_sh_cmds, first.toString(), StringComparator.INSTANCE) >= 0)
                         has_meta = true;
                 }

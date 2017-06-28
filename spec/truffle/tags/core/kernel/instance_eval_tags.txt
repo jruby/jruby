@@ -1,5 +1,0 @@
-fails:Kernel#instance_eval expects a block with no arguments
-fails:Kernel#instance_eval yields the object to the block
-fails:Kernel#instance_eval gets constants in the receiver if a string given
-fails:Kernel#instance_eval raises a TypeError when defining methods on an immediate
-fails:Kernel#instance_eval raises a TypeError when defining methods on numerics

@@ -12,7 +12,10 @@ describe "Struct.new" do
     first = Struct.new('Person', :height, :weight)
     first.should == Struct::Person
 
-    second = Struct.new('Person', :hair, :sex)
+    second = nil
+    lambda {
+      second = Struct.new('Person', :hair, :sex)
+    }.should complain(/redefining constant/)
     second.should == Struct::Person
 
     first.members.should_not == second.members
@@ -40,7 +43,7 @@ describe "Struct.new" do
   end
 
   it "does not create a constant with symbol as first argument" do
-    struct = Struct.new(:Animal2, :name, :legs, :eyeballs)
+    Struct.new(:Animal2, :name, :legs, :eyeballs)
     Struct.const_defined?("Animal2").should be_false
   end
 

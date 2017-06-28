@@ -1,0 +1,2 @@
+fails:Binding#local_variable_set raises a NameError on global access
+fails:Binding#local_variable_set raises a NameError on special variable access

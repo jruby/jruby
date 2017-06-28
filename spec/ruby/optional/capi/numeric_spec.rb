@@ -88,7 +88,7 @@ describe "CApiNumericSpecs" do
       it "calls #to_int to coerce the value" do
         obj = mock("number")
         obj.should_receive(:to_int).and_return(2)
-        @s.rb_num2ulong(obj).should == 2
+        @s.rb_num2uint(obj).should == 2
       end
     end
   end
@@ -371,8 +371,23 @@ describe "CApiNumericSpecs" do
       @s.rb_num_coerce_cmp(2, obj, :<=>).should == -1
     end
 
-    it "returns nil if passed nil" do
-      @s.rb_num_coerce_cmp(nil, 2, :<=>).should be_nil
+    ruby_version_is ""..."2.5" do
+      it "returns nil if passed nil" do
+        -> {
+          @result = @s.rb_num_coerce_cmp(nil, 2, :<=>)
+        }.should complain(/comparison operators will no more rescue exceptions/)
+        @result.should be_nil
+      end
+    end
+
+    ruby_version_is "2.5" do
+      it "lets the exception go through if #coerce raises an exception" do
+        obj = mock("rb_num_coerce_cmp")
+        obj.should_receive(:coerce).with(2).and_raise(RuntimeError.new("my error"))
+        -> {
+          @s.rb_num_coerce_cmp(2, obj, :<=>)
+        }.should raise_error(RuntimeError, "my error")
+      end
     end
 
     it "returns nil if #coerce does not return an Array" do

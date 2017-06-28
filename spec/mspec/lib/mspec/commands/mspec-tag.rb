@@ -30,7 +30,6 @@ class MSpecTag < MSpecScript
 
     options.doc "\n How to modify the execution"
     options.configure { |f| load f }
-    options.name
     options.pretend
     options.unguarded
     options.interrupt
@@ -98,6 +97,8 @@ class MSpecTag < MSpecScript
   end
 
   def register
+    require 'mspec/runner/actions'
+
     case config[:tagger]
     when :add, :del
       tag = SpecTag.new config[:tag]

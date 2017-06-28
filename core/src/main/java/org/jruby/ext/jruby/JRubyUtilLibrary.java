@@ -95,7 +95,7 @@ public class JRubyUtilLibrary implements Library {
                 String urlString = getPath(url);
                 urlStrings.add(runtime.newString(urlString));
             }
-            return RubyArray.newArrayNoCopy(runtime, urlStrings.toArray(new IRubyObject[urlStrings.size()]));
+            return RubyArray.newArray(runtime, urlStrings);
         } catch (IOException ignore) {
         }
         return runtime.newEmptyArray();

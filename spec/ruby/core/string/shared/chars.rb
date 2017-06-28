@@ -16,10 +16,8 @@ describe :string_chars, shared: true do
 
 
   it "is unicode aware" do
-    before = $KCODE
-    $KCODE = "UTF-8"
-    "\303\207\342\210\202\303\251\306\222g".send(@method).to_a.should == ["\303\207", "\342\210\202", "\303\251", "\306\222", "g"]
-    $KCODE = before
+    "\303\207\342\210\202\303\251\306\222g".send(@method).to_a.should ==
+      ["\303\207", "\342\210\202", "\303\251", "\306\222", "g"]
   end
 
   with_feature :encoding do
@@ -35,17 +33,17 @@ describe :string_chars, shared: true do
     end
 
     it "works if the String's contents is invalid for its encoding" do
-      s = "\xA4"
-      s.force_encoding('UTF-8')
-      s.valid_encoding?.should be_false
-      s.send(@method).to_a.should == ["\xA4".force_encoding("UTF-8")]
+      xA4 = [0xA4].pack('C')
+      xA4.force_encoding('UTF-8')
+      xA4.valid_encoding?.should be_false
+      xA4.send(@method).to_a.should == [xA4.force_encoding("UTF-8")]
     end
 
     it "returns a different character if the String is transcoded" do
       s = "\u{20AC}".force_encoding('UTF-8')
       s.encode('UTF-8').send(@method).to_a.should == ["\u{20AC}".force_encoding('UTF-8')]
       s.encode('iso-8859-15').send(@method).to_a.should == [
-        "\xA4".force_encoding('iso-8859-15')]
+        [0xA4].pack('C').force_encoding('iso-8859-15')]
       s.encode('iso-8859-15').encode('UTF-8').send(@method).to_a.should == [
         "\u{20AC}".force_encoding('UTF-8')]
     end
@@ -57,15 +55,15 @@ describe :string_chars, shared: true do
         s.force_encoding('UTF-8')
       ]
       s.force_encoding('BINARY').send(@method).to_a.should == [
-        "\xF0".force_encoding('BINARY'),
-        "\xA4".force_encoding('BINARY'),
-        "\xAD".force_encoding('BINARY'),
-        "\xA2".force_encoding('BINARY')
+        [0xF0].pack('C').force_encoding('BINARY'),
+        [0xA4].pack('C').force_encoding('BINARY'),
+        [0xAD].pack('C').force_encoding('BINARY'),
+        [0xA2].pack('C').force_encoding('BINARY')
       ]
       s.force_encoding('SJIS').send(@method).to_a.should == [
-        "\xF0\xA4".force_encoding('SJIS'),
-        "\xAD".force_encoding('SJIS'),
-        "\xA2".force_encoding('SJIS')
+        [0xF0,0xA4].pack('CC').force_encoding('SJIS'),
+        [0xAD].pack('C').force_encoding('SJIS'),
+        [0xA2].pack('C').force_encoding('SJIS')
       ]
     end
 

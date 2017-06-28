@@ -6,7 +6,7 @@ describe "Array#repeated_combination" do
   end
 
   it "returns an enumerator when no block is provided" do
-    @array.repeated_combination(2).should be_an_instance_of(enumerator_class)
+    @array.repeated_combination(2).should be_an_instance_of(Enumerator)
   end
 
   it "returns self when a block is given" do

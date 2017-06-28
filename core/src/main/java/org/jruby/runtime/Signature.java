@@ -31,14 +31,14 @@ public class Signature {
         }
     }
 
-    public static final Signature NO_ARGUMENTS = new Signature(0, 0, 0, Rest.NONE, 0, 0, false);
-    public static final Signature ONE_ARGUMENT = new Signature(1, 0, 0, Rest.NONE, 0, 0, false);
-    public static final Signature TWO_ARGUMENTS = new Signature(2, 0, 0, Rest.NONE, 0, 0, false);
-    public static final Signature THREE_ARGUMENTS = new Signature(3, 0, 0, Rest.NONE, 0, 0, false);
-    public static final Signature OPTIONAL = new Signature(0, 0, 0, Rest.NORM, 0, 0, false);
-    public static final Signature ONE_REQUIRED = new Signature(1, 0, 0, Rest.NORM, 0, 0, false);
-    public static final Signature TWO_REQUIRED = new Signature(2, 0, 0, Rest.NORM, 0, 0, false);
-    public static final Signature THREE_REQUIRED = new Signature(3, 0, 0, Rest.NORM, 0, 0, false);
+    public static final Signature NO_ARGUMENTS = new Signature(0, 0, 0, Rest.NONE, 0, 0, -1);
+    public static final Signature ONE_ARGUMENT = new Signature(1, 0, 0, Rest.NONE, 0, 0, -1);
+    public static final Signature TWO_ARGUMENTS = new Signature(2, 0, 0, Rest.NONE, 0, 0, -1);
+    public static final Signature THREE_ARGUMENTS = new Signature(3, 0, 0, Rest.NONE, 0, 0, -1);
+    public static final Signature OPTIONAL = new Signature(0, 0, 0, Rest.NORM, 0, 0, -1);
+    public static final Signature ONE_REQUIRED = new Signature(1, 0, 0, Rest.NORM, 0, 0, -1);
+    public static final Signature TWO_REQUIRED = new Signature(2, 0, 0, Rest.NORM, 0, 0, -1);
+    public static final Signature THREE_REQUIRED = new Signature(3, 0, 0, Rest.NORM, 0, 0, -1);
 
     private final short pre;
     private final short opt;
@@ -47,16 +47,16 @@ public class Signature {
     private final short kwargs;
     private final short requiredKwargs;
     private final Arity arity;
-    private final boolean restKwargs;
+    private final int keyRest;
 
-    public Signature(int pre, int opt, int post, Rest rest, int kwargs, int requiredKwargs, boolean restKwargs) {
+    public Signature(int pre, int opt, int post, Rest rest, int kwargs, int requiredKwargs, int keyRest) {
         this.pre = (short) pre;
         this.opt = (short) opt;
         this.post = (short) post;
         this.rest = rest;
         this.kwargs = (short) kwargs;
         this.requiredKwargs = (short) requiredKwargs;
-        this.restKwargs = restKwargs;
+        this.keyRest = keyRest;
 
         // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the
         //       |a,| form) as a rest arg for destructuring purposes. However ANON does *not*
@@ -74,15 +74,16 @@ public class Signature {
     }
 
     public boolean restKwargs() {
-        return restKwargs;
+        return keyRest != -1;
     }
 
     public int pre() { return pre; }
     public int opt() { return opt; }
     public Rest rest() { return rest; }
     public int post() { return post; }
-    public boolean hasKwargs() { return kwargs > 0 || restKwargs; }
+    public boolean hasKwargs() { return kwargs > 0 || restKwargs(); }
     public boolean hasRest() { return rest != Rest.NONE; }
+    public int keyRest() { return keyRest; }
 
     /**
      * Are there an exact (fixed) number of parameters to this signature?
@@ -128,8 +129,8 @@ public class Signature {
         throw new UnsupportedOperationException("We do not know enough about the arity to convert it to a signature");
     }
 
-    public static Signature from(int pre, int opt, int post, int kwargs, int requiredKwargs, Rest rest, boolean restKwargs) {
-        if (opt == 0 && post == 0 && kwargs == 0 && !restKwargs) {
+    public static Signature from(int pre, int opt, int post, int kwargs, int requiredKwargs, Rest rest, int keyRest) {
+        if (opt == 0 && post == 0 && kwargs == 0 && keyRest == -1) {
             switch (pre) {
                 case 0:
                     switch (rest) {
@@ -165,7 +166,7 @@ public class Signature {
                     break;
             }
         }
-        return new Signature(pre, opt, post, rest, kwargs, requiredKwargs, restKwargs);
+        return new Signature(pre, opt, post, rest, kwargs, requiredKwargs, keyRest);
     }
 
     public static Signature from(ArgsNode args) {
@@ -173,7 +174,7 @@ public class Signature {
         Rest rest = restArg != null ? restFromArg(restArg) : Rest.NONE;
 
         return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(),
-                args.getKeywordCount(), args.getRequiredKeywordCount(),rest,args.hasKeyRest());
+                args.getKeywordCount(), args.getRequiredKeywordCount(),rest,args.hasKeyRest() ? args.getKeyRest().getIndex() : -1);
     }
 
     public static Signature from(IterNode iter) {
@@ -213,7 +214,7 @@ public class Signature {
                 Node restArg = masgn.getRest();
                 rest = restFromArg(restArg);
             }
-            return Signature.from(masgn.getPreCount(), 0, masgn.getPostCount(), 0, 0, rest, false);
+            return Signature.from(masgn.getPreCount(), 0, masgn.getPostCount(), 0, 0, rest, -1);
         }
         return Signature.ONE_ARGUMENT;
     }
@@ -229,7 +230,7 @@ public class Signature {
     private static final int MAX_ENCODED_ARGS_EXPONENT = 8;
     private static final int MAX_ENCODED_ARGS_MASK = 0xFF;
     private static final int ENCODE_RESTKWARGS_SHIFT = 0;
-    private static final int ENCODE_REST_SHIFT = ENCODE_RESTKWARGS_SHIFT + 1;
+    private static final int ENCODE_REST_SHIFT = ENCODE_RESTKWARGS_SHIFT + MAX_ENCODED_ARGS_EXPONENT;
     private static final int ENCODE_REQKWARGS_SHIFT = ENCODE_REST_SHIFT + MAX_ENCODED_ARGS_EXPONENT;
     private static final int ENCODE_KWARGS_SHIFT = ENCODE_REQKWARGS_SHIFT + MAX_ENCODED_ARGS_EXPONENT;
     private static final int ENCODE_POST_SHIFT = ENCODE_KWARGS_SHIFT + MAX_ENCODED_ARGS_EXPONENT;
@@ -244,24 +245,24 @@ public class Signature {
                         ((long)kwargs << ENCODE_KWARGS_SHIFT) |
                         ((long)requiredKwargs << ENCODE_REQKWARGS_SHIFT) |
                         (rest.ordinal() << ENCODE_REST_SHIFT) |
-                        ((restKwargs?1:0) << ENCODE_RESTKWARGS_SHIFT);
+                        (keyRest & 0xFF) << ENCODE_RESTKWARGS_SHIFT;
     }
 
     public static Signature decode(long l) {
         return Signature.from(
-                (int)(l >> ENCODE_PRE_SHIFT) & MAX_ENCODED_ARGS_MASK,
-                (int)(l >> ENCODE_OPT_SHIFT) & MAX_ENCODED_ARGS_MASK,
-                (int)(l >> ENCODE_POST_SHIFT) & MAX_ENCODED_ARGS_MASK,
-                (int)(l >> ENCODE_KWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK,
-                (int)(l >> ENCODE_REQKWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK,
-                Rest.fromOrdinal((int)((l >> ENCODE_REST_SHIFT) & MAX_ENCODED_ARGS_MASK)),
-                ((int)(l >> ENCODE_RESTKWARGS_SHIFT) & 0x1)==1 ? true : false
+                (int)(l >>> ENCODE_PRE_SHIFT) & MAX_ENCODED_ARGS_MASK,
+                (int)(l >>> ENCODE_OPT_SHIFT) & MAX_ENCODED_ARGS_MASK,
+                (int)(l >>> ENCODE_POST_SHIFT) & MAX_ENCODED_ARGS_MASK,
+                (int)(l >>> ENCODE_KWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK,
+                (int)(l >>> ENCODE_REQKWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK,
+                Rest.fromOrdinal((int)((l >>> ENCODE_REST_SHIFT) & MAX_ENCODED_ARGS_MASK)),
+                (byte)((l >>> ENCODE_RESTKWARGS_SHIFT) & MAX_ENCODED_ARGS_MASK)
 
         );
     }
 
     public String toString() {
-        return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ",kwreq=" + requiredKwargs + ",kwrest=" + restKwargs + ")";
+        return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ",kwreq=" + requiredKwargs + ",kwrest=" + keyRest + ")";
     }
 
     public void checkArity(Ruby runtime, IRubyObject[] args) {
@@ -281,5 +282,19 @@ public class Signature {
                 }
             }
         }
+    }
+
+    public boolean equals(Object other) {
+        if (!(other instanceof Signature)) return false;
+
+        Signature otherSig = (Signature) other;
+
+        return pre == otherSig.pre &&
+                opt == otherSig.opt &&
+                post == otherSig.post &&
+                rest == otherSig.rest &&
+                kwargs == otherSig.kwargs &&
+                requiredKwargs == otherSig.requiredKwargs &&
+                keyRest == otherSig.keyRest;
     }
 }

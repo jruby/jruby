@@ -12,6 +12,15 @@ public enum IRScopeType {
         return VALUES[ordinal];
     }
 
+    // Is this a block type of closure vs an instance of IRClosure (which is also a for/eval internally)?
+    public boolean isBlock() {
+        return this == CLOSURE;
+    }
+
+    public boolean isEval() {
+        return this == EVAL_SCRIPT;
+    }
+
     public boolean isMethodType() {
         return this == INSTANCE_METHOD || this == CLASS_METHOD;
     }

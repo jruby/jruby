@@ -1,18 +1,19 @@
 %{
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2013 The JRuby Team (jruby@jruby.org)
+ * Copyright (C) 2013-2017 The JRuby Team (jruby@jruby.org)
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,6 +34,7 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
+import static org.jruby.lexer.LexingCommon.EXPR_FITEM;
 import static org.jruby.lexer.LexingCommon.EXPR_FNAME;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDFN;
 import static org.jruby.lexer.LexingCommon.EXPR_ENDARG;
@@ -279,7 +281,7 @@ stmt_or_begin   : stmt {
                 }
 
 stmt            : kALIAS fitem {
-                    p.setState(EXPR_FNAME);
+                    p.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     $$ = p.dispatch("on_alias", $2, $4);
                 }
@@ -728,7 +730,7 @@ undef_list      : fitem {
                     $$ = p.new_array($1);
                 }
                 | undef_list ',' {
-                    p.setState(EXPR_FNAME);
+                    p.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     $$ = $1.append($4);
                 }
@@ -746,6 +748,7 @@ reswords        : k__LINE__ | k__FILE__ | k__ENCODING__ | klBEGIN | klEND
                 | kFOR | kIN | kMODULE | kNEXT | kNIL | kNOT
                 | kOR | kREDO | kRESCUE | kRETRY | kRETURN | kSELF | kSUPER
                 | kTHEN | kTRUE | kUNDEF | kWHEN | kYIELD
+                | kIF | kUNLESS | kWHILE | kUNTIL
                 | kIF_MOD | kUNLESS_MOD | kWHILE_MOD | kUNTIL_MOD | kRESCUE_MOD
 
 arg             : lhs '=' arg {
@@ -1390,10 +1393,14 @@ lambda          : /* none */  {
                     p.pushBlockScope();
                     $$ = p.getLeftParenBegin();
                     p.setLeftParenBegin(p.incrementParenNest());
+                } {
+                    $$ = p.getCmdArgumentState().getStack();
+                    p.getCmdArgumentState().reset();
                 } f_larglist lambda_body {
-                    $$ = p.dispatch("on_lambda", $2, $3);
+                    $$ = p.dispatch("on_lambda", $3, $4);
                     p.popCurrentScope();
                     p.setLeftParenBegin($<Integer>1);
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                 }
 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {

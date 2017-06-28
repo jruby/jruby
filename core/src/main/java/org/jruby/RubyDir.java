@@ -79,7 +79,7 @@ public class RubyDir extends RubyObject {
 
     private final static Encoding UTF8 = UTF8Encoding.INSTANCE;
 
-    private static Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
+    private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
 
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -173,7 +173,7 @@ public class RubyDir extends RubyObject {
         for ( int i = 0; i < size; i++ ) {
             dirStrings[i] = RubyString.newString(runtime, dirs.get(i), enc);
         }
-        return RubyArray.newArrayNoCopy(runtime, dirStrings);
+        return RubyArray.newArrayMayCopy(runtime, dirStrings);
     }
 
     private static String getCWD(Ruby runtime) {
@@ -244,7 +244,7 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(name = "entries")
     public RubyArray entries() {
-        return getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
+        return RubyArray.newArrayMayCopy(getRuntime(), JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
     }
 
     /**
@@ -275,7 +275,7 @@ public class RubyDir extends RubyObject {
         FileResource directory = JRubyFile.createResource(context, path);
         String[] files = getEntries(context, directory, adjustedPath);
 
-        return runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, files));
+        return RubyArray.newArrayMayCopy(runtime, JavaUtil.convertJavaArrayToRuby(runtime, files));
     }
 
     private static final String[] NO_FILES = StringSupport.EMPTY_STRING_ARRAY;
@@ -315,7 +315,7 @@ public class RubyDir extends RubyObject {
             realPath = dir.canonicalPath();
         }
 
-        IRubyObject result = null;
+        IRubyObject result;
         if (block.isGiven()) {
             // FIXME: Don't allow multiple threads to do this at once
             runtime.setCurrentDirectory(realPath);
@@ -790,11 +790,11 @@ public class RubyDir extends RubyObject {
             String passwd;
             try {
                 FileInputStream stream = new FileInputStream("/etc/passwd");
-                int totalBytes = stream.available();
-                byte[] bytes = new byte[totalBytes];
-                stream.read(bytes);
+                int readBytes = stream.available();
+                byte[] bytes = new byte[readBytes];
+                readBytes = stream.read(bytes);
                 stream.close();
-                passwd = new String(bytes);
+                passwd = new String(bytes, 0, readBytes);
             } catch (IOException ioe) {
                 return runtime.getNil();
             }

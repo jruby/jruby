@@ -1,9 +1,11 @@
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 platform_is :windows do
   require 'win32ole'
 
   describe "WIN32OLE#_invoke" do
     before :each do
-      @shell = WIN32OLE.new 'Shell.application'
+      @shell = WIN32OLESpecs.new_ole 'Shell.application'
     end
 
     it "raises ArgumentError if insufficient number of arguments are given" do
@@ -13,7 +15,7 @@ platform_is :windows do
     end
 
     it "dispatches the method bound to a specific ID" do
-      @shell._invoke(0x60020002, [0], [WIN32OLE::VARIANT::VT_VARIANT]).title.should =~ /Desktop/i
+      @shell._invoke(0x60020002, [37], [WIN32OLE::VARIANT::VT_VARIANT]).title.should =~ /System32/i
     end
 
   end

@@ -1,5 +1,3 @@
-require 'mspec/helpers/const_lookup'
-
 class NameMap
   MAP = {
     '`'   => 'backtick',
@@ -59,16 +57,10 @@ class NameMap
   EXCLUDED = %w[
     MSpecScript
     MkSpec
-    DTracer
-    Etc
-    FileUtils
     MSpecOption
     MSpecOptions
     NameMap
-    OptionParser
-    RbConfig
     SpecVersion
-    YAML
   ]
 
   def initialize(filter=false)
@@ -82,9 +74,9 @@ class NameMap
   end
 
   def class_or_module(c)
-    const = const_lookup(c)
+    const = Object.const_get(c, false)
     filtered = @filter && EXCLUDED.include?(const.name)
-    return const if Module === const and not filtered
+    return const if Module === const and !filtered
   rescue NameError
   end
 
@@ -99,7 +91,7 @@ class NameMap
     constants.each do |const|
       name = namespace mod, const
       m = class_or_module name
-      next unless m and not @seen[m]
+      next unless m and !@seen[m]
       @seen[m] = true
 
       ms = m.methods(false).map { |x| x.to_s }

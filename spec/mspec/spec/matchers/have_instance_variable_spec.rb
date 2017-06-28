@@ -46,20 +46,6 @@ shared_examples_for "have_instance_variable, on all Ruby versions" do
   end
 end
 
-describe HaveInstanceVariableMatcher, "on RUBY_VERSION < 1.9" do
-  before :all do
-    @ruby_version = Object.const_get :RUBY_VERSION
-    Object.const_set :RUBY_VERSION, '1.8.6'
-
-    @object = Object.new
-    def @object.instance_variables
-      ['@foo']
-    end
-  end
-
-  it_should_behave_like "have_instance_variable, on all Ruby versions"
-end
-
 describe HaveInstanceVariableMatcher, "on RUBY_VERSION >= 1.9" do
   before :all do
     @ruby_version = Object.const_get :RUBY_VERSION

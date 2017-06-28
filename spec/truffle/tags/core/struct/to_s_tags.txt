@@ -1,1 +1,0 @@
-windows:Struct#to_s is a synonym for inspect

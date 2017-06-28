@@ -66,6 +66,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         this.argsNode = argsNode;
         this.iterNode = iterNode;
         this.isLazy = isLazy;
+        setNewline();
     }
 
     public NodeType getNodeType() {

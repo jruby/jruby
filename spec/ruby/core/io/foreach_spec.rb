@@ -28,7 +28,7 @@ describe "IO.foreach" do
       it "gets data from a fork when passed -" do
         parent_pid = $$
 
-        ret = IO.foreach("|-") { |l| ScratchPad << l; true }
+        IO.foreach("|-") { |l| ScratchPad << l }
 
         if $$ == parent_pid
           ScratchPad.recorded.should == ["hello\n", "from a fork\n"]
@@ -63,7 +63,7 @@ describe "IO.foreach" do
 
   describe "when no block is given" do
     it "returns an Enumerator" do
-      IO.foreach(@name).should be_an_instance_of(enumerator_class)
+      IO.foreach(@name).should be_an_instance_of(Enumerator)
       IO.foreach(@name).to_a.should == IOSpecs.lines
     end
 

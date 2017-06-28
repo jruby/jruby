@@ -60,5 +60,15 @@ with_feature :encoding do
         raise_error(Encoding::UndefinedConversionError)
       ec.replacement.should == "?".force_encoding('us-ascii')
     end
+
+    it "uses the replacement character" do
+      ec = Encoding::Converter.new("utf-8", "us-ascii", :invalid => :replace, :undef => :replace)
+      ec.replacement = "!"
+      dest = ""
+      status = ec.primitive_convert "中文123", dest
+
+      status.should == :finished
+      dest.should == "!!123"
+    end
   end
 end

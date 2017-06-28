@@ -1,1 +1,0 @@
-fails:Hash literal does not change encoding of literal string keys during creation

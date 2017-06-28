@@ -103,8 +103,7 @@ module EnumerableSpecs
 
     def initialize(string)
       self.value = string
-      all_vowels = ['a', 'e' , 'i' , 'o', 'u']
-      self.vowels = string.gsub(/[^aeiou]/,'').size
+      self.vowels = string.gsub(/[^aeiou]/, '').size
     end
 
     def <=>(other)

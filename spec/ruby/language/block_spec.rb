@@ -599,7 +599,7 @@ describe "A block" do
       @y.m(1, 2) { |a, (b, (c, d))| [a, b, c, d] }.should == [1, 2, nil, nil]
     end
 
-    it "destructures a single multi-level Array value yielded" do
+    it "destructures a nested Array value yielded" do
       @y.m(1, [2, 3]) { |a, (b, (c, d))| [a, b, c, d] }.should == [1, 2, 3, nil]
     end
 
@@ -617,7 +617,7 @@ describe "A block" do
       @y.m(1, 2) { |a, ((b, c), d)| [a, b, c, d] }.should == [1, 2, nil, nil]
     end
 
-    it "destructures a single multi-level Array value yielded" do
+    it "destructures a nested value yielded" do
       @y.m(1, [2, 3]) { |a, ((b, c), d)| [a, b, c, d] }.should == [1, 2, nil, 3]
     end
 
@@ -825,22 +825,26 @@ describe "Post-args" do
       end.call(2, 3).should == [2, 6, [], 3]
     end
 
-    ruby_version_is "2.2" do
-      describe "with a circular argument reference" do
-        it "shadows an existing local with the same name as the argument" do
-          a = 1
-          proc { |a=a| a }.call.should == nil
-        end
+    describe "with a circular argument reference" do
+      it "shadows an existing local with the same name as the argument" do
+        a = 1
+        -> {
+          @proc = eval "proc { |a=a| a }"
+        }.should complain(/circular argument reference/)
+        @proc.call.should == nil
+      end
 
-        it "shadows an existing method with the same name as the argument" do
-          def a; 1; end
-          proc { |a=a| a }.call.should == nil
-        end
+      it "shadows an existing method with the same name as the argument" do
+        def a; 1; end
+        -> {
+          @proc = eval "proc { |a=a| a }"
+        }.should complain(/circular argument reference/)
+        @proc.call.should == nil
+      end
 
-        it "calls an existing method with the same name as the argument if explicitly using ()" do
-          def a; 1; end
-          proc { |a=a()| a }.call.should == 1
-        end
+      it "calls an existing method with the same name as the argument if explicitly using ()" do
+        def a; 1; end
+        proc { |a=a()| a }.call.should == 1
       end
     end
   end

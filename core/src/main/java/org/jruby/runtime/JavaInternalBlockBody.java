@@ -7,6 +7,7 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 /**
  * Represents a special Java implementation of a block.
@@ -33,7 +34,12 @@ public abstract class JavaInternalBlockBody extends BlockBody {
         this.methodName = methodName;
         this.dummyScope = runtime.getStaticScopeFactory().getDummyScope();
     }
-    
+
+    @Deprecated // needed by jruby-rack until it supports 1.7 along side with 9K
+    public JavaInternalBlockBody(Ruby runtime, Arity arity) {
+        this(runtime, null, null, Signature.from(arity));
+    }
+
     // Make sure we are still on the same thread as originator if we care
     private void threadCheck(ThreadContext yieldingContext) {
         if (originalContext != null && yieldingContext != originalContext) {
@@ -41,14 +47,22 @@ public abstract class JavaInternalBlockBody extends BlockBody {
         }
     }
 
-    @Override
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        return yield(context, block, args, null);
+    private IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
+        Signature signature = block.getSignature();
+        int required = signature.required();
+        if (signature.isFixed() && required  > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
+
+        return args;
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, Block b, IRubyObject[] args, Block blockArg) {
-        return yield(context, b, args, null, blockArg);
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
+        return yield(context, block, adjustArgs(block, args), null);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        return yield(context, block, adjustArgs(block, args), null, blockArg);
     }
 
     @Override
@@ -61,8 +75,8 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         threadCheck(context);
-        
-        return yield(context, args);
+
+        return yield(context, adjustArgs(block, args));
     }
     
     public abstract IRubyObject yield(ThreadContext context, IRubyObject[] args);

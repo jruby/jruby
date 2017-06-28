@@ -126,7 +126,15 @@ public class RubyLexer extends LexingCommon {
     }
     
     private RationalNode newRationalNode(String value, int radix) throws NumberFormatException {
-        return new RationalNode(getPosition(), Long.parseLong(value, radix), 1);
+        NumericNode numerator;
+
+        try {
+            numerator = new FixnumNode(getPosition(), Long.parseLong(value, radix));
+        } catch (NumberFormatException e) {
+            numerator = new BignumNode(getPosition(), new BigInteger(value, radix));
+        }
+
+        return new RationalNode(getPosition(), numerator, new FixnumNode(getPosition(), 1));
     }
     
     private ComplexNode newComplexNode(NumericNode number) {
@@ -134,8 +142,9 @@ public class RubyLexer extends LexingCommon {
     }
     
     protected void ambiguousOperator(String op, String syn) {
-        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getPosition(), "`" + op + "' after local variable or literal is interpreted as binary operator");
-        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getPosition(), "even though it seems like " + syn);
+        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline,
+                "`" + op + "' after local variable or literal is interpreted as binary operator");
+        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "even though it seems like " + syn);
     }
    
     public enum Keyword {
@@ -159,7 +168,7 @@ public class RubyLexer extends LexingCommon {
         IF ("if", Tokens.kIF, Tokens.kIF_MOD, EXPR_BEG),
         DEFINED_P ("defined?", Tokens.kDEFINED, Tokens.kDEFINED, EXPR_ARG),
         SUPER ("super", Tokens.kSUPER, Tokens.kSUPER, EXPR_ARG),
-        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, EXPR_FNAME),
+        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, EXPR_FNAME|EXPR_FITEM),
         BREAK ("break", Tokens.kBREAK, Tokens.kBREAK, EXPR_MID),
         IN ("in", Tokens.kIN, Tokens.kIN, EXPR_BEG),
         DO ("do", Tokens.kDO, Tokens.kDO, EXPR_BEG),
@@ -178,7 +187,7 @@ public class RubyLexer extends LexingCommon {
         LEND ("END", Tokens.klEND, Tokens.klEND, EXPR_END),
         LBEGIN ("BEGIN", Tokens.klBEGIN, Tokens.klBEGIN, EXPR_END),
         WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, EXPR_BEG),
-        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, EXPR_FNAME),
+        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, EXPR_FNAME|EXPR_FITEM),
         __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, EXPR_END);
         
         public final String name;
@@ -429,7 +438,8 @@ public class RubyLexer extends LexingCommon {
             BigDecimal numerator = bd.multiply(denominator);
 
             try {
-                yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
+                yaccValue = new RationalNode(getPosition(), new FixnumNode(getPosition(), numerator.longValueExact()),
+                        new FixnumNode(getPosition(), denominator.longValueExact()));
             } catch (ArithmeticException ae) {
                 // FIXME: Rational supports Bignum numerator and denominator
                 compile_error(PID.RATIONAL_OUT_OF_RANGE, "Rational (" + numerator + "/" + denominator + ") out of range.");
@@ -441,7 +451,7 @@ public class RubyLexer extends LexingCommon {
         try {
             d = SafeDoubleParser.parseDouble(number);
         } catch (NumberFormatException e) {
-            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
+            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getFile(), ruby_sourceline, "Float " + number + " out of range.");
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
@@ -525,53 +535,53 @@ public class RubyLexer extends LexingCommon {
 
         switch (c) {
         case 'Q':
-            lex_strterm = new StringTerm(str_dquote, begin ,end);
+            lex_strterm = new StringTerm(str_dquote, begin ,end, ruby_sourceline);
             yaccValue = "%"+ (shortHand ? (""+end) : ("" + c + begin));
             return Tokens.tSTRING_BEG;
 
         case 'q':
-            lex_strterm = new StringTerm(str_squote, begin, end);
+            lex_strterm = new StringTerm(str_squote, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return Tokens.tSTRING_BEG;
 
         case 'W':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end, ruby_sourceline);
             do {c = nextc();} while (Character.isWhitespace(c));
             pushback(c);
             yaccValue = "%"+c+begin;
             return Tokens.tWORDS_BEG;
 
         case 'w':
-            lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end, ruby_sourceline);
             do {c = nextc();} while (Character.isWhitespace(c));
             pushback(c);
             yaccValue = "%"+c+begin;
             return Tokens.tQWORDS_BEG;
 
         case 'x':
-            lex_strterm = new StringTerm(str_xquote, begin, end);
+            lex_strterm = new StringTerm(str_xquote, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return Tokens.tXSTRING_BEG;
 
         case 'r':
-            lex_strterm = new StringTerm(str_regexp, begin, end);
+            lex_strterm = new StringTerm(str_regexp, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return Tokens.tREGEXP_BEG;
 
         case 's':
-            lex_strterm = new StringTerm(str_ssym, begin, end);
-            setState(EXPR_FNAME);
+            lex_strterm = new StringTerm(str_ssym, begin, end, ruby_sourceline);
+            setState(EXPR_FNAME|EXPR_FITEM);
             yaccValue = "%"+c+begin;
             return Tokens.tSYMBEG;
         
         case 'I':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end, ruby_sourceline);
             do {c = nextc();} while (Character.isWhitespace(c));
             pushback(c);
             yaccValue = "%" + c + begin;
             return Tokens.tSYMBOLS_BEG;
         case 'i':
-            lex_strterm = new StringTerm(/* str_squote | */STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(/* str_squote | */STR_FUNC_QWORDS, begin, end, ruby_sourceline);
             do {c = nextc();} while (Character.isWhitespace(c));
             pushback(c);
             yaccValue = "%" + c + begin;
@@ -655,8 +665,8 @@ public class RubyLexer extends LexingCommon {
     }
     
     private boolean arg_ambiguous() {
-        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load() && !ParserSupport.skipTruffleRubiniusWarnings(this)) {
-            warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
+        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
+            warnings.warning(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "Ambiguous first argument; make sure.");
         }
         return true;
     }
@@ -1056,7 +1066,7 @@ public class RubyLexer extends LexingCommon {
     private int identifierToken(int result, String value) {
         if (result == Tokens.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
                 parserSupport.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END);
+            setState(EXPR_END|EXPR_LABEL);
         }
 
         yaccValue = value;
@@ -1094,7 +1104,7 @@ public class RubyLexer extends LexingCommon {
         ISourcePosition tmpPosition = getPosition();
         if (isSpaceArg(c, spaceSeen)) {
             if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                warnings.warning(ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
+                warnings.warning(ID.ARGUMENT_AS_PREFIX, getFile(), tmpPosition.getLine(), "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
             c = Tokens.tAMPER;
@@ -1155,7 +1165,7 @@ public class RubyLexer extends LexingCommon {
             return Tokens.tBACK_REF2;
         }
 
-        lex_strterm = new StringTerm(str_xquote, '\0', '`');
+        lex_strterm = new StringTerm(str_xquote, '\0', '`', ruby_sourceline);
         return Tokens.tXSTRING_BEG;
     }
     
@@ -1228,10 +1238,10 @@ public class RubyLexer extends LexingCommon {
         
         switch (c) {
         case '\'':
-            lex_strterm = new StringTerm(str_ssym, '\0', c);
+            lex_strterm = new StringTerm(str_ssym, '\0', c, ruby_sourceline);
             break;
         case '"':
-            lex_strterm = new StringTerm(str_dsym, '\0', c);
+            lex_strterm = new StringTerm(str_dsym, '\0', c, ruby_sourceline);
             break;
         default:
             pushback(c);
@@ -1403,7 +1413,7 @@ public class RubyLexer extends LexingCommon {
     
     private int doubleQuote(boolean commandState) throws IOException {
         int label = isLabelPossible(commandState) ? str_label : 0;
-        lex_strterm = new StringTerm(str_dquote|label, '\0', '"');
+        lex_strterm = new StringTerm(str_dquote|label, '\0', '"', ruby_sourceline);
         yaccValue = "\"";
 
         return Tokens.tSTRING_BEG;
@@ -1443,7 +1453,6 @@ public class RubyLexer extends LexingCommon {
         }
 
         newtok(true);
-        int first = c;
         do {
             if (!tokadd_mbchar(c)) return EOF;
             c = nextc();
@@ -1465,8 +1474,10 @@ public class RubyLexer extends LexingCommon {
         int result = 0;
 
         last_state = lex_state;
+        String tempVal;
         if (lastBangOrPredicate) {
             result = Tokens.tFID;
+            tempVal = createTokenString();
         } else {
             if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
@@ -1484,14 +1495,14 @@ public class RubyLexer extends LexingCommon {
                     pushback(c);
                 }
             }
+            tempVal = createTokenString();
 
-            if (result == 0 && Character.isUpperCase(first)) {
+            if (result == 0 && Character.isUpperCase(tempVal.charAt(0))) {
                 result = Tokens.tCONSTANT;
             } else {
                 result = Tokens.tIDENTIFIER;
             }
         }
-        String tempVal = createTokenString();
         
         if (isLabelPossible(commandState)) {
             if (isLabelSuffix()) {
@@ -1717,7 +1728,7 @@ public class RubyLexer extends LexingCommon {
             return Tokens.tOP_ASGN;
         }
 
-        if (isSpaceArg(c, spaceSeen)) return parseQuote(c);
+        if (isSpaceArg(c, spaceSeen) || (isLexState(lex_state, EXPR_FITEM) && c == 's')) return parseQuote(c);
 
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
         
@@ -1829,7 +1840,7 @@ public class RubyLexer extends LexingCommon {
                     break;
                 }
                 if (c2 != 0) {
-                    warnings.warn(ID.INVALID_CHAR_SEQUENCE, getPosition(), "invalid character syntax; use ?\\" + c2);
+                    warnings.warn(ID.INVALID_CHAR_SEQUENCE, getFile(), ruby_sourceline, "invalid character syntax; use ?\\" + c2);
                 }
             }
             pushback(c);
@@ -1908,7 +1919,7 @@ public class RubyLexer extends LexingCommon {
     
     private int singleQuote(boolean commandState) throws IOException {
         int label = isLabelPossible(commandState) ? str_label : 0;
-        lex_strterm = new StringTerm(str_squote|label, '\0', '\'');
+        lex_strterm = new StringTerm(str_squote|label, '\0', '\'', ruby_sourceline);
         yaccValue = "'";
 
         return Tokens.tSTRING_BEG;
@@ -1916,7 +1927,7 @@ public class RubyLexer extends LexingCommon {
     
     private int slash(boolean spaceSeen) throws IOException {
         if (isBEG()) {
-            lex_strterm = new StringTerm(str_regexp, '\0', '/');
+            lex_strterm = new StringTerm(str_regexp, '\0', '/', ruby_sourceline);
             yaccValue = "/";
             return Tokens.tREGEXP_BEG;
         }
@@ -1931,7 +1942,7 @@ public class RubyLexer extends LexingCommon {
         pushback(c);
         if (isSpaceArg(c, spaceSeen)) {
             arg_ambiguous();
-            lex_strterm = new StringTerm(str_regexp, '\0', '/');
+            lex_strterm = new StringTerm(str_regexp, '\0', '/', ruby_sourceline);
             yaccValue = "/";
             return Tokens.tREGEXP_BEG;
         }
@@ -1959,7 +1970,7 @@ public class RubyLexer extends LexingCommon {
 
             if (isSpaceArg(c, spaceSeen)) {
                 if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`**' interpreted as argument prefix");
+                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getFile(), ruby_sourceline, "`**' interpreted as argument prefix");
                 c = Tokens.tDSTAR;
             } else if (isBEG()) {
                 c = Tokens.tDSTAR;
@@ -1975,8 +1986,8 @@ public class RubyLexer extends LexingCommon {
         default:
             pushback(c);
             if (isSpaceArg(c, spaceSeen)) {
-                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load() && !ParserSupport.skipTruffleRubiniusWarnings(this))
-                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
+                if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
+                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getFile(), ruby_sourceline, "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {
                 c = Tokens.tSTAR;
@@ -2010,7 +2021,7 @@ public class RubyLexer extends LexingCommon {
      *  Parse a number from the input stream.
      *
      *@param c The first character of the number.
-     *@return A int constant wich represents a token.
+     *@return An int constant which represents a token.
      */
     private int parseNumber(int c) throws IOException {
         setState(EXPR_END);
@@ -2189,8 +2200,9 @@ public class RubyLexer extends LexingCommon {
                     break;
                 case 'e' :
                 case 'E' :
-                    if (nondigit != '\0') {
-                        compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
+                    if (nondigit != 0) {
+                        pushback(c);
+                        return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
                     } else if (seen_e) {
                         pushback(c);
                         return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);

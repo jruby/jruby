@@ -14,7 +14,7 @@ describe :array_collect, shared: true do
 
   it "does not change self" do
     a = ['a', 'b', 'c', 'd']
-    b = a.send(@method) { |i| i + '!' }
+    a.send(@method) { |i| i + '!' }
     a.should == ['a', 'b', 'c', 'd']
   end
 
@@ -32,7 +32,14 @@ describe :array_collect, shared: true do
 
   it "returns an Enumerator when no block given" do
     a = [1, 2, 3]
-    a.send(@method).should be_an_instance_of(enumerator_class)
+    a.send(@method).should be_an_instance_of(Enumerator)
+  end
+
+  it "raises an ArgumentError when no block and with arguments" do
+    a = [1, 2, 3]
+    lambda {
+      a.send(@method, :foo)
+    }.should raise_error(ArgumentError)
   end
 
   it "does not copy tainted status" do
@@ -82,7 +89,7 @@ describe :array_collect_b, shared: true do
   it "returns an Enumerator when no block given, and the enumerator can modify the original array" do
     a = [1, 2, 3]
     enum = a.send(@method)
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.each{|i| "#{i}!" }
     a.should == ["1!", "2!", "3!"]
   end

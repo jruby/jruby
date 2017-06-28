@@ -1,5 +1,0 @@
-fails:CApiComplexSpecs rb_Complex creates a new Complex with numerator and denominator
-fails:CApiComplexSpecs rb_Complex2 creates a new Complex with numerator and denominator
-fails:CApiComplexSpecs rb_Complex1 creates a new Complex with real and imaginary of 0
-fails:CApiComplexSpecs rb_complex_new creates a normalized Complex
-fails:CApiComplexSpecs rb_complex_new2 creates a normalized Complex

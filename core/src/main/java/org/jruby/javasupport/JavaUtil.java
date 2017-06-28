@@ -36,19 +36,19 @@ package org.jruby.javasupport;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ReflectPermission;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
+import static java.lang.Character.toUpperCase;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.AccessController;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -99,9 +99,13 @@ public class JavaUtil {
 
         if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
             try {
-                AccessController.checkPermission(new ReflectPermission("suppressAccessChecks"));
-                canSetAccessible = true;
-            } catch (Throwable t) {
+                // We want to check if we can access a commonly-existing private field through reflection.
+                // If so, we're probably able to access some other fields too later on.
+                Field f = Java.class.getDeclaredField(Java.HIDDEN_STATIC_FIELD_NAME);
+                f.setAccessible(true);
+                canSetAccessible = f.getByte(null) == 72;
+            }
+            catch (Exception t) {
                 // added this so if things are weird in the future we can debug without
                 // spinning a new binary
                 if (Options.JI_LOGCANSETACCESSIBLE.load()) {
@@ -128,20 +132,20 @@ public class JavaUtil {
 
     public static RubyArray convertJavaArrayToRubyWithNesting(final ThreadContext context, final Object array) {
         final int length = Array.getLength(array);
-        final RubyArray outer = context.runtime.newArray(length);
+        final IRubyObject[] rubyElements = new IRubyObject[length];
         for ( int i = 0; i < length; i++ ) {
             final Object element = Array.get(array, i);
             if ( element instanceof ArrayJavaProxy ) {
-                outer.append( convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy) element).getObject()) );
+                rubyElements[i] = convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy) element).getObject());
             }
             else if ( element != null && element.getClass().isArray() ) {
-                outer.append( convertJavaArrayToRubyWithNesting(context, element) );
+                rubyElements[i] = convertJavaArrayToRubyWithNesting(context, element);
             }
             else {
-                outer.append( convertJavaToUsableRubyObject(context.runtime, element) );
+                rubyElements[i] = convertJavaToUsableRubyObject(context.runtime, element);
             }
         }
-        return outer;
+        return context.runtime.newArrayNoCopy(rubyElements);
     }
 
     public static JavaConverter getJavaConverter(Class clazz) {
@@ -210,8 +214,7 @@ public class JavaUtil {
 
     public static IRubyObject convertJavaArrayElementToRuby(Ruby runtime, JavaConverter converter, Object array, int i) {
         if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
-            IRubyObject x = convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
-            return x;
+            return convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
         }
         return converter.get(runtime, array, i);
     }
@@ -294,15 +297,15 @@ public class JavaUtil {
      * @return java object or passed object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
-    public static Object unwrapIfJavaObject(final IRubyObject object) {
+    public static <T> T unwrapIfJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
-            return ((JavaProxy) object).getObject();
+            return (T) ((JavaProxy) object).getObject();
         }
         final Object unwrap = object.dataGetStruct();
         if ( unwrap instanceof JavaObject ) {
-            return ((JavaObject) unwrap).getValue();
+            return (T) ((JavaObject) unwrap).getValue();
         }
-        return object;
+        return (T) object; // assume correct instance
     }
 
     @Deprecated // no longer used
@@ -364,6 +367,26 @@ public class JavaUtil {
             }
         }
         return null;
+    }
+
+    // property -> getProperty
+    public static String toJavaGetName(final String propertyName) {
+        if ( propertyName == null ) return null;
+        final int len = propertyName.length();
+        if ( len == 0 ) return null;
+        final char first = toUpperCase(propertyName.charAt(0));
+        if ( len == 1 ) return "get" + first;
+        return "get" + first + propertyName.substring(1);
+    }
+
+    // property -> isProperty
+    public static String toJavaIsName(final String propertyName) {
+        if ( propertyName == null ) return null;
+        final int len = propertyName.length();
+        if ( len == 0 ) return null;
+        final char first = toUpperCase(propertyName.charAt(0));
+        if ( len == 1 ) return "is" + first;
+        return "is" + first + propertyName.substring(1);
     }
 
     /**
@@ -1015,7 +1038,7 @@ public class JavaUtil {
         return ((JavaProxy)self).getObject();
     }
 
-    public static final Map<String,Class> PRIMITIVE_CLASSES;
+    public static final Map<String, Class> PRIMITIVE_CLASSES;
     static {
         Map<String, Class> primitiveClasses = new HashMap<>(10, 1);
         primitiveClasses.put("boolean", Boolean.TYPE);
@@ -1027,6 +1050,22 @@ public class JavaUtil {
         primitiveClasses.put("float", Float.TYPE);
         primitiveClasses.put("double", Double.TYPE);
         PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitiveClasses);
+    }
+
+    public static Class<?> getPrimitiveClass(final String name) {
+        switch (name) {
+            case "boolean": return Boolean.TYPE;
+            case "byte": return Byte.TYPE;
+            case "char": return Character.TYPE;
+            case "short": return Short.TYPE;
+            case "int": return Integer.TYPE;
+            case "long": return Long.TYPE;
+            case "float": return Float.TYPE;
+            case "double": return Double.TYPE;
+
+            case "void": return Void.TYPE;
+        }
+        return null;
     }
 
     @Deprecated

@@ -1,2 +1,0 @@
-fails:Binding#local_variable_set sets a local variable using a String as the variable name
-fails:Binding#local_variable_set sets a local variable using an object responding to #to_str as the variable name

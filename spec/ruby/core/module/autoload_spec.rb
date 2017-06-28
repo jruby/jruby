@@ -43,6 +43,7 @@ describe "Module#autoload" do
     ModuleSpecs::Autoload.should_not have_constant(:X)
     ModuleSpecs::Autoload.autoload :X, fixture(__FILE__, "autoload_x.rb")
     ModuleSpecs::Autoload::X.should == :x
+    ModuleSpecs::Autoload.send(:remove_const, :X)
   end
 
   it "loads the registered constant into a dynamically created class" do
@@ -127,6 +128,7 @@ describe "Module#autoload" do
 
     ModuleSpecs::Autoload.autoload :S, filename
     ModuleSpecs::Autoload.autoload?(:S).should be_nil
+    ModuleSpecs::Autoload.send(:remove_const, :S)
   end
 
   it "retains the autoload even if the request to require fails" do
@@ -261,6 +263,7 @@ describe "Module#autoload" do
 
     ModuleSpecs::Autoload::W::Y.should be_kind_of(Class)
     ScratchPad.recorded.should == :loaded
+    ModuleSpecs::Autoload::W.send(:remove_const, :Y)
   end
 
   it "calls #to_path on non-string filenames" do
@@ -286,9 +289,12 @@ describe "Module#autoload" do
   end
 
   it "shares the autoload request across dup'ed copies of modules" do
+    require fixture(__FILE__, "autoload_s.rb")
     filename = fixture(__FILE__, "autoload_t.rb")
     mod1 = Module.new { autoload :T, filename }
-    ModuleSpecs::Autoload::S = mod1
+    lambda {
+      ModuleSpecs::Autoload::S = mod1
+    }.should complain(/already initialized constant/)
     mod2 = mod1.dup
 
     mod1.autoload?(:T).should == filename
@@ -374,6 +380,8 @@ describe "Module#autoload" do
       t2_val.should == t1_val
 
       t2_exc.should be_nil
+
+      ModuleSpecs::Autoload.send(:remove_const, :Concur)
     end
   end
 
@@ -396,7 +404,7 @@ describe "Module#autoload" do
   end
 
   describe "(concurrently)" do
-    ruby_bug "#10892", "2.3" do
+    ruby_bug "#10892", ""..."2.3" do
       it "blocks others threads while doing an autoload" do
         file_path     = fixture(__FILE__, "repeated_concurrent_autoload.rb")
         autoload_path = file_path.sub(/\.rb\Z/, '')
@@ -438,6 +446,10 @@ describe "Module#autoload" do
 
         # check that the autoloaded file was evaled exactly once
         ScratchPad.recorded.get.should == mod_count
+
+        mod_names.each do |mod_name|
+          Object.send(:remove_const, mod_name)
+        end
       end
     end
   end

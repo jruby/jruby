@@ -49,6 +49,15 @@ describe "CApiObject" do
   class DescObjectTest < ObjectTest
   end
 
+  class MethodArity
+    def one;    end
+    def two(a); end
+    def three(*a);  end
+    def four(a, b); end
+    def five(a, b, *c);    end
+    def six(a, b, *c, &d); end
+  end
+
   describe "rb_obj_alloc" do
     it "allocates a new uninitialized object" do
       o = @o.rb_obj_alloc(CApiObjectSpecs::Alloc)
@@ -112,6 +121,36 @@ describe "CApiObject" do
     end
   end
 
+  describe "rb_obj_method_arity" do
+    before :each do
+      @obj = MethodArity.new
+    end
+
+    it "returns 0 when the method takes no arguments" do
+      @o.rb_obj_method_arity(@obj, :one).should == 0
+    end
+
+    it "returns 1 when the method takes a single, required argument" do
+      @o.rb_obj_method_arity(@obj, :two).should == 1
+    end
+
+    it "returns -1 when the method takes a variable number of arguments" do
+      @o.rb_obj_method_arity(@obj, :three).should == -1
+    end
+
+    it "returns 2 when the method takes two required arguments" do
+      @o.rb_obj_method_arity(@obj, :four).should == 2
+    end
+
+    it "returns -N-1 when the method takes N required and variable additional arguments" do
+      @o.rb_obj_method_arity(@obj, :five).should == -3
+    end
+
+    it "returns -N-1 when the method takes N required, variable additional, and a block argument" do
+      @o.rb_obj_method_arity(@obj, :six).should == -3
+    end
+  end
+
   describe "rb_method_boundp" do
     it "returns true when the given method is bound" do
       @o.rb_method_boundp(Object, :class, true).should == true
@@ -134,6 +173,15 @@ describe "CApiObject" do
   end
 
   describe "rb_require" do
+    before :each do
+      @saved_loaded_features = $LOADED_FEATURES.dup
+    end
+
+    after :each do
+      $foo = nil
+      $LOADED_FEATURES.replace @saved_loaded_features
+    end
+
     it "requires a ruby file" do
       $foo.should == nil
       $:.unshift File.dirname(__FILE__)
@@ -603,8 +651,14 @@ describe "CApiObject" do
   end
 
   describe "rb_any_to_s" do
-    it "converts obj to string" do
+    it "converts an Integer to string" do
       obj = 1
+      i = @o.rb_any_to_s(obj)
+      i.should be_kind_of(String)
+    end
+
+    it "converts an Object to string" do
+      obj = Object.new
       i = @o.rb_any_to_s(obj)
       i.should be_kind_of(String)
     end

@@ -44,7 +44,7 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     private final String name;
     private final INameNode constNode;
 
-    // TODO: Split this into two sub-classes so that name and constNode can be specified seperately.
+    // TODO: Split this into two sub-classes so that name and constNode can be specified separately.
     public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         

@@ -2,7 +2,6 @@ package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
-import jnr.posix.FileStat;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -1590,7 +1589,7 @@ public class OpenFile implements Finalizable {
             if (str == null) return context.nil;
             str = EncodingUtils.ioEncStr(runtime, str, this);
             ((RubyString) str).setCodeRange(cr);
-            incrementLineno(runtime);
+            incrementLineno(runtime, io);
         } finally {
             if (locked) unlock();
         }
@@ -1598,12 +1597,25 @@ public class OpenFile implements Finalizable {
         return str;
     }
 
+    public void incrementLineno(Ruby runtime, RubyIO io) {
+        boolean locked = lock();
+        try {
+            lineno++;
+            if (RubyArgsFile.ArgsFileData.getArgsFileData(runtime).isCurrentFile(io)) {
+                runtime.setCurrentLine(runtime.getCurrentLine() + 1);
+            } else {
+                runtime.setCurrentLine(lineno);
+            }
+        } finally {
+            if (locked) unlock();
+        }
+    }
+
+    @Deprecated
     public void incrementLineno(Ruby runtime) {
         boolean locked = lock();
         try {
             lineno++;
-            runtime.setCurrentLine(lineno);
-            RubyArgsFile.setCurrentLineNumber(runtime.getArgsFile(), lineno);
         } finally {
             if (locked) unlock();
         }
@@ -2393,8 +2405,9 @@ public class OpenFile implements Finalizable {
 
     // MRI: check_tty
     public void checkTTY() {
-        // TODO: native descriptors? Is this only used for stdio?
-        if (stdio_file != null) {
+        if (fd.realFileno != -1 && runtime.getPosix().isatty(fd.realFileno) != 0
+            || stdio_file != null) {
+
             boolean locked = lock();
             try {
                 mode |= TTY | DUPLEX;
@@ -2402,6 +2415,9 @@ public class OpenFile implements Finalizable {
                 if (locked) unlock();
             }
         }
+
+        // Clear errno so ENOTTY does not get picked up elsewhere (jruby/jruby#4527
+        runtime.getPosix().errno(0);
     }
 
     public boolean isBOM() {

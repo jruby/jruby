@@ -14,10 +14,17 @@ describe :rational_round, shared: true do
 
     it "returns the truncated value toward the nearest integer" do
       @rational.round.should == 314
-      Rational(1, 2).round.should == 1
-      Rational(-1, 2).round.should == -1
       Rational(0, 1).round(0).should == 0
       Rational(2, 1).round(0).should == 2
+    end
+
+    it "returns the rounded value toward the nearest integer" do
+      Rational(1, 2).round.should == 1
+      Rational(-1, 2).round.should == -1
+      Rational(3, 2).round.should == 2
+      Rational(-3, 2).round.should == -2
+      Rational(5, 2).round.should == 3
+      Rational(-5, 2).round.should == -3
     end
   end
 

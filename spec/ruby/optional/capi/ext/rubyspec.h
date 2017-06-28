@@ -23,25 +23,19 @@
    (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR < (minor)) || \
    (RUBY_VERSION_MAJOR == (major) && RUBY_VERSION_MINOR == (minor) && RUBY_VERSION_TEENY < (teeny)))
 
+#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 4)
+#define RUBY_VERSION_IS_2_4
+#endif
+
 #if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 3)
 #define RUBY_VERSION_IS_2_3
-#endif
-
-#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 2)
-#define RUBY_VERSION_IS_2_2
-#endif
-
-#if RUBY_VERSION_MAJOR > 2 || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 1)
-#define RUBY_VERSION_IS_2_1
 #endif
 
 /* Define all function flags */
 
 /* Array */
 #define HAVE_RB_ARRAY                      1
-#ifdef RUBY_VERSION_IS_2_1
 #define HAVE_RARRAY_AREF                   1
-#endif
 #define HAVE_RARRAY_LEN                    1
 #define HAVE_RARRAY_PTR                    1
 #define HAVE_RB_ARY_AREF                   1
@@ -55,14 +49,16 @@
 #define HAVE_RB_ARY_JOIN                   1
 #define HAVE_RB_ARY_NEW                    1
 #define HAVE_RB_ARY_NEW2                   1
+#define HAVE_RB_ARY_NEW_CAPA               1
 #define HAVE_RB_ARY_NEW3                   1
-#ifdef RUBY_VERSION_IS_2_1
 #define HAVE_RB_ARY_NEW_FROM_ARGS          1
-#endif
 #define HAVE_RB_ARY_NEW4                   1
+#define HAVE_RB_ARY_NEW_FROM_VALUES        1
 #define HAVE_RB_ARY_POP                    1
 #define HAVE_RB_ARY_PUSH                   1
+#define HAVE_RB_ARY_CAT                    1
 #define HAVE_RB_ARY_REVERSE                1
+#define HAVE_RB_ARY_ROTATE                 1
 #define HAVE_RB_ARY_SHIFT                  1
 #define HAVE_RB_ARY_STORE                  1
 #define HAVE_RB_ARY_CONCAT                 1
@@ -78,12 +74,7 @@
 #define HAVE_RB_MEM_CLEAR                  1
 
 /* Bignum */
-#if RUBY_VERSION_BEFORE(2,2,0)
-#define HAVE_RBIGNUM_NEGATIVE_P            1
-#define HAVE_RBIGNUM_POSITIVE_P            1
-#define HAVE_RBIGNUM_SIGN                  1
-#define HAVE_RBIGNUM_LEN                   1
-#endif
+#define HAVE_ABSINT_SIZE                   1
 #define HAVE_RB_BIG2DBL                    1
 #define HAVE_RB_DBL2BIG                    1
 #define HAVE_RB_BIG2LL                     1
@@ -149,6 +140,7 @@
 #define HAVE_RB_CSTRING                    1
 #define HAVE_RB_CSTRUCT                    1
 #define HAVE_RB_CSYMBOL                    1
+#define HAVE_RB_CTIME                      1
 #define HAVE_RB_CTHREAD                    1
 #define HAVE_RB_CTRUECLASS                 1
 #define HAVE_RB_CNUMERATOR                 1
@@ -299,6 +291,7 @@
 
 /* Hash */
 #define HAVE_RB_HASH                       1
+#define HAVE_RB_HASH2                      1
 #define HAVE_RB_HASH_DUP                   1
 #define HAVE_RB_HASH_FREEZE                1
 #define HAVE_RB_HASH_AREF                  1
@@ -310,17 +303,11 @@
 #define HAVE_RB_HASH_LOOKUP                1
 #define HAVE_RB_HASH_LOOKUP2               1
 #define HAVE_RB_HASH_NEW                   1
-#ifdef RUBY_VERSION_IS_2_1
 #define HAVE_RB_HASH_SET_IFNONE            1
-#endif
-#ifdef RUBY_VERSION_IS_2_2
 #define HAVE_RB_HASH_SIZE                  1
-#endif
 
 /* Integer */
-#ifdef RUBY_VERSION_IS_2_1
 #define HAVE_RB_INTEGER_PACK               1
-#endif
 
 /* IO */
 #define HAVE_GET_OPEN_FILE                 1
@@ -379,6 +366,7 @@
 #define HAVE_RB_YIELD_VALUES               1
 #define HAVE_RB_FUNCALL3                   1
 #define HAVE_RB_FUNCALL_WITH_BLOCK         1
+#define HAVE_RB_PROTECT                    1
 
 /* GC */
 #define HAVE_RB_GC_REGISTER_ADDRESS        1
@@ -406,6 +394,7 @@
 #define HAVE_RB_DEFINE_GLOBAL_FUNCTION     1
 #define HAVE_RB_DEFINE_METHOD              1
 #define HAVE_RB_DEFINE_MODULE_FUNCTION     1
+#define HAVE_RB_DEFINE_MODULE              1
 #define HAVE_RB_DEFINE_MODULE_UNDER        1
 #define HAVE_RB_DEFINE_PRIVATE_METHOD      1
 #define HAVE_RB_DEFINE_PROTECTED_METHOD    1
@@ -473,6 +462,7 @@
 #define HAVE_RB_OBJ_IS_KIND_OF             1
 #define HAVE_RB_OBJ_TAINT                  1
 #define HAVE_RB_OBJ_METHOD                 1
+#define HAVE_RB_OBJ_METHOD_ARITY           1
 #define HAVE_RB_REQUIRE                    1
 #define HAVE_RB_RESPOND_TO                 1
 #define HAVE_RB_OBJ_RESPOND_TO             1
@@ -498,10 +488,8 @@
 #define HAVE_RB_RATIONAL_NEW               1
 #define HAVE_RB_RATIONAL_NEW1              1
 #define HAVE_RB_RATIONAL_NEW2              1
-#ifdef RUBY_VERSION_IS_2_2
 #define HAVE_RB_RATIONAL_NUM               1
 #define HAVE_RB_RATIONAL_DEN               1
-#endif
 
 /* Regexp */
 #define HAVE_RB_BACKREF_GET                1
@@ -535,6 +523,7 @@
 #define HAVE_RB_STR_NEW4                   1
 #define HAVE_RB_STR_NEW5                   1
 #define HAVE_RB_STR_PLUS                   1
+#define HAVE_RB_STR_TIMES                  1
 #define HAVE_RB_STR_RESIZE                 1
 #define HAVE_RB_STR_SET_LEN                1
 #define HAVE_RB_STR_SPLIT                  1
@@ -556,13 +545,20 @@
 #define HAVE_RB_STR_EQUAL                  1
 #define HAVE_RB_STR_SUBSEQ                 1
 #define HAVE_RB_VSPRINTF                   1
+#define HAVE_RB_STRING                     1
 
 /* Struct */
 #define HAVE_RB_STRUCT_AREF                1
 #define HAVE_RB_STRUCT_ASET                1
 #define HAVE_RB_STRUCT_DEFINE              1
+#define HAVE_RB_STRUCT_DEFINE_UNDER        1
 #define HAVE_RB_STRUCT_NEW                 1
 #define HAVE_RB_STRUCT_GETMEMBER           1
+#define HAVE_RB_STRUCT_S_MEMBERS           1
+#define HAVE_RB_STRUCT_MEMBERS             1
+#ifdef RUBY_VERSION_IS_2_4
+#define HAVE_RB_STRUCT_SIZE                1
+#endif
 
 /* Symbol */
 #define HAVE_RB_ID2NAME                    1
@@ -572,23 +568,14 @@
 #define HAVE_RB_IS_CLASS_ID                1
 #define HAVE_RB_IS_CONST_ID                1
 #define HAVE_RB_IS_INSTANCE_ID             1
-#ifdef RUBY_VERSION_IS_2_2
 #define HAVE_RB_SYM2STR                    1
-#endif
 
 /* Thread */
 #define HAVE_RB_THREAD_ALONE               1
-#if RUBY_VERSION_BEFORE(2,2,0)
-#define HAVE_RB_THREAD_BLOCKING_REGION     1
-#endif
 #define HAVE_RB_THREAD_CALL_WITHOUT_GVL    1
-#define HAVE_RB_THREAD_CALL_WITHOUT_GVL2   1
 #define HAVE_RB_THREAD_CURRENT             1
 #define HAVE_RB_THREAD_LOCAL_AREF          1
 #define HAVE_RB_THREAD_LOCAL_ASET          1
-#if RUBY_VERSION_BEFORE(2,2,0)
-#define HAVE_RB_THREAD_SELECT              1
-#endif
 #define HAVE_RB_THREAD_WAIT_FOR            1
 #define HAVE_RB_THREAD_WAKEUP              1
 #define HAVE_RB_THREAD_CREATE              1
@@ -601,27 +588,11 @@
 #define HAVE_RB_TIME_TIMEVAL               1
 #define HAVE_RB_TIME_TIMESPEC              1
 #ifdef RUBY_VERSION_IS_2_3
+#define HAVE_RB_TIMESPEC_NOW               1
 #define HAVE_RB_TIME_TIMESPEC_NEW          1
 #endif
 
 /* Util */
 #define HAVE_RB_SCAN_ARGS                  1
-#define HAVE_RUBY_SETENV                   1
-#define HAVE_RUBY_STRDUP                   1
-
-/* Now, create the differential set. The format of the preprocessor directives
- * is significant. The alternative implementations should define RUBY because
- * some extensions depend on that. But only one alternative implementation
- * macro should be defined at a time. The conditional is structured so that if
- * no alternative implementation is defined then MRI is assumed.
- */
-
-#if defined(RUBINIUS)
-#include "rubinius.h"
-#elif defined(JRUBY)
-#include "jruby.h"
-#elif defined(JRUBY_TRUFFLE)
-#include "jruby_truffle.h"
-#endif
 
 #endif

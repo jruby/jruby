@@ -6,7 +6,9 @@ describe "GzipReader#each_byte" do
 
   before :each do
     @data = '12345abcde'
-    @zip = "\037\213\b\000,\334\321G\000\00334261MLJNI\005\000\235\005\000$\n\000\000\000"
+    @zip = [31, 139, 8, 0, 44, 220, 209, 71, 0, 3, 51, 52, 50, 54, 49, 77,
+            76, 74, 78, 73, 5, 0, 157, 5, 0, 36, 10, 0, 0, 0].pack('C*')
+
     @io = StringIO.new @zip
     ScratchPad.clear
   end
@@ -16,6 +18,22 @@ describe "GzipReader#each_byte" do
 
     ScratchPad.record []
     gz.each_byte { |b| ScratchPad << b }
+
+    ScratchPad.recorded.should == [49, 50, 51, 52, 53, 97, 98, 99, 100, 101]
+  end
+
+  it "returns an enumerator, which yields each byte in the stream, when no block is passed" do
+    gz = Zlib::GzipReader.new @io
+    enum = gz.each_byte
+
+    ScratchPad.record []
+    while true
+      begin
+        ScratchPad << enum.next
+      rescue StopIteration
+        break
+      end
+    end
 
     ScratchPad.recorded.should == [49, 50, 51, 52, 53, 97, 98, 99, 100, 101]
   end

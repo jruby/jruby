@@ -1,18 +1,18 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2013 The JRuby Team (jruby@jruby.org)
+ * Copyright (C) 2013-2017 The JRuby Team (jruby@jruby.org)
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -20,11 +20,11 @@
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
@@ -172,7 +172,7 @@ public class RipperLexer extends LexingCommon {
         IF ("if", Tokens.kIF, Tokens.kIF_MOD, EXPR_BEG),
         DEFINED_P ("defined?", Tokens.kDEFINED, Tokens.kDEFINED, EXPR_ARG),
         SUPER ("super", Tokens.kSUPER, Tokens.kSUPER, EXPR_ARG),
-        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, EXPR_FNAME),
+        UNDEF ("undef", Tokens.kUNDEF, Tokens.kUNDEF, EXPR_FNAME|EXPR_FITEM),
         BREAK ("break", Tokens.kBREAK, Tokens.kBREAK, EXPR_MID),
         IN ("in", Tokens.kIN, Tokens.kIN, EXPR_BEG),
         DO ("do", Tokens.kDO, Tokens.kDO, EXPR_BEG),
@@ -191,7 +191,7 @@ public class RipperLexer extends LexingCommon {
         LEND ("END", Tokens.klEND, Tokens.klEND, EXPR_END),
         LBEGIN ("BEGIN", Tokens.klBEGIN, Tokens.klBEGIN, EXPR_END),
         WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, EXPR_BEG),
-        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, EXPR_FNAME),
+        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, EXPR_FNAME|EXPR_FITEM),
         __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, EXPR_END);
 
         public final String name;
@@ -336,7 +336,7 @@ public class RipperLexer extends LexingCommon {
         String value = createTokenString();
 
         if (!isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parser.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END);
+            setState(EXPR_END|EXPR_LABEL);
         }
 
         identValue = value.intern();
@@ -524,7 +524,7 @@ public class RipperLexer extends LexingCommon {
 
         case 's':
             lex_strterm = new StringTerm(str_ssym, begin, end);
-            setState(EXPR_FNAME);
+            setState(EXPR_FNAME|EXPR_FITEM);
             return Tokens.tSYMBEG;
 
         case 'I':
@@ -1601,7 +1601,6 @@ public class RipperLexer extends LexingCommon {
         // and this hack can disappear.
         int whereKeywordShouldStart = lex_p - 1;
 
-        int first = c;
         do {
             if (!tokadd_mbchar(c)) return EOF;
             c = nextc();
@@ -1622,9 +1621,11 @@ public class RipperLexer extends LexingCommon {
         
         int result = 0;
 
+        String tempVal;
         last_state = lex_state;
         if (lastBangOrPredicate) {
             result = Tokens.tFID;
+            tempVal = createTokenString();
         } else {
             if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
@@ -1642,14 +1643,13 @@ public class RipperLexer extends LexingCommon {
                     pushback(c);
                 }
             }
-            if (result == 0 && Character.isUpperCase(first)) {
+            tempVal = createTokenString();
+            if (result == 0 && Character.isUpperCase(tempVal.charAt(0))) {
                 result = Tokens.tCONSTANT;
             } else {
                 result = Tokens.tIDENTIFIER;
             }
         }
-
-        String tempVal = createTokenString();
 
         if (isLabelPossible(commandState)) {
             if (isLabelSuffix()) {
@@ -1850,8 +1850,8 @@ public class RipperLexer extends LexingCommon {
             setState(EXPR_BEG);
             return Tokens.tOP_ASGN;
         }
-        
-        if (isSpaceArg(c, spaceSeen)) return parseQuote(c);
+
+        if (isSpaceArg(c, spaceSeen) || (isLexState(lex_state, EXPR_FITEM) && c == 's')) return parseQuote(c);
 
         setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG);
 
@@ -2133,7 +2133,7 @@ public class RipperLexer extends LexingCommon {
      *  Parse a number from the input stream.
      *
      *@param c The first character of the number.
-     *@return A int constant wich represents a token.
+     *@return A int constant which represents a token.
      */
     private int parseNumber(int c) throws IOException {
         setState(EXPR_END);

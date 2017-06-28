@@ -35,7 +35,6 @@ public class UnresolvedSuperInstr extends CallInstr {
     public boolean computeScopeFlags(IRScope scope) {
         super.computeScopeFlags(scope);
         scope.getFlags().add(IRFlags.REQUIRES_FRAME); // for current class and method name
-        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE); // for current class and method name
         return true;
     }
 

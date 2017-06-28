@@ -1,5 +1,4 @@
 require 'mspec/expectations/expectations'
-require 'mspec/helpers/singleton_class'
 
 class Object
   alias_method :__mspec_object_id__, :object_id
@@ -108,7 +107,7 @@ module Mock
         end
         unless pass
           SpecExpectation.fail_with(
-            "Mock '#{name_or_inspect obj}' expected to receive '#{key.last}' " \
+            "Mock '#{name_or_inspect obj}' expected to receive '#{key.last}' " + \
             "#{qualifier.to_s.sub('_', ' ')} #{count} times",
             "but received it #{proxy.calls} times")
         end
@@ -118,10 +117,7 @@ module Mock
 
   def self.verify_call(obj, sym, *args, &block)
     compare = *args
-    behaves_like_ruby_1_9 = *[]
-    if (behaves_like_ruby_1_9)
-      compare = compare.first if compare.length <= 1
-    end
+    compare = compare.first if compare.length <= 1
 
     key = replaced_key obj, sym
     [mocks, stubs].each do |proxies|
@@ -142,14 +138,14 @@ module Mock
                 block.call(*args_to_yield)
               else
                 SpecExpectation.fail_with(
-                  "Mock '#{name_or_inspect obj}' asked to yield " \
+                  "Mock '#{name_or_inspect obj}' asked to yield " + \
                   "|#{proxy.yielding.join(', ')}| on #{sym}\n",
                   "but a block with arity #{block.arity} was passed")
               end
             end
           else
             SpecExpectation.fail_with(
-              "Mock '#{name_or_inspect obj}' asked to yield " \
+              "Mock '#{name_or_inspect obj}' asked to yield " + \
               "|[#{proxy.yielding.join('], [')}]| on #{sym}\n",
               "but no block was passed")
           end

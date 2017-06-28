@@ -1,2 +1,0 @@
-fails:Kernel.lambda raises an ArgumentError when no block is given
-fails:Kernel.lambda allows long returns to flow through it

@@ -1,1 +1,0 @@
-fails:Array#flatten performs respond_to? and method_missing-aware checks when coercing elements to array

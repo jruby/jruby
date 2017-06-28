@@ -61,23 +61,22 @@ public class RubyClassPathVariable extends RubyObject {
     public IRubyObject append(ThreadContext context, IRubyObject obj) {
         IRubyObject[] paths;
         if (obj.respondsTo("to_a")) {
-            paths = ((RubyArray) obj.callMethod(context, "to_a")).toJavaArray();
+            paths = ((RubyArray) obj.callMethod(context, "to_a")).toJavaArrayMaybeUnsafe();
         } else {
-            paths = context.runtime.newArray(obj).toJavaArray();
+            paths = new IRubyObject[] { obj };
         }
 
         for (IRubyObject path: paths) {
             try {
                 URL url = getURL(path.convertToString().toString());
                 if (url.getProtocol().equals("file")) {
-                    path = RubyFile.expand_path19(context, null, new IRubyObject[]{ path });
+                    path = RubyFile.expand_path(context, null, path);
                     url = getURL(path.convertToString().toString());
                 }
-                getRuntime().getJRubyClassLoader().addURL(url);
+                context.runtime.getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException mue) {
-                throw getRuntime().newArgumentError(mue.getLocalizedMessage());
+                throw context.runtime.newArgumentError(mue.getLocalizedMessage());
             }
-            
         }
         return this;
     }

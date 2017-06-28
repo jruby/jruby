@@ -121,7 +121,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
                 implementationClass,
                 desc1.anno.visibility(),
                 (min == max) ?
-                        org.jruby.runtime.Signature.from(min, 0, 0, 0, 0, org.jruby.runtime.Signature.Rest.NONE, false).encode() :
+                        org.jruby.runtime.Signature.from(min, 0, 0, 0, 0, org.jruby.runtime.Signature.Rest.NONE, -1).encode() :
                         org.jruby.runtime.Signature.OPTIONAL.encode(),
                 true,
                 notImplemented,
@@ -139,15 +139,8 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         int min = Integer.MAX_VALUE;
         int max = 0;
 
-        JavaMethodDescriptor desc1 = descs.get(0);
-        String rubyName;
-
-        if (desc1.anno.name() != null && desc1.anno.name().length > 0) {
-            // FIXME: Using this for super may super up the wrong name
-            rubyName = desc1.anno.name()[0];
-        } else {
-            rubyName = desc1.name;
-        }
+        // FIXME: Using desc.anno.name()[0] for super may super up the wrong name
+        final String rubyName = descs.get(0).rubyName;
 
         Callable<MethodHandle>[] targets = new Callable[5];
 

@@ -74,9 +74,9 @@ public class RubySignal {
         Map<String, Integer> signals = new HashMap<String, Integer>();
 
         for (Signal s : Signal.values()) {
-            if (!s.description().startsWith("SIG"))
+            if (!s.description().startsWith(SIGNAME_PREFIX))
                 continue;
-            if (!RUBY_18_SIGNALS.contains(s.description().substring(3)))
+            if (!RUBY_18_SIGNALS.contains(signmWithoutPrefix(s.description())))
                 continue;
 
             // replace CLD with CHLD value
@@ -88,7 +88,7 @@ public class RubySignal {
             if (signo >= 20000)
                 continue;
 
-            signals.put(s.description().substring("SIG".length()), signo);
+            signals.put(signmWithoutPrefix(s.description()), signo);
         }
 
         return signals;
@@ -143,12 +143,28 @@ public class RubySignal {
     public static String signo2signm(long no) {
         for (Signal s : Signal.values()) {
             if (s.intValue() == no) {
-                return s.name().substring(3);
+                return signmWithoutPrefix(s.name());
             }
         }
         return null;
     }
-    
+
+    // MRI: signm2signo
+    public static long signm2signo(String nm) {
+        for (Signal s : Signal.values()) {
+            if (signmWithoutPrefix(s.name()).equals(nm)) return s.longValue();
+        }
+        return 0;
+    }
+
+    public static String signmWithPrefix(String nm) {
+        return (nm.startsWith(SIGNAME_PREFIX)) ? nm : SIGNAME_PREFIX + nm;
+    }
+
+    public static String signmWithoutPrefix(String nm) {
+        return (nm.startsWith(SIGNAME_PREFIX)) ? nm.substring(SIGNAME_PREFIX.length()) : nm;
+    }
+
     private static final Set<String> RUBY_18_SIGNALS;
     static {
         RUBY_18_SIGNALS = new HashSet<String>();
@@ -201,4 +217,6 @@ public class RubySignal {
             RUBY_18_SIGNALS.add(name);
         }
     }
+
+    private static final String SIGNAME_PREFIX = "SIG";
 }// RubySignal

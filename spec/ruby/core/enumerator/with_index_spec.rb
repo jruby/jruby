@@ -9,7 +9,7 @@ describe "Enumerator#with_index" do
   it "returns a new Enumerator when no block is given" do
     enum1 = [1,2,3].select
     enum2 = enum1.with_index
-    enum2.should be_an_instance_of(enumerator_class)
+    enum2.should be_an_instance_of(Enumerator)
     enum1.should_not === enum2
   end
 

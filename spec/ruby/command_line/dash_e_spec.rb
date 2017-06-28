@@ -10,11 +10,11 @@ describe "The -e command line option" do
   end
 
   it "uses 'main' as self" do
-    ruby_exe("puts self").chomp.should == "main"
+    ruby_exe("puts self", escape: false).chomp.should == "main"
   end
 
   it "uses '-e' as file" do
-    ruby_exe("puts __FILE__").chomp.should == "-e"
+    ruby_exe("puts __FILE__", escape: false).chomp.should == "-e"
   end
 
   #needs to test return => LocalJumpError

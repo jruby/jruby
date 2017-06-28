@@ -2,21 +2,26 @@
 #include "rubyspec.h"
 #include "ruby/io.h"
 #include <fcntl.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 static int set_non_blocking(int fd) {
-  int flags;
-#if defined(O_NONBLOCK)
-  if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
+#if defined(O_NONBLOCK) && defined(F_GETFL)
+  int flags = fcntl(fd, F_GETFL, 0);
+  if (flags == -1)
     flags = 0;
   return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-#else
-  flags = 1;
+#elif defined(FIOBIO)
+  int flags = 1;
   return ioctl(fd, FIOBIO, &flags);
+#else
+  errno = ENOSYS;
+  return -1;
 #endif
 }
 
@@ -139,13 +144,14 @@ VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p) {
   char buf[RB_IO_WAIT_READABLE_BUF];
   wait_bool ret;
 
-  set_non_blocking(fd);
+  if (set_non_blocking(fd) == -1)
+    rb_sys_fail("set_non_blocking failed");
 
   if(RTEST(read_p)) {
-    rb_ivar_set(self, rb_intern("@write_data"), Qtrue);
     if(read(fd, buf, RB_IO_WAIT_READABLE_BUF) != -1) {
       return Qnil;
     }
+    rb_ivar_set(self, rb_intern("@write_data"), Qtrue);
   }
 
   ret = rb_io_wait_readable(fd);

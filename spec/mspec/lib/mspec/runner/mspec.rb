@@ -5,9 +5,11 @@ require 'mspec/runner/tag'
 module MSpec
 
   @exit    = nil
+  @abort   = nil
   @start   = nil
   @enter   = nil
   @before  = nil
+  @add     = nil
   @after   = nil
   @leave   = nil
   @finish  = nil
@@ -40,24 +42,50 @@ module MSpec
   end
 
   def self.process
+    STDOUT.puts RUBY_DESCRIPTION
+
     actions :start
     files
     actions :finish
   end
 
+  def self.each_file(&block)
+    if ENV["MSPEC_MULTI"]
+      STDOUT.print "."
+      STDOUT.flush
+      while file = STDIN.gets and file = file.chomp
+        return if file == "QUIT"
+        yield file
+        begin
+          STDOUT.print "."
+          STDOUT.flush
+        rescue Errno::EPIPE
+          # The parent died
+          exit 1
+        end
+      end
+      # The parent closed the connection without QUIT
+      abort "the parent did not send QUIT"
+    else
+      return unless files = retrieve(:files)
+      shuffle files if randomize?
+      files.each(&block)
+    end
+  end
+
   def self.files
-    return unless files = retrieve(:files)
-
-    shuffle files if randomize?
-    files.each do |file|
-      @env = Object.new
-      @env.extend MSpec
-
+    each_file do |file|
+      setup_env
       store :file, file
       actions :load
       protect("loading #{file}") { Kernel.load file }
       actions :unload
     end
+  end
+
+  def self.setup_env
+    @env = Object.new
+    @env.extend MSpec
   end
 
   def self.actions(action, *args)
@@ -69,8 +97,8 @@ module MSpec
     begin
       @env.instance_eval(&block)
       return true
-    rescue SystemExit
-      raise
+    rescue SystemExit => e
+      raise e
     rescue Exception => exc
       register_exit 1
       actions :exception, ExceptionState.new(current && current.state, location, exc)
@@ -89,7 +117,7 @@ module MSpec
   end
 
   def self.guarded?
-    not @guarded.empty?
+    !@guarded.empty?
   end
 
   # Sets the toplevel ContextState to +state+.
@@ -290,7 +318,7 @@ module MSpec
     tags = []
     file = tags_file
     if File.exist? file
-      File.open(file, "rb") do |f|
+      File.open(file, "r:utf-8") do |f|
         f.each_line do |line|
           line.chomp!
           next if line.empty?
@@ -318,7 +346,7 @@ module MSpec
   def self.write_tags(tags)
     file = tags_file
     make_tag_dir(file)
-    File.open(file, "wb") do |f|
+    File.open(file, "w:utf-8") do |f|
       tags.each { |t| f.puts t }
     end
   end
@@ -335,7 +363,7 @@ module MSpec
 
     file = tags_file
     make_tag_dir(file)
-    File.open(file, "ab") { |f| f.puts tag.to_s }
+    File.open(file, "a:utf-8") { |f| f.puts tag.to_s }
     return true
   end
 
@@ -344,16 +372,17 @@ module MSpec
   # file if it is empty.
   def self.delete_tag(tag)
     deleted = false
-    pattern = /#{tag.tag}.*#{Regexp.escape(tag.escape(tag.description))}/
+    desc = tag.escape(tag.description)
     file = tags_file
     if File.exist? file
       lines = IO.readlines(file)
-      File.open(file, "wb") do |f|
+      File.open(file, "w:utf-8") do |f|
         lines.each do |line|
-          unless pattern =~ line.chomp
-            f.puts line unless line.empty?
-          else
+          line = line.chomp
+          if line.start_with?(tag.tag) and line.end_with?(desc)
             deleted = true
+          else
+            f.puts line unless line.empty?
           end
         end
       end

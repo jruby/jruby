@@ -40,6 +40,7 @@ public enum Operation {
     B_NIL(OpFlags.f_is_jump_or_branch),
     B_TRUE(OpFlags.f_is_jump_or_branch),
     B_FALSE(OpFlags.f_is_jump_or_branch),
+    B_SWITCH(OpFlags.f_is_jump_or_branch),
 
     /** argument receive in methods and blocks **/
     RECV_SELF(0),

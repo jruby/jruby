@@ -44,11 +44,11 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.MethodNames;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import org.jruby.util.TypeConverter;
 
 /**
  * A proxy for wrapping <code>java.util.Map</code> instances.
@@ -251,21 +251,22 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public void visitAll(Visitor visitor) {
+        public <T> void visitAll(ThreadContext context, VisitorWithState visitor, T state) {
             final Ruby runtime = getRuntime();
             // NOTE: this is here to make maps act similar to Hash-es which allow modifications while
             // iterating (meant from the same thread) ... thus we avoid iterating entrySet() directly
             final Map<Object, Object> map = mapDelegate();
             final Map.Entry[] entries = map.entrySet().toArray( new Map.Entry[map.size() ] );
+            int index = 0;
             for ( Map.Entry entry : entries ) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
-                visitor.visit(key, value);
+                visitor.visit(context, this, key, value, index++, state);
             }
         }
 
         @Override
-        public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
+        public RubyBoolean compare(final ThreadContext context, final VisitorWithState<RubyHash> method, IRubyObject other) {
             syncSize();
             if ( other instanceof RubyHashMap ) {
                 ((RubyHashMap) other).syncSize();
@@ -292,7 +293,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyBoolean getCompareByIdentity_p(ThreadContext context) {
+        public RubyBoolean compare_by_identity_p(ThreadContext context) {
             // NOTE: obviously little we can do to detect - but at least report Java built-in one :
             return context.runtime.newBoolean( mapDelegate() instanceof java.util.IdentityHashMap );
         }
@@ -447,7 +448,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc(ThreadContext context) {
-        return getOrCreateRubyHashMap().to_proc(context);
+        IRubyObject newProc = getOrCreateRubyHashMap().callMethod("to_proc");
+
+        TypeConverter.checkType(context, newProc, context.runtime.getProc());
+
+        return (RubyProc) newProc;
     }
 
     /** rb_hash_to_s
@@ -551,8 +556,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      *
      */
     @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
-    public RubyBoolean has_key_p(IRubyObject key) {
-        return getOrCreateRubyHashMap().has_key_p(key);
+    public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+        return getOrCreateRubyHashMap().has_key_p(context, key);
     }
 
     /** rb_hash_has_value
@@ -601,14 +606,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     @JRubyMethod(name = "keep_if")
     public IRubyObject keep_if(final ThreadContext context, final Block block) {
         return getOrCreateRubyHashMap().keep_if(context, block);
-    }
-
-    /** rb_hash_sort
-     *
-     */
-    @JRubyMethod(name = "sort")
-    public IRubyObject sort(ThreadContext context, Block block) {
-        return getOrCreateRubyHashMap().sort(context, block);
     }
 
     /** rb_hash_index
@@ -773,13 +770,13 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     }
 
     @JRubyMethod(name = "compare_by_identity")
-    public IRubyObject getCompareByIdentity(ThreadContext context) {
+    public IRubyObject compare_by_identity(ThreadContext context) {
         return this; // has no effect - mostly for compatibility
     }
 
     @JRubyMethod(name = "compare_by_identity?")
-    public IRubyObject getCompareByIdentity_p(ThreadContext context) {
-        return getOrCreateRubyHashMap().getCompareByIdentity_p(context);
+    public IRubyObject compare_by_identity_p(ThreadContext context) {
+        return getOrCreateRubyHashMap().compare_by_identity_p(context);
     }
 
     @Override
@@ -830,6 +827,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     @Deprecated
     public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
         return getOrCreateRubyHashMap().op_aset19(context, key, value);
+    }
+
+    @Deprecated
+    public IRubyObject sort(ThreadContext context, Block block) {
+        return getOrCreateRubyHashMap().sort(context, block);
     }
 
 }

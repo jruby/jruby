@@ -29,28 +29,6 @@ module Specs
         false
       end
     end
-
-    class RandomID
-      def ==(other)
-        true
-      end
-
-      def equal?(other)
-        true
-      end
-
-      def object_id()
-        @ids ||= []
-
-        loop {
-          candidate = rand
-          next if @ids.include? candidate
-          @ids << candidate
-          return candidate
-        }
-      end
-    end
-
   end
 end
 
@@ -124,26 +102,13 @@ describe "Kernel#=== for a class with #== and #equal? overridden to always be fa
     @o2 = @o1.dup
   end
 
-  not_compliant_on :rubinius do
-    it "returns true if the object id is the same even if both #== and #equal? return false" do
-      @o1.object_id.should == @o1.object_id
+  it "returns true if the object id is the same even if both #== and #equal? return false" do
+    @o1.object_id.should == @o1.object_id
 
-      @o1.should_not equal(@o1)
-      (@o1 == @o1).should == false
+    @o1.should_not equal(@o1)
+    (@o1 == @o1).should == false
 
-      (@o1 === @o1).should == true
-    end
-  end
-
-  deviates_on :rubinius do
-    it "returns false if both #== and #equal? return false even if object id is same" do
-      @o1.object_id.should == @o1.object_id
-
-      @o1.should_not equal(@o1)
-      (@o1 == @o1).should == false
-
-      (@o1 === @o1).should == false
-    end
+    (@o1 === @o1).should == true
   end
 
   it "returns false if the object id is not the same and both #== and #equal? return false" do
@@ -156,19 +121,15 @@ describe "Kernel#=== for a class with #== and #equal? overridden to always be fa
   end
 end
 
-describe "Kernel#=== for a class with #object_id overridden to always be different #== and #equal? overridden to always be true" do
+describe "Kernel#=== does not call #object_id nor #equal?" do
   before :each do
-    @o  = Object.new
-    @o1 = Specs::Kernel::RandomID.new
-    @o2 = @o1.dup
+    @o1 = Object.new
+    @o1.should_not_receive(:object_id)
+    @o1.should_not_receive(:equal?)
   end
 
-  it "returns true if #== or #equal? is true even if object id is different" do
-    @o1.object_id.should_not == @o1.object_id
-
-    @o1.should equal(@o1)
+  it "but still returns true for #== or #=== on the same object" do
     (@o1 == @o1).should == true
-
     (@o1 === @o1).should == true
   end
 end

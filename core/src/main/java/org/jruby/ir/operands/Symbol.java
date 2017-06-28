@@ -2,23 +2,27 @@ package org.jruby.ir.operands;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.ByteList;
 
 public class Symbol extends ImmutableLiteral {
     public static final Symbol KW_REST_ARG_DUMMY = new Symbol("", ASCIIEncoding.INSTANCE);
 
-    private final String name;
-    private final Encoding encoding;
+    private final ByteList bytes;
 
     public Symbol(String name, Encoding encoding) {
         super();
 
-        this.name = name;
-        this.encoding = encoding;
+        this.bytes = new ByteList(name.getBytes(encoding.getCharset()), encoding);
+    }
+
+    public Symbol(ByteList bytes) {
+        this.bytes = bytes;
     }
 
     @Override
@@ -26,13 +30,15 @@ public class Symbol extends ImmutableLiteral {
         return OperandType.SYMBOL;
     }
 
-    public String getName() {
-        return name;
+    public ByteList getBytes() {
+        return bytes;
     }
+
+    public String getString() { return RubyString.byteListToString(bytes); }
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return RubySymbol.newSymbol(context.runtime, getName(), encoding);
+        return RubySymbol.newSymbol(context.runtime, bytes);
     }
 
     @Override
@@ -41,18 +47,18 @@ public class Symbol extends ImmutableLiteral {
     }
 
     public Encoding getEncoding() {
-        return encoding;
+        return bytes.getEncoding();
     }
 
     @Override
     public String toString() {
-        return ":'" + getName() + "'";
+        return ":'" + getString() + "'";
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getName());
+        e.encode(getString());
         e.encode(getEncoding());
     }
 

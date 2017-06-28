@@ -98,6 +98,16 @@ public class CallableSelector {
         return method;
     }
 
+    public static <T extends JavaCallable> T matchingCallableArityZero(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods) {
+        final int signatureCode = 0;
+        T method = invoker.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods);
+            if (method != null) invoker.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
     public static <T extends JavaCallable> T matchingCallableArityOne(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0) {
         final int signatureCode = argsHashCode(arg0);
         T method = invoker.getSignature(signatureCode);
@@ -164,7 +174,7 @@ public class CallableSelector {
                         ( implMethod = getFunctionalInterfaceMethod(msTypes[last]) ) != null ) {
                         mostSpecificArity = implMethod.getParameterTypes().length;
                     }
-                    procArity = ((RubyProc) lastArg).getBlock().getSignature().arityValue();
+                    procArity = procArityValue(lastArg);
                 }
                 else {
                     procArity = Integer.MIN_VALUE;
@@ -179,7 +189,7 @@ public class CallableSelector {
 
                     final boolean lastArgProc = procArity != Integer.MIN_VALUE;
                     final Boolean moreSpecific = moreSpecificTypes(msTypes, cTypes, lastArgProc);
-                    if ( (Object) moreSpecific == Boolean.TRUE ) {
+                    if ( moreSpecific == Boolean.TRUE ) {
                         mostSpecific = candidate; msTypes = cTypes;
                         ambiguous = false; continue /* OUTER */;
                     }
@@ -584,7 +594,9 @@ public class CallableSelector {
     }
 
     private static boolean assignable(Class<?> type, final IRubyObject arg) {
-        return JavaClass.assignable(type, getJavaClass(arg));
+        return JavaClass.assignable(type, getJavaClass(arg)) ||
+                // handle 'native' signatures e.g. method with a (org.jruby.RubyArray arg)
+                ( arg != null && type.isAssignableFrom(arg.getClass()) );
     }
 
     /**
@@ -727,14 +739,16 @@ public class CallableSelector {
     }
 
     private static int javaClassHashCode(final IRubyObject arg) {
-        // if ( arg == null ) return 0;
         return arg.getJavaClass().hashCode();
     }
 
     private static int javaClassOrProcHashCode(final IRubyObject arg) {
-        // if ( arg == null ) return 0;
         final Class<?> javaClass = arg.getJavaClass();
-        return javaClass == RubyProc.class ? arg.hashCode() : javaClass.hashCode();
+        return javaClass == RubyProc.class ? 11 * procArityValue(arg) : javaClass.hashCode();
+    }
+
+    private static int procArityValue(final IRubyObject proc) {
+        return ((RubyProc) proc).getBlock().getSignature().arityValue();
     }
 
     private static Class<?> getJavaClass(final IRubyObject arg) {

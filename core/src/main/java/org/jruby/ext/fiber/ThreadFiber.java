@@ -4,6 +4,7 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
@@ -70,7 +71,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             switch (values.length) {
                 case 0: return context.nil;
                 case 1: return values[0];
-                default: return runtime.newArrayNoCopyLight(values);
+                default: return RubyArray.newArrayMayCopy(runtime, values);
             }
         }
         
@@ -78,7 +79,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         switch (values.length) {
             case 0: val = NEVER; break;
             case 1: val = values[0]; break;
-            default: val = runtime.newArrayNoCopyLight(values);
+            default: val = RubyArray.newArrayMayCopy(runtime, values);
         }
         
         if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
@@ -153,7 +154,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // Otherwise, we want to forward the exception to the target fiber
         // since it has the ball
         final ThreadFiber fiber = targetFiberData.fiber.get();
-        if ( fiber != null ) fiber.thread.raise(re.getException());
+        if ( fiber != null && fiber.alive() ) fiber.thread.raise(re.getException());
         else LOG.warn("no fiber thread to raise: {}", re.getException().inspect(context));
     }
 
@@ -171,7 +172,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             switch (values.length) {
                 case 0: return context.nil;
                 case 1: return values[0];
-                default: return runtime.newArrayNoCopyLight(values);
+                default: return RubyArray.newArrayMayCopy(runtime, values);
             }
         }
         
@@ -179,7 +180,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         switch (values.length) {
             case 0: val = NEVER; break;
             case 1: val = values[0]; break;
-            default: val = runtime.newArrayNoCopyLight(values);
+            default: val = RubyArray.newArrayMayCopy(runtime, values);
         }
         
         if (data.parent != context.getFiberCurrentThread()) throw runtime.newFiberError("fiber called across threads");
@@ -214,7 +215,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         if (currentFiberData.parent == null) throw runtime.newFiberError("can't yield from root fiber");
 
-        if (currentFiberData.prev == null) throw runtime.newFiberError("BUG: yield occured with null previous fiber. Report this at http://bugs.jruby.org");
+        if (currentFiberData.prev == null) throw runtime.newFiberError("BUG: yield occurred with null previous fiber. Report this at http://bugs.jruby.org");
 
         if (currentFiberData.queue.isShutdown()) throw runtime.newFiberError("dead fiber yielded");
         
@@ -238,7 +239,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return thread.getContextVariables();
     }
     
-    boolean alive() {
+    final boolean alive() {
         return thread != null && thread.isAlive() && !data.queue.isShutdown();
     }
     
@@ -253,6 +254,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 public void run() {
                     ThreadContext context = runtime.getCurrentContext();
                     context.setFiber(data.fiber.get());
+                    context.useRecursionGuardsFrom(data.parent.getContext());
                     fiberThread.set(context.getThread());
                     context.getThread().setFiberCurrentThread(data.parent);
 

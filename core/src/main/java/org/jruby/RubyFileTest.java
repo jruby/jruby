@@ -46,6 +46,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.FileResource;
+import org.jruby.util.NullDeviceResource;
 import org.jruby.util.TypeConverter;
 
 @JRubyModule(name = "FileTest")
@@ -203,7 +204,7 @@ public class RubyFileTest {
         return runtime.newBoolean(fileResource(filename).canRead());
     }
 
-    // Not exposed by filetest, but so similiar in nature that it is stored here
+    // Not exposed by filetest, but so similar in nature that it is stored here
     public static IRubyObject rowned_p(IRubyObject recv, IRubyObject filename) {
         FileStat stat = fileResource(filename).stat();
 
@@ -311,7 +312,13 @@ public class RubyFileTest {
     public static RubyBoolean zero_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
 
-        FileStat stat = fileResource(context, filename).stat();
+        FileResource resource = fileResource(context, filename);
+
+        // FIXME: Ultimately we should return a valid stat() from this but without massive NUL coverage
+        // this is less risky.
+        if (resource instanceof NullDeviceResource) return runtime.newBoolean(true);
+
+        FileStat stat = resource.stat();
 
         if (stat == null) return runtime.getFalse();
         // MRI behavior, enforced by RubySpecs.

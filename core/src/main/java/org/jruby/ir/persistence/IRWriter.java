@@ -88,7 +88,7 @@ public class IRWriter {
         if (scope instanceof IRClosure) {
             IRClosure closure = (IRClosure) scope;
 
-            file.encode(closure.getSignature().encode());
+            file.encode(closure.getSignature());
         }
 
         persistStaticScope(file, scope.getStaticScope());
@@ -123,6 +123,7 @@ public class IRWriter {
     private static void persistStaticScope(IRWriterEncoder file, StaticScope staticScope) {
         file.encode(staticScope.getType());
         file.encode(staticScope.getVariables());
+        file.encode(staticScope.getFirstKeywordIndex());
         file.encode(staticScope.getSignature());
     }
 }

@@ -3,14 +3,6 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
 describe "String#scan" do
-  before :each do
-    @kcode = $KCODE
-  end
-
-  after :each do
-    $KCODE = @kcode
-  end
-
   it "returns an array containing all matches" do
     "cruel world".scan(/\w+/).should == ["cruel", "world"]
     "cruel world".scan(/.../).should == ["cru", "el ", "wor"]
@@ -20,12 +12,9 @@ describe "String#scan" do
     "".scan(//).should == [""]
   end
 
-  it "respects $KCODE when the pattern collapses to nothing" do
+  it "respects unicode when the pattern collapses to nothing" do
     str = "こにちわ"
     reg = %r!!
-
-    $KCODE = "utf-8"
-
     str.scan(reg).should == ["", "", "", "", ""]
   end
 
@@ -191,5 +180,13 @@ describe "String#scan with pattern and block" do
 
   it "taints the results when passed a Regexp argument if self is tainted" do
     "hello".taint.scan(/./).each { |m| m.tainted?.should be_true }
+  end
+
+  it "passes block arguments as individual arguments when blocks are provided" do
+    "a b c\na b c\na b c".scan(/(\w*) (\w*) (\w*)/) do |first,second,third|
+      first.should == 'a';
+      second.should == 'b';
+      third.should == 'c';
+    end
   end
 end

@@ -3,7 +3,6 @@ package org.jruby.java.invokers;
 import java.lang.reflect.Field;
 
 import org.jruby.RubyModule;
-import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -14,16 +13,14 @@ public class InstanceFieldSetter extends FieldMethodOne {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
+    public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
         try {
-            JavaProxy proxy = InstanceMethodInvoker.castJavaProxy(self);
-            Object newValue = arg.toJava(field.getType());
-            field.set(proxy.getObject(), newValue);
-        } catch (IllegalAccessException iae) {
-            throw context.runtime.newSecurityError(iae.getMessage());
-        } catch (IllegalArgumentException iae) {
-            throw context.runtime.newTypeError(iae.getMessage());
+            Object value = arg.toJava(field.getType());
+            field.set(retrieveTarget(self), value);
         }
+        catch (IllegalAccessException ex) { return handleSetException(context.runtime, ex); }
+        catch (IllegalArgumentException ex) { return handleSetException(context.runtime, ex); }
         return arg;
     }
+
 }

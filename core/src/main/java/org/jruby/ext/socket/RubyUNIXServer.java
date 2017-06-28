@@ -29,6 +29,7 @@ package org.jruby.ext.socket;
 
 
 import jnr.unixsocket.UnixServerSocketChannel;
+import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -42,6 +43,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 
@@ -127,6 +129,11 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                 try {
                     UnixSocketChannel socketChannel = ((UnixServerSocketChannel) selectable).accept();
 
+                    if (socketChannel == null) {
+                        if (!ex) return runtime.newSymbol("wait_readable");
+                        throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
+                    }
+
                     RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
 
                     sock.init_sock(context.runtime, socketChannel, "");
@@ -156,7 +163,8 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod
     public IRubyObject sysaccept(ThreadContext context) {
-        return accept(context);
+        RubyUNIXSocket socket = (RubyUNIXSocket) accept(context);
+        return context.runtime.newFixnum(((UnixSocketChannel) socket.getChannel()).getFD());
     }
 
     @JRubyMethod
@@ -176,6 +184,20 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
         throw context.runtime.newErrnoENOTCONNError();
+    }
+
+    @Override
+    protected UnixSocketAddress getUnixSocketAddress() {
+        SocketAddress socketAddress = ((UnixServerSocketChannel)getChannel()).getLocalSocketAddress();
+        if (socketAddress instanceof UnixSocketAddress) return (UnixSocketAddress) socketAddress;
+        return null;
+    }
+
+    @Override
+    protected UnixSocketAddress getUnixRemoteSocket() {
+        SocketAddress socketAddress = ((UnixServerSocketChannel)getChannel()).getLocalSocketAddress();
+        if (socketAddress instanceof UnixSocketAddress) return (UnixSocketAddress) socketAddress;
+        return null;
     }
 
     private UnixServerSocketChannel asUnixServer() {

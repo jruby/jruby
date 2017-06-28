@@ -213,6 +213,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         super(runtime, type);
 
         finalResult = errorInfo = runtime.getNil();
+        threadName = runtime.getNil();
     }
 
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
@@ -488,9 +489,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             final int offset, final int length) {
             final RubyClass locationClass = runtime.getLocation();
 
-            RubyArray ary = runtime.newArray(length);
-            for ( int i = offset; i < offset + length; i++ ) {
-                ary.append(new RubyThread.Location(runtime, locationClass, elements[i]));
+            RubyArray ary = RubyArray.newBlankArray(runtime, length);
+            for ( int i = 0; i < length; i++ ) {
+                ary.store(i, new RubyThread.Location(runtime, locationClass, elements[i + offset]));
             }
 
             return ary;
@@ -678,6 +679,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return rubyThread;
     }
 
+    protected static RubyThread startWaiterThread(final Ruby runtime, int pid, Block block) {
+        final IRubyObject waiter = runtime.getClassFromPath("Process::Waiter");
+        final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) waiter);
+        rubyThread.op_aset(runtime.newSymbol("pid"), runtime.newFixnum(pid));
+        rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
+        return rubyThread;
+    }
+
     public synchronized void cleanTerminate(IRubyObject result) {
         finalResult = result;
     }
@@ -714,20 +723,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         final RubyHash mask = (RubyHash) TypeConverter.convertToType(_mask, context.runtime.getHash(), "to_hash");
 
-        mask.visitAll(new RubyHash.Visitor() {
-            @Override
-            public void visit(IRubyObject key, IRubyObject value) {
-                if (value instanceof RubySymbol) {
-                    RubySymbol sym = (RubySymbol) value;
-                    switch (sym.toString()) {
-                        case "immediate" : return;
-                        case "on_blocking" : return;
-                        case "never" : return;
-                        default : throw key.getRuntime().newArgumentError("unknown mask signature");
-                    }
-                }
-            }
-        });
+        mask.visitAll(context, HandleInterruptVisitor, null);
 
         RubyThread th = context.getThread();
         th.interruptMaskStack.add(mask);
@@ -745,6 +741,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             th.pollThreadEvents(context);
         }
     }
+
+    private static final RubyHash.VisitorWithState HandleInterruptVisitor = new RubyHash.VisitorWithState() {
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object state) {
+            if (value instanceof RubySymbol) {
+                RubySymbol sym = (RubySymbol) value;
+                switch (sym.toString()) {
+                    case "immediate" : return;
+                    case "on_blocking" : return;
+                    case "never" : return;
+                    default : throw key.getRuntime().newArgumentError("unknown mask signature");
+                }
+            }
+        }
+    };
 
     @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1)
     public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
@@ -859,7 +870,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public static RubyArray list(IRubyObject recv) {
         RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
 
-        return recv.getRuntime().newArrayNoCopy(activeThreads);
+        return RubyArray.newArrayMayCopy(recv.getRuntime(), activeThreads);
     }
 
     private void addToCorrectThreadGroup(ThreadContext context) {
@@ -1127,7 +1138,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public RubyArray keys() {
         IRubyObject[] keys = new IRubyObject[getFiberLocals().size()];
 
-        return RubyArray.newArrayNoCopy(getRuntime(), getFiberLocals().keySet().toArray(keys));
+        return RubyArray.newArrayMayCopy(getRuntime(), getFiberLocals().keySet().toArray(keys));
     }
 
     @JRubyMethod(meta = true)
@@ -1239,6 +1250,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public final IRubyObject raise(IRubyObject exception) {
         return raise(new IRubyObject[]{exception}, Block.NULL_BLOCK);
+    }
+
+    /**
+     * Simplified utility method for just raising an existing exception in this
+     * thread.
+     *
+     * @param exception the exception to raise
+     * @param message the message to use
+     * @return this thread
+     */
+    public final IRubyObject raise(IRubyObject exception, RubyString message) {
+        return raise(new IRubyObject[]{exception, message}, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(optional = 3)
@@ -1730,7 +1753,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             synchronized (selectable.blockingLock()) {
                 boolean oldBlocking = selectable.isBlocking();
 
-                SelectionKey key = null;
+                SelectionKey key;
                 try {
                     selectable.configureBlocking(false);
 

@@ -1,5 +1,4 @@
 require 'mspec/expectations/expectations'
-require 'mspec/utils/ruby_name'
 require 'mspec/runner/formatters/yaml'
 
 class JUnitFormatter < YamlFormatter
@@ -39,7 +38,7 @@ class JUnitFormatter < YamlFormatter
           errors="#{errors}"
           failures="#{failures}"
           time="#{time}"
-          name="Spec Output For #{::RUBY_NAME} (#{::RUBY_VERSION})">
+          name="Spec Output For #{::RUBY_ENGINE} (#{::RUBY_VERSION})">
     XML
     @tests.each do |h|
       description = encode_for_xml h[:test].description
@@ -80,17 +79,10 @@ class JUnitFormatter < YamlFormatter
   def encode_for_xml(str)
     encode_as_latin1(str).gsub("<", LT).gsub(">", GT).
       gsub('"', QU).gsub("'", AP).gsub("&", AM).
-      gsub(/[#{Regexp.escape("\0\1\2\3\4\5\6\7\8")}]/, "?")
+      tr("\x00-\x08", "?")
   end
 
-  if defined? Encoding
-    def encode_as_latin1(str)
-      str.encode(TARGET_ENCODING, :undef => :replace, :invalid => :replace)
-    end
-  else
-    require 'iconv'
-    def encode_as_latin1(str)
-      Iconv.conv("#{TARGET_ENCODING}//TRANSLIT//IGNORE", "UTF-8", str)
-    end
+  def encode_as_latin1(str)
+    str.encode(TARGET_ENCODING, :undef => :replace, :invalid => :replace)
   end
 end

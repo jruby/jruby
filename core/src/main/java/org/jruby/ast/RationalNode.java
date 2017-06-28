@@ -15,10 +15,10 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * @author enebo
  */
 public class RationalNode extends NumericNode implements SideEffectFree {
-    private final long numerator;
-    private final long denominator;
+    private final NumericNode numerator;
+    private final NumericNode denominator;
 
-    public RationalNode(ISourcePosition position, long numerator, long denominator) {
+    public RationalNode(ISourcePosition position, NumericNode numerator, NumericNode denominator) {
         super(position);
         
         this.numerator = numerator;
@@ -31,6 +31,11 @@ public class RationalNode extends NumericNode implements SideEffectFree {
     }
 
     @Override
+    public NumericNode negate() {
+        return new RationalNode(getPosition(), numerator.negate(), denominator);
+    }
+
+    @Override
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
@@ -40,11 +45,11 @@ public class RationalNode extends NumericNode implements SideEffectFree {
         return NodeType.RATIONALNODE;
     }
 
-    public long getNumerator() {
+    public NumericNode getNumerator() {
         return numerator;
     }
 
-    public long getDenominator() {
+    public NumericNode getDenominator() {
         return denominator;
     }
 }

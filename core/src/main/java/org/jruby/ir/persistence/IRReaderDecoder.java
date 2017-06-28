@@ -31,12 +31,15 @@ import org.jruby.util.ByteList;
 public interface IRReaderDecoder {
     public String decodeString();
     public String[] decodeStringArray();
+    public int[] decodeIntArray();
     public Instr decodeInstr();
     public IRScopeType decodeIRScopeType();
     public StaticScope.Type decodeStaticScopeType();
     public Operation decodeOperation();
     public Operand decodeOperand();
     public List<Operand> decodeOperandList();
+    public Label decodeLabel();
+    public Label[] decodeLabelArray();
     public Operand[] decodeOperandArray();
     public OperandType decodeOperandType();
     public boolean decodeBoolean();
@@ -50,7 +53,6 @@ public interface IRReaderDecoder {
     public long decodeLong();
     public double decodeDouble();
     public float decodeFloat();
-    public Label decodeLabel();
     public RubyEvent decodeRubyEvent();
     public Signature decodeSignature();
 

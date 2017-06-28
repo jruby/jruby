@@ -40,16 +40,19 @@ public class ProfileData implements ProfileCollection {
     private Invocation currentInvocation;
     private Invocation topInvocation;
     private int[] methodRecursion;
-    
+
     private final ThreadContext threadContext;
+    private final ProfiledMethods profiledMethods;
     
-    public ProfileData(ThreadContext tc) {
-        threadContext = tc;
+    public ProfileData(ThreadContext context, ProfiledMethods profiledMethods) {
+        this.threadContext = context;
+        this.profiledMethods = profiledMethods;
+
         clear();
     }
     
     private ProfiledMethod getProfiledMethod(final long serial) {
-        return threadContext.getRuntime().getProfiledMethods().getProfiledMethod( serial );
+        return profiledMethods.getProfiledMethod( serial );
     }
     
     /**

@@ -86,13 +86,13 @@ public class Block {
     public static final Block NULL_BLOCK = new Block(BlockBody.NULL_BODY);
 
     public Block(BlockBody body, Binding binding) {
+        assert binding != null;
         this.body = body;
         this.binding = binding;
     }
 
     public Block(BlockBody body) {
-        this.body = body;
-        this.binding = null;
+        this(body, Binding.DUMMY);
     }
 
     public DynamicScope allocScope(DynamicScope parentScope) {
@@ -103,15 +103,13 @@ public class Block {
         //
         // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
         // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
-        EvalType evalType = ((IRBlockBody)body).getEvalType();
-        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, evalType);
+        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, body.getEvalType());
         if (type == Block.Type.LAMBDA) newScope.setLambda(true);
         return newScope;
     }
 
     public EvalType getEvalType() {
-        // SSS FIXME: This is smelly
-        return body instanceof IRBlockBody ? ((IRBlockBody)body).getEvalType() : null;
+        return body.getEvalType();
     }
 
     public void setEvalType(EvalType evalType) {
@@ -192,6 +190,15 @@ public class Block {
         return newBlock;
     }
 
+    public Block cloneBlockAndBinding() {
+        Block newBlock = new Block(body, binding.clone());
+
+        newBlock.type = type;
+        newBlock.escapeBlock = this;
+
+        return newBlock;
+    }
+
     public Block cloneBlockAndFrame() {
         Binding oldBinding = binding;
         Binding binding = new Binding(
@@ -213,6 +220,16 @@ public class Block {
 
     public Block cloneBlockForEval(IRubyObject self, EvalType evalType) {
         Block block = cloneBlock();
+
+        block.getBinding().setSelf(self);
+        block.getBinding().getFrame().setSelf(self);
+        block.setEvalType(evalType);
+
+        return block;
+    }
+
+    public Block deepCloneBlockForEval(IRubyObject self, EvalType evalType) {
+        Block block = cloneBlockAndBinding();
 
         block.getBinding().setSelf(self);
         block.getBinding().getFrame().setSelf(self);

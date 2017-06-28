@@ -55,7 +55,7 @@ describe "Processing RUBYOPT" do
   it "requires the file for '-r'" do
     f = fixture __FILE__, "rubyopt"
     ENV["RUBYOPT"] = "-r#{f}"
-    ruby_exe("").should =~ /^rubyopt.rb required/
+    ruby_exe("0", args: '2>&1').should =~ /^rubyopt.rb required/
   end
 
   it "raises a RuntimeError for '-a'" do

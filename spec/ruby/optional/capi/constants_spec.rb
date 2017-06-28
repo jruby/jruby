@@ -107,6 +107,10 @@ describe "C-API constant" do
     @s.rb_cSymbol.should == Symbol
   end
 
+  specify "rb_cTime references the Time class" do
+    @s.rb_cTime.should == Time
+  end
+
   specify "rb_cThread references the Thread class" do
     @s.rb_cThread.should == Thread
   end

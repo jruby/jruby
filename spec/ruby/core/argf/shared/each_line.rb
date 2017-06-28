@@ -45,7 +45,7 @@ describe :argf_each_line, shared: true do
   describe "when no block is given" do
     it "returns an Enumerator" do
       argf [@file1_name, @file2_name] do
-        @argf.send(@method).should be_an_instance_of(enumerator_class)
+        @argf.send(@method).should be_an_instance_of(Enumerator)
       end
     end
 

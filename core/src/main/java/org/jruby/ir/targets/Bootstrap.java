@@ -174,7 +174,7 @@ public class Bootstrap {
     }
 
     public static Handle global() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
     }
 
     public static RubyString string(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
@@ -211,7 +211,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
-        return RubyArray.newArrayNoCopy(context.runtime, elts);
+        return RubyArray.newArrayMayCopy(context.runtime, elts);
     }
 
     public static Handle contextValue() {
@@ -362,7 +362,7 @@ public class Bootstrap {
     }
 
     static MethodHandle buildAttrHandle(InvokeSite site, DynamicMethod method, IRubyObject self, RubyClass dispatchClass) {
-        if (method instanceof AttrReaderMethod) {
+        if (method instanceof AttrReaderMethod && site.arity == 0) {
             AttrReaderMethod attrReader = (AttrReaderMethod) method;
             String varName = attrReader.getVariableName();
 
@@ -371,15 +371,15 @@ public class Bootstrap {
 
             // Ruby to attr reader
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                //            if (accessor instanceof FieldVariableAccessor) {
-                //                LOG.info(site.name() + "\tbound as field attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
-                //            } else {
-                //                LOG.info(site.name() + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
-                //            }
+                if (accessor instanceof FieldVariableAccessor) {
+                    LOG.info(site.name() + "\tbound as field attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                } else {
+                    LOG.info(site.name() + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
+                }
             }
 
             return createAttrReaderHandle(site, self, dispatchClass.getRealClass(), accessor);
-        } else if (method instanceof AttrWriterMethod) {
+        } else if (method instanceof AttrWriterMethod && site.arity == 1) {
             AttrWriterMethod attrReader = (AttrWriterMethod)method;
             String varName = attrReader.getVariableName();
 
@@ -387,13 +387,13 @@ public class Bootstrap {
             VariableAccessor accessor = dispatchClass.getRealClass().getVariableAccessorForWrite(varName);
 
             // Ruby to attr reader
-//            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-//                if (accessor instanceof FieldVariableAccessor) {
-//                    LOG.info(site.name() + "\tbound as field attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
-//                } else {
-//                    LOG.info(site.name() + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
-//                }
-//            }
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                if (accessor instanceof FieldVariableAccessor) {
+                    LOG.info(site.name() + "\tbound as field attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+                } else {
+                    LOG.info(site.name() + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
+                }
+            }
 
             return createAttrWriterHandle(site, self, dispatchClass.getRealClass(), accessor);
         }
@@ -412,7 +412,6 @@ public class Bootstrap {
 
         MethodHandle getValue;
 
-        // FIXME: Duplicated from ivar get
         if (accessor instanceof FieldVariableAccessor) {
             int offset = ((FieldVariableAccessor)accessor).getOffset();
             getValue = Binder.from(site.type())
@@ -424,9 +423,9 @@ public class Bootstrap {
             getValue = Binder.from(site.type())
                     .drop(0, 2)
                     .filterReturn(filter)
-                    .cast(methodType(Object.class, RubyBasicObject.class))
-                    .append(accessor.getIndex())
-                    .invokeVirtualQuiet(LOOKUP, "getVariable");
+                    .cast(methodType(Object.class, Object.class))
+                    .prepend(accessor)
+                    .invokeVirtualQuiet(LOOKUP, "get");
         }
 
         // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
@@ -459,9 +458,9 @@ public class Bootstrap {
             setValue = Binder.from(site.type())
                     .drop(0, 2)
                     .filterReturn(filter)
-                    .cast(methodType(void.class, RubyBasicObject.class, Object.class))
-                    .insert(1, accessor.getIndex())
-                    .invokeVirtualQuiet(LOOKUP, "setVariable");
+                    .cast(methodType(void.class, Object.class, Object.class))
+                    .prepend(accessor)
+                    .invokeVirtualQuiet(LOOKUP, "set");
         }
 
         return setValue;
@@ -816,7 +815,7 @@ public class Bootstrap {
         return value;
     }
 
-    public static boolean testArg0ModuleMatch(IRubyObject arg0, int id) {
+    public static boolean testModuleMatch(ThreadContext context, IRubyObject arg0, int id) {
         return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
     }
 
@@ -869,17 +868,17 @@ public class Bootstrap {
         site.setTarget(target);
     }
 
-    public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
+    public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
         String[] names = name.split(":");
         String operation = names[0];
         String varName = JavaNameMangler.demangleMethodName(names[1]);
-        GlobalSite site = new GlobalSite(type, varName);
+        GlobalSite site = new GlobalSite(type, varName, file, line);
         MethodHandle handle;
 
         if (operation.equals("get")) {
             handle = lookup.findStatic(Bootstrap.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
         } else {
-            throw new RuntimeException("invalid variable access type");
+            handle = lookup.findStatic(Bootstrap.class, "setGlobalFallback", methodType(void.class, GlobalSite.class, IRubyObject.class, ThreadContext.class));
         }
 
         handle = handle.bindTo(site);
@@ -893,10 +892,11 @@ public class Bootstrap {
         GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
 
         if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
-                variable.getScope() != GlobalVariable.Scope.GLOBAL) {
+                variable.getScope() != GlobalVariable.Scope.GLOBAL ||
+                RubyGlobal.UNCACHED_GLOBALS.contains(site.name())) {
 
             // use uncached logic forever
-//            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
+            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") uncacheable or rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
 
             MethodHandle uncached = lookup().findStatic(Bootstrap.class, "getGlobalUncached", methodType(IRubyObject.class, GlobalVariable.class));
             uncached = uncached.bindTo(variable);
@@ -924,6 +924,23 @@ public class Bootstrap {
 
     public static IRubyObject getGlobalUncached(GlobalVariable variable) throws Throwable {
         return variable.getAccessor().getValue();
+    }
+
+    public static void setGlobalFallback(GlobalSite site, IRubyObject value, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
+        MethodHandle uncached = lookup().findStatic(Bootstrap.class, "setGlobalUncached", methodType(void.class, GlobalVariable.class, IRubyObject.class));
+        uncached = uncached.bindTo(variable);
+        uncached = dropArguments(uncached, 1, ThreadContext.class);
+        site.setTarget(uncached);
+        uncached.invokeWithArguments(value, context);
+    }
+
+    public static void setGlobalUncached(GlobalVariable variable, IRubyObject value) throws Throwable {
+        // FIXME: duplicated logic from GlobalVariables.set
+        variable.getAccessor().setValue(value);
+        variable.trace(value);
+        variable.invalidate();
     }
 
     public static Handle prepareBlock() {
@@ -961,6 +978,10 @@ public class Bootstrap {
                 .invoke(CONSTRUCT_BLOCK);
 
         return new ConstantCallSite(blockMaker);
+    }
+
+    private static String logMethod(DynamicMethod method) {
+        return "[#" + method.getSerialNumber() + " " + method.getImplementationClass() + "]";
     }
 
     private static final Binder BINDING_MAKER_BINDER = Binder.from(Binding.class, ThreadContext.class, IRubyObject.class, DynamicScope.class);

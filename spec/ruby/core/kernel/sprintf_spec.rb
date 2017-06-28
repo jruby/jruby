@@ -78,29 +78,31 @@ describe "Kernel#sprintf" do
     it "raises KeyError when no matching key is in second argument" do
       lambda { sprintf("%<foo>f", {}) }.should raise_error(KeyError)
     end
+
+    it "raises ArgumentError if missing second named argument" do
+      lambda { sprintf("%<key><foo>d", {key: 1}) }.should raise_error(ArgumentError)
+    end
   end
 
   describe "with negative values" do
     describe "with format %x" do
       it "precedes the number with '..'" do
-        [ ["%0x",     "..f85"],
-          ["%#0x",    "0x..f85"],
-          ["%08x",    "..ffff85"],
-          ["%#08x",   "0x..ff85"],
-          ["%8.10x",  "..ffffff85"],
-          ["%08.10x", "..ffffff85"],
-          ["%10.8x",  "  ..ffff85"],
-          ["%010.8x", "  ..ffff85"],
-        ].should be_computed_by_function(:sprintf, -123)
+        sprintf("%0x", -123).should == "..f85"
+        sprintf("%#0x", -123).should == "0x..f85"
+        sprintf("%08x", -123).should == "..ffff85"
+        sprintf("%#08x", -123).should == "0x..ff85"
+        sprintf("%8.10x", -123).should == "..ffffff85"
+        sprintf("%08.10x", -123).should == "..ffffff85"
+        sprintf("%10.8x", -123).should == "  ..ffff85"
+        sprintf("%010.8x", -123).should == "  ..ffff85"
       end
     end
 
     describe "with format %b or %B" do
       it "precedes the number with '..'" do
-        [ ["%.7b", "..11011"],
-          ["%.7B", "..11011"],
-          ["%0b",  "..1011"],
-        ].should be_computed_by_function(:sprintf, -5)
+        sprintf("%.7b", -5).should == "..11011"
+        sprintf("%.7B", -5).should == "..11011"
+        sprintf("%0b", -5).should == "..1011"
       end
     end
   end

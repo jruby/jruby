@@ -70,11 +70,13 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -351,13 +353,12 @@ public class RubyRational extends RubyNumeric {
     
     private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
         if (a1 instanceof RubyComplex) {
-            RubyComplex a1Complex = (RubyComplex)a1;
-            if (k_exact_p(a1Complex.getImage()) && f_zero_p(context, a1Complex.getImage())) a1 = a1Complex.getReal();            
+            RubyComplex a1c = (RubyComplex) a1;
+            if (k_exact_p(a1c.getImage()) && f_zero_p(context, a1c.getImage())) a1 = a1c.getReal();
         }
-
         if (a2 instanceof RubyComplex) {
-            RubyComplex a2Complex = (RubyComplex)a2;
-            if (k_exact_p(a2Complex.getImage()) && f_zero_p(context, a2Complex.getImage())) a2 = a2Complex.getReal();
+            RubyComplex a2c = (RubyComplex) a2;
+            if (k_exact_p(a2c.getImage()) && f_zero_p(context, a2c.getImage())) a2 = a2c.getReal();
         }
         
         if (a1 instanceof RubyFloat) {
@@ -365,7 +366,7 @@ public class RubyRational extends RubyNumeric {
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
         } else {
-            if (a1.respondsTo("to_r")) {
+            if (a1 instanceof RubyObject && responds_to_to_r(context, a1)) {
                 a1 = f_to_r(context, a1);
             }
         }
@@ -391,6 +392,13 @@ public class RubyRational extends RubyNumeric {
             return newInstance(context, recv, a1, a2);
         }
     }
+
+    private static boolean responds_to_to_r(ThreadContext context, IRubyObject obj) {
+        return respond_to_to_r.respondsTo(context, obj, obj);
+    }
+
+    // TODO: wasn't sure whether to put this on NumericSites, here for now - should move
+    static final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
 
     /** nurat_numerator
      * 
@@ -485,7 +493,7 @@ public class RubyRational extends RubyNumeric {
             RubyRational otherRational = (RubyRational)other;
             return f_addsub(context, num, den, otherRational.num, otherRational.den, true);
         }            
-        return coerceBin(context, "+", other);
+        return coerceBin(context, sites(context).op_plus, other);
     }
     
     /** nurat_sub
@@ -501,7 +509,7 @@ public class RubyRational extends RubyNumeric {
             RubyRational otherRational = (RubyRational)other;
             return f_addsub(context, num, den, otherRational.num, otherRational.den, false);
         }
-        return coerceBin(context, "-", other);
+        return coerceBin(context, sites(context).op_minus, other);
     }
     
     /** f_muldiv
@@ -554,7 +562,7 @@ public class RubyRational extends RubyNumeric {
             RubyRational otherRational = (RubyRational)other;
             return f_muldiv(context, num, den, otherRational.num, otherRational.den, true);
         }
-        return coerceBin(context, "*", other);
+        return coerceBin(context, sites(context).op_times, other);
     }
     
     /** nurat_div
@@ -576,7 +584,7 @@ public class RubyRational extends RubyNumeric {
             RubyRational otherRational = (RubyRational)other;
             return f_muldiv(context, num, den, otherRational.num, otherRational.den, false);
         }
-        return coerceBin(context, "/", other);
+        return coerceBin(context, sites(context).op_quo, other);
     }
 
     /** nurat_fdiv
@@ -638,7 +646,7 @@ public class RubyRational extends RubyNumeric {
         } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return f_expt(context, f_to_f(context, this), other);
         }
-        return coerceBin(context, "**", other);
+        return coerceBin(context, sites(context).op_exp, other);
     }
 
     
@@ -666,7 +674,7 @@ public class RubyRational extends RubyNumeric {
             }
             return f_cmp(context, f_sub(context, num1, num2), RubyFixnum.zero(context.runtime));
         }
-        return coerceBin(context, "<=>", other);             
+        return coerceBin(context, sites(context).op_cmp, other);
     }
 
     /** nurat_equal_p
@@ -1048,11 +1056,11 @@ public class RubyRational extends RubyNumeric {
             IRubyObject de = match.op_aref19(RubyFixnum.three(runtime));
             IRubyObject re = match.post_match(context);
             
-            RubyArray a = nu.split19(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), false).convertToArray();
+            RubyArray a = nu.split19(RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), context, false).convertToArray();
             RubyString ifp = (RubyString)a.eltInternal(0);
             IRubyObject exp = a.size() != 2 ? runtime.getNil() : a.eltInternal(1);
             
-            a = ifp.split19(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat), false).convertToArray();
+            a = ifp.split19(RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat), context, false).convertToArray();
             IRubyObject ip = a.eltInternal(0);
             IRubyObject fp = a.size() != 2 ? runtime.getNil() : a.eltInternal(1);
             
@@ -1113,8 +1121,12 @@ public class RubyRational extends RubyNumeric {
         if (Numeric.CANON && canonicalization) {
             x = newRationalRaw(context.runtime, x);
         } else {
-            x = TypeConverter.convertToType(x, context.runtime.getRational(), "to_r");
+            x = TypeConverter.convertToType(context, x, context.runtime.getRational(), sites(context).to_r_checked);
         }
-        return x.callMethod(context, "/", y);
+        return sites(context).op_quo.call(context, x, x, y);
+    }
+
+    private static JavaSites.RationalSites sites(ThreadContext context) {
+        return context.sites.Rational;
     }
 }

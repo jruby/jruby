@@ -48,6 +48,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -106,8 +107,16 @@ public class RubyTCPSocket extends RubyIPSocket {
                 // Do this nonblocking so we can be interrupted
                 channel.configureBlocking(false);
                 channel.connect( new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort) );
-                context.getThread().select(channel, this, SelectionKey.OP_CONNECT);
-                channel.finishConnect();
+
+                // wait for connection
+                while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
+                    context.pollThreadEvents();
+                }
+
+                // complete connection
+                while (!channel.finishConnect()) {
+                    context.pollThreadEvents();
+                }
 
                 // only try to set blocking back if we succeeded to finish connecting
                 channel.configureBlocking(true);
@@ -154,24 +163,24 @@ public class RubyTCPSocket extends RubyIPSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
         Ruby runtime = context.runtime;
-        IRubyObject[] ret = new IRubyObject[4];
+        IRubyObject ret0, ret1, ret2, ret3;
         String hostString = hostname.convertToString().toString();
 
         try {
             InetAddress addr = InetAddress.getByName(hostString);
 
-            ret[0] = runtime.newString(do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName());
-            ret[1] = runtime.newArray();
+            ret0 = runtime.newString(do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName());
+            ret1 = runtime.newArray();
 
             if (addr instanceof Inet4Address) {
-                ret[2] = runtime.newFixnum(AF_INET);
-            } else if (addr instanceof Inet6Address) {
-                ret[2] = runtime.newFixnum(AF_INET6);
+                ret2 = runtime.newFixnum(AF_INET);
+            } else { // if (addr instanceof Inet6Address) {
+                ret2 = runtime.newFixnum(AF_INET6);
             }
 
-            ret[3] = runtime.newString(addr.getHostAddress());
+            ret3 = runtime.newString(addr.getHostAddress());
 
-            return runtime.newArrayNoCopy(ret);
+            return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
         }
         catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "gethostbyname: name or service not known");

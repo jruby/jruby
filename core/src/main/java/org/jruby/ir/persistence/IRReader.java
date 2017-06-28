@@ -33,7 +33,7 @@ public class IRReader implements IRPersistenceValues {
         int version = file.decodeIntRaw();
 
         if (version != VERSION) {
-            throw new IOException("Trying to read incompatable persistence format (version found: " +
+            throw new IOException("Trying to read incompatible persistence format (version found: " +
                     version + ", version expected: " + VERSION);
         }
         int headersOffset = file.decodeIntRaw();
@@ -141,7 +141,7 @@ public class IRReader implements IRPersistenceValues {
     }
 
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
-        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray());
+        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray(), decoder.decodeInt());
 
         scope.setSignature(decoder.decodeSignature());
 

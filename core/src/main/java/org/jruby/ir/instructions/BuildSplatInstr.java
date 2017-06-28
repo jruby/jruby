@@ -15,8 +15,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents a splat value in Ruby code: *array
 public class BuildSplatInstr extends OneOperandResultBaseInstr {
-    public BuildSplatInstr(Variable result, Operand array) {
+    // Should we dup the resulting splat or not?
+    private final boolean dup;
+
+    public BuildSplatInstr(Variable result, Operand array, boolean dup) {
         super(Operation.BUILD_SPLAT, result, array);
+
+        this.dup = dup;
+    }
+
+    public boolean getDup() {
+        return dup;
     }
 
     public Operand getArray() {
@@ -25,23 +34,24 @@ public class BuildSplatInstr extends OneOperandResultBaseInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BuildSplatInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii));
+        return new BuildSplatInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii), getDup());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        return IRRuntimeHelpers.irSplat(context,
-                (IRubyObject) getArray().retrieve(context, self, currScope, currDynScope, temp));
+        return IRRuntimeHelpers.splatArray(context,
+                (IRubyObject) getArray().retrieve(context, self, currScope, currDynScope, temp), getDup());
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getArray());
+        e.encode(getDup());
     }
 
     public static BuildSplatInstr decode(IRReaderDecoder d) {
-        return new BuildSplatInstr(d.decodeVariable(), d.decodeOperand());
+        return new BuildSplatInstr(d.decodeVariable(), d.decodeOperand(), d.decodeBoolean());
     }
 
     @Override

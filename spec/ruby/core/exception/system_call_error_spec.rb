@@ -83,7 +83,7 @@ describe "SystemCallError#message" do
   end
 
   it "returns the message given as an argument to new" do
-    SystemCallError.new("message", 1).message.should  =~ /message/
+    SystemCallError.new("message", 1).message.should =~ /message/
     SystemCallError.new("XXX").message.should =~ /XXX/
   end
 end

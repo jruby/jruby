@@ -99,7 +99,7 @@ public class RubyNameError extends RubyException {
             } else {
                 String description = null;
                 String separator;
-                String className = null;
+                String className;
                 boolean singleton = false;
 
                 if (object.isNil()) {
@@ -130,7 +130,8 @@ public class RubyNameError extends RubyException {
                 }
 
                 RubyArray arr =
-                        runtime.newArray(
+                        RubyArray.newArray(
+                                runtime,
                                 name,
                                 runtime.newString(description),
                                 runtime.newString(separator),

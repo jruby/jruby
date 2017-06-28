@@ -1,5 +1,6 @@
 package org.jruby.ir.passes;
 
+import java.util.EnumSet;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.instructions.Instr;
@@ -21,6 +22,11 @@ public class OptimizeDynScopesPass extends CompilerPass {
         return "Optimize Dynamic Scopes";
     }
 
+    @Override
+    public String getShortLabel() {
+        return "Opt Dyn Scopes";
+    }
+
     private void setupLocalVarReplacement(LocalVariable v, IRScope s, Map<Operand, Operand> varRenameMap) {
          if (varRenameMap.get(v) == null) varRenameMap.put(v, s.getNewTemporaryVariableFor(v));
     }
@@ -30,9 +36,12 @@ public class OptimizeDynScopesPass extends CompilerPass {
     }
 
     public void eliminateLocalVars(IRScope s) {
+        assert s.getClosures().isEmpty() : "We assume that if a scope has nested closures, it uses a dynamic scoope.";
+
         Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
-        // Record the fact that we eliminated the scope
-        s.getFlags().add(IRFlags.DYNSCOPE_ELIMINATED);
+        EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();
+
+        flags.add(IRFlags.DYNSCOPE_ELIMINATED); // Record the fact that we eliminated the scope
 
         // Since the scope does not require a binding, no need to do
         // any analysis. It is sufficient to rename all local var uses
@@ -101,9 +110,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
             }
         }
 
-        if (parentScopeNeeded) {
-            s.getFlags().add(IRFlags.REUSE_PARENT_DYNSCOPE);
-        }
+        if (parentScopeNeeded) flags.add(IRFlags.REUSE_PARENT_DYNSCOPE);
 
         // Rename all local var uses with their tmp-var stand-ins
         for (BasicBlock b: s.getCFG().getBasicBlocks()) {
@@ -121,9 +128,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
         scope.computeScopeFlags();
 
         // Cannot run this on scopes that require dynamic scopes
-        if (scope.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE)) {
-            return null;
-        }
+        if (scope.getExecutionContext().getFlags().contains(IRFlags.REQUIRES_DYNSCOPE)) return null;
 
         eliminateLocalVars(scope);
 

@@ -39,6 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
+@Deprecated
 public class WrapperMethod extends DynamicMethod {
     private DynamicMethod method;
 
@@ -107,4 +108,12 @@ public class WrapperMethod extends DynamicMethod {
     public Arity getArity() {
         return method.getArity();
     }
+
+    @Override
+    public RubyModule getDefinedClass() {
+        RubyModule definedClass = this.definedClass;
+        if (definedClass != null) return definedClass;
+        return method.getDefinedClass();
+    }
+
 }

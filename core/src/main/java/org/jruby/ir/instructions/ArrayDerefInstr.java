@@ -19,8 +19,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
-
 /**
  * Instruction representing Ruby code of the form: "a['str']"
  * which is equivalent to: a.[]('str'). Because a Hash receiver
@@ -38,14 +36,6 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
         super(Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result, "[]", obj, new Operand[] {arg0}, false);
 
         key = arg0;
-    }
-
-    @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        // CON: No native [] impls require backref/lastline for a literal String arg,
-        // so we don't have to deopt frame here.
-        super.computeScopeFlags(scope);
-        return true;
     }
 
     @Override

@@ -1,1 +1,0 @@
-fails:GzipReader#each_byte calls the given block for each byte in the stream, passing the byte as an argument

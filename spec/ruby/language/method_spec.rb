@@ -110,6 +110,17 @@ describe "A method send" do
 
       lambda { m(1, *x, 2, 3) }.should raise_error(TypeError)
     end
+
+    it "copies the splatted array" do
+      args = [3, 4]
+      m(1, 2, *args, 4, 5).should == [1, 2, [3, 4], 4, 5]
+      m(1, 2, *args, 4, 5)[2].should_not equal(args)
+    end
+
+    it "allows an array being splatted to be modified by another argument" do
+      args = [3, 4]
+      m(1, args.shift, *args, 4, 5).should == [1, 3, [4], 4, 5]
+    end
   end
 
   context "with a trailing splatted Object argument" do
@@ -955,7 +966,7 @@ describe "A method" do
 
       h = mock("keyword splat")
       h.should_receive(:to_hash)
-      lambda { m **h }.should raise_error(TypeError)
+      lambda { m(**h) }.should raise_error(TypeError)
     end
 
     evaluate <<-ruby do
@@ -1021,6 +1032,12 @@ describe "A method" do
       m({ "a" => 1 }, a: 1).should == [[{"a" => 1}], {a: 1}]
       m({a: 1}, {}).should == [[{a: 1}], {}]
       m({a: 1}, {"a" => 1}).should == [[{a: 1}, {"a" => 1}], {}]
+
+      bo = BasicObject.new
+      def bo.to_a; [1, 2, 3]; end
+      def bo.to_hash; {:b => 2, :c => 3}; end
+
+      m(*bo, **bo).should == [[1, 2, 3], {:b => 2, :c => 3}]
     end
 
     evaluate <<-ruby do
@@ -1169,6 +1186,16 @@ describe "A method" do
       result = m(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
       result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
     end
+
+    evaluate <<-ruby do
+        def m (a, b = nil, c = nil, d, e: nil, **f)
+          [a, b, c, d, e, f]
+        end
+    ruby
+
+      result = m(1, 2)
+      result.should == [1, nil, nil, 2, nil, {}]
+    end
   end
 end
 
@@ -1227,5 +1254,37 @@ describe "A method call with a space between method name and parentheses" do
       :block_value
     end
     args.should == [1, :block_value]
+  end
+end
+
+describe "An array-dereference method ([])" do
+  SpecEvaluate.desc = "for definition"
+
+  context "received the passed-in block" do
+    evaluate <<-ruby do
+        def [](*, &b)
+          b.call
+        end
+    ruby
+      pr = proc {:ok}
+
+      self[&pr].should == :ok
+      self['foo', &pr].should == :ok
+      self.[](&pr).should == :ok
+      self.[]('foo', &pr).should == :ok
+    end
+
+    evaluate <<-ruby do
+        def [](*)
+          yield
+        end
+    ruby
+      pr = proc {:ok}
+
+      self[&pr].should == :ok
+      self['foo', &pr].should == :ok
+      self.[](&pr).should == :ok
+      self.[]('foo', &pr).should == :ok
+    end
   end
 end

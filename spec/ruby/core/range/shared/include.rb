@@ -76,4 +76,16 @@ describe :range_include, shared: true do
       end
     end
   end
+
+  describe "with Time endpoints" do
+    it "uses cover? logic" do
+      now = Time.now
+      range = (now..(now + 60))
+
+      range.include?(now).should == true
+      range.include?(now - 1).should == false
+      range.include?(now + 60).should == true
+      range.include?(now + 61).should == false
+    end
+  end
 end

@@ -53,7 +53,7 @@ describe "Enumerable#each_slice" do
 
   it "returns an enumerator if no block" do
     e = @enum.each_slice(3)
-    e.should be_an_instance_of(enumerator_class)
+    e.should be_an_instance_of(Enumerator)
     e.to_a.should == @sliced
   end
 
@@ -65,7 +65,7 @@ describe "Enumerable#each_slice" do
   describe "when no block is given" do
     it "returns an enumerator" do
       e = @enum.each_slice(3)
-      e.should be_an_instance_of(enumerator_class)
+      e.should be_an_instance_of(Enumerator)
       e.to_a.should == @sliced
     end
 

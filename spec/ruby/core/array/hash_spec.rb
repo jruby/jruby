@@ -16,7 +16,7 @@ describe "Array#hash" do
     lambda { empty.hash }.should_not raise_error
 
     array = ArraySpecs.recursive_array
-    lambda { empty.hash }.should_not raise_error
+    lambda { array.hash }.should_not raise_error
   end
 
   it "returns the same hash for equal recursive arrays" do
@@ -36,28 +36,25 @@ describe "Array#hash" do
     # Like above, this is because rec.eql?([{x: rec}])
   end
 
-  #  Too much of an implementation detail? -rue
-  not_supported_on :rubinius, :opal do
-    it "calls to_int on result of calling hash on each element" do
-      ary = Array.new(5) do
-        obj = mock('0')
-        obj.should_receive(:hash).and_return(obj)
-        obj.should_receive(:to_int).and_return(0)
-        obj
-      end
-
-      ary.hash
-
-
-      hash = mock('1')
-      hash.should_receive(:to_int).and_return(1.hash)
-
-      obj = mock('@hash')
-      obj.instance_variable_set(:@hash, hash)
-      def obj.hash() @hash end
-
-      [obj].hash.should == [1].hash
+  it "calls to_int on result of calling hash on each element" do
+    ary = Array.new(5) do
+      obj = mock('0')
+      obj.should_receive(:hash).and_return(obj)
+      obj.should_receive(:to_int).and_return(0)
+      obj
     end
+
+    ary.hash
+
+
+    hash = mock('1')
+    hash.should_receive(:to_int).and_return(1.hash)
+
+    obj = mock('@hash')
+    obj.instance_variable_set(:@hash, hash)
+    def obj.hash() @hash end
+
+    [obj].hash.should == [1].hash
   end
 
   it "ignores array class differences" do

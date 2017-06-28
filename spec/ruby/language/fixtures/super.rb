@@ -383,7 +383,7 @@ module Super
 
       def c
         block_ref = lambda { 16 }
-        super &block_ref
+        super(&block_ref)
       end
     end
   end
@@ -450,6 +450,29 @@ module Super
 
       def m_modified(a, b, *args)
         args[1] = 14
+        super
+      end
+    end
+  end
+
+  module ZSuperWithUnderscores
+    class A
+      def m(*args)
+        args
+      end
+
+      def m_modified(*args)
+        args
+      end
+    end
+
+    class B < A
+      def m(_, _)
+        super
+      end
+
+      def m_modified(_, _)
+        _ = 14
         super
       end
     end

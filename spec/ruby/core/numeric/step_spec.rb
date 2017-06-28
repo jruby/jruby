@@ -23,11 +23,11 @@ describe "Numeric#step" do
 
     describe "when no block is given" do
       it "returns an Enumerator when step is 0" do
-        1.step(5, 0).should be_an_instance_of(enumerator_class)
+        1.step(5, 0).should be_an_instance_of(Enumerator)
       end
 
       it "returns an Enumerator when step is 0.0" do
-        1.step(2, 0.0).should be_an_instance_of(enumerator_class)
+        1.step(2, 0.0).should be_an_instance_of(Enumerator)
       end
 
       describe "returned Enumerator" do
@@ -71,6 +71,14 @@ describe "Numeric#step" do
 
           it "should return infinity_value when step is 0.0" do
             1.step(to: 2, by: 0.0).size.should == infinity_value
+          end
+
+          it "should return infinity_value when the limit is Float::INFINITY" do
+            1.step(to: Float::INFINITY, by: 42).size.should == infinity_value
+          end
+
+          it "should return 1 when the both limit and step are Float::INFINITY" do
+            1.step(to: Float::INFINITY, by: Float::INFINITY).size.should == 1
           end
         end
       end
@@ -130,7 +138,7 @@ describe "Numeric#step" do
       # a mix of positional and keyword arguments.
       # It's needed to test numeric_step behaviour with positional mixed with
       # keyword arguments.
-      @step_args = ->(*args) do 
+      @step_args = ->(*args) do
         if args.size == 2
           [args[0], {by: args[1]}]
         else

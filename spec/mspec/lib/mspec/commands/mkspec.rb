@@ -1,13 +1,10 @@
-#! /usr/bin/env ruby
+#!/usr/bin/env ruby
 
-MSPEC_HOME = File.expand_path(File.dirname(__FILE__) + '/../../..')
-
-require 'fileutils'
 require 'rbconfig'
 require 'mspec/version'
 require 'mspec/utils/options'
 require 'mspec/utils/name_map'
-
+require 'mspec/helpers/fs'
 
 class MkSpec
   attr_reader :config
@@ -65,17 +62,19 @@ class MkSpec
         return nil
       end
     else
-      FileUtils.mkdir_p subdir
+      mkdir_p subdir
     end
 
     subdir
   end
 
   def write_requires(dir, file)
-    /\A#{Regexp.escape config[:base]}\/?(.*)/ =~ dir
-    parents = '../' * ($1.split('/').length + 1)
+    prefix = config[:base] + '/'
+    raise dir unless dir.start_with? prefix
+    sub = dir[prefix.size..-1]
+    parents = '../' * (sub.split('/').length + 1)
 
-    File.open file, 'w' do |f|
+    File.open(file, 'w') do |f|
       f.puts "require File.expand_path('../#{parents}spec_helper', __FILE__)"
       config[:requires].each do |lib|
         f.puts "require '#{lib}'"
@@ -96,8 +95,8 @@ class MkSpec
 
   def write_spec(file, meth, exists)
     if exists
-      out = `#{ruby} #{MSPEC_HOME}/bin/mspec-run --dry-run -fs -e '#{meth}' #{file}`
-      return if out =~ /#{Regexp.escape meth}/
+      out = `#{ruby} #{MSPEC_HOME}/bin/mspec-run --dry-run --unguarded -fs -e '#{meth}' #{file}`
+      return if out.include?(meth)
     end
 
     File.open file, 'a' do |f|
@@ -154,4 +153,3 @@ EOS
     script.run
   end
 end
-

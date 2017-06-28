@@ -1,1 +1,0 @@
-fails:Dir#close raises an IOError when called on a closed Dir instance

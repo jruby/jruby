@@ -5,7 +5,7 @@ module CGISpecs
     begin
       CGI.new(tag_maker: html)
     ensure
-      ENV['REQUEST_METHOD'] = @old_request_method
+      ENV['REQUEST_METHOD'] = old_request_method
     end
   end
 

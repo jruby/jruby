@@ -40,6 +40,7 @@ public abstract class IRVisitor {
     public void BNEInstr(BNEInstr bneinstr) { error(bneinstr); }
     public void BNilInstr(BNilInstr bnilinstr) { error(bnilinstr); }
     public void BreakInstr(BreakInstr breakinstr) { error(breakinstr); }
+    public void BSwitchInstr(BSwitchInstr bswitchinstr) { error(bswitchinstr); }
     public void BTrueInstr(BTrueInstr btrueinstr) { error(btrueinstr); }
     public void BUndefInstr(BUndefInstr bundefinstr) { error(bundefinstr); }
     public void BuildBackrefInstr(BuildBackrefInstr instr) { error(instr); }

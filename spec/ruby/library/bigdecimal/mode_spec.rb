@@ -3,7 +3,7 @@ require 'bigdecimal'
 
 describe "BigDecimal.mode" do
   #the default value of BigDecimal exception constants is false
-  after :all do
+  after :each do
     BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false)
     BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, false)
     BigDecimal.mode(BigDecimal::EXCEPTION_UNDERFLOW, false)

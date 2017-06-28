@@ -1,2 +1,0 @@
-slow:IO#reopen with a String effects exec/system/fork performed after it
-fails:IO#reopen with a String affects exec/system/fork performed after it

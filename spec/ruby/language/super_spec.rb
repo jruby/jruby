@@ -239,6 +239,14 @@ describe "The super keyword" do
     Super::ZSuperWithRestAndOthers::B.new.m_modified(1, 2, 3, 4, 5).should == [3, 14, 5]
   end
 
+  it "without explicit arguments that are '_'" do
+    Super::ZSuperWithUnderscores::B.new.m(1, 2).should == [1, 2]
+  end
+
+  it "without explicit arguments that are '_' including any modifications" do
+    Super::ZSuperWithUnderscores::B.new.m_modified(1, 2).should == [14, 2]
+  end
+
   describe 'when using keyword arguments' do
     it 'passes any given keyword arguments to the parent' do
       b = Super::KeywordArguments::B.new

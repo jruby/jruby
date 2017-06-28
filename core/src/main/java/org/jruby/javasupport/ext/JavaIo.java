@@ -35,7 +35,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
+import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
 /**
@@ -66,12 +66,12 @@ public abstract class JavaIo {
 
         @Override
         public RubyIO call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            return to_io(context, (java.io.InputStream) unwrapJavaObject(self), null);
+            return to_io(context, (java.io.InputStream) unwrapIfJavaObject(self), null);
         }
 
         @Override
         public RubyIO call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject opts) {
-            return to_io(context, (java.io.InputStream) unwrapJavaObject(self), opts);
+            return to_io(context, (java.io.InputStream) unwrapIfJavaObject(self), opts);
         }
 
     }
@@ -90,12 +90,12 @@ public abstract class JavaIo {
 
         @Override
         public RubyIO call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            return to_io(context, (java.io.OutputStream) unwrapJavaObject(self), null);
+            return to_io(context, (java.io.OutputStream) unwrapIfJavaObject(self), null);
         }
 
         @Override
         public RubyIO call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject opts) {
-            return to_io(context, (java.io.OutputStream) unwrapJavaObject(self), opts);
+            return to_io(context, (java.io.OutputStream) unwrapIfJavaObject(self), opts);
         }
 
     }
@@ -123,7 +123,7 @@ public abstract class JavaIo {
         }
 
         private static RubyIO to_io(final ThreadContext context, final IRubyObject self, final IRubyObject opts) {
-            final RubyIO io = new RubyIO(context.runtime, (java.nio.channels.Channel) unwrapJavaObject(self));
+            final RubyIO io = new RubyIO(context.runtime, (java.nio.channels.Channel) unwrapIfJavaObject(self));
             setAutoclose(context, io, opts);
             return io;
         }

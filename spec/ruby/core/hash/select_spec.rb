@@ -33,11 +33,11 @@ describe "Hash#select" do
   end
 
   it "returns an Enumerator when called on a non-empty hash without a block" do
-    @hsh.select.should be_an_instance_of(enumerator_class)
+    @hsh.select.should be_an_instance_of(Enumerator)
   end
 
   it "returns an Enumerator when called on an empty hash without a block" do
-    @empty.select.should be_an_instance_of(enumerator_class)
+    @empty.select.should be_an_instance_of(Enumerator)
   end
 
   it_behaves_like(:hash_iteration_no_block, :select)
@@ -58,6 +58,12 @@ describe "Hash#select!" do
     all_args_select = []
     h.dup.select! { |*args| all_args_select << args }
     all_args_select.should == [[1, 2], [3, 4]]
+  end
+
+  it "removes all entries if the block is false" do
+    h = { a: 1, b: 2, c: 3 }
+    h.select! { |k,v| false }.should equal(h)
+    h.should == {}
   end
 
   it "returns nil if no changes were made" do

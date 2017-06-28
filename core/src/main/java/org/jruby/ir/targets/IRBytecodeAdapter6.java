@@ -42,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
@@ -342,17 +343,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void pushSymbol(final String sym, final Encoding encoding) {
-        cacheValuePermanentlyLoadContext("symbol", RubySymbol.class, keyFor("symbol", sym, encoding), new Runnable() {
+    public void pushSymbol(final ByteList bytes) {
+        cacheValuePermanentlyLoadContext("symbol", RubySymbol.class, keyFor("symbol", bytes, bytes.getEncoding()), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
-                adapter.ldc(sym);
-                loadContext();
-                adapter.ldc(encoding.toString());
-                invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
-
-                adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, String.class, Encoding.class));
+                pushByteList(bytes);
+                adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, ByteList.class));
             }
         });
     }
@@ -389,7 +386,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         invoke(file, line, name, arity, hasClosure, CallType.NORMAL, isPotentiallyRefined);
     }
 
-    public void invokeArrayDeref() {
+    public void invokeArrayDeref(String file, int line) {
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyString.class));
 
@@ -846,6 +843,12 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     public void array(int length) {
         if (length > MAX_ARGUMENTS) throw new NotCompilableException("literal array has more than " + MAX_ARGUMENTS + " elements");
 
+        // use utility method for supported sizes
+        if (length <= RubyArraySpecialized.MAX_PACKED_SIZE) {
+            invokeIRHelper("newArray", sig(RubyArray.class, params(ThreadContext.class, IRubyObject.class, length)));
+            return;
+        }
+
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length));
 
@@ -951,19 +954,23 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void getGlobalVariable(String name) {
+    public void getGlobalVariable(String name, String file, int line) {
         loadContext();
         adapter.invokedynamic(
                 "get:" + JavaNameMangler.mangleMethodName(name),
                 sig(IRubyObject.class, ThreadContext.class),
-                Bootstrap.global());
+                Bootstrap.global(),
+                file, line);
     }
 
     @Override
-    public void setGlobalVariable(String name) {
-        loadRuntime();
-        adapter.ldc(name);
-        invokeHelper("setGlobalVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
+    public void setGlobalVariable(String name, String file, int line) {
+        loadContext();
+        adapter.invokedynamic(
+                "set:" + JavaNameMangler.mangleMethodName(name),
+                sig(void.class, IRubyObject.class, ThreadContext.class),
+                Bootstrap.global(),
+                file, line);
     }
 
     @Override

@@ -48,14 +48,18 @@ public class StringTerm extends StrTerm {
     // End of string (], ), }, >, ', ", \0)
     private final char end;
 
+    // Syntax errors (eof) will occur at this position.
+    private final int startLine;
+
     // How many strings are nested in the current string term
     private int nest;
 
-    public StringTerm(int flags, int begin, int end) {
+    public StringTerm(int flags, int begin, int end, int startLine) {
         this.flags = flags;
         this.begin = (char) begin;
         this.end   = (char) end;
         this.nest  = 0;
+        this.startLine = startLine;
     }
 
     public int getFlags() {
@@ -196,7 +200,8 @@ public class StringTerm extends StrTerm {
         enc[0] = lexer.getEncoding();
 
         if (parseStringIntoBuffer(lexer, buffer, enc) == EOF) {
-            lexer.compile_error("unterminated string meets end of file");
+            lexer.setRubySourceline(startLine);
+            lexer.compile_error("unterminated " + ((flags & STR_FUNC_REGEXP) != 0 ? "regexp" : "string") +  " meets end of file");
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));
@@ -342,7 +347,6 @@ public class StringTerm extends StrTerm {
 
                     if (regexp) {
                         if (c == end && !simple_re_meta(c)) {
-                            buffer.append('\\');
                             buffer.append(c);
                             continue;
                         }

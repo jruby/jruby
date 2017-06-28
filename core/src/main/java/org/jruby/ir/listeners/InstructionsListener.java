@@ -30,7 +30,7 @@ package org.jruby.ir.listeners;
 
 import org.jruby.ir.instructions.Instr;
 
-import java.util.List;
+import org.jruby.ir.representations.BasicBlock;
 
 public interface InstructionsListener {
     public enum OperationType {
@@ -40,11 +40,11 @@ public interface InstructionsListener {
     /**
      * listen to a change of a list of instructions, right before the change going to take place
      *
-     * @param instrs List of instructions before the change happens
+     * @param basicBlock List of instructions before the change happens
      * @param oldInstr If possible, specify which instruction is the old one at index
      * @param newInstr If possible, this the new element inserted at index
      * @param index where the manipulation takes place
      * @param op the operation type can be an ADD, REMOVE or UPDATE
      */
-    public void instrChanged(List<Instr> instrs, Instr oldInstr, Instr newInstr, int index, OperationType op);
+    public void instrChanged(BasicBlock basicBlock, Instr oldInstr, Instr newInstr, int index, OperationType op);
 }

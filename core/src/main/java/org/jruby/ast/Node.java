@@ -47,12 +47,12 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class Node implements ISourcePositionHolder, ParseResult {    
+public abstract class Node implements ISourcePositionHolder, ParseResult, ISourcePosition {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<>();
-    
-    private ISourcePosition position;
 
+    private int line;
+    
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
     //    a = 1; [a, a = 2];
@@ -62,7 +62,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     protected boolean newline;
 
     public Node(ISourcePosition position, boolean containsAssignment) {
-        this.position = position;
+        this.line = position.getLine();
         this.containsVariableAssignment = containsAssignment;
     }
 
@@ -78,15 +78,19 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
      * Location of this node within the source
      */
     public ISourcePosition getPosition() {
-        return position;
+        return this;
     }
 
     public int getLine() {
-        return position.getLine();
+        return line;
+    }
+
+    public String getFile() {
+        return null;
     }
 
     public void setPosition(ISourcePosition position) {
-        this.position = position;
+        this.line = position.getLine();
     }
     
     public abstract <T> T accept(NodeVisitor<T> visitor);

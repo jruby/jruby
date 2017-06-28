@@ -47,18 +47,6 @@ import java.util.HashSet;
  * @author  jpetersen
  */
 public final class ArgsUtil {
-    public static IRubyObject[] convertToJavaArray(IRubyObject value) {
-        if (value == null) {
-        	return IRubyObject.NULL_ARRAY;
-        }
-        
-        if (value instanceof RubyArray) {
-            return ((RubyArray)value).toJavaArrayMaybeUnsafe();
-        }
-
-        return new IRubyObject[] { value };
-    }
-
     /**
      * This name may be a bit misleading, since this also attempts to coerce
      * array behavior using to_ary.
@@ -93,51 +81,6 @@ public final class ArgsUtil {
         }
         
         return (RubyArray)newValue;
-    }
-    
-    public static RubyArray convertToRubyArray19(Ruby runtime, IRubyObject value, boolean coerce) {
-        if (value == null) {
-            return RubyArray.newEmptyArray(runtime);
-        }
-        
-        if (coerce) return convertToRubyArrayWithCoerce19(runtime, value);
-
-        // don't attempt to coerce to array, just wrap and return
-        return RubyArray.newArrayLight(runtime, value);
-    }
-    
-    public static RubyArray convertToRubyArrayWithCoerce19(Ruby runtime, IRubyObject value) {
-        if (value instanceof RubyArray) return ((RubyArray)value);
-        
-        IRubyObject newValue = TypeConverter.convertToType19(value, runtime.getArray(), "to_ary", false);
-
-        if (newValue.isNil()) {
-            return RubyArray.newArrayLight(runtime, value);
-        }
-        
-        // must be array by now, or error
-        if (!(newValue instanceof RubyArray)) {
-            throw runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
-        }
-        
-        return (RubyArray)newValue;
-    }    
-    
-    /**
-     * Remove first element from array
-     * 
-     * @param array to have first element "popped" off
-     * @return all but first element of the supplied array
-     */
-    public static IRubyObject[] popArray(IRubyObject[] array) {
-    	if (array == null || array.length == 0) {
-    		return IRubyObject.NULL_ARRAY;
-    	}
-    	
-    	IRubyObject[] newArray = new IRubyObject[array.length - 1];
-    	System.arraycopy(array, 1, newArray, 0, array.length - 1);
-    	
-    	return newArray;
     }
     
     public static int arrayLength(IRubyObject node) {

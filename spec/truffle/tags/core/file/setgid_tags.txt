@@ -1,1 +1,0 @@
-fails:File.setgid? returns true when the gid bit is set

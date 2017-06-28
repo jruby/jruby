@@ -416,7 +416,7 @@ class Logger
   # * Append open does not need to lock file.
   # * If the OS supports multi I/O, records possibly may be mixed.
   #
-  def add(severity, message = nil, progname = nil, &block)
+  def add(severity, message = nil, progname = nil)
     severity ||= UNKNOWN
     if @logdev.nil? or severity < @level
       return true
@@ -593,8 +593,8 @@ private
       when 'weekly'
         t = Time.mktime(now.year, now.month, now.mday) + SiD * (7 - now.wday)
       when 'monthly'
-        t = Time.mktime(now.year, now.month, 1) + SiD * 31
-        return Time.mktime(t.year, t.month, 1) if t.mday > 1
+        t = Time.mktime(now.year, now.month, 1) + SiD * 32
+        return Time.mktime(t.year, t.month, 1)
       else
         return now
       end
@@ -742,7 +742,7 @@ private
       end
     end
 
-    if /mswin|mingw/ =~ RUBY_PLATFORM
+    if /mswin|mingw/ =~ RbConfig::CONFIG['host_os']
       def lock_shift_log
         yield
       end

@@ -241,7 +241,7 @@ public class RubySystemCallError extends RubyException {
         if (val == null) {
             val = defaultMessages.get(klass.getName());
             if (val == null) {
-                val = "Unknown error";
+                val = "Unknown error (" + klass.getName() + ")";
             }
         }
 

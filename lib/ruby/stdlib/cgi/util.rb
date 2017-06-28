@@ -1,5 +1,19 @@
 # frozen_string_literal: false
-class CGI; module Util; end; extend Util; end
+
+# We do this here to work around jruby/jruby#4531
+begin
+  require 'cgi/escape'
+rescue LoadError
+end
+class CGI
+  module Util
+    prepend Escape
+  end
+
+  extend Util
+  extend Escape
+end
+
 module CGI::Util
   @@accept_charset="UTF-8" unless defined?(@@accept_charset)
   # URL-encode a string.
@@ -38,7 +52,8 @@ module CGI::Util
     string.gsub(/['&\"<>]/, TABLE_FOR_ESCAPE_HTML__)
   end
 
-  begin
+  # We do this above to work around jruby/jruby#4531
+  false && begin
     require 'cgi/escape'
   rescue LoadError
   end

@@ -47,6 +47,8 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.runtime.Helpers;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
 import org.jruby.javasupport.binding.AssignedName;
@@ -127,24 +129,20 @@ public class JavaSupportImpl extends JavaSupport {
 
         this.staticAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
             @Override
-            public Map<String, AssignedName> computeValue(Class<?> cls) {
-                return new HashMap<String, AssignedName>();
-            }
+            public Map<String, AssignedName> computeValue(Class<?> cls) { return new HashMap<>(); }
         });
         this.instanceAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
             @Override
-            public Map<String, AssignedName> computeValue(Class<?> cls) {
-                return new HashMap<String, AssignedName>();
-            }
+            public Map<String, AssignedName> computeValue(Class<?> cls) { return new HashMap<>(); }
         });
 
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
-        this.unfinishedProxies = new ConcurrentHashMap<Class, UnfinishedProxy>(8, 0.75f, 1);
+        this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
     }
 
     public Class loadJavaClass(String className) throws ClassNotFoundException {
-        Class primitiveClass;
-        if ((primitiveClass = JavaUtil.PRIMITIVE_CLASSES.get(className)) == null) {
+        Class<?> primitiveClass;
+        if ((primitiveClass = JavaUtil.getPrimitiveClass(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
                 for(Loader loader : runtime.getInstanceConfig().getExtraLoaders()) {
                     try {
@@ -215,11 +213,8 @@ public class JavaSupportImpl extends JavaSupport {
                 throw (RuntimeException) exception;
             }
         }
-        throw createRaiseException(exception, target);
-    }
-
-    private RaiseException createRaiseException(Throwable exception, Member target) {
-        return RaiseException.createNativeRaiseException(runtime, exception, target);
+        // rethrow original
+        Helpers.throwException(exception);
     }
 
     public ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache() {
@@ -361,17 +356,23 @@ public class JavaSupportImpl extends JavaSupport {
         return instanceAssignedNames;
     }
 
+    @Deprecated
+    @Override
     public final void beginProxy(Class cls, RubyModule proxy) {
         UnfinishedProxy up = new UnfinishedProxy(proxy);
         up.lock();
         unfinishedProxies.put(cls, up);
     }
 
+    @Deprecated
+    @Override
     public final void endProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.remove(cls);
         up.unlock();
     }
 
+    @Deprecated
+    @Override
     public final RubyModule getUnfinishedProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.get(cls);
         if (up != null && up.isHeldByCurrentThread()) return up.proxy;
@@ -403,14 +404,14 @@ public class JavaSupportImpl extends JavaSupport {
     private final Map<ProxyClassKey, JavaProxyClass> javaProxyClasses = new HashMap<>();
 
     @Override
-    final JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey) {
+    final protected JavaProxyClass fetchJavaProxyClass(ProxyClassKey classKey) {
         synchronized (javaProxyClasses) {
             return javaProxyClasses.get(classKey);
         }
     }
 
     @Override
-    final JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass) {
+    final protected JavaProxyClass saveJavaProxyClass(ProxyClassKey classKey, JavaProxyClass klass) {
         synchronized (javaProxyClasses) {
             JavaProxyClass existing = javaProxyClasses.get(classKey);
             if ( existing != null ) return existing;
@@ -463,10 +464,8 @@ public class JavaSupportImpl extends JavaSupport {
                 variables.put(o, vars);
             }
             else if (vars.length <= i) {
-                Object[] newVars = new Object[i + 1];
-                System.arraycopy(vars, 0, newVars, 0, vars.length);
-                variables.put(o, newVars);
-                vars = newVars;
+                vars = ArraySupport.newCopy(vars, i + 1);
+                variables.put(o, vars);
             }
             vars[i] = v;
         }

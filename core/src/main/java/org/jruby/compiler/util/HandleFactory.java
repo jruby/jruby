@@ -212,7 +212,7 @@ public class HandleFactory {
     private static String createHandleName(Method method) {
         Class returnType = method.getReturnType();
         Class[] paramTypes = method.getParameterTypes();
-        return method.getDeclaringClass().getCanonicalName().replaceAll("\\.", "__") + "#" + method.getName() + "#" + JITCompiler.getHashForString(pretty(returnType, paramTypes));
+        return method.getDeclaringClass().getCanonicalName().replaceAll("\\.", "__") + '#' + method.getName() + '#' + JITCompiler.getHashForString(pretty(returnType, paramTypes));
     }
     
     public static void loadUnboxedArgument(SkinnyMethodAdapter m, int index, Class type) {

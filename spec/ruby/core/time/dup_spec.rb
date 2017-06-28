@@ -25,4 +25,22 @@ describe "Time#dup" do
     t.should be_an_instance_of(c)
     t.dup.should be_an_instance_of(c)
   end
+
+  it "returns a clone of Time instance" do
+    c = Time.dup
+    t = c.now
+
+    t.should be_an_instance_of(c)
+    t.should_not be_an_instance_of(Time)
+
+    t.dup.should be_an_instance_of(c)
+    t.dup.should_not be_an_instance_of(Time)
+  end
+
+  it "does not copy frozen status from the original" do
+    t = Time.now
+    t.freeze
+    t2 = t.dup
+    t2.frozen?.should be_false
+  end
 end

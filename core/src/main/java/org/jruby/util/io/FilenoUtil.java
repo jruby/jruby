@@ -2,6 +2,8 @@ package org.jruby.util.io;
 
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSocketChannel;
+import jnr.posix.FileStat;
+import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
 
@@ -17,6 +19,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Utilities for working with native fileno and Java structures that wrap them.
  */
 public class FilenoUtil {
+    public FilenoUtil(POSIX posix) {
+        this.posix = posix;
+    }
+
     public static FileDescriptor getDescriptorFromChannel(Channel channel) {
         if (SEL_CH_IMPL_GET_FD != null && SEL_CH_IMPL.isInstance(channel)) {
             // Pipe Source and Sink, Sockets, and other several other selectable channels
@@ -52,7 +58,21 @@ public class FilenoUtil {
     }
 
     public ChannelFD getWrapperFromFileno(int fileno) {
-        return filenoMap.get(fileno);
+        ChannelFD fd = filenoMap.get(fileno);
+
+        // This is a hack to get around stale ChannelFD that are closed when a descriptor is reused.
+        // It appears to happen for openpty, and in theory could happen for any IO call that produces
+        // a new descriptor.
+        if (fd != null && !fd.ch.isOpen() && !isFake(fileno)) {
+            FileStat stat = posix.allocateStat();
+            if (posix.fstat(fileno, stat) >= 0) {
+                // found ChannelFD is closed, but actual fileno is open; clear it.
+                filenoMap.remove(fileno);
+                fd = null;
+            }
+        }
+
+        return fd;
     }
 
     public void registerWrapper(int fileno, ChannelFD wrapper) {
@@ -91,15 +111,20 @@ public class FilenoUtil {
 
     private static int getFilenoUsingReflection(Channel channel) {
         if (FILE_DESCRIPTOR_FD != null) {
-            FileDescriptor fd = getDescriptorFromChannel(channel);
-            if (fd.valid()) {
-                try {
-                    return (Integer)FILE_DESCRIPTOR_FD.get(fd);
-                } catch (Exception e) {
-                    // failed to get
-                }
+            return filenoFrom(getDescriptorFromChannel(channel));
+        }
+        return -1;
+    }
+
+    public static int filenoFrom(FileDescriptor fd) {
+        if (fd.valid()) {
+            try {
+                return (Integer)FILE_DESCRIPTOR_FD.get(fd);
+            } catch (Exception e) {
+                // failed to get
             }
         }
+
         return -1;
     }
 
@@ -152,6 +177,7 @@ public class FilenoUtil {
     public static final int FIRST_FAKE_FD = 100000;
     protected final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
     private final Map<Integer, ChannelFD> filenoMap = new ConcurrentHashMap<Integer, ChannelFD>();
+    private final POSIX posix;
 
     private static final Class SEL_CH_IMPL;
     private static final Method SEL_CH_IMPL_GET_FD;

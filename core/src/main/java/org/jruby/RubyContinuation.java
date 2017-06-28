@@ -112,7 +112,7 @@ public class RubyContinuation extends RubyObject {
                 } else if (continuation.args.length == 1) {
                     return continuation.args[0];
                 } else {
-                    return context.runtime.newArrayNoCopy(continuation.args);
+                    return RubyArray.newArrayMayCopy(context.runtime, continuation.args);
                 }
             } else {
                 throw c;

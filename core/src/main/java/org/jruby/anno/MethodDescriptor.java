@@ -57,22 +57,28 @@ public abstract class MethodDescriptor<T> {
     protected abstract int parameterCount(T methodObject);
     protected abstract String parameterAsString(T methodObject, int index);
 
+//    protected abstract <A extends Annotation> A getAnnotation(Class<A> annotationType);
+//    protected abstract int getModifiers();
+//    protected abstract String getDeclaringClassName();
+//    protected abstract String getSimpleName();
+//    protected abstract boolean hasContext();
+//    protected abstract boolean hasBlock();
+//    protected abstract int parameterCount();
+//    protected abstract String parameterAsString(int index);
+
     public MethodDescriptor(T methodObject) {
         anno = getAnnotation(methodObject, JRubyMethod.class);
         modifiers = getModifiers(methodObject);
         declaringClassName = getDeclaringClassName(methodObject);
         declaringClassPath = declaringClassName.replace('.', '/');
         name = getSimpleName(methodObject);
-        if (anno.name() != null && anno.name().length > 0) {
-            rubyName = anno.name()[0];
-        } else {
-            rubyName = name;
-        }
+        final String[] names = anno.name();
+        rubyName = (names != null && names.length > 0) ? names[0] : name;
         isStatic = Modifier.isStatic(modifiers);
         hasContext = hasContext(methodObject);
         hasBlock = hasBlock(methodObject);
 
-        int parameterCount = parameterCount(methodObject);
+        final int parameterCount = parameterCount(methodObject);
         if (hasContext) {
             if (isStatic && (parameterCount < 2 || !parameterAsString(methodObject, 1).equals("org.jruby.runtime.builtin.IRubyObject"))) {
                 throw new RuntimeException("static method without self argument: " + methodObject);

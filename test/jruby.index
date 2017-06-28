@@ -34,6 +34,7 @@ jruby/test_frame_self
 jruby/test_hash
 jruby/test_higher_javasupport
 jruby/test_ifaddr
+jruby/test_include_order
 jruby/test_included_in_object_space
 jruby/test_integer_overflows
 jruby/test_ivar_table_integrity
@@ -67,6 +68,7 @@ jruby/test_string_java_bytes
 jruby/test_string_printf
 jruby/test_string_to_number
 jruby/test_super_call_site_caching
+jruby/test_symbol
 jruby/test_system
 jruby/test_system_error
 jruby/test_timeout
@@ -74,9 +76,7 @@ jruby/test_thread
 # FIXME probably should figure this one out
 #test_thread_backtrace
 jruby/test_threaded_nonlocal_return
-jruby/test_time_add
-jruby/test_time_nil_ops
-jruby/test_time_tz
+jruby/test_time
 jruby/test_unmarshal
 jruby/test_vietnamese_charset
 jruby/test_win32
@@ -108,8 +108,7 @@ jruby/test_instantiating_interfaces
 jruby/test_openssl
 jruby/test_tempfile_cleanup
 
-# Disabled until the new JIT/AOT is more complete
+jruby/test_reified_variables
 jruby/compiler/test_jrubyc
 jruby/test_load_compiled_ruby
 jruby/test_load_compiled_ruby_class_from_classpath
-

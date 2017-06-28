@@ -1,5 +1,3 @@
-require 'mspec/runner/filters/match'
-
 class TagFilter
   def initialize(what, *tags)
     @what = what
@@ -7,14 +5,16 @@ class TagFilter
   end
 
   def load
-    desc = MSpec.read_tags(@tags).map { |t| t.description }
-
-    @filter = MatchFilter.new(@what, *desc)
-    @filter.register
+    @descriptions = MSpec.read_tags(@tags).map { |t| t.description }
+    MSpec.register @what, self
   end
 
   def unload
-    @filter.unregister if @filter
+    MSpec.unregister @what, self
+  end
+
+  def ===(string)
+    @descriptions.include?(string)
   end
 
   def register

@@ -21,7 +21,7 @@ module BlockSpecs
 
   class Yield
     def splat(*args)
-      yield *args
+      yield(*args)
     end
 
     def two_args
@@ -47,8 +47,8 @@ module BlockSpecs
     end
 
     def method_missing(method, *args, &block)
-      self.class.send :define_method, method do |*args, &block|
-        @y.send method, *args, &block
+      self.class.send :define_method, method do |*a, &b|
+        @y.send method, *a, &b
       end
 
       send method, *args, &block

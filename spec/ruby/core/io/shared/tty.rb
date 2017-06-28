@@ -1,17 +1,17 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe :io_tty, shared: true do
-  with_tty do
-    begin
-      # check to enabled tty
-      File.open('/dev/tty') {}
-
-      # Yeah, this will probably break.
-      it "returns true if this stream is a terminal device (TTY)" do
+  platform_is_not :windows do
+    it "returns true if this stream is a terminal device (TTY)" do
+      begin
+        # check to enabled tty
+        File.open('/dev/tty') {}
+      rescue Errno::ENXIO
+        # workaround for not configured environment like OS X
+        1.should == 1
+      else
         File.open('/dev/tty') { |f| f.send(@method) }.should == true
       end
-    rescue Errno::ENXIO
-      # workaround for not configured environment
     end
   end
 

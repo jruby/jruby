@@ -46,7 +46,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -165,11 +164,11 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
-    private void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
+    private static void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
         Arrays.sort(pairs);
 
         int length = pairs.length;
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
         int p = value.getBegin();
         int s = p;
         int c = 0;
@@ -276,7 +275,7 @@ public class RubyMatchData extends RubyObject {
         charOffsetUpdated = true;
     }
 
-    private static final int MATCH_BUSY = Constants.MATCH_BUSY;
+    private static final int MATCH_BUSY = ObjectFlags.MATCH_BUSY;
 
     // rb_match_busy
     public final void use() {
@@ -295,7 +294,7 @@ public class RubyMatchData extends RubyObject {
         final Object pattern = this.pattern;
         if (pattern instanceof Regex) return (Regex) pattern;
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Match (missing pattern)");
-        // when a regexp is avoided for matching we lazyli instantiate one from the unquoted string :
+        // when a regexp is avoided for matching we lazily instantiate one from the unquoted string :
         Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(getRuntime(), (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
         this.pattern = regexPattern;
         return regexPattern;
@@ -314,22 +313,24 @@ public class RubyMatchData extends RubyObject {
 
     private RubyArray match_array(Ruby runtime, int start) {
         check();
+        IRubyObject nil = runtime.getNil();
         if (regs == null) {
             if (start != 0) return runtime.newEmptyArray();
             if (begin == -1) {
-                return runtime.newArray(runtime.getNil());
+                return runtime.newArray(nil);
             } else {
                 RubyString ss = makeShared(runtime, str, begin, end - begin);
                 return runtime.newArray( ss.infectBy(this) );
             }
         } else {
-            RubyArray arr = runtime.newArray(regs.numRegs - start);
-            for (int i=start; i<regs.numRegs; i++) {
+            RubyArray arr = RubyArray.newBlankArray(runtime, regs.numRegs - start);
+            int index = 0;
+            for (int i=start; i < regs.numRegs; i++) {
                 if (regs.beg[i] == -1) {
-                    arr.append(runtime.getNil());
+                    arr.store(index++, nil);
                 } else {
                     RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);
-                    arr.append( ss.infectBy(this) );
+                    arr.store(index++, ss.infectBy(this));
                 }
             }
             return arr;
@@ -502,7 +503,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject op_aref19(IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
-        return result == null ? to_a().aref19(idx) : result;
+        return result == null ? to_a().aref(idx) : result;
     }
 
     /** match_aref
@@ -511,7 +512,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
-        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref19(idx, rest) : result;
+        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref(idx, rest) : result;
     }
 
     private IRubyObject op_arefCommon(IRubyObject idx) {

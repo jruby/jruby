@@ -199,7 +199,9 @@ describe "Module#const_get" do
       ConstantSpecs::ClassB::CS_CONST309 = :const309_1
       ConstantSpecs::ClassB.const_get(:CS_CONST309).should == :const309_1
 
-      ConstantSpecs::ClassB::CS_CONST309 = :const309_2
+      lambda {
+        ConstantSpecs::ClassB::CS_CONST309 = :const309_2
+      }.should complain(/already initialized constant/)
       ConstantSpecs::ClassB.const_get(:CS_CONST309).should == :const309_2
     end
   end

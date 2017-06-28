@@ -495,7 +495,7 @@ public class TraceType {
             traceArray[i] = new RubyString(runtime, stringClass, line.toString()); // must toString
         }
 
-        return RubyArray.newArrayNoCopy(runtime, traceArray);
+        return RubyArray.newArrayMayCopy(runtime, traceArray);
     }
 
     private static void printErrorPos(ThreadContext context, PrintStream errorStream) {

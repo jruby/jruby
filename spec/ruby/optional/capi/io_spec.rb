@@ -24,12 +24,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_addstr data")
 
       @o.rb_io_addstr(@io, obj)
-      @name.should have_data("rb_io_addstr data")
+      File.read(@name).should == "rb_io_addstr data"
     end
 
     it "writes the String to the IO" do
       @o.rb_io_addstr(@io, "rb_io_addstr data")
-      @name.should have_data("rb_io_addstr data")
+      File.read(@name).should == "rb_io_addstr data"
     end
 
     it "returns the io" do
@@ -43,7 +43,7 @@ describe "C-API IO function" do
       obj.should_receive(:to_str).and_return("%s")
 
       @o.rb_io_printf(@io, [obj, "rb_io_printf"])
-      @name.should have_data("rb_io_printf")
+      File.read(@name).should == "rb_io_printf"
     end
 
     it "calls #to_s to convert the object to a String" do
@@ -51,12 +51,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_printf")
 
       @o.rb_io_printf(@io, ["%s", obj])
-      @name.should have_data("rb_io_printf")
+      File.read(@name).should == "rb_io_printf"
     end
 
     it "writes the Strings to the IO" do
       @o.rb_io_printf(@io, ["%s_%s_%s", "rb", "io", "printf"])
-      @name.should have_data("rb_io_printf")
+      File.read(@name).should == "rb_io_printf"
     end
   end
 
@@ -66,12 +66,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_print")
 
       @o.rb_io_print(@io, [obj])
-      @name.should have_data("rb_io_print")
+      File.read(@name).should == "rb_io_print"
     end
 
     it "writes the Strings to the IO with no separator" do
       @o.rb_io_print(@io, ["rb_", "io_", "print"])
-      @name.should have_data("rb_io_print")
+      File.read(@name).should == "rb_io_print"
     end
   end
 
@@ -81,12 +81,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_puts")
 
       @o.rb_io_puts(@io, [obj])
-      @name.should have_data("rb_io_puts")
+      File.read(@name).should == "rb_io_puts\n"
     end
 
     it "writes the Strings to the IO separated by newlines" do
       @o.rb_io_puts(@io, ["rb", "io", "write"])
-      @name.should have_data("rb\nio\nwrite")
+      File.read(@name).should == "rb\nio\nwrite\n"
     end
   end
 
@@ -96,12 +96,12 @@ describe "C-API IO function" do
       obj.should_receive(:to_s).and_return("rb_io_write")
 
       @o.rb_io_write(@io, obj)
-      @name.should have_data("rb_io_write")
+      File.read(@name).should == "rb_io_write"
     end
 
     it "writes the String to the IO" do
       @o.rb_io_write(@io, "rb_io_write")
-      @name.should have_data("rb_io_write")
+      File.read(@name).should == "rb_io_write"
     end
   end
 end
@@ -147,7 +147,7 @@ describe "C-API IO function" do
 
     it "raises an error if the IO is closed" do
       @io.close
-      lambda { @o.rb_io_check_writable(@io) }.should raise_error(IOError)
+      lambda { @o.rb_io_check_closed(@io) }.should raise_error(IOError)
     end
   end
 
@@ -251,29 +251,31 @@ describe "C-API IO function" do
     end
   end
 
-  describe "rb_io_wait_readable" do
-    it "returns false if there is no error condition" do
-      @o.rb_io_wait_readable(@r_io, false).should be_false
-    end
-
-    it "raises and IOError if passed a closed stream" do
-      @r_io.close
-      lambda { @o.rb_io_wait_readable(@r_io, false) }.should raise_error(IOError)
-    end
-
-    it "blocks until the io is readable and returns true" do
-      @o.instance_variable_set :@write_data, false
-      thr = Thread.new do
-        sleep 0.1 until @o.instance_variable_get(:@write_data)
-        @w_io.write "rb_io_wait_readable"
+  platform_is_not :windows do
+    describe "rb_io_wait_readable" do
+      it "returns false if there is no error condition" do
+        @o.rb_io_wait_readable(@r_io, false).should be_false
       end
 
-      Thread.pass until thr.alive?
+      it "raises and IOError if passed a closed stream" do
+        @r_io.close
+        lambda {
+          @o.rb_io_wait_readable(@r_io, false)
+        }.should raise_error(IOError)
+      end
 
-      @o.rb_io_wait_readable(@r_io, true).should be_true
-      @o.instance_variable_get(:@read_data).should == "rb_io_wait_re"
+      it "blocks until the io is readable and returns true" do
+        @o.instance_variable_set :@write_data, false
+        thr = Thread.new do
+          Thread.pass until @o.instance_variable_get(:@write_data)
+          @w_io.write "rb_io_wait_readable"
+        end
 
-      thr.join
+        @o.rb_io_wait_readable(@r_io, true).should be_true
+        @o.instance_variable_get(:@read_data).should == "rb_io_wait_re"
+
+        thr.join
+      end
     end
   end
 
@@ -282,7 +284,7 @@ describe "C-API IO function" do
       start = false
       thr = Thread.new do
         start = true
-        sleep 0.5
+        sleep 0.05
         @w_io.write "rb_io_wait_readable"
       end
 

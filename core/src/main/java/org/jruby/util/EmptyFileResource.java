@@ -2,7 +2,6 @@ package org.jruby.util;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 import org.jruby.util.io.ModeFlags;
 import java.io.InputStream;
 
@@ -97,7 +96,7 @@ public class EmptyFileResource implements FileResource {
         // It is somewhat weird that we're returning the NOT_EXIST instance that this resource is
         // intending to replace. However, that should go away once we get rid of the hacky method, so
         // should be okay for now.
-        return JRubyNonExistentFile.NOT_EXIST;
+        return JRubyFile.DUMMY;
     }
 
     @Override

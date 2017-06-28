@@ -33,7 +33,7 @@ describe "Module#module_function with specific method names" do
       module_function :test, :test2
     end
 
-    m.respond_to?(:test).should  == true
+    m.respond_to?(:test).should == true
     m.respond_to?(:test2).should == true
     m.respond_to?(:test3).should == false
   end
@@ -96,7 +96,7 @@ describe "Module#module_function with specific method names" do
       module_function :test
     end
 
-    m.public_methods.map {|m| m.to_s }.include?('test').should == true
+    m.public_methods.map {|me| me.to_s }.include?('test').should == true
   end
 
   it "tries to convert the given names to strings using to_str" do
@@ -109,7 +109,7 @@ describe "Module#module_function with specific method names" do
       module_function o, o2
     end
 
-    m.respond_to?(:test).should  == true
+    m.respond_to?(:test).should == true
     m.respond_to?(:test2).should == true
   end
 
@@ -128,15 +128,33 @@ describe "Module#module_function with specific method names" do
     end
     m.respond_to?(:require).should be_true
   end
+
+  it "creates Module methods that super up the singleton class of the module" do
+    super_m = Module.new do
+      def foo
+        "super_m"
+      end
+    end
+
+    m = Module.new do
+      extend super_m
+      module_function
+      def foo
+        ["m", super]
+      end
+    end
+
+    m.foo.should == ["m", "super_m"]
+  end
 end
 
 describe "Module#module_function as a toggle (no arguments) in a Module body" do
   it "makes any subsequently defined methods module functions with the normal semantics" do
     m = Module.new {
-          module_function
-            def test1() end
-            def test2() end
-        }
+      module_function
+      def test1() end
+      def test2() end
+    }
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true
@@ -154,12 +172,12 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
   it "stops creating module functions if the body encounters another toggle " \
      "like public/protected/private without arguments" do
     m = Module.new {
-          module_function
-            def test1() end
-            def test2() end
-          public
-            def test3() end
-        }
+      module_function
+      def test1() end
+      def test2() end
+      public
+      def test3() end
+    }
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true
@@ -169,16 +187,13 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
   it "does not stop creating module functions if the body encounters " \
      "public/protected/private WITH arguments" do
     m = Module.new {
-          def foo() end
-
-          module_function
-            def test1() end
-            def test2() end
-
-            public :foo
-
-            def test3() end
-        }
+      def foo() end
+      module_function
+      def test1() end
+      def test2() end
+      public :foo
+      def test3() end
+    }
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true
@@ -187,13 +202,10 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
 
   it "does not affect module_evaled method definitions also if outside the eval itself" do
     m = Module.new {
-          module_function
-
-          module_eval { def test1() end }
-          module_eval " def test2() end "
-        }
-
-    c = Class.new { include m }
+      module_function
+      module_eval { def test1() end }
+      module_eval " def test2() end "
+    }
 
     m.respond_to?(:test1).should == false
     m.respond_to?(:test2).should == false
@@ -201,11 +213,10 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
 
   it "has no effect if inside a module_eval if the definitions are outside of it" do
     m = Module.new {
-          module_eval { module_function }
-
-          def test1() end
-          def test2() end
-        }
+      module_eval { module_function }
+      def test1() end
+      def test2() end
+    }
 
     m.respond_to?(:test1).should == false
     m.respond_to?(:test2).should == false
@@ -213,13 +224,12 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
 
   it "functions normally if both toggle and definitions inside a module_eval" do
     m = Module.new {
-          module_eval {
-            module_function
-
-            def test1() end
-            def test2() end
-          }
-        }
+      module_eval {
+        module_function
+        def test1() end
+        def test2() end
+      }
+    }
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true
@@ -227,10 +237,9 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
 
   it "affects evaled method definitions also even when outside the eval itself" do
     m = Module.new {
-          module_function
-
-          eval "def test1() end"
-        }
+      module_function
+      eval "def test1() end"
+    }
 
     m.respond_to?(:test1).should == true
   end
@@ -238,7 +247,6 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
   it "doesn't affect definitions when inside an eval even if the definitions are outside of it" do
     m = Module.new {
       eval "module_function"
-
       def test1() end
     }
 
@@ -247,13 +255,13 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
 
   it "functions normally if both toggle and definitions inside a eval" do
     m = Module.new {
-          eval <<-CODE
-            module_function
+      eval <<-CODE
+        module_function
 
-            def test1() end
-            def test2() end
-          CODE
-        }
+        def test1() end
+        def test2() end
+      CODE
+    }
 
     m.respond_to?(:test1).should == true
     m.respond_to?(:test2).should == true

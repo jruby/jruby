@@ -71,6 +71,7 @@ describe "YAML.load" do
   end
 
   it "works on complex keys" do
+    require 'date'
     expected = {
       [ 'Detroit Tigers', 'Chicago Cubs' ] => [ Date.new( 2001, 7, 23 ) ],
       [ 'New York Yankees', 'Atlanta Braves' ] => [ Date.new( 2001, 7, 2 ),
@@ -97,5 +98,19 @@ describe "YAML.load" do
     it "rounds values smaller than 1 usec to 0 " do
       YAML.load("2011-03-22t23:32:11.000000342222+01:00").usec.should == 0
     end
+  end
+
+  it "loads an OpenStruct" do
+    require "ostruct"
+    os = OpenStruct.new("age" => 20, "name" => "John")
+    loaded = YAML.load("--- !ruby/object:OpenStruct\ntable:\n  :age: 20\n  :name: John\n")
+    loaded.should == os
+  end
+
+  it "loads a File but raise an error when used as it is uninitialized" do
+    loaded = YAML.load("--- !ruby/object:File {}\n")
+    lambda {
+      loaded.read(1)
+    }.should raise_error(IOError)
   end
 end

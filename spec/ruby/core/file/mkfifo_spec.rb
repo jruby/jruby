@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 ruby_version_is "2.3" do
   describe "File.mkfifo" do
-    platform_is_not os: [:windows] do
+    platform_is_not :windows do
       before do
         @path = tmp('fifo')
       end

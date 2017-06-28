@@ -14,22 +14,22 @@ ruby_version_is "2.3" do
     end
 
     it "requires an argument" do
-      enumerator_class::Lazy.instance_method(:grep_v).arity.should == 1
+      Enumerator::Lazy.instance_method(:grep_v).arity.should == 1
     end
 
     it "returns a new instance of Enumerator::Lazy" do
       ret = @yieldsmixed.grep_v(Object) {}
-      ret.should be_an_instance_of(enumerator_class::Lazy)
+      ret.should be_an_instance_of(Enumerator::Lazy)
       ret.should_not equal(@yieldsmixed)
 
       ret = @yieldsmixed.grep_v(Object)
-      ret.should be_an_instance_of(enumerator_class::Lazy)
+      ret.should be_an_instance_of(Enumerator::Lazy)
       ret.should_not equal(@yieldsmixed)
     end
 
     it "sets #size to nil" do
-      enumerator_class::Lazy.new(Object.new, 100) {}.grep_v(Object) {}.size.should == nil
-      enumerator_class::Lazy.new(Object.new, 100) {}.grep_v(Object).size.should == nil
+      Enumerator::Lazy.new(Object.new, 100) {}.grep_v(Object) {}.size.should == nil
+      Enumerator::Lazy.new(Object.new, 100) {}.grep_v(Object).size.should == nil
     end
 
     describe "when the returned lazy enumerator is evaluated by Enumerable#first" do
@@ -58,12 +58,12 @@ ruby_version_is "2.3" do
 
     describe "on a nested Lazy" do
       it "sets #size to nil" do
-        enumerator_class::Lazy.new(Object.new, 100) {}.grep_v(Object).grep_v(Object) {}.size.should == nil
-        enumerator_class::Lazy.new(Object.new, 100) {}.grep_v(Object).grep_v(Object).size.should == nil
+        Enumerator::Lazy.new(Object.new, 100) {}.grep_v(Object).grep_v(Object) {}.size.should == nil
+        Enumerator::Lazy.new(Object.new, 100) {}.grep_v(Object).grep_v(Object).size.should == nil
       end
 
       describe "when the returned lazy enumerator is evaluated by Enumerable#first" do
-       it "stops after specified times when not given a block" do
+        it "stops after specified times when not given a block" do
           (0..Float::INFINITY).lazy.grep_v(3..5).grep_v(6..10).first(3).should == [0, 1, 2]
 
           @eventsmixed.grep_v(Symbol).grep_v(String).first(1)

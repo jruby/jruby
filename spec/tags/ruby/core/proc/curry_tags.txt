@@ -1,1 +1,0 @@
-fails:Proc#curry with arity argument raises an ArgumentError if called on a lambda that requires fewer than _arity_ arguments

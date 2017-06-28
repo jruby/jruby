@@ -1,1 +1,0 @@
-fails(windows):File::NULL returns NUL as a string

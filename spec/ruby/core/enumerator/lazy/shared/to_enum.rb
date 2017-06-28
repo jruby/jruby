@@ -8,21 +8,21 @@ describe :enumerator_lazy_to_enum, shared: true do
   end
 
   it "requires multiple arguments" do
-    enumerator_class::Lazy.instance_method(@method).arity.should < 0
+    Enumerator::Lazy.instance_method(@method).arity.should < 0
   end
 
   it "returns a new instance of Enumerator::Lazy" do
     ret = @infinite.send @method
-    ret.should be_an_instance_of(enumerator_class::Lazy)
+    ret.should be_an_instance_of(Enumerator::Lazy)
     ret.should_not equal(@infinite)
   end
 
   it "sets #size to nil when not given a block" do
-    enumerator_class::Lazy.new(Object.new, 100) {}.send(@method).size.should == nil
+    Enumerator::Lazy.new(Object.new, 100) {}.send(@method).size.should == nil
   end
 
   it "sets given block to size when given a block" do
-    enumerator_class::Lazy.new(Object.new, 100) {}.send(@method) { 30 }.size.should == 30
+    Enumerator::Lazy.new(Object.new, 100) {}.send(@method) { 30 }.size.should == 30
   end
 
   it "generates a lazy enumerator from the given name" do
@@ -43,8 +43,8 @@ describe :enumerator_lazy_to_enum, shared: true do
       each_entry: [],
       each_cons: [2]
     }.each_pair do |method, args|
-      @infinite.method(method).owner.should_not equal(enumerator_class::Lazy)
-      @infinite.send(method, *args).should be_an_instance_of(enumerator_class::Lazy)
+      @infinite.method(method).owner.should_not equal(Enumerator::Lazy)
+      @infinite.send(method, *args).should be_an_instance_of(Enumerator::Lazy)
     end
   end
 end

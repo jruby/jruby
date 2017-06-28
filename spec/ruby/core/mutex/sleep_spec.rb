@@ -9,16 +9,16 @@ describe "Mutex#sleep" do
 
     it "raises an ArgumentError if passed a negative duration" do
       m = Mutex.new
-      lambda { m.sleep -0.1 }.should raise_error(ArgumentError)
-      lambda { m.sleep -1 }.should raise_error(ArgumentError)
+      lambda { m.sleep(-0.1) }.should raise_error(ArgumentError)
+      lambda { m.sleep(-1) }.should raise_error(ArgumentError)
     end
   end
 
   it "raises an ArgumentError if passed a negative duration" do
     m = Mutex.new
     m.lock
-    lambda { m.sleep -0.1 }.should raise_error(ArgumentError)
-    lambda { m.sleep -1 }.should raise_error(ArgumentError)
+    lambda { m.sleep(-0.1) }.should raise_error(ArgumentError)
+    lambda { m.sleep(-1) }.should raise_error(ArgumentError)
   end
 
   it "pauses execution for approximately the duration requested" do

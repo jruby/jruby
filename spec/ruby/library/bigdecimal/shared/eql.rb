@@ -20,7 +20,7 @@ describe :bigdecimal_eql, shared: true do
     @bigint.send(@method, 1000).should == true
   end
 
-  it "NaN is never equal to any number" do
+  it "returns false for NaN as it is never equal to any number" do
     @nan.send(@method, @nan).should == false
     @a.send(@method, @nan).should == false
     @nan.send(@method, @a).should == false

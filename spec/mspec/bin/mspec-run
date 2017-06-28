@@ -3,6 +3,5 @@
 $:.unshift File.expand_path('../../lib', __FILE__)
 
 require 'mspec/commands/mspec-run'
-require 'mspec'
 
 MSpecRun.main

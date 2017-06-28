@@ -16,8 +16,6 @@ describe "Class#to_s" do
     end
 
     it 'for objects includes class name and object ID' do
-      from_class = CoreClassSpecs::Record.singleton_class.to_s
-
       obj = CoreClassSpecs::Record.new
       obj.singleton_class.to_s.should =~ /#<Class:#<CoreClassSpecs::Record:0x[0-9a-f]+>>/
     end
