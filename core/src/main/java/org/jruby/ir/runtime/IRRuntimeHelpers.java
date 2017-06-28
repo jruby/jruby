@@ -96,7 +96,7 @@ public class IRRuntimeHelpers {
 
     // Create a jump for a non-local return which will return from nearest lambda (which may be itself) or method.
     public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block block, IRubyObject returnValue) {
-        if (IRRuntimeHelpers.inLambda(block.type)) throw new IRWrappedLambdaReturnValue(returnValue);
+        if (block != null && IRRuntimeHelpers.inLambda(block.type)) throw new IRWrappedLambdaReturnValue(returnValue);
 
         throw IRReturnJump.create(getContainingMethodOrLambdasDynamicScope(dynScope), returnValue);
     }
