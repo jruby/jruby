@@ -369,7 +369,7 @@ public class Sprintf {
         int length;
         int start;
         int mark;
-        Encoding encoding = null;
+        Encoding encoding;
 
         // used for RubyString functions to manage encoding, etc
         RubyString wrapper = RubyString.newString(runtime, buf);
@@ -399,12 +399,12 @@ public class Sprintf {
             }
             if (offset++ >= length) break;
 
-            IRubyObject arg = null;
+            IRubyObject arg;
             int flags = 0;
             int width = 0;
             int precision = 0;
-            int number = 0;
-            byte fchar = 0;
+            int number;
+            byte fchar;
             boolean incomplete = true;
             for ( ; incomplete && offset < length ; ) {
                 switch (fchar = format[offset]) {
@@ -598,8 +598,7 @@ public class Sprintf {
                 case 'c': {
                     arg = args.getArg();
 
-                    int c = 0;
-                    int n = 0;
+                    int c; int n;
                     tmp = arg.checkStringType19();
                     if (!tmp.isNil()) {
                         if (((RubyString)tmp).strLength() != 1) {
@@ -647,7 +646,7 @@ public class Sprintf {
                     arg = args.getArg();
 
                     if (fchar == 'p') {
-                        arg = arg.callMethod(arg.getRuntime().getCurrentContext(),"inspect");
+                        arg = arg.callMethod(runtime.getCurrentContext(), "inspect");
                     }
                     RubyString strArg = arg.asString();
                     ByteList bytes = strArg.getByteList();
@@ -704,22 +703,22 @@ public class Sprintf {
                     if (type != ClassIndex.FIXNUM && type != ClassIndex.BIGNUM) {
                         switch(type) {
                         case FLOAT:
-                            arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
+                            arg = RubyNumeric.dbl2num(runtime, ((RubyFloat) arg).getValue());
                             break;
                         case STRING:
-                            arg = ((RubyString)arg).stringToInum19(0, true);
+                            arg = ((RubyString) arg).stringToInum(0, true);
                             break;
                         default:
                             if (arg.respondsTo("to_int")) {
-                                arg = TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), "to_int", true);
+                                arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_int", true);
                             } else {
-                                arg = TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), "to_i", true);
+                                arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_i", true);
                             }
                             break;
                         }
                         type = arg.getMetaClass().getClassIndex();
                     }
-                    byte[] bytes = null;
+                    byte[] bytes;
                     int first = 0;
                     byte[] prefix = null;
                     boolean sign;
