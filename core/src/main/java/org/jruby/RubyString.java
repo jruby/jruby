@@ -3270,10 +3270,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             byte e = end.value.getUnsafeBytes()[end.value.getBegin()];
             if (c > e || (excl && c == e)) return this;
             while (true) {
-                RubyString s = new RubyString(runtime, runtime.getString(), RubyInteger.SINGLE_CHAR_BYTELISTS[c & 0xff],
-                                                                            enc, CR_7BIT);
-                s.shareLevel = SHARE_LEVEL_BYTELIST;
-                block.yield(context, asSymbol ? runtime.newSymbol(s.toString()) : s);
+                ByteList s = RubyInteger.SINGLE_CHAR_BYTELISTS[c & 0xff];
+                RubyString str = new RubyString(runtime, runtime.getString(), s, enc, CR_7BIT);
+                str.shareLevel = SHARE_LEVEL_BYTELIST;
+                block.yield(context, asSymbol ? runtime.newSymbol(s) : str);
 
                 if (!excl && c == e) break;
                 c++;
