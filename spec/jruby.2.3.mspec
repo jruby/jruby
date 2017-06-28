@@ -52,8 +52,6 @@ class MSpecScript
 
     # These all spawn sub-rubies, making them very slow to run
     '^' + SPEC_DIR + '/core/process',
-    '^' + SPEC_DIR + '/core/kernel/exec',
-    '^' + SPEC_DIR + '/core/kernel/spawn',
     '^' + SPEC_DIR + '/core/io/popen',
     '^' + SPEC_DIR + '/core/argf/gets_spec.rb',
     '^' + SPEC_DIR + '/core/argf/read_spec.rb',
