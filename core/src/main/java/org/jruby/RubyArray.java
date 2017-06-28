@@ -4391,7 +4391,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
         try {
-            return Pack.pack(context, context.runtime, this, iFmt);
+            return Pack.pack(context, this, iFmt);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(context.runtime, e);
         }

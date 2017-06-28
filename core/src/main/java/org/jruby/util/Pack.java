@@ -1619,7 +1619,14 @@ public class Pack {
         return packCommon(runtime.getCurrentContext(), list, formatString, false, executor());
     }
 
+    /**
+     * @deprecated
+     */
     public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
+        return pack(context, list, formatString);
+    }
+
+    public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString) {
         RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor());
         return (RubyString) pack.infectBy(formatString);
     }
