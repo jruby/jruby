@@ -125,24 +125,24 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
     }
 
-    public void invokeOther(String file, int line, String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
+    public void invokeOther(String file, int line, String name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (isPotentiallyRefined) {
-            super.invokeOther(file, line, name, arity, hasClosure, isPotentiallyRefined);
+            super.invokeOther(file, line, name, arity, blockPassType, isPotentiallyRefined);
             return;
         }
 
-        if (hasClosure) {
+        if (blockPassType.given()) {
             if (arity == -1) {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), NormalInvokeSite.BOOTSTRAP, file, line);
+                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             } else {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), NormalInvokeSite.BOOTSTRAP, file, line);
+                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             }
         } else {
             if (arity == -1) {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), NormalInvokeSite.BOOTSTRAP, file, line);
+                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), NormalInvokeSite.BOOTSTRAP, false, file, line);
             } else {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP, file, line);
+                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP, false, file, line);
             }
         }
     }
@@ -156,9 +156,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         if (!MethodIndex.hasFastFixnumOps(name)) {
             pushFixnum(fixnum);
             if (callType == CallType.NORMAL) {
-                invokeOther(file, line, name, 1, false, false);
+                invokeOther(file, line, name, 1, BlockPassType.NONE,false);
             } else {
-                invokeSelf(file, line, name, 1, false, callType, false);
+                invokeSelf(file, line, name, 1, BlockPassType.NONE, callType, false);
             }
             return;
         }
@@ -179,9 +179,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         if (!MethodIndex.hasFastFloatOps(name)) {
             pushFloat(flote);
             if (callType == CallType.NORMAL) {
-                invokeOther(file, line, name, 1, false, false);
+                invokeOther(file, line, name, 1, BlockPassType.NONE, false);
             } else {
-                invokeSelf(file, line, name, 1, false, callType, false);
+                invokeSelf(file, line, name, 1, BlockPassType.NONE, callType, false);
             }
             return;
         }
@@ -198,25 +198,25 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             0);
     }
 
-    public void invokeSelf(String file, int line, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
+    public void invokeSelf(String file, int line, String name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (isPotentiallyRefined) {
-            super.invokeSelf(file, line, name, arity, hasClosure, callType, isPotentiallyRefined);
+            super.invokeSelf(file, line, name, arity, blockPassType, callType, isPotentiallyRefined);
             return;
         }
 
         String action = callType == CallType.FUNCTIONAL ? "callFunctional" : "callVariable";
-        if (hasClosure) {
+        if (blockPassType != BlockPassType.NONE) {
             if (arity == -1) {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, file, line);
+                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             } else {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), SelfInvokeSite.BOOTSTRAP, file, line);
+                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             }
         } else {
             if (arity == -1) {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, file, line);
+                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, file, line);
             } else {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, file, line);
+                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, file, line);
             }
         }
     }

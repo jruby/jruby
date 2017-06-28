@@ -329,7 +329,7 @@ public class InterpreterEngine {
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
-                result = call.getCallSite().call(context, self, r, o, preparedBlock);
+                result = call.getCallSite().callIter(context, self, r, o, preparedBlock);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }
@@ -419,7 +419,6 @@ public class InterpreterEngine {
     protected static IRubyObject processReturnOp(ThreadContext context, Block block, Instr instr, Operation operation,
                                                  DynamicScope currDynScope, Object[] temp, IRubyObject self,
                                                  StaticScope currScope) {
-        Block.Type blockType = block == null ? null : block.type;
         switch(operation) {
             // --------- Return flavored instructions --------
             case RETURN: {
@@ -433,12 +432,12 @@ public class InterpreterEngine {
                 // This assumes that scopes with break instr. have a frame / dynamic scope
                 // pushed so that we can get to its static scope. For-loops now always have
                 // a dyn-scope pushed onto stack which makes this work in all scenarios.
-                return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, blockType);
+                return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, block);
             }
             case NONLOCAL_RETURN: {
                 NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
                 IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
-                return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, rv);
+                return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, block, rv);
             }
             case RETURN_OR_RETHROW_SAVED_EXC: {
                 IRubyObject retVal = (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);

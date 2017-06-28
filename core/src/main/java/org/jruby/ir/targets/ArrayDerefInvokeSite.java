@@ -31,7 +31,7 @@ import static org.jruby.util.CodegenUtils.sig;
 */
 public class ArrayDerefInvokeSite extends NormalInvokeSite {
     public ArrayDerefInvokeSite(MethodType type, String file, int line) {
-        super(type, "[]", file, line);
+        super(type, "[]", false, file, line);
     }
 
     public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(ArrayDerefInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class));
