@@ -745,7 +745,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         IRubyObject result = TypeConverter.convertToType(context, this, runtime.getInteger(), sites.to_int_checked, true);
 
-        if (!(result instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + "#to_int should return Integer");
+        if (!(result instanceof RubyInteger)) {
+            throw getRuntime().newTypeError(getMetaClass().getName() + "#to_int should return Integer");
+        }
 
         return (RubyInteger) result;
     }
@@ -768,7 +770,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             result = TypeConverter.convertToType(this, getRuntime().getInteger(), convertMethod, true);
         }
 
-        if (!(result instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + "#to_int should return Integer");
+        if (!(result instanceof RubyInteger)) {
+            throw getRuntime().newTypeError(getMetaClass().getName() + '#' + convertMethod + " should return Integer");
+        }
 
         return (RubyInteger) result;
     }
