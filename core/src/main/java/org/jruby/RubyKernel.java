@@ -397,7 +397,7 @@ public class RubyKernel {
             }
             RubyString arg = (RubyString)object;
             if (arg.toString().startsWith("0x")) {
-                return ConvertBytes.byteListToInum19(runtime, arg.getByteList(), 16, true).toFloat();
+                return ConvertBytes.byteListToInum(runtime, arg.getByteList(), 16, true).toFloat();
             }
             return RubyNumeric.str2fnum(runtime, arg, true);
         } else if(object.isNil()){

@@ -363,7 +363,7 @@ public class RubyNumeric extends RubyObject {
      */
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean strict) {
         ByteList s = str.getByteList();
-        return ConvertBytes.byteListToInum19(runtime, s, base, strict);
+        return ConvertBytes.byteListToInum(runtime, s, base, strict);
     }
 
     /**
