@@ -868,7 +868,7 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "round")
     public IRubyObject op_round(ThreadContext context, IRubyObject n) {
         IRubyObject b = op_roundCommonPre(context, n);
-        return op_roundCommonPost(context, ((RubyRational)f_mul(context, this, b)).op_round(context), n, b);
+        return op_roundCommonPost(context, ((RubyNumeric) f_mul(context, this, b)).round(), n, b);
     }
 
     /** nurat_to_f
