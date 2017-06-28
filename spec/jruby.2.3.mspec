@@ -62,7 +62,6 @@ class MSpecScript
     '^' + SPEC_DIR + '/core/encoding/default_internal_spec.rb',
     '^' + SPEC_DIR + '/core/io/pid_spec.rb',
     '^' + SPEC_DIR + '/core/kernel/at_exit_spec.rb',
-    '^' + SPEC_DIR + '/language/break_spec.rb',
     '^' + SPEC_DIR + '/language/predefined_spec.rb',
     '^' + SPEC_DIR + '/language/predefined/data_spec.rb',
   ]
