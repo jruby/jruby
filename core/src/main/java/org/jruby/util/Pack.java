@@ -1616,20 +1616,20 @@ public class Pack {
      * Same as pack but defaults tainting of output to false.
      */
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        return packCommon(runtime, list, formatString, false, executor());
+        return packCommon(runtime.getCurrentContext(), list, formatString, false, executor());
     }
 
     public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
-        RubyString pack = packCommon(runtime, list, formatString.getByteList(), formatString.isTaint(), executor());
+        RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor());
         return (RubyString) pack.infectBy(formatString);
     }
 
-    private static RubyString packCommon(Ruby runtime, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
+    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteList result = new ByteList();
         boolean taintOutput = tainted;
         int listSize = list.size();
-        int type = 0;
+        int type;
         int next = safeGet(format);
 
         int idx = 0;
@@ -1663,8 +1663,7 @@ public class Pack {
             if (next == '!' || next == '_') {
                 int index = NATIVE_CODES.indexOf(type);
                 if (index == -1) {
-                    throw runtime.newArgumentError("'" + next +
-                            "' allowed only after types " + NATIVE_CODES);
+                    throw context.runtime.newArgumentError("'" + next + "' allowed only after types " + NATIVE_CODES);
                 }
                 int typeBeforeMap = type;
                 type = MAPPED_CODES.charAt(index);
@@ -1679,8 +1678,7 @@ public class Pack {
                 next = next == '>' ? BE : LE;
                 int index = ENDIANESS_CODES.indexOf(type + next);
                 if (index == -1) {
-                    throw runtime.newArgumentError("'" + (char)next +
-                            "' allowed only after types sSiIlLqQ");
+                    throw context.runtime.newArgumentError("'" + (char)next + "' allowed only after types sSiIlLqQ");
                 }
                 type = ENDIANESS_CODES.charAt(index);
                 next = safeGet(format);
@@ -1726,13 +1724,13 @@ public class Pack {
 
             if (converter != null) {
                 executor.setConverter(converter);
-                idx = encode(runtime, occurrences, result, list, idx, executor);
+                idx = encode(context.runtime, occurrences, result, list, idx, executor);
                 continue;
             }
 
             switch (type) {
                 case '%' :
-                    throw runtime.newArgumentError("% is not supported");
+                    throw context.runtime.newArgumentError("% is not supported");
                 case 'A' :
                 case 'a' :
                 case 'Z' :
@@ -1742,13 +1740,13 @@ public class Pack {
                 case 'h' :
                     {
                         if (listSize-- <= 0) {
-                            throw runtime.newArgumentError(sTooFew);
+                            throw context.runtime.newArgumentError(sTooFew);
                         }
 
                         IRubyObject from = list.eltInternal(idx++);
                         if(from.isTaint()) taintOutput = true;
 
-                        lCurElemString = from == runtime.getNil() ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
+                        lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
 
                         if (isStar) {
                             occurrences = lCurElemString.length();
@@ -1932,7 +1930,7 @@ public class Pack {
                     try {
                         shrink(result, occurrences);
                     } catch (IllegalArgumentException e) {
-                        throw runtime.newArgumentError("in `pack': X outside of string");
+                        throw context.runtime.newArgumentError("in `pack': X outside of string");
                     }
                     break;
                 case '@' :
@@ -1947,19 +1945,19 @@ public class Pack {
                     break;
                 case 'u' :
                 case 'm' : {
-                        if (listSize-- <= 0) throw runtime.newArgumentError(sTooFew);
+                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
                         IRubyObject from = list.eltInternal(idx++);
-                        if (from == runtime.getNil()) throw runtime.newTypeError(from, "Integer");
+                        if (from == context.nil) throw context.runtime.newTypeError(from, "Integer");
                         lCurElemString = from.convertToString().getByteList();
-                        encodeUM(runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
+                        encodeUM(context.runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
                     }
                     break;
                 case 'M' : {
-                       if (listSize-- <= 0) throw runtime.newArgumentError(sTooFew);
+                       if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
                        IRubyObject from = list.eltInternal(idx++);
-                       lCurElemString = from == runtime.getNil() ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
+                       lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
 
                        if (occurrences <= 1) {
                            occurrences = 72;
@@ -1970,34 +1968,34 @@ public class Pack {
                     break;
                 case 'U' :
                     while (occurrences-- > 0) {
-                        if (listSize-- <= 0) throw runtime.newArgumentError(sTooFew);
+                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
                         IRubyObject from = list.eltInternal(idx++);
-                        int code = from == runtime.getNil() ? 0 : RubyNumeric.num2int(from);
+                        int code = from == context.nil ? 0 : RubyNumeric.num2int(from);
 
-                        if (code < 0) throw runtime.newRangeError("pack(U): value out of range");
+                        if (code < 0) throw context.runtime.newRangeError("pack(U): value out of range");
 
-                        result.ensure(result.getRealSize() + 6);
-                        result.setRealSize(result.getRealSize() + utf8Decode(runtime, result.getUnsafeBytes(), result.getBegin() + result.getRealSize(), code));
+                        int len = result.getRealSize();
+                        result.ensure(len + 6);
+                        result.setRealSize(len + utf8Decode(context.runtime, result.getUnsafeBytes(), result.getBegin() + len, code));
                     }
                     break;
                 case 'w' :
                     while (occurrences-- > 0) {
-                        if (listSize-- <= 0) throw runtime.newArgumentError(sTooFew);
+                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
                         ByteList buf = new ByteList();
                         IRubyObject from = list.eltInternal(idx++);
 
-                        if (from.isNil()) throw runtime.newTypeError("pack('w') does not take nil");
-
+                        if (from.isNil()) throw context.runtime.newTypeError("pack('w') does not take nil");
 
                         if (from instanceof RubyBignum) {
-                            RubyBignum big128 = RubyBignum.newBignum(runtime, 128);
+                            RubyBignum big128 = RubyBignum.newBignum(context.runtime, 128);
                             while (from instanceof RubyBignum) {
                                 RubyBignum bignum = (RubyBignum)from;
-                                RubyArray ary = (RubyArray)bignum.divmod(runtime.getCurrentContext(), big128);
-                                buf.append((byte)(RubyNumeric.fix2int(ary.at(RubyFixnum.one(runtime))) | 0x80) & 0xff);
-                                from = ary.at(RubyFixnum.zero(runtime));
+                                RubyArray ary = (RubyArray)bignum.divmod(context, big128);
+                                buf.append((byte)(RubyNumeric.fix2int(ary.at(RubyFixnum.one(context.runtime))) | 0x80) & 0xff);
+                                from = ary.at(RubyFixnum.zero(context.runtime));
                             }
                         }
 
@@ -2031,7 +2029,7 @@ public class Pack {
 
                             result.append(buf);
                         } else {
-                            throw runtime.newArgumentError("can't compress negative numbers");
+                            throw context.runtime.newArgumentError("can't compress negative numbers");
                         }
                     }
 
@@ -2039,8 +2037,8 @@ public class Pack {
             }
         }        
 
-        RubyString output = runtime.newString(result);
-        if (taintOutput) output.taint(runtime.getCurrentContext());
+        RubyString output = context.runtime.newString(result);
+        if (taintOutput) output.taint(context);
 
         switch (enc_info)
         {
@@ -2048,8 +2046,7 @@ public class Pack {
                 output.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
                 break;
             case 2:
-                output.force_encoding(runtime.getCurrentContext(),
-                        runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
+                output.force_encoding(context, context.runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
                 break;
             default:
                 /* do nothing, keep ASCII-8BIT */
