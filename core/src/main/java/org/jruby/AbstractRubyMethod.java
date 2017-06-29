@@ -32,6 +32,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
@@ -153,6 +154,15 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         } else {
             return RubyMethod.newMethod(superClass, methodName, superClass, originName, newMethod, receiver);
         }
+    }
+
+    @JRubyMethod
+    public IRubyObject original_name(ThreadContext context) {
+        if (method instanceof AliasMethod) {
+            return context.runtime.newSymbol(((AliasMethod) method).getOldName());
+        }
+
+        return context.runtime.newSymbol(method.getName());
     }
 }
 
