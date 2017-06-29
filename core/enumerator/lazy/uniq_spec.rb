@@ -2,18 +2,18 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 ruby_version_is '2.4' do
-  describe 'Enumerator::Lazy#uniq'do
+  describe 'Enumerator::Lazy#uniq' do
     context 'when yielded with an argument' do
       before :each do
         @lazy = [0, 1, 2, 3].to_enum.lazy.uniq(&:even?)
       end
 
-      it 'returns a lazy enumerator'  do
+      it 'returns a lazy enumerator' do
         @lazy.should be_an_instance_of(Enumerator::Lazy)
         @lazy.force.should == [0, 1]
       end
 
-      it 'sets the size to nil'  do
+      it 'sets the size to nil' do
         @lazy.size.should == nil
       end
     end
