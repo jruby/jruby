@@ -108,7 +108,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     // static { LOG.setDebugEnable(true); }
 
     /** The thread-like think that is actually executing */
-    private volatile ThreadLike threadImpl;
+    private volatile ThreadLike threadImpl = ThreadLike.DUMMY;
 
     /** Fiber-local variables */
     private volatile transient Map<IRubyObject, IRubyObject> fiberLocalVariables;
@@ -579,7 +579,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(rest = true, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
-        if (threadImpl != null) throw context.runtime.newThreadError("already initialized thread");
+        if (threadImpl != ThreadLike.DUMMY) throw context.runtime.newThreadError("already initialized thread");
 
         return startThread(context, new RubyRunnable(this, args, block));
     }
@@ -665,7 +665,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (callInit) {
             rubyThread.callInit(args, block);
 
-            if (rubyThread.threadImpl == null) {
+            if (rubyThread.threadImpl == ThreadLike.DUMMY) {
                 throw recv.getRuntime().newThreadError("uninitialized thread - check " + ((RubyClass) recv).getName() + "#initialize");
             }
         } else {
@@ -1979,7 +1979,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return false;
         }
         final RubyThread other = (RubyThread)obj;
-        if (this.threadImpl != other.threadImpl && (this.threadImpl == null || !this.threadImpl.equals(other.threadImpl))) {
+        if (this.threadImpl != other.threadImpl && (this.threadImpl == ThreadLike.DUMMY || !this.threadImpl.equals(other.threadImpl))) {
             return false;
         }
         return true;
@@ -1987,7 +1987,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Override
     public int hashCode() {
-        return 97 * 3 + (this.threadImpl != null ? this.threadImpl.hashCode() : 0);
+        return 97 * 3 + (this.threadImpl != ThreadLike.DUMMY ? this.threadImpl.hashCode() : 0);
     }
 
     @Override

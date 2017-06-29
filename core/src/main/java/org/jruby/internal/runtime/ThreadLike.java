@@ -55,4 +55,59 @@ public interface ThreadLike {
     public String getRubyName();
 
     public String getReportName();
+
+    ThreadLike DUMMY = new ThreadLike() {
+        @Override
+        public void start() {}
+
+        @Override
+        public void interrupt() {}
+
+        @Override
+        public boolean isAlive() {
+            return false;
+        }
+
+        @Override
+        public void join() throws InterruptedException, ExecutionException {}
+
+        @Override
+        public void join(long millis) throws InterruptedException, ExecutionException {}
+
+        @Override
+        public int getPriority() {
+            return 0;
+        }
+
+        @Override
+        public void setPriority(int priority) {}
+
+        @Override
+        public boolean isCurrent() {
+            return false;
+        }
+
+        @Override
+        public boolean isInterrupted() {
+            return false;
+        }
+
+        @Override
+        public Thread nativeThread() {
+            return null;
+        }
+
+        @Override
+        public void setRubyName(String name) {}
+
+        @Override
+        public String getRubyName() {
+            return "uninitialized thread";
+        }
+
+        @Override
+        public String getReportName() {
+            return "uninitialized thread";
+        }
+    };
 }
