@@ -731,33 +731,24 @@ public class RubyNumeric extends RubyObject {
         return equalInternal(context, this, other) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    /** num_quo (1.8)
-     * quo and fdiv in 1.8 just invokes "/"
+    /** num_quo
+     *
      */
-    public IRubyObject quo(ThreadContext context, IRubyObject other) {
-        return sites(context).op_quo.call(context, this, this, other);
-    }
-
-    /** num_quo (1.9)
-    *
-    */
     @JRubyMethod(name = "quo")
-    public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
+    public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return RubyRational.numericQuo(context, this, other);
     }
 
-    /** num_div
-     *
-     */
-    public IRubyObject div(ThreadContext context, IRubyObject other) {
-        return div19(context, other);
+    @Deprecated
+    public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
+        return quo(context, other);
     }
 
     /** num_div
      *
      */
     @JRubyMethod(name = "div")
-    public IRubyObject div19(ThreadContext context, IRubyObject other) {
+    public IRubyObject div(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyNumeric) {
             RubyNumeric numeric = (RubyNumeric) other;
             if (numeric.zero_p(context).isTrue()) {
@@ -768,22 +759,25 @@ public class RubyNumeric extends RubyObject {
         return sites(context).floor.call(context, quotient, quotient);
     }
 
-    /** num_divmod
-     *
-     */
-    public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        return divmod19(context, other);
+    @Deprecated
+    public IRubyObject div19(ThreadContext context, IRubyObject other) {
+        return div(context, other);
     }
 
     /** num_divmod
      *
      */
     @JRubyMethod(name = "divmod")
-    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
-        return RubyArray.newArray(getRuntime(), div(context, other), modulo19(context, other));
+    public IRubyObject divmod(ThreadContext context, IRubyObject other) {
+        return RubyArray.newArray(context.runtime, div(context, other), modulo19(context, other));
     }
 
-    /** num_fdiv (1.9) */
+    @Deprecated
+    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+        return divmod(context, other);
+    }
+
+    /** num_fdiv */
     @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
         RubyFloat flote = this.convertToFloat();
@@ -793,18 +787,16 @@ public class RubyNumeric extends RubyObject {
     /** num_modulo
      *
      */
-    public IRubyObject modulo(ThreadContext context, IRubyObject other) {
-        return modulo19(context, other);
-    }
-
-    /** num_modulo
-     *
-     */
     @JRubyMethod(name = "modulo")
-    public IRubyObject modulo19(ThreadContext context, IRubyObject other) {
+    public IRubyObject modulo(ThreadContext context, IRubyObject other) {
         IRubyObject div = sites(context).div.call(context, this, this, other);
         IRubyObject product = sites(context).op_times.call(context, other, other, div);
         return sites(context).op_minus.call(context, this, this, product);
+    }
+
+    @Deprecated
+    public IRubyObject modulo19(ThreadContext context, IRubyObject other) {
+        return modulo(context, other);
     }
 
     /** num_remainder
