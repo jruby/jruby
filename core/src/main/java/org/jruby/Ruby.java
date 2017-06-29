@@ -1362,7 +1362,7 @@ public final class Ruby implements Constantizable {
         trueObject = new RubyBoolean.True(this);
         trueObject.setFrozen(true);
 
-        reportOnException = nilObject;
+        reportOnException = falseObject;
     }
 
     private void initCore() {
