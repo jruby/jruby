@@ -732,38 +732,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @JRubyMethod(name = "**")
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
-        return op_pow_19(context, other);
-    }
-
-    public IRubyObject op_pow(ThreadContext context, long other) {
-        // FIXME this needs to do the right thing for 1.9 mode before we can use it
-        throw context.runtime.newRuntimeError("bug: using direct op_pow(long) in 1.8 mode");
-    }
-
-    private IRubyObject powerFixnum(ThreadContext context, long other) {
-        Ruby runtime = context.runtime;
-        if (other == 0) {
-            return RubyFixnum.one(runtime);
-        }
-        if (other == 1) {
-            return this;
-        }
-        if (other > 0) {
-            return RubyBignum.newBignum(runtime, value).op_pow(context, other);
-        }
-        return RubyFloat.newFloat(runtime, Math.pow(value, other));
-    }
-
-    private IRubyObject powerOther(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-        if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(runtime, Math.pow(value, ((RubyFloat) other)
-                    .getDoubleValue()));
-        }
-        return coerceBin(context, sites(context).op_exp, other);
-    }
-
-    public IRubyObject op_pow_19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyNumeric) {
             double d_other = ((RubyNumeric) other).getDoubleValue();
             if (value < 0 && (d_other != Math.round(d_other))) {
@@ -771,13 +739,23 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
                 return sites(context).op_exp_complex.call(context, complex, complex, other);
             }
             if (other instanceof RubyFixnum) {
-                return powerFixnum19(context, other);
+                return powerFixnum(context, other);
             }
         }
-        return powerOther19(context, other);
+        return powerOther(context, other);
     }
 
-    private IRubyObject powerOther19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_pow(ThreadContext context, long other) {
+        // FIXME this needs to do the right thing for 1.9 mode before we can use it
+        throw context.runtime.newRuntimeError("bug: using direct op_pow(long) in 1.8 mode");
+    }
+
+    @Deprecated
+    public IRubyObject op_pow_19(ThreadContext context, IRubyObject other) {
+        return op_pow(context, other);
+    }
+
+    private IRubyObject powerOther(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
         long a = value;
         if (other instanceof RubyBignum) {
@@ -800,7 +778,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return coerceBin(context, sites(context).op_exp, other);
     }
 
-    private IRubyObject powerFixnum19(ThreadContext context, IRubyObject other) {
+    private IRubyObject powerFixnum(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
         long a = value;
         long b = ((RubyFixnum) other).value;
