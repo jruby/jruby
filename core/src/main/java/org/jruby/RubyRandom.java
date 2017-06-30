@@ -462,7 +462,7 @@ public class RubyRandom extends RubyObject {
         } else if ((v = checkMaxInt(context, vmax)) != null) {
             v = randInt(context, random, (RubyInteger) v, true);
         } else if (!(v = TypeConverter.checkFloatType(context.runtime, vmax)).isNil()) {
-            double max = floatValue(v);
+            double max = ((RubyFloat) v).getDoubleValue();
             if (max > 0.0) {
                 v = context.runtime.newFloat(max * random.genrandReal());
             } else {
