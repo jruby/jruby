@@ -83,23 +83,32 @@ public class Pack {
     private static final Converter[] converters = new Converter[256];
 
     private static long num2quad(IRubyObject arg) {
-        if (arg == arg.getRuntime().getNil()) {
-            return 0L;
-        }
-        else if (arg instanceof RubyBignum) {
-            BigInteger big = ((RubyBignum)arg).getValue();
+        if (arg.isNil()) return 0L;
+        if (arg instanceof RubyBignum) {
+            BigInteger big = ((RubyBignum) arg).getValue();
             return big.longValue();
         }
         return RubyNumeric.num2long(arg);
     }
 
     private static float obj2flt(Ruby runtime, IRubyObject o) {
-        return (float) TypeConverter.toFloat(runtime, o).getDoubleValue();        
+        return (float) toFloat(runtime, o).getDoubleValue();
     }
 
     private static double obj2dbl(Ruby runtime, IRubyObject o) {
-        return TypeConverter.toFloat(runtime, o).getDoubleValue();        
-    }    
+        return toFloat(runtime, o).getDoubleValue();
+    }
+
+    // MRI: rb_to_float 1.9
+    private static RubyFloat toFloat(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyNumeric) {
+            return ((RubyNumeric) obj).convertToFloat();
+        }
+        if (obj instanceof RubyString || obj.isNil()) {
+            throw runtime.newTypeError(obj, "Float");
+        }
+        return (RubyFloat) TypeConverter.convertToType(obj, runtime.getFloat(), "to_f", true);
+    }
 
     static {
         uu_table =

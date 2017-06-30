@@ -131,12 +131,13 @@ public class TypeConverter {
         return convertToType(context, obj, target, sites);
     }
 
-    // MRI: rb_to_float 1.9
+    // NOTE: no longer used, pack has specific conversion rules (e.g. String#to_f should not happen)
+    // thus has been moved and re-implemented directly in org.jruby.util.Pack (MRI: rb_to_float 1.9)
     public static RubyNumeric toFloat(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyFloat) return (RubyNumeric) obj;
-        
         return (RubyNumeric) convertToType(obj, runtime.getFloat(), "to_f", true);
     }
+
     /**
      * Checks that this object is of type DATA and then returns it, otherwise raises failure (MRI: Check_Type(obj, T_DATA))
      *
