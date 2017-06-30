@@ -740,7 +740,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     @Deprecated
-    public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
+    public final IRubyObject quo_19(ThreadContext context, IRubyObject other) {
         return quo(context, other);
     }
 
@@ -760,7 +760,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     @Deprecated
-    public IRubyObject div19(ThreadContext context, IRubyObject other) {
+    public final IRubyObject div19(ThreadContext context, IRubyObject other) {
         return div(context, other);
     }
 
@@ -773,7 +773,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     @Deprecated
-    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+    public final IRubyObject divmod19(ThreadContext context, IRubyObject other) {
         return divmod(context, other);
     }
 
@@ -795,7 +795,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     @Deprecated
-    public IRubyObject modulo19(ThreadContext context, IRubyObject other) {
+    public final IRubyObject modulo19(ThreadContext context, IRubyObject other) {
         return modulo(context, other);
     }
 
