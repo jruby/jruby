@@ -159,55 +159,55 @@ public class RubyParser {
     }
 					// line 161 "-"
   // %token constants
-  public static final int kCLASS = 257;
-  public static final int kMODULE = 258;
-  public static final int kDEF = 259;
-  public static final int kUNDEF = 260;
-  public static final int kBEGIN = 261;
-  public static final int kRESCUE = 262;
-  public static final int kENSURE = 263;
-  public static final int kEND = 264;
-  public static final int kIF = 265;
-  public static final int kUNLESS = 266;
-  public static final int kTHEN = 267;
-  public static final int kELSIF = 268;
-  public static final int kELSE = 269;
-  public static final int kCASE = 270;
-  public static final int kWHEN = 271;
-  public static final int kWHILE = 272;
-  public static final int kUNTIL = 273;
-  public static final int kFOR = 274;
-  public static final int kBREAK = 275;
-  public static final int kNEXT = 276;
-  public static final int kREDO = 277;
-  public static final int kRETRY = 278;
-  public static final int kIN = 279;
-  public static final int kDO = 280;
-  public static final int kDO_COND = 281;
-  public static final int kDO_BLOCK = 282;
-  public static final int kRETURN = 283;
-  public static final int kYIELD = 284;
-  public static final int kSUPER = 285;
-  public static final int kSELF = 286;
-  public static final int kNIL = 287;
-  public static final int kTRUE = 288;
-  public static final int kFALSE = 289;
-  public static final int kAND = 290;
-  public static final int kOR = 291;
-  public static final int kNOT = 292;
-  public static final int kIF_MOD = 293;
-  public static final int kUNLESS_MOD = 294;
-  public static final int kWHILE_MOD = 295;
-  public static final int kUNTIL_MOD = 296;
-  public static final int kRESCUE_MOD = 297;
-  public static final int kALIAS = 298;
-  public static final int kDEFINED = 299;
-  public static final int klBEGIN = 300;
-  public static final int klEND = 301;
-  public static final int k__LINE__ = 302;
-  public static final int k__FILE__ = 303;
-  public static final int k__ENCODING__ = 304;
-  public static final int kDO_LAMBDA = 305;
+  public static final int keyword_class = 257;
+  public static final int keyword_module = 258;
+  public static final int keyword_def = 259;
+  public static final int keyword_undef = 260;
+  public static final int keyword_begin = 261;
+  public static final int keyword_rescue = 262;
+  public static final int keyword_ensure = 263;
+  public static final int keyword_end = 264;
+  public static final int keyword_if = 265;
+  public static final int keyword_unless = 266;
+  public static final int keyword_then = 267;
+  public static final int keyword_elsif = 268;
+  public static final int keyword_else = 269;
+  public static final int keyword_case = 270;
+  public static final int keyword_when = 271;
+  public static final int keyword_while = 272;
+  public static final int keyword_until = 273;
+  public static final int keyword_for = 274;
+  public static final int keyword_break = 275;
+  public static final int keyword_next = 276;
+  public static final int keyword_redo = 277;
+  public static final int keyword_retry = 278;
+  public static final int keyword_in = 279;
+  public static final int keyword_do = 280;
+  public static final int keyword_do_cond = 281;
+  public static final int keyword_do_block = 282;
+  public static final int keyword_return = 283;
+  public static final int keyword_yield = 284;
+  public static final int keyword_super = 285;
+  public static final int keyword_self = 286;
+  public static final int keyword_nil = 287;
+  public static final int keyword_true = 288;
+  public static final int keyword_false = 289;
+  public static final int keyword_and = 290;
+  public static final int keyword_or = 291;
+  public static final int keyword_not = 292;
+  public static final int modifier_if = 293;
+  public static final int modifier_unless = 294;
+  public static final int modifier_while = 295;
+  public static final int modifier_until = 296;
+  public static final int modifier_rescue = 297;
+  public static final int keyword_alias = 298;
+  public static final int keyword_defined = 299;
+  public static final int keyword_BEGIN = 300;
+  public static final int keyword_END = 301;
+  public static final int keyword__LINE__ = 302;
+  public static final int keyword__FILE__ = 303;
+  public static final int keyword__ENCODING__ = 304;
+  public static final int keyword_do_lambda = 305;
   public static final int tIDENTIFIER = 306;
   public static final int tFID = 307;
   public static final int tGVAR = 308;
@@ -840,27 +840,32 @@ public class RubyParser {
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,null,null,null,null,null,null,
-    "kCLASS","kMODULE","kDEF","kUNDEF","kBEGIN","kRESCUE","kENSURE",
-    "kEND","kIF","kUNLESS","kTHEN","kELSIF","kELSE","kCASE","kWHEN",
-    "kWHILE","kUNTIL","kFOR","kBREAK","kNEXT","kREDO","kRETRY","kIN",
-    "kDO","kDO_COND","kDO_BLOCK","kRETURN","kYIELD","kSUPER","kSELF",
-    "kNIL","kTRUE","kFALSE","kAND","kOR","kNOT","kIF_MOD","kUNLESS_MOD",
-    "kWHILE_MOD","kUNTIL_MOD","kRESCUE_MOD","kALIAS","kDEFINED","klBEGIN",
-    "klEND","k__LINE__","k__FILE__","k__ENCODING__","kDO_LAMBDA",
-    "tIDENTIFIER","tFID","tGVAR","tIVAR","tCONSTANT","tCVAR","tLABEL",
-    "tCHAR","tUPLUS","tUMINUS","tUMINUS_NUM","tPOW","tCMP","tEQ","tEQQ",
-    "tNEQ","tGEQ","tLEQ","tANDOP","tOROP","tMATCH","tNMATCH","tDOT",
-    "tDOT2","tDOT3","tAREF","tASET","tLSHFT","tRSHFT","tANDDOT","tCOLON2",
-    "tCOLON3","tOP_ASGN","tASSOC","tLPAREN","tLPAREN2","tRPAREN",
-    "tLPAREN_ARG","tLBRACK","tRBRACK","tLBRACE","tLBRACE_ARG","tSTAR",
-    "tSTAR2","tAMPER","tAMPER2","tTILDE","tPERCENT","tDIVIDE","tPLUS",
-    "tMINUS","tLT","tGT","tPIPE","tBANG","tCARET","tLCURLY","tRCURLY",
-    "tBACK_REF2","tSYMBEG","tSTRING_BEG","tXSTRING_BEG","tREGEXP_BEG",
-    "tWORDS_BEG","tQWORDS_BEG","tSTRING_DBEG","tSTRING_DVAR",
-    "tSTRING_END","tLAMBDA","tLAMBEG","tNTH_REF","tBACK_REF",
-    "tSTRING_CONTENT","tINTEGER","tIMAGINARY","tFLOAT","tRATIONAL",
-    "tREGEXP_END","tSYMBOLS_BEG","tQSYMBOLS_BEG","tDSTAR","tSTRING_DEND",
-    "tLABEL_END","tLOWEST",
+    "keyword_class","keyword_module","keyword_def","keyword_undef",
+    "keyword_begin","keyword_rescue","keyword_ensure","keyword_end",
+    "keyword_if","keyword_unless","keyword_then","keyword_elsif",
+    "keyword_else","keyword_case","keyword_when","keyword_while",
+    "keyword_until","keyword_for","keyword_break","keyword_next",
+    "keyword_redo","keyword_retry","keyword_in","keyword_do",
+    "keyword_do_cond","keyword_do_block","keyword_return","keyword_yield",
+    "keyword_super","keyword_self","keyword_nil","keyword_true",
+    "keyword_false","keyword_and","keyword_or","keyword_not",
+    "modifier_if","modifier_unless","modifier_while","modifier_until",
+    "modifier_rescue","keyword_alias","keyword_defined","keyword_BEGIN",
+    "keyword_END","keyword__LINE__","keyword__FILE__",
+    "keyword__ENCODING__","keyword_do_lambda","tIDENTIFIER","tFID",
+    "tGVAR","tIVAR","tCONSTANT","tCVAR","tLABEL","tCHAR","tUPLUS",
+    "tUMINUS","tUMINUS_NUM","tPOW","tCMP","tEQ","tEQQ","tNEQ","tGEQ",
+    "tLEQ","tANDOP","tOROP","tMATCH","tNMATCH","tDOT","tDOT2","tDOT3",
+    "tAREF","tASET","tLSHFT","tRSHFT","tANDDOT","tCOLON2","tCOLON3",
+    "tOP_ASGN","tASSOC","tLPAREN","tLPAREN2","tRPAREN","tLPAREN_ARG",
+    "tLBRACK","tRBRACK","tLBRACE","tLBRACE_ARG","tSTAR","tSTAR2","tAMPER",
+    "tAMPER2","tTILDE","tPERCENT","tDIVIDE","tPLUS","tMINUS","tLT","tGT",
+    "tPIPE","tBANG","tCARET","tLCURLY","tRCURLY","tBACK_REF2","tSYMBEG",
+    "tSTRING_BEG","tXSTRING_BEG","tREGEXP_BEG","tWORDS_BEG","tQWORDS_BEG",
+    "tSTRING_DBEG","tSTRING_DVAR","tSTRING_END","tLAMBDA","tLAMBEG",
+    "tNTH_REF","tBACK_REF","tSTRING_CONTENT","tINTEGER","tIMAGINARY",
+    "tFLOAT","tRATIONAL","tREGEXP_END","tSYMBOLS_BEG","tQSYMBOLS_BEG",
+    "tDSTAR","tSTRING_DEND","tLABEL_END","tLOWEST",
     };
 
   /** printable rules for debugging.
@@ -876,7 +881,7 @@ public class RubyParser {
     "top_stmts : error top_stmt",
     "top_stmt : stmt",
     "$$2 :",
-    "top_stmt : klBEGIN $$2 tLCURLY top_compstmt tRCURLY",
+    "top_stmt : keyword_BEGIN $$2 tLCURLY top_compstmt tRCURLY",
     "bodystmt : compstmt opt_rescue opt_else opt_ensure",
     "compstmt : stmts opt_terms",
     "stmts : none",
@@ -885,19 +890,19 @@ public class RubyParser {
     "stmts : error stmt",
     "stmt_or_begin : stmt",
     "$$3 :",
-    "stmt_or_begin : kBEGIN $$3 tLCURLY top_compstmt tRCURLY",
+    "stmt_or_begin : keyword_begin $$3 tLCURLY top_compstmt tRCURLY",
     "$$4 :",
-    "stmt : kALIAS fitem $$4 fitem",
-    "stmt : kALIAS tGVAR tGVAR",
-    "stmt : kALIAS tGVAR tBACK_REF",
-    "stmt : kALIAS tGVAR tNTH_REF",
-    "stmt : kUNDEF undef_list",
-    "stmt : stmt kIF_MOD expr_value",
-    "stmt : stmt kUNLESS_MOD expr_value",
-    "stmt : stmt kWHILE_MOD expr_value",
-    "stmt : stmt kUNTIL_MOD expr_value",
-    "stmt : stmt kRESCUE_MOD stmt",
-    "stmt : klEND tLCURLY compstmt tRCURLY",
+    "stmt : keyword_alias fitem $$4 fitem",
+    "stmt : keyword_alias tGVAR tGVAR",
+    "stmt : keyword_alias tGVAR tBACK_REF",
+    "stmt : keyword_alias tGVAR tNTH_REF",
+    "stmt : keyword_undef undef_list",
+    "stmt : stmt modifier_if expr_value",
+    "stmt : stmt modifier_unless expr_value",
+    "stmt : stmt modifier_while expr_value",
+    "stmt : stmt modifier_until expr_value",
+    "stmt : stmt modifier_rescue stmt",
+    "stmt : keyword_END tLCURLY compstmt tRCURLY",
     "stmt : command_asgn",
     "stmt : mlhs '=' command_call",
     "stmt : var_lhs tOP_ASGN command_call",
@@ -913,9 +918,9 @@ public class RubyParser {
     "command_asgn : lhs '=' command_call",
     "command_asgn : lhs '=' command_asgn",
     "expr : command_call",
-    "expr : expr kAND expr",
-    "expr : expr kOR expr",
-    "expr : kNOT opt_nl expr",
+    "expr : expr keyword_and expr",
+    "expr : expr keyword_or expr",
+    "expr : keyword_not opt_nl expr",
     "expr : tBANG command_call",
     "expr : arg",
     "expr_value : expr",
@@ -932,11 +937,11 @@ public class RubyParser {
     "command : primary_value call_op operation2 command_args cmd_brace_block",
     "command : primary_value tCOLON2 operation2 command_args",
     "command : primary_value tCOLON2 operation2 command_args cmd_brace_block",
-    "command : kSUPER command_args",
-    "command : kYIELD command_args",
-    "command : kRETURN call_args",
-    "command : kBREAK call_args",
-    "command : kNEXT call_args",
+    "command : keyword_super command_args",
+    "command : keyword_yield command_args",
+    "command : keyword_return call_args",
+    "command : keyword_break call_args",
+    "command : keyword_next call_args",
     "mlhs : mlhs_basic",
     "mlhs : tLPAREN mlhs_inner rparen",
     "mlhs_inner : mlhs_basic",
@@ -962,13 +967,13 @@ public class RubyParser {
     "mlhs_node : tGVAR",
     "mlhs_node : tCONSTANT",
     "mlhs_node : tCVAR",
-    "mlhs_node : kNIL",
-    "mlhs_node : kSELF",
-    "mlhs_node : kTRUE",
-    "mlhs_node : kFALSE",
-    "mlhs_node : k__FILE__",
-    "mlhs_node : k__LINE__",
-    "mlhs_node : k__ENCODING__",
+    "mlhs_node : keyword_nil",
+    "mlhs_node : keyword_self",
+    "mlhs_node : keyword_true",
+    "mlhs_node : keyword_false",
+    "mlhs_node : keyword__FILE__",
+    "mlhs_node : keyword__LINE__",
+    "mlhs_node : keyword__ENCODING__",
     "mlhs_node : primary_value '[' opt_call_args rbracket",
     "mlhs_node : primary_value call_op tIDENTIFIER",
     "mlhs_node : primary_value tCOLON2 tIDENTIFIER",
@@ -981,13 +986,13 @@ public class RubyParser {
     "lhs : tGVAR",
     "lhs : tCONSTANT",
     "lhs : tCVAR",
-    "lhs : kNIL",
-    "lhs : kSELF",
-    "lhs : kTRUE",
-    "lhs : kFALSE",
-    "lhs : k__FILE__",
-    "lhs : k__LINE__",
-    "lhs : k__ENCODING__",
+    "lhs : keyword_nil",
+    "lhs : keyword_self",
+    "lhs : keyword_true",
+    "lhs : keyword_false",
+    "lhs : keyword__FILE__",
+    "lhs : keyword__LINE__",
+    "lhs : keyword__ENCODING__",
     "lhs : primary_value '[' opt_call_args rbracket",
     "lhs : primary_value call_op tIDENTIFIER",
     "lhs : primary_value tCOLON2 tIDENTIFIER",
@@ -1042,52 +1047,52 @@ public class RubyParser {
     "op : tAREF",
     "op : tASET",
     "op : tBACK_REF2",
-    "reswords : k__LINE__",
-    "reswords : k__FILE__",
-    "reswords : k__ENCODING__",
-    "reswords : klBEGIN",
-    "reswords : klEND",
-    "reswords : kALIAS",
-    "reswords : kAND",
-    "reswords : kBEGIN",
-    "reswords : kBREAK",
-    "reswords : kCASE",
-    "reswords : kCLASS",
-    "reswords : kDEF",
-    "reswords : kDEFINED",
-    "reswords : kDO",
-    "reswords : kELSE",
-    "reswords : kELSIF",
-    "reswords : kEND",
-    "reswords : kENSURE",
-    "reswords : kFALSE",
-    "reswords : kFOR",
-    "reswords : kIN",
-    "reswords : kMODULE",
-    "reswords : kNEXT",
-    "reswords : kNIL",
-    "reswords : kNOT",
-    "reswords : kOR",
-    "reswords : kREDO",
-    "reswords : kRESCUE",
-    "reswords : kRETRY",
-    "reswords : kRETURN",
-    "reswords : kSELF",
-    "reswords : kSUPER",
-    "reswords : kTHEN",
-    "reswords : kTRUE",
-    "reswords : kUNDEF",
-    "reswords : kWHEN",
-    "reswords : kYIELD",
-    "reswords : kIF",
-    "reswords : kUNLESS",
-    "reswords : kWHILE",
-    "reswords : kUNTIL",
-    "reswords : kRESCUE_MOD",
+    "reswords : keyword__LINE__",
+    "reswords : keyword__FILE__",
+    "reswords : keyword__ENCODING__",
+    "reswords : keyword_BEGIN",
+    "reswords : keyword_END",
+    "reswords : keyword_alias",
+    "reswords : keyword_and",
+    "reswords : keyword_begin",
+    "reswords : keyword_break",
+    "reswords : keyword_case",
+    "reswords : keyword_class",
+    "reswords : keyword_def",
+    "reswords : keyword_defined",
+    "reswords : keyword_do",
+    "reswords : keyword_else",
+    "reswords : keyword_elsif",
+    "reswords : keyword_end",
+    "reswords : keyword_ensure",
+    "reswords : keyword_false",
+    "reswords : keyword_for",
+    "reswords : keyword_in",
+    "reswords : keyword_module",
+    "reswords : keyword_next",
+    "reswords : keyword_nil",
+    "reswords : keyword_not",
+    "reswords : keyword_or",
+    "reswords : keyword_redo",
+    "reswords : keyword_rescue",
+    "reswords : keyword_retry",
+    "reswords : keyword_return",
+    "reswords : keyword_self",
+    "reswords : keyword_super",
+    "reswords : keyword_then",
+    "reswords : keyword_true",
+    "reswords : keyword_undef",
+    "reswords : keyword_when",
+    "reswords : keyword_yield",
+    "reswords : keyword_if",
+    "reswords : keyword_unless",
+    "reswords : keyword_while",
+    "reswords : keyword_until",
+    "reswords : modifier_rescue",
     "arg : lhs '=' arg",
-    "arg : lhs '=' arg kRESCUE_MOD arg",
+    "arg : lhs '=' arg modifier_rescue arg",
     "arg : var_lhs tOP_ASGN arg",
-    "arg : var_lhs tOP_ASGN arg kRESCUE_MOD arg",
+    "arg : var_lhs tOP_ASGN arg modifier_rescue arg",
     "arg : primary_value '[' opt_call_args rbracket tOP_ASGN arg",
     "arg : primary_value call_op tIDENTIFIER tOP_ASGN arg",
     "arg : primary_value call_op tCONSTANT tOP_ASGN arg",
@@ -1125,7 +1130,7 @@ public class RubyParser {
     "arg : arg tRSHFT arg",
     "arg : arg tANDOP arg",
     "arg : arg tOROP arg",
-    "arg : kDEFINED opt_nl arg",
+    "arg : keyword_defined opt_nl arg",
     "arg : arg '?' arg opt_nl ':' arg",
     "arg : primary",
     "arg_value : arg",
@@ -1172,7 +1177,7 @@ public class RubyParser {
     "primary : backref",
     "primary : tFID",
     "$$8 :",
-    "primary : kBEGIN $$8 bodystmt kEND",
+    "primary : keyword_begin $$8 bodystmt keyword_end",
     "$$9 :",
     "primary : tLPAREN_ARG $$9 rparen",
     "$$10 :",
@@ -1183,56 +1188,56 @@ public class RubyParser {
     "primary : tCOLON3 tCONSTANT",
     "primary : tLBRACK aref_args tRBRACK",
     "primary : tLBRACE assoc_list tRCURLY",
-    "primary : kRETURN",
-    "primary : kYIELD tLPAREN2 call_args rparen",
-    "primary : kYIELD tLPAREN2 rparen",
-    "primary : kYIELD",
-    "primary : kDEFINED opt_nl tLPAREN2 expr rparen",
-    "primary : kNOT tLPAREN2 expr rparen",
-    "primary : kNOT tLPAREN2 rparen",
+    "primary : keyword_return",
+    "primary : keyword_yield tLPAREN2 call_args rparen",
+    "primary : keyword_yield tLPAREN2 rparen",
+    "primary : keyword_yield",
+    "primary : keyword_defined opt_nl tLPAREN2 expr rparen",
+    "primary : keyword_not tLPAREN2 expr rparen",
+    "primary : keyword_not tLPAREN2 rparen",
     "primary : fcall brace_block",
     "primary : method_call",
     "primary : method_call brace_block",
     "primary : tLAMBDA lambda",
-    "primary : kIF expr_value then compstmt if_tail kEND",
-    "primary : kUNLESS expr_value then compstmt opt_else kEND",
+    "primary : keyword_if expr_value then compstmt if_tail keyword_end",
+    "primary : keyword_unless expr_value then compstmt opt_else keyword_end",
     "$$12 :",
     "$$13 :",
-    "primary : kWHILE $$12 expr_value do $$13 compstmt kEND",
+    "primary : keyword_while $$12 expr_value do $$13 compstmt keyword_end",
     "$$14 :",
     "$$15 :",
-    "primary : kUNTIL $$14 expr_value do $$15 compstmt kEND",
-    "primary : kCASE expr_value opt_terms case_body kEND",
-    "primary : kCASE opt_terms case_body kEND",
+    "primary : keyword_until $$14 expr_value do $$15 compstmt keyword_end",
+    "primary : keyword_case expr_value opt_terms case_body keyword_end",
+    "primary : keyword_case opt_terms case_body keyword_end",
     "$$16 :",
     "$$17 :",
-    "primary : kFOR for_var kIN $$16 expr_value do $$17 compstmt kEND",
+    "primary : keyword_for for_var keyword_in $$16 expr_value do $$17 compstmt keyword_end",
     "$$18 :",
-    "primary : kCLASS cpath superclass $$18 bodystmt kEND",
+    "primary : keyword_class cpath superclass $$18 bodystmt keyword_end",
     "$$19 :",
     "$$20 :",
-    "primary : kCLASS tLSHFT expr $$19 term $$20 bodystmt kEND",
+    "primary : keyword_class tLSHFT expr $$19 term $$20 bodystmt keyword_end",
     "$$21 :",
-    "primary : kMODULE cpath $$21 bodystmt kEND",
+    "primary : keyword_module cpath $$21 bodystmt keyword_end",
     "$$22 :",
-    "primary : kDEF fname $$22 f_arglist bodystmt kEND",
+    "primary : keyword_def fname $$22 f_arglist bodystmt keyword_end",
     "$$23 :",
     "$$24 :",
-    "primary : kDEF singleton dot_or_colon $$23 fname $$24 f_arglist bodystmt kEND",
-    "primary : kBREAK",
-    "primary : kNEXT",
-    "primary : kREDO",
-    "primary : kRETRY",
+    "primary : keyword_def singleton dot_or_colon $$23 fname $$24 f_arglist bodystmt keyword_end",
+    "primary : keyword_break",
+    "primary : keyword_next",
+    "primary : keyword_redo",
+    "primary : keyword_retry",
     "primary_value : primary",
     "then : term",
-    "then : kTHEN",
-    "then : term kTHEN",
+    "then : keyword_then",
+    "then : term keyword_then",
     "do : term",
-    "do : kDO_COND",
+    "do : keyword_do_cond",
     "if_tail : opt_else",
-    "if_tail : kELSIF expr_value then compstmt if_tail",
+    "if_tail : keyword_elsif expr_value then compstmt if_tail",
     "opt_else : none",
-    "opt_else : kELSE compstmt",
+    "opt_else : keyword_else compstmt",
     "for_var : lhs",
     "for_var : mlhs",
     "f_marg : f_norm_arg",
@@ -1285,9 +1290,9 @@ public class RubyParser {
     "f_larglist : tLPAREN2 f_args opt_bv_decl tRPAREN",
     "f_larglist : f_args",
     "lambda_body : tLAMBEG compstmt tRCURLY",
-    "lambda_body : kDO_LAMBDA compstmt kEND",
+    "lambda_body : keyword_do_lambda compstmt keyword_end",
     "$$26 :",
-    "do_block : kDO_BLOCK $$26 opt_block_param compstmt kEND",
+    "do_block : keyword_do_block $$26 opt_block_param compstmt keyword_end",
     "block_call : command do_block",
     "block_call : block_call call_op2 operation2 opt_paren_args",
     "block_call : block_call call_op2 operation2 opt_paren_args brace_block",
@@ -1298,24 +1303,24 @@ public class RubyParser {
     "method_call : primary_value tCOLON2 operation3",
     "method_call : primary_value call_op paren_args",
     "method_call : primary_value tCOLON2 paren_args",
-    "method_call : kSUPER paren_args",
-    "method_call : kSUPER",
+    "method_call : keyword_super paren_args",
+    "method_call : keyword_super",
     "method_call : primary_value '[' opt_call_args rbracket",
     "$$27 :",
     "brace_block : tLCURLY $$27 opt_block_param compstmt tRCURLY",
     "$$28 :",
-    "brace_block : kDO $$28 opt_block_param compstmt kEND",
-    "case_body : kWHEN args then compstmt cases",
+    "brace_block : keyword_do $$28 opt_block_param compstmt keyword_end",
+    "case_body : keyword_when args then compstmt cases",
     "cases : opt_else",
     "cases : case_body",
-    "opt_rescue : kRESCUE exc_list exc_var then compstmt opt_rescue",
+    "opt_rescue : keyword_rescue exc_list exc_var then compstmt opt_rescue",
     "opt_rescue :",
     "exc_list : arg_value",
     "exc_list : mrhs",
     "exc_list : none",
     "exc_var : tASSOC lhs",
     "exc_var : none",
-    "opt_ensure : kENSURE compstmt",
+    "opt_ensure : keyword_ensure compstmt",
     "opt_ensure : none",
     "literal : numeric",
     "literal : symbol",
@@ -1381,25 +1386,25 @@ public class RubyParser {
     "var_ref : tGVAR",
     "var_ref : tCONSTANT",
     "var_ref : tCVAR",
-    "var_ref : kNIL",
-    "var_ref : kSELF",
-    "var_ref : kTRUE",
-    "var_ref : kFALSE",
-    "var_ref : k__FILE__",
-    "var_ref : k__LINE__",
-    "var_ref : k__ENCODING__",
+    "var_ref : keyword_nil",
+    "var_ref : keyword_self",
+    "var_ref : keyword_true",
+    "var_ref : keyword_false",
+    "var_ref : keyword__FILE__",
+    "var_ref : keyword__LINE__",
+    "var_ref : keyword__ENCODING__",
     "var_lhs : tIDENTIFIER",
     "var_lhs : tIVAR",
     "var_lhs : tGVAR",
     "var_lhs : tCONSTANT",
     "var_lhs : tCVAR",
-    "var_lhs : kNIL",
-    "var_lhs : kSELF",
-    "var_lhs : kTRUE",
-    "var_lhs : kFALSE",
-    "var_lhs : k__FILE__",
-    "var_lhs : k__LINE__",
-    "var_lhs : k__ENCODING__",
+    "var_lhs : keyword_nil",
+    "var_lhs : keyword_self",
+    "var_lhs : keyword_true",
+    "var_lhs : keyword_false",
+    "var_lhs : keyword__FILE__",
+    "var_lhs : keyword__LINE__",
+    "var_lhs : keyword__ENCODING__",
     "backref : tNTH_REF",
     "backref : tBACK_REF",
     "$$35 :",
@@ -5342,7 +5347,7 @@ states[643] = new ParserState() {
   }
 };
 }
-					// line 2570 "RubyParser.y"
+					// line 2574 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5357,4 +5362,4 @@ states[643] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10182 "-"
+					// line 10187 "-"

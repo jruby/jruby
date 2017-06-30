@@ -31,6 +31,7 @@ package org.jruby.ext.ripper;
 
 import org.jcodings.Encoding;
 import org.jruby.lexer.LexerSource;
+import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 
 import static org.jruby.lexer.LexingCommon.*;
@@ -79,7 +80,7 @@ public class HeredocTerm extends StrTerm {
         lexer.compile_error("can't find string \"" + eos.toString() + "\" anywhere before EOF");
 
         if (lexer.delayed == null) {
-            lexer.dispatchScanEvent(Tokens.tSTRING_CONTENT);
+            lexer.dispatchScanEvent(RubyParser.tSTRING_CONTENT);
         } else {
             if (str != null) {
                 lexer.delayed.append(str);
@@ -89,7 +90,7 @@ public class HeredocTerm extends StrTerm {
                     lexer.delayed.append(lexer.lexb.makeShared(lexer.tokp, len));
                 }
             }
-            lexer.dispatchDelayedToken(Tokens.tSTRING_CONTENT);
+            lexer.dispatchDelayedToken(RubyParser.tSTRING_CONTENT);
         }
         lexer.lex_goto_eol();
 
@@ -117,7 +118,7 @@ public class HeredocTerm extends StrTerm {
         if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
             lexer.dispatchHeredocEnd();
             lexer.heredoc_restore(this);
-            return Tokens.tSTRING_END;
+            return RubyParser.tSTRING_END;
         }
 
         if ((flags & STR_FUNC_EXPAND) == 0) {
@@ -156,7 +157,7 @@ public class HeredocTerm extends StrTerm {
 
                 if (lexer.getHeredocIndent() > 0) {
                     lexer.setValue(lexer.createStr(str, 0));
-                    return Tokens.tSTRING_CONTENT;
+                    return RubyParser.tSTRING_CONTENT;
                 }
                 // MRI null checks str in this case but it is unconditionally non-null?
                 if (lexer.nextc() == -1) return error(lexer, len, null, eos);
@@ -169,10 +170,10 @@ public class HeredocTerm extends StrTerm {
                 case '$':
                 case '@':
                     lexer.pushback(c);
-                    return Tokens.tSTRING_DVAR;
+                    return RubyParser.tSTRING_DVAR;
                 case '{':
                     lexer.commandStart = true;
-                    return Tokens.tSTRING_DBEG;
+                    return RubyParser.tSTRING_DBEG;
                 }
                 tok.append('#');
             }
@@ -191,7 +192,7 @@ public class HeredocTerm extends StrTerm {
                 if (c != '\n') {
                     lexer.setValue(lexer.createStr(tok, 0));
                     lexer.flush_string_content(enc[0]);
-                    return Tokens.tSTRING_CONTENT;
+                    return RubyParser.tSTRING_CONTENT;
                 }
                 tok.append(lexer.nextc());
                 
@@ -204,6 +205,6 @@ public class HeredocTerm extends StrTerm {
         lexer.heredoc_restore(this);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
         lexer.setValue(lexer.createStr(str, 0));
-        return Tokens.tSTRING_CONTENT;
+        return RubyParser.tSTRING_CONTENT;
     }
 }

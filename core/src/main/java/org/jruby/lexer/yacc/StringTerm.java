@@ -31,7 +31,7 @@ import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
-import org.jruby.parser.Tokens;
+import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
@@ -84,11 +84,11 @@ public class StringTerm extends StrTerm {
                 ByteList regexpBytelist = ByteList.create("");
 
                 lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
-                return Tokens.tREGEXP_END;
+                return RubyParser.tREGEXP_END;
             }
 
             lexer.setValue("" + end);
-            return Tokens.tSTRING_END;
+            return RubyParser.tSTRING_END;
     }
 
     // Return of 0 means failed to find anything.  Non-zero means return that from lexer.
@@ -114,7 +114,7 @@ public class StringTerm extends StrTerm {
                     lexer.setValue("#" + (char) c2);
 
                     lexer.pushback(c2); lexer.pushback(c);
-                    return Tokens.tSTRING_DVAR;
+                    return RubyParser.tSTRING_DVAR;
                 }
 
                 significant = c2;                                  // $FOO potentially
@@ -145,7 +145,7 @@ public class StringTerm extends StrTerm {
                 //lexer.setBraceNest(lexer.getBraceNest() + 1);
                 lexer.setValue("#" + (char) c);
                 lexer.commandStart = true;
-                return Tokens.tSTRING_DBEG;
+                return RubyParser.tSTRING_DBEG;
             default:
                 // We did not find significant char after # so push it back to
                 // be processed as an ordinary string.
@@ -156,7 +156,7 @@ public class StringTerm extends StrTerm {
         if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
             lexer.pushback(c);
             lexer.setValue("#" + significant);
-            return Tokens.tSTRING_DVAR;
+            return RubyParser.tSTRING_DVAR;
         }
 
         return 0;
@@ -170,7 +170,7 @@ public class StringTerm extends StrTerm {
         // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
             lexer.setValue("" + end);
-            return Tokens.tSTRING_END;
+            return RubyParser.tSTRING_END;
         }
 
         c = lexer.nextc();
@@ -205,7 +205,7 @@ public class StringTerm extends StrTerm {
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));
-        return Tokens.tSTRING_CONTENT;
+        return RubyParser.tSTRING_CONTENT;
     }
 
     private RegexpOptions parseRegexpFlags(RubyLexer lexer) throws IOException {

@@ -47,12 +47,16 @@ public class RipperParser extends RipperParserBase {
     }
 %}
 
-%token <IRubyObject> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
-  kUNLESS kTHEN kELSIF kELSE kCASE kWHEN kWHILE kUNTIL kFOR kBREAK kNEXT
-  kREDO kRETRY kIN kDO kDO_COND kDO_BLOCK kRETURN kYIELD kSUPER kSELF kNIL
-  kTRUE kFALSE kAND kOR kNOT kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD
-  kRESCUE_MOD kALIAS kDEFINED klBEGIN klEND k__LINE__ k__FILE__
-  k__ENCODING__ kDO_LAMBDA
+%token <IRubyObject> keyword_class keyword_module keyword_def keyword_undef
+  keyword_begin keyword_rescue keyword_ensure keyword_end keyword_if
+  keyword_unless keyword_then keyword_elsif keyword_else keyword_case
+  keyword_when keyword_while keyword_until keyword_for keyword_break
+  keyword_next keyword_redo keyword_retry keyword_in keyword_do keyword_do_cond
+  keyword_do_block keyword_return keyword_yield keyword_super keyword_self
+  keyword_nil keyword_true keyword_false keyword_and keyword_or keyword_not
+  modifier_if modifier_unless modifier_while modifier_until modifier_rescue
+  keyword_alias keyword_defined keyword_BEGIN keyword_END keyword__LINE__
+  keyword__FILE__ keyword__ENCODING__ keyword_do_lambda
 
 %token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
 %type <IRubyObject> sym symbol operation operation2 operation3 cname fname op
@@ -190,12 +194,12 @@ public class RipperParser extends RipperParserBase {
 %nonassoc tLOWEST
 %nonassoc tLBRACE_ARG
 
-%nonassoc  kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD
-%left  kOR kAND
-%right kNOT
-%nonassoc kDEFINED
+%nonassoc  modifier_if modifier_unless modifier_while modifier_until
+%left  keyword_or keyword_and
+%right keyword_not
+%nonassoc keyword_defined
 %right '=' tOP_ASGN
-%left kRESCUE_MOD
+%left modifier_rescue
 %right '?' ':'
 %nonassoc tDOT2 tDOT3
 %left  tOROP
@@ -241,7 +245,7 @@ top_stmts     : none {
               }
 
 top_stmt      : stmt
-              | klBEGIN {
+              | keyword_BEGIN {
                   if (p.isInDef() || p.isInSingle()) {
                       p.yyerror("BEGIN in method");
                   }
@@ -274,46 +278,46 @@ stmt_or_begin   : stmt {
                     $$ = $1;
                 }
 // FIXME: How can this new begin ever work?  is yyerror conditional in MRI?
-                | kBEGIN {
+                | keyword_begin {
                     p.yyerror("BEGIN is permitted only at toplevel");
                 } tLCURLY top_compstmt tRCURLY {
                     $$ = p.dispatch("on_BEGIN", $4);
                 }
 
-stmt            : kALIAS fitem {
+stmt            : keyword_alias fitem {
                     p.setState(EXPR_FNAME|EXPR_FITEM);
                 } fitem {
                     $$ = p.dispatch("on_alias", $2, $4);
                 }
-                | kALIAS tGVAR tGVAR {
+                | keyword_alias tGVAR tGVAR {
                     $$ = p.dispatch("on_var_alias", $2, $3);
                 }
-                | kALIAS tGVAR tBACK_REF {
+                | keyword_alias tGVAR tBACK_REF {
                     $$ = p.dispatch("on_var_alias", $2, $3);
                 }
-                | kALIAS tGVAR tNTH_REF {
+                | keyword_alias tGVAR tNTH_REF {
                     $$ = p.dispatch("on_alias_error", p.dispatch("on_var_alias", $2, $3));
                     p.error();
                 }
-                | kUNDEF undef_list {
+                | keyword_undef undef_list {
                     $$ = p.dispatch("on_undef", $2);
                 }
-                | stmt kIF_MOD expr_value {
+                | stmt modifier_if expr_value {
                     $$ = p.dispatch("on_if_mod", $3, $1);
                 }
-                | stmt kUNLESS_MOD expr_value {
+                | stmt modifier_unless expr_value {
                     $$ = p.dispatch("on_unless_mod", $3, $1);
                 }
-                | stmt kWHILE_MOD expr_value {
+                | stmt modifier_while expr_value {
                     $$ = p.dispatch("on_while_mod", $3, $1);
                 }
-                | stmt kUNTIL_MOD expr_value {
+                | stmt modifier_until expr_value {
                     $$ = p.dispatch("on_until_mod", $3, $1);
                 }
-                | stmt kRESCUE_MOD stmt {
+                | stmt modifier_rescue stmt {
                     $$ = p.dispatch("on_rescue_mod", $1, $3);
                 }
-                | klEND tLCURLY compstmt tRCURLY {
+                | keyword_END tLCURLY compstmt tRCURLY {
                     if (p.isInDef() || p.isInSingle()) {
                         p.warn("END in method; use at_exit");
                     }
@@ -376,13 +380,13 @@ command_asgn    : lhs '=' command_call {
 
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
-                | expr kAND expr {
+                | expr keyword_and expr {
                     $$ = p.dispatch("on_binary", $1, p.intern("and"), $3);
                 }
-                | expr kOR expr {
+                | expr keyword_or expr {
                     $$ = p.dispatch("on_binary", $1, p.intern("or"), $3);
                 }
-                | kNOT opt_nl expr {
+                | keyword_not opt_nl expr {
                     $$ = p.dispatch("on_unary", p.intern("not"), $3);
                 }
                 | tBANG command_call {
@@ -443,19 +447,19 @@ command        : fcall command_args %prec tLOWEST {
                                     p.dispatch("on_command_call", $1, p.intern("::"), $3, $4),
                                     $5);
                 }
-                | kSUPER command_args {
+                | keyword_super command_args {
                     $$ = p.dispatch("on_super", $2);
                 }
-                | kYIELD command_args {
+                | keyword_yield command_args {
                     $$ = p.dispatch("on_yield", $2);
                 }
-                | kRETURN call_args {
+                | keyword_return call_args {
                     $$ = p.dispatch("on_return", $2);
                 }
-		| kBREAK call_args {
+		| keyword_break call_args {
                     $$ = p.dispatch("on_break", $2);
                 }
-		| kNEXT call_args {
+		| keyword_next call_args {
                     $$ = p.dispatch("on_next", $2);
                 }
 
@@ -548,31 +552,31 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 | tCVAR {
                     $$ = $1;
                 } /*mri:user_variable*/
-                | /*mri:keyword_variable*/ kNIL {
+                | /*mri:keyword_variable*/ keyword_nil {
                     p.compile_error("Can't assign to nil");
                     $$ = null;
                 }
-                | kSELF {
+                | keyword_self {
                     p.compile_error("Can't change the value of self");
                     $$ = null;
                 }
-                | kTRUE {
+                | keyword_true {
                     p.compile_error("Can't assign to true");
                     $$ = null;
                 }
-                | kFALSE {
+                | keyword_false {
                     p.compile_error("Can't assign to false");
                     $$ = null;
                 }
-                | k__FILE__ {
+                | keyword__FILE__ {
                     p.compile_error("Can't assign to __FILE__");
                     $$ = null;
                 }
-                | k__LINE__ {
+                | keyword__LINE__ {
                     p.compile_error("Can't assign to __LINE__");
                     $$ = null;
                 }
-                | k__ENCODING__ {
+                | keyword__ENCODING__ {
                     p.compile_error("Can't assign to __ENCODING__");
                     $$ = null;
                 } /*mri:keyword_variable*/
@@ -625,25 +629,25 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 | tCVAR {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 } /*mri:user_variable*/
-                | /*mri:keyword_variable*/ kNIL {
+                | /*mri:keyword_variable*/ keyword_nil {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | kSELF {
+                | keyword_self {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | kTRUE {
+                | keyword_true {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | kFALSE {
+                | keyword_false {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | k__FILE__ {
+                | keyword__FILE__ {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | k__LINE__ {
+                | keyword__LINE__ {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | k__ENCODING__ {
+                | keyword__ENCODING__ {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
@@ -742,25 +746,25 @@ op              : tPIPE | tCARET | tAMPER2 | tCMP | tEQ | tEQQ | tMATCH
                 | tBANG | tTILDE | tUPLUS | tUMINUS | tAREF | tASET | tBACK_REF2
 
 // Token:op
-reswords        : k__LINE__ | k__FILE__ | k__ENCODING__ | klBEGIN | klEND
-                | kALIAS | kAND | kBEGIN | kBREAK | kCASE | kCLASS | kDEF
-                | kDEFINED | kDO | kELSE | kELSIF | kEND | kENSURE | kFALSE
-                | kFOR | kIN | kMODULE | kNEXT | kNIL | kNOT
-                | kOR | kREDO | kRESCUE | kRETRY | kRETURN | kSELF | kSUPER
-                | kTHEN | kTRUE | kUNDEF | kWHEN | kYIELD
-                | kIF | kUNLESS | kWHILE | kUNTIL
-                | kIF_MOD | kUNLESS_MOD | kWHILE_MOD | kUNTIL_MOD | kRESCUE_MOD
+reswords        : keyword__LINE__ | keyword__FILE__ | keyword__ENCODING__ | keyword_BEGIN | keyword_END
+                | keyword_alias | keyword_and | keyword_begin | keyword_break | keyword_case | keyword_class | keyword_def
+                | keyword_defined | keyword_do | keyword_else | keyword_elsif | keyword_end | keyword_ensure | keyword_false
+                | keyword_for | keyword_in | keyword_module | keyword_next | keyword_nil | keyword_not
+                | keyword_or | keyword_redo | keyword_rescue | keyword_retry | keyword_return | keyword_self | keyword_super
+                | keyword_then | keyword_true | keyword_undef | keyword_when | keyword_yield
+                | keyword_if | keyword_unless | keyword_while | keyword_until
+                | modifier_if | modifier_unless | modifier_while | modifier_until | modifier_rescue
 
 arg             : lhs '=' arg {
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
-                | lhs '=' arg kRESCUE_MOD arg {
+                | lhs '=' arg modifier_rescue arg {
                     $$ = p.dispatch("on_assign", $1, p.dispatch("on_rescue_mod", $3, $5));
                 }
                 | var_lhs tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", $1, $2, $3);
                 }
-                | var_lhs tOP_ASGN arg kRESCUE_MOD arg {
+                | var_lhs tOP_ASGN arg modifier_rescue arg {
                     $$ = p.dispatch("on_opassign", $1, $2, p.dispatch("on_rescue_mod", $3, $5));
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
@@ -894,7 +898,7 @@ arg             : lhs '=' arg {
                 | arg tOROP arg {
                     $$ = p.dispatch("on_binary", $1, p.intern("||"), $3);
                 }
-                | kDEFINED opt_nl arg {
+                | keyword_defined opt_nl arg {
                     $$ = p.dispatch("on_defined", $3);
                 }
                 | arg '?' arg opt_nl ':' arg {
@@ -1034,10 +1038,10 @@ primary         : literal
                 | tFID {
                     $$ = p.dispatch("on_method_add_arg", p.dispatch("on_fcall", $1), p.dispatch("on_args_new"));
                 }
-                | kBEGIN {
+                | keyword_begin {
                     $$ = p.getCmdArgumentState().getStack();
                     p.getCmdArgumentState().reset();
-                } bodystmt kEND {
+                } bodystmt keyword_end {
                     p.getCmdArgumentState().reset($<Long>2.longValue());
                     $$ = p.dispatch("on_begin", $3);
                 }
@@ -1071,25 +1075,25 @@ primary         : literal
                 | tLBRACE assoc_list tRCURLY {
                     $$ = p.dispatch("on_hash", $2);
                 }
-                | kRETURN {
+                | keyword_return {
                     $$ = p.dispatch("on_return0");
                 }
-                | kYIELD tLPAREN2 call_args rparen {
+                | keyword_yield tLPAREN2 call_args rparen {
                     $$ = p.dispatch("on_yield", p.dispatch("on_paren", $3));
                 }
-                | kYIELD tLPAREN2 rparen {
+                | keyword_yield tLPAREN2 rparen {
                     $$ = p.dispatch("on_yield", p.dispatch("on_paren", p.dispatch("on_args_new")));
                 }
-                | kYIELD {
+                | keyword_yield {
                     $$ = p.dispatch("on_yield0");
                 }
-                | kDEFINED opt_nl tLPAREN2 expr rparen {
+                | keyword_defined opt_nl tLPAREN2 expr rparen {
                     $$ = p.dispatch("on_defined", $4);
                 }
-                | kNOT tLPAREN2 expr rparen {
+                | keyword_not tLPAREN2 expr rparen {
                     $$ = p.dispatch("on_unary", p.intern("not"), $3);
                 }
-                | kNOT tLPAREN2 rparen {
+                | keyword_not tLPAREN2 rparen {
                     $$ = p.dispatch("on_unary", p.intern("not"), null);
                 }
                 | fcall brace_block {
@@ -1106,102 +1110,102 @@ primary         : literal
                 | tLAMBDA lambda {
                     $$ = $2;
                 }
-                | kIF expr_value then compstmt if_tail kEND {
+                | keyword_if expr_value then compstmt if_tail keyword_end {
                     $$ = p.dispatch("on_if", $2, $4, $5);
                 }
-                | kUNLESS expr_value then compstmt opt_else kEND {
+                | keyword_unless expr_value then compstmt opt_else keyword_end {
                     $$ = p.dispatch("on_unless", $2, $4, $5);
                 }
-                | kWHILE {
+                | keyword_while {
                     p.getConditionState().begin();
                 } expr_value do {
                     p.getConditionState().end();
-                } compstmt kEND {
+                } compstmt keyword_end {
                     $$ = p.dispatch("on_while", $3, $6);
                 }
-                | kUNTIL {
+                | keyword_until {
                   p.getConditionState().begin();
                 } expr_value do {
                   p.getConditionState().end();
-                } compstmt kEND {
+                } compstmt keyword_end {
                     $$ = p.dispatch("on_until", $3, $6);
                 }
-                | kCASE expr_value opt_terms case_body kEND {
+                | keyword_case expr_value opt_terms case_body keyword_end {
                     $$ = p.dispatch("on_case", $2, $4);
                 }
-                | kCASE opt_terms case_body kEND {
+                | keyword_case opt_terms case_body keyword_end {
                     $$ = p.dispatch("on_case", null, $3);
                 }
-                | kFOR for_var kIN {
+                | keyword_for for_var keyword_in {
                     p.getConditionState().begin();
                 } expr_value do {
                     p.getConditionState().end();
-                } compstmt kEND {
+                } compstmt keyword_end {
                     $$ = p.dispatch("on_for", $2, $5, $8);
                 }
-                | kCLASS cpath superclass {
+                | keyword_class cpath superclass {
                     if (p.isInDef() || p.isInSingle()) {
                         p.yyerror("class definition in method body");
                     }
                     p.pushLocalScope();
-                } bodystmt kEND {
+                } bodystmt keyword_end {
                     $$ = p.dispatch("on_class", $2, $3, $5);
                     p.popCurrentScope();
                 }
-                | kCLASS tLSHFT expr {
+                | keyword_class tLSHFT expr {
                     $$ = Boolean.valueOf(p.isInDef());
                     p.setInDef(false);
                 } term {
                     $$ = Integer.valueOf(p.getInSingle());
                     p.setInSingle(0);
                     p.pushLocalScope();
-                } bodystmt kEND {
+                } bodystmt keyword_end {
                     $$ = p.dispatch("on_sclass", $3, $7);
 
                     p.popCurrentScope();
                     p.setInDef($<Boolean>4.booleanValue());
                     p.setInSingle($<Integer>6.intValue());
                 }
-                | kMODULE cpath {
+                | keyword_module cpath {
                     if (p.isInDef() || p.isInSingle()) { 
                         p.yyerror("module definition in method body");
                     }
                     p.pushLocalScope();
-                } bodystmt kEND {
+                } bodystmt keyword_end {
                     $$ = p.dispatch("on_module", $2, $4);
                     p.popCurrentScope();
                 }
-                | kDEF fname {
+                | keyword_def fname {
                     p.setInDef(true);
                     p.pushLocalScope();
-                } f_arglist bodystmt kEND {
+                } f_arglist bodystmt keyword_end {
                     $$ = p.dispatch("on_def", $2, $4, $5);
 
                     p.popCurrentScope();
                     p.setInDef(false);
                 }
-                | kDEF singleton dot_or_colon {
+                | keyword_def singleton dot_or_colon {
                     p.setState(EXPR_FNAME);
                 } fname {
                     p.setInSingle(p.getInSingle() + 1);
                     p.pushLocalScope();
                     p.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
-                } f_arglist bodystmt kEND {
+                } f_arglist bodystmt keyword_end {
                     $$ = p.dispatch("on_defs", $2, $3, $5, $7, $8);
 
                     p.popCurrentScope();
                     p.setInSingle(p.getInSingle() - 1);
                 }
-                | kBREAK {
+                | keyword_break {
                     $$ = p.dispatch("on_break", p.dispatch("on_args_new"));
                 }
-                | kNEXT {
+                | keyword_next {
                     $$ = p.dispatch("on_next", p.dispatch("on_args_new"));
                 }
-                | kREDO {
+                | keyword_redo {
                     $$ = p.dispatch("on_redo");
                 }
-                | kRETRY {
+                | keyword_retry {
                     $$ = p.dispatch("on_retry");
                 }
 
@@ -1212,23 +1216,23 @@ primary_value   : primary {
 then            : term {
                     $$ = null;
                 }
-                | kTHEN
-                | term kTHEN {
+                | keyword_then
+                | term keyword_then {
                     $$ = $2;
                 }
 
 do              : term {
                     $$ = null;
                 }
-                | kDO_COND
+                | keyword_do_cond
 
 if_tail         : opt_else
-                | kELSIF expr_value then compstmt if_tail {
+                | keyword_elsif expr_value then compstmt if_tail {
                     $$ = p.dispatch("on_elsif", $2, $4, $5);
                 }
 
 opt_else        : none
-                | kELSE compstmt {
+                | keyword_else compstmt {
                     $$ = p.dispatch("on_else", $2);
                 }
 
@@ -1413,13 +1417,13 @@ f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
 lambda_body     : tLAMBEG compstmt tRCURLY {
                     $$ = $2;
                 }
-                | kDO_LAMBDA compstmt kEND {
+                | keyword_do_lambda compstmt keyword_end {
                     $$ = $2;
                 }
 
-do_block        : kDO_BLOCK {
+do_block        : keyword_do_block {
                     p.pushBlockScope();
-                } opt_block_param compstmt kEND {
+                } opt_block_param compstmt keyword_end {
                     $$ = p.dispatch("on_do_block", $3, $4);
                     p.popCurrentScope();
                 }
@@ -1456,10 +1460,10 @@ method_call     : fcall paren_args {
                 | primary_value tCOLON2 paren_args {
                     $$ = p.method_optarg(p.dispatch("on_call", $1, p.intern("::"), p.intern("call")), $3);
                 }
-                | kSUPER paren_args {
+                | keyword_super paren_args {
                     $$ = p.dispatch("on_super", $2);
                 }
-                | kSUPER {
+                | keyword_super {
                     $$ = p.dispatch("on_zsuper");
                 }
                 | primary_value '[' opt_call_args rbracket {
@@ -1472,21 +1476,21 @@ brace_block     : tLCURLY {
                     $$ = p.dispatch("on_brace_block", $3, $4);
                     p.popCurrentScope();
                 }
-                | kDO {
+                | keyword_do {
                     p.pushBlockScope();
-                } opt_block_param compstmt kEND {
+                } opt_block_param compstmt keyword_end {
                     $$ = p.dispatch("on_do_block", $3, $4);
                     p.popCurrentScope();
                 }
 
-case_body       : kWHEN args then compstmt cases {
+case_body       : keyword_when args then compstmt cases {
                     $$ = p.dispatch("on_when", $2, $4, $5);
 
                 }
 
 cases           : opt_else | case_body
 
-opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
+opt_rescue      : keyword_rescue exc_list exc_var then compstmt opt_rescue {
                     $$ = p.dispatch("on_rescue", $2, $3, $5, $6);
                 }
                 | none
@@ -1504,7 +1508,7 @@ exc_var         : tASSOC lhs {
                 }
                 | none
 
-opt_ensure      : kENSURE compstmt {
+opt_ensure      : keyword_ensure compstmt {
                     $$ = p.dispatch("on_ensure", $2);
                 }
                 | none
@@ -1742,25 +1746,25 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                         $$ = p.dispatch("on_vcall", $1);
                     }
                 } /*mri:user_variable*/
-                | /*mri:keyword_variable*/ kNIL {
+                | /*mri:keyword_variable*/ keyword_nil {
                     $$ = p.dispatch("on_var_ref", $1);
                 }
-                | kSELF {
+                | keyword_self {
                     $$ = p.dispatch("on_var_ref", $1);
                 }
-                | kTRUE {
+                | keyword_true {
                     $$ = p.dispatch("on_var_ref", $1);
                 }
-                | kFALSE {
+                | keyword_false {
                     $$ = p.dispatch("on_var_ref", $1);
                  }
-                | k__FILE__ {
+                | keyword__FILE__ {
                     $$ = p.dispatch("on_var_ref", $1);
                 }
-                | k__LINE__ {
+                | keyword__LINE__ {
                     $$ = p.dispatch("on_var_ref", $1);
                 }
-                | k__ENCODING__ {
+                | keyword__ENCODING__ {
                     $$ = p.dispatch("on_var_ref", $1);
                 } /*mri:keyword_variable*/
 
@@ -1780,25 +1784,25 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                 | tCVAR {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 } /*mri:user_variable*/
-                | /*mri:keyword_variable*/ kNIL {
+                | /*mri:keyword_variable*/ keyword_nil {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | kSELF {
+                | keyword_self {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | kTRUE {
+                | keyword_true {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | kFALSE {
+                | keyword_false {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | k__FILE__ {
+                | keyword__FILE__ {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | k__LINE__ {
+                | keyword__LINE__ {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 }
-                | k__ENCODING__ {
+                | keyword__ENCODING__ {
                     $$ = p.dispatch("on_var_field", p.assignable($1));
                 } /*mri:keyword_variable*/
  
