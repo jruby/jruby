@@ -6,6 +6,11 @@ cache:
  directories:
    - $HOME/.m2
 
+addons:
+  apt:
+    packages:
+      - haveged
+
 before_install:
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
