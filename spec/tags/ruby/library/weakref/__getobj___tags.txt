@@ -1,0 +1,2 @@
+fails(travis):WeakRef#__getobj__ returns the object if it is reachable
+fails(travis):WeakRef#__getobj__ raises WeakRef::RefError if the object is no longer reachable
