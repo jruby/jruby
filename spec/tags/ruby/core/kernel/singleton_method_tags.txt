@@ -1,0 +1,4 @@
+fails:Kernel#singleton_method find a method defined on the singleton class
+fails:Kernel#singleton_method returns a Method which can be called
+fails:Kernel#singleton_method only looks at singleton methods and not at methods in the class
+fails:Kernel#singleton_method raises a NameError if there is no such method

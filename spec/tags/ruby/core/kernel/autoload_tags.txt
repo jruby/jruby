@@ -1,1 +1,3 @@
 fails:Kernel.autoload sets the autoload constant in Object's constant table
+fails:Kernel#autoload registers a file to load the first time the named constant is accessed
+fails:Kernel#autoload? returns the name of the file that will be autoloaded
