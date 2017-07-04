@@ -1939,6 +1939,11 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "methods", optional = 1)
+    public static IRubyObject methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).methods(context, args);
+    }
+
+    @Deprecated
     public static IRubyObject methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).methods(context, args);
     }
@@ -1949,21 +1954,41 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "public_methods", optional = 1)
+    public static IRubyObject public_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).public_methods(context, args);
+    }
+
+    @Deprecated
     public static IRubyObject public_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).public_methods(context, args);
     }
 
     @JRubyMethod(name = "protected_methods", optional = 1)
+    public static IRubyObject protected_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).protected_methods(context, args);
+    }
+
+    @Deprecated
     public static IRubyObject protected_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).protected_methods(context, args);
     }
 
     @JRubyMethod(name = "private_methods", optional = 1)
+    public static IRubyObject private_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).private_methods(context, args);
+    }
+
+    @Deprecated
     public static IRubyObject private_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).private_methods(context, args);
     }
 
     @JRubyMethod(name = "singleton_methods", optional = 1)
+    public static RubyArray singleton_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).singleton_methods(context, args);
+    }
+
+    @Deprecated
     public static RubyArray singleton_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).singleton_methods(context, args);
     }

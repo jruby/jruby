@@ -2442,7 +2442,7 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
-    public void populateInstanceMethodNames(Set<String> seen, RubyArray ary, Visibility visibility, boolean obj, boolean not, boolean recur) {
+    final void populateInstanceMethodNames(Set<String> seen, RubyArray ary, Visibility visibility, boolean obj, boolean not, boolean recur) {
         Ruby runtime = getRuntime();
         RubyModule mod = this;
         boolean prepended = false;
@@ -2507,25 +2507,27 @@ public class RubyModule extends RubyObject {
     /** rb_class_protected_instance_methods
      *
      */
+    @JRubyMethod(name = "protected_instance_methods", optional = 1)
     public RubyArray protected_instance_methods(IRubyObject[] args) {
-        return protected_instance_methods19(args);
+        return instanceMethods(args, PROTECTED, false, false);
     }
 
-    @JRubyMethod(name = "protected_instance_methods", optional = 1)
+    @Deprecated
     public RubyArray protected_instance_methods19(IRubyObject[] args) {
-        return instanceMethods(args, PROTECTED, false, false);
+        return protected_instance_methods(args);
     }
 
     /** rb_class_private_instance_methods
      *
      */
+    @JRubyMethod(name = "private_instance_methods", optional = 1)
     public RubyArray private_instance_methods(IRubyObject[] args) {
-        return private_instance_methods19(args);
+        return instanceMethods(args, PRIVATE, false, false);
     }
 
-    @JRubyMethod(name = "private_instance_methods", optional = 1)
+    @Deprecated
     public RubyArray private_instance_methods19(IRubyObject[] args) {
-        return instanceMethods(args, PRIVATE, false, false);
+        return private_instance_methods(args);
     }
 
     /** rb_mod_prepend_features
