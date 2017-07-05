@@ -608,7 +608,7 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject match3(ThreadContext context, RubyRegexp regexp, IRubyObject argValue) {
         if (argValue instanceof RubyString) {
-            return regexp.op_match19(context, argValue);
+            return regexp.op_match(context, argValue);
         } else {
             return argValue.callMethod(context, "=~", regexp);
         }

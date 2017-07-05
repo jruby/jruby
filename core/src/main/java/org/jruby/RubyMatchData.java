@@ -482,25 +482,21 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
-    /** match_aref
-    *
-    */
-    public IRubyObject op_aref(IRubyObject idx) {
-        return op_aref19(idx);
+    @Deprecated
+    public IRubyObject op_aref19(IRubyObject idx) {
+        return op_aref(idx);
     }
 
-    /** match_aref
-     *
-     */
-    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
-        return op_aref19(idx, rest);
+    @Deprecated
+    public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
+        return op_aref(idx, rest);
     }
 
     /** match_aref
      *
      */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref19(IRubyObject idx) {
+    public IRubyObject op_aref(IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
         return result == null ? to_a().aref(idx) : result;
@@ -510,7 +506,7 @@ public class RubyMatchData extends RubyObject {
     *
     */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
+    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
         return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref(idx, rest) : result;
     }
@@ -527,6 +523,10 @@ public class RubyMatchData extends RubyObject {
             }
         }
         return null;
+    }
+
+    public final IRubyObject at(final int nth) {
+        return RubyRegexp.nth_match(nth, this);
     }
 
     /** match_size

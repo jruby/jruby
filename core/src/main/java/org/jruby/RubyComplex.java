@@ -996,26 +996,26 @@ public class RubyComplex extends RubyNumeric {
         IRubyObject sr, si, re;
         sr = si = re = runtime.getNil();
         boolean po = false;
-        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat0).match_m19(context, s, false, Block.NULL_BLOCK);
+        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat0).match_m(context, s, false);
 
         if (!m.isNil()) {
             RubyMatchData match = (RubyMatchData)m;
-            sr = match.op_aref19(RubyFixnum.one(runtime));
-            si = match.op_aref19(RubyFixnum.two(runtime));
+            sr = match.at(1);
+            si = match.at(2);
             re = match.post_match(context);
             po = true;
         }
 
         if (m.isNil()) {
-            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat1).match_m19(context, s, false, Block.NULL_BLOCK);
+            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat1).match_m(context, s, false);
 
             if (!m.isNil()) {
                 RubyMatchData match = (RubyMatchData)m;
                 sr = runtime.getNil();
-                si = match.op_aref19(RubyFixnum.one(runtime));
+                si = match.at(1);
                 if (si.isNil()) si = runtime.newString();
-                IRubyObject t = match.op_aref19(RubyFixnum.two(runtime));
-                if (t.isNil()) t = runtime.newString(new ByteList(new byte[]{'1'}));
+                IRubyObject t = match.at(2);
+                if (t.isNil()) t = runtime.newString(new ByteList(new byte[]{'1'}, false));
                 si.convertToString().cat(t.convertToString().getByteList());
                 re = match.post_match(context);
                 po = false;
@@ -1023,15 +1023,15 @@ public class RubyComplex extends RubyNumeric {
         }
 
         if (m.isNil()) {
-            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat2).match_m19(context, s, false, Block.NULL_BLOCK);
+            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat2).match_m(context, s, false);
             if (m.isNil()) return runtime.newArray(runtime.getNil(), recv);
             RubyMatchData match = (RubyMatchData)m;
-            sr = match.op_aref19(RubyFixnum.one(runtime));
-            if (match.op_aref19(RubyFixnum.two(runtime)).isNil()) {
+            sr = match.at(1);
+            if (match.at(2).isNil()) {
                 si = runtime.getNil();
             } else {
-                si = match.op_aref19(RubyFixnum.three(runtime));
-                IRubyObject t = match.op_aref19(RubyFixnum.four(runtime));
+                si = match.at(3);
+                IRubyObject t = match.at(4);
                 if (t.isNil()) t = runtime.newString(RubyFixnum.SINGLE_CHAR_BYTELISTS19['1']);
                 si.convertToString().cat(t.convertToString().getByteList());
             }

@@ -1047,13 +1047,13 @@ public class RubyRational extends RubyNumeric {
         Ruby runtime = context.runtime;
         if (bytes.getRealSize() == 0) return runtime.newArray(runtime.getNil(), recv);
 
-        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).match_m19(context, s, false, Block.NULL_BLOCK);
+        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).match_m(context, s, false);
         
         if (!m.isNil()) {
             RubyMatchData match = (RubyMatchData)m;
-            IRubyObject si = match.op_aref19(RubyFixnum.one(runtime));
-            RubyString nu = (RubyString)match.op_aref19(RubyFixnum.two(runtime));
-            IRubyObject de = match.op_aref19(RubyFixnum.three(runtime));
+            IRubyObject si = match.at(1);
+            RubyString nu = (RubyString)match.at(2);
+            IRubyObject de = match.at(3);
             IRubyObject re = match.post_match(context);
             
             RubyArray a = nu.split19(RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), context, false).convertToArray();

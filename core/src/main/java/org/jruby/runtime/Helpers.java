@@ -1462,21 +1462,15 @@ public class Helpers {
         context.postScopedBody();
     }
 
+    @Deprecated // not-used
     public static void registerEndBlock(Block block, Ruby runtime) {
         runtime.pushExitBlock(runtime.newProc(Block.Type.LAMBDA, block));
     }
 
+    @Deprecated // not-used
     public static IRubyObject match3(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
         if (value instanceof RubyString) {
             return regexp.op_match(context, value);
-        } else {
-            return value.callMethod(context, "=~", regexp);
-        }
-    }
-
-    public static IRubyObject match3_19(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
-        if (value instanceof RubyString) {
-            return regexp.op_match19(context, value);
         } else {
             return value.callMethod(context, "=~", regexp);
         }
@@ -2244,14 +2238,9 @@ public class Helpers {
         return scopeOffsets;
     }
 
+    @Deprecated // not-used
     public static IRubyObject match2AndUpdateScope(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
         IRubyObject match = ((RubyRegexp)receiver).op_match(context, value);
-        updateScopeWithCaptures(context, decodeCaptureOffsets(scopeOffsets), match);
-        return match;
-    }
-
-    public static IRubyObject match2AndUpdateScope19(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
-        IRubyObject match = ((RubyRegexp)receiver).op_match19(context, value);
         updateScopeWithCaptures(context, decodeCaptureOffsets(scopeOffsets), match);
         return match;
     }
