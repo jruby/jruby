@@ -1254,7 +1254,7 @@ public class RubyModule extends RubyObject {
      * @param name The name of the method to search for
      * @return The method, or UndefinedMethod if not found
      */
-    public DynamicMethod searchMethod(String name) {
+    public final DynamicMethod searchMethod(String name) {
         return searchWithCache(name).method;
     }
 
@@ -1834,11 +1834,11 @@ public class RubyModule extends RubyObject {
         return checkRespondTo ? respondsToMethod(name, checkVisibility): isMethodBound(name, checkVisibility);
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {
+    public final IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {
         return newMethod(receiver, methodName, bound, visibility, false, true);
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
+    public final IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
         return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
     }
 
@@ -1875,18 +1875,15 @@ public class RubyModule extends RubyObject {
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
         DynamicMethod method = searchMethod(methodName);
 
-        if (method.isUndefined() ||
-            (visibility != null && method.getVisibility() != visibility)) {
+        if (method.isUndefined() || (visibility != null && method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
                 if (receiver.respondsToMissing(methodName, priv)) {
                     method = new RespondToMissingMethod(this, PUBLIC, methodName);
                 } else {
-                    throw getRuntime().newNameError("undefined method `" + methodName +
-                        "' for class `" + this.getName() + "'", methodName);
+                    throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName);
                 }
             } else {
-                throw getRuntime().newNameError("undefined method `" + methodName +
-                    "' for class `" + this.getName() + "'", methodName);
+                throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName);
             }
         }
 
@@ -2442,7 +2439,8 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
-    final void populateInstanceMethodNames(Set<String> seen, RubyArray ary, Visibility visibility, boolean obj, boolean not, boolean recur) {
+    final void populateInstanceMethodNames(final Set<String> seen, final RubyArray ary, Visibility visibility,
+                                           boolean obj, boolean not, boolean recur) {
         Ruby runtime = getRuntime();
         RubyModule mod = this;
         boolean prepended = false;
