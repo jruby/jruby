@@ -769,7 +769,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        return RubyArray.newArray(context.runtime, div(context, other), modulo19(context, other));
+        return RubyArray.newArray(context.runtime, div(context, other), modulo(context, other));
     }
 
     @Deprecated
@@ -806,7 +806,7 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
         IRubyObject z = sites(context).op_mod.call(context, this, this, dividend);
         IRubyObject x = this;
-        RubyFixnum zero = RubyFixnum.zero(getRuntime());
+        RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
         if (!equalInternal(context, z, zero) &&
                 ((sites(context).op_lt.call(context, x, x, zero).isTrue() &&
@@ -814,9 +814,8 @@ public class RubyNumeric extends RubyObject {
                 (sites(context).op_gt.call(context, x, x, zero).isTrue() &&
                         sites(context).op_lt.call(context, dividend, dividend, zero).isTrue()))) {
             return sites(context).op_minus.call(context, z, z, dividend);
-        } else {
-            return z;
         }
+        return z;
     }
 
     /** num_abs
@@ -824,7 +823,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "abs")
     public IRubyObject abs(ThreadContext context) {
-        if (sites(context).op_lt.call(context, this, this, RubyFixnum.zero(getRuntime())).isTrue()) {
+        if (sites(context).op_lt.call(context, this, this, RubyFixnum.zero(context.runtime)).isTrue()) {
             return sites(context).op_uminus.call(context, this, this);
         }
         return this;
@@ -876,7 +875,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "nonzero?")
     public IRubyObject nonzero_p(ThreadContext context) {
         if (sites(context).zero.call(context, this, this).isTrue()) {
-            return getRuntime().getNil();
+            return context.nil;
         }
         return this;
     }

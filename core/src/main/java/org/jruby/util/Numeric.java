@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.math.BigInteger;
 import org.joni.Regex;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
@@ -39,9 +38,6 @@ import org.jruby.RubyNumeric;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 public class Numeric {
     public static final boolean CANON = true;
@@ -501,7 +497,7 @@ public class Numeric {
             while (y % 2 == 0) {
                 if (!fitSqrtLong(x)) {
                     IRubyObject v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, x))).op_pow(context, RubyFixnum.newFixnum(runtime, y));
-                    if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul19(context, v);
+                    if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul(context, v);
                     return v;
                 }
                 x *= x;
@@ -510,7 +506,7 @@ public class Numeric {
             
             if (multiplyOverflows(x, z)) {
                 IRubyObject v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, x))).op_pow(context, RubyFixnum.newFixnum(runtime, y));
-                if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul19(context, v);
+                if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul(context, v);
                 return v;
             }
             z = x * z;
