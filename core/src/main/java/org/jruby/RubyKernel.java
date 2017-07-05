@@ -1993,6 +1993,11 @@ public class RubyKernel {
         return ((RubyBasicObject)self).singleton_methods(context, args);
     }
 
+    @JRubyMethod(name = "singleton_method", required = 1)
+    public static IRubyObject singleton_method(IRubyObject self, IRubyObject symbol) {
+        return ((RubyBasicObject)self).singleton_method(symbol);
+    }
+
     @JRubyMethod(name = "method", required = 1)
     public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
         return ((RubyBasicObject)self).method(symbol);

@@ -2449,10 +2449,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
     public RubyArray singleton_methods(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        boolean all = true;
-        if(args.length == 1) {
-            all = args[0].isTrue();
-        }
+        boolean all = (args.length == 1) ? args[0].isTrue() : true;
 
         RubyClass klass = metaClass;
         RubyModule origin = klass.getMethodLocation();
@@ -2483,6 +2480,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         return context.runtime.newEmptyArray();
+    }
+
+    public IRubyObject singleton_method(IRubyObject name) {
+        final String methodName = TypeConverter.checkID(name).asJavaString();
+        final RubyClass klass = metaClass;
+        if (klass.isSingleton()) {
+            DynamicMethod method = klass.searchMethod(methodName);
+            if (klass == method.getDefinedClass()) { // ! method.isUndefined()
+                AbstractRubyMethod newMethod = RubyMethod.newMethod(klass, methodName, klass, methodName, method, this);
+                newMethod.infectBy(this);
+                return newMethod;
+            }
+        }
+        throw getRuntime().newNameError("undefined method `" + methodName + "' for `" + inspect() + '\'', methodName);
     }
 
     /** rb_obj_method
