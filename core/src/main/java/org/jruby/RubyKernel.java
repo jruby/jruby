@@ -1503,12 +1503,18 @@ public class RubyKernel {
         return RubyRandom.srandCommon(context, recv, arg);
     }
 
+    @Deprecated
     public static IRubyObject rand18(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return rand19(context, recv, arg);
+        return rand(context, recv, arg);
+    }
+
+    @Deprecated
+    public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
+        return rand(context, recv, arg);
     }
 
     @JRubyMethod(name = "rand", module = true, optional = 1, visibility = PRIVATE)
-    public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
         return RubyRandom.randCommon19(context, recv, arg);
     }
 
@@ -1522,12 +1528,8 @@ public class RubyKernel {
         throw context.runtime.newNotImplementedError("Kernel#syscall is not implemented in JRuby");
     }
 
-    public static IRubyObject system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return system19(context, recv, args);
-    }
-
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
@@ -1559,9 +1561,8 @@ public class RubyKernel {
 //            #ifdef SIGCHLD
 //            signal(SIGCHLD, chfunc);
 //            #endif
-            if (pid < 0) {
-                return runtime.getNil();
-            }
+            if (pid < 0) return context.nil;
+
             status = (int)((RubyProcess.RubyStatus) context.getLastExitStatus()).getStatus();
             if (status == 0) return runtime.getTrue();
             return runtime.getFalse();
@@ -1582,6 +1583,11 @@ public class RubyKernel {
             case 127: return runtime.getNil();
             default: return runtime.getFalse();
         }
+    }
+
+    @Deprecated
+    public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return system(context, recv, args);
     }
 
     private static int systemCommon(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
@@ -1732,14 +1738,15 @@ public class RubyKernel {
         return runtime.getNil();
     }
 
-    public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
-        return fork19(context, recv, block);
-    }
-
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)
-    public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
+    public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.runtime;
         throw runtime.newNotImplementedError("fork is not available on this platform");
+    }
+
+    @Deprecated
+    public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
+        return fork(context, recv, block);
     }
 
     @JRubyMethod(module = true)
