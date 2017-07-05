@@ -62,4 +62,14 @@ class TestArray < Test::Unit::TestCase
     end
   end
 
+  def test_pack_type_error_message
+    obj = Object.new
+    begin
+      [ obj ].pack('D')
+      fail 'expected to raise a TypeError'
+    rescue TypeError => e
+      assert_equal "can't convert Object into Float", e.message
+    end
+  end
+
 end

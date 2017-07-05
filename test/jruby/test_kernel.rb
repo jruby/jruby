@@ -319,6 +319,15 @@ class TestKernel < Test::Unit::TestCase
 #  select
 #  set_trace_func
 
+  def test_select_convert_timeout_error_msg
+    timeout = Object.new
+    begin
+      Kernel.select [$stdin], nil, nil, timeout
+    rescue TypeError => ex
+      assert ex.message.start_with? "can't convert Object into"
+    end
+  end
+
 
   def test_sleep
     assert_raises(ArgumentError) { sleep(-10) }

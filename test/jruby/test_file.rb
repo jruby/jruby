@@ -5,7 +5,7 @@ require 'rbconfig'
 require 'fileutils'
 require 'tempfile'
 require 'pathname'
-require 'jruby'
+require 'jruby' if defined? JRUBY_VERSION
 
 class TestFile < Test::Unit::TestCase
   include TestHelper
@@ -22,7 +22,7 @@ class TestFile < Test::Unit::TestCase
   end
 
   def jruby_specific_test
-    flunk("JRuby specific test") unless defined?(JRUBY_VERSION)
+    skip("JRuby specific test") unless defined?(JRUBY_VERSION)
   end
 
   def test_file_separator_constants_defined
@@ -893,13 +893,23 @@ class TestFile < Test::Unit::TestCase
 
   def test_file_utime_nil
     filename = '__test__file'
-    File.open(filename, 'w') {|f| }
+    File.open(filename, 'w') { |f| assert f }
     time = File.mtime(filename)
     sleep 2
     File.utime(nil, nil, filename)
     assert((File.atime(filename).to_i - time.to_i) >= 2)
     assert((File.mtime(filename).to_i - time.to_i) >= 2)
     File.unlink(filename)
+  end
+
+  def test_utime_convert_time
+    filename = '__test__file'
+    File.open(filename, 'w') { |f| assert f }
+    begin
+      File.utime(0, Object.new, filename)
+    rescue TypeError => e
+      assert_match /can't convert Object into Time/i, e.message
+    end
   end
 
   def test_file_utime_bad_time_raises_typeerror
@@ -939,7 +949,7 @@ class TestFile < Test::Unit::TestCase
     assert(stat2.readable?)
   end
 
-  if WINDOWS && JRuby::runtime.posix.native?
+  if WINDOWS && defined?(JRuby) && JRuby::runtime.posix.native?
     # JRUBY-2351
     def test_not_implemented_methods_on_windows
       # the goal here is to make sure that those "weird"

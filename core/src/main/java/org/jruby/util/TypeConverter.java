@@ -353,7 +353,7 @@ public class TypeConverter {
     }
 
     public static IRubyObject handleUncoercibleObject(Ruby runtime, IRubyObject obj, RubyClass target, boolean raise) {
-        if (raise) throw runtime.newTypeError("no implicit conversion of " + typeAsString(obj) + " into " + target);
+        if (raise) throw runtime.newTypeError("can't convert " + typeAsString(obj) + " into " + target);
         return runtime.getNil();
     }
 
