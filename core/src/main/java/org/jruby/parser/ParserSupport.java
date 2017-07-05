@@ -288,7 +288,7 @@ public class ParserSupport {
 
     @Deprecated
     public Node getOperatorCallNode(Node firstNode, String operator) {
-        checkExpression(firstNode);
+        value_expr(lexer, firstNode);
 
         return new CallNode(firstNode.getPosition(), firstNode, operator, null, null);
     }
@@ -308,8 +308,8 @@ public class ParserSupport {
             secondNode = checkForNilNode(secondNode, defaultPosition);
         }
         
-        checkExpression(firstNode);
-        checkExpression(secondNode);
+        value_expr(lexer, firstNode);
+        value_expr(lexer, secondNode);
 
         return new CallNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode), null, false);
     }
@@ -357,7 +357,7 @@ public class ParserSupport {
      * @return an AttrAssignNode
      */
     public Node aryset(Node receiver, Node index) {
-        checkExpression(receiver);
+        value_expr(lexer, receiver);
 
         return new_attrassign(receiver.getPosition(), receiver, "[]=", index, false);
     }
@@ -387,7 +387,7 @@ public class ParserSupport {
 
     @Deprecated
     public Node attrset(Node receiver, String callType, String name) {
-        checkExpression(receiver);
+        value_expr(lexer, receiver);
 
         return new_attrassign(receiver.getPosition(), receiver, name + "=", null, isLazy(callType));
     }
@@ -423,7 +423,7 @@ public class ParserSupport {
 
         Node newNode = lhs;
 
-        checkExpression(rhs);
+        value_expr(lexer, rhs);
         if (lhs instanceof AssignableNode) {
     	    ((AssignableNode) lhs).setValueNode(rhs);
         } else if (lhs instanceof IArgumentNode) {
@@ -483,37 +483,41 @@ public class ParserSupport {
         }
     }
 
-    // logical equivalent to value_expr in MRI
-    public boolean checkExpression(Node node) {
+    public static boolean value_expr(RubyLexer lexer, Node node) {
         boolean conditional = false;
 
         while (node != null) {
             switch (node.getNodeType()) {
-            case RETURNNODE: case BREAKNODE: case NEXTNODE: case REDONODE:
-            case RETRYNODE:
-                if (!conditional) lexer.compile_error(PID.VOID_VALUE_EXPRESSION, "void value expression");
+                case RETURNNODE: case BREAKNODE: case NEXTNODE: case REDONODE:
+                case RETRYNODE:
+                    if (!conditional) lexer.compile_error(PID.VOID_VALUE_EXPRESSION, "void value expression");
 
-                return false;
-            case BLOCKNODE:
-                node = ((BlockNode) node).getLast();
-                break;
-            case BEGINNODE:
-                node = ((BeginNode) node).getBodyNode();
-                break;
-            case IFNODE:
-                if (!checkExpression(((IfNode) node).getThenBody())) return false;
-                node = ((IfNode) node).getElseBody();
-                break;
-            case ANDNODE: case ORNODE:
-                conditional = true;
-                node = ((BinaryOperatorNode) node).getSecondNode();
-                break;
-            default: // Node
-                return true;
+                    return false;
+                case BLOCKNODE:
+                    node = ((BlockNode) node).getLast();
+                    break;
+                case BEGINNODE:
+                    node = ((BeginNode) node).getBodyNode();
+                    break;
+                case IFNODE:
+                    if (!value_expr(lexer, ((IfNode) node).getThenBody())) return false;
+                    node = ((IfNode) node).getElseBody();
+                    break;
+                case ANDNODE: case ORNODE:
+                    conditional = true;
+                    node = ((BinaryOperatorNode) node).getSecondNode();
+                    break;
+                default: // Node
+                    return true;
             }
         }
 
         return true;
+    }
+
+    @Deprecated
+    public boolean checkExpression(Node node) {
+        return value_expr(lexer, node);
     }
     
     /**
@@ -741,7 +745,7 @@ public class ParserSupport {
     }
 
     public AndNode newAndNode(ISourcePosition position, Node left, Node right) {
-        checkExpression(left);
+        value_expr(lexer, left);
         
         if (left == null && right == null) return new AndNode(position, makeNullNil(left), makeNullNil(right));
         
@@ -749,7 +753,7 @@ public class ParserSupport {
     }
 
     public OrNode newOrNode(ISourcePosition position, Node left, Node right) {
-        checkExpression(left);
+        value_expr(lexer, left);
 
         if (left == null && right == null) return new OrNode(position, makeNullNil(left), makeNullNil(right));
         
@@ -841,6 +845,8 @@ public class ParserSupport {
 
     // FIXME: Currently this is passing in position of receiver
     public Node new_opElementAsgnNode(Node receiverNode, ByteList operatorName, Node argsNode, Node valueNode) {
+        value_expr(lexer, valueNode);
+
         ISourcePosition position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
 
         Node newNode = new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
@@ -1465,7 +1471,7 @@ public class ParserSupport {
         StaticScope scope = getCurrentScope();
 
         for (int i = 0; i < length; i++) {
-            if (RubyLexer.getKeyword(names[i]) == null && IdUtil.isLocal(names[i])) {
+            if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
                 int slot = scope.isDefined(names[i]);
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn

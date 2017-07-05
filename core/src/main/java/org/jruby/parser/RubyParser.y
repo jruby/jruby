@@ -1123,7 +1123,7 @@ reswords        : keyword__LINE__ {
                 | modifier_rescue {
                     $$ = RubyLexer.Keyword.RESCUE.bytes;
                 }
-  
+
 arg             : lhs '=' arg_rhs {
                     $$ = support.node_assign($1, $3);
                     // FIXME: Consider fixing node_assign itself rather than single case

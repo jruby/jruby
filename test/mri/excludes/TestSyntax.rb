@@ -1,6 +1,5 @@
 exclude :test__END___cr, "needs investigation"
 exclude :test_block_after_cmdarg_in_paren, "needs investigation"
-exclude :test_cmdarg_in_paren, "needs investigation"
 exclude :test_constant_reassignment_nested, "needs investigation"
 exclude :test_constant_reassignment_toplevel, "needs investigation"
 exclude :test_dedented_heredoc_with_blank_more_indented_line, "needs investigation #4308"

@@ -947,7 +947,7 @@ public class RipperLexer extends LexingCommon {
 
             if (tok == RipperParser.tSTRING_END || tok == RipperParser.tREGEXP_END) {
                 lex_strterm = null;
-                setState(EXPR_END);
+                setState(EXPR_END|EXPR_ENDARG);
             }
 
             return tok;

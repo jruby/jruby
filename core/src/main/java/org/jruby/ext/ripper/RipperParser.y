@@ -1678,7 +1678,7 @@ string_dvar     : tGVAR {
 
 // Token:symbol
 symbol          : tSYMBEG sym {
-                     p.setState(EXPR_END);
+                     p.setState(EXPR_END|EXPR_ENDARG);
                      $$ = p.dispatch("on_symbol", $2);
                 }
 
@@ -1686,7 +1686,7 @@ symbol          : tSYMBEG sym {
 sym             : fname | tIVAR | tGVAR | tCVAR
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
-                     p.setState(EXPR_END);
+                     p.setState(EXPR_END|EXPR_ENDARG);
                      $$ = p.dispatch("on_dyna_symbol", $2);
                 }
 

@@ -4057,14 +4057,14 @@ states[500] = new RipperParserState() {
 };
 states[502] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                     p.setState(EXPR_END);
+                     p.setState(EXPR_END|EXPR_ENDARG);
                      yyVal = p.dispatch("on_symbol", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[507] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                     p.setState(EXPR_END);
+                     p.setState(EXPR_END|EXPR_ENDARG);
                      yyVal = p.dispatch("on_dyna_symbol", ((IRubyObject)yyVals[-1+yyTop]));
     return yyVal;
   }
