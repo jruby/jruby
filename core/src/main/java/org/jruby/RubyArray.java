@@ -1261,7 +1261,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_push_m - instance method push
      *
      */
-
+    @Deprecated // not-used
     public RubyArray push_m(IRubyObject[] items) {
         return push(items);
     }
