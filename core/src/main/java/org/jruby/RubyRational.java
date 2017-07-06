@@ -616,40 +616,70 @@ public class RubyRational extends RubyNumeric {
             if (f_one_p(context, den)) {
                 if (f_one_p(context, num)) {
                     return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.one(runtime));
-                } else if (f_minus_one_p(context, num) && k_integer_p(other)) {
+                }
+                if (f_minus_one_p(context, num) && k_integer_p(other)) {
                     return RubyRational.newRationalBang(context, getMetaClass(),
                             f_odd_p(context, other) ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime));
-                } else if (f_zero_p(context, num)) {
+                }
+                if (f_zero_p(context, num)) {
                     if (f_cmp(context, other, RubyFixnum.zero(runtime)) == RubyFixnum.minus_one(runtime)) {
                         throw context.runtime.newZeroDivisionError();
-                    } else {
-                        return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.zero(runtime));
                     }
+                    return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.zero(runtime));
                 }
             }
         }
 
         // General case
-        if (other instanceof RubyFixnum || other instanceof RubyBignum) {        
-            final IRubyObject tnum, tden;
-            IRubyObject res = f_cmp(context, other, RubyFixnum.zero(runtime));
-            if (res == RubyFixnum.one(runtime)) {
-                tnum = f_expt(context, num, other);
-                tden = f_expt(context, den, other);
-            } else if (res == RubyFixnum.minus_one(runtime)){
-                tnum = f_expt(context, den, f_negate(context, other));
-                tden = f_expt(context, num, f_negate(context, other));
-            } else {
-                tnum = tden = RubyFixnum.one(runtime);
-            }
-            return RubyRational.newRational(context, getMetaClass(), tnum, tden);
-        } else if (other instanceof RubyFloat || other instanceof RubyRational) {
+        if (other instanceof RubyFixnum || other instanceof RubyBignum) {
+            return fix_expt(context, (RubyInteger) other, ((RubyInteger) other).getBigIntegerValue().signum());
+        }
+        if (other instanceof RubyFloat || other instanceof RubyRational) {
             return f_expt(context, f_to_f(context, this), other);
         }
         return coerceBin(context, sites(context).op_exp, other);
     }
 
-    
+    public final IRubyObject op_expt(ThreadContext context, long other) {
+        Ruby runtime = context.runtime;
+
+        if (other == 0) {
+            return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.one(runtime));
+        }
+
+        // Deal with special cases of 0**n and 1**n
+        if (f_one_p(context, den)) {
+            if (f_one_p(context, num)) {
+                return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.one(runtime));
+            }
+            if (f_minus_one_p(context, num)) {
+                return RubyRational.newRationalBang(context, getMetaClass(),
+                        other % 2 != 0 ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime));
+            }
+            if (f_zero_p(context, num)) {
+                if (other < 0) throw context.runtime.newZeroDivisionError();
+                return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.zero(runtime));
+            }
+        }
+
+        // General case
+        return fix_expt(context, RubyFixnum.newFixnum(runtime, other), Long.signum(other));
+    }
+
+    private IRubyObject fix_expt(ThreadContext context, RubyInteger other, final int sign) {
+        final IRubyObject tnum, tden;
+        if (sign > 0) { // other > 0
+            tnum = f_expt(context, num, other);
+            tden = f_expt(context, den, other);
+        } else if (sign < 0) { // other < 0
+            tnum = f_expt(context, den, f_negate(context, other));
+            tden = f_expt(context, num, f_negate(context, other));
+        } else { // other == 0
+            tnum = tden = RubyFixnum.one(context.runtime);
+        }
+        return RubyRational.newRational(context, getMetaClass(), tnum, tden);
+    }
+
     /** nurat_cmp
      * 
      */
