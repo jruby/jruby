@@ -11,29 +11,28 @@ import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConvertBytes {
+
     private final Ruby runtime;
-    private final ByteList _str;
-    private int str;
+    private final ByteList str;
+    private int beg;
     private int end;
     private byte[] data;
     private int base;
     private final boolean badcheck;
-    private final boolean is19;
 
-    public ConvertBytes(Ruby runtime, ByteList _str, int base, boolean badcheck) {
-        this(runtime, _str, base, badcheck, true);
+    public ConvertBytes(Ruby runtime, ByteList str, int base, boolean badcheck) {
+        this.runtime = runtime;
+        this.str = str;
+        this.beg = str.getBegin();
+        this.data = str.getUnsafeBytes();
+        this.end = beg + str.getRealSize();
+        this.badcheck = badcheck;
+        this.base = base;
     }
 
     @Deprecated
-    public ConvertBytes(Ruby runtime, ByteList _str, int base, boolean badcheck, boolean is19) {
-        this.runtime = runtime;
-        this._str = _str;
-        this.str = _str.getBegin();
-        this.data = _str.getUnsafeBytes();
-        this.end = str + _str.getRealSize();
-        this.badcheck = badcheck;
-        this.base = base;
-        this.is19 = is19;
+    public ConvertBytes(Ruby runtime, ByteList str, int base, boolean badcheck, boolean is19) {
+        this(runtime, str, base, badcheck);
     }
 
     public static final byte[] intToBinaryBytes(int i) {
@@ -230,13 +229,13 @@ public class ConvertBytes {
     /** rb_cstr_to_inum
      *
      */
-    @Deprecated
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, base, badcheck, false).byteListToInum();
+        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
     }
 
+    @Deprecated
     public static RubyInteger byteListToInum19(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
+        return byteListToInum(runtime, str, base, badcheck);
     }
 
     private final static byte[] conv_digit = new byte[128];
@@ -333,9 +332,7 @@ public class ConvertBytes {
      *
      */
     private byte convertDigit(byte c) {
-        if(c < 0) {
-            return -1;
-        }
+        if(c < 0) return -1;
         return conv_digit[c];
     }
 
@@ -350,61 +347,28 @@ public class ConvertBytes {
         return space[c];
     }
 
-    /** ISDIGIT
-     *
-     */
-    private boolean isDigit(byte[] buf, int str) {
-        byte c;
-        if(str == buf.length || (c = buf[str]) < 0) {
-            return false;
-        }
-        return digit[c];
-    }
-
-    /** ISSPACE || *str == '_'
-     *
-     */
-    private boolean isSpaceOrUnderscore(int str) {
-        byte c;
-        if(str == end || (c = data[str]) < 0) {
-            return false;
-        }
-        return spaceOrUnderscore[c];
-    }
-
     private boolean getSign() {
-        //System.err.println("getSign()");
         boolean sign = true;
-        if(str < end) {
-            if(data[str] == '+') {
-                str++;
-            } else if(data[str] == '-') {
-                str++;
+        if(beg < end) {
+            if(data[beg] == '+') {
+                beg++;
+            } else if(data[beg] == '-') {
+                beg++;
                 sign = false;
             }
         }
-        //System.err.println(" getSign/" + sign);
         return sign;
     }
 
     private void ignoreLeadingWhitespace() {
-        if(badcheck || is19) {
-            while(isSpace(str)) {
-                str++;
-            }
-        } else {
-            while(isSpaceOrUnderscore(str)) {
-                str++;
-            }
-        }
+        while(isSpace(beg)) beg++;
     }
 
     private void figureOutBase() {
-        //System.err.println("figureOutBase()/base=" + base);
         if(base <= 0) {
-            if(str < end && data[str] == '0') {
-                if(str + 1 < end) {
-                    switch(data[str+1]) {
+            if(beg < end && data[beg] == '0') {
+                if(beg + 1 < end) {
+                    switch(data[beg +1]) {
                     case 'x':
                     case 'X':
                         base = 16;
@@ -433,18 +397,16 @@ public class ConvertBytes {
                 base = 10;
             }
         }
-        //System.err.println(" figureOutBase/base=" + base);
     }
 
     private int calculateLength() {
-        int len = 0;
-        byte second = ((str+1 < end) && data[str] == '0') ? data[str+1] : (byte)0;
-        //System.err.println("calculateLength()/str=" + str);
+        int len;
+        byte second = ((beg +1 < end) && data[beg] == '0') ? data[beg +1] : (byte)0;
         switch(base) {
         case 2:
             len = 1;
             if(second == 'b' || second == 'B') {
-                str+=2;
+                beg +=2;
             }
             break;
         case 3:
@@ -452,14 +414,14 @@ public class ConvertBytes {
             break;
         case 8:
             if(second == 'o' || second == 'O') {
-                str+=2;
+                beg +=2;
             }
         case 4: case 5: case 6: case 7:
             len = 3;
             break;
         case 10:
             if(second == 'd' || second == 'D') {
-                str+=2;
+                beg +=2;
             }
         case 9: case 11: case 12:
         case 13: case 14: case 15:
@@ -468,7 +430,7 @@ public class ConvertBytes {
         case 16:
             len = 4;
             if(second == 'x' || second == 'X') {
-                str+=2;
+                beg +=2;
             }
             break;
         default:
@@ -483,16 +445,15 @@ public class ConvertBytes {
             break;
         }
 
-        //System.err.println(" calculateLength()/str=" + str);
         return len;
     }
 
     private void squeezeZeroes() {
         byte c;
-        if(str < end && data[str] == '0') {
-            str++;
+        if(beg < end && data[beg] == '0') {
+            beg++;
             int us = 0;
-            while((str < end) && ((c = data[str]) == '0' || c == '_')) {
+            while((beg < end) && ((c = data[beg]) == '0' || c == '_')) {
                 if(c == '_') {
                     if(++us >= 2) {
                         break;
@@ -500,16 +461,15 @@ public class ConvertBytes {
                 } else {
                     us += 0;
                 }
-                str++;
+                beg++;
             }
-            if(str == end || isSpace(str)) {
-                str--;
+            if(beg == end || isSpace(beg)) {
+                beg--;
             }
         }
     }
 
     private long stringToLong(int nptr, int[] endptr, int base) {
-        //System.err.println("stringToLong(" + nptr + ", " + base + ")");
         if(base < 0 || base == 1 || base > 36) {
             return 0;
         }
@@ -539,9 +499,7 @@ public class ConvertBytes {
             final long cutlim = Long.MAX_VALUE % (long)base;
 
             while(s < end) {
-                //System.err.println(" stringToLong/reading c=" + data[s]);
                 c = convertDigit(data[s]);
-                //System.err.println(" stringToLong/converted c=" + c);
                 if(c == -1 || c >= base) {
                     break;
                 }
@@ -583,10 +541,9 @@ public class ConvertBytes {
     }
 
     public RubyInteger byteListToInum() {
-        if(_str == null) {
-            if(badcheck) {
-                invalidString("Integer");
-            }
+        if(str == null) {
+            if(badcheck) invalidString("Integer");
+
             return runtime.newFixnum(0);
         }
 
@@ -594,11 +551,10 @@ public class ConvertBytes {
 
         boolean sign = getSign();
 
-        if(str < end) {
-            if(data[str] == '+' || data[str] == '-') {
-                if(badcheck) {
-                    invalidString("Integer");
-                }
+        if(beg < end) {
+            if(data[beg] == '+' || data[beg] == '-') {
+                if(badcheck) invalidString("Integer");
+
                 return runtime.newFixnum(0);
             }
         }
@@ -610,33 +566,30 @@ public class ConvertBytes {
         squeezeZeroes();
 
         byte c = 0;
-        if(str < end) {
-            c = data[str];
+        if(beg < end) {
+            c = data[beg];
         }
         c = convertDigit(c);
         if(c < 0 || c >= base) {
-            if(badcheck) {
-                invalidString("Integer");
-            }
+            if(badcheck) invalidString("Integer");
+
             return runtime.newFixnum(0);
         }
 
         if (base <= 10) {
             len *= (trailingLength());
         } else {
-            len *= (end-str);
+            len *= (end- beg);
         }
 
-        //System.err.println(" main/len=" + len);
         if(len < Long.SIZE-1) {
-            int[] endPlace = new int[]{str};
-            long val = stringToLong(str, endPlace, base);
-            //System.err.println(" stringToLong=" + val);
+            int[] endPlace = new int[]{beg};
+            long val = stringToLong(beg, endPlace, base);
             if(endPlace[0] < end && data[endPlace[0]] == '_') {
                 return bigParse(len, sign);
             }
             if(badcheck) {
-                if(endPlace[0] == str) {
+                if(endPlace[0] == beg) {
                     invalidString("Integer"); // no number
                 }
 
@@ -649,18 +602,14 @@ public class ConvertBytes {
                 }
             }
 
-            if(sign) {
-                return runtime.newFixnum(val);
-            } else {
-                return runtime.newFixnum(-val);
-            }
+            return sign ? runtime.newFixnum(val) : runtime.newFixnum(-val);
         }
         return bigParse(len, sign);
     }
 
     private int trailingLength() {
         int newLen = 0;
-        for (int i=str; i < end; i++) {
+        for (int i = beg; i < end; i++) {
             if (Character.isDigit(data[i])) newLen++;
             else return newLen;
         }
@@ -668,19 +617,19 @@ public class ConvertBytes {
     }
 
     private RubyInteger bigParse(int len, boolean sign) {
-        if(badcheck && str < end && data[str] == '_') {
+        if(badcheck && beg < end && data[beg] == '_') {
             invalidString("Integer");
         }
 
-        char[] result = new char[end-str];
+        char[] result = new char[end- beg];
         int resultIndex = 0;
 
         byte nondigit = -1;
 
         // str2big_scan_digits
         {
-            while(str < end) {
-                byte c = data[str++];
+            while(beg < end) {
+                byte c = data[beg++];
                 byte cx = c;
                 if(c == '_') {
                     if(nondigit != -1) {
@@ -698,16 +647,15 @@ public class ConvertBytes {
                     break;
                 }
                 nondigit = -1;
-                //System.err.println("ADDING CHAR: " + (char)cx + " with number: " + cx);
                 result[resultIndex++] = (char)cx;
             }
 
-            if(resultIndex == 0) { return runtime.newFixnum(0); }
+            if(resultIndex == 0) return runtime.newFixnum(0);
 
-            int tmpStr = str;
+            int tmpStr = beg;
             if (badcheck) {
-                // no str-- here because we don't null-terminate strings
-                if (_str.getBegin()+1 < tmpStr && data[tmpStr-1] == '_') invalidString("Integer");
+                // no beg-- here because we don't null-terminate strings
+                if (str.getBegin()+1 < tmpStr && data[tmpStr-1] == '_') invalidString("Integer");
                 while (tmpStr < end && Character.isWhitespace(data[tmpStr])) tmpStr++;
                 if (tmpStr < end) {
                     invalidString("Integer");
@@ -718,16 +666,16 @@ public class ConvertBytes {
 
         String s = new String(result, 0, resultIndex);
         BigInteger z = (base == 10) ? stringToBig(s) : new BigInteger(s, base);
-        if(!sign) { z = z.negate(); }
+        if(!sign) z = z.negate();
 
         if(badcheck) {
-            if(_str.getBegin() + 1 < str && data[str-1] == '_') {
+            if(str.getBegin() + 1 < beg && data[beg -1] == '_') {
                 invalidString("Integer");
             }
-            while(str < end && isSpace(str)) {
-                str++;
+            while(beg < end && isSpace(beg)) {
+                beg++;
             }
-            if(str < end) {
+            if(beg < end) {
                 invalidString("Integer");
             }
         }
@@ -739,7 +687,7 @@ public class ConvertBytes {
         str = str.replaceAll("_", "");
         int size = str.length();
         int nDigits = 512;
-        if (size < nDigits) { nDigits = size; }
+        if (size < nDigits) nDigits = size;
 
         int j = size - 1;
         int i = j - nDigits + 1;
@@ -775,11 +723,9 @@ public class ConvertBytes {
     }
 
     public static class ERange extends RuntimeException {
-        public static enum Kind {Overflow, Underflow};
-        private Kind kind;
-        public ERange() {
-            super();
-        }
+        public enum Kind { Overflow, Underflow }
+
+        private final Kind kind;
         public ERange(Kind kind) {
             super();
             this.kind = kind;
@@ -793,7 +739,7 @@ public class ConvertBytes {
      *
      */
     private void invalidString(String type) {
-        IRubyObject s = RubyString.newString(runtime, _str).inspect();
+        IRubyObject s = RubyString.newString(runtime, str).inspect();
         throw runtime.newArgumentError("invalid value for " + type + "(): " + s);
     }
 }

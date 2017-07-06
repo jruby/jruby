@@ -1994,7 +1994,7 @@ public class EncodingUtils {
 
         if (!Character.isValidCodePoint(code)) {
             // inefficient to create a fixnum for this
-            return new RubyFixnum(runtime, code).chr19(context);
+            return new RubyFixnum(runtime, code).chr(context);
         }
 
         char[] chars = Character.toChars(code);

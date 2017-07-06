@@ -95,8 +95,8 @@ public class IRRuntimeHelpers {
     }
 
     // Create a jump for a non-local return which will return from nearest lambda (which may be itself) or method.
-    public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block.Type blockType, IRubyObject returnValue) {
-        if (IRRuntimeHelpers.inLambda(blockType)) throw new IRWrappedLambdaReturnValue(returnValue);
+    public static IRubyObject initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, Block block, IRubyObject returnValue) {
+        if (block != null && IRRuntimeHelpers.inLambda(block.type)) throw new IRWrappedLambdaReturnValue(returnValue);
 
         throw IRReturnJump.create(getContainingMethodOrLambdasDynamicScope(dynScope), returnValue);
     }
@@ -159,15 +159,21 @@ public class IRRuntimeHelpers {
     }
 
     // FIXME: When we recompile lambdas we can eliminate this binary code path and we can emit as a NONLOCALRETURN directly.
-    public static IRubyObject initiateBreak(ThreadContext context, DynamicScope dynScope, IRubyObject breakValue, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject initiateBreak(ThreadContext context, DynamicScope dynScope, IRubyObject breakValue, Block block) throws RuntimeException {
         // Wrap the return value in an exception object and push it through the break exception
         // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
-        if (inLambda(blockType)) throw new IRWrappedLambdaReturnValue(breakValue);
+        if (inLambda(block.type)) throw new IRWrappedLambdaReturnValue(breakValue);
 
         IRScopeType scopeType = ensureScopeIsClosure(context, dynScope);
 
+        DynamicScope parentScope = dynScope.getParentScope();
+
+        if (block.isEscaped()) {
+            throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, breakValue, "unexpected break");
+        }
+
         // Raise a break jump so we can bubble back down the stack to the appropriate place to break from.
-        throw IRBreakJump.create(dynScope.getParentScope(), breakValue, scopeType.isEval()); // weirdly evals are impld as closures...yes yes.
+        throw IRBreakJump.create(parentScope, breakValue, scopeType.isEval()); // weirdly evals are impld as closures...yes yes.
     }
 
     // Are we within the scope where we want to return the value we are passing down the stack?
@@ -602,7 +608,7 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject match3(ThreadContext context, RubyRegexp regexp, IRubyObject argValue) {
         if (argValue instanceof RubyString) {
-            return regexp.op_match19(context, argValue);
+            return regexp.op_match(context, argValue);
         } else {
             return argValue.callMethod(context, "=~", regexp);
         }
@@ -1489,7 +1495,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyArray irSplat(ThreadContext context, IRubyObject ary) {
         Ruby runtime = context.runtime;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(context, ary, runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
         if (tmp.isNil()) {
             tmp = runtime.newArray(ary);
         }
@@ -1507,7 +1513,7 @@ public class IRRuntimeHelpers {
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary, boolean dupArray) {
         Ruby runtime = context.runtime;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(context, ary, runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
 
         if (tmp.isNil()) {
             tmp = runtime.newArray(ary);

@@ -1262,7 +1262,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_push_m - instance method push
      *
      */
-
+    @Deprecated // not-used
     public RubyArray push_m(IRubyObject[] items) {
         return push(items);
     }
@@ -3711,7 +3711,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         arrays[0] = this;
         RubyClass array = runtime.getArray();
         JavaSites.CheckedSites to_ary_checked = sites(context).to_ary_checked;
-        for (int i = 1; i < n; i++) arrays[i] = (RubyArray) TypeConverter.convertToType19(context, args[i - 1], array, to_ary_checked);
+        for (int i = 1; i < n; i++) arrays[i] = (RubyArray) TypeConverter.convertToType(context, args[i - 1], array, to_ary_checked);
 
         int resultLen = 1;
         for (int i = 0; i < n; i++) {
@@ -4614,7 +4614,7 @@ float_loop:
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
         try {
-            return Pack.pack(context, context.runtime, this, iFmt);
+            return Pack.pack(context, this, iFmt);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(context.runtime, e);
         }

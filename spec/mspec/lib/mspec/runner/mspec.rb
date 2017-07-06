@@ -2,6 +2,10 @@ require 'mspec/runner/context'
 require 'mspec/runner/exception'
 require 'mspec/runner/tag'
 
+class MSpecEnv
+  include MSpec
+end
+
 module MSpec
 
   @exit    = nil
@@ -84,8 +88,7 @@ module MSpec
   end
 
   def self.setup_env
-    @env = Object.new
-    @env.extend MSpec
+    @env = MSpecEnv.new
   end
 
   def self.actions(action, *args)

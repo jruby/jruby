@@ -98,7 +98,7 @@ class MSpecMain < MSpecScript
     end
 
     output_files = []
-    processes = [cores, @files.size].min
+    processes = cores(@files.size)
     children = processes.times.map { |i|
       name = tmp "mspec-multi-#{i}"
       output_files << name
@@ -109,7 +109,7 @@ class MSpecMain < MSpecScript
       }
       command = argv + ["-fy", "-o", name]
       $stderr.puts "$ #{command.join(' ')}" if $MSPEC_DEBUG
-      IO.popen([env, *command], "rb+")
+      IO.popen([env, *command, close_others: false], "rb+")
     }
 
     puts children.map { |child| child.gets }.uniq
@@ -147,7 +147,7 @@ class MSpecMain < MSpecScript
     success = true
     children.each { |child|
       child.puts "QUIT"
-      pid, status = Process.wait2(child.pid)
+      _pid, status = Process.wait2(child.pid)
       success &&= status.success?
       child.close
     }
@@ -171,7 +171,7 @@ class MSpecMain < MSpecScript
       exit multi_exec(argv)
     else
       $stderr.puts "$ #{argv.join(' ')}"
-      exec(*argv)
+      exec(*argv, close_others: false)
     end
   end
 end

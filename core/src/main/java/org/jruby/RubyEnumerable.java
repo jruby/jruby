@@ -1800,7 +1800,7 @@ public class RubyEnumerable {
 
         // 1.9 tries to convert, and failing that tries to "each" elements into a new array
         for (int i = 0; i < args.length; i++) {
-            IRubyObject result = TypeConverter.convertToTypeWithCheck19(args[i], Array, method);
+            IRubyObject result = TypeConverter.convertToTypeWithCheck(args[i], Array, method);
             if (result.isNil()) {
                 result = takeItems(context, args[i]);
             }

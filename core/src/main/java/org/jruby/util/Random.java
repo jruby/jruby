@@ -29,11 +29,11 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Random {
-    public static int N = 624;
-    private static int M = 397;
-    private static int MATRIX_A = 0x9908b0df; /* constant vector a */
-    private static int UMASK = 0x80000000; /* most significant w-r bits */
-    private static int LMASK = 0x7fffffff; /* least significant r bits */
+    public static final int N = 624;
+    private static final int M = 397;
+    private static final int MATRIX_A = 0x9908b0df; /* constant vector a */
+    private static final int UMASK = 0x80000000; /* most significant w-r bits */
+    private static final int LMASK = 0x7fffffff; /* least significant r bits */
 
     private static int MIXBITS(int u, int v) {
         return (u & UMASK) | (v & LMASK);
@@ -72,11 +72,8 @@ public class Random {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        } else if (!(obj instanceof Random)) {
-            return false;
-        }
+        if (this == obj) return true;
+        if (!(obj instanceof Random)) return false;
         Random rhs = (Random) obj;
         return (left == rhs.left) && Arrays.equals(state, rhs.state);
     }

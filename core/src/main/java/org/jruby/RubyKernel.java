@@ -404,7 +404,7 @@ public class RubyKernel {
             }
             RubyString arg = (RubyString)object;
             if (arg.toString().startsWith("0x")) {
-                return ConvertBytes.byteListToInum19(runtime, arg.getByteList(), 16, true).toFloat();
+                return ConvertBytes.byteListToInum(runtime, arg.getByteList(), 16, true).toFloat();
             }
             return RubyNumeric.str2fnum(runtime, arg, true);
         } else if(object.isNil()){
@@ -412,7 +412,7 @@ public class RubyKernel {
         } else {
             ThreadContext context = runtime.getCurrentContext();
             KernelSites sites = sites(context);
-            return (RubyFloat)TypeConverter.convertToType19(context, object, runtime.getFloat(), sites.to_f_checked);
+            return (RubyFloat)TypeConverter.convertToType(context, object, runtime.getFloat(), sites.to_f_checked);
         }
     }
 
@@ -460,7 +460,7 @@ public class RubyKernel {
 
         IRubyObject tmp = TypeConverter.checkStringType(context, sites.to_str_checked, object, runtime.getString());
         if (tmp.isNil()) {
-            tmp = TypeConverter.convertToType19(context, object, runtime.getString(), sites(context).to_s_checked);
+            tmp = TypeConverter.convertToType(context, object, runtime.getString(), sites(context).to_s_checked);
         }
         return tmp;
     }
@@ -1510,12 +1510,18 @@ public class RubyKernel {
         return RubyRandom.srandCommon(context, recv, arg);
     }
 
+    @Deprecated
     public static IRubyObject rand18(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return rand19(context, recv, arg);
+        return rand(context, recv, arg);
+    }
+
+    @Deprecated
+    public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
+        return rand(context, recv, arg);
     }
 
     @JRubyMethod(name = "rand", module = true, optional = 1, visibility = PRIVATE)
-    public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
         return RubyRandom.randCommon19(context, recv, arg);
     }
 
@@ -1529,12 +1535,8 @@ public class RubyKernel {
         throw context.runtime.newNotImplementedError("Kernel#syscall is not implemented in JRuby");
     }
 
-    public static IRubyObject system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return system19(context, recv, args);
-    }
-
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
@@ -1566,9 +1568,8 @@ public class RubyKernel {
 //            #ifdef SIGCHLD
 //            signal(SIGCHLD, chfunc);
 //            #endif
-            if (pid < 0) {
-                return runtime.getNil();
-            }
+            if (pid < 0) return context.nil;
+
             status = (int)((RubyProcess.RubyStatus) context.getLastExitStatus()).getStatus();
             if (status == 0) return runtime.getTrue();
             return runtime.getFalse();
@@ -1589,6 +1590,11 @@ public class RubyKernel {
             case 127: return runtime.getNil();
             default: return runtime.getFalse();
         }
+    }
+
+    @Deprecated
+    public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return system(context, recv, args);
     }
 
     private static int systemCommon(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
@@ -1739,14 +1745,15 @@ public class RubyKernel {
         return runtime.getNil();
     }
 
-    public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
-        return fork19(context, recv, block);
-    }
-
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)
-    public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
+    public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.runtime;
         throw runtime.newNotImplementedError("fork is not available on this platform");
+    }
+
+    @Deprecated
+    public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
+        return fork(context, recv, block);
     }
 
     @JRubyMethod(module = true)
@@ -1951,6 +1958,11 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "methods", optional = 1)
+    public static IRubyObject methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).methods(context, args);
+    }
+
+    @Deprecated
     public static IRubyObject methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).methods(context, args);
     }
@@ -1961,23 +1973,48 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "public_methods", optional = 1)
+    public static IRubyObject public_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).public_methods(context, args);
+    }
+
+    @Deprecated
     public static IRubyObject public_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).public_methods(context, args);
     }
 
     @JRubyMethod(name = "protected_methods", optional = 1)
+    public static IRubyObject protected_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).protected_methods(context, args);
+    }
+
+    @Deprecated
     public static IRubyObject protected_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).protected_methods(context, args);
     }
 
     @JRubyMethod(name = "private_methods", optional = 1)
+    public static IRubyObject private_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).private_methods(context, args);
+    }
+
+    @Deprecated
     public static IRubyObject private_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).private_methods(context, args);
     }
 
     @JRubyMethod(name = "singleton_methods", optional = 1)
+    public static RubyArray singleton_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).singleton_methods(context, args);
+    }
+
+    @Deprecated
     public static RubyArray singleton_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).singleton_methods(context, args);
+    }
+
+    @JRubyMethod(name = "singleton_method", required = 1)
+    public static IRubyObject singleton_method(IRubyObject self, IRubyObject symbol) {
+        return ((RubyBasicObject)self).singleton_method(symbol);
     }
 
     @JRubyMethod(name = "method", required = 1)

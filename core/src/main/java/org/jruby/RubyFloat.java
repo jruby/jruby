@@ -315,8 +315,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public IRubyObject op_mul(ThreadContext context, double other) {
-        return RubyFloat.newFloat(
-                getRuntime(), value * other);
+        return RubyFloat.newFloat(context.runtime, value * other);
     }
 
     /** flo_div
@@ -348,11 +347,13 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mod
      *
      */
+    @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
         case FLOAT:
             double y = ((RubyNumeric) other).getDoubleValue();
+            if (y == 0) throw context.runtime.newZeroDivisionError();
             return op_mod(context, y);
         default:
             return coerceBin(context, sites(context).op_mod, other);
@@ -371,15 +372,8 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(context.runtime, mod);
     }
 
-    /** flo_mod
-     *
-     */
-    @JRubyMethod(name = {"%", "modulo"}, required = 1)
-    public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
-        if (!other.isNil() && other instanceof RubyNumeric
-            && ((RubyNumeric)other).getDoubleValue() == 0) {
-            throw context.runtime.newZeroDivisionError();
-        }
+    @Deprecated
+    public final IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
         return op_mod(context, other);
     }
 
@@ -387,24 +381,26 @@ public class RubyFloat extends RubyNumeric {
      *
      */
     @Override
+    @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
         case FLOAT:
             double y = ((RubyNumeric) other).getDoubleValue();
+            if (y == 0) throw context.runtime.newZeroDivisionError();
             double x = value;
 
             double mod = Math.IEEEremainder(x, y);
             // MRI behavior:
             if (Double.isNaN(mod)) {
-                throw getRuntime().newFloatDomainError("NaN");
+                throw context.runtime.newFloatDomainError("NaN");
             }
             double div = Math.floor(x / y);
 
             if (y * mod < 0) {
                 mod += y;
             }
-            final Ruby runtime = getRuntime();
+            final Ruby runtime = context.runtime;
             IRubyObject car = dbl2num(runtime, div);
             RubyFloat cdr = RubyFloat.newFloat(runtime, mod);
             return RubyArray.newArray(runtime, car, cdr);
@@ -413,38 +409,11 @@ public class RubyFloat extends RubyNumeric {
         }
     }
 
-    /** flo_divmod
-     *
-     */
-    @JRubyMethod(name = "divmod", required = 1)
-    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
-        if (!other.isNil() && other instanceof RubyNumeric
-            && ((RubyNumeric)other).getDoubleValue() == 0) {
-            throw context.runtime.newZeroDivisionError();
-        }
-        return divmod(context, other);
-    }
-
     /** flo_pow
      *
      */
-    public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            return RubyFloat.newFloat(context.runtime, Math.pow(value, ((RubyNumeric) other)
-                    .getDoubleValue()));
-        default:
-            return coerceBin(context, sites(context).op_exp, other);
-        }
-    }
-
-    public IRubyObject op_pow(ThreadContext context, double other) {
-        return RubyFloat.newFloat(context.runtime, Math.pow(value, other));
-    }
-
     @JRubyMethod(name = "**", required = 1)
-    public IRubyObject op_pow19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
             case INTEGER:
             case FLOAT:
@@ -452,12 +421,20 @@ public class RubyFloat extends RubyNumeric {
                 if (value < 0 && (d_other != Math.round(d_other))) {
                     RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
                     return sites(context).op_exp.call(context, complex, complex, other);
-                } else {
-                    return op_pow(context, other);
                 }
+                return RubyFloat.newFloat(context.runtime, Math.pow(value, d_other));
             default:
                 return coerceBin(context, sites(context).op_exp, other);
         }
+    }
+
+    public IRubyObject op_pow(ThreadContext context, double other) {
+        return RubyFloat.newFloat(context.runtime, Math.pow(value, other));
+    }
+
+    @Deprecated
+    public IRubyObject op_pow19(ThreadContext context, IRubyObject other) {
+        return op_pow(context, other);
     }
 
     /** flo_eq

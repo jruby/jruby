@@ -46,23 +46,20 @@ public class RubyRandom extends RubyObject {
 
     public static class RandomType {
         private final IRubyObject seed;
-        private final Random mt;
+        private final Random impl;
 
-        RandomType(Ruby runtime) {
-            this(randomSeed(runtime));
-        }
+        // RandomType(Ruby runtime) { this(randomSeed(runtime)); }
 
         // c: rand_init
         RandomType(IRubyObject vseed) {
             this.seed = vseed.convertToInteger();
             if (seed instanceof RubyFixnum) {
-                this.mt = randomFromFixnum((RubyFixnum) seed);
+                this.impl = randomFromFixnum((RubyFixnum) seed);
             } else if (seed instanceof RubyBignum) {
-                this.mt = randomFromBignum((RubyBignum) seed);
+                this.impl = randomFromBignum((RubyBignum) seed);
             } else {
                 throw vseed.getRuntime().newTypeError(
-                        String.format("failed to convert %s into Integer", vseed.getMetaClass()
-                                .getName()));
+                        String.format("failed to convert %s into Integer", vseed.getMetaClass().getName()));
             }
         }
 
@@ -112,42 +109,38 @@ public class RubyRandom extends RubyObject {
             for (int i = 0; i < ints.length; ++i) {
                 ints[i] = getIntBigIntegerBuffer(bytes, i);
             }
-            this.mt = new Random(ints, left);
+            this.impl = new Random(ints, left);
         }
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            } else if (!(obj instanceof RandomType)) {
-                return false;
-            }
+            if (this == obj) return true;
+            if (!(obj instanceof RandomType)) return false;
             RandomType rhs = (RandomType) obj;
-            return seed.op_equal(seed.getRuntime().getCurrentContext(), rhs.seed).isTrue()
-                    && mt.equals(rhs.mt);
+            return seed.op_equal(seed.getRuntime().getCurrentContext(), rhs.seed).isTrue() && impl.equals(rhs.impl);
         }
 
         @Override
         public int hashCode() {
             // Using 17 as the initializer, 37 as the multiplier.
-            return (629 + seed.hashCode()) * 37 + mt.hashCode();
+            return (629 + seed.hashCode()) * 37 + impl.hashCode();
         }
 
         RandomType(RandomType orig) {
             this.seed = orig.seed;
-            this.mt = new Random(orig.mt);
+            this.impl = new Random(orig.impl);
         }
 
         int genrandInt32() {
-            return mt.genrandInt32();
+            return impl.genrandInt32();
         }
 
         double genrandReal() {
-            return mt.genrandReal();
+            return impl.genrandReal();
         }
 
         double genrandReal2() {
-            return mt.genrandReal2();
+            return impl.genrandReal2();
         }
 
         IRubyObject getSeed() {
@@ -155,7 +148,7 @@ public class RubyRandom extends RubyObject {
         }
 
         RubyBignum getState() {
-            int[] ints = mt.getState();
+            int[] ints = impl.getState();
             byte[] bytes = new byte[ints.length * 4];
             for (int idx = 0; idx < ints.length; ++idx) {
                 setIntBigIntegerBuffer(bytes, idx, ints[idx]);
@@ -164,7 +157,7 @@ public class RubyRandom extends RubyObject {
         }
 
         int getLeft() {
-            return mt.getLeft();
+            return impl.getLeft();
         }
 
         // big endian of bytes to reversed ints
@@ -278,14 +271,12 @@ public class RubyRandom extends RubyObject {
         RandomType random = getDefaultRand(context);
         if (args.length == 0) {
             return randFloat(context, random);
-        } else {
-            return randomRand(context, args[0], random);
         }
+        return randomRand(context, args[0], random);
     }
 
     // c: rb_f_rand for 1.9
-    public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv,
-            IRubyObject[] args) {
+    public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         RandomType random = getDefaultRand(context);
         if (args.length == 0) {
             return randFloat(context, random);
@@ -303,22 +294,6 @@ public class RubyRandom extends RubyObject {
         return randCommon(context, random, max);
     }
 
-    // c: rb_f_rand for 1.8
-    public static IRubyObject randCommon18(ThreadContext context, IRubyObject recv,
-            IRubyObject[] args) {
-        RandomType random = getDefaultRand(context);
-        if (args.length == 0) {
-            return randFloat(context, random);
-        }
-        IRubyObject arg = args[0];
-        if (arg.isNil()) {
-            return randFloat(context, random);
-        }
-        // 1.8 calls rb_Integer()
-        RubyInteger max = (RubyInteger) RubyKernel.new_integer(context, recv, arg);
-        return randCommon(context, random, max);
-    }
-
     private static IRubyObject randCommon(ThreadContext context, RandomType random, RubyInteger max) {
         if (max.zero_p(context).isTrue()) {
             return randFloat(context, random);
@@ -330,13 +305,19 @@ public class RubyRandom extends RubyObject {
         return r;
     }
 
-    @JRubyMethod(name = "rand", optional = 1)
+    @Deprecated
     public IRubyObject randObj(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0) {
-            return randFloat(context, random);
-        } else {
-            return randomRand(context, args[0], random);
-        }
+        return (args.length == 0) ? rand(context) : rand(context, args[0]);
+    }
+
+    @JRubyMethod(name = "rand")
+    public IRubyObject rand(ThreadContext context) {
+        return randFloat(context, random);
+    }
+
+    @JRubyMethod(name = "rand")
+    public IRubyObject rand(ThreadContext context, IRubyObject arg) {
+        return randomRand(context, arg, random);
     }
 
     // c: rand_int
@@ -376,9 +357,8 @@ public class RubyRandom extends RubyObject {
 
     // c: limited_rand
     // limited_rand gets/returns ulong but we do this in signed long only.
-    private static IRubyObject randLimitedFixnum(ThreadContext context, RandomType random,
-            long limit) {
-        return RubyFixnum.newFixnum(context.getRuntime(), randLimitedFixnumInner(random.mt, limit));
+    private static IRubyObject randLimitedFixnum(ThreadContext context, RandomType random, long limit) {
+        return RubyFixnum.newFixnum(context.runtime, randLimitedFixnumInner(random.impl, limit));
     }
 
     public static long randLimitedFixnumInner(Random random, long limit) {
@@ -406,8 +386,7 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: limited_big_rand
-    private static IRubyObject randLimitedBignum(ThreadContext context, RandomType random,
-            RubyBignum limit) {
+    private static IRubyObject randLimitedBignum(ThreadContext context, RandomType random, RubyBignum limit) {
         byte[] buf = limit.getBigIntegerValue().toByteArray();
         byte[] bytes = new byte[buf.length];
         int len = (buf.length + 3) / 4;
@@ -462,7 +441,7 @@ public class RubyRandom extends RubyObject {
         } else if ((v = checkMaxInt(context, vmax)) != null) {
             v = randInt(context, random, (RubyInteger) v, true);
         } else if (!(v = TypeConverter.checkFloatType(context.runtime, vmax)).isNil()) {
-            double max = floatValue(v);
+            double max = ((RubyFloat) v).getDoubleValue();
             if (max > 0.0) {
                 v = context.runtime.newFloat(max * random.genrandReal());
             } else {
@@ -500,13 +479,13 @@ public class RubyRandom extends RubyObject {
                 double mid = 0.5;
                 double r;
                 if (Double.isInfinite(max)) {
-                    double min = floatValue(range.begin) / 2.0;
-                    max = floatValue(range.end) / 2.0;
+                    double min = floatValue(context, range.begin) / 2.0;
+                    max = floatValue(context, range.end) / 2.0;
                     scale = 2;
                     mid = max + min;
                     max -= min;
                 } else {
-                    floatValue(v);
+                    checkFloatValue(context, max); // v
                 }
                 v = context.nil;
                 if (max > 0.0) {
@@ -549,19 +528,23 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: float_value
-    private static double floatValue(IRubyObject v) {
-        double x;
+    private static double floatValue(ThreadContext context, IRubyObject v) {
+        final double x;
         if (v instanceof RubyFloat) {
             x = ((RubyFloat) v).getDoubleValue();
         } else if (v instanceof RubyNumeric) {
             x = ((RubyNumeric) v).convertToFloat().getDoubleValue();
         } else {
-            throw v.getRuntime().newTypeError(v, v.getRuntime().getFloat());
+            throw context.runtime.newTypeError(v, context.runtime.getFloat());
         }
-        if (Double.isInfinite(x) || Double.isNaN(x)) {
-            throw v.getRuntime().newErrnoEDOMError("Numerical argument out of domain");
-        }
+        checkFloatValue(context, x);
         return x;
+    }
+
+    private static void checkFloatValue(ThreadContext context, double x) {
+        if (Double.isInfinite(x) || Double.isNaN(x)) {
+            throw context.runtime.newErrnoEDOMError("Numerical argument out of domain");
+        }
     }
 
     private static IRubyObject checkMaxInt(ThreadContext context, IRubyObject vmax) {
@@ -737,7 +720,7 @@ public class RubyRandom extends RubyObject {
             return r;
         }
 
-        return randLimitedFixnumInner(rnd.mt, limit);
+        return randLimitedFixnumInner(rnd.impl, limit);
     }
 
     // c: rb_random_real

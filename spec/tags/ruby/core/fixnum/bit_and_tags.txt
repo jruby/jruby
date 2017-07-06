@@ -1,0 +1,1 @@
+fails:Fixnum#& coerces the rhs and calls #coerce

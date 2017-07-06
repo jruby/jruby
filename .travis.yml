@@ -86,7 +86,8 @@ matrix:
     #  group: edge
     #  jdk: oraclejdk9
 
-install: tool/travis-install.sh
+install:
+  - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
 script: tool/travis-script.sh
 
 notifications:

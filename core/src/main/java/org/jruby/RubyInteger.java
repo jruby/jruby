@@ -110,6 +110,8 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyFloat.newFloat(getRuntime(), getDoubleValue());
     }
 
+    public int signum() { return getBigIntegerValue().signum(); }
+
     /*  ================
      *  Instance Methods
      *  ================
@@ -317,12 +319,8 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_chr
      *
      */
-    public RubyString chr(ThreadContext context) {
-        return chr19(context);
-    }
-
     @JRubyMethod(name = "chr")
-    public RubyString chr19(ThreadContext context) {
+    public RubyString chr(ThreadContext context) {
         Ruby runtime = context.runtime;
         int value = (int)getLongValue();
         if (value >= 0 && value <= 0xFF) {
@@ -339,8 +337,13 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
+    @Deprecated
+    public final RubyString chr19(ThreadContext context) {
+        return chr(context);
+    }
+
     @JRubyMethod(name = "chr")
-    public RubyString chr19(ThreadContext context, IRubyObject arg) {
+    public RubyString chr(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         long value = getLongValue();
         Encoding enc;
@@ -353,6 +356,11 @@ public abstract class RubyInteger extends RubyNumeric {
             return chr19(context);
         }
         return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, value), enc, 0);
+    }
+
+    @Deprecated
+    public final RubyString chr19(ThreadContext context, IRubyObject arg) {
+        return chr(context, arg);
     }
 
     private ByteList fromEncodedBytes(Ruby runtime, Encoding enc, long value) {
@@ -424,17 +432,18 @@ public abstract class RubyInteger extends RubyNumeric {
     public abstract IRubyObject truncate(ThreadContext context, IRubyObject arg);
 
     @Override
+    @JRubyMethod(name = "round")
     public IRubyObject round() {
         return this;
     }
 
-    @JRubyMethod(name = "round")
-    public IRubyObject round19() {
-        return this;
+    @Deprecated
+    public final IRubyObject round19() {
+        return round();
     }
 
     @JRubyMethod(name = "round")
-    public IRubyObject round19(ThreadContext context, IRubyObject arg) {
+    public IRubyObject round(ThreadContext context, IRubyObject arg) {
         int ndigits = RubyNumeric.num2int(arg);
         if (ndigits > 0) return RubyKernel.new_float(this, this);
         if (ndigits == 0) return this;
@@ -469,6 +478,11 @@ public abstract class RubyInteger extends RubyNumeric {
             if (!op.call(context, r, r, h).isTrue()) n = sites(context).op_plus.call(context, n, n, f);
             return n;
         }
+    }
+
+    @Deprecated
+    public final IRubyObject round19(ThreadContext context, IRubyObject arg) {
+        return round(context, arg);
     }
 
     /** integer_to_r

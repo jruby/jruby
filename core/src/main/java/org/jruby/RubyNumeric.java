@@ -364,7 +364,7 @@ public class RubyNumeric extends RubyObject {
      */
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean strict) {
         ByteList s = str.getByteList();
-        return ConvertBytes.byteListToInum19(runtime, s, base, strict);
+        return ConvertBytes.byteListToInum(runtime, s, base, strict);
     }
 
     /**
@@ -436,38 +436,25 @@ public class RubyNumeric extends RubyObject {
         return coerceResult(runtime, result, true).toJavaArrayMaybeUnsafe();
     }
 
-    protected IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other, boolean err) {
+    protected final IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other, boolean err) {
         IRubyObject[] args = getCoerced(context, other, err);
-        if (args == null) {
-            return context.nil;
-        }
+        if (args == null) return context.nil;
         return args[0].callMethod(context, method, args[1]);
     }
 
-    public IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other) {
-        IRubyObject[] args = getCoerced(context, other, false);
-        if (args == null) {
-            return context.nil;
-        }
-        return args[0].callMethod(context, method, args[1]);
+    public final IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other) {
+        return callCoerced(context, method, other, false);
     }
 
-    protected IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other, boolean err) {
+    protected final IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other, boolean err) {
         IRubyObject[] args = getCoerced(context, other, err);
-        if (args == null) {
-            return context.nil;
-        }
+        if (args == null) return context.nil;
         IRubyObject car = args[0];
         return site.call(context, car, car, args[1]);
     }
 
-    public IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other) {
-        IRubyObject[] args = getCoerced(context, other, false);
-        if (args == null) {
-            return context.nil;
-        }
-        IRubyObject car = args[0];
-        return site.call(context, car, car, args[1]);
+    public final IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other) {
+        return callCoerced(context, site, other, false);
     }
 
     // beneath are rewritten coercions that reflect MRI logic, the aboves are used only by RubyBigDecimal
@@ -734,6 +721,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     /** num_quo
+     *
      */
     @JRubyMethod(name = "quo")
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
@@ -741,7 +729,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     @Deprecated
-    public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
+    public final IRubyObject quo_19(ThreadContext context, IRubyObject other) {
         return quo(context, other);
     }
 
@@ -761,15 +749,8 @@ public class RubyNumeric extends RubyObject {
     }
 
     @Deprecated
-    public IRubyObject div19(ThreadContext context, IRubyObject other) {
+    public final IRubyObject div19(ThreadContext context, IRubyObject other) {
         return div(context, other);
-    }
-
-    /** num_divmod
-     *
-     */
-    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
-        return divmod(context, other);
     }
 
     /** num_divmod
@@ -777,10 +758,15 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        return RubyArray.newArray(getRuntime(), div(context, other), modulo19(context, other));
+        return RubyArray.newArray(context.runtime, div(context, other), modulo(context, other));
     }
 
-    /** num_fdiv (1.9) */
+    @Deprecated
+    public final IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+        return divmod(context, other);
+    }
+
+    /** num_fdiv */
     @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
         RubyFloat flote = this.convertToFloat();
@@ -801,7 +787,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @Deprecated
-    public IRubyObject modulo19(ThreadContext context, IRubyObject other) {
+    public final IRubyObject modulo19(ThreadContext context, IRubyObject other) {
         return modulo(context, other);
     }
 
@@ -812,7 +798,7 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
         IRubyObject z = numFuncall(context, this, sites(context).op_mod, dividend);
         IRubyObject x = this;
-        RubyFixnum zero = RubyFixnum.zero(getRuntime());
+        RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
         if (!equalInternal(context, z, zero) &&
                 ((sites(context).op_lt.call(context, x, x, zero).isTrue() &&
@@ -820,9 +806,8 @@ public class RubyNumeric extends RubyObject {
                 (sites(context).op_gt.call(context, x, x, zero).isTrue() &&
                         sites(context).op_lt.call(context, dividend, dividend, zero).isTrue()))) {
             return sites(context).op_minus.call(context, z, z, dividend);
-        } else {
-            return z;
         }
+        return z;
     }
 
     /** num_abs
@@ -830,8 +815,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "abs")
     public IRubyObject abs(ThreadContext context) {
-        if (sites(context).op_lt.call(context, this, this, RubyFixnum.zero(getRuntime())).isTrue()) {
-            return numFuncall(context, this, sites(context).op_uminus);
+        if (sites(context).op_lt.call(context, this, this, RubyFixnum.zero(context.runtime)).isTrue()) {
+            return sites(context).op_uminus.call(context, this, this);
         }
         return this;
     }
