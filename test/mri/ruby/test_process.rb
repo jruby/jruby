@@ -636,11 +636,14 @@ class TestProcess < Test::Unit::TestCase
         class E < StandardError; end
         trap(:USR1) { raise E }
         begin
+          puts "start"
+          STDOUT.flush
           system("cat", :in => "fifo")
         rescue E
           puts "ok"
         end
       EOS
+        assert_equal("start\n", io.gets)
         sleep 0.5
         Process.kill(:USR1, io.pid)
         assert_equal("ok\n", io.read)
@@ -2135,7 +2138,7 @@ EOS
   end
 
   def test_deadlock_by_signal_at_forking
-    assert_separately(["-", RUBY], <<-INPUT, timeout: 60)
+    assert_separately(["-", RUBY], <<-INPUT, timeout: 80)
       ruby = ARGV.shift
       GC.start # reduce garbage
       GC.disable # avoid triggering CoW after forks

@@ -106,10 +106,10 @@ module Test
           elsif negative.empty? and positive.size == 1 and pos_pat !~ positive[0]
             filter = positive[0]
           else
-            filter = Regexp.union(*positive.map! {|s| s[pos_pat, 1] || "\\A#{Regexp.quote(s)}\\z"})
+            filter = Regexp.union(*positive.map! {|s| Regexp.new(s[pos_pat, 1] || "\\A#{Regexp.quote(s)}\\z")})
           end
           unless negative.empty?
-            negative = Regexp.union(*negative.map! {|s| s[neg_pat, 1]})
+            negative = Regexp.union(*negative.map! {|s| Regexp.new(s[neg_pat, 1])})
             filter = /\A(?=.*#{filter})(?!.*#{negative})/
           end
           if Regexp === filter
@@ -902,6 +902,7 @@ module Test
           excludes = excludes.split(File::PATH_SEPARATOR)
         end
         options[:excludes] = excludes || []
+        parser.separator "excludes options:"
         parser.on '-X', '--excludes-dir DIRECTORY', "Directory name of exclude files" do |d|
           options[:excludes].concat d.split(File::PATH_SEPARATOR)
         end

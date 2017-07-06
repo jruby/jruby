@@ -656,6 +656,10 @@ eom
     assert_equal(expected, actual, bug7559)
   end
 
+  def test_dedented_heredoc_invalid_identifer
+    assert_syntax_error('<<~ "#{}"', /unexpected <</)
+  end
+
   def test_lineno_operation_brace_block
     expected = __LINE__ + 1
     actual = caller_lineno\
@@ -743,6 +747,12 @@ eom
 
   def test_heredoc_cr
     assert_syntax_error("puts <<""EOS\n""ng\n""EOS\r""NO\n", /can't find string "EOS" anywhere before EOF/)
+  end
+
+  def test_heredoc_newline
+    assert_warn(/ends with a newline/) do
+      eval("<<\"EOS\n\"\nEOS\n")
+    end
   end
 
   def test__END___cr
@@ -911,6 +921,15 @@ eom
     end
   end
 
+  def test_do_block_in_hash_brace
+    bug13073 = '[ruby-core:78837] [Bug #13073]'
+    assert_valid_syntax 'p :foo, {a: proc do end, b: proc do end}', bug13073
+    assert_valid_syntax 'p :foo, {:a => proc do end, b: proc do end}', bug13073
+    assert_valid_syntax 'p :foo, {"a": proc do end, b: proc do end}', bug13073
+    assert_valid_syntax 'p :foo, {** proc do end, b: proc do end}', bug13073
+    assert_valid_syntax 'p :foo, {proc do end => proc do end, b: proc do end}', bug13073
+  end
+
   def test_do_after_local_variable
     obj = Object.new
     def obj.m; yield; end
@@ -918,6 +937,46 @@ eom
       obj.instance_eval("m = 1; m do :ok end")
     end
     assert_equal(:ok, result)
+  end
+
+  def test_return_toplevel
+    feature4840 = '[ruby-core:36785] [Feature #4840]'
+    code = "#{<<~"begin;"}\n#{<<~"end;"}"
+    begin;
+      return; raise
+      begin return; rescue SystemExit; exit false; end
+      begin return; ensure exit false; end
+      begin ensure return; end
+      begin raise; ensure; return; end
+      begin raise; rescue; return; end
+      return false; raise
+      return 1; raise
+    end;
+    all_assertions(feature4840) do |a|
+      code.each_line do |s|
+        s.chomp!
+        a.for(s) do
+          assert_ruby_status([], s, proc {RubyVM::InstructionSequence.compile(s).disasm})
+        end
+      end
+    end
+  end
+
+  def test_syntax_error_in_rescue
+    bug12613 = '[ruby-core:76531] [Bug #12613]'
+    assert_syntax_error("#{<<-"begin;"}\n#{<<-"end;"}", /Invalid retry/, bug12613)
+    begin;
+      while true
+        begin
+          p
+        rescue
+          retry
+        else
+          retry
+        end
+        break
+      end
+    end;
   end
 
   private

@@ -259,18 +259,12 @@ module OpenSSL::TestPairM
   def test_write_nonblock_no_exceptions
     ssl_pair {|s1, s2|
       n = 0
-      begin
-        n += write_nonblock_no_ex s1, "a" * 100000
-        n += write_nonblock_no_ex s1, "b" * 100000
-        n += write_nonblock_no_ex s1, "c" * 100000
-        n += write_nonblock_no_ex s1, "d" * 100000
-        n += write_nonblock_no_ex s1, "e" * 100000
-        n += write_nonblock_no_ex s1, "f" * 100000
-      rescue OpenSSL::SSL::SSLError => e
-        # on some platforms (maybe depend on OpenSSL version), writing to
-        # SSLSocket after SSL_ERROR_WANT_WRITE causes this error.
-        raise e if n == 0
-      end
+      n += write_nonblock_no_ex s1, "a" * 100000
+      n += write_nonblock_no_ex s1, "b" * 100000
+      n += write_nonblock_no_ex s1, "c" * 100000
+      n += write_nonblock_no_ex s1, "d" * 100000
+      n += write_nonblock_no_ex s1, "e" * 100000
+      n += write_nonblock_no_ex s1, "f" * 100000
       s1.close
       assert_equal(n, s2.read.length)
     }
@@ -301,7 +295,7 @@ module OpenSSL::TestPairM
       # fill up a socket so we hit EAGAIN
       written = String.new
       n = 0
-      buf = 'a' * 11
+      buf = 'a' * 4099
       case ret = s1.write_nonblock(buf, exception: false)
       when :wait_readable then break
       when :wait_writable then break

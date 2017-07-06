@@ -96,17 +96,17 @@ class TestMathn < Test::Unit::TestCase
   def test_round
     assert_separately(%w[-rmathn], <<-EOS, ignore_stderr: true)
       assert_equal( 3, ( 13/5).round)
-      assert_equal( 2, (  5/2).round)
+      assert_equal( 3, (  5/2).round)
       assert_equal( 2, ( 12/5).round)
       assert_equal(-2, (-12/5).round)
-      assert_equal(-2, ( -5/2).round)
+      assert_equal(-3, ( -5/2).round)
       assert_equal(-3, (-13/5).round)
 
       assert_equal( 3, ( 13/5).round(0))
-      assert_equal( 2, (  5/2).round(0))
+      assert_equal( 3, (  5/2).round(0))
       assert_equal( 2, ( 12/5).round(0))
       assert_equal(-2, (-12/5).round(0))
-      assert_equal(-2, ( -5/2).round(0))
+      assert_equal(-3, ( -5/2).round(0))
       assert_equal(-3, (-13/5).round(0))
 
       assert_equal(( 13/5), ( 13/5).round(2))
@@ -157,6 +157,36 @@ class TestMathn < Test::Unit::TestCase
       assert_equal((-12/5), (-12/5).round(2, half: :up))
       assert_equal(( -5/2), ( -5/2).round(2, half: :up))
       assert_equal((-13/5), (-13/5).round(2, half: :up))
+
+      assert_equal( 3, ( 13/5).round(half: :down))
+      assert_equal( 2, (  5/2).round(half: :down))
+      assert_equal( 2, ( 12/5).round(half: :down))
+      assert_equal(-2, (-12/5).round(half: :down))
+      assert_equal(-2, ( -5/2).round(half: :down))
+      assert_equal(-3, (-13/5).round(half: :down))
+
+      assert_equal( 3, ( 13/5).round(0, half: :down))
+      assert_equal( 2, (  5/2).round(0, half: :down))
+      assert_equal( 2, ( 12/5).round(0, half: :down))
+      assert_equal(-2, (-12/5).round(0, half: :down))
+      assert_equal(-2, ( -5/2).round(0, half: :down))
+      assert_equal(-3, (-13/5).round(0, half: :down))
+
+      assert_equal(( 13/5), ( 13/5).round(2, half: :down))
+      assert_equal((  5/2), (  5/2).round(2, half: :down))
+      assert_equal(( 12/5), ( 12/5).round(2, half: :down))
+      assert_equal((-12/5), (-12/5).round(2, half: :down))
+      assert_equal(( -5/2), ( -5/2).round(2, half: :down))
+      assert_equal((-13/5), (-13/5).round(2, half: :down))
     EOS
+  end
+
+  def test_rational
+    assert_separately(%w[-rmathn], "#{<<-"begin;"}\n#{<<-"end;"}", ignore_stderr: true)
+    begin;
+      assert_equal(-5, "-5".to_r)
+      assert_equal(1, "5/5".to_r)
+      assert_equal(5, "5e0".to_r)
+    end;
   end
 end

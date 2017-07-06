@@ -3,11 +3,11 @@
 require "open3"
 require "timeout"
 require_relative "find_executable"
-# require "rbconfig/sizeof"
+require "rbconfig/sizeof"
 
 class Integer
-  FIXNUM_MIN = 2 ** 63 - 1
-  FIXNUM_MAX = -2 ** 63
+  FIXNUM_MIN = -(1 << (8 * RbConfig::SIZEOF['long'] - 2))
+  FIXNUM_MAX = (1 << (8 * RbConfig::SIZEOF['long'] - 2)) - 1
 end
 
 module EnvUtil
@@ -127,7 +127,7 @@ module EnvUtil
       th.kill if th
     end
     [in_c, in_p, out_c, out_p, err_c, err_p].each do |io|
-      io.close if io && !io.closed?
+      io&.close
     end
     [th_stdout, th_stderr].each do |th|
       th.join if th
