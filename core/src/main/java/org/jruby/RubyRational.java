@@ -632,7 +632,7 @@ public class RubyRational extends RubyNumeric {
 
         // General case
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
-            return fix_expt(context, (RubyInteger) other, ((RubyInteger) other).getBigIntegerValue().signum());
+            return fix_expt(context, (RubyInteger) other, ((RubyInteger) other).signum());
         }
         if (other instanceof RubyFloat || other instanceof RubyRational) {
             return f_expt(context, f_to_f(context, this), other);

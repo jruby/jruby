@@ -110,6 +110,8 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyFloat.newFloat(getRuntime(), getDoubleValue());
     }
 
+    public int signum() { return getBigIntegerValue().signum(); }
+
     /*  ================
      *  Instance Methods
      *  ================

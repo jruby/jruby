@@ -199,6 +199,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return BigInteger.valueOf(value);
     }
 
+    @Override
+    public int signum() { return Long.signum(value); }
+
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
         if (USE_CACHE && isInCacheRange(value)) {
             return cachedFixnum(runtime, value);

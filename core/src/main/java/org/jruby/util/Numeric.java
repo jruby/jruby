@@ -334,7 +334,7 @@ public class Numeric {
      * 
      */
     public static boolean f_negative_p(ThreadContext context, IRubyObject x) {
-        if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() < 0;
+        if (x instanceof RubyInteger) return ((RubyInteger) x).signum() == -1;
         return sites(context).op_lt.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
     }
     
@@ -342,7 +342,7 @@ public class Numeric {
      * 
      */
     public static boolean f_zero_p(ThreadContext context, IRubyObject x) {
-        if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == 0;
+        if (x instanceof RubyInteger) return ((RubyInteger) x).signum() == 0;
         return sites(context).op_equals.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
     }
     

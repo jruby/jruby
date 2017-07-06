@@ -138,6 +138,9 @@ public class RubyBignum extends RubyInteger {
         return value;
     }
 
+    @Override
+    public int signum() { return value.signum(); }
+
     /*  ================
      *  Utility Methods
      *  ================
@@ -255,8 +258,7 @@ public class RubyBignum extends RubyInteger {
     @JRubyMethod(name = "to_s", alias = "inspect")
     @Override
     public IRubyObject to_s() {
-        int base = 10;
-        return RubyString.newUSASCIIString(getRuntime(), getValue().toString(base));
+        return RubyString.newUSASCIIString(getRuntime(), getValue().toString(10));
     }
 
     @JRubyMethod(name = "to_s")
