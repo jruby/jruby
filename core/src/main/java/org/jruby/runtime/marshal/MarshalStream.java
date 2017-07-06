@@ -341,6 +341,9 @@ public class MarshalStream extends FilterOutputStream {
         } else {
             marshaled = value.callMethod(runtime.getCurrentContext(), "marshal_dump");
         }
+        if (marshaled.getMetaClass() == value.getMetaClass()) {
+            throw runtime.newRuntimeError("marshal_dump returned same class instance");
+        }
         dumpObject(marshaled);
     }
 
