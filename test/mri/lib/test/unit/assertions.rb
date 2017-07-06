@@ -475,7 +475,11 @@ EOT
         if defined? RubyVM::InstructionSequence
           RubyVM::InstructionSequence.compile(src, filename, filename, line)
         else
-          eval src, binding, filename, line
+          src = <<-WRAPPED
+#{src}
+            BEGIN { throw :tag, :ok }
+          WRAPPED
+          assert_equal(:ok, catch(:tag) { eval(src, binding, filename, line)})
         end
       end
 
