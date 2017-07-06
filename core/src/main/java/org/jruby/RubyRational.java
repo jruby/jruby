@@ -622,9 +622,7 @@ public class RubyRational extends RubyNumeric {
                             f_odd_p(context, other) ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime));
                 }
                 if (f_zero_p(context, num)) {
-                    if (f_cmp(context, other, RubyFixnum.zero(runtime)) == RubyFixnum.minus_one(runtime)) {
-                        throw context.runtime.newZeroDivisionError();
-                    }
+                    if (f_negative_p(context, other)) throw context.runtime.newZeroDivisionError();
                     return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.zero(runtime));
                 }
             }
