@@ -435,38 +435,25 @@ public class RubyNumeric extends RubyObject {
         return coerceResult(runtime, result, true).toJavaArrayMaybeUnsafe();
     }
 
-    protected IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other, boolean err) {
+    protected final IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other, boolean err) {
         IRubyObject[] args = getCoerced(context, other, err);
-        if (args == null) {
-            return context.nil;
-        }
+        if (args == null) return context.nil;
         return args[0].callMethod(context, method, args[1]);
     }
 
-    public IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other) {
-        IRubyObject[] args = getCoerced(context, other, false);
-        if (args == null) {
-            return context.nil;
-        }
-        return args[0].callMethod(context, method, args[1]);
+    public final IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other) {
+        return callCoerced(context, method, other, false);
     }
 
-    protected IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other, boolean err) {
+    protected final IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other, boolean err) {
         IRubyObject[] args = getCoerced(context, other, err);
-        if (args == null) {
-            return context.nil;
-        }
+        if (args == null) return context.nil;
         IRubyObject car = args[0];
         return site.call(context, car, car, args[1]);
     }
 
-    public IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other) {
-        IRubyObject[] args = getCoerced(context, other, false);
-        if (args == null) {
-            return context.nil;
-        }
-        IRubyObject car = args[0];
-        return site.call(context, car, car, args[1]);
+    public final IRubyObject callCoerced(ThreadContext context, CallSite site, IRubyObject other) {
+        return callCoerced(context, site, other, false);
     }
 
     // beneath are rewritten coercions that reflect MRI logic, the aboves are used only by RubyBigDecimal
