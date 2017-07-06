@@ -590,7 +590,7 @@ public class RubyBignum extends RubyInteger {
             return RubyFloat.newFloat(context.runtime, Math.pow(big2dbl(this), (double) other));
         }
         // (other < 0)
-        return RubyRational.newRationalRaw(context.runtime, this).callMethod(context, "**", RubyFixnum.newFixnum(context.runtime, other));
+        return RubyRational.newRationalRaw(context.runtime, this).op_expt(context, other);
     }
 
     private void warnIfPowExponentTooBig(final ThreadContext context, final long other) {
