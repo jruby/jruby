@@ -572,8 +572,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public static RubyString newStringShared(Ruby runtime, RubyClass clazz, ByteList bytes, Encoding encoding) {
-        RubyString str = new RubyString(runtime, clazz, bytes, encoding);
-        str.shareLevel = SHARE_LEVEL_BYTELIST;
+        if (bytes.getEncoding() == encoding) return newStringShared(runtime, clazz, bytes);
+        RubyString str = new RubyString(runtime, clazz, bytes.makeShared(bytes.getBegin(), bytes.getRealSize()), encoding);
+        str.shareLevel = SHARE_LEVEL_BUFFER; // since passing an encoding in does bytes.setEncoding(encoding)
+        return str;
+    }
+
+    private static RubyString newStringShared(Ruby runtime, ByteList bytes, Encoding encoding, int cr) {
+        RubyString str = newStringShared(runtime, runtime.getString(), bytes, encoding);
+        str.flags |= cr;
         return str;
     }
 
@@ -813,8 +820,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (len == 0) {
             shared = newEmptyString(runtime, meta);
         } else if (len == 1) {
-            shared = newStringShared(runtime, meta,
-                    RubyInteger.SINGLE_CHAR_BYTELISTS[value.getUnsafeBytes()[value.getBegin() + index] & 0xff]);
+            shared = newStringShared(runtime, meta, RubyInteger.singleCharByteList(value.getUnsafeBytes()[value.getBegin() + index]));
         } else {
             if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
             shared = new RubyString(runtime, meta, value.makeShared(index, len));
@@ -3272,10 +3278,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             byte e = end.value.getUnsafeBytes()[end.value.getBegin()];
             if (c > e || (excl && c == e)) return this;
             while (true) {
-                ByteList s = RubyInteger.SINGLE_CHAR_BYTELISTS[c & 0xff];
-                RubyString str = new RubyString(runtime, runtime.getString(), s, enc, CR_7BIT);
-                str.shareLevel = SHARE_LEVEL_BYTELIST;
-                block.yield(context, asSymbol ? runtime.newSymbol(s) : str);
+                ByteList s = RubyInteger.singleCharByteList(c);
+                block.yield(context, asSymbol ? runtime.newSymbol(s) : newStringShared(runtime, s, enc, CR_7BIT));
 
                 if (!excl && c == e) break;
                 c++;

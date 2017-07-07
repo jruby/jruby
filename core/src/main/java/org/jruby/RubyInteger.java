@@ -316,6 +316,10 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
+    static ByteList singleCharByteList(final byte index) {
+        return SINGLE_CHAR_BYTELISTS[index & 0xFF];
+    }
+
     /** int_chr
      *
      */
