@@ -808,10 +808,8 @@ public class RubyRational extends RubyNumeric {
         return f_negate(context, this);
     }
 
-    private IRubyObject op_roundCommonPre(ThreadContext context, IRubyObject n) {
-        checkInteger(context, n);
-        Ruby runtime = context.runtime;
-        return f_expt(context, RubyFixnum.newFixnum(runtime, 10), n);
+    private static IRubyObject op_roundCommonPre(ThreadContext context, IRubyObject n) {
+        return f_expt(context, RubyFixnum.newFixnum(context.runtime, 10), RubyInteger.toInteger(context, n));
     }
 
     private IRubyObject op_roundCommonPost(ThreadContext context, IRubyObject s, IRubyObject n, IRubyObject b) {
@@ -1043,8 +1041,8 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "marshal_load")
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
-        num = load.size() > 0 ? load.eltInternal(0) : context.runtime.getNil();
-        den = load.size() > 1 ? load.eltInternal(1) : context.runtime.getNil();
+        num = load.size() > 0 ? load.eltInternal(0) : context.nil;
+        den = load.size() > 1 ? load.eltInternal(1) : context.nil;
 
         if (f_zero_p(context, den)) {
             throw context.runtime.newZeroDivisionError();

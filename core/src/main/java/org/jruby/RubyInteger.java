@@ -352,7 +352,7 @@ public abstract class RubyInteger extends RubyNumeric {
             enc =  arg.convertToString().toEncoding(runtime);
         }
         if (enc == ASCIIEncoding.INSTANCE && value >= 0x80) {
-            return chr19(context);
+            return chr(context);
         }
         return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, value), enc, 0);
     }
@@ -505,8 +505,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcd")
     public IRubyObject gcd(ThreadContext context, IRubyObject other) {
-        checkInteger(context, other);
-        return f_gcd(context, this, RubyRational.intValue(context, other));
+        return f_gcd(context, this, toInteger(context, other));
     }
 
     /** rb_lcm
@@ -514,8 +513,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "lcm")
     public IRubyObject lcm(ThreadContext context, IRubyObject other) {
-        checkInteger(context, other);
-        return f_lcm(context, this, RubyRational.intValue(context, other));
+        return f_lcm(context, this, toInteger(context, other));
     }
 
     /** rb_gcdlcm
@@ -523,9 +521,16 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcdlcm")
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
-        checkInteger(context, other);
-        other = RubyRational.intValue(context, other);
+        other = toInteger(context, other);
         return context.runtime.newArray(f_gcd(context, this, other), f_lcm(context, this, other));
+    }
+
+    static IRubyObject toInteger(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyInteger) return num;
+        if (num instanceof RubyNumeric && !num.callMethod(context, "integer?").isTrue()) {
+            throw context.runtime.newTypeError("not an integer");
+        }
+        return num.callMethod(context, "to_i");
     }
 
     @Override
