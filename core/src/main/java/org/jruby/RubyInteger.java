@@ -607,8 +607,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcd")
     public IRubyObject gcd(ThreadContext context, IRubyObject other) {
-        checkInteger(context, other);
-        return f_gcd(context, this, RubyRational.intValue(context, other));
+        return f_gcd(context, this, toInteger(context, other));
     }
 
     // MRI: rb_int_fdiv_double and rb_int_fdiv in one
@@ -632,8 +631,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "lcm")
     public IRubyObject lcm(ThreadContext context, IRubyObject other) {
-        checkInteger(context, other);
-        return f_lcm(context, this, RubyRational.intValue(context, other));
+        return f_lcm(context, this, toInteger(context, other));
     }
 
     /** rb_gcdlcm
@@ -641,9 +639,16 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcdlcm")
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
-        checkInteger(context, other);
-        other = RubyRational.intValue(context, other);
+        other = toInteger(context, other);
         return context.runtime.newArray(f_gcd(context, this, other), f_lcm(context, this, other));
+    }
+
+    static IRubyObject toInteger(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyInteger) return num;
+        if (num instanceof RubyNumeric && !num.callMethod(context, "integer?").isTrue()) {
+            throw context.runtime.newTypeError("not an integer");
+        }
+        return num.callMethod(context, "to_i");
     }
 
     @JRubyMethod(name = "digits")

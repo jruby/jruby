@@ -214,8 +214,7 @@ public class RubyRational extends RubyNumeric {
         if (num instanceof RubyFixnum || num instanceof RubyBignum) return;
         if (!(num instanceof RubyNumeric) || !num.callMethod(context, "integer?").isTrue()) {
             Ruby runtime = num.getRuntime();
-            throw runtime.newTypeError("can't convert "
-                    + num.getMetaClass().getName() + " into Rational");
+            throw runtime.newTypeError("can't convert " + num.getMetaClass().getName() + " into Rational");
         }
     }
 
@@ -1191,9 +1190,6 @@ public class RubyRational extends RubyNumeric {
         RubyArray load = arg.convertToArray();
         IRubyObject num = load.size() > 0 ? load.eltInternal(0) : context.nil;
         IRubyObject den = load.size() > 1 ? load.eltInternal(1) : context.nil;
-
-        intCheck(context, num);
-        intCheck(context, den);
 
         // MRI: nurat_canonicalize, negation part
         if (canonicalizeShouldNegate(context, num, den)) {
