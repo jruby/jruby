@@ -62,6 +62,7 @@ public abstract class JavaLang {
         Throwable.define(runtime);
         Runnable.define(runtime);
         Character.define(runtime);
+        Number.define(runtime);
         Class.define(runtime);
         ClassLoader.define(runtime);
         // Java::byte[].class_eval ...
@@ -307,6 +308,40 @@ public abstract class JavaLang {
 
     }
 
+    @JRubyClass(name = "Java::JavaLang::Number")
+    public static class Number {
+
+        static RubyClass define(final Ruby runtime) {
+            final RubyModule Number = Java.getProxyClass(runtime, java.lang.Number.class);
+            Number.defineAnnotatedMethods(Number.class);
+            return (RubyClass) Number;
+        }
+
+        @JRubyMethod(name = "to_f")
+        public static IRubyObject to_f(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return context.runtime.newFloat(val.doubleValue());
+        }
+
+        @JRubyMethod(name = { "to_i", "to_int" })
+        public static IRubyObject to_i(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            if (val instanceof java.math.BigInteger) { // NOTE: should be moved into its own?
+                return RubyBignum.newBignum(context.runtime, (java.math.BigInteger) val);
+            }
+            return context.runtime.newFixnum(val.longValue());
+        }
+
+        @JRubyMethod(name = "integer?")
+        public static IRubyObject integer_p(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return context.runtime.newBoolean(val instanceof Integer || val instanceof Long ||
+                                                    val instanceof Short || val instanceof Byte ||
+                                                    val instanceof java.math.BigInteger);
+        }
+
+    }
+
     @JRubyClass(name = "Java::JavaLang::Character")
     public static class Character {
 
@@ -328,6 +363,12 @@ public abstract class JavaLang {
 
         private static char to_char(final IRubyObject num) {
             return (java.lang.Character) num.toJava(java.lang.Character.TYPE);
+        }
+
+        @JRubyMethod(name = "to_i")
+        public static IRubyObject to_i(final ThreadContext context, final IRubyObject self) {
+            java.lang.Character c = (java.lang.Character) self.toJava(java.lang.Character.class);
+            return context.runtime.newFixnum(c);
         }
 
     }

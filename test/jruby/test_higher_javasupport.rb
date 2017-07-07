@@ -1599,6 +1599,36 @@ CLASSDEF
     end
   end
 
+  def test_java_numbers_treated_like_ruby_ones
+    i = java.lang.Integer.new(3)
+    assert_equal 3.0, i.to_f
+    assert_equal 3, i.to_i
+    assert_equal true, i.integer?
+
+    assert_equal 4, java.lang.Byte.new(4).to_i
+    assert_equal 5, java.lang.Byte.new(5).to_int
+
+    i = java.math.BigInteger.new('3')
+    assert_equal 3.0, i.to_f
+    assert_equal 3, i.to_i
+    assert_equal true, i.integer?
+
+    f = java.lang.Float.new(3)
+    assert_equal 3.0, f.to_f
+    assert_equal 3, f.to_i
+    assert_equal false, f.integer?
+
+    f = java.math.BigDecimal.new('3.0')
+    assert_equal 3.0, f.to_f
+    assert_equal 3, f.to_i
+    assert_equal false, f.integer?
+  end
+
+  def test_java_character_converts_to_i
+    c = '0'.to_java(:char)
+    assert_equal 48, c.to_i
+  end
+
   # GH-3262
   def test_indexed_bean_style_accessors_are_not_aliased
     # ArgumentError: wrong number of arguments (0 for 1)
