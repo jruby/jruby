@@ -1599,6 +1599,23 @@ CLASSDEF
     end
   end
 
+  def test_java_numbers_with_array
+    num1 = 0.5; num2 = 111
+    if defined?(JRUBY_VERSION)
+      num1 = java.lang.Float.new(num1)
+      num2 = java.lang.Short.new(num2)
+    end
+    pack = [ num1, num2 ].pack('D')
+    assert_equal "\x00\x00\x00\x00\x00\x00\xE0?".force_encoding('ASCII-8BIT'), pack
+
+    i = java.lang.Integer.new(1)
+    arr = []; arr[i] = 'one'
+    assert_equal 'one', arr.at(i)
+    assert_equal 'one', arr[1]
+    i = java.lang.Long.new(1)
+    assert_equal 'one', arr[i]
+  end
+
   def test_java_numbers_treated_like_ruby_ones
     i = java.lang.Integer.new(3)
     assert_equal 3.0, i.to_f
@@ -1608,10 +1625,14 @@ CLASSDEF
     assert_equal 4, java.lang.Byte.new(4).to_i
     assert_equal 5, java.lang.Byte.new(5).to_int
 
+    assert_equal 1, 10.gcd(i)
+
     i = java.math.BigInteger.new('3')
     assert_equal 3.0, i.to_f
     assert_equal 3, i.to_i
     assert_equal true, i.integer?
+
+    assert_equal 30, 10.lcm(i)
 
     f = java.lang.Float.new(3)
     assert_equal 3.0, f.to_f
