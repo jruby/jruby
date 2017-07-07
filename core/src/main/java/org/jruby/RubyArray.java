@@ -1582,7 +1582,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return this;
     }
 
-    /** rb_ary_concat
+    /** rb_ary_concat_multi
      *
      */
     @JRubyMethod(name = "concat", rest = true)
@@ -3851,20 +3851,19 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "repeated_combination", new IRubyObject[] { num }, repeatedCombinationSize(context));
 
         int n = RubyNumeric.num2int(num);
-        int len = realLength;
 
         if (n < 0) {
             // yield nothing
         } else if (n == 0) {
             block.yield(context, newEmptyArray(runtime));
         } else if (n == 1) {
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i < realLength; i++) {
                 block.yield(context, newArray(runtime, eltOk(i)));
             }
         } else {
             int[] p = new int[n];
             RubyArray values = makeShared();
-            rcombinate(context, len, n, p, values, block);
+            rcombinate(context, realLength, n, p, values, block);
         }
 
         return this;
