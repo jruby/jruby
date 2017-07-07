@@ -1318,6 +1318,20 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return this;
     }
 
+    // MRI: fix_fdiv_double
+    @Override
+    public IRubyObject fdivDouble(ThreadContext context, IRubyObject y) {
+        if (y instanceof RubyFixnum) {
+            return context.runtime.newFloat(((double) value) / ((double) fix2long(y)));
+        } else if (y instanceof RubyBignum) {
+            return RubyBignum.newBignum(context.runtime, value).fdivDouble(context, y);
+        } else if (y instanceof RubyFloat) {
+            return context.runtime.newFloat(((double) value) / ((RubyFloat) y).getDoubleValue());
+        } else {
+            return coerceBin(context, sites(context).fdiv, y);
+        }
+    }
+
     private static JavaSites.FixnumSites sites(ThreadContext context) {
         return context.sites.Fixnum;
     }

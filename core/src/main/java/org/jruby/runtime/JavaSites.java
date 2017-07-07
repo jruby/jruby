@@ -223,6 +223,7 @@ public class JavaSites {
         public final CallSite op_exp_complex = new FunctionalCachingCallSite("**");
         public final CallSite op_lt_bignum = new FunctionalCachingCallSite("<");
         public final CallSite op_exp_rational = new FunctionalCachingCallSite("**");
+        public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
     }
 
     public static class BignumSites {
@@ -240,6 +241,7 @@ public class JavaSites {
         public final CallSite op_or = new FunctionalCachingCallSite("|");
         public final CallSite op_xor = new FunctionalCachingCallSite("^");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
+        public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
     }
 
     public static class FloatSites {

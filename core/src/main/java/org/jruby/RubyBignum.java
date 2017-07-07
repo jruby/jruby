@@ -1028,6 +1028,44 @@ public class RubyBignum extends RubyInteger {
         return result;
     }
 
+    // MRI: rb_big_fdiv_double
+    @Override
+    public IRubyObject fdivDouble(ThreadContext context, IRubyObject y) {
+        double dx, dy;
+
+        dx = getDoubleValue();
+        if (y instanceof RubyFixnum) {
+            dy = (double)fix2long(y);
+            if (Double.isInfinite(dx))
+                return fdivInt(context, RubyBignum.newBignum(context.runtime, fix2long(y)));
+        } else if (y instanceof RubyBignum) {
+            dy = RubyBignum.big2dbl((RubyBignum) y);
+            if (Double.isInfinite(dx) || Double.isInfinite(dy))
+                return fdivInt(context, (RubyBignum) y);
+        } else if (y instanceof RubyFloat) {
+            dy = ((RubyFloat) y).getDoubleValue();
+            if (Double.isNaN(dy)) {
+                return context.runtime.newFloat(dy);
+            }
+            if (Double.isInfinite(dx)) {
+                return fdivFloat(context, (RubyFloat) y);
+            }
+        } else {
+            return coerceBin(context, sites(context).fdiv, y);
+        }
+        return context.runtime.newFloat(dx / dy);
+    }
+
+    // MRI: big_fdiv_int and big_fdiv
+    public IRubyObject fdivInt(ThreadContext context, RubyBignum y) {
+        return context.runtime.newFloat(new BigDecimal(value).divide(new BigDecimal(y.getValue())).doubleValue());
+    }
+
+    // MRI: big_fdiv_float
+    public IRubyObject fdivFloat(ThreadContext context, RubyFloat y) {
+        return context.runtime.newFloat(new BigDecimal(value).divide(new BigDecimal(y.getValue())).doubleValue());
+    }
+
     private static JavaSites.BignumSites sites(ThreadContext context) {
         return context.sites.Bignum;
     }

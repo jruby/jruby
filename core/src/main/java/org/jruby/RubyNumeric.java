@@ -58,10 +58,7 @@ import java.math.BigInteger;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.util.Numeric.f_abs;
-import static org.jruby.util.Numeric.f_arg;
-import static org.jruby.util.Numeric.f_mul;
-import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.*;
 
 /**
  * Base class for all numerical types in ruby.

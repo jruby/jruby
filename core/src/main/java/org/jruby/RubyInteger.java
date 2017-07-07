@@ -534,6 +534,22 @@ public abstract class RubyInteger extends RubyNumeric {
         return f_gcd(context, this, RubyRational.intValue(context, other));
     }
 
+    // MRI: rb_int_fdiv_double and rb_int_fdiv in one
+    @Override
+    public IRubyObject fdiv(ThreadContext context, IRubyObject y) {
+        RubyInteger x = this;
+        if (y instanceof RubyInteger && !((RubyInteger) y).zero_p(context).isTrue()) {
+            IRubyObject gcd = gcd(context, y);
+            if (!((RubyInteger) gcd).zero_p(context).isTrue()) {
+                x = (RubyInteger) op_idiv(context, gcd);
+                y = ((RubyInteger) y).op_idiv(context, gcd);
+            }
+        }
+        return x.fdivDouble(context, y);
+    }
+
+    public abstract IRubyObject fdivDouble(ThreadContext context, IRubyObject y);
+
     /** rb_lcm
      *
      */
