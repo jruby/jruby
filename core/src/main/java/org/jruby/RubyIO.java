@@ -1627,9 +1627,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject putc(ThreadContext context, IRubyObject ch) {
         IRubyObject str;
         if (ch instanceof RubyString) {
-            str = ((RubyString)ch).substr(context.runtime, 0, 1);
+            str = ((RubyString) ch).substr(context.runtime, 0, 1);
         } else {
-            str = RubyString.newStringShared(context.runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[RubyNumeric.num2chr(ch) & 0xFF]);
+            str = RubyString.newStringShared(context.runtime, RubyInteger.singleCharByteList(RubyNumeric.num2chr(ch)));
         }
 
         sites(context).write.call(context, this, this, str);
@@ -1639,10 +1639,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     public static IRubyObject putc(ThreadContext context, IRubyObject maybeIO, IRubyObject object) {
         if (maybeIO instanceof RubyIO) {
-            ((RubyIO)maybeIO).putc(context, object);
+            ((RubyIO) maybeIO).putc(context, object);
         } else {
             byte c = RubyNumeric.num2chr(object);
-            IRubyObject str = RubyString.newStringShared(context.runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[c & 0xFF]);
+            IRubyObject str = RubyString.newStringShared(context.runtime, RubyInteger.singleCharByteList(c));
             sites(context).write.call(context, maybeIO, maybeIO, str);
         }
 
