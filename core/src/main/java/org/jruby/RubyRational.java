@@ -25,7 +25,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.util.Numeric.checkInteger;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_cmp;
@@ -68,7 +67,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -208,25 +206,15 @@ public class RubyRational extends RubyNumeric {
         canonicalization = canonical;
     }
 
-    /** nurat_int_check
-     * 
-     */
-    static void intCheck(ThreadContext context, IRubyObject num) {
-        if (num instanceof RubyFixnum || num instanceof RubyBignum) return;
-        if (!(num instanceof RubyNumeric) || !num.callMethod(context, "integer?").isTrue()) {
-            Ruby runtime = num.getRuntime();
-            throw runtime.newTypeError("can't convert "
-                    + num.getMetaClass().getName() + " into Rational");
-        }
-    }
-
     /** nurat_int_value
      * 
      */
     static IRubyObject intValue(ThreadContext context, IRubyObject num) {
-        intCheck(context, num);
-        if (!(num instanceof RubyInteger)) num = num.callMethod(context, "to_f");
-        return num;
+        IRubyObject i;
+        if (( i = RubyInteger.toInteger(context, num) ) == null) {
+            throw context.runtime.newTypeError("can't convert " + num.getMetaClass().getName() + " into Rational");
+        }
+        return i;
     }
     
     /** nurat_s_canonicalize_internal
@@ -809,7 +797,7 @@ public class RubyRational extends RubyNumeric {
     }
 
     private static IRubyObject op_roundCommonPre(ThreadContext context, IRubyObject n) {
-        return f_expt(context, RubyFixnum.newFixnum(context.runtime, 10), RubyInteger.toInteger(context, n));
+        return f_expt(context, RubyFixnum.newFixnum(context.runtime, 10), intValue(context, n));
     }
 
     private IRubyObject op_roundCommonPost(ThreadContext context, IRubyObject s, IRubyObject n, IRubyObject b) {
