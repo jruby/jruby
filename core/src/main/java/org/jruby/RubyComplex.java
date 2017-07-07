@@ -985,16 +985,19 @@ public class RubyComplex extends RubyNumeric {
         }
         return real.callMethod(context, "rationalize", args);
     }
-    
+
+    private static final ByteList SEP = RubyFile.SLASH;
+    private static final ByteList _eE = new ByteList(new byte[] { '.', 'e', 'E' }, false);
+
     static RubyArray str_to_c_internal(ThreadContext context, IRubyObject recv) {
         RubyString s = recv.convertToString();
         ByteList bytes = s.getByteList();
 
         Ruby runtime = context.runtime;
-        if (bytes.getRealSize() == 0) return runtime.newArray(runtime.getNil(), recv);
+        if (bytes.getRealSize() == 0) return runtime.newArray(context.nil, recv);
 
         IRubyObject sr, si, re;
-        sr = si = re = runtime.getNil();
+        sr = si = re = context.nil;
         boolean po = false;
         IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat0).match_m(context, s, false);
 
@@ -1024,15 +1027,15 @@ public class RubyComplex extends RubyNumeric {
 
         if (m.isNil()) {
             m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat2).match_m(context, s, false);
-            if (m.isNil()) return runtime.newArray(runtime.getNil(), recv);
+            if (m.isNil()) return runtime.newArray(context.nil, recv);
             RubyMatchData match = (RubyMatchData)m;
             sr = match.at(1);
             if (match.at(2).isNil()) {
-                si = runtime.getNil();
+                si = context.nil;
             } else {
                 si = match.at(3);
                 IRubyObject t = match.at(4);
-                if (t.isNil()) t = runtime.newString(RubyFixnum.SINGLE_CHAR_BYTELISTS19['1']);
+                if (t.isNil()) t = runtime.newString(RubyInteger.singleCharByteList((byte) '1'));
                 si.convertToString().cat(t.convertToString().getByteList());
             }
             re = match.post_match(context);
@@ -1042,28 +1045,24 @@ public class RubyComplex extends RubyNumeric {
         IRubyObject r = RubyFixnum.zero(runtime);
         IRubyObject i = r;
 
-        if (!sr.isNil()) {
-            if (sr.callMethod(context, "include?", runtime.newString(new ByteList(new byte[]{'/'}))).isTrue()) {
-                r = f_to_r(context, sr);
-            } else if (f_gt_p(context, sr.callMethod(context, "count", runtime.newString(".eE")), RubyFixnum.zero(runtime)).isTrue()) {
-                r = f_to_f(context, sr); 
-            } else {
-                r = f_to_i(context, sr);
-            }
-        }
+        r = convertString(context, sr, r);
+        i = convertString(context, si, i);
 
-        if (!si.isNil()) {
-            if (si.callMethod(context, "include?", runtime.newString(new ByteList(new byte[]{'/'}))).isTrue()) {
-                i = f_to_r(context, si);
-            } else if (f_gt_p(context, si.callMethod(context, "count", runtime.newString(".eE")), RubyFixnum.zero(runtime)).isTrue()) {
-                i = f_to_f(context, si);
-            } else {
-                i = f_to_i(context, si);
-            }
-        }
         return runtime.newArray(po ? newComplexPolar(context, r, i) : newComplexCanonicalize(context, r, i), re);
     }
-    
+
+    private static IRubyObject convertString(ThreadContext context, final IRubyObject s, IRubyObject def) {
+        if (s == context.nil) return def;
+        final Ruby runtime = context.runtime;
+        if (s.callMethod(context, "include?", RubyString.newStringShared(runtime, SEP)).isTrue()) {
+            return f_to_r(context, s);
+        }
+        if (f_gt_p(context, s.callMethod(context, "count", RubyString.newStringShared(runtime, _eE)), RubyFixnum.zero(runtime)).isTrue()) {
+            return f_to_f(context, s);
+        }
+        return f_to_i(context, s);
+    }
+
     private static IRubyObject str_to_c_strict(ThreadContext context, IRubyObject recv) {
         RubyArray a = str_to_c_internal(context, recv);
         if (a.eltInternal(0).isNil() || a.eltInternal(1).convertToString().getByteList().length() > 0) {
