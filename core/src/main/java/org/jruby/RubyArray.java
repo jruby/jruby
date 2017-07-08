@@ -1577,7 +1577,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         RubyArray ary = obj.convertToArray();
 
-        if (ary.realLength > 0) splice(realLength, 0, ary, false);
+        return aryAppend(ary);
+    }
+
+    // MRI: ary_append
+    public RubyArray aryAppend(RubyArray y) {
+        if (y.realLength > 0) splice(realLength, 0, y, false);
 
         return this;
     }
@@ -1598,7 +1603,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 tmp.concat(context, obj);
             }
 
-            append(tmp);
+            aryAppend(tmp);
         }
 
         return this;
