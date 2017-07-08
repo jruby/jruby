@@ -4475,9 +4475,13 @@ rational_loop:
             }
         }
         if (is_float) {
+            /*
+             * Kahan-Babuska balancing compensated summation algorithm
+             * See http://link.springer.com/article/10.1007/s00607-005-0139-x
+             */
             double f = ((RubyFloat) result).getDoubleValue();
             double c = 0.0;
-            double x, y, t;
+            double x, t;
 float_loop:
             for (; i < realLength; value=null, i++) {
                 if (value == null) {
@@ -4498,12 +4502,16 @@ float_loop:
                 } else {
                     break float_loop;
                 }
-                // Kahan's compensated summation algorithm
-                y = x - c;
-                t = f + y;
-                c = (t - f) - y;
+                t = f + x;
+                if (Math.abs(f) >= Math.abs(x)) {
+                    c += ((f - t) + x);
+                } else {
+                    c += ((x - t) + f);
+                }
                 f = t;
             }
+            f += c;
+
             result = new RubyFloat(runtime, f);
         }
 //object_loop:
