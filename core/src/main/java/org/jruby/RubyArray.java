@@ -3102,7 +3102,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         unpack();
         modifyCheck();
 
-        RubyArray result = new RubyArray(context.runtime, getMetaClass(), realLength);
+        RubyArray result = new RubyArray(context.runtime, getType(), realLength);
         if (flatten(context, -1, result)) {
             modifyCheck();
             isShared = false;
@@ -3122,7 +3122,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int level = RubyNumeric.num2int(arg);
         if (level == 0) return context.nil;
 
-        RubyArray result = new RubyArray(context.runtime, getMetaClass(), realLength);
+        RubyArray result = new RubyArray(context.runtime, getType(), realLength);
         if (flatten(context, level, result)) {
             isShared = false;
             begin = 0;
@@ -3142,7 +3142,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject flatten(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
+        RubyArray result = new RubyArray(runtime, getType(), realLength);
         flatten(context, -1, result);
         result.infectBy(this);
         return result;
@@ -3154,7 +3154,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         int level = RubyNumeric.num2int(arg);
         if (level == 0) return makeShared();
 
-        RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
+        RubyArray result = new RubyArray(runtime, getType(), realLength);
         flatten(context, level, result);
         result.infectBy(this);
         return result;
