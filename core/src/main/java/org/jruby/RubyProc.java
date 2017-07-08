@@ -176,6 +176,9 @@ public class RubyProc extends RubyObject implements DataType {
                     oldBinding.getLine());
             block = new Block(procBlock.getBody(), newBinding);
 
+            // Mark as escaped, so non-local flow errors immediately
+            block.escape();
+
             // modify the block with a new backref/lastline-grabbing scope
             StaticScope oldScope = block.getBody().getStaticScope();
             StaticScope newScope = oldScope.duplicate();
