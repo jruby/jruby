@@ -978,6 +978,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         if (!opts.isNil()) {
             IRubyObject freeze = ((RubyHash) opts).fastARef(runtime.newSymbol("freeze"));
+            if (freeze != null && freeze != runtime.getTrue() && freeze != runtime.getFalse()) {
+                throw runtime.newArgumentError("unexpected value for freeze: " + freeze.getType().getName());
+            }
             if (freeze != null) {
                 kwfreeze = freeze.isTrue();
             }
