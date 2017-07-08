@@ -508,6 +508,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return isImmediate() || !isTrue();
     }
 
+    // MRI: special_object_p
+    public boolean isSpecialObject() {
+        return isImmediate() || this instanceof RubyBignum || this instanceof RubyFloat;
+    }
+
     /**
      * if exist return the meta-class else return the type of the object.
      *
@@ -888,7 +893,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject dup() {
         Ruby runtime = getRuntime();
 
-        if (isImmediate()) {
+        if (isSpecialObject()) {
             return this;
         }
 
@@ -984,7 +989,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     private IRubyObject rbCloneInternal(ThreadContext context, boolean freeze) {
         Ruby runtime = context.runtime;
 
-        if (isImmediate()) {
+        if (isSpecialObject()) {
             if (!freeze) {
                 throw runtime.newArgumentError("can't unfreeze " + getType().getName());
             }
