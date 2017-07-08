@@ -4403,7 +4403,7 @@ fixnum_loop:
             if (is_bignum) {
                 result = RubyBignum.newBignum(runtime, sum);
             } else if (is_rational) {
-                result = RubyRational.newRationalCanonicalize(context, sum, 1);
+                result = RubyRational.newRational(runtime, sum, 1);
             } else if (is_float) {
                 result = RubyFloat.newFloat(runtime, (double) sum);
             } else {
@@ -4440,7 +4440,7 @@ bignum_loop:
             }
 
             if (is_rational) {
-                result = RubyRational.newRationalCanonicalize(context, RubyBignum.newBignum(runtime, sum), RubyFixnum.one(runtime));
+                result = RubyRational.newRationalConvert(context, RubyBignum.newBignum(runtime, sum), RubyFixnum.one(runtime));
             } else if (is_float) {
                 result = RubyFloat.newFloat(runtime, sum.doubleValue());
             } else {
@@ -4458,7 +4458,13 @@ rational_loop:
                 }
 
                 if (value instanceof RubyFixnum || value instanceof RubyBignum || value instanceof RubyRational) {
-                    result = ((RubyRational) result).op_add(context, value);
+                    if (result instanceof RubyInteger) {
+                        result = ((RubyInteger) result).op_plus(context, value);
+                    } else if (result instanceof RubyRational) {
+                        result = ((RubyRational) result).op_add(context, value);
+                    } else {
+                        throw runtime.newTypeError("BUG: unexpected type in rational part of Array#sum");
+                    }
                 } else if (value instanceof RubyFloat) {
                     result = RubyFloat.newFloat(runtime, ((RubyRational) result).getDoubleValue(context));
                     is_float = true;
