@@ -559,19 +559,23 @@ public class RubyNumeric extends RubyObject {
         return callMethod(context, method, other);
     }
 
-    protected final IRubyObject coerceBit(ThreadContext context, CallSite site, IRubyObject other) {
-        if (!(other instanceof RubyFixnum) && !(other instanceof RubyBignum)) {
-            RubyArray ary = doCoerce(context, other, true);
-            IRubyObject x = ary.eltInternal(0);
-            IRubyObject y = ary.eltInternal(1);
-
-            if (!(x instanceof RubyFixnum) && !(x instanceof RubyBignum)
-                    && !(y instanceof RubyFixnum) && !(y instanceof RubyBignum)) {
-                coerceFailed(context, other);
+    protected final IRubyObject coerceBit(ThreadContext context, JavaSites.CheckedSites site, IRubyObject other) {
+        RubyArray ary = doCoerce(context, other, true);
+        final IRubyObject x = ary.eltOk(0);
+        IRubyObject y = ary.eltOk(1);
+        IRubyObject ret = context.safeRecurse(new ThreadContext.RecursiveFunctionEx<JavaSites.CheckedSites>() {
+            @Override
+            public IRubyObject call(ThreadContext context, JavaSites.CheckedSites site, IRubyObject obj, boolean recur) {
+                if (recur) {
+                    throw context.runtime.newNameError("recursive call to " + site.methodName, site.methodName);
+                }
+                return x.getMetaClass().finvokeChecked(context, x, site, obj);
             }
-            return numFuncall(context, x, site, y);
+        }, site, y, site.methodName, true);
+        if (ret == null) {
+            coerceFailed(context, other);
         }
-        return numFuncall(context, this, site, other);
+        return ret;
     }
 
     /** rb_num_coerce_cmp

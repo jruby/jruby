@@ -93,17 +93,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return x;
     }
 
-    private IRubyObject bitCoerce(ThreadContext context, IRubyObject y) {
-        if(!(y instanceof RubyFixnum || y instanceof RubyBignum)) {
-            RubyArray ary = doCoerce(context, y, true);
-            y = ary.last();
-            if(!(y instanceof RubyFixnum || y instanceof RubyBignum)) {
-                coerceFailed(context, y);
-            }
-        }
-        return y;
-    }
-
     public RubyFixnum(Ruby runtime) {
         this(runtime, 0);
     }
@@ -1120,18 +1109,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
-        if (!((other = bitCoerce(context, other)) instanceof RubyFixnum)) {
+        if (other instanceof RubyFixnum) {
+            return context.runtime.newFixnum(value & ((RubyFixnum) other).value);
+        }
+        if (other instanceof RubyBignum) {
             return ((RubyBignum) other).op_and(context, this);
         }
-
-        return op_andOther(context, other);
-    }
-
-    private IRubyObject op_andOther(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
-            return newFixnum(context.runtime, value & ((RubyFixnum) other).value);
-        }
-        return ((RubyBignum) other).op_and(context, this);
+        return coerceBit(context, sites(context).checked_op_and, other);
     }
 
     public IRubyObject op_and(ThreadContext context, long other) {
@@ -1143,11 +1127,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
-        if ((other = bitCoerce(context, other)) instanceof RubyFixnum) {
-            return newFixnum(context.runtime, value | ((RubyFixnum) other).value);
+        if (other instanceof RubyFixnum) {
+            return context.runtime.newFixnum(value | ((RubyFixnum) other).value);
         }
-
-        return ((RubyBignum) other).op_or(context, this);
+        if (other instanceof RubyBignum) {
+            return ((RubyBignum) other).op_or(context, this);
+        }
+        return coerceBit(context, sites(context).checked_op_or, other);
     }
 
     public IRubyObject op_or(ThreadContext context, long other) {
@@ -1159,13 +1145,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject op_xor(ThreadContext context, IRubyObject other) {
-        if (!((other = bitCoerce(context, other)) instanceof RubyFixnum)) {
-            return ((RubyBignum) other).op_xor(context, this);
+        if (other instanceof RubyFixnum) {
+            return context.runtime.newFixnum(value ^ ((RubyFixnum) other).value);
         }
-        if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
-            return newFixnum(context.runtime, value ^ ((RubyFixnum) other).value);
+        if (other instanceof RubyBignum) {
+            return ((RubyBignum) other).op_and(context, this);
         }
-        return ((RubyBignum) other).op_xor(context, this);
+        return coerceBit(context, sites(context).checked_op_xor, other);
     }
 
     public IRubyObject op_xor(ThreadContext context, long other) {

@@ -224,6 +224,9 @@ public class JavaSites {
         public final CallSite op_lt_bignum = new FunctionalCachingCallSite("<");
         public final CallSite op_exp_rational = new FunctionalCachingCallSite("**");
         public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
+        public final CheckedSites checked_op_and = new CheckedSites("&");
+        public final CheckedSites checked_op_or = new CheckedSites("|");
+        public final CheckedSites checked_op_xor = new CheckedSites("^");
     }
 
     public static class BignumSites {
@@ -237,9 +240,9 @@ public class JavaSites {
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite quo = new FunctionalCachingCallSite("quo");
         public final CallSite remainder = new FunctionalCachingCallSite("remainder");
-        public final CallSite op_and = new FunctionalCachingCallSite("&");
-        public final CallSite op_or = new FunctionalCachingCallSite("|");
-        public final CallSite op_xor = new FunctionalCachingCallSite("^");
+        public final CheckedSites checked_op_and = new CheckedSites("&");
+        public final CheckedSites checked_op_or = new CheckedSites("|");
+        public final CheckedSites checked_op_xor = new CheckedSites("^");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
     }

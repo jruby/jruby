@@ -41,7 +41,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -735,7 +734,7 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyFixnum) {
             return bignorm(context.runtime, value.and(fix2big((RubyFixnum)other)));
         }
-        return coerceBit(context, sites(context).op_and, other);
+        return coerceBit(context, sites(context).checked_op_and, other);
     }
 
     @Deprecated
@@ -754,7 +753,7 @@ public class RubyBignum extends RubyInteger {
         if (other instanceof RubyFixnum) { // no bignorm here needed
             return bignorm(context.runtime, value.or(fix2big((RubyFixnum)other)));
         }
-        return coerceBit(context, sites(context).op_or, other);
+        return coerceBit(context, sites(context).checked_op_or, other);
     }
 
     @Override
@@ -778,7 +777,7 @@ public class RubyBignum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             return bignorm(context.runtime, value.xor(BigInteger.valueOf(((RubyFixnum) other).getLongValue())));
         }
-        return coerceBit(context, sites(context).op_xor, other);
+        return coerceBit(context, sites(context).checked_op_xor, other);
     }
 
     @Deprecated
