@@ -221,12 +221,12 @@ public class RubyRational extends RubyNumeric {
     /** nurat_int_value
      * 
      */
-    static IRubyObject intValue(ThreadContext context, IRubyObject num) {
+    static RubyInteger intValue(ThreadContext context, IRubyObject num) {
         IRubyObject i;
         if (( i = RubyInteger.toInteger(context, num) ) == null) {
             throw context.runtime.newTypeError("can't convert " + num.getMetaClass().getName() + " into Rational");
         }
-        return i;
+        return (RubyInteger) i;
     }
     
     /** nurat_s_canonicalize_internal
@@ -294,17 +294,18 @@ public class RubyRational extends RubyNumeric {
 
     // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject num) {
-        num = intValue(context, num);
-        return canonicalizeInternal(context, clazz, num, RubyFixnum.one(context.runtime));
+        return canonicalizeInternal(context, clazz, intValue(context, num), RubyFixnum.one(context.runtime));
     }
 
     // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject num, IRubyObject den) {
-        num = intValue(context, num);
-        den = intValue(context, den);
-        return canonicalizeInternal(context, clazz, num, den);
+        return canonicalizeInternal(context, clazz, intValue(context, num), intValue(context, den));
     }
-    
+
+    public static IRubyObject newInstance(ThreadContext context, RubyInteger num, RubyInteger den) {
+        return canonicalizeInternal(context, context.runtime.getRational(), num, den);
+    }
+
     /** rb_Rational1
      * 
      */
@@ -686,12 +687,14 @@ public class RubyRational extends RubyNumeric {
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
-            if (den instanceof RubyFixnum && ((RubyFixnum)den).getLongValue() == 1) return f_cmp(context, num, other);
+            if (den instanceof RubyFixnum && ((RubyFixnum) den).getLongValue() == 1) return f_cmp(context, num, other);
             return f_cmp(context, this, RubyRational.newRationalBang(context, getMetaClass(), other));
-        } else if (other instanceof RubyFloat) {
+        }
+        if (other instanceof RubyFloat) {
             return f_cmp(context, f_to_f(context, this), other);
-        } else if (other instanceof RubyRational) {
-            RubyRational otherRational = (RubyRational)other;
+        }
+        if (other instanceof RubyRational) {
+            RubyRational otherRational = (RubyRational) other;
             final IRubyObject num1, num2;
             if (num instanceof RubyFixnum && den instanceof RubyFixnum &&
                 otherRational.num instanceof RubyFixnum && otherRational.den instanceof RubyFixnum) {
