@@ -163,18 +163,15 @@ public abstract class LexingCommon {
         return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), false);
     }
 
+    public ByteList createTokenByteList(int start) {
+        return new ByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp, getEncoding(), false);
+    }
+
     public String createTokenString(int start) {
         return createAsEncodedString(lexb.getUnsafeBytes(), lexb.begin() + start, lex_p - start, getEncoding());
     }
 
-    public ByteList getIdentifier() {
-        return identifier;
-    }
-
     public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
-        // We copy because the source is typically an entire source line (it will appear leakish?).
-        identifier = new ByteList(bytes, start, length, encoding, true);
-
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
             Charset charset = getEncoding().getCharset();

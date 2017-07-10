@@ -2187,13 +2187,13 @@ symbol          : tSYMBEG sym {
 // ByteList:symbol
 sym             : fname
                 | tIVAR {
-                    $$ = lexer.getIdentifier();
+                    $$ = $1;
                 }
                 | tGVAR {
                     $$ = $1;
                 }
                 | tCVAR {
-                    $$ = lexer.getIdentifier();
+                    $$ = $1;
                 }
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {

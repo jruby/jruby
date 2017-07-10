@@ -271,8 +271,7 @@ public class RubyLexer extends LexingCommon {
 
     public int tokenize_ident(int result) {
         // FIXME: Get token from newtok index to lex_p?
-        createTokenString(); // FIXME: only until all is bytelist.
-        ByteList value = getIdentifier();
+        ByteList value = createTokenByteList();
 
         if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(value) >= 0) {
             setState(EXPR_END);
@@ -1077,13 +1076,13 @@ public class RubyLexer extends LexingCommon {
         }
     }
 
-    private int identifierToken(int result, String value) {
+    private int identifierToken(int result, ByteList value) {
         if (result == RubyParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
                 parserSupport.getCurrentScope().isDefined(value) >= 0) {
             setState(EXPR_END|EXPR_LABEL);
         }
 
-        yaccValue = getIdentifier();
+        yaccValue = value;
         return result;
     }
     
@@ -1306,8 +1305,7 @@ public class RubyLexer extends LexingCommon {
 
                 last_state = lex_state;
                 setState(EXPR_END);
-                createTokenString();
-                yaccValue = getIdentifier();
+                yaccValue = createTokenByteList();
                 return RubyParser.tGVAR;
 
             }
@@ -1343,8 +1341,7 @@ public class RubyLexer extends LexingCommon {
                 pushback('-');
                 return '$';
             }
-            createTokenString().intern();
-            yaccValue = getIdentifier();
+            yaccValue = createTokenByteList();
             /* xxx shouldn't check if valid option variable */
             return RubyParser.tGVAR;
 
@@ -1368,8 +1365,7 @@ public class RubyLexer extends LexingCommon {
             } while (Character.isDigit(c));
             pushback(c);
             if (isLexState(last_state, EXPR_FNAME)) {
-                createTokenString().intern();
-                yaccValue = getIdentifier();
+                yaccValue = createTokenByteList();
                 return RubyParser.tGVAR;
             }
 
@@ -1377,7 +1373,7 @@ public class RubyLexer extends LexingCommon {
             String refAsString = createTokenString();
 
             try {
-                ref = Integer.parseInt(refAsString.substring(1).intern());
+                ref = Integer.parseInt(refAsString.substring(1));
             } catch (NumberFormatException e) {
                 warnings.warn(ID.AMBIGUOUS_ARGUMENT, "`" + refAsString + "' is too big for a number variable, always nil");
                 ref = 0;
@@ -1389,7 +1385,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_END);
 
             identifier = new ByteList(new byte[] {'$', (byte) c}, USASCII_ENCODING);
-            return identifierToken(RubyParser.tGVAR, ("$" + (char) c).intern());
+            return identifierToken(RubyParser.tGVAR, new ByteList(new byte[] {'$', (byte) c}));
         default:
             if (!isIdentifierChar(c)) {
                 if (c == EOF || Character.isSpaceChar(c)) {
@@ -1405,7 +1401,7 @@ public class RubyLexer extends LexingCommon {
 
             tokadd_ident(c);
 
-            return identifierToken(RubyParser.tGVAR, createTokenString().intern());  // $blah
+            return identifierToken(RubyParser.tGVAR, createTokenByteList());  // $blah
         }
     }
 
@@ -1494,10 +1490,10 @@ public class RubyLexer extends LexingCommon {
         int result = 0;
 
         last_state = lex_state;
-        String tempVal;
+        ByteList tempVal;
         if (lastBangOrPredicate) {
             result = RubyParser.tFID;
-            tempVal = createTokenString();
+            tempVal = createTokenByteList();
         } else {
             if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
@@ -1515,9 +1511,9 @@ public class RubyLexer extends LexingCommon {
                     pushback(c);
                 }
             }
-            tempVal = createTokenString();
+            tempVal = createTokenByteList();
 
-            if (result == 0 && Character.isUpperCase(tempVal.charAt(0))) {
+            if (result == 0 && Character.isUpperCase(StringSupport.preciseCodePoint(getEncoding(), tempVal.unsafeBytes(), tempVal.begin(), tempVal.begin() + 1))) {
                 result = RubyParser.tCONSTANT;
             } else {
                 result = RubyParser.tIDENTIFIER;
@@ -1528,7 +1524,7 @@ public class RubyLexer extends LexingCommon {
             if (isLabelSuffix()) {
                 setState(EXPR_ARG|EXPR_LABELED);
                 nextc();
-                yaccValue = getIdentifier();
+                yaccValue = tempVal;
                 return RubyParser.tLABEL;
             }
         }
@@ -1568,7 +1564,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_END);
         }
 
-        return identifierToken(result, tempVal.intern());
+        return identifierToken(result, tempVal);
     }
 
     private int leftBracket(boolean spaceSeen) throws IOException {
