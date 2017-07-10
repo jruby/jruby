@@ -39,6 +39,8 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.math.BigInteger;
+
 public class Numeric {
     public static final boolean CANON = true;
 
@@ -59,6 +61,12 @@ public class Numeric {
             long c = ((RubyFixnum) x).getLongValue() - ((RubyFixnum) y).getLongValue();
             if (c > 0) return RubyFixnum.one(context.runtime); // x > y
             if (c < 0) return RubyFixnum.minus_one(context.runtime); // x < y
+            return RubyFixnum.zero(context.runtime);
+        }
+        if (x instanceof RubyInteger && y instanceof RubyInteger) { // RubyBignum || RubyFixnum
+            BigInteger c = ((RubyInteger) x).getBigIntegerValue().subtract( ((RubyInteger) y).getBigIntegerValue() );
+            if (c.signum() > 0) return RubyFixnum.one(context.runtime); // x > y
+            if (c.signum() < 0) return RubyFixnum.minus_one(context.runtime); // x < y
             return RubyFixnum.zero(context.runtime);
         }
         return sites(context).op_cmp.call(context, x, x, y);
