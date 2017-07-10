@@ -68,7 +68,7 @@ public class Numeric {
      * 
      */
     public static IRubyObject f_div(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (y instanceof RubyFixnum && ((RubyFixnum)y).getLongValue() == 1) return x;
+        if (y instanceof RubyFixnum && ((RubyFixnum) y).getLongValue() == 1) return x;
         return sites(context).op_quo.call(context, x, x, y);
     }
 
@@ -343,6 +343,7 @@ public class Numeric {
      */
     public static boolean f_zero_p(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyInteger) return ((RubyInteger) x).signum() == 0;
+        if (x instanceof RubyFloat) return ((RubyFloat) x).signum() == 0;
         return sites(context).op_equals.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
     }
     
