@@ -189,9 +189,9 @@ public class RubyNumeric extends RubyObject {
      */
     public static byte num2chr(IRubyObject arg) {
         if (arg instanceof RubyString) {
-            String value = arg.toString();
-
-            if (value != null && value.length() > 0) return (byte) value.charAt(0);
+            if (((RubyString) arg).size() > 0) {
+                return (byte) ((RubyString) arg).getByteList().get(0);
+            }
         }
 
         return (byte) num2int(arg);
