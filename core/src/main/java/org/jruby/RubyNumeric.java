@@ -722,8 +722,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        if (getClass() != other.getClass()) return getRuntime().getFalse();
-        return equalInternal(context, this, other) ? getRuntime().getTrue() : getRuntime().getFalse();
+        if (getClass() != other.getClass()) return context.runtime.getFalse();
+        return equalInternal(context, this, other) ? context.runtime.getTrue() : context.runtime.getFalse();
     }
 
     /** num_quo
@@ -852,7 +852,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p(ThreadContext context) {
-        return equalInternal(context, this, RubyFixnum.zero(getRuntime())) ? getRuntime().getTrue() : getRuntime().getFalse();
+        final Ruby runtime = context.runtime;
+        return equalInternal(context, this, RubyFixnum.zero(runtime)) ? runtime.getTrue() : runtime.getFalse();
     }
 
     /** num_nonzero_p
@@ -917,10 +918,8 @@ public class RubyNumeric extends RubyObject {
     /** num_step_scan_args
      *
      */
-
     private IRubyObject[] scanStepArgs(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-
         IRubyObject to = context.nil;
         IRubyObject step = runtime.newFixnum(1);
 
@@ -1203,7 +1202,7 @@ public class RubyNumeric extends RubyObject {
      */
     protected final IRubyObject op_num_equal(ThreadContext context, IRubyObject other) {
         // it won't hurt fixnums
-        if (this == other)  return getRuntime().getTrue();
+        if (this == other)  return context.runtime.getTrue();
 
         return numFuncall(context, other, sites(context).op_equals, this);
     }
@@ -1303,6 +1302,7 @@ public class RubyNumeric extends RubyObject {
         return JavaUtil.getNumericConverter(target).coerce(this, target);
     }
 
+    @Deprecated // not-used
     public static class InvalidIntegerException extends NumberFormatException {
         private static final long serialVersionUID = 55019452543252148L;
 
@@ -1318,6 +1318,7 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
+    @Deprecated // not-used
     public static class NumberTooLargeException extends NumberFormatException {
         private static final long serialVersionUID = -1835120694982699449L;
         public NumberTooLargeException() {
