@@ -158,6 +158,11 @@ public class RubyBignum extends RubyInteger {
     @Override
     public int signum() { return value.signum(); }
 
+    @Override
+    public RubyInteger negate() {
+        return RubyBignum.newBignum(getRuntime(), value.negate());
+    }
+
     /*  ================
      *  Utility Methods
      *  ================

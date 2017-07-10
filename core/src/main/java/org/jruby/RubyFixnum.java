@@ -184,6 +184,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public int signum() { return Long.signum(value); }
 
+    @Override
+    public RubyInteger negate() {
+        return RubyFixnum.newFixnum(getRuntime(), -value);
+    }
+
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
         if (USE_CACHE && isInCacheRange(value)) {
             return cachedFixnum(runtime, value);

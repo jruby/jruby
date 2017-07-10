@@ -109,6 +109,18 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public int signum() { return getBigIntegerValue().signum(); }
 
+    public abstract RubyInteger negate() ;
+
+    @Override
+    public IRubyObject isNegative(ThreadContext context) {
+        return context.runtime.newBoolean(signum() < 0);
+    }
+
+    @Override
+    public IRubyObject isPositive(ThreadContext context) {
+        return context.runtime.newBoolean(signum() > 0);
+    }
+
     /*  ================
      *  Instance Methods
      *  ================
