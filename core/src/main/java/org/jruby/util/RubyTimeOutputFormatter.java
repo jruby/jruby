@@ -66,7 +66,7 @@ public class RubyTimeOutputFormatter {
         return padder;
     }
 
-    public String format(String sequence, long value, FieldType type) {
+    public String format(CharSequence sequence, long value, FieldType type) {
         int width = getWidth(type.defaultWidth);
         char padder = getPadder(type.defaultPadder);
 
@@ -79,31 +79,30 @@ public class RubyTimeOutputFormatter {
         for (int i = 0; i < flags.length(); i++) {
             switch (flags.charAt(i)) {
                 case '^':
-                    sequence = sequence.toUpperCase();
+                    sequence = sequence.toString().toUpperCase();
                     break;
                 case '#': // change case
                     char last = sequence.charAt(sequence.length() - 1);
                     if (Character.isLowerCase(last)) {
-                        sequence = sequence.toUpperCase();
+                        sequence = sequence.toString().toUpperCase();
                     } else {
-                        sequence = sequence.toLowerCase();
+                        sequence = sequence.toString().toLowerCase();
                     }
                     break;
             }
         }
 
-        return sequence;
+        return sequence.toString();
     }
 
     static String formatNumber(long value, int width, char padder) {
         if (value >= 0 || padder != '0') {
-            return padding(Long.toString(value), width, padder);
-        } else {
-            return "-" + padding(Long.toString(-value), width - 1, padder);
+            return padding(Long.toString(value), width, padder).toString();
         }
+        return "-" + padding(Long.toString(-value), width - 1, padder);
     }
 
-    static String formatSignedNumber(long value, int width, char padder) {
+    static CharSequence formatSignedNumber(long value, int width, char padder) {
         if (padder == '0') {
             if (value >= 0) {
                 return "+" + padding(Long.toString(value), width - 1, padder);
@@ -112,7 +111,7 @@ public class RubyTimeOutputFormatter {
             }
         } else {
             if (value >= 0) {
-                return padding("+" + Long.toString(value), width, padder);
+                return padding('+' + Long.toString(value), width, padder);
             } else {
                 return padding(Long.toString(value), width, padder);
             }
@@ -121,10 +120,8 @@ public class RubyTimeOutputFormatter {
 
     private static final int SMALLBUF = 100;
 
-    static String padding(String sequence, int width, char padder) {
-        if (sequence.length() >= width) {
-            return sequence;
-        }
+    private static CharSequence padding(CharSequence sequence, int width, char padder) {
+        if (sequence.length() >= width) return sequence;
 
         if (width > SMALLBUF) throw new IndexOutOfBoundsException("padding width " + width + " too large");
 
@@ -133,6 +130,6 @@ public class RubyTimeOutputFormatter {
             buf.append(padder);
         }
         buf.append(sequence);
-        return buf.toString();
+        return buf;
     }
 }
