@@ -1522,14 +1522,22 @@ public class RubyBigDecimal extends RubyNumeric {
         throw getRuntime().newArgumentError("signum of this rational is invalid: " + value.signum());
     }
 
-    @JRubyMethod(name = {"to_i", "to_int"})
-    public IRubyObject to_int() {
-        checkFloatDomain();
+    public final IRubyObject to_int() {
+        return to_int(getRuntime());
+    }
 
+    @Override
+    @JRubyMethod(name = {"to_i", "to_int"})
+    public IRubyObject to_int(ThreadContext context) {
+        return to_int(context.runtime);
+    }
+
+    final RubyInteger to_int(Ruby runtime) {
+        checkFloatDomain();
         try {
-            return RubyNumeric.int2fix(getRuntime(), value.longValueExact());
-        } catch (ArithmeticException ae) {
-            return RubyBignum.bignorm(getRuntime(), value.toBigInteger());
+            return RubyNumeric.int2fix(runtime, value.longValueExact());
+        } catch (ArithmeticException ex) {
+            return RubyBignum.bignorm(runtime, value.toBigInteger());
         }
     }
 

@@ -313,7 +313,7 @@ public class RubyNumeric extends RubyObject {
         return str2inum(runtime, str, base, false);
     }
 
-    public static RubyNumeric int2fix(Ruby runtime, long val) {
+    public static RubyInteger int2fix(Ruby runtime, long val) {
         return RubyFixnum.newFixnum(runtime, val);
     }
 
