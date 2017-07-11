@@ -1547,7 +1547,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         int scale = value.scale();
         BigInteger numerator = value.scaleByPowerOfTen(scale).toBigInteger();
-        BigInteger denominator = BigInteger.valueOf((long) Math.pow(10, scale));
+        BigInteger denominator = BigInteger.TEN.pow(scale);
 
         return RubyRational.newInstance(context, context.runtime.getRational(), RubyBignum.newBignum(context.runtime, numerator), RubyBignum.newBignum(context.runtime, denominator));
     }
