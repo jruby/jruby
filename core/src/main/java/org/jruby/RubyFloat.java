@@ -45,6 +45,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites.FloatSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -844,24 +845,41 @@ public class RubyFloat extends RubyNumeric {
         return dbl2num(getRuntime(), val2dbl());
     }
 
-    @JRubyMethod(name = "round", optional = 1)
+    @JRubyMethod(name = "round", optional = 2)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0) return round();
-        // truncate floats.
-        double digits = num2long(args[0]);
+        int argc = args.length;
+
+        if (argc == 0) return round();
+        Ruby runtime = context.runtime;
+        double digits;
+
+        // options (only "half" right now)
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
+        if (opts.isNil()) {
+            digits = num2long(args[0]);
+        } else {
+            argc--;
+            if (argc == 0) {
+                digits = 0;
+            } else {
+                digits = num2long(args[argc - 1]);
+            }
+        }
 
         double magnifier = Math.pow(10.0, Math.abs(digits));
         double number = value;
 
         if (Double.isInfinite(value)) {
-            if (digits <= 0) throw context.runtime.newFloatDomainError(value < 0 ? "-Infinity" : "Infinity");
+            if (digits <= 0) throw runtime.newFloatDomainError(value < 0 ? "-Infinity" : "Infinity");
             return this;
         }
 
         if (Double.isNaN(value)) {
-            if (digits <= 0) throw context.runtime.newFloatDomainError("NaN");
+            if (digits <= 0) throw runtime.newFloatDomainError("NaN");
             return this;
         }
+
+        IRubyObject halfArg = ArgsUtil.extractKeywordArg(context, "half", opts);
 
         double binexp;
         // Missing binexp values for NaN and (-|+)Infinity.  frexp man page just says unspecified.
@@ -873,10 +891,10 @@ public class RubyFloat extends RubyNumeric {
 
         // MRI flo_round logic to deal with huge precision numbers.
         if (digits >= (DIG+2) - (binexp > 0 ? binexp / 4 : binexp / 3 - 1)) {
-            return RubyFloat.newFloat(context.runtime, number);
+            return RubyFloat.newFloat(runtime, number);
         }
         if (digits < -(binexp > 0 ? binexp / 3 + 1 : binexp / 4)) {
-            return dbl2num(context.runtime, (long) 0);
+            return dbl2num(runtime, (long) 0);
         }
 
         if (Double.isInfinite(magnifier)) {
@@ -884,28 +902,39 @@ public class RubyFloat extends RubyNumeric {
         } else {
             if (digits < 0) {
                 number /= magnifier;
-            } else {
+            } else if (digits > 0){
                 number *= magnifier;
             }
 
-            number = Math.round(Math.abs(number))*Math.signum(number);
+            double signum = Math.signum(number);
+            double abs = Math.abs(number);
+            if (halfArg.isNil()) {
+                number = Math.round(abs) * signum;
+            } else if (halfArg.asJavaString().equals("even")) {
+                number = Math.rint(abs) * signum;
+            } else if (halfArg.asJavaString().equals("up")) {
+                number = (((int) (abs * 2.0)) / 2.0 + 1) * signum;
+            } else if (halfArg.asJavaString().equals("down")) {
+                number = ((int) (abs * 2.0)) / 2.0 * signum;
+            }
+
             if (digits < 0) {
                 number *= magnifier;
-            } else {
+            } else if (digits > 0){
                 number /= magnifier;
             }
         }
 
         if (digits > 0) {
-            return RubyFloat.newFloat(context.runtime, number);
+            return RubyFloat.newFloat(runtime, number);
         } else {
             if (number > Long.MAX_VALUE || number < Long.MIN_VALUE) {
                 // The only way to get huge precise values with BigDecimal is
                 // to convert the double to String first.
                 BigDecimal roundedNumber = new BigDecimal(Double.toString(number));
-                return RubyBignum.newBignum(context.runtime, roundedNumber.toBigInteger());
+                return RubyBignum.newBignum(runtime, roundedNumber.toBigInteger());
             }
-            return dbl2num(context.runtime, (long)number);
+            return dbl2num(runtime, (long)number);
         }
     }
 
