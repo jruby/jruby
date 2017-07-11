@@ -1058,7 +1058,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingObj) {
         setEncoding(context, encodingObj, context.nil, context.nil);
 
-        return context.nil;
+        return this;
     }
 
     @JRubyMethod
@@ -1070,14 +1070,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
             setEncoding(context, encodingString, internalEncoding, context.nil);
         }
 
-        return context.nil;
+        return this;
     }
 
     @JRubyMethod
     public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString, IRubyObject internalEncoding, IRubyObject options) {
         setEncoding(context, encodingString, internalEncoding, options);
 
-        return context.nil;
+        return this;
     }
 
     // mri: io_encoding_set
