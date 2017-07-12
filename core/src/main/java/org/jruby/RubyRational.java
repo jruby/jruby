@@ -1001,9 +1001,6 @@ public class RubyRational extends RubyNumeric {
             num = (RubyInteger) num.op_uminus(context);
         }
 
-        num = (RubyInteger) num.op_minus(context, RubyFixnum.one(runtime));
-        num = (RubyInteger) num.op_idiv(context, den);
-
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
         den = (RubyInteger) den.op_mul(context, RubyFixnum.two(runtime));
         qr = (RubyArray) num.divmod(context, den);
