@@ -90,7 +90,11 @@ public class RubyBignum extends RubyInteger {
     }
 
     public static RubyBignum newBignum(Ruby runtime, double value) {
-        return newBignum(runtime, new BigDecimal(value).toBigInteger());
+        try {
+            return newBignum(runtime, new BigDecimal(value).toBigInteger());
+        } catch (NumberFormatException nfe) {
+            throw runtime.newFloatDomainError(Double.toString(value));
+        }
     }
 
     public static RubyBignum newBignum(Ruby runtime, BigInteger value) {
@@ -1063,6 +1067,24 @@ public class RubyBignum extends RubyInteger {
     // MRI: big_fdiv_float
     public IRubyObject fdivFloat(ThreadContext context, RubyFloat y) {
         return context.runtime.newFloat(new BigDecimal(value).divide(new BigDecimal(y.getValue())).doubleValue());
+    }
+
+    @Override
+    public IRubyObject isNegative(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        if (sites(context).basic_op_lt.retrieveCache(metaClass).method.isBuiltin()) {
+            return runtime.newBoolean(value.signum() < 0);
+        }
+        return sites(context).basic_op_lt.call(context, this, this, RubyFixnum.zero(runtime));
+    }
+
+    @Override
+    public IRubyObject isPositive(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        if (sites(context).basic_op_gt.retrieveCache(metaClass).method.isBuiltin()) {
+            return runtime.newBoolean(value.signum() > 0);
+        }
+        return sites(context).basic_op_gt.call(context, this, this, RubyFixnum.zero(runtime));
     }
 
     private static JavaSites.BignumSites sites(ThreadContext context) {

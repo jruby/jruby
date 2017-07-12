@@ -220,6 +220,8 @@ public class JavaSites {
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite basic_op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite basic_op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_exp_complex = new FunctionalCachingCallSite("**");
         public final CallSite op_lt_bignum = new FunctionalCachingCallSite("<");
         public final CallSite op_exp_rational = new FunctionalCachingCallSite("**");
@@ -245,6 +247,8 @@ public class JavaSites {
         public final CheckedSites checked_op_xor = new CheckedSites("^");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
+        public final CachingCallSite basic_op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite basic_op_gt = new FunctionalCachingCallSite(">");
     }
 
     public static class FloatSites {

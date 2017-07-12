@@ -39,6 +39,7 @@ package org.jruby;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Locale;
 
 import org.jcodings.specific.ASCIIEncoding;
@@ -46,6 +47,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites.FloatSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -319,21 +321,25 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(context.runtime, value * other);
     }
 
-    /** flo_div
-     *
+    /**
+     * MRI: flo_div
      */
     @JRubyMethod(name = "/", required = 1)
-    public IRubyObject op_fdiv(ThreadContext context, IRubyObject other) { // don't override Numeric#div !
+    public IRubyObject op_div(ThreadContext context, IRubyObject other) { // don't override Numeric#div !
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
         case FLOAT:
-            return RubyFloat.newFloat(context.runtime, value / ((RubyNumeric) other).getDoubleValue());
+            try {
+                return RubyFloat.newFloat(context.runtime, value / ((RubyNumeric) other).getDoubleValue());
+            } catch (NumberFormatException nfe) {
+                throw context.runtime.newFloatDomainError(other.toString());
+            }
         default:
             return coerceBin(context, sites(context).op_quo, other);
         }
     }
 
-    public IRubyObject op_fdiv(ThreadContext context, double other) { // don't override Numeric#div !
+    public IRubyObject op_div(ThreadContext context, double other) { // don't override Numeric#div !
         return RubyFloat.newFloat(context.runtime, value / other);
     }
 
@@ -662,25 +668,32 @@ public class RubyFloat extends RubyNumeric {
         return abs(context);
     }
 
-    /** flo_zero_p
-     *
+    /**
+     * MRI: flo_zero_p
      */
     @JRubyMethod(name = "zero?")
-    public IRubyObject zero_p() {
-        return RubyBoolean.newBoolean(getRuntime(), value == 0.0);
+    @Override
+    public IRubyObject zero_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context.runtime, value == 0.0);
     }
 
-    /** flo_truncate
-     *
+    /**
+     * MRI: flo_truncate
      */
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     @Override
-    public IRubyObject truncate() {
-        double f = value;
-        if (f > 0.0) f = Math.floor(f);
-        if (f < 0.0) f = Math.ceil(f);
+    public IRubyObject truncate(ThreadContext context) {
+        if (value > 0.0) return floor(context);
+        return ceil(context);
+    }
 
-        return dbl2num(getRuntime(), f);
+    /**
+     * MRI: flo_truncate
+     */
+    @JRubyMethod(name = {"truncate", "to_i", "to_int"})
+    public IRubyObject truncate(ThreadContext context, IRubyObject n) {
+        if (value > 0.0) return floor(context, n);
+        return ceil(context, n);
     }
 
     /** flo_numerator
@@ -771,101 +784,165 @@ public class RubyFloat extends RubyNumeric {
         IRubyObject[] ans = nurat_rationalize_internal(context, ary);
 
         return RubyRational.newRationalRaw(runtime, ans[0], ans[1]);
-
     }
 
-    /** floor
-     *
+    /**
+     * MRI: flo_floor
      */
+    @Override
+    @JRubyMethod(name = "floor")
+    public IRubyObject floor(ThreadContext context) {
+        return dbl2ival(context.runtime, Math.floor(value));
+    }
 
-     @Override
-     public IRubyObject floor() {
-         return dbl2num(getRuntime(), Math.floor(value));
-     }
+    /**
+     * MRI: flo_floor
+     */
+    @JRubyMethod(name = "floor")
+    public IRubyObject floor(ThreadContext context, IRubyObject digits) {
+        double number, f;
+        int ndigits =  num2int(digits);
 
-     @JRubyMethod(name = "floor", optional = 1)
-     public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
-         if (args.length == 0) return floor();
+        if (ndigits < 0) {
+            return ((RubyInteger) truncate(context)).floor(context, digits);
+        }
 
-         double number = value;
-         double digits = num2long(args[0]);
-         double magnifier = Math.pow(10.0, Math.abs(digits));
-         double reducer   = Math.pow(10.0, -Math.abs(digits));
+        number = value;
 
-         // Borrowed from round
-         double binexp;
-         if (value == 0) {
-             binexp = 0;
-         } else {
-             binexp = Math.ceil(Math.log(value)/Math.log(2));
-         }
+        if (ndigits > 0) {
+            RubyNumeric[] num = {this};
+            Ruby runtime = context.runtime;
+            if (floatInvariantRound(runtime, number, ndigits, num)) return num[0];
+            f = Math.pow(10, ndigits);
+            f = Math.floor(number * f) / f;
+            return dbl2num(runtime, f);
+        }
 
-         if (digits >= (DIG+2) - (binexp > 0 ? binexp / 4 : binexp / 3 - 1)) {
-             return RubyFloat.newFloat(context.runtime, value);
-         }
-         if (digits < -(binexp > 0 ? binexp / 3 + 1 : binexp / 4)) {
-             return dbl2num(context.runtime, (long) 0);
-         }
+        return floor(context);
+    }
 
-         if (digits > 0) {
-            number = Math.floor(value * magnifier) / magnifier;
-         }
+     // MRI: float_invariant_round
+     private static boolean floatInvariantRound(Ruby runtime, double number, int ndigits, RubyNumeric[] num)    {
+        int float_dig = DIG+2;
+        long[] binexp = {0L};
 
-         if (digits < 0) {
-            number = Math.floor(value * reducer) * magnifier;
-         }
+        frexp(number, binexp);
 
-         // Deal with big numbers
-         if (number > Long.MAX_VALUE || number < Long.MIN_VALUE) {
-             BigDecimal roundedNumber = new BigDecimal(Double.toString(number));
-             return RubyBignum.newBignum(context.runtime, roundedNumber.toBigInteger());
-         }
+        /* Let `exp` be such that `number` is written as:"0.#{digits}e#{exp}",
+           i.e. such that  10 ** (exp - 1) <= |number| < 10 ** exp
+           Recall that up to float_dig digits can be needed to represent a double,
+           so if ndigits + exp >= float_dig, the intermediate value (number * 10 ** ndigits)
+           will be an integer and thus the result is the original number.
+           If ndigits + exp <= 0, the result is 0 or "1e#{exp}", so
+           if ndigits + exp < 0, the result is 0.
+           We have:
+                2 ** (binexp-1) <= |number| < 2 ** binexp
+                10 ** ((binexp-1)/log_2(10)) <= |number| < 10 ** (binexp/log_2(10))
+                If binexp >= 0, and since log_2(10) = 3.322259:
+                   10 ** (binexp/4 - 1) < |number| < 10 ** (binexp/3)
+                   floor(binexp/4) <= exp <= ceil(binexp/3)
+                If binexp <= 0, swap the /4 and the /3
+                So if ndigits + floor(binexp/(4 or 3)) >= float_dig, the result is number
+                If ndigits + ceil(binexp/(3 or 4)) < 0 the result is 0
+        */
 
-         if (digits > 0) {
-            return RubyFloat.newFloat(context.runtime, number);
-         } else {
-            return dbl2num(context.runtime, number);
-         }
-     }
+        if (Double.isInfinite(number) || Double.isNaN(number) ||
+                (ndigits >= float_dig - (binexp[0] > 0 ? binexp[0] / 4 : binexp[0] / 3 - 1))) {
+            return true;
+        }
 
-    /** flo_ceil
-     *
+        if (ndigits < - (binexp[0] > 0 ? binexp[0] / 3 + 1 : binexp[0] / 4)) {
+            num[0] = RubyFixnum.zero(runtime);
+            return false;
+        }
+
+        return false;
+    }
+
+    /**
+     * MRI: flo_ceil
      */
     @JRubyMethod(name = "ceil")
     @Override
-    public IRubyObject ceil() {
-        return dbl2num(getRuntime(), Math.ceil(value));
+    public IRubyObject ceil(ThreadContext context) {
+        return dbl2ival(context.runtime, Math.ceil(value));
     }
 
-    /** flo_round
-     *
+    /**
+     * MRI: flo_ceil
      */
-    @Override
-    public IRubyObject round() {
-        return dbl2num(getRuntime(), val2dbl());
-    }
-
-    @JRubyMethod(name = "round", optional = 2)
-    public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        int argc = args.length;
-
-        if (argc == 0) return round();
+    @JRubyMethod(name = "ceil")
+    public IRubyObject ceil(ThreadContext context, IRubyObject digits) {
         Ruby runtime = context.runtime;
-        double digits;
+        double number, f;
 
-        // options (only "half" right now)
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
-        if (opts.isNil()) {
-            digits = num2long(args[0]);
-        } else {
-            argc--;
-            if (argc == 0) {
-                digits = 0;
-            } else {
-                digits = num2long(args[argc - 1]);
-            }
+        int ndigits = num2int(digits);
+
+        number = value;
+
+        if (ndigits < 0) {
+            return ((RubyInteger) dbl2ival(runtime, Math.ceil(number))).ceil(context, digits);
         }
 
+        if (ndigits == 0) {
+            return dbl2ival(runtime, Math.ceil(number));
+        }
+
+        RubyNumeric[] num = {this};
+        if (floatInvariantRound(runtime, number, ndigits, num)) return num[0];
+
+        f = Math.pow(10, ndigits);
+
+        return RubyFloat.newFloat(runtime, Math.ceil(number * f) / f);
+    }
+
+    /**
+     * MRI: flo_round
+     */
+    @Override
+    @JRubyMethod(name = "round")
+    public IRubyObject round(ThreadContext context) {
+        return roundShared(context, RoundingMode.HALF_UP, 0, context.nil);
+    }
+
+    /**
+     * MRI: flo_round
+     */
+    @JRubyMethod(name = "round")
+    public IRubyObject round(ThreadContext context, IRubyObject arg0) {
+        Ruby runtime = context.runtime;
+        double digits = 0;
+
+        // options (only "half" right now)
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, arg0);
+        if (opts.isNil()) {
+            digits = num2long(arg0);
+        }
+
+        RoundingMode roundingMode = getRoundingMode(context, opts);
+
+        return roundShared(context, roundingMode, digits, opts);
+    }
+
+    /**
+     * MRI: flo_round
+     */
+    @JRubyMethod(name = "round")
+    public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
+        Ruby runtime = context.runtime;
+        double digits = 0;
+
+        // options (only "half" right now)
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts);
+        digits = num2long(_digits);
+
+        RoundingMode roundingMode = getRoundingMode(context, opts);
+
+        return roundShared(context, roundingMode, digits, opts);
+    }
+
+    private IRubyObject roundShared(ThreadContext context, RoundingMode roundingMode, double digits, IRubyObject opts) {
+        Ruby runtime = context.runtime;
         double magnifier = Math.pow(10.0, Math.abs(digits));
         double number = value;
 
@@ -878,8 +955,6 @@ public class RubyFloat extends RubyNumeric {
             if (digits <= 0) throw runtime.newFloatDomainError("NaN");
             return this;
         }
-
-        IRubyObject halfArg = ArgsUtil.extractKeywordArg(context, "half", opts);
 
         double binexp;
         // Missing binexp values for NaN and (-|+)Infinity.  frexp man page just says unspecified.
@@ -908,15 +983,8 @@ public class RubyFloat extends RubyNumeric {
 
             double signum = Math.signum(number);
             double abs = Math.abs(number);
-            if (halfArg.isNil()) {
-                number = Math.round(abs) * signum;
-            } else if (halfArg.asJavaString().equals("even")) {
-                number = Math.rint(abs) * signum;
-            } else if (halfArg.asJavaString().equals("up")) {
-                number = (((int) (abs * 2.0)) / 2.0 + 1) * signum;
-            } else if (halfArg.asJavaString().equals("down")) {
-                number = ((int) (abs * 2.0)) / 2.0 * signum;
-            }
+
+            number = doRound(roundingMode, number, signum, abs);
 
             if (digits < 0) {
                 number *= magnifier;
@@ -938,21 +1006,19 @@ public class RubyFloat extends RubyNumeric {
         }
     }
 
-    private double val2dbl() {
-        double f = value;
-        if (f > 0.0) {
-            f = Math.floor(f);
-            if (value - f >= 0.5) {
-                f += 1.0;
-            }
-        } else if (f < 0.0) {
-            f = Math.ceil(f);
-            if (f - value >= 0.5) {
-                f -= 1.0;
-            }
+    private static double doRound(RoundingMode roundingMode, double number, double signum, double abs) {
+        switch (roundingMode) {
+            case HALF_UP:
+                number = Math.round(abs) * signum;
+                break;
+            case HALF_DOWN:
+                number = ((int) (abs * 2.0)) / 2.0 * signum;
+                break;
+            case HALF_EVEN:
+                number = Math.rint(abs) * signum;
+                break;
         }
-
-        return f;
+        return number;
     }
 
     /** flo_is_nan_p
@@ -1029,6 +1095,37 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "prev_float")
     public IRubyObject prev_float() {
         return RubyFloat.newFloat(getRuntime(), Math.nextAfter(value, Double.NEGATIVE_INFINITY));
+    }
+
+    @Deprecated
+    public IRubyObject zero_p() {
+        return zero_p(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return floor(context);
+            case 1:
+                return floor(context, args[0]);
+            default:
+                throw context.runtime.newArgumentError("floor", args.length, 1);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject round(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return round(context);
+            case 1:
+                return round(context, args[0]);
+            case 2:
+                return round(context, args[0], args[1]);
+            default:
+                throw context.runtime.newArgumentError("round", args.length, 2);
+        }
     }
 
     private static FloatSites sites(ThreadContext context) {

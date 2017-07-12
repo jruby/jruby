@@ -55,6 +55,7 @@ import org.jruby.util.ConvertDouble;
 import org.jruby.util.TypeConverter;
 
 import java.math.BigInteger;
+import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -115,6 +116,27 @@ public class RubyNumeric extends RubyObject {
     @Deprecated
     public RubyNumeric(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
         super(runtime, metaClass, useObjectSpace, canBeTainted);
+    }
+
+    public static RoundingMode getRoundingMode(ThreadContext context, IRubyObject opts) {
+        IRubyObject halfArg = ArgsUtil.extractKeywordArg(context, "half", opts);
+
+        if (halfArg.isNil()) {
+            return RoundingMode.HALF_UP;
+        } else if (halfArg instanceof RubySymbol) {
+            String halfString = halfArg.toString();
+
+            switch (halfString) {
+                case "up":
+                    return RoundingMode.HALF_UP;
+                case "even":
+                    return RoundingMode.HALF_EVEN;
+                case "down":
+                    return RoundingMode.HALF_DOWN;
+            }
+        }
+
+        throw context.runtime.newArgumentError("invalid rounding mode: " + halfArg);
     }
 
     // The implementations of these are all bonus (see TODO above)  I was going
@@ -238,6 +260,16 @@ public class RubyNumeric extends RubyObject {
             throw runtime.newFloatDomainError("NaN");
         }
         return convertToNum(val, runtime);
+    }
+
+    /**
+     * MRI: dbl2ival
+     */
+    public static IRubyObject dbl2ival(Ruby runtime, double val) {
+        if (fixable(val)) {
+            return RubyFixnum.newFixnum(runtime, (long) val);
+        }
+        return RubyBignum.newBignum(runtime, val);
     }
 
     /** rb_num2dbl and NUM2DBL
@@ -749,22 +781,12 @@ public class RubyNumeric extends RubyObject {
         return sites(context).floor.call(context, quotient, quotient);
     }
 
-    @Deprecated
-    public final IRubyObject div19(ThreadContext context, IRubyObject other) {
-        return div(context, other);
-    }
-
     /** num_divmod
      *
      */
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         return RubyArray.newArray(context.runtime, div(context, other), modulo(context, other));
-    }
-
-    @Deprecated
-    public final IRubyObject divmod19(ThreadContext context, IRubyObject other) {
-        return divmod(context, other);
     }
 
     /** num_fdiv */
@@ -782,14 +804,6 @@ public class RubyNumeric extends RubyObject {
         IRubyObject div = numFuncall(context, this, sites(context).div, other);
         IRubyObject product = sites(context).op_times.call(context, other, other, div);
         return sites(context).op_minus.call(context, this, this, product);
-    }
-
-    /** num_modulo
-     *
-     */
-    @Deprecated
-    public final IRubyObject modulo19(ThreadContext context, IRubyObject other) {
-        return modulo(context, other);
     }
 
     /** num_remainder
@@ -873,36 +887,36 @@ public class RubyNumeric extends RubyObject {
         return this;
     }
 
-    /** num_floor
-     *
+    /**
+     * MRI: num_floor
      */
     @JRubyMethod(name = "floor")
-    public IRubyObject floor() {
-        return convertToFloat().floor();
+    public IRubyObject floor(ThreadContext context) {
+        return convertToFloat().floor(context);
     }
 
-    /** num_ceil
-     *
+    /**
+     * MRI: num_ceil
      */
     @JRubyMethod(name = "ceil")
-    public IRubyObject ceil() {
-        return convertToFloat().ceil();
+    public IRubyObject ceil(ThreadContext context) {
+        return convertToFloat().ceil(context);
     }
 
-    /** num_round
-     *
+    /**
+     * MRI: num_round
      */
     @JRubyMethod(name = "round")
-    public IRubyObject round() {
-        return convertToFloat().round();
+    public IRubyObject round(ThreadContext context) {
+        return convertToFloat().round(context);
     }
 
-    /** num_truncate
-     *
+    /**
+     * MRI: num_truncate
      */
     @JRubyMethod(name = "truncate")
-    public IRubyObject truncate() {
-        return convertToFloat().truncate();
+    public IRubyObject truncate(ThreadContext context) {
+        return convertToFloat().truncate(context);
     }
 
     // TODO: Fold kwargs into the @JRubyMethod decorator
@@ -1358,6 +1372,21 @@ public class RubyNumeric extends RubyObject {
         return context.safeRecurse(new NumFuncall1(value), site, x, site.methodName, true);
     }
 
+    // MRI: macro FIXABLE, RB_FIXABLE
+    public static boolean fixable(double f) {
+        return posFixable(f) && negFixable(f);
+    }
+
+    // MRI: macro POSFIXABLE, RB_POSFIXABLE
+    public static boolean posFixable(double f) {
+        return f < RubyFixnum.MAX + 1;
+    }
+
+    // MRI: macro NEGFIXABLE, RB_NEGFIXABLE
+    public static boolean negFixable(double f) {
+        return f >= RubyFixnum.MIN;
+    }
+
     private static class NumFuncall1 implements ThreadContext.RecursiveFunctionEx<CallSite> {
         private final IRubyObject value;
 
@@ -1396,6 +1425,29 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
+    @Deprecated
+    public IRubyObject floor() {
+        return floor(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject ceil() {
+        return ceil(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject round() {
+        return round(getRuntime().getCurrentContext());
+    }
+
+    /** num_truncate
+     *
+     */
+    @Deprecated
+    public IRubyObject truncate() {
+        return truncate(getRuntime().getCurrentContext());
+    }
+
     private static JavaSites.NumericSites sites(ThreadContext context) {
         return context.sites.Numeric;
     }
@@ -1403,5 +1455,20 @@ public class RubyNumeric extends RubyObject {
     @Deprecated
     public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
         return str2fnum(runtime, arg, strict);
+    }
+
+    @Deprecated
+    public final IRubyObject div19(ThreadContext context, IRubyObject other) {
+        return div(context, other);
+    }
+
+    @Deprecated
+    public final IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+        return divmod(context, other);
+    }
+
+    @Deprecated
+    public final IRubyObject modulo19(ThreadContext context, IRubyObject other) {
+        return modulo(context, other);
     }
 }

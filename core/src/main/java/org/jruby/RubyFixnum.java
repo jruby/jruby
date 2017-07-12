@@ -1318,6 +1318,24 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         }
     }
 
+    @Override
+    public IRubyObject isNegative(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        if (sites(context).basic_op_lt.retrieveCache(metaClass).method.isBuiltin()) {
+            return runtime.newBoolean(value < 0);
+        }
+        return sites(context).basic_op_lt.call(context, this, this, RubyFixnum.zero(runtime));
+    }
+
+    @Override
+    public IRubyObject isPositive(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        if (sites(context).basic_op_gt.retrieveCache(metaClass).method.isBuiltin()) {
+            return runtime.newBoolean(value > 0);
+        }
+        return sites(context).basic_op_gt.call(context, this, this, RubyFixnum.zero(runtime));
+    }
+
     private static JavaSites.FixnumSites sites(ThreadContext context) {
         return context.sites.Fixnum;
     }

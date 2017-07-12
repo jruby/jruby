@@ -408,7 +408,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @JRubyMethod(name = "ceil")
-    public IRubyObject ceil(){
+    public IRubyObject ceil(ThreadContext context){
         return this;
     }
 
@@ -416,7 +416,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public abstract IRubyObject ceil(ThreadContext context, IRubyObject arg);
 
     @JRubyMethod(name = "floor")
-    public IRubyObject floor(){
+    public IRubyObject floor(ThreadContext context){
         return this;
     }
 
@@ -424,7 +424,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public abstract IRubyObject floor(ThreadContext context, IRubyObject arg);
 
     @JRubyMethod(name = "truncate")
-    public IRubyObject truncate(){
+    public IRubyObject truncate(ThreadContext context){
         return this;
     }
 
@@ -433,13 +433,8 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @Override
     @JRubyMethod(name = "round")
-    public IRubyObject round() {
+    public IRubyObject round(ThreadContext context) {
         return this;
-    }
-
-    @Deprecated
-    public final IRubyObject round19() {
-        return round();
     }
 
     @JRubyMethod(name = "round")
@@ -478,11 +473,6 @@ public abstract class RubyInteger extends RubyNumeric {
             if (!op.call(context, r, r, h).isTrue()) n = sites(context).op_plus.call(context, n, n, f);
             return n;
         }
-    }
-
-    @Deprecated
-    public final IRubyObject round19(ThreadContext context, IRubyObject arg) {
-        return round(context, arg);
     }
 
     /** integer_to_r
@@ -608,6 +598,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "*")
     public abstract IRubyObject op_mul(ThreadContext context, IRubyObject other);
 
+    // MRI: rb_int_idiv, polymorphism handles fixnum vs bignum
     @JRubyMethod(name = "div")
     public abstract IRubyObject op_idiv(ThreadContext context, IRubyObject other);
 
@@ -735,5 +726,35 @@ public abstract class RubyInteger extends RubyNumeric {
             throw recv.getRuntime().newTypeError(
                     "failed to convert " + other.getMetaClass().getName() + " into Integer");
         }
+    }
+
+    @Deprecated
+    public IRubyObject round() {
+        return this;
+    }
+
+    @Deprecated
+    public IRubyObject ceil(){
+        return this;
+    }
+
+    @Deprecated
+    public IRubyObject floor(){
+        return this;
+    }
+
+    @Deprecated
+    public IRubyObject truncate(){
+        return this;
+    }
+
+    @Deprecated
+    public final IRubyObject round19() {
+        return round(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public final IRubyObject round19(ThreadContext context, IRubyObject arg) {
+        return round(context, arg);
     }
 }
