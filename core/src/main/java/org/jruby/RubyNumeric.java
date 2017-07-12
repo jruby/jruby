@@ -94,7 +94,6 @@ public class RubyNumeric extends RubyObject {
     public static final double DBL_EPSILON=2.2204460492503131e-16;
 
     private static IRubyObject convertToNum(double val, Ruby runtime) {
-
         if (val >= (double) RubyFixnum.MAX || val < (double) RubyFixnum.MIN) {
             return RubyBignum.newBignum(runtime, val);
         }
@@ -249,21 +248,15 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    /** rb_dbl2big + LONG2FIX at once (numeric.c)
-     *
+    /**
+     * MRI: macro DBL2NUM
      */
     public static IRubyObject dbl2num(Ruby runtime, double val) {
-        if (Double.isInfinite(val)) {
-            throw runtime.newFloatDomainError(val < 0 ? "-Infinity" : "Infinity");
-        }
-        if (Double.isNaN(val)) {
-            throw runtime.newFloatDomainError("NaN");
-        }
-        return convertToNum(val, runtime);
+        return RubyFloat.newFloat(runtime, val);
     }
 
     /**
-     * MRI: dbl2ival
+     * MRI: macro DBL2IVAL
      */
     public static IRubyObject dbl2ival(Ruby runtime, double val) {
         if (fixable(val)) {

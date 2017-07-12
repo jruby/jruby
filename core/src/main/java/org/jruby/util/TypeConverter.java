@@ -384,7 +384,7 @@ public class TypeConverter {
                 if (base != 0) raiseIntegerBaseError(context);
                 double value = ((RubyFloat) val).getValue();
                 if (value <= RubyFixnum.MAX || value >= RubyFixnum.MIN) {
-                    return RubyNumeric.dbl2num(context.runtime, value);
+                    return RubyNumeric.dbl2ival(context.runtime, value);
                 }
             } else if (val instanceof RubyInteger) {
                 if (base != 0) raiseIntegerBaseError(context);

@@ -703,7 +703,7 @@ public class Sprintf {
                     if (type != ClassIndex.INTEGER) {
                         switch(type) {
                         case FLOAT:
-                            arg = RubyNumeric.dbl2num(runtime, ((RubyFloat) arg).getValue());
+                            arg = RubyNumeric.dbl2ival(runtime, ((RubyFloat) arg).getValue());
                             break;
                         case STRING:
                             arg = ((RubyString) arg).stringToInum(0, true);

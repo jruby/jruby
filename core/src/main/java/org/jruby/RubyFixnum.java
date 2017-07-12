@@ -867,7 +867,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return this;
         }
         if (a == 0) {
-            return b > 0 ? RubyFixnum.zero(runtime) : RubyNumeric.dbl2num(runtime, 1.0 / 0.0);
+            return b > 0 ? RubyFixnum.zero(runtime) : RubyNumeric.dbl2ival(runtime, 1.0 / 0.0);
         }
         if (a == 1) {
             return RubyFixnum.one(runtime);

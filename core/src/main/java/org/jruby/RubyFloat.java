@@ -408,7 +408,7 @@ public class RubyFloat extends RubyNumeric {
                 mod += y;
             }
             final Ruby runtime = context.runtime;
-            IRubyObject car = dbl2num(runtime, div);
+            IRubyObject car = dbl2ival(runtime, div);
             RubyFloat cdr = RubyFloat.newFloat(runtime, mod);
             return RubyArray.newArray(runtime, car, cdr);
         default:
@@ -732,7 +732,7 @@ public class RubyFloat extends RubyNumeric {
 
         Ruby runtime = context.runtime;
 
-        IRubyObject rf = RubyNumeric.dbl2num(runtime, f);
+        IRubyObject rf = RubyNumeric.dbl2ival(runtime, f);
         IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
         return f_mul(context, rf, f_expt(context, RubyFixnum.newFixnum(runtime, FLT_RADIX), rn));
     }
@@ -762,7 +762,7 @@ public class RubyFloat extends RubyNumeric {
             long n = exp[0] - DBL_MANT_DIG;
 
 
-            IRubyObject rf = RubyNumeric.dbl2num(runtime, f);
+            IRubyObject rf = RubyNumeric.dbl2ival(runtime, f);
             IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
 
             if (f_zero_p(context, rf) || !(f_negative_p(context, rn) || f_zero_p(context, rn)))
@@ -853,7 +853,7 @@ public class RubyFloat extends RubyNumeric {
 
         if (ndigits < - (binexp[0] > 0 ? binexp[0] / 3 + 1 : binexp[0] / 4)) {
             num[0] = RubyFixnum.zero(runtime);
-            return false;
+            return true;
         }
 
         return false;
@@ -902,7 +902,7 @@ public class RubyFloat extends RubyNumeric {
     @Override
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context) {
-        return roundShared(context, RoundingMode.HALF_UP, 0, context.nil);
+        return roundShared(context, RoundingMode.HALF_UP, 0);
     }
 
     /**
@@ -911,17 +911,17 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject arg0) {
         Ruby runtime = context.runtime;
-        double digits = 0;
+        int digits = 0;
 
         // options (only "half" right now)
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, arg0);
         if (opts.isNil()) {
-            digits = num2long(arg0);
+            digits = num2int(arg0);
         }
 
         RoundingMode roundingMode = getRoundingMode(context, opts);
 
-        return roundShared(context, roundingMode, digits, opts);
+        return roundShared(context, roundingMode, digits);
     }
 
     /**
@@ -930,32 +930,29 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
         Ruby runtime = context.runtime;
-        double digits = 0;
+        int digits = 0;
 
         // options (only "half" right now)
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts);
-        digits = num2long(_digits);
+        digits = num2int(_digits);
 
         RoundingMode roundingMode = getRoundingMode(context, opts);
 
-        return roundShared(context, roundingMode, digits, opts);
+        return roundShared(context, roundingMode, digits);
     }
 
-    private IRubyObject roundShared(ThreadContext context, RoundingMode roundingMode, double digits, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-        double magnifier = Math.pow(10.0, Math.abs(digits));
-        double number = value;
+    private IRubyObject roundShared(ThreadContext context, RoundingMode roundingMode, int ndigits) {
+        double number, f, x;
 
         if (Double.isInfinite(value)) {
-            if (digits <= 0) throw runtime.newFloatDomainError(value < 0 ? "-Infinity" : "Infinity");
+            if (ndigits <= 0) throw context.runtime.newFloatDomainError(value < 0 ? "-Infinity" : "Infinity");
             return this;
         }
 
-        if (Double.isNaN(value)) {
-            if (digits <= 0) throw runtime.newFloatDomainError("NaN");
+        if (Double.isInfinite(value)) {
+            if (ndigits <= 0) throw context.runtime.newFloatDomainError("NaN");
             return this;
         }
-
         double binexp;
         // Missing binexp values for NaN and (-|+)Infinity.  frexp man page just says unspecified.
         if (value == 0) {
@@ -964,61 +961,100 @@ public class RubyFloat extends RubyNumeric {
             binexp = Math.ceil(Math.log(value)/Math.log(2));
         }
 
-        // MRI flo_round logic to deal with huge precision numbers.
-        if (digits >= (DIG+2) - (binexp > 0 ? binexp / 4 : binexp / 3 - 1)) {
-            return RubyFloat.newFloat(runtime, number);
+        if (ndigits < 0) {
+            return ((RubyInteger) truncate(context)).round(context, ndigits);
         }
-        if (digits < -(binexp > 0 ? binexp / 3 + 1 : binexp / 4)) {
-            return dbl2num(runtime, (long) 0);
+        number = value;
+        if (ndigits == 0) {
+            x = doRound(context, roundingMode, number, 1.0);
+            return dbl2ival(context.runtime, x);
         }
-
-        if (Double.isInfinite(magnifier)) {
-            if (digits < 0) number = 0;
-        } else {
-            if (digits < 0) {
-                number /= magnifier;
-            } else if (digits > 0){
-                number *= magnifier;
-            }
-
-            double signum = Math.signum(number);
-            double abs = Math.abs(number);
-
-            number = doRound(roundingMode, number, signum, abs);
-
-            if (digits < 0) {
-                number *= magnifier;
-            } else if (digits > 0){
-                number /= magnifier;
-            }
-        }
-
-        if (digits > 0) {
-            return RubyFloat.newFloat(runtime, number);
-        } else {
-            if (number > Long.MAX_VALUE || number < Long.MIN_VALUE) {
-                // The only way to get huge precise values with BigDecimal is
-                // to convert the double to String first.
-                BigDecimal roundedNumber = new BigDecimal(Double.toString(number));
-                return RubyBignum.newBignum(runtime, roundedNumber.toBigInteger());
-            }
-            return dbl2num(runtime, (long)number);
-        }
+        RubyNumeric[] num = {this};
+        if (floatInvariantRound(context.runtime, number, ndigits, num)) return num[0];
+        f = Math.pow(10, ndigits);
+        x = doRound(context, roundingMode, number, f);
+        return dbl2num(context.runtime, x / f);
     }
 
-    private static double doRound(RoundingMode roundingMode, double number, double signum, double abs) {
+    private static double doRound(ThreadContext context, RoundingMode roundingMode, double number, double scale) {
         switch (roundingMode) {
             case HALF_UP:
-                number = Math.round(abs) * signum;
-                break;
+                return roundHalfUp(number, scale);
             case HALF_DOWN:
-                number = ((int) (abs * 2.0)) / 2.0 * signum;
-                break;
+                return roundHalfDown(number, scale);
             case HALF_EVEN:
-                number = Math.rint(abs) * signum;
-                break;
+                return roundHalfEven(number, scale);
         }
-        return number;
+        throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+    }
+
+    private static double roundHalfUp(double x, double s) {
+        double f, xs = x * s;
+
+        int signum = x >= 0.0 ? 1 : -1;
+        xs = xs * signum;
+        f = roundHalfUp(xs);
+        f = f * signum;
+        if (s == 1.0) return f;
+        if (x > 0) {
+            if ((f + 0.5) / s <= x) f += 1;
+            x = f;
+        }
+        else {
+            if ((f - 0.5) / s >= x) f -= 1;
+            x = f;
+        }
+        return x;
+    }
+
+    private static double roundHalfDown(double x, double s) {
+        double f, xs = x * s;
+
+        int signum = x >= 0.0 ? 1 : -1;
+        xs = xs * signum;
+        f = roundHalfUp(xs);;
+        f = f * signum;
+        if (x > 0) {
+            if ((f - 0.5) / s >= x) f -= 1;
+            x = f;
+        }
+        else {
+            if ((f + 0.5) / s <= x) f += 1;
+            x = f;
+        }
+        return x;
+    }
+
+    private static double roundHalfUp(double xs) {
+        return Math.floor((Math.floor((xs + 0.5) * 2.0)) / 2.0);
+    }
+
+    private static double roundHalfEven(double x, double s) {
+        double f, d, xs = x * s;
+
+        if (x > 0.0) {
+            f = Math.floor(xs);
+            d = xs - f;
+            if (d > 0.5)
+                d = 1.0;
+            else if (d == 0.5 || ((double)((f + 0.5) / s) <= x))
+                d = f % 2.0;
+            else
+                d = 0.0;
+            x = f + d;
+        }
+        else if (x < 0.0) {
+            f = Math.ceil(xs);
+            d = f - xs;
+            if (d > 0.5)
+                d = 1.0;
+            else if (d == 0.5 || ((double)((f - 0.5) / s) >= x))
+                d = -f % 2.0;
+            else
+                d = 0.0;
+            x = f - d;
+        }
+        return x;
     }
 
     /** flo_is_nan_p

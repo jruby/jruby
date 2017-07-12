@@ -440,6 +440,10 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject arg) {
         int ndigits = RubyNumeric.num2int(arg);
+        return round(context, ndigits);
+    }
+
+    public IRubyObject round(ThreadContext context, int ndigits) {
         if (ndigits > 0) return RubyKernel.new_float(this, this);
         if (ndigits == 0) return this;
         Ruby runtime = context.runtime;
