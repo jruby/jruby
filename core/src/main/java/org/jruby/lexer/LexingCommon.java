@@ -79,7 +79,6 @@ public abstract class LexingCommon {
     public ISourcePosition tokline;
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
-    protected ByteList identifier = null; // until we get rid of String + ByteList duality we have this as extra field.
 
     public final ByteList BACKTICK = new ByteList(new byte[] {'`'}, USASCII_ENCODING);
     public final ByteList EQ_EQ_EQ = new ByteList(new byte[] {'=', '=', '='}, USASCII_ENCODING);
