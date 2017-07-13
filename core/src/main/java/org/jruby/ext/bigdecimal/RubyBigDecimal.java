@@ -1332,14 +1332,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        StringBuilder val = new StringBuilder("#<BigDecimal:");
-
-        val.append( Integer.toHexString(System.identityHashCode(this)) ).append(',');
-        val.append('\'').append( callMethod(context, "to_s") ).append('\'').append(',');
-        val.append( getSignificantDigits().length() ).append('(');
-        val.append( ((getAllDigits().length() / 4) + 1) * 4 ).append(')').append('>');
-
-        return RubyString.newString(context.runtime, val);
+        return toStringImpl(context.runtime, null);
     }
 
     @JRubyMethod(name = "nan?")
@@ -1627,7 +1620,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 sep = " ";
             }
         }
-        build.append('E').append(getExponent());
+        build.append('e').append(getExponent());
         return build;
     }
 
