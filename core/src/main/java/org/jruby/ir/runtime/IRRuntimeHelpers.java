@@ -578,10 +578,7 @@ public class IRRuntimeHelpers {
     private static final RubyHash.VisitorWithState<StaticScope> CheckUnwantedKeywordsVisitor = new RubyHash.VisitorWithState<StaticScope>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
-            String javaName = key.asJavaString();
-            if (!scope.keywordExists(javaName)) {
-                throw INVALID_KEY_EXCEPTION;
-            }
+            if (!scope.keywordExists((RubySymbol) key)) throw INVALID_KEY_EXCEPTION;
         }
     };
 
@@ -589,10 +586,9 @@ public class IRRuntimeHelpers {
         ArrayList invalidKwargs;
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
-            String javaName = key.asJavaString();
-            if (!scope.keywordExists(javaName)) {
+            if (!scope.keywordExists((RubySymbol) key)) {
                 if (invalidKwargs == null) invalidKwargs = new ArrayList();
-                invalidKwargs.add(javaName);
+                invalidKwargs.add(key);
             }
         }
 

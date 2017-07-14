@@ -759,14 +759,14 @@ public class RubyKernel {
     @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE)
     public static RubyArray local_variables19(ThreadContext context, IRubyObject recv) {
         final Ruby runtime = context.runtime;
-        HashSet<String> encounteredLocalVariables = new HashSet<String>();
+        HashSet<RubySymbol> encounteredLocalVariables = new HashSet<>();
         RubyArray allLocalVariables = runtime.newArray();
         DynamicScope currentScope = context.getCurrentScope();
 
         while (currentScope != null) {
-            for (String name : currentScope.getStaticScope().getVariables()) {
-                if (IdUtil.isLocal(name) && !encounteredLocalVariables.contains(name)) {
-                    allLocalVariables.push(runtime.newSymbol(name));
+            for (RubySymbol name : currentScope.getStaticScope().getVariableSymbols()) {
+                if (IdUtil.isLocal(name.asJavaString()) && !encounteredLocalVariables.contains(name)) {
+                    allLocalVariables.push(name);
                     encounteredLocalVariables.add(name);
                 }
             }

@@ -43,6 +43,7 @@ import java.util.Map;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubySymbol;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.ComplexNode;
@@ -272,8 +273,9 @@ public class RubyLexer extends LexingCommon {
     public int tokenize_ident(int result) {
         // FIXME: Get token from newtok index to lex_p?
         ByteList value = createTokenByteList();
+        RubySymbol symbol = parserSupport.symbol(value);
 
-        if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(value) >= 0) {
+        if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(symbol) >= 0) {
             setState(EXPR_END);
         }
 
@@ -1078,7 +1080,7 @@ public class RubyLexer extends LexingCommon {
 
     private int identifierToken(int result, ByteList value) {
         if (result == RubyParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
-                parserSupport.getCurrentScope().isDefined(value) >= 0) {
+                parserSupport.getCurrentScope().isDefined(parserSupport.symbol(value)) >= 0) {
             setState(EXPR_END|EXPR_LABEL);
         }
 

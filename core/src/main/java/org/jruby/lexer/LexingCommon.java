@@ -124,7 +124,7 @@ public abstract class LexingCommon {
     protected ByteList RPAREN = new ByteList(new byte[] {')'}, USASCII_ENCODING);
     protected ByteList Q = new ByteList(new byte[] {'\''}, USASCII_ENCODING);
     protected ByteList SLASH = new ByteList(new byte[] {'/'}, USASCII_ENCODING);
-    protected ByteList STAR = new ByteList(new byte[] {'*'}, USASCII_ENCODING);
+    public static final ByteList STAR = new ByteList(new byte[] {'*'}, USASCIIEncoding.INSTANCE);
     protected ByteList STAR_STAR = new ByteList(new byte[] {'*', '*'}, USASCII_ENCODING);
     protected ByteList TILDE = new ByteList(new byte[] {'~'}, USASCII_ENCODING);
     protected ByteList QQ = new ByteList(new byte[] {'"'}, USASCII_ENCODING);

@@ -40,8 +40,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
+import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
@@ -91,6 +93,14 @@ public class ParserSupport {
     public StaticScope getCurrentScope() {
         return currentScope;
     }
+
+    public Ruby getRuntime() {
+        return configuration.getRuntime();
+    }
+
+    public RubySymbol symbol(ByteList bytes) {
+        return getRuntime().newSymbol(bytes);
+    }
     
     public ParserConfiguration getConfiguration() {
         return configuration;
@@ -135,8 +145,14 @@ public class ParserSupport {
     public Node gettable2(Node node) {
         switch (node.getNodeType()) {
         case DASGNNODE: // LOCALVAR
+            // FIXME: Remerge with LOCALASGN once symbol name is part of INameNode again.
+            RubySymbol name = ((DAsgnNode) node).getSymbolName();
+            if (name.equals(lexer.getCurrentArg())) {
+                warn(ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
+            }
+            return currentScope.declare(node.getPosition(), name);
         case LOCALASGNNODE:
-            String name = ((INameNode) node).getName();
+            name = ((LocalAsgnNode) node).getSymbolName();
             if (name.equals(lexer.getCurrentArg())) {
                 warn(ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
             }
@@ -160,7 +176,7 @@ public class ParserSupport {
         if (name.equals(lexer.getCurrentArg())) {
             warn(ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
         }
-        return currentScope.declare(lexer.tokline, name);
+        return currentScope.declare(lexer.tokline, symbol(name));
     }
 
     @Deprecated
@@ -173,7 +189,7 @@ public class ParserSupport {
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableLabelOrIdentifier(ByteList name, Node value) {
-        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
+        return currentScope.assign(lexer.getPosition(), symbol(name), makeNullNil(value));
     }
 
     @Deprecated
@@ -183,7 +199,7 @@ public class ParserSupport {
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableKeyword(ByteList name, Node value) {
-        return currentScope.assignKeyword(lexer.getPosition(), name, makeNullNil(value));
+        return currentScope.assignKeyword(lexer.getPosition(), symbol(name), makeNullNil(value));
     }
 
     @Deprecated
@@ -269,8 +285,9 @@ public class ParserSupport {
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableInCurr(ByteList name, Node value) {
-        currentScope.addVariableThisScope(name);
-        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
+        RubySymbol symbol = symbol(name);
+        currentScope.addVariableThisScope(symbol);
+        return currentScope.assign(lexer.getPosition(), symbol, makeNullNil(value));
     }
 
     @Deprecated
@@ -686,8 +703,9 @@ public class ParserSupport {
             
             ByteList label = new ByteList(new byte[] {'F', 'L', 'I', 'P'}, USASCII_ENCODING);
             label.append(Long.toString(node.hashCode()).getBytes());
-            currentScope.getLocalScope().addVariable(label);
-            int slot = currentScope.isDefined(label);
+            RubySymbol symbol = symbol(label);
+            currentScope.getLocalScope().addVariable(symbol);
+            int slot = currentScope.isDefined(symbol);
             
             return new FlipNode(node.getPosition(),
                     getFlipConditionNode(((DotNode) node).getBeginNode()),
@@ -1252,9 +1270,10 @@ public class ParserSupport {
         if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
 
         ByteList restKwargsName = keywordRestArgName;
+        RubySymbol symbol = symbol(restKwargsName);
 
-        int slot = currentScope.exists(restKwargsName);
-        if (slot == -1) slot = currentScope.addVariable(restKwargsName);
+        int slot = currentScope.exists(symbol);
+        if (slot == -1) slot = currentScope.addVariable(symbol);
 
         KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, restKwargsName, slot);
 
@@ -1359,7 +1378,7 @@ public class ParserSupport {
     }
 
     public ArgumentNode arg_var(ByteList name) {
-        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name));
+        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(symbol(name)));
     }
 
     @Deprecated
@@ -1384,10 +1403,12 @@ public class ParserSupport {
     public ByteList shadowing_lvar(ByteList name) {
         if (name.realSize() == 1 && name.charAt(0) == '_') return name;
 
-        StaticScope current = getCurrentScope();
-        if (current.exists(name) >= 0) yyerror("duplicated argument name");
+        RubySymbol symbol = symbol(name);
 
-        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
+        StaticScope current = getCurrentScope();
+        if (current.exists(symbol) >= 0) yyerror("duplicated argument name");
+
+        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(symbol) >= 0 &&
                 Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
             warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), "shadowing outer local variable - " + StringSupport.byteListAsString(name));
         }
@@ -1471,7 +1492,8 @@ public class ParserSupport {
 
         for (int i = 0; i < length; i++) {
             if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
-                int slot = scope.isDefined(names[i]);
+                RubySymbol symbol = symbol(names[i]);
+                int slot = scope.isDefined(symbol);
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn
                     if (warnings.isVerbose() && !scope.isNamedCapture(slot)) {
@@ -1479,7 +1501,7 @@ public class ParserSupport {
                     }
                     locals.add(slot);
                 } else {
-                    locals.add(getCurrentScope().addNamedCaptureVariable(names[i]));
+                    locals.add(getCurrentScope().addNamedCaptureVariable(symbol));
                 }
             }
         }

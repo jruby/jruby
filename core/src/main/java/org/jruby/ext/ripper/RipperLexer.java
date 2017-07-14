@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubySymbol;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -215,7 +216,7 @@ public class RipperLexer extends LexingCommon {
     // here so the parser can then look at it on-demand to check things like
     // whether it is a valid identifier.  This should be safe to be a single
     // field since all ident logic should hit sequentially.
-    String identValue;
+    RubySymbol identValue;
 
     // Used for tiny smidgen of grammar in lexer (see setParserSupport())
     private RipperParserBase parser = null;
@@ -333,13 +334,13 @@ public class RipperLexer extends LexingCommon {
     }
 
     public int tokenize_ident(int result) {
-        String value = createTokenString();
+        RubySymbol value = parser.symbol(createTokenByteList());
 
         if (!isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parser.getCurrentScope().isDefined(value) >= 0) {
             setState(EXPR_END|EXPR_LABEL);
         }
 
-        identValue = value.intern();
+        identValue = value;
         return result;
     }
     
@@ -368,9 +369,14 @@ public class RipperLexer extends LexingCommon {
 
         return token == EOF ? 0 : token;
     }
-    
-    public String getIdent() {
+
+    public RubySymbol getID() {
         return identValue;
+    }
+
+    @Deprecated
+    public String getIdent() {
+        return identValue.asJavaString();
     }
     
     public Ruby getRuntime() {
@@ -1191,14 +1197,14 @@ public class RipperLexer extends LexingCommon {
         }
     }
 
-    private int identifierToken(int last_state, int result, String value) {
+    private int identifierToken(int last_state, int result, RubySymbol value) {
 
         if (result == RipperParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT) &&
                 parser.getCurrentScope().isDefined(value) >= 0) {
             setState(EXPR_END);
         }
 
-        identValue = value.intern();
+        identValue = value;
         return result;
     }
     
@@ -1393,7 +1399,7 @@ public class RipperLexer extends LexingCommon {
 
                 last_state = lex_state;
                 setState(EXPR_END);
-                identValue = createTokenString().intern();
+                identValue = parser.symbol(createTokenByteList());
                 return RipperParser.tGVAR;
             }
             pushback(c);
@@ -1416,7 +1422,7 @@ public class RipperLexer extends LexingCommon {
         case '<':       /* $<: reading filename */
         case '>':       /* $>: default output handle */
         case '\"':      /* $": already loaded files */
-            identValue = "$" + (char) c;
+            identValue = parser.symbol(new ByteList(new byte[] {'$' , (byte) c }));
             return RipperParser.tGVAR;
 
         case '-':
@@ -1428,7 +1434,7 @@ public class RipperLexer extends LexingCommon {
                 pushback('-');
                 return '$';
             }
-            identValue = createTokenString().intern();
+            identValue = parser.symbol(createTokenByteList());
             /* xxx shouldn't check if valid option variable */
             return RipperParser.tGVAR;
 
@@ -1438,11 +1444,11 @@ public class RipperLexer extends LexingCommon {
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
             if (last_state == EXPR_FNAME) {
-                identValue = "$" + (char) c;
+                identValue = parser.symbol(new ByteList(new byte[] {'$', (byte) c}));
                 return RipperParser.tGVAR;
             }
 
-            identValue = "$" + (char) c;
+            identValue = parser.symbol(new ByteList(new byte[] {'$', (byte) c}));
             return RipperParser.tBACK_REF;
 
         case '1': case '2': case '3': case '4': case '5': case '6':
@@ -1452,7 +1458,7 @@ public class RipperLexer extends LexingCommon {
             } while (Character.isDigit(c));
             pushback(c);
             if (last_state == EXPR_FNAME) {
-                identValue = createTokenString().intern();
+                identValue = parser.symbol(createTokenByteList());
                 return RipperParser.tGVAR;
             }
 
@@ -1464,12 +1470,12 @@ public class RipperLexer extends LexingCommon {
                 warn("`" + refAsString + "' is too big for a number variable, always nil");
             }
 
-            identValue = createTokenString().intern();
+            identValue = parser.symbol(createTokenByteList());
             return RipperParser.tNTH_REF;
         case '0':
             setState(EXPR_END);
 
-            return identifierToken(last_state, RipperParser.tGVAR, ("$" + (char) c).intern());
+            return identifierToken(last_state, RipperParser.tGVAR, parser.symbol(new ByteList(new byte[] {'$', (byte) c})));
         default:
             if (!isIdentifierChar(c)) {
                 if (c == EOF || Character.isSpaceChar(c)) {
@@ -1486,7 +1492,7 @@ public class RipperLexer extends LexingCommon {
 
             tokadd_ident(c);
 
-            return identifierToken(last_state, RipperParser.tGVAR, createTokenString().intern()); // $blah
+            return identifierToken(last_state, RipperParser.tGVAR, parser.symbol(createTokenByteList())); // $blah
         }
     }
     
@@ -1573,11 +1579,11 @@ public class RipperLexer extends LexingCommon {
         
         int result = 0;
 
-        String tempVal;
+        ByteList tempVal;
         last_state = lex_state;
         if (lastBangOrPredicate) {
             result = RipperParser.tFID;
-            tempVal = createTokenString();
+            tempVal = createTokenByteList();
         } else {
             if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
@@ -1595,8 +1601,8 @@ public class RipperLexer extends LexingCommon {
                     pushback(c);
                 }
             }
-            tempVal = createTokenString();
-            if (result == 0 && Character.isUpperCase(tempVal.charAt(0))) {
+            tempVal = createTokenByteList();
+            if (result == 0 && Character.isUpperCase(StringSupport.preciseCodePoint(getEncoding(), tempVal.unsafeBytes(), tempVal.begin(), tempVal.begin() + 1))) {
                 result = RipperParser.tCONSTANT;
             } else {
                 result = RipperParser.tIDENTIFIER;
@@ -1607,7 +1613,7 @@ public class RipperLexer extends LexingCommon {
             if (isLabelSuffix()) {
                 setState(EXPR_ARG|EXPR_LABELED);
                 nextc();
-                identValue = tempVal.intern();
+                identValue = parser.symbol(tempVal);
                 return RipperParser.tLABEL;
             }
         }
@@ -1620,7 +1626,7 @@ public class RipperLexer extends LexingCommon {
                 setState(keyword.state);
 
                 if (isLexState(state, EXPR_FNAME)) {
-                    identValue = tempVal;
+                    identValue = parser.symbol(tempVal);
                     return keyword.id0;
                 }
 
@@ -1645,7 +1651,7 @@ public class RipperLexer extends LexingCommon {
             setState(EXPR_END);
         }
         
-        return identifierToken(last_state, result, tempVal.intern());
+        return identifierToken(last_state, result, parser.symbol(tempVal));
     }
 
     private int leftBracket(boolean spaceSeen) throws IOException {

@@ -3,6 +3,7 @@ package org.jruby.ir;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -855,7 +856,7 @@ public abstract class IRScope implements ParseResult {
 
     public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
         assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
-        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
+        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(getManager().getRuntime().newSymbol(name)));
         localVars.put(name, lvar);
         return lvar;
     }

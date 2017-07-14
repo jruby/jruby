@@ -33,24 +33,25 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * An assignment to a dynamic variable (e.g. block scope local variable).
  */
 public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode {
     // The name of the variable
-    private ByteList name;
+    private RubySymbol name;
     
     // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
     // is what index in the right scope to set the value.
     private int location;
 
-    public DAsgnNode(ISourcePosition position, ByteList name, int location, Node valueNode) {
+    public DAsgnNode(ISourcePosition position, RubySymbol name, int location, Node valueNode) {
         super(position, valueNode, true);
         this.name = name;
         this.location = location;
@@ -58,7 +59,7 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
 
     @Deprecated
     public DAsgnNode(ISourcePosition position, String name, int location, Node valueNode) {
-        this(position, StringSupport.stringAsByteList(name), location, valueNode);
+        this(position, Ruby.getThreadLocalRuntime().newSymbol(name), location, valueNode);
     }
 
     public NodeType getNodeType() {
@@ -78,10 +79,14 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
 
@@ -110,7 +115,7 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
 
     @Deprecated
     public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
+        this.name = Ruby.getThreadLocalRuntime().newSymbol(name);
     }
 
     @Override

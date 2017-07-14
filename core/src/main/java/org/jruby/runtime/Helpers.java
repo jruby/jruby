@@ -1855,7 +1855,7 @@ public class Helpers {
         namesBuilder.append(',');  // 1
 
         boolean first = true;
-        for (String name : scope.getVariables()) {
+        for (RubySymbol name : scope.getVariableSymbols()) {
             if (!first) namesBuilder.append(';');
             first = false;
             namesBuilder.append(name);

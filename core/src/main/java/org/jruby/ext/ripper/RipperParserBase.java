@@ -33,6 +33,7 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.StackState;
@@ -40,6 +41,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 
 /**
  *
@@ -54,7 +56,7 @@ public class RipperParserBase {
     static int associateEncoding(ByteList buffer, Encoding ASCII8BIT_ENCODING, int codeRange) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
     public void reset() {
 //        inSingleton = 0;
      //   inDefinition = false;
@@ -76,7 +78,11 @@ public class RipperParserBase {
         
         lexer.parser_prepare();
         return (IRubyObject) yyparse(lexer, null);
-    }    
+    }
+
+    public RubySymbol symbol(ByteList value) {
+        return getRuntime().newSymbol(value);
+    }
     
     public IRubyObject arg_add_optblock(IRubyObject arg1, IRubyObject arg2) {
         // This has to be an MRI bug
@@ -88,17 +94,25 @@ public class RipperParserBase {
     }
 
     public IRubyObject arg_var(IRubyObject identifier) {
-        String name = lexer.getIdent();
+        RubySymbol name = lexer.getID();
         StaticScope current = getCurrentScope();
 
         // Multiple _ arguments are allowed.  To not screw with tons of arity
         // issues in our runtime we will allocate unnamed bogus vars so things
         // still work. MRI does not use name as intern'd value so they don't
         // have this issue.
-        if (name == "_") {
+        if (name.asJavaString().equals("_")) {
             int count = 0;
             while (current.exists(name) >= 0) {
-                name = "_$" + count++;
+                ByteList buf = new ByteList(new byte[] { '_', '$' });
+                int i = 2; // _, $ as 0 and 1
+                while (count > 0) {
+                    int digit = count % 10;
+                    count /= 10;
+                    buf.set(i, digit);
+                    i++;
+                }
+                name = symbol(buf);
             }
         }
         
@@ -139,7 +153,7 @@ public class RipperParserBase {
             return name;
         }
 
-        currentScope.assign(lexer.getPosition(), javaName.intern(), null);
+        currentScope.assign(lexer.getPosition(), TypeConverter.checkID(name), null);
         
         return name;
     }
@@ -186,8 +200,8 @@ public class RipperParserBase {
     
     // FIXME: Consider removing identifier.
     public boolean is_id_var(IRubyObject identifier) {
-        String ident = lexer.getIdent().intern();
-        char c = ident.charAt(0);
+        RubySymbol ident = lexer.getID();
+        char c = ident.asJavaString().charAt(0);
         
         if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return true;
 
@@ -250,9 +264,9 @@ public class RipperParserBase {
     }    
     
     public IRubyObject new_bv(IRubyObject identifier) {
-        String ident = lexer.getIdent();
+        RubySymbol ident = lexer.getID();
         
-        if (!is_local_id(ident)) getterIdentifierError(ident);
+        if (!is_local_id(ident.asJavaString())) getterIdentifierError(ident.asJavaString());
 
         return arg_var(shadowing_lvar(identifier));
     }
@@ -288,16 +302,16 @@ public class RipperParserBase {
     }
     
     public IRubyObject shadowing_lvar(IRubyObject identifier) {
-       String name = lexer.getIdent();
+       RubySymbol name = lexer.getID();
 
-        if (name == "_") return identifier;
+        if (name.asJavaString().equals("_")) return identifier;
 
         StaticScope current = getCurrentScope();
         if (current.isBlockScope()) {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
             if (current.isDefined(name) >= 0) {
-                lexer.warning("shadowing outer local variable - %s", name);
+                lexer.warning("shadowing outer local variable - %s", name.asJavaString());
             }
         } else if (current.exists(name) >= 0) {
             yyerror("duplicated argument name");

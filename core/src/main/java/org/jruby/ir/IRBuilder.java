@@ -4,6 +4,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
@@ -3037,7 +3038,7 @@ public class IRBuilder {
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
-        Variable variable  = getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
+        Variable variable  = getLocalVariable(localAsgnNode.getSymbolName(), localAsgnNode.getDepth());
         Operand value = build(variable, localAsgnNode.getValueNode());
 
         // no use copying a variable to itself
@@ -3109,7 +3110,7 @@ public class IRBuilder {
 
     private String getVarNameFromScopeTree(IRScope scope, int depth, int offset) {
         if (depth == 0) {
-            return scope.getStaticScope().getVariables()[offset];
+            return scope.getStaticScope().getVariableSymbols()[offset].asJavaString();
         }
         return getVarNameFromScopeTree(scope.getLexicalParent(), depth - 1, offset);
     }
@@ -4075,6 +4076,11 @@ public class IRBuilder {
         return scope.createTemporaryVariable();
     }
 
+    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
+        return scope.getLocalVariable(name.asJavaString(), scopeDepth);
+    }
+
+    @Deprecated
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         return scope.getLocalVariable(name, scopeDepth);
     }

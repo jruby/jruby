@@ -33,9 +33,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
-import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubySymbol;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
@@ -54,8 +55,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -84,7 +83,7 @@ public class StaticScope implements Serializable {
     private StaticScope previousCRefScope = null;
 
     // Our name holder (offsets are assigned as variables are added)
-    private ByteList[] variableNames;
+    private RubySymbol[] variableNames;
 
     private int variableNamesLength;
 
@@ -101,7 +100,7 @@ public class StaticScope implements Serializable {
 
     protected IRScopeType scopeType;
 
-    private static final ByteList[] NO_NAMES = new ByteList[0];
+    private static final RubySymbol[] NO_NAMES = new RubySymbol[0];
 
     private Type type;
     private boolean isBlockOrEval;
@@ -155,7 +154,7 @@ public class StaticScope implements Serializable {
      * @param enclosingScope the lexically containing scope.
      * @param names          The list of interned String variable names.
      */
-    protected StaticScope(Type type, StaticScope enclosingScope, ByteList[] names, int firstKeywordIndex) {
+    protected StaticScope(Type type, StaticScope enclosingScope, RubySymbol[] names, int firstKeywordIndex) {
         assert names != null : "names is not null";
 
         this.enclosingScope = enclosingScope;
@@ -168,7 +167,7 @@ public class StaticScope implements Serializable {
         this.firstKeywordIndex = firstKeywordIndex;
     }
 
-    protected StaticScope(Type type, StaticScope enclosingScope, ByteList[] names) {
+    protected StaticScope(Type type, StaticScope enclosingScope, RubySymbol[] names) {
         this(type, enclosingScope, names, -1);
     }
 
@@ -226,7 +225,7 @@ public class StaticScope implements Serializable {
      * @param name of new variable
      * @return index of variable
      */
-    public int addVariableThisScope(ByteList name) {
+    public int addVariableThisScope(RubySymbol name) {
         int slot = exists(name);
 
         if (slot >= 0) return slot;
@@ -243,7 +242,7 @@ public class StaticScope implements Serializable {
 
     @Deprecated
     public int addVariableThisScope(String stringName) {
-        return addVariableThisScope(new ByteList(stringName.getBytes(), USASCIIEncoding.INSTANCE));
+        return addVariableThisScope(Ruby.getGlobalRuntime().newSymbol(stringName));
     }
 
     /**
@@ -252,7 +251,7 @@ public class StaticScope implements Serializable {
      * @param name name of variable.
      * @return index of variable
      */
-    public int addNamedCaptureVariable(ByteList name) {
+    public int addNamedCaptureVariable(RubySymbol name) {
         int index = addVariableThisScope(name);
 
         growNamedCaptures(index);
@@ -276,7 +275,7 @@ public class StaticScope implements Serializable {
      * @param name of new variable
      * @return index+depth merged location of scope
      */
-    public int addVariable(ByteList name) {
+    public int addVariable(RubySymbol name) {
         int slot = isDefined(name);
 
         if (slot >= 0) return slot;
@@ -293,19 +292,19 @@ public class StaticScope implements Serializable {
 
     @Deprecated
     public int addVariable(String name) {
-        return addVariable(new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE));
+        return addVariable(Ruby.getGlobalRuntime().newSymbol(name));
     }
 
     @Deprecated
     public String[] getVariables() {
         String[] newVars = new String[variableNames.length];
         for (int i = 0; i < variableNames.length; i++) {
-            newVars[i] = StringSupport.byteListAsString(variableNames[i]);
+            newVars[i] = variableNames[i].asJavaString();
         }
         return newVars;
     }
 
-    public ByteList[] getByteVariables() {
+    public RubySymbol[] getVariableSymbols() {
         return variableNames;
     }
 
@@ -319,7 +318,7 @@ public class StaticScope implements Serializable {
         // Clear constructor since we are changing names
         constructor = null;
 
-        variableNames = new ByteList[names.length];
+        variableNames = new RubySymbol[names.length];
         variableNamesLength = names.length;
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
@@ -385,18 +384,18 @@ public class StaticScope implements Serializable {
      * @param name of the variable to find
      * @return index of variable or -1 if it does not exist
      */
-    public int exists(ByteList name) {
+    public int exists(RubySymbol name) {
         return findVariableName(name);
     }
 
     @Deprecated
     public int exists(String name) {
-        return findVariableName(new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE));
+        return findVariableName(Ruby.getThreadLocalRuntime().newSymbol(name));
     }
 
-    private int findVariableName(ByteList name) {
+    private int findVariableName(RubySymbol name) {
         for (int i = 0; i < variableNames.length; i++) {
-            if (name.equal(variableNames[i])) return i;
+            if (name.equals(variableNames[i])) return i;
         }
         return -1;
     }
@@ -408,7 +407,7 @@ public class StaticScope implements Serializable {
      * @return a location where the left-most 16 bits of number of scopes down it is and the
      * right-most 16 bits represents its index in that scope
      */
-    public int isDefined(ByteList name) {
+    public int isDefined(RubySymbol name) {
         return isDefined(name, 0);
     }
 
@@ -425,7 +424,7 @@ public class StaticScope implements Serializable {
      * @param value
      * @return
      */
-    public AssignableNode assign(ISourcePosition position, ByteList name, Node value) {
+    public AssignableNode assign(ISourcePosition position, RubySymbol name, Node value) {
         return assign(position, name, value, this, 0);
     }
 
@@ -443,7 +442,7 @@ public class StaticScope implements Serializable {
      * @param value
      * @return
      */
-    public AssignableNode assignKeyword(ISourcePosition position, ByteList name, Node value) {
+    public AssignableNode assignKeyword(ISourcePosition position, RubySymbol name, Node value) {
         AssignableNode assignment = assign(position, name, value, this, 0);
 
         // register first keyword index encountered
@@ -454,9 +453,16 @@ public class StaticScope implements Serializable {
 
     @Deprecated
     public AssignableNode assignKeyword(ISourcePosition position, String name, Node value) {
-        return assignKeyword(position, StringSupport.stringAsByteList(name), value);
+        return assignKeyword(position, Ruby.getThreadLocalRuntime().newSymbol(name), value);
     }
 
+    public boolean keywordExists(RubySymbol name) {
+        int slot = exists(name);
+
+        return slot >= 0 && firstKeywordIndex != -1 && slot >= firstKeywordIndex;
+    }
+
+    @Deprecated
     public boolean keywordExists(String name) {
         int slot = exists(name);
 
@@ -485,7 +491,7 @@ public class StaticScope implements Serializable {
         return names;
     }
 
-    public int isDefined(ByteList name, int depth) {
+    public int isDefined(RubySymbol name, int depth) {
         if (isBlockOrEval) {
             int slot = exists(name);
             if (slot >= 0) return (depth << 16) | slot;
@@ -497,10 +503,10 @@ public class StaticScope implements Serializable {
     }
 
     public int isDefined(String name, int depth) {
-        return isDefined(new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE), depth);
+        return isDefined(Ruby.getThreadLocalRuntime().newSymbol(name), depth);
     }
 
-    public AssignableNode addAssign(ISourcePosition position, ByteList name, Node value) {
+    public AssignableNode addAssign(ISourcePosition position, RubySymbol name, Node value) {
         int slot = addVariable(name);
         // No bit math to store level since we know level is zero for this case
         return new DAsgnNode(position, name, slot, value);
@@ -508,10 +514,10 @@ public class StaticScope implements Serializable {
 
     @Deprecated
     public AssignableNode addAssign(ISourcePosition position, String name, Node value) {
-        return addAssign(position, new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE), value);
+        return addAssign(position, Ruby.getThreadLocalRuntime().newSymbol(name), value);
     }
 
-    public AssignableNode assign(ISourcePosition position, ByteList name, Node value,
+    public AssignableNode assign(ISourcePosition position, RubySymbol name, Node value,
                                  StaticScope topScope, int depth) {
         int slot = exists(name);
 
@@ -536,17 +542,17 @@ public class StaticScope implements Serializable {
     @Deprecated
     public AssignableNode assign(ISourcePosition position, String name, Node value,
                                  StaticScope topScope, int depth) {
-        return assign(position, new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE), value, topScope, depth);
+        return assign(position, Ruby.getThreadLocalRuntime().newSymbol(name), value, topScope, depth);
     }
 
-    public Node declare(ISourcePosition position, ByteList name, int depth) {
+    public Node declare(ISourcePosition position, RubySymbol name, int depth) {
         int slot = exists(name);
 
         if (slot >= 0) {
             return isBlockOrEval ? new DVarNode(position, ((depth << 16) | slot), name) : new LocalVarNode(position, ((depth << 16) | slot), name);
         }
 
-        return isBlockOrEval ? enclosingScope.declare(position, name, depth + 1) : new VCallNode(position, name);
+        return isBlockOrEval ? enclosingScope.declare(position, name, depth + 1) : new VCallNode(position, name.getBytes());
     }
 
     /**
@@ -556,13 +562,13 @@ public class StaticScope implements Serializable {
      * @param name     of the variable to be created is named
      * @return a DVarNode or LocalVarNode
      */
-    public Node declare(ISourcePosition position, ByteList name) {
+    public Node declare(ISourcePosition position, RubySymbol name) {
         return declare(position, name, 0);
     }
 
     @Deprecated
     public Node declare(ISourcePosition position, String name) {
-        return declare(position, new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE));
+        return declare(position, Ruby.getThreadLocalRuntime().newSymbol(name));
     }
     /**
      * Gets the Local Scope relative to the current Scope.  For LocalScopes this will be itself.
@@ -666,8 +672,8 @@ public class StaticScope implements Serializable {
         return commandArgumentStack;
     }
 
-    private void growVariableNames(ByteList name) {
-        ByteList[] newVariableNames = new ByteList[variableNames.length + 1];
+    private void growVariableNames(RubySymbol name) {
+        RubySymbol[] newVariableNames = new RubySymbol[variableNames.length + 1];
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
         variableNames = newVariableNames;
         variableNamesLength = newVariableNames.length;

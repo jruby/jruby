@@ -33,24 +33,25 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.Ruby;
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Access a dynamic variable (e.g. block scope local variable).
  */
 public class DVarNode extends Node implements INameNode, IScopedNode, SideEffectFree {
     // The name of the variable
-    private ByteList name;
+    private RubySymbol name;
     
     // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
     // is what index in the right scope to set the value.
     private int location;
 
-    public DVarNode(ISourcePosition position, int location, ByteList name) {
+    public DVarNode(ISourcePosition position, int location, RubySymbol name) {
         super(position, false);
         this.location = location;
         this.name = name;
@@ -58,7 +59,7 @@ public class DVarNode extends Node implements INameNode, IScopedNode, SideEffect
 
     @Deprecated
     public DVarNode(ISourcePosition position, int location, String name) {
-        this(position, location, StringSupport.stringAsByteList(name));
+        this(position, location, Ruby.getThreadLocalRuntime().newSymbol(name));
     }
 
     public NodeType getNodeType() {
@@ -97,10 +98,14 @@ public class DVarNode extends Node implements INameNode, IScopedNode, SideEffect
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
     
@@ -110,7 +115,7 @@ public class DVarNode extends Node implements INameNode, IScopedNode, SideEffect
      */
     @Deprecated
     public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
+        Ruby.getThreadLocalRuntime().newSymbol(name);
     }
     
     public List<Node> childNodes() {

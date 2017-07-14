@@ -152,7 +152,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return symbol;
     }
 
-    final ByteList getBytes() {
+    public final ByteList getBytes() {
         return symbolBytes;
     }
 

@@ -42,6 +42,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -2463,6 +2464,25 @@ public final class StringSupport {
 
         for (int i = 0; i < strings.length; i++) {
             newList[i] = stringAsByteList(strings[i]);
+        }
+
+        return newList;
+    }
+
+    /**
+     * This is a far from perfect method in that it will totally choke on anything not UTF-8.
+     * However virtually nothing which was represented internally as a String would work with
+     * any String which was not UTF-8 (and in some cases 7-bit ASCII).
+     *
+     * Note: Do not use unless you are core developer or at least acknowledge the issues with
+     * this method.
+     */
+    @Deprecated
+    public static RubySymbol[] stringsAsSymbols(String[] strings) {
+        RubySymbol[] newList = new RubySymbol[strings.length];
+
+        for (int i = 0; i < strings.length; i++) {
+            newList[i] = Ruby.getThreadLocalRuntime().newSymbol(strings[i]);
         }
 
         return newList;

@@ -28,6 +28,7 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
+import org.jruby.RubySymbol;
 import org.jruby.ir.JIT;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -519,7 +520,7 @@ public abstract class DynamicScope implements Cloneable {
         IRubyObject[] variableValues = getValues();
 
         if (size != 0) {
-            String names[] = staticScope.getVariables();
+            RubySymbol names[] = staticScope.getVariableSymbols();
             for (int i = 0; i < size-1; i++) {
                 buf.append(names[i]).append("=");
 
