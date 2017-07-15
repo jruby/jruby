@@ -50,6 +50,7 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
+import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
@@ -62,7 +63,7 @@ public class RubyDateFormatter {
     private static final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
     private static final Token[] CONVERSION2TOKEN = new Token[256];
 
-    private final ThreadContext context;
+    private final Ruby runtime;
     private final StrftimeLexer lexer;
 
     static enum Format {
@@ -226,7 +227,7 @@ public class RubyDateFormatter {
      */
     public RubyDateFormatter(ThreadContext context) {
         super();
-        this.context = context;
+        this.runtime = context.runtime;
         lexer = new StrftimeLexer((Reader) null);
     }
 
@@ -250,14 +251,14 @@ public class RubyDateFormatter {
 
         Encoding enc = pattern.getEncoding();
         if (!enc.isAsciiCompatible()) {
-            throw context.runtime.newArgumentError("format should have ASCII compatible encoding");
+            throw runtime.newArgumentError("format should have ASCII compatible encoding");
         }
         if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
         }
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
-        Reader reader = new InputStreamReader(in, context.runtime.getEncodingService().charsetForEncoding(pattern.getEncoding()));
+        Reader reader = new InputStreamReader(in, runtime.getEncodingService().charsetForEncoding(pattern.getEncoding()));
         lexer.yyreset(reader);
 
         Token token;
@@ -358,13 +359,13 @@ public class RubyDateFormatter {
     public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, IRubyObject sub_millis) {
         RubyString out = format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
         if (pattern.isTaint()) {
-            out.taint(context);
+            out.setTaint(true);
         }
         return out;
     }
 
     public RubyString format(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
-        return context.runtime.newString(formatToByteList(compiledPattern, dt, nsec, sub_millis));
+        return runtime.newString(formatToByteList(compiledPattern, dt, nsec, sub_millis));
     }
 
     public ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
@@ -489,7 +490,7 @@ public class RubyDateFormatter {
                     output = formatZone(colons, (int) value, formatter);
                     break;
                 case FORMAT_ZONE_ID:
-                    output = RubyTime.getRubyTimeZoneName(context.runtime, dt);
+                    output = RubyTime.getRubyTimeZoneName(runtime, dt);
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
@@ -515,7 +516,8 @@ public class RubyDateFormatter {
                             buff.append(RubyTimeOutputFormatter.formatNumber(nsec, 6, '0'));
                         } else { // Date, DateTime
                             int prec = width - 3;
-                            IRubyObject power = context.runtime.newFixnum(10).callMethod("**", context.runtime.newFixnum(prec));
+                            final ThreadContext context = runtime.getCurrentContext(); // TODO really need the dynamic nature here?
+                            IRubyObject power = runtime.newFixnum(10).callMethod(context, "**", runtime.newFixnum(prec));
                             IRubyObject truncated = sub_millis.callMethod(context, "numerator").callMethod(context, "*", power);
                             truncated = truncated.callMethod(context, "/", sub_millis.callMethod(context, "denominator"));
                             long decimals = truncated.convertToInteger().getLongValue();
@@ -555,13 +557,13 @@ public class RubyDateFormatter {
             try {
                 formatted = formatter.format(output, value, type);
             } catch (IndexOutOfBoundsException ioobe) {
-                throw context.runtime.newErrnoFromErrno(Errno.ERANGE, "strftime");
+                throw runtime.newErrnoFromErrno(Errno.ERANGE, "strftime");
             }
 
             // reset formatter
             formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
 
-            toAppendTo.append(formatted.getBytes(context.runtime.getEncodingService().charsetForEncoding(toAppendTo.getEncoding())));
+            toAppendTo.append(formatted.getBytes(runtime.getEncodingService().charsetForEncoding(toAppendTo.getEncoding())));
         }
 
         return toAppendTo;
