@@ -44,22 +44,25 @@ import org.jruby.util.TypeConverter;
 @JRubyClass(name = "Random")
 public class RubyRandom extends RubyObject {
 
-    public static class RandomType {
-        private final IRubyObject seed;
+    /**
+     * Internal API, subject to change.
+     */
+    public static final class RandomType {
+        private final RubyInteger seed;
         private final Random impl;
 
         // RandomType(Ruby runtime) { this(randomSeed(runtime)); }
 
         // c: rand_init
-        RandomType(IRubyObject vseed) {
-            this.seed = vseed.convertToInteger();
+        RandomType(IRubyObject seed) {
+            this.seed = seed.convertToInteger();
             if (seed instanceof RubyFixnum) {
                 this.impl = randomFromFixnum((RubyFixnum) seed);
             } else if (seed instanceof RubyBignum) {
                 this.impl = randomFromBignum((RubyBignum) seed);
             } else {
-                throw vseed.getRuntime().newTypeError(
-                        String.format("failed to convert %s into Integer", vseed.getMetaClass().getName()));
+                throw seed.getRuntime().newTypeError(
+                        String.format("failed to convert %s into Integer", seed.getMetaClass().getName()));
             }
         }
 
@@ -143,7 +146,7 @@ public class RubyRandom extends RubyObject {
             return impl.genrandReal2();
         }
 
-        IRubyObject getSeed() {
+        RubyInteger getSeed() {
             return seed;
         }
 
@@ -214,9 +217,10 @@ public class RubyRandom extends RubyObject {
 
     // c: random_seed
     public static RubyBignum randomSeed(Ruby runtime) {
-        return RubyBignum.newBignum(runtime, randomSeedBigInteger(runtime.getRandom()));
+        return RubyBignum.newBignum(runtime, randomSeedBigInteger(runtime.random));
     }
 
+    @SuppressWarnings("deprecated")
     public static RubyClass createRandomClass(Ruby runtime) {
         RubyClass randomClass = runtime
                 .defineClass("Random", runtime.getObject(), RANDOM_ALLOCATOR);
@@ -433,7 +437,7 @@ public class RubyRandom extends RubyObject {
     }
 
     private static RandomType getDefaultRand(ThreadContext context) {
-        return context.runtime.getDefaultRand();
+        return context.runtime.defaultRand;
     }
 
     // c: random_rand
@@ -569,7 +573,7 @@ public class RubyRandom extends RubyObject {
             RubyRange vrange = (RubyRange) range;
             like.begin = vrange.first(context);
             like.end = vrange.last(context);
-            like.excl = vrange.exclude_end_p().isTrue();
+            like.excl = vrange.isExcludeEnd();
         } else {
             if (!range.respondsTo("begin") || !range.respondsTo("end")
                     || !range.respondsTo("exclude_end?")) {
@@ -577,7 +581,7 @@ public class RubyRandom extends RubyObject {
             }
             like.begin = Helpers.invoke(context, range, "begin");
             like.end = Helpers.invoke(context, range, "end");
-            like.excl = Helpers.invoke(context, range, "exlucde_end?").isTrue();
+            like.excl = Helpers.invoke(context, range, "exclude_end?").isTrue();
         }
         like.range = Helpers.invoke(context, like.end, "-", like.begin);
         return like;
@@ -608,12 +612,12 @@ public class RubyRandom extends RubyObject {
         return previousSeed;
     }
 
-    // c: random_equal
     @Deprecated
     public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
         return op_equal(context, obj);
     }
 
+    // c: random_equal
     @Override
     @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
@@ -752,7 +756,7 @@ public class RubyRandom extends RubyObject {
         if (n == 0) return runtime.newString();
 
         byte[] seed = new byte[n];
-        runtime.getRandom().nextBytes(seed);
+        runtime.random.nextBytes(seed);
 
         return RubyString.newString(runtime, seed);
     }

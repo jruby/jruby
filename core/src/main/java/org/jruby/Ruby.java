@@ -2500,16 +2500,24 @@ public final class Ruby implements Constantizable {
         return invalidByteSequenceError;
     }
 
-    private RubyRandom.RandomType defaultRand;
+    RubyRandom.RandomType defaultRand;
+
+    /**
+     * @deprecated internal API, to be hidden
+     */
     public RubyRandom.RandomType getDefaultRand() {
         return defaultRand;
     }
 
+    /**
+     * @deprecated internal API, to be hidden
+     */
     public void setDefaultRand(RubyRandom.RandomType defaultRand) {
         this.defaultRand = defaultRand;
     }
 
     private RubyHash charsetMap;
+    @Deprecated // no longer used (internal API)
     public RubyHash getCharsetMap() {
         if (charsetMap == null) charsetMap = new RubyHash(this);
         return charsetMap;
@@ -4563,6 +4571,9 @@ public final class Ruby implements Constantizable {
         return coverageData;
     }
 
+    /**
+     * @deprecated internal API, to be removed
+     */
     public Random getRandom() {
         return random;
     }
@@ -5077,7 +5088,7 @@ public final class Ruby implements Constantizable {
     private static ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
 
     /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
-    private final Random random;
+    final Random random;
 
     /** The runtime-local seed for hash randomization */
     private final long hashSeedK0;
