@@ -220,7 +220,7 @@ public class RubyRandom extends RubyObject {
         return RubyBignum.newBignum(runtime, randomSeedBigInteger(runtime.random));
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     public static RubyClass createRandomClass(Ruby runtime) {
         RubyClass randomClass = runtime
                 .defineClass("Random", runtime.getObject(), RANDOM_ALLOCATOR);
@@ -603,6 +603,7 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: rb_f_srand
+    @SuppressWarnings("deprecation")
     public static IRubyObject srandCommon(ThreadContext context, IRubyObject recv, IRubyObject newSeed) {
         RandomType defaultRand = getDefaultRand(context);
         IRubyObject previousSeed = defaultRand.getSeed();
