@@ -42,8 +42,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
-import org.jruby.util.JavaNameMangler;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.TypeConverter;
 
@@ -68,89 +66,6 @@ import org.jruby.util.io.EncodingUtils;
  *
  */
 public class Helpers {
-    public static CallSite selectAttrAsgnCallSite(IRubyObject receiver, IRubyObject self, CallSite normalSite, CallSite variableSite) {
-        if (receiver == self) return variableSite;
-        return normalSite;
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject value, ThreadContext context, IRubyObject caller) {
-        callSite.call(context, caller, receiver, value);
-        return value;
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject value, ThreadContext context, IRubyObject caller) {
-        callSite.call(context, caller, receiver, arg0, value);
-        return value;
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject arg1, IRubyObject value, ThreadContext context, IRubyObject caller) {
-        callSite.call(context, caller, receiver, arg0, arg1, value);
-        return value;
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject value, ThreadContext context, IRubyObject caller) {
-        callSite.call(context, caller, receiver, arg0, arg1, arg2, value);
-        return value;
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject[] args, ThreadContext context, IRubyObject caller) {
-        callSite.call(context, caller, receiver, args);
-        return args[args.length - 1];
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject[] args, IRubyObject value, ThreadContext context, IRubyObject caller) {
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 0, args.length);
-        newArgs[args.length] = value;
-        callSite.call(context, caller, receiver, newArgs);
-        return value;
-    }
-
-    public static boolean invokeEqqForCaseWhen(CallSite callSite, ThreadContext context, IRubyObject caller, IRubyObject arg, IRubyObject[] receivers) {
-        for (int i = 0; i < receivers.length; i++) {
-            IRubyObject receiver = receivers[i];
-            if (invokeEqqForCaseWhen(callSite, context, caller, arg, receiver)) return true;
-        }
-        return false;
-    }
-
-    public static boolean invokeEqqForCaseWhen(CallSite callSite, ThreadContext context, IRubyObject caller, IRubyObject arg, IRubyObject receiver) {
-        IRubyObject result = callSite.call(context, caller, receiver, arg);
-        if (result.isTrue()) return true;
-        return false;
-    }
-
-    public static boolean invokeEqqForCaseWhen(CallSite callSite, ThreadContext context, IRubyObject caller, IRubyObject arg, IRubyObject receiver0, IRubyObject receiver1) {
-        IRubyObject result = callSite.call(context, caller, receiver0, arg);
-        if (result.isTrue()) return true;
-        return invokeEqqForCaseWhen(callSite, context, caller, arg, receiver1);
-    }
-
-    public static boolean invokeEqqForCaseWhen(CallSite callSite, ThreadContext context, IRubyObject caller, IRubyObject arg, IRubyObject receiver0, IRubyObject receiver1, IRubyObject receiver2) {
-        IRubyObject result = callSite.call(context, caller, receiver0, arg);
-        if (result.isTrue()) return true;
-        return invokeEqqForCaseWhen(callSite, context, caller, arg, receiver1, receiver2);
-    }
-
-    public static boolean invokeEqqForCaselessWhen(IRubyObject[] receivers) {
-        for (int i = 0; i < receivers.length; i++) {
-            if (receivers[i].isTrue()) return true;
-        }
-        return false;
-    }
-
-    public static boolean invokeEqqForCaselessWhen(IRubyObject receiver) {
-        return receiver.isTrue();
-    }
-
-    public static boolean invokeEqqForCaselessWhen(IRubyObject receiver0, IRubyObject receiver1) {
-        return receiver0.isTrue() || receiver1.isTrue();
-    }
-
-    public static boolean invokeEqqForCaselessWhen(IRubyObject receiver0, IRubyObject receiver1, IRubyObject receiver2) {
-        return receiver0.isTrue() || receiver1.isTrue() || receiver2.isTrue();
-    }
-
-    public static String[] parseBlockDescriptor(String descriptor) {
-        String[] mangled = descriptor.split(":");
-        mangled[0] = JavaNameMangler.demangleMethodName(mangled[0]);
-        mangled[4] = JavaNameMangler.demangleMethodName(mangled[4]);
-        return mangled;
-    }
 
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
@@ -239,7 +154,7 @@ public class Helpers {
     }
 
     public static final Map<String, String> map(String... keyValues) {
-        HashMap<String, String> map = new HashMap<String, String>(keyValues.length / 2);
+        HashMap<String, String> map = new HashMap<>(keyValues.length / 2 + 1, 1);
         for (int i = 0; i < keyValues.length;) {
             map.put(keyValues[i++], keyValues[i++]);
         }
@@ -584,27 +499,6 @@ public class Helpers {
         return value != null ? value : nil;
     }
 
-    public static RubyClass prepareSuperClass(Ruby runtime, IRubyObject rubyClass) {
-        RubyClass.checkInheritable(rubyClass); // use the same logic as in EvaluationState
-        return (RubyClass)rubyClass;
-    }
-
-    public static RubyModule prepareClassNamespace(ThreadContext context, StaticScope scope, IRubyObject rubyModule) {
-        if (rubyModule == null || rubyModule.isNil()) {
-            rubyModule = scope.getModule();
-
-            if (rubyModule == null) {
-                throw context.runtime.newTypeError("no outer class/module");
-            }
-        }
-
-        if (rubyModule instanceof RubyModule) {
-            return (RubyModule)rubyModule;
-        } else {
-            throw context.runtime.newTypeError(rubyModule + " is not a class/module");
-        }
-    }
-
     public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {
         if (opt == 0) {
             if (rest < 0) {
@@ -651,25 +545,6 @@ public class Helpers {
 
     public static IRubyObject unwrapLocalJumpErrorValue(RaiseException re) {
         return ((RubyLocalJumpError)re.getException()).exit_value();
-    }
-
-    public static IRubyObject processBlockArgument(Ruby runtime, Block block) {
-        if (!block.isGiven()) {
-            return runtime.getNil();
-        }
-
-        return processGivenBlock(block, runtime);
-    }
-
-    private static IRubyObject processGivenBlock(Block block, Ruby runtime) {
-        RubyProc blockArg = block.getProcObject();
-
-        if (blockArg == null) {
-            blockArg = runtime.newBlockPassProc(Block.Type.PROC, block);
-            blockArg.getBlock().type = Block.Type.PROC;
-        }
-
-        return blockArg;
     }
 
     public static Block getBlockFromBlockPassBody(Ruby runtime, IRubyObject proc, Block currentBlock) {
@@ -993,13 +868,6 @@ public class Helpers {
         }
     }
 
-    public static Block ensureSuperBlock(Block given, Block parent) {
-        if (!given.isGiven()) {
-            return parent;
-        }
-        return given;
-    }
-
     public static RubyModule findImplementerIfNecessary(RubyModule clazz, RubyModule implementationClass) {
         if (implementationClass.needsImplementer()) {
             // modules are included with a shim class; we must find that shim to handle super() appropriately
@@ -1057,29 +925,6 @@ public class Helpers {
         } else {
             return input[element];
         }
-    }
-
-    public static IRubyObject postElementOrNil(IRubyObject[] input, int postCount, int postIndex, IRubyObject nil) {
-        int aryIndex = input.length - postCount + postIndex;
-        if (aryIndex >= input.length || aryIndex < 0) {
-            return nil;
-        } else {
-            return input[aryIndex];
-        }
-    }
-
-    public static RubyBoolean isWhenTriggered(IRubyObject expression, IRubyObject expressionsObject, ThreadContext context) {
-        RubyArray expressions = Helpers.splatValue(expressionsObject);
-        for (int j = 0,k = expressions.getLength(); j < k; j++) {
-            IRubyObject condition = expressions.eltInternal(j);
-
-            if ((expression != null && condition.callMethod(context, "===", expression).isTrue()) ||
-                    (expression == null && condition.isTrue())) {
-                return context.runtime.getTrue();
-            }
-        }
-
-        return context.runtime.getFalse();
     }
 
     public static IRubyObject setConstantInModule(ThreadContext context, String name, IRubyObject value, IRubyObject module) {
@@ -1501,87 +1346,6 @@ public class Helpers {
         return backref(context); // backref(context) method otherwise not used
     }
 
-    public static IRubyObject preOpAsgnWithOrAnd(IRubyObject receiver, ThreadContext context, IRubyObject self, CallSite varSite) {
-        return varSite.call(context, self, receiver);
-    }
-
-    public static IRubyObject postOpAsgnWithOrAnd(IRubyObject receiver, IRubyObject value, ThreadContext context, IRubyObject self, CallSite varAsgnSite) {
-        varAsgnSite.call(context, self, receiver, value);
-        return value;
-    }
-
-    public static IRubyObject opAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg, CallSite varSite, CallSite opSite, CallSite opAsgnSite) {
-        IRubyObject var = varSite.call(context, self, receiver);
-        IRubyObject result = opSite.call(context, self, var, arg);
-        opAsgnSite.call(context, self, receiver, result);
-
-        return result;
-    }
-
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject var = elementSite.call(context, self, receiver);
-        IRubyObject result = opSite.call(context, self, var, value);
-        elementAsgnSite.call(context, self, receiver, result);
-
-        return result;
-    }
-
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject var = elementSite.call(context, self, receiver, arg);
-        IRubyObject result = opSite.call(context, self, var, value);
-        elementAsgnSite.call(context, self, receiver, arg, result);
-
-        return result;
-    }
-
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject var = elementSite.call(context, self, receiver, arg1, arg2);
-        IRubyObject result = opSite.call(context, self, var, value);
-        elementAsgnSite.call(context, self, receiver, arg1, arg2, result);
-
-        return result;
-    }
-
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject var = elementSite.call(context, self, receiver, arg1, arg2, arg3);
-        IRubyObject result = opSite.call(context, self, var, value);
-        elementAsgnSite.call(context, self, receiver, new IRubyObject[] {arg1, arg2, arg3, result});
-
-        return result;
-    }
-
-    public static IRubyObject opElementAsgnWithMethod(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite elementSite, CallSite opSite, CallSite elementAsgnSite) {
-        IRubyObject var = elementSite.call(context, self, receiver);
-        IRubyObject result = opSite.call(context, self, var, value);
-        elementAsgnSite.call(context, self, receiver, appendToObjectArray(args, result));
-
-        return result;
-    }
-
-
-    public static IRubyObject opElementAsgnWithOrPartTwoOneArg(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject arg, IRubyObject value, CallSite asetSite) {
-        asetSite.call(context, self, receiver, arg, value);
-        return value;
-    }
-
-    public static IRubyObject opElementAsgnWithOrPartTwoTwoArgs(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
-        asetSite.call(context, self, receiver, args[0], args[1], value);
-        return value;
-    }
-
-    public static IRubyObject opElementAsgnWithOrPartTwoThreeArgs(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
-        asetSite.call(context, self, receiver, new IRubyObject[] {args[0], args[1], args[2], value});
-        return value;
-    }
-
-    public static IRubyObject opElementAsgnWithOrPartTwoNArgs(ThreadContext context, IRubyObject self, IRubyObject receiver, IRubyObject[] args, IRubyObject value, CallSite asetSite) {
-        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, newArgs, 0, args.length);
-        newArgs[args.length] = value;
-        asetSite.call(context, self, receiver, newArgs);
-        return value;
-    }
-
     public static RubyArray arrayValue(IRubyObject value) {
         Ruby runtime = value.getRuntime();
         return arrayValue(runtime.getCurrentContext(), runtime, value);
@@ -1623,31 +1387,9 @@ public class Helpers {
         return arr.aryDup();
     }
 
-    public static RubyArray asArray18(ThreadContext context, IRubyObject value) {
-        Ruby runtime = context.runtime;
-        IRubyObject tmp = value.checkArrayType();
-
-        if (tmp.isNil()) {
-            if (value.respondsTo("to_a")) {
-                IRubyObject avalue = value.callMethod(context, "to_a");
-                if (!(avalue instanceof RubyArray)) {
-                    if (avalue.isNil()) {
-                        return runtime.newArray(value);
-                    } else {
-                        throw runtime.newTypeError("`to_a' did not return Array");
-                    }
-                }
-                return (RubyArray)avalue;
-            } else {
-                return runtime.newArray(value);
-            }
-        }
-
-        return (RubyArray) tmp;
-    }
-
     // mri: rb_Array
     // FIXME: Replace arrayValue/asArray18 with this on 9k (currently dead -- respond_to? logic broken further down the line -- fix that first)
+    @Deprecated
     public static RubyArray asArray(ThreadContext context, IRubyObject value) {
         return TypeConverter.rb_Array(context, value);
     }
@@ -1662,6 +1404,7 @@ public class Helpers {
         return value.getRuntime().newArray(value);
     }
 
+    @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
         if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
             return value.getRuntime().getNil();
@@ -1672,6 +1415,7 @@ public class Helpers {
         return array.getLength() == 1 ? array.first() : array;
     }
 
+    @Deprecated // not used
     public static IRubyObject aValueSplat19(IRubyObject value) {
         if (!(value instanceof RubyArray)) {
             return value.getRuntime().getNil();
@@ -1688,6 +1432,7 @@ public class Helpers {
         return arrayValue(value);
     }
 
+    @Deprecated // not used
     public static RubyArray splatValue19(IRubyObject value) {
         if (value.isNil()) {
             return value.getRuntime().newEmptyArray();
@@ -1696,6 +1441,7 @@ public class Helpers {
         return arrayValue(value);
     }
 
+    @Deprecated // not used
     public static IRubyObject unsplatValue19(IRubyObject argsResult) {
         if (argsResult instanceof RubyArray) {
             RubyArray array = (RubyArray) argsResult;
@@ -1814,7 +1560,7 @@ public class Helpers {
         receiver.callMethod(context, "singleton_method_added", name);
     }
 
-    public static String encodeScope(StaticScope scope) {
+    static String encodeScope(StaticScope scope) {
         StringBuilder namesBuilder = new StringBuilder(scope.getType().name()); // 0
 
         namesBuilder.append(',');  // 1
@@ -1831,7 +1577,7 @@ public class Helpers {
         return namesBuilder.toString();
     }
 
-    public static StaticScope decodeScope(ThreadContext context, StaticScope parent, String scopeString) {
+    static StaticScope decodeScope(ThreadContext context, StaticScope parent, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
         String scopeTypeName = decodedScope[0][0];
         String[] names = decodedScope[1];
@@ -2048,42 +1794,6 @@ public class Helpers {
         fillNil(arr, 0, arr.length, runtime);
     }
 
-    public static boolean isFastSwitchableString(IRubyObject str) {
-        return str instanceof RubyString;
-    }
-
-    public static boolean isFastSwitchableSingleCharString(IRubyObject str) {
-        return str instanceof RubyString && ((RubyString)str).getByteList().length() == 1;
-    }
-
-    public static int getFastSwitchString(IRubyObject str) {
-        ByteList byteList = ((RubyString)str).getByteList();
-        return byteList.hashCode();
-    }
-
-    public static int getFastSwitchSingleCharString(IRubyObject str) {
-        ByteList byteList = ((RubyString)str).getByteList();
-        return byteList.get(0);
-    }
-
-    public static boolean isFastSwitchableSymbol(IRubyObject sym) {
-        return sym instanceof RubySymbol;
-    }
-
-    public static boolean isFastSwitchableSingleCharSymbol(IRubyObject sym) {
-        return sym instanceof RubySymbol && ((RubySymbol)sym).asJavaString().length() == 1;
-    }
-
-    public static int getFastSwitchSymbol(IRubyObject sym) {
-        String str = ((RubySymbol)sym).asJavaString();
-        return str.hashCode();
-    }
-
-    public static int getFastSwitchSingleCharSymbol(IRubyObject sym) {
-        String str = ((RubySymbol)sym).asJavaString();
-        return (int)str.charAt(0);
-    }
-
     public static Block getBlock(ThreadContext context, IRubyObject self, Node node) {
         throw new RuntimeException("Should not be called");
     }
@@ -2174,16 +1884,6 @@ public class Helpers {
         if (superklazz == null && klazz.isModule()) superklazz = runtime.getObject();
 
         return superklazz;
-    }
-
-    public static boolean isGenerationEqual(IRubyObject object, int generation) {
-        RubyClass metaClass;
-        if (object instanceof RubyBasicObject) {
-            metaClass = ((RubyBasicObject)object).getMetaClass();
-        } else {
-            metaClass = object.getMetaClass();
-        }
-        return metaClass.getGeneration() == generation;
     }
 
     public static String[] getScopeNames(String scopeNames) {
@@ -2449,13 +2149,6 @@ public class Helpers {
         return null;
     }
 
-    public static RubyString getDefinedNot(Ruby runtime, RubyString definition) {
-        if (definition != null) {
-            return runtime.getDefinedMessage(DefinedMessage.METHOD);
-        }
-        return definition;
-    }
-
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, MethodNames method) {
         RubyClass metaclass = self.getMetaClass();
         String name = method.realName();
@@ -2477,10 +2170,12 @@ public class Helpers {
         return ary[ary.length - 1];
     }
 
+    @Deprecated // not used
     public static RubyString appendAsString(RubyString target, IRubyObject other) {
         return target.append(other.asString());
     }
 
+    @Deprecated // not used
     public static RubyString appendAsString19(RubyString target, IRubyObject other) {
         return target.append19(other.asString());
     }
@@ -2489,6 +2184,7 @@ public class Helpers {
      * We need to splat incoming array to a block when |a, *b| (any required +
      * rest) or |a, b| (>1 required).
      */
+    @Deprecated // not used
     public static boolean needsSplat19(int requiredCount, boolean isRest) {
         return (isRest && requiredCount > 0) || (!isRest && requiredCount > 1);
     }
@@ -2496,23 +2192,21 @@ public class Helpers {
     // . Array given to rest should pass itself
     // . Array with rest + other args should extract array
     // . Array with multiple values and NO rest should extract args if there are more than one argument
-    // Note: In 1.9 alreadyArray is only relevant from our internal Java code in core libs.  We never use it
-    // from interpreter or JIT.  FIXME: Change core lib consumers to stop using alreadyArray param.
+    // Note: In 1.9 alreadyArray is only relevant from our internal Java code in core libs.
+    // We never use it from interpreter or JIT.
+    @Deprecated // not used
     public static IRubyObject[] restructureBlockArgs19(IRubyObject value, Signature signature, Block.Type type, boolean needsSplat, boolean alreadyArray) {
+        return restructureBlockArgs(value, signature, type, needsSplat);
+    }
+
+    static IRubyObject[] restructureBlockArgs(IRubyObject value, Signature signature, Block.Type type, boolean needsSplat) {
         if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
-        if (value != null && !(value instanceof RubyArray) && needsSplat) value = Helpers.aryToAry(value);
+        if (value != null && needsSplat && !(value instanceof RubyArray)) value = Helpers.aryToAry(value);
 
-        IRubyObject[] parameters;
-        if (value == null) {
-            parameters = IRubyObject.NULL_ARRAY;
-        } else if (value instanceof RubyArray && (alreadyArray || needsSplat)) {
-            parameters = ((RubyArray) value).toJavaArray();
-        } else {
-            parameters = new IRubyObject[] { value };
-        }
-
-        return parameters;
+        if (value == null) return IRubyObject.NULL_ARRAY;
+        if (needsSplat && value instanceof RubyArray) return ((RubyArray) value).toJavaArrayMaybeUnsafe();
+        return new IRubyObject[] { value };
     }
 
     public static boolean BEQ(ThreadContext context, IRubyObject value1, IRubyObject value2) {
@@ -2526,41 +2220,18 @@ public class Helpers {
         return !eql;
     }
 
-    public static RubyModule checkIsRubyModule(ThreadContext context, Object object) {
-        if (!(object instanceof RubyModule)) {
-            throw context.runtime.newTypeError("no outer class/module");
-        }
-
-        return (RubyModule)object;
-    }
-
-    public static RubyClass newClassForIR(ThreadContext context, String name, IRubyObject self, RubyModule classContainer, Object superClass, boolean meta) {
-        if (meta) return classContainer.getMetaClass();
-
-        RubyClass sc = null;
-
-        if (superClass == UndefinedValue.UNDEFINED) {
-            sc = null;
-        } else if (superClass != null) {
-            RubyClass.checkInheritable((IRubyObject)superClass);
-
-            sc = (RubyClass) superClass;
-        }
-
-
-        return classContainer.defineOrGetClassUnder(name, sc);
-    }
-
     public static RubyString appendByteList(RubyString target, ByteList source) {
         target.getByteList().append(source);
         return target;
     }
 
+    @Deprecated
     public static RubyString appendByteList19(RubyString target, ByteList source, int codeRange) {
         target.cat19(source, codeRange);
         return target;
     }
 
+    @Deprecated
     public static RubyString shortcutAppend18(RubyString string, IRubyObject object) {
         if (object instanceof RubyFixnum || object instanceof RubyFloat || object instanceof RubySymbol) {
             return string.append(object);
@@ -2569,6 +2240,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated
     public static RubyString shortcutAppend(RubyString string, IRubyObject object) {
         if (object instanceof RubyFixnum || object instanceof RubyFloat || object instanceof RubySymbol) {
             return string.append19(object);
