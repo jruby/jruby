@@ -54,6 +54,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaSites;
@@ -326,30 +327,32 @@ public class RubyBigDecimal extends RubyNumeric {
             if (value.isNil()) return c.searchInternalModuleVariable("vpExceptionMode");
             if (!(value instanceof RubyBoolean)) throw context.runtime.newArgumentError("second argument must be true or false");
 
-            RubyFixnum currentExceptionMode = (RubyFixnum)c.searchInternalModuleVariable("vpExceptionMode");
-            RubyFixnum newExceptionMode = new RubyFixnum(context.runtime, currentExceptionMode.getLongValue());
+            RubyFixnum newExceptionMode = (RubyFixnum)c.searchInternalModuleVariable("vpExceptionMode");
+
+            boolean enable = value.isTrue();
 
             RubyFixnum _EXCEPTION_INFINITY = (RubyFixnum)clazz.getConstant("EXCEPTION_INFINITY");
             if ((longMode & _EXCEPTION_INFINITY.getLongValue()) != 0) {
-                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_INFINITY)
-                        : (RubyFixnum)currentExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_INFINITY).getLongValue()));
+                newExceptionMode = enable ? (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_INFINITY)
+                        : (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_INFINITY).getLongValue()));
             }
 
             RubyFixnum _EXCEPTION_NaN = (RubyFixnum)clazz.getConstant("EXCEPTION_NaN");
             if ((longMode & _EXCEPTION_NaN.getLongValue()) != 0) {
-                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_NaN)
-                        : (RubyFixnum)currentExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_NaN).getLongValue()));
+                newExceptionMode = enable ? (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_NaN)
+                        : (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_NaN).getLongValue()));
             }
 
             RubyFixnum _EXCEPTION_UNDERFLOW = (RubyFixnum)clazz.getConstant("EXCEPTION_UNDERFLOW");
             if ((longMode & _EXCEPTION_UNDERFLOW.getLongValue()) != 0) {
-                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_UNDERFLOW)
-                        : (RubyFixnum)currentExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_UNDERFLOW).getLongValue()));
+                newExceptionMode = enable ? (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_UNDERFLOW)
+                        : (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_UNDERFLOW).getLongValue()));
             }
+
             RubyFixnum _EXCEPTION_OVERFLOW = (RubyFixnum)clazz.getConstant("EXCEPTION_OVERFLOW");
             if ((longMode & _EXCEPTION_OVERFLOW.getLongValue()) != 0) {
-                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_OVERFLOW)
-                        : (RubyFixnum)currentExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_OVERFLOW).getLongValue()));
+                newExceptionMode = enable ? (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_OVERFLOW)
+                        : (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_OVERFLOW).getLongValue()));
             }
             c.setInternalModuleVariable("vpExceptionMode", newExceptionMode);
             return newExceptionMode;
@@ -1396,8 +1399,12 @@ public class RubyBigDecimal extends RubyNumeric {
 
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
     private static RoundingMode javaRoundingModeFromRubyRoundingMode(Ruby runtime, IRubyObject arg) {
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, arg);
+        if (!opts.isNil()) {
+            arg = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), "half", opts);
+        }
         if (arg instanceof RubySymbol) {
-            String roundingMode = ((RubySymbol) arg).asJavaString();
+            String roundingMode = arg.asJavaString();
             switch (roundingMode) {
                 case "up" :
                     return RoundingMode.UP;
