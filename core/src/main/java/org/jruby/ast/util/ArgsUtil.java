@@ -106,7 +106,7 @@ public final class ArgsUtil {
      * @param validKeys A list of valid kwargs keys.
      * @return an array of objects corresponding to the given keys.
      */
-    public static IRubyObject[] extractKeywordArgs(ThreadContext context, RubyHash options, String[] validKeys) {
+    public static IRubyObject[] extractKeywordArgs(ThreadContext context, RubyHash options, String... validKeys) {
         IRubyObject[] ret = new IRubyObject[validKeys.length];
         int index = 0;
         HashSet<RubySymbol> validKeySet = new HashSet<RubySymbol>();
@@ -133,7 +133,7 @@ public final class ArgsUtil {
         return ret;
     }
 
-    public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String[] validKeys) {
+    public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String... validKeys) {
         IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, args);
         if(options instanceof RubyHash) {
             return extractKeywordArgs(context, (RubyHash)options, validKeys);

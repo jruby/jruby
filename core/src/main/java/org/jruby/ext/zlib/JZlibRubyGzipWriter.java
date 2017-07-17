@@ -69,17 +69,19 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     };
 
     @JRubyMethod(name = "new", rest = true, meta = true)
-    public static JZlibRubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyClass klass = (RubyClass) recv;
-        JZlibRubyGzipWriter result = (JZlibRubyGzipWriter) klass.allocate();
-        
-        result.callInit(args, block);
-        
-        return result;
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        JZlibRubyGzipWriter result = newInstance(recv, args);
+
+        return RubyGzipFile.wrapBlock(context, result, block);
     }
 
-    public static IRubyObject open18(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return open19(context, recv, args, block);
+    public static JZlibRubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyClass klass = (RubyClass) recv;
+        JZlibRubyGzipWriter result = (JZlibRubyGzipWriter) klass.allocate();
+
+        result.callInit(args, Block.NULL_BLOCK);
+
+        return result;
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 3, meta = true)
@@ -88,7 +90,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         
         args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
         
-        JZlibRubyGzipWriter gzio = newInstance(recv, args, block);
+        JZlibRubyGzipWriter gzio = newInstance(recv, args);
         
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }
@@ -102,7 +104,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     }
 
     @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block unused) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject opt = context.nil;
         

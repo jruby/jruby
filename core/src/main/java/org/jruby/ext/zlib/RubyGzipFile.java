@@ -88,9 +88,9 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
         // TODO: People extending GzipWriter/reader will break.  Find better way here.
         if (recv == runtime.getModule("Zlib").getClass("GzipWriter")) {
-            instance = JZlibRubyGzipWriter.newInstance(recv, args, block);
+            instance = JZlibRubyGzipWriter.newInstance(recv, args);
         } else {
-            instance = JZlibRubyGzipReader.newInstance(recv, args, block);
+            instance = JZlibRubyGzipReader.newInstance(recv, args);
         }
 
         return wrapBlock(context, instance, block);
