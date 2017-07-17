@@ -1616,6 +1616,40 @@ CLASSDEF
     assert_equal 'one', arr[i]
   end
 
+  def test_java_numbers_coercing
+    num1 = 1; num2 = 2
+    if defined?(JRUBY_VERSION)
+      num1 = java.lang.Integer.new(num1)
+      num2 = java.lang.Byte.new(num2)
+    end
+    assert_equal 2, 2 / num1
+    assert_equal 1, 2.div(num2)
+
+    assert_equal 4, 2 * num2
+    big = 1_000_000_000_000_000_000_000_000
+    assert_equal 2 * big, big * num2
+
+    assert_equal 1, 5 % num2
+    assert_equal 0, big % num1
+    assert_equal 100, 10 ** num2
+
+    require 'bigdecimal'
+    dec = BigDecimal('4444.1234')
+    assert_equal BigDecimal('8888.2468'), dec * num2
+    assert_equal BigDecimal('4445.1234'), dec + num1
+  end
+
+  def test_java_numbers_with_rational
+    num1 = 0.5; num2 = 2
+    if defined?(JRUBY_VERSION)
+      num1 = java.lang.Double.new(num1)
+      num2 = java.lang.Integer.new(num2)
+    end
+    half = Rational('1/2')
+    assert_equal 1, half.div(num1)
+    assert_equal Rational('1/4'), half / num2
+  end
+
   def test_java_numbers_treated_like_ruby_ones
     i = java.lang.Integer.new(3)
     assert_equal 3.0, i.to_f
