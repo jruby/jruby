@@ -65,11 +65,6 @@ public class IRMethod extends IRScope {
     }
 
     @Override
-    protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
-        return findExistingLocalVariable(getManager().getRuntime().newSymbol(name), scopeDepth);
-    }
-
-    @Override
     public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);

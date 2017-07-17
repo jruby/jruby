@@ -1470,6 +1470,14 @@ public class Helpers {
         return RubyString.newStringShared(context.runtime, value);
     }
 
+    public static StaticScope preLoad(ThreadContext context, RubySymbol[] varNames) {
+        StaticScope staticScope = context.runtime.getStaticScopeFactory().newLocalScope(null, varNames);
+        preLoadCommon(context, staticScope, false);
+
+        return staticScope;
+    }
+
+    @Deprecated
     public static StaticScope preLoad(ThreadContext context, String[] varNames) {
         StaticScope staticScope = context.runtime.getStaticScopeFactory().newLocalScope(null, varNames);
         preLoadCommon(context, staticScope, false);

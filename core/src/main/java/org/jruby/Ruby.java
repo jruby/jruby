@@ -680,7 +680,7 @@ public final class Ruby implements Constantizable {
 
         // we do pre and post load outside the "body" versions to pre-prepare
         // and pre-push the dynamic scope we need for lastline
-        Helpers.preLoad(context, ((RootNode) scriptNode).getStaticScope().getVariables());
+        Helpers.preLoad(context, scriptNode.getStaticScope().getVariableSymbols());
 
         try {
             if (script != null) {

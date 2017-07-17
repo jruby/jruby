@@ -243,11 +243,6 @@ public class IRClosure extends IRScope {
         return lvar;
     }
 
-    @Override
-    protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
-        return findExistingLocalVariable(getManager().getRuntime().newSymbol(name), scopeDepth);
-    }
-
     @Deprecated
     public LocalVariable getNewLocalVariable(String name, int depth) {
         return getNewLocalVariable(getManager().getRuntime().newSymbol(name), depth);
@@ -277,11 +272,6 @@ public class IRClosure extends IRScope {
 
             return s.getNewLocalVariable(name, 0).cloneForDepth(depth);
         }
-    }
-
-    @Override
-    public LocalVariable getLocalVariable(String name, int depth) {
-        return getLocalVariable(getManager().getRuntime().newSymbol(name), depth);
     }
 
     public LocalVariable getLocalVariable(RubySymbol name, int depth) {

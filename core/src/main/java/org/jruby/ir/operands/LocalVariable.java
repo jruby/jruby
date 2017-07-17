@@ -45,6 +45,10 @@ public class LocalVariable extends Variable implements DepthCloneable {
         return offset;
     }
 
+    public RubySymbol getSymbol() {
+        return name;
+    }
+
     @Override
     public String getName() {
         return name.asJavaString();
