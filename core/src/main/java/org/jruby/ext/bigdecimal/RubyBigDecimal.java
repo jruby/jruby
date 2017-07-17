@@ -1351,6 +1351,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "round", optional = 2)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
         // Special treatment for BigDecimal::NAN and BigDecimal::INFINITY
         //
         // If round is called without any argument, we should raise a
@@ -1360,16 +1362,30 @@ public class RubyBigDecimal extends RubyNumeric {
             StringBuilder message = new StringBuilder("Computation results to ");
             message.append('\'').append(callMethod(context, "to_s")).append('\'');
 
-            throw context.runtime.newFloatDomainError(message.toString());
+            throw runtime.newFloatDomainError(message.toString());
         } else {
-            if (isNaN()) return newNaN(context.runtime);
+            if (isNaN()) return newNaN(runtime);
             if (isInfinity()) {
-                return newInfinity(context.runtime, infinitySign);
+                return newInfinity(runtime, infinitySign);
             }
         }
 
-        final int scale = args.length > 0 ? num2int(args[0]) : 0;
-        RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(context.runtime, args[1]) : getRoundingMode(context.runtime);
+        RoundingMode mode = getRoundingMode(runtime);
+        int scale = 0;
+
+        int argc = args.length;
+        switch (argc) {
+            case 2:
+                mode = javaRoundingModeFromRubyRoundingMode(runtime, args[1]);
+                scale = num2int(args[0]);
+            case 1:
+                if (ArgsUtil.getOptionsArg(runtime, args[0]).isNil()) {
+                    scale = num2int(args[0]);
+                } else {
+                    mode = javaRoundingModeFromRubyRoundingMode(runtime, args[0]);
+                }
+        }
+
         // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
         final RubyBigDecimal bigDecimal;
         if (scale < 0) {
@@ -1379,9 +1395,9 @@ public class RubyBigDecimal extends RubyNumeric {
           // ...round to that digit
           BigDecimal rounded = normalized.setScale(0, mode);
           // ...and shift the result back to the left (multiply by 10**(abs(scale)))
-          bigDecimal = new RubyBigDecimal(context.runtime, rounded.movePointLeft(scale));
+          bigDecimal = new RubyBigDecimal(runtime, rounded.movePointLeft(scale));
         } else {
-          bigDecimal = new RubyBigDecimal(context.runtime, value.setScale(scale, mode));
+          bigDecimal = new RubyBigDecimal(runtime, value.setScale(scale, mode));
         }
 
         return args.length == 0 ? bigDecimal.to_int() : bigDecimal;
@@ -1396,6 +1412,23 @@ public class RubyBigDecimal extends RubyNumeric {
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, arg);
         if (!opts.isNil()) {
             arg = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), "half", opts);
+            if (arg.isNil()) {
+                return getRoundingMode(runtime);
+            }
+            String roundingMode = arg.asJavaString();
+            switch (roundingMode) {
+                case "up":
+                    return RoundingMode.HALF_UP;
+                case "down" :
+                    return RoundingMode.HALF_DOWN;
+                case "even" :
+                    return RoundingMode.HALF_EVEN;
+                default :
+                    throw runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+            }
+        }
+        if (arg.isNil()) {
+            return getRoundingMode(runtime);
         }
         if (arg instanceof RubySymbol) {
             String roundingMode = arg.asJavaString();
@@ -1411,6 +1444,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case "half_down" :
                     return RoundingMode.HALF_DOWN;
                 case "half_even" :
+                case "even" :
                 case "banker" :
                     return RoundingMode.HALF_EVEN;
                 case "ceiling" :
@@ -1419,7 +1453,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case "floor" :
                     return RoundingMode.FLOOR;
                 default :
-                    throw runtime.newArgumentError("invalid rounding mode");
+                    throw runtime.newArgumentError("invalid rounding mode: " + roundingMode);
             }
         } else {
             try {
