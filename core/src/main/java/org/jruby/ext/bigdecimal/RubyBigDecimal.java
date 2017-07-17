@@ -96,7 +96,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyConstant
     public final static int SIGN_POSITIVE_INFINITE = 3;
     @JRubyConstant
-    public final static int EXCEPTION_OVERFLOW = 8;
+    public final static int EXCEPTION_OVERFLOW = 1; // Note: This is same as EXCEPTION_INFINITY in MRI now
     @JRubyConstant
     public final static int SIGN_POSITIVE_ZERO = 1;
     @JRubyConstant
@@ -306,10 +306,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject mode(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
         // FIXME: I doubt any of the constants referenced in this method
         // are ever redefined -- should compare to the known values, rather
         // than do an expensive constant lookup.
-        RubyClass clazz = context.runtime.getClass("BigDecimal");
         RubyModule c = (RubyModule)recv;
 
         args = Arity.scanArgs(context.runtime, args, 1, 1);
@@ -322,55 +323,48 @@ public class RubyBigDecimal extends RubyNumeric {
         }
 
         long longMode = ((RubyFixnum)mode).getLongValue();
-        long _EXCEPTION_ALL =  bigDecimalConst(context.runtime, "EXCEPTION_ALL");
-        if ((longMode & _EXCEPTION_ALL) != 0) {
+        if ((longMode & EXCEPTION_ALL) != 0) {
             if (value.isNil()) return c.searchInternalModuleVariable("vpExceptionMode");
             if (!(value instanceof RubyBoolean)) throw context.runtime.newArgumentError("second argument must be true or false");
 
-            RubyFixnum newExceptionMode = (RubyFixnum)c.searchInternalModuleVariable("vpExceptionMode");
+            long newExceptionMode = c.searchInternalModuleVariable("vpExceptionMode").convertToInteger().getLongValue();
 
             boolean enable = value.isTrue();
 
-            RubyFixnum _EXCEPTION_INFINITY = (RubyFixnum)clazz.getConstant("EXCEPTION_INFINITY");
-            if ((longMode & _EXCEPTION_INFINITY.getLongValue()) != 0) {
-                newExceptionMode = enable ? (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_INFINITY)
-                        : (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_INFINITY).getLongValue()));
+            if ((longMode & EXCEPTION_INFINITY) != 0) {
+                newExceptionMode = enable ? newExceptionMode | EXCEPTION_INFINITY : newExceptionMode &  ~(EXCEPTION_INFINITY);
             }
 
-            RubyFixnum _EXCEPTION_NaN = (RubyFixnum)clazz.getConstant("EXCEPTION_NaN");
-            if ((longMode & _EXCEPTION_NaN.getLongValue()) != 0) {
-                newExceptionMode = enable ? (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_NaN)
-                        : (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_NaN).getLongValue()));
+            if ((longMode & EXCEPTION_NaN) != 0) {
+                newExceptionMode = enable ? newExceptionMode | EXCEPTION_NaN : newExceptionMode &  ~(EXCEPTION_NaN);
             }
 
-            RubyFixnum _EXCEPTION_UNDERFLOW = (RubyFixnum)clazz.getConstant("EXCEPTION_UNDERFLOW");
-            if ((longMode & _EXCEPTION_UNDERFLOW.getLongValue()) != 0) {
-                newExceptionMode = enable ? (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_UNDERFLOW)
-                        : (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_UNDERFLOW).getLongValue()));
+            if ((longMode & EXCEPTION_UNDERFLOW) != 0) {
+                newExceptionMode = enable ? newExceptionMode | EXCEPTION_UNDERFLOW : newExceptionMode &  ~(EXCEPTION_UNDERFLOW);
             }
 
-            RubyFixnum _EXCEPTION_OVERFLOW = (RubyFixnum)clazz.getConstant("EXCEPTION_OVERFLOW");
-            if ((longMode & _EXCEPTION_OVERFLOW.getLongValue()) != 0) {
-                newExceptionMode = enable ? (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_or, _EXCEPTION_OVERFLOW)
-                        : (RubyFixnum)newExceptionMode.callCoerced(context, sites(context).op_and, new RubyFixnum(context.runtime, ~(_EXCEPTION_OVERFLOW).getLongValue()));
+            if ((longMode & EXCEPTION_ZERODIVIDE) != 0) {
+                newExceptionMode = enable ? newExceptionMode | EXCEPTION_ZERODIVIDE : newExceptionMode &  ~(EXCEPTION_ZERODIVIDE);
             }
-            c.setInternalModuleVariable("vpExceptionMode", newExceptionMode);
-            return newExceptionMode;
+
+            RubyFixnum fixnumMode = RubyFixnum.newFixnum(runtime, newExceptionMode);
+            c.setInternalModuleVariable("vpExceptionMode", fixnumMode);
+            return fixnumMode;
         }
 
-        long ROUND_MODE = ((RubyFixnum)clazz.getConstant("ROUND_MODE")).getLongValue();
         if (longMode == ROUND_MODE) {
             if (value.isNil()) {
                 return c.searchInternalModuleVariable("vpRoundingMode");
             }
 
-            RoundingMode javaRoundingMode = javaRoundingModeFromRubyRoundingMode(context.runtime, value);
-            RubyFixnum roundingMode = context.runtime.newFixnum(javaRoundingMode.ordinal());
+            RoundingMode javaRoundingMode = javaRoundingModeFromRubyRoundingMode(runtime, value);
+            RubyFixnum roundingMode = runtime.newFixnum(javaRoundingMode.ordinal());
             c.setInternalModuleVariable("vpRoundingMode", roundingMode);
 
             return c.searchInternalModuleVariable("vpRoundingMode");
         }
-        throw context.runtime.newTypeError("first argument for BigDecimal#mode invalid");
+
+        throw runtime.newTypeError("first argument for BigDecimal#mode invalid");
     }
 
     private static RubyModule bigDecimal(Ruby runtime) {
@@ -392,15 +386,15 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static boolean isNaNExceptionMode(Ruby runtime) {
-        return (bigDecimalVar(runtime, "vpExceptionMode") & bigDecimalConst(runtime, "EXCEPTION_NaN")) != 0;
+        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_NaN) != 0;
     }
 
     private static boolean isInfinityExceptionMode(Ruby runtime) {
-        return (bigDecimalVar(runtime, "vpExceptionMode") & bigDecimalConst(runtime, "EXCEPTION_INFINITY")) != 0;
+        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_INFINITY) != 0;
     }
 
     private static boolean isOverflowExceptionMode(Ruby runtime) {
-        return (bigDecimalVar(runtime, "vpExceptionMode") & bigDecimalConst(runtime, "EXCEPTION_OVERFLOW")) != 0;
+        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_OVERFLOW) != 0;
     }
 
     private static RubyBigDecimal cannotBeCoerced(ThreadContext context, IRubyObject value, boolean must) {
