@@ -56,10 +56,10 @@ public class RubyRandom extends RubyObject {
         // c: rand_init
         RandomType(IRubyObject seed) {
             this.seed = seed.convertToInteger();
-            if (seed instanceof RubyFixnum) {
-                this.impl = randomFromFixnum((RubyFixnum) seed);
-            } else if (seed instanceof RubyBignum) {
-                this.impl = randomFromBignum((RubyBignum) seed);
+            if (this.seed instanceof RubyFixnum) {
+                this.impl = randomFromFixnum((RubyFixnum) this.seed);
+            } else if (this.seed instanceof RubyBignum) {
+                this.impl = randomFromBignum((RubyBignum) this.seed);
             } else {
                 throw seed.getRuntime().newTypeError(
                         String.format("failed to convert %s into Integer", seed.getMetaClass().getName()));
