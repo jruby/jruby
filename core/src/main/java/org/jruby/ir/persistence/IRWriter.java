@@ -122,7 +122,7 @@ public class IRWriter {
     // {type,[variables],signature}
     private static void persistStaticScope(IRWriterEncoder file, StaticScope staticScope) {
         file.encode(staticScope.getType());
-        file.encode(staticScope.getVariables());
+        file.encode(staticScope.getVariableSymbols());
         file.encode(staticScope.getFirstKeywordIndex());
         file.encode(staticScope.getSignature());
     }

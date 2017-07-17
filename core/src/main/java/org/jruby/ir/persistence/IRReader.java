@@ -7,7 +7,9 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.EvalType;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.ClosureLocalVariable;
@@ -116,11 +118,11 @@ public class IRReader implements IRPersistenceValues {
         return new KeyValuePair<>(scope, instructionsOffset);
     }
 
-    private static Map<String, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
+    private static Map<RubySymbol, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
         int size = decoder.decodeInt();
-        Map<String, LocalVariable> localVariables = new HashMap(size);
+        Map<RubySymbol, LocalVariable> localVariables = new HashMap(size);
         for (int i = 0; i < size; i++) {
-            String name = decoder.decodeString();
+            RubySymbol name = decoder.decodeSymbol();
             int offset = decoder.decodeInt();
 
             localVariables.put(name, scope instanceof IRClosure ?
@@ -141,7 +143,7 @@ public class IRReader implements IRPersistenceValues {
     }
 
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
-        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray(), decoder.decodeInt());
+        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeSymbolArray(), decoder.decodeInt());
 
         scope.setSignature(decoder.decodeSignature());
 

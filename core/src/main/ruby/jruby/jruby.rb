@@ -70,7 +70,7 @@ module JRuby
 
     def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
       runtime = JRuby.runtime
-      manager = org.jruby.ir.IRManager.new(runtime.instance_config)
+      manager = org.jruby.ir.IRManager.new(runtime, runtime.instance_config)
       manager.dry_run = true
       if filename.equal?(DEFAULT_FILENAME)
         node = parse(content, &block)

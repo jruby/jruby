@@ -114,7 +114,7 @@ public abstract class IRScope implements ParseResult {
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
 
-    Map<String, LocalVariable> localVars;
+    Map<RubySymbol, LocalVariable> localVars;
 
     EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
 
@@ -236,7 +236,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public LocalVariable getNewFlipStateVariable() {
-        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"), 0);
+        return getLocalVariable(getManager().getRuntime().newSymbol("%flip_" + allocateNextPrefixedName("%flip")), 0);
     }
 
     public Label getNewLabel(String prefix) {
@@ -808,6 +808,16 @@ public abstract class IRScope implements ParseResult {
      * This should only be used by persistence layer.
      */
     public Map<String, LocalVariable> getLocalVariables() {
+        Map<String, LocalVariable> newMap = new HashMap<>();
+
+        for (RubySymbol symbol: localVars.keySet()) {
+            newMap.put(symbol.asJavaString(), localVars.get(symbol));
+        }
+
+        return newMap;
+    }
+
+    public Map<RubySymbol, LocalVariable> getLocals() {
         return localVars;
     }
 
@@ -822,7 +832,7 @@ public abstract class IRScope implements ParseResult {
      * Set the local variables for this scope. This should only be used by persistence layer.
      */
     // FIXME: Consider making constructor for persistence to pass in all of this stuff
-    public void setLocalVariables(Map<String, LocalVariable> variables) {
+    public void setLocalVariables(Map variables) {
         this.localVars = variables;
     }
 
@@ -830,12 +840,22 @@ public abstract class IRScope implements ParseResult {
         nextVarIndex = indices;
     }
 
-    public LocalVariable lookupExistingLVar(String name) {
+    public LocalVariable lookupExistingLVar(RubySymbol name) {
         return localVars.get(name);
     }
 
-    protected LocalVariable findExistingLocalVariable(String name, int depth) {
+    @Deprecated
+    public LocalVariable lookupExistingLVar(String name) {
+        return lookupExistingLVar(getManager().getRuntime().newSymbol(name));
+    }
+
+    protected LocalVariable findExistingLocalVariable(RubySymbol name, int depth) {
         return localVars.get(name);
+    }
+
+    @Deprecated
+    protected LocalVariable findExistingLocalVariable(String name, int depth) {
+        return findExistingLocalVariable(getManager().getRuntime().newSymbol(name), depth);
     }
 
     /**
@@ -843,7 +863,7 @@ public abstract class IRScope implements ParseResult {
      * only check current depth.  Blocks/Closures override this because they
      * have special nesting rules.
      */
-    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
             lvar = getNewLocalVariable(name, scopeDepth);
@@ -854,11 +874,21 @@ public abstract class IRScope implements ParseResult {
         return lvar;
     }
 
-    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+    @Deprecated
+    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+        return getLocalVariable(getManager().getRuntime().newSymbol(name), scopeDepth);
+    }
+
+    public LocalVariable getNewLocalVariable(RubySymbol name, int scopeDepth) {
         assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
-        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(getManager().getRuntime().newSymbol(name)));
+        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
         localVars.put(name, lvar);
         return lvar;
+    }
+
+    @Deprecated
+    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+        return getNewLocalVariable(getManager().getRuntime().newSymbol(name), scopeDepth);
     }
 
     public TemporaryLocalVariable createTemporaryVariable() {
@@ -949,7 +979,7 @@ public abstract class IRScope implements ParseResult {
     public Variable getNewInlineVariable(String inlinePrefix, Variable v) {
         if (v instanceof LocalVariable) {
             LocalVariable lv = (LocalVariable)v;
-            return getLocalVariable(inlinePrefix + lv.getName(), lv.getScopeDepth());
+            return getLocalVariable(getManager().getRuntime().newSymbol(inlinePrefix + lv.getName()), lv.getScopeDepth());
         } else {
             return createTemporaryVariable();
         }

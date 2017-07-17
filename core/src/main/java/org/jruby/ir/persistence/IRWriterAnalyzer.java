@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -38,6 +39,14 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
         for (Operand operand: instr.getOperands()) {
             increment(operand);
         }
+    }
+
+    @Override
+    public void encode(RubySymbol symbol) {
+    }
+
+    @Override
+    public void encode(RubySymbol[] symbols) {
     }
 
     @Override

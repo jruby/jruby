@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.jruby.EvalType;
+import org.jruby.RubySymbol;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -85,7 +86,7 @@ public class IREvalScript extends IRClosure {
 
     @Override
     public LocalVariable getNewFlipStateVariable() {
-        String flipVarName = "%flip_" + allocateNextPrefixedName("%flip");
+        RubySymbol flipVarName = getManager().getRuntime().newSymbol("%flip_" + allocateNextPrefixedName("%flip"));
         LocalVariable v = lookupExistingLVar(flipVarName);
 
         return v == null ? getNewLocalVariable(flipVarName, 0) : v;

@@ -1,6 +1,7 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -26,6 +27,8 @@ public interface IRWriterEncoder {
     public void encode(String value);
     public void encode(String[] values);
     public void encode(Instr value);
+    public void encode(RubySymbol symbol);
+    public void encode(RubySymbol[] symbols);
     public void encode(IRScope scope);
     public void encode(IRScopeType value);
     public void encode(Signature signature);

@@ -7,6 +7,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
+import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
@@ -682,7 +683,7 @@ public class IRBuilder {
             case DASGNNODE: {
                 DAsgnNode variable = (DAsgnNode) node;
                 int depth = variable.getDepth();
-                addInstr(new CopyInstr(getLocalVariable(variable.getName(), depth), rhsVal));
+                addInstr(new CopyInstr(getLocalVariable(variable.getSymbolName(), depth), rhsVal));
                 break;
             }
             case GLOBALASGNNODE:
@@ -695,7 +696,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-                addInstr(new CopyInstr(getLocalVariable(localVariable.getName(), depth), rhsVal));
+                addInstr(new CopyInstr(getLocalVariable(localVariable.getSymbolName(), depth), rhsVal));
                 break;
             }
             case ZEROARGNODE:
@@ -711,7 +712,7 @@ public class IRBuilder {
         }
     }
 
-    protected LocalVariable getBlockArgVariable(String name, int depth) {
+    protected LocalVariable getBlockArgVariable(RubySymbol name, int depth) {
         if (!(scope instanceof IRFor)) throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
 
         return getLocalVariable(name, depth);
@@ -761,7 +762,7 @@ public class IRBuilder {
                 break;
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                v = getBlockArgVariable(dynamicAsgn.getName(), dynamicAsgn.getDepth());
+                v = getBlockArgVariable(dynamicAsgn.getSymbolName(), dynamicAsgn.getDepth());
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
                 break;
             }
@@ -794,7 +795,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-                v = getBlockArgVariable(localVariable.getName(), depth);
+                v = getBlockArgVariable(localVariable.getSymbolName(), depth);
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
                 break;
             }
@@ -1985,7 +1986,7 @@ public class IRBuilder {
         // assignments to block variables within a block.  As far as the IR is concerned,
         // this is just a simple copy
         int depth = dasgnNode.getDepth();
-        Variable arg = getLocalVariable(dasgnNode.getName(), depth);
+        Variable arg = getLocalVariable(dasgnNode.getSymbolName(), depth);
         Operand  value = build(dasgnNode.getValueNode());
 
         // no use copying a variable to itself
@@ -2289,11 +2290,11 @@ public class IRBuilder {
             for (int i = 0; i < keywordsCount; i++) {
                 KeywordArgNode kwarg = (KeywordArgNode) args[keywordIndex + i];
                 AssignableNode kasgn = kwarg.getAssignable();
-                String argName = ((INameNode) kasgn).getName();
+                RubySymbol argName = ((ISymbolNameNode) kasgn).getSymbolName();
                 Variable av = getNewLocalVariable(argName, 0);
                 Label l = getNewLabel();
-                if (scope instanceof IRMethod) addKeyArgDesc(kasgn, argName);
-                addInstr(new ReceiveKeywordArgInstr(av, argName, required));
+                if (scope instanceof IRMethod) addKeyArgDesc(kasgn, argName.asJavaString());
+                addInstr(new ReceiveKeywordArgInstr(av, argName.asJavaString(), required));
                 addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
 
                 // Required kwargs have no value and check_arity will throw if they are not provided.
@@ -2301,7 +2302,7 @@ public class IRBuilder {
                     addInstr(new CopyInstr(av, buildNil())); // wipe out undefined value with nil
                     build(kasgn);
                 } else {
-                    addInstr(new RaiseRequiredKeywordArgumentError(argName));
+                    addInstr(new RaiseRequiredKeywordArgumentError(argName.asJavaString()));
                 }
                 addInstr(new LabelInstr(l));
             }
@@ -4077,16 +4078,21 @@ public class IRBuilder {
     }
 
     public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
-        return scope.getLocalVariable(name.asJavaString(), scopeDepth);
+        return scope.getLocalVariable(name, scopeDepth);
     }
 
     @Deprecated
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
-        return scope.getLocalVariable(name, scopeDepth);
+        return getLocalVariable(manager.getRuntime().newSymbol(name), scopeDepth);
     }
 
-    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getNewLocalVariable(RubySymbol name, int scopeDepth) {
         return scope.getNewLocalVariable(name, scopeDepth);
+    }
+
+    @Deprecated
+    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+        return getNewLocalVariable(manager.getRuntime().newSymbol(name), scopeDepth);
     }
 
     public String getName() {

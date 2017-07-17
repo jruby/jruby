@@ -9,6 +9,7 @@ package org.jruby.ir.persistence;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -141,6 +142,20 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("STR<" + newString + ">");
 
         return newString;
+    }
+
+    @Override
+    public RubySymbol decodeSymbol() {
+        return getCurrentScope().getManager().getRuntime().newSymbol(decodeByteList());
+    }
+
+    public RubySymbol[] decodeSymbolArray() {
+        int arrayLength = decodeInt();
+        RubySymbol[] array = new RubySymbol[arrayLength];
+        for (int i = 0; i < arrayLength; i++) {
+            array[i] = decodeSymbol();
+        }
+        return array;
     }
 
     @Override

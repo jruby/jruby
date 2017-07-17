@@ -36,7 +36,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
-import org.jruby.ast.types.INameNode;
+import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
@@ -44,7 +44,7 @@ import org.jruby.util.ByteList;
 /**
  * An assignment to a local variable.
  */
-public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedNode {
+public class LocalAsgnNode extends AssignableNode implements ISymbolNameNode, IScopedNode {
     // The name of the variable
     private RubySymbol name;
     
