@@ -947,6 +947,9 @@ public class RubyEnumerable {
             });
         }
 
+        if (result[0] instanceof RubyFloat) {
+            return ((RubyFloat) result[0]).op_plus(context, memo[0]);
+        }
         return result[0];
     }
 
@@ -955,7 +958,11 @@ public class RubyEnumerable {
     public static IRubyObject sumAdd(final ThreadContext ctx, IRubyObject lhs, IRubyObject rhs, final double c[]) {
         boolean floats = false;
         double f = 0.0;
-        double x = 0.0, y, t;
+        /*
+         * Kahan-Babuska balancing compensated summation algorithm
+         * See http://link.springer.com/article/10.1007/s00607-005-0139-x
+         */
+        double x = 0.0, t;
         if (lhs instanceof RubyFloat) {
             if (rhs instanceof RubyFloat) {
                 f = ((RubyFloat) lhs).getValue();
@@ -998,9 +1005,12 @@ public class RubyEnumerable {
         }
 
         // Kahan's compensated summation algorithm
-        y = x - c[0];
-        t = f + y;
-        c[0] = (t - f) - y;
+        t = f + x;
+        if (Math.abs(f) >= Math.abs(x)) {
+            c[0] += ((f - t) + x);
+        } else {
+            c[0] += ((x - t) + f);
+        }
         f = t;
 
         return new RubyFloat(ctx.runtime, f);
