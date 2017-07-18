@@ -39,6 +39,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -805,14 +806,13 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
         IRubyObject z = numFuncall(context, this, sites(context).op_mod, dividend);
-        IRubyObject x = this;
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
         if (!equalInternal(context, z, zero) &&
-                ((sites(context).op_lt.call(context, x, x, zero).isTrue() &&
-                        sites(context).op_gt.call(context, dividend, dividend, zero).isTrue()) ||
-                (sites(context).op_gt.call(context, x, x, zero).isTrue() &&
-                        sites(context).op_lt.call(context, dividend, dividend, zero).isTrue()))) {
+                ((isNegative(context).isTrue() &&
+                        positiveIntP(context, dividend).isTrue()) ||
+                (isPositive(context).isTrue() &&
+                        negativeIntP(context, dividend).isTrue()))) {
             return sites(context).op_minus.call(context, z, z, dividend);
         }
         return z;
@@ -1334,8 +1334,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "negative?")
     public IRubyObject isNegative(ThreadContext context) {
-        IRubyObject zero = convertToNum(0, context.runtime);
-        return sites(context).op_lt.call(context, this, this, zero);
+        return compareWithZero(context, this, sites(context).op_lt_checked);
 
     }
     /** num_positive_p
@@ -1343,8 +1342,30 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "positive?")
     public IRubyObject isPositive(ThreadContext context) {
-        IRubyObject zero = convertToNum(0, context.runtime);
-        return sites(context).op_gt.call(context, this, this, zero);
+        return compareWithZero(context, this, sites(context).op_gt_checked);
+    }
+
+    protected static IRubyObject negativeIntP(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyNumeric) {
+            return ((RubyNumeric) obj).isNegative(context);
+        }
+        return compareWithZero(context, obj, sites(context).op_lt_checked);
+    }
+
+    protected static IRubyObject positiveIntP(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyNumeric) {
+            return ((RubyNumeric) obj).isPositive(context);
+        }
+        return compareWithZero(context, obj, sites(context).op_gt_checked);
+    }
+
+    protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {
+        IRubyObject zero = RubyFixnum.zero(context.runtime);
+        IRubyObject r = num.getMetaClass().finvokeChecked(context, num, site, zero);
+        if (r == null) {
+            RubyComparable.cmperr(num, zero);
+        }
+        return r;
     }
 
     @JRubyMethod(name = "finite?")
