@@ -78,17 +78,19 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     };
 
     @JRubyMethod(name = "new", rest = true, meta = true)
-    public static JZlibRubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        JZlibRubyGzipReader result = newInstance(recv, args);
+
+        return RubyGzipFile.wrapBlock(context, result, block);
+    }
+
+    public static JZlibRubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass) recv;
         JZlibRubyGzipReader result = (JZlibRubyGzipReader) klass.allocate();
 
-        result.callInit(args, block);
+        result.callInit(args, Block.NULL_BLOCK);
 
         return result;
-    }
-
-    public static IRubyObject open18(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return open19(context, recv, args, block);
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 1, meta = true)
@@ -96,7 +98,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         Ruby runtime = recv.getRuntime();
         args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("rb"));
 
-        JZlibRubyGzipReader gzio = newInstance(recv, args, block);
+        JZlibRubyGzipReader gzio = newInstance(recv, args);
 
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }

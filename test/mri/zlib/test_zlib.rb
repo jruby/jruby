@@ -1158,7 +1158,9 @@ if defined? Zlib
     def test_gunzip
       src = %w[1f8b08000000000000034bcbcf07002165738c03000000].pack("H*")
       assert_equal 'foo', Zlib.gunzip(src.freeze)
+    end
 
+    def test_gunzip_errors
       src = %w[1f8b08000000000000034bcbcf07002165738c03000001].pack("H*")
       assert_raise(Zlib::GzipFile::LengthError){ Zlib.gunzip(src) }
 

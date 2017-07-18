@@ -1149,7 +1149,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return context.runtime.newFixnum(value ^ ((RubyFixnum) other).value);
         }
         if (other instanceof RubyBignum) {
-            return ((RubyBignum) other).op_and(context, this);
+            return ((RubyBignum) other).op_xor(context, this);
         }
         return coerceBit(context, sites(context).checked_op_xor, other);
     }
