@@ -148,6 +148,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(RubySymbol[] symbols) {
+        encode(symbols.length);
         for (int i = 0; i < symbols.length; i++) {
             encode(symbols[i]);
         }
