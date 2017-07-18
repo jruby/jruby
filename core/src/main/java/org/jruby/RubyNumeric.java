@@ -1088,27 +1088,39 @@ public class RubyNumeric extends RubyObject {
 
     public static RubyNumeric intervalStepSize(ThreadContext context, IRubyObject from, IRubyObject to, IRubyObject step, boolean excludeLast) {
         Ruby runtime = context.runtime;
+        JavaSites.NumericSites sites = sites(context);
+        CallSite cmpSite = sites.op_gt;
+        IRubyObject deltaObj;
 
         if (from instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
             long diff = ((RubyFixnum) step).getLongValue();
             if (diff == 0) {
                 return RubyFloat.newFloat(runtime, Double.POSITIVE_INFINITY);
             }
+            long toLong = ((RubyFixnum) to).getLongValue();
+            long fromLong = ((RubyFixnum) from).getLongValue();
+            long delta = toLong - fromLong;
+            if (!Helpers.subtractionOverflowed(toLong, fromLong, delta)) {
+                if (diff < 0) {
+                    diff = -diff;
+                    delta = -delta;
+                }
+                if (excludeLast) {
+                    delta--;
+                }
+                if (delta < 0) {
+                    return runtime.newFixnum(0);
+                }
 
-            long delta = ((RubyFixnum) to).getLongValue() - ((RubyFixnum) from).getLongValue();
-            if (diff < 0) {
-                diff = -diff;
-                delta = -delta;
+                long steps = delta / diff;
+                long stepSize = steps + 1;
+                if (stepSize != Long.MIN_VALUE) {
+                    return new RubyFixnum(runtime, delta / diff + 1);
+                } else {
+                    return RubyBignum.newBignum(runtime, BigInteger.valueOf(steps).add(BigInteger.ONE));
+                }
             }
-            if (excludeLast) {
-                delta--;
-            }
-            if (delta < 0) {
-                return runtime.newFixnum(0);
-            }
-
-            long result = delta / diff;
-            return new RubyFixnum(runtime, result >= 0 ? result + 1 : 0);
+            // fall through to duck-typed logic
         } else if (from instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
             double n = floatStepSize(from.convertToFloat().getDoubleValue(), to.convertToFloat().getDoubleValue(), step.convertToFloat().getDoubleValue(), excludeLast);
 
@@ -1117,32 +1129,31 @@ public class RubyNumeric extends RubyObject {
             } else {
                 return runtime.newFloat(n).convertToInteger();
             }
-        } else {
-            JavaSites.NumericSites sites = sites(context);
-            CallSite cmpSite = sites.op_gt;
-            RubyFixnum zero = RubyFixnum.zero(runtime);
-            IRubyObject comparison = zero.coerceCmp(context, sites.op_cmp, step);
-
-            switch (RubyComparable.cmpint(context, comparison, step, zero)) {
-                case 0:
-                    return RubyFloat.newFloat(runtime, Float.POSITIVE_INFINITY);
-                case 1:
-                    cmpSite = sites.op_lt;
-                    break;
-            }
-
-            if (cmpSite.call(context, from, from, to).isTrue()) {
-                return RubyFixnum.zero(runtime);
-            }
-
-            IRubyObject diff = sites.op_minus.call(context, to, to, from);
-            IRubyObject result = sites.div.call(context, diff, diff, step);
-            IRubyObject timesPlus = sites.op_plus.call(context, from, from, sites.op_times.call(context, result, result, step));
-            if (!excludeLast || cmpSite.call(context, timesPlus, timesPlus, to).isTrue()) {
-                result = sites.op_plus.call(context, result, result, RubyFixnum.newFixnum(runtime, 1));
-            }
-            return (RubyNumeric) result;
         }
+
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+        IRubyObject comparison = zero.coerceCmp(context, sites.op_cmp, step);
+
+        switch (RubyComparable.cmpint(context, comparison, step, zero)) {
+            case 0:
+                return RubyFloat.newFloat(runtime, Float.POSITIVE_INFINITY);
+            case 1:
+                cmpSite = sites.op_lt;
+                break;
+        }
+
+        if (cmpSite.call(context, from, from, to).isTrue()) {
+            return RubyFixnum.zero(runtime);
+        }
+
+        deltaObj = sites.op_minus.call(context, to, to, from);
+
+        IRubyObject result = sites.div.call(context, deltaObj, deltaObj, step);
+        IRubyObject timesPlus = sites.op_plus.call(context, from, from, sites.op_times.call(context, result, result, step));
+        if (!excludeLast || cmpSite.call(context, timesPlus, timesPlus, to).isTrue()) {
+            result = sites.op_plus.call(context, result, result, RubyFixnum.newFixnum(runtime, 1));
+        }
+        return (RubyNumeric) result;
     }
 
     private SizeFn stepSizeFn(final ThreadContext context, final IRubyObject from, final IRubyObject[] args) {
