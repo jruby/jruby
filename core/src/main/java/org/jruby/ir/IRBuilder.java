@@ -672,9 +672,6 @@ public class IRBuilder {
             case CLASSVARASGNNODE:
                 addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getName(), rhsVal));
                 break;
-            case CLASSVARDECLNODE:
-                addInstr(new PutClassVariableInstr(classVarDeclarationContainer(), ((ClassVarDeclNode)node).getName(), rhsVal));
-                break;
             case CONSTDECLNODE:
                 buildConstDeclAssignment((ConstDeclNode) node, rhsVal);
                 break;
@@ -768,11 +765,6 @@ public class IRBuilder {
                 v = createTemporaryVariable();
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
                 addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getName(), v));
-                break;
-            case CLASSVARDECLNODE:
-                v = createTemporaryVariable();
-                receiveBlockArg(v, argsArray, argIndex, isSplat);
-                addInstr(new PutClassVariableInstr(classVarDeclarationContainer(), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 v = createTemporaryVariable();
@@ -1419,6 +1411,7 @@ public class IRBuilder {
         return val;
     }
 
+    @Deprecated
     public Operand classVarDeclarationContainer() {
         return classVarContainer(true);
     }
