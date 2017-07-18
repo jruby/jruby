@@ -1758,7 +1758,11 @@ public class RubyKernel {
 
     @JRubyMethod(module = true)
     public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
-        block.yield(context, recv);
+        if (block.getProcObject() != null) {
+            block.getProcObject().call(context, Helpers.arrayOf(recv));
+        } else {
+            block.yield(context, recv);
+        }
         return recv;
     }
 

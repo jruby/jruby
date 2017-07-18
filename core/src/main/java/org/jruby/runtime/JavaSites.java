@@ -82,6 +82,7 @@ public class JavaSites {
         public final CallSite convert_rational = new FunctionalCachingCallSite("convert");
         public final CheckedSites to_hash_checked = new CheckedSites("to_hash");
         public final CallSite write = new FunctionalCachingCallSite("write");
+        public final CallSite call = new FunctionalCachingCallSite("call");
     }
 
     public static class ArraySites {
