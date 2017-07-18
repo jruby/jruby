@@ -38,7 +38,6 @@ package org.jruby.util;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import org.jcodings.Encoding;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -50,10 +49,11 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.util.TypeConverter.toFloat;
 
 public class Pack {
     private static final byte[] sSp10 = "          ".getBytes();
@@ -97,17 +97,6 @@ public class Pack {
 
     private static double obj2dbl(Ruby runtime, IRubyObject o) {
         return toFloat(runtime, o).getDoubleValue();
-    }
-
-    // MRI: rb_to_float 1.9
-    private static RubyFloat toFloat(Ruby runtime, IRubyObject obj) {
-        if (obj instanceof RubyNumeric) {
-            return ((RubyNumeric) obj).convertToFloat();
-        }
-        if (obj instanceof RubyString || obj.isNil()) {
-            throw runtime.newTypeError(obj, "Float");
-        }
-        return (RubyFloat) TypeConverter.convertToType(obj, runtime.getFloat(), "to_f", true);
     }
 
     static {
