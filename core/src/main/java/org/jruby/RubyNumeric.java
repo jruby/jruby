@@ -50,6 +50,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
@@ -1010,7 +1011,8 @@ public class RubyNumeric extends RubyObject {
     private IRubyObject stepCommon(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
         Ruby runtime = context.runtime;
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
-            fixnumStep(context, runtime, getLongValue(),
+            fixnumStep(context, runtime, (RubyFixnum) this,
+                                         this.getLongValue(),
                                          ((RubyFixnum)to).getLongValue(),
                                          ((RubyFixnum)step).getLongValue(),
                                           block);
@@ -1022,9 +1024,13 @@ public class RubyNumeric extends RubyObject {
         return this;
     }
 
-    private static void fixnumStep(ThreadContext context, Ruby runtime, long from, long to, long step, Block block) {
+    private static void fixnumStep(ThreadContext context, Ruby runtime, RubyFixnum fromObj, long from, long to, long step, Block block) {
         // We must avoid integer overflows in "i += step".
-        if (step >= 0) {
+        if (step == 0) {
+            for (;;) {
+                block.yield(context, fromObj);
+            }
+        } else if (step > 0) {
             long tov = Long.MAX_VALUE - step;
             if (to < tov) tov = to;
             long i;
@@ -1088,9 +1094,6 @@ public class RubyNumeric extends RubyObject {
 
     public static RubyNumeric intervalStepSize(ThreadContext context, IRubyObject from, IRubyObject to, IRubyObject step, boolean excludeLast) {
         Ruby runtime = context.runtime;
-        JavaSites.NumericSites sites = sites(context);
-        CallSite cmpSite = sites.op_gt;
-        IRubyObject deltaObj;
 
         if (from instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
             long diff = ((RubyFixnum) step).getLongValue();
@@ -1131,14 +1134,19 @@ public class RubyNumeric extends RubyObject {
             }
         }
 
+        JavaSites.NumericSites sites = sites(context);
+        CallSite op_gt = sites.op_gt;
+        CallSite op_lt = sites.op_lt;
+        CallSite cmpSite = op_gt;
+
         RubyFixnum zero = RubyFixnum.zero(runtime);
         IRubyObject comparison = zero.coerceCmp(context, sites.op_cmp, step);
 
-        switch (RubyComparable.cmpint(context, comparison, step, zero)) {
+        switch (RubyComparable.cmpint(context, op_gt, op_lt, comparison, step, zero)) {
             case 0:
                 return RubyFloat.newFloat(runtime, Float.POSITIVE_INFINITY);
             case 1:
-                cmpSite = sites.op_lt;
+                cmpSite = op_lt;
                 break;
         }
 
@@ -1146,8 +1154,7 @@ public class RubyNumeric extends RubyObject {
             return RubyFixnum.zero(runtime);
         }
 
-        deltaObj = sites.op_minus.call(context, to, to, from);
-
+        IRubyObject deltaObj = sites.op_minus.call(context, to, to, from);
         IRubyObject result = sites.div.call(context, deltaObj, deltaObj, step);
         IRubyObject timesPlus = sites.op_plus.call(context, from, from, sites.op_times.call(context, result, result, step));
         if (!excludeLast || cmpSite.call(context, timesPlus, timesPlus, to).isTrue()) {
