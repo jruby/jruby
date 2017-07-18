@@ -210,7 +210,7 @@ class TestIO < Test::Unit::TestCase
       ensure_files @file
 
       fno = IO::sysopen(@file, "r", 0124) # not creating, mode is ignored
-      assert_instance_of(Fixnum, fno)
+      assert_instance_of(Integer, fno)
       assert_raises(Errno::EINVAL) { IO.open(fno, "w") } # not writable
       IO.open(fno, "r") do |io|
         assert_equal(fno, io.fileno)

@@ -98,8 +98,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(10.0, Double.new("10").doubleValue())
 
     assert_equal(Random, r.class)
-    assert_equal(Fixnum, r.nextInt.class)
-    assert_equal(Fixnum, r.nextInt(10).class)
+    assert_equal(Integer, r.nextInt.class)
+    assert_equal(Integer, r.nextInt(10).class)
   end
 
   Long = java.lang.Long
@@ -116,7 +116,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_class_methods
     result = java.lang.System.currentTimeMillis()
-    assert_equal(Fixnum, result.class)
+    assert_equal(Integer, result.class)
   end
 
   Boolean = java.lang.Boolean
@@ -644,7 +644,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     r_returned = l.get(1)
     # Since Random is a public class we should get the value casted as that
     assert_equal("java.util.Random", r_returned.java_class.name)
-    assert(r_returned.nextInt.kind_of?(Fixnum))
+    assert(r_returned.nextInt.kind_of?(Integer))
   end
 
   HashMap = java.util.HashMap
@@ -1065,8 +1065,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_package_object_id
-    assert org.jruby.object_id.is_a?(Fixnum)
-    assert Java::java::lang.object_id.is_a?(Fixnum)
+    assert org.jruby.object_id.is_a?(Integer)
+    assert Java::java::lang.object_id.is_a?(Integer)
   end
 
   def test_package_singleton_method_hooks
