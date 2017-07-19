@@ -1118,16 +1118,11 @@ public class ParserSupport {
     }
 
     public Node asSymbol(ISourcePosition position, ByteList value) {
-        return new SymbolNode(position, value);
-    }
-
-    @Deprecated
-    public Node asSymbol(ISourcePosition position, String value) {
-        return new SymbolNode(position, value, lexer.getEncoding(), lexer.getTokenCR());
+        return new SymbolNode(position, symbol(value));
     }
         
     public Node asSymbol(ISourcePosition position, Node value) {
-        return value instanceof StrNode ? new SymbolNode(position, ((StrNode) value).getValue()) :
+        return value instanceof StrNode ? new SymbolNode(position, symbol(((StrNode) value).getValue())) :
                 new DSymbolNode(position, (DStrNode) value);
     }
     

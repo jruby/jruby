@@ -3,10 +3,9 @@ package org.jruby.ast;
 import java.util.List;
 
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * This is not a node in the classic sense in that it has no defined or
@@ -17,20 +16,15 @@ import org.jruby.util.StringSupport;
  * subtype which is not Object.
  */
 public class LiteralNode extends Node implements InvisibleNode {
-    private ByteList name;
+    private RubySymbol name;
 
-    public LiteralNode(ISourcePosition position, ByteList name) {
+    public LiteralNode(ISourcePosition position, RubySymbol name) {
         super(position, false);
         this.name = name;
     }
 
-    @Deprecated
-    public LiteralNode(ISourcePosition position, String name) {
-        this(position, StringSupport.stringAsByteList(name));
-    }
-
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     /**

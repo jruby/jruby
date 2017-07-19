@@ -30,6 +30,7 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -98,6 +99,7 @@ import org.jruby.ast.SClassNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
+import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.UntilNode;
@@ -172,7 +174,8 @@ public class RubyParser {
 
 %token <ByteList> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
 %token <StrNode> tCHAR
-%type <ByteList> sym symbol operation operation2 operation3 op fname cname
+%type <RubySymbol> sym symbol fname
+%type <ByteList> operation operation2 operation3 op cname
 %type <ByteList> f_norm_arg restarg_mark
 %type <ByteList> dot_or_colon  blkarg_mark
 %token <ByteList> tUPLUS         /* unary+ */
@@ -860,23 +863,23 @@ cpath           : tCOLON3 cname {
                     $$ = support.new_colon2(support.getPosition($1), $1, $3);
                 }
 
-// ByteList:fname - A function name [!null]
+// RubySymbol:fname - A function name [!null]
 fname          : tIDENTIFIER {
-                   $$ = $1;
+                   $$ = support.symbol($1);
                }
                | tCONSTANT {
-                   $$ = $1;
+                   $$ = support.symbol($1);
                }
                | tFID  {
-                   $$ = $1;
+                   $$ = support.symbol($1);
                }
                | op {
                    lexer.setState(EXPR_ENDFN);
-                   $$ = $1;
+                   $$ = support.symbol($1);
                }
                | reswords {
                    lexer.setState(EXPR_ENDFN);
-                   $$ = $1;
+                   $$ = support.symbol($1);
                }
 
 // LiteralNode:fsym
@@ -1983,7 +1986,7 @@ literal         : numeric {
                     $$ = $1;
                 }
                 | symbol {
-                    $$ = support.asSymbol(lexer.getPosition(), $1);
+                    $$ = new SymbolNode(lexer.getPosition(), $1);
                 }
                 | dsym
 
@@ -2178,22 +2181,24 @@ string_dvar     : tGVAR {
                 }
                 | backref
 
-// ByteList:symbol
+// RubySymbol:symbol
 symbol          : tSYMBEG sym {
                      lexer.setState(EXPR_ENDARG);
                      $$ = $2;
                 }
 
-// ByteList:symbol
-sym             : fname
-                | tIVAR {
+// RubySymbol:symbol
+sym             : fname {
                     $$ = $1;
+                }
+                | tIVAR {
+                    $$ = support.symbol($1);
                 }
                 | tGVAR {
-                    $$ = $1;
+                    $$ = support.symbol($1);
                 }
                 | tCVAR {
-                    $$ = $1;
+                    $$ = support.symbol($1);
                 }
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {

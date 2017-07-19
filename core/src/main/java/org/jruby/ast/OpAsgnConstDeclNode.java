@@ -47,9 +47,10 @@ public class OpAsgnConstDeclNode extends Node implements BinaryOperatorNode {
         return visitor.visitOpAsgnConstDeclNode(this);
     }
 
+    // FIXME: Missing operator as a node.
     @Override
     public List<Node> childNodes() {
-        return createList(lhs, new LiteralNode(getPosition(), operator), rhs);
+        return createList(lhs, rhs);
     }
 
     @Override

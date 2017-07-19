@@ -3817,9 +3817,7 @@ public class IRBuilder {
     }
 
     public Operand buildSymbol(SymbolNode node) {
-        // Since symbols are interned objects, no need to copyAndReturnValue(...)
-        // SSS FIXME: Premature opt?
-        return new Symbol(node.getBytes());
+        return new Symbol(node.getByteName());
     }
 
     public Operand buildTrue() {
