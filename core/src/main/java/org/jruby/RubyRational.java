@@ -752,12 +752,9 @@ public class RubyRational extends RubyNumeric {
     /** nurat_idiv
      * 
      */
-    public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
-        return op_idiv19(context, other);
-    }
-
     @JRubyMethod(name = "div")
-    public IRubyObject op_idiv19(ThreadContext context, IRubyObject other) {
+    @Override
+    public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         return f_floor(context, f_div(context, this, other));
@@ -1343,6 +1340,11 @@ public class RubyRational extends RubyNumeric {
     @Deprecated
     public IRubyObject op_ceil(ThreadContext context, IRubyObject n) {
         return ceil(context, n);
+    }
+
+    @Deprecated
+    public IRubyObject op_idiv19(ThreadContext context, IRubyObject other) {
+        return idiv(context, other);
     }
 
     private static JavaSites.RationalSites sites(ThreadContext context) {

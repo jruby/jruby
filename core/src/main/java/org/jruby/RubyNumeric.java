@@ -728,6 +728,11 @@ public class RubyNumeric extends RubyObject {
         return numFuncall(context, car, sites(context).op_minus, ary.eltInternal(1));
     }
 
+    // MRI: rb_int_plus and others, handled by polymorphism
+    public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
+        return coerceBin(context, sites(context).op_plus, other);
+    }
+
     /** num_cmp
      *
      */
@@ -761,8 +766,8 @@ public class RubyNumeric extends RubyObject {
         return quo(context, other);
     }
 
-    /** num_div
-     *
+    /**
+     * MRI: num_div
      */
     @JRubyMethod(name = "div")
     public IRubyObject div(ThreadContext context, IRubyObject other) {
@@ -774,6 +779,13 @@ public class RubyNumeric extends RubyObject {
         }
         IRubyObject quotient = numFuncall(context, this, sites(context).op_quo, other);
         return sites(context).floor.call(context, quotient, quotient);
+    }
+
+    /**
+     * MRI: rb_int_idiv and overrides
+     */
+    public IRubyObject idiv(ThreadContext context, IRubyObject other) {
+        return div(context, other);
     }
 
     /** num_divmod

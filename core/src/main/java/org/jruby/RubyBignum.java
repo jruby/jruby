@@ -547,7 +547,7 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
+    public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         return op_divide(context, other, false);
     }
 
@@ -683,16 +683,31 @@ public class RubyBignum extends RubyInteger {
         Ruby runtime = context.runtime;
         if (other == RubyFixnum.zero(runtime)) return RubyFixnum.one(runtime);
         final double d;
-        if (other instanceof RubyFixnum) {
-            return op_pow(context, ((RubyFixnum) other).getLongValue());
-        } else if (other instanceof RubyBignum) {
-            d = ((RubyBignum) other).getDoubleValue();
-            context.runtime.getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
-        } else if (other instanceof RubyFloat) {
+        if (other instanceof RubyFloat) {
             d = ((RubyFloat) other).getDoubleValue();
             if (compareTo(RubyFixnum.zero(runtime)) == -1 && d != Math.round(d)) {
                 RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
                 return sites(context).op_exp.call(context, complex, complex, other);
+            }
+        } else if (other instanceof RubyBignum) {
+            d = ((RubyBignum) other).getDoubleValue();
+            context.runtime.getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
+        } else if (other instanceof RubyFixnum) {
+            long yy = other.convertToInteger().getLongValue();
+            if (yy < 0)
+                return RubyRational.newRationalRaw(runtime, this).op_expt(context, other);
+            else {
+                int xbits = value.bitLength();
+                int BIGLEN_LIMIT = 32*1024*1024;
+
+                if ((xbits > BIGLEN_LIMIT) ||
+                        (xbits * yy > BIGLEN_LIMIT)) {
+                    runtime.getWarnings().warn("in a**b, b may be too big");
+                    d = (double)yy;
+                }
+                else {
+                    return newBignum(runtime, value.pow((int)yy));
+                }
             }
         } else {
             return coerceBin(context, sites(context).op_exp, other);
@@ -702,18 +717,6 @@ public class RubyBignum extends RubyInteger {
             return RubyFloat.newFloat(runtime, pow);
         }
         return RubyNumeric.dbl2ival(runtime, pow);
-    }
-
-    public final IRubyObject op_pow(final ThreadContext context, final long other) {
-        if (other >= 0) {
-            if (other <= Integer.MAX_VALUE) { // only have BigInteger#pow(int)
-                return bignorm(context.runtime, value.pow((int) other)); // num2int is also implemented
-            }
-            warnIfPowExponentTooBig(context, other);
-            return RubyFloat.newFloat(context.runtime, Math.pow(big2dbl(this), (double) other));
-        }
-        // (other < 0)
-        return RubyRational.newRationalRaw(context.runtime, this).op_expt(context, other);
     }
 
     private void warnIfPowExponentTooBig(final ThreadContext context, final long other) {
@@ -1085,6 +1088,25 @@ public class RubyBignum extends RubyInteger {
             return runtime.newBoolean(value.signum() > 0);
         }
         return sites(context).basic_op_gt.call(context, this, this, RubyFixnum.zero(runtime));
+    }
+
+    @Override
+    protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
+        long bytes = value.bitLength() / 8 + 1;
+        return (-0.415241 * ndigits - 0.125 > bytes);
+    }
+
+    @Deprecated
+    public final IRubyObject op_pow(final ThreadContext context, final long other) {
+        if (other >= 0) {
+            if (other <= Integer.MAX_VALUE) { // only have BigInteger#pow(int)
+                return bignorm(context.runtime, value.pow((int) other)); // num2int is also implemented
+            }
+            warnIfPowExponentTooBig(context, other);
+            return RubyFloat.newFloat(context.runtime, Math.pow(big2dbl(this), (double) other));
+        }
+        // (other < 0)
+        return RubyRational.newRationalRaw(context.runtime, this).op_expt(context, other);
     }
 
     private static JavaSites.BignumSites sites(ThreadContext context) {

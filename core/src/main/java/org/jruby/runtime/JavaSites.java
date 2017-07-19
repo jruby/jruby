@@ -205,6 +205,7 @@ public class JavaSites {
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite op_quo = new FunctionalCachingCallSite("/");
         public final CallSite op_mod = new FunctionalCachingCallSite("%");
+        public final CallSite size = new FunctionalCachingCallSite("size");
     }
 
     public static class FixnumSites {
