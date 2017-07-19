@@ -320,7 +320,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1) {
-        if (a1.isNil()) {
+        if (a1 == context.nil) {
             throw context.runtime.newTypeError("can't convert nil into Rational");
         }
 
@@ -332,7 +332,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
-        if (a1.isNil() || a2.isNil()) {
+        if (a1 == context.nil || a2 == context.nil) {
             throw context.runtime.newTypeError("can't convert nil into Rational");
         }
         
@@ -354,7 +354,7 @@ public class RubyRational extends RubyNumeric {
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
         } else {
-            if (a1 instanceof RubyObject && responds_to_to_r(context, a1)) {
+            if (a1 instanceof RubyObject && sites(context).respond_to_to_r.respondsTo(context, a1, a1)) {
                 a1 = f_to_r(context, a1);
             }
         }
@@ -366,27 +366,22 @@ public class RubyRational extends RubyNumeric {
         }
 
         if (a1 instanceof RubyRational) {
-            if (a2.isNil() || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
+            if (a2 == context.nil || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
         }
 
-        if (a2.isNil()) {
-            if (a1 instanceof RubyNumeric && !f_integer_p(context, a1).isTrue()) return a1;
+        if (a2 == context.nil) {
+            if (!(a1 instanceof RubyNumeric && f_integer_p(context, a1).isTrue())) {
+                return TypeConverter.convertToType(a1, context.runtime.getRational(), "to_r");
+            }
             return newInstance(context, recv, a1);
         } else {
-            if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
+            if ((a1 instanceof RubyNumeric && a2 instanceof RubyNumeric) &&
                 (!f_integer_p(context, a1).isTrue() || !f_integer_p(context, a2).isTrue())) {
                 return f_div(context, a1, a2);
             }
             return newInstance(context, recv, a1, a2);
         }
     }
-
-    private static boolean responds_to_to_r(ThreadContext context, IRubyObject obj) {
-        return respond_to_to_r.respondsTo(context, obj, obj);
-    }
-
-    // TODO: wasn't sure whether to put this on NumericSites, here for now - should move
-    static final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
 
     /** nurat_numerator
      * 

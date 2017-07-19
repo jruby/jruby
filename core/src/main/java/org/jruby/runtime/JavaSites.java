@@ -363,6 +363,7 @@ public class JavaSites {
         public final CallSite remainder = new FunctionalCachingCallSite("remainder");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CheckedSites to_r_checked = new CheckedSites("to_r");
+        public final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
     }
 
     public static class RangeSites {
