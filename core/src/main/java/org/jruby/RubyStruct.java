@@ -434,7 +434,7 @@ public class RubyStruct extends RubyObject {
         final RubyStruct self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
                 return self.size();
             }
         };

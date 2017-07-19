@@ -56,11 +56,11 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.KernelSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
@@ -81,16 +81,22 @@ import java.util.HashSet;
 import java.util.Map;
 
 import static org.jruby.RubyBasicObject.UNDEF;
+import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.BLOCK;
+import static org.jruby.anno.FrameField.CLASS;
 import static org.jruby.anno.FrameField.FILENAME;
+import static org.jruby.anno.FrameField.JUMPTARGET;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.anno.FrameField.LINE;
 import static org.jruby.anno.FrameField.METHODNAME;
+import static org.jruby.anno.FrameField.SCOPE;
+import static org.jruby.anno.FrameField.SELF;
+import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
-import static org.jruby.RubyEnumerator.SizeFn;
-import static org.jruby.anno.FrameField.*;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -1287,7 +1293,7 @@ public class RubyKernel {
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
         if ( ! block.isGiven() ) {
-            return RubyEnumerator.enumeratorizeWithSize(context, recv, "loop", loopSizeFn(context));
+            return enumeratorizeWithSize(context, recv, "loop", loopSizeFn(context));
         }
         final Ruby runtime = context.runtime;
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
@@ -1313,7 +1319,7 @@ public class RubyKernel {
     private static SizeFn loopSizeFn(final ThreadContext context) {
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject self, IRubyObject[] args) {
                 return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
             }
         };
@@ -1766,7 +1772,7 @@ public class RubyKernel {
         if (block.isGiven()) {
             sizeFn = new SizeFn() {
                 @Override
-                public IRubyObject size(IRubyObject[] args) {
+                public IRubyObject size(ThreadContext context, IRubyObject self, IRubyObject[] args) {
                     return block.call(context, args);
                 }
             };

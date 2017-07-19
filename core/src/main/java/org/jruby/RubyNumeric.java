@@ -1104,7 +1104,7 @@ public class RubyNumeric extends RubyObject {
     private SizeFn stepSizeFn(final ThreadContext context, final IRubyObject from, final IRubyObject[] args) {
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context1, IRubyObject self, IRubyObject[] args) {
                 IRubyObject[] scannedArgs = scanStepArgs(context, args);
                 return intervalStepSize(context, from, scannedArgs[0], scannedArgs[1], false);
             }

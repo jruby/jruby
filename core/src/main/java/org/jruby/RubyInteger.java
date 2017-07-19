@@ -41,7 +41,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
@@ -53,11 +52,11 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.checkInteger;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
-import static org.jruby.RubyEnumerator.SizeFn;
 
 /** Implementation of the Integer class.
  *
@@ -182,7 +181,7 @@ public abstract class RubyInteger extends RubyNumeric {
     private static SizeFn uptoSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject self, IRubyObject[] args) {
                 return intervalStepSize(context, from, to, RubyFixnum.one(context.runtime), false);
             }
         };
@@ -245,7 +244,7 @@ public abstract class RubyInteger extends RubyNumeric {
     private static SizeFn downToSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject self, IRubyObject[] args) {
                 return intervalStepSize(context, from, to, RubyFixnum.newFixnum(context.runtime, -1), false);
             }
         };
@@ -274,7 +273,7 @@ public abstract class RubyInteger extends RubyNumeric {
         final RubyInteger self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context1, IRubyObject recv, IRubyObject[] args) {
                 RubyFixnum zero = RubyFixnum.zero(runtime);
                 ThreadContext context = runtime.getCurrentContext();
                 if ((self instanceof RubyFixnum && getLongValue() < 0)

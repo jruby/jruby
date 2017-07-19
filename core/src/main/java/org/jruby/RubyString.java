@@ -60,8 +60,8 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.StringSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -78,6 +78,7 @@ import java.util.Arrays;
 import java.util.Locale;
 
 import static org.jruby.RubyComparable.invcmp;
+import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
@@ -96,12 +97,11 @@ import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.codeRangeScan;
 import static org.jruby.util.StringSupport.encFastMBCLen;
 import static org.jruby.util.StringSupport.isSingleByteOptimizable;
+import static org.jruby.util.StringSupport.memsearch;
 import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.offset;
-import static org.jruby.util.StringSupport.memsearch;
 import static org.jruby.util.StringSupport.toLower;
 import static org.jruby.util.StringSupport.toUpper;
-import static org.jruby.RubyEnumerator.SizeFn;
 
 /**
  * Implementation of Ruby String class
@@ -2197,7 +2197,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final RubyString self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
                 return self.bytesize();
             }
         };
@@ -5030,7 +5030,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final RubyString self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
                 return self.length();
             }
         };
@@ -5213,7 +5213,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final RubyString self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
                 return self.length();
             }
         };

@@ -40,14 +40,12 @@ import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaInternalBlockBody;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.EnumerableSites;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ArraySupport;
+import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.util.TypeConverter;
 
 import java.util.ArrayList;
@@ -56,12 +54,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyObject.equalInternal;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
-import static org.jruby.RubyEnumerator.SizeFn;
 
 /**
  * The implementation of Ruby's Enumerable module.
@@ -258,10 +256,10 @@ public class RubyEnumerable {
     private static SizeFn cycleSizeFn(final ThreadContext context, final IRubyObject self) {
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context1, IRubyObject recv, IRubyObject[] args) {
                 Ruby runtime = context.runtime;
                 IRubyObject n = runtime.getNil();
-                IRubyObject size = enumSizeFn(context, self).size(args);
+                IRubyObject size = enumSizeFn(context, self).size(context, self, args);
 
                 if (size == null || size.isNil()) {
                     return runtime.getNil();
@@ -1129,7 +1127,7 @@ public class RubyEnumerable {
     private static SizeFn eachSliceSizeFn(final ThreadContext context, final IRubyObject self) {
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject self, IRubyObject[] args) {
                 Ruby runtime = context.runtime;
                 assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_slice ensures arg[0] is numeric
                 long sliceSize = ((RubyNumeric) args[0]).getLongValue();
@@ -1137,7 +1135,7 @@ public class RubyEnumerable {
                     throw runtime.newArgumentError("invalid slice size");
                 }
 
-                IRubyObject size = enumSizeFn(context, self).size(args);
+                IRubyObject size = enumSizeFn(context, self).size(context, self, args);
                 if (size == null || size.isNil()) {
                     return runtime.getNil();
                 }
@@ -1179,7 +1177,7 @@ public class RubyEnumerable {
     private static SizeFn eachConsSizeFn(final ThreadContext context, final IRubyObject self) {
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context1, IRubyObject self, IRubyObject[] args) {
                 Ruby runtime = context.runtime;
                 assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_cons ensures arg[0] is numeric
                 long consSize = ((RubyNumeric) args[0]).getLongValue();
@@ -1187,7 +1185,7 @@ public class RubyEnumerable {
                     throw runtime.newArgumentError("invalid size");
                 }
 
-                IRubyObject size = enumSizeFn(context, self).size(args);
+                IRubyObject size = enumSizeFn(context, self).size(context1, self, args);
                 if (size == null || size.isNil()) {
                     return runtime.getNil();
                 }
@@ -1931,7 +1929,7 @@ public class RubyEnumerable {
     private static SizeFn enumSizeFn(final ThreadContext context, final IRubyObject self) {
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject self, IRubyObject[] args) {
                 IRubyObject size = self.checkCallMethod(context, sites(context).size_checked);
                 return size == null ? context.nil : size;
             }

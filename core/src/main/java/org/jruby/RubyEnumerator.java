@@ -443,7 +443,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @JRubyMethod
     public final IRubyObject size(ThreadContext context) {
         if (sizeFn != null) {
-            return sizeFn.size(methodArgs);
+            return sizeFn.size(context, this, methodArgs);
         }
 
         IRubyObject size = this.size;
@@ -473,7 +473,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         final RubyEnumerator self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
                 return self.size(context);
             }
         };
@@ -616,7 +616,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
      * TODO (CON): fix this to receive context and state to we're not reallocating it all the time
      */
     public interface SizeFn {
-        IRubyObject size(IRubyObject[] args);
+        IRubyObject size(ThreadContext context, IRubyObject self, IRubyObject[] args);
     }
 
     private static abstract class Nexter {

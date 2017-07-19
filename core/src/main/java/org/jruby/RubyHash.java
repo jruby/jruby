@@ -834,7 +834,7 @@ public class RubyHash extends RubyObject implements Map {
         final RubyHash self = this;
         return new RubyEnumerator.SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context1, IRubyObject recv, IRubyObject[] args) {
                 return self.rb_size();
             }
         };

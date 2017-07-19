@@ -36,43 +36,40 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.IOException;
-import java.util.List;
-
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
-
-import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.runtime.Visibility.*;
-
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.component.VariableEntry;
+import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
-import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.RubyEnumerator.SizeFn;
-import static org.jruby.RubyNumeric.intervalStepSize;
+import java.io.IOException;
+import java.util.List;
 
-import org.jruby.runtime.invokedynamic.MethodNames;
+import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyNumeric.intervalStepSize;
+import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
  * @author jpetersen
@@ -649,7 +646,7 @@ public class RubyRange extends RubyObject {
         final RubyRange self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context1, IRubyObject recv, IRubyObject[] args) {
                 return self.size(context);
             }
         };
@@ -659,7 +656,7 @@ public class RubyRange extends RubyObject {
         final RubyRange self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context1, IRubyObject recv, IRubyObject[] args) {
                 Ruby runtime = context.runtime;
                 IRubyObject begin = self.begin;
                 IRubyObject end = self.end;

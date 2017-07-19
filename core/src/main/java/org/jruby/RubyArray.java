@@ -1226,7 +1226,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         final RubyArray self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
                 return self.length();
             }
         };
@@ -3636,7 +3636,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return new SizeFn() {
             CallSite op_times = sites(context).op_times;
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject self, IRubyObject[] args) {
                 Ruby runtime = context.runtime;
                 IRubyObject n = runtime.getNil();
 
@@ -3793,7 +3793,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         final RubyArray self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
                 long n = self.realLength;
                 assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #combination ensures arg[0] is numeric
                 long k = ((RubyNumeric) args[0]).getLongValue();
@@ -3847,7 +3847,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         final RubyArray self = this;
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context1, IRubyObject recv, IRubyObject[] args) {
                 long n = self.realLength;
                 assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #repeated_combination ensures arg[0] is numeric
                 long k = ((RubyNumeric) args[0]).getLongValue();
@@ -3944,7 +3944,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return new SizeFn() {
             CallSite op_exp = sites(context).op_exp;
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
                 RubyFixnum n = self.length();
                 assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #repeated_permutation ensures arg[0] is numeric
                 long k = ((RubyNumeric) args[0]).getLongValue();
@@ -3989,7 +3989,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         return new SizeFn() {
             @Override
-            public IRubyObject size(IRubyObject[] args) {
+            public IRubyObject size(ThreadContext context1, IRubyObject recv, IRubyObject[] args) {
                 long n = self.realLength;
                 long k;
 
