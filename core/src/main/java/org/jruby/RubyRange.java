@@ -879,8 +879,8 @@ public class RubyRange extends RubyObject {
             marshalStream.registerLinkTarget(range);
             List<Variable<Object>> attrs = range.getVariableList();
 
-            attrs.add(new VariableEntry<Object>("begin", range.begin));
-            attrs.add(new VariableEntry<Object>("end", range.end));
+            attrs.add(new VariableEntry<Object>("begini", range.begin));
+            attrs.add(new VariableEntry<Object>("endi", range.end));
             attrs.add(new VariableEntry<Object>("excl", range.isExclusive ? runtime.getTrue() : runtime.getFalse()));
 
             marshalStream.dumpVariables(attrs);
@@ -896,9 +896,21 @@ public class RubyRange extends RubyObject {
             // FIXME: Maybe we can just gank these off the line directly?
             unmarshalStream.defaultVariablesUnmarshal(range);
 
-            range.begin = (IRubyObject) range.removeInternalVariable("begin");
-            range.end = (IRubyObject) range.removeInternalVariable("end");
-            range.isExclusive = ((IRubyObject) range.removeInternalVariable("excl")).isTrue();
+            IRubyObject begin = (IRubyObject) range.removeInternalVariable("begini");
+            IRubyObject end = (IRubyObject) range.removeInternalVariable("endi");
+            IRubyObject excl = (IRubyObject) range.removeInternalVariable("excl");
+
+            // try old names as well
+            if (begin == null) begin = (IRubyObject) range.removeInternalVariable("begin");
+            if (end == null) end = (IRubyObject) range.removeInternalVariable("end");
+
+            if (begin == null || end == null || excl == null) {
+                throw runtime.newArgumentError("bad value for range");
+            }
+
+            range.begin = begin;
+            range.end = end;
+            range.isExclusive = excl.isTrue();
 
             return range;
         }
