@@ -4645,8 +4645,11 @@ float_loop:
         RubyString str;
 
         try {
-            IRubyObject buffer = opts.convertToHash().fastARef(runtime.newSymbol("buffer"));
-            if (buffer != null) {
+            IRubyObject buffer = ArgsUtil.extractKeywordArg(context, "buffer", opts);
+            if (!buffer.isNil() && !(buffer instanceof RubyString)) {
+                throw runtime.newTypeError("buffer must be String, not " + buffer.getType().getName());
+            }
+            if (buffer.isNil()) {
                 str = buffer.convertToString();
             } else {
                 str = RubyString.newString(runtime, "");
