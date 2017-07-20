@@ -273,6 +273,7 @@ public class RubyRange extends RubyObject {
         if (this.isInited) {
             throw context.runtime.newNameError("`initialize' called twice", "initialize");
         }
+        checkFrozen();
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
         return context.nil;
     }
