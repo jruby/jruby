@@ -99,9 +99,9 @@ public class RubySignal {
         Ruby runtime = recv.getRuntime();
         RubyHash names = RubyHash.newHash(runtime);
         for (Map.Entry<String, Integer> sig : RubySignal.list().entrySet()) {
-            names.op_aset(context, runtime.newString(sig.getKey()), runtime.newFixnum(sig.getValue()));
+            names.op_aset(context, runtime.freezeAndDedupString(runtime.newString(sig.getKey())), runtime.newFixnum(sig.getValue()));
         }
-        names.op_aset(context, runtime.newString("EXIT"), runtime.newFixnum(0));
+        names.op_aset(context, runtime.freezeAndDedupString(runtime.newString("EXIT")), runtime.newFixnum(0));
         return names;
     }
 
