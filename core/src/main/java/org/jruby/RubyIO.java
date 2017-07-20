@@ -680,7 +680,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public IRubyObject getline(ThreadContext context, IRubyObject separator) {
-        return getline(context, separator, -1, null);
+        return getlineInner(context, separator, -1, false, null);
     }
 
     /**
@@ -688,18 +688,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
      *
      */
     public IRubyObject getline(ThreadContext context, IRubyObject separator, long limit) {
-        return getline(context, separator, limit, null);
+        return getlineInner(context, separator, (int) limit, false, null);
     }
 
     private IRubyObject getline(ThreadContext context, IRubyObject separator, long limit, ByteListCache cache) {
-        return getlineInner(context, separator, (int)limit, cache);
+        return getlineInner(context, separator, (int) limit, false, cache);
     }
+
 
     /**
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      * mri: rb_io_getline_1 (mostly)
      */
-    private IRubyObject getlineInner(ThreadContext context, IRubyObject rs, int _limit, ByteListCache cache) {
+    private IRubyObject getlineInner(ThreadContext context, IRubyObject rs, int _limit, boolean chomp, ByteListCache cache) {
         Ruby runtime = context.runtime;
         IRubyObject str = context.nil;
         boolean noLimit = false;
@@ -714,6 +715,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (rs.isNil() && _limit < 0) {
                 str = fptr.readAll(context, 0, context.nil);
                 if (((RubyString) str).size() == 0) return context.nil;
+                if (chomp) ((RubyString) str).chomp_bang(context, runtime.getGlobalVariables().getDefaultSeparator());
             } else if (_limit == 0) {
                 return RubyString.newEmptyString(runtime, fptr.readEncoding(runtime));
             } else if (
@@ -722,7 +724,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                             && !fptr.needsReadConversion()
                             && (enc = fptr.readEncoding(runtime)).isAsciiCompatible()) {
                 fptr.NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
-                return fptr.getlineFast(context, enc, this);
+                return fptr.getlineFast(context, enc, this, chomp);
             }
 
             // slow path logic
@@ -732,6 +734,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             int rslen = 0;
             boolean rspara = false;
             int extraLimit = 16;
+            boolean chompCR = chomp;
 
             fptr.SET_BINARY_MODE();
             enc = getReadEncoding();
@@ -761,6 +764,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     rsptr = rsByteList.getBegin();
                 }
                 newline = rsptrBytes[rsptr + rslen - 1] & 0xFF;
+                chompCR = chomp && rslen == 1 && newline == '\n';
             }
 
             ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
@@ -772,21 +776,31 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 while ((c = fptr.appendline(context, newline, strPtr, limit_p)) != OpenFile.EOF) {
                     int s, p, pp, e;
 
+                    byte[] strBytes = strPtr[0].getUnsafeBytes();
+                    int realSize = strPtr[0].getRealSize();
+                    int begin = strPtr[0].getBegin();
+
                     if (c == newline) {
-                        if (strPtr[0].getRealSize() < rslen) continue;
-                        s = strPtr[0].getBegin();
-                        e = s + strPtr[0].getRealSize();
+                        if (realSize < rslen) continue;
+                        s = begin;
+                        e = s + realSize;
                         p = e - rslen;
-                        pp = enc.leftAdjustCharHead(strPtr[0].getUnsafeBytes(), s, p, e);
+                        pp = enc.leftAdjustCharHead(strBytes, s, p, e);
                         if (pp != p) continue;
-                        if (ByteList.memcmp(strPtr[0].getUnsafeBytes(), p, rsptrBytes, rsptr, rslen) == 0) break;
+                        if (ByteList.memcmp(strBytes, p, rsptrBytes, rsptr, rslen) == 0) {
+                            if (chomp) {
+                                if (chompCR && p > s && strBytes[p-1] == '\r') --p;
+                                strPtr[0].length(p - s);
+                            }
+                            break;
+                        }
                     }
                     if (limit_p[0] == 0) {
-                        s = strPtr[0].getBegin();
-                        p = s + strPtr[0].getRealSize();
-                        pp = enc.leftAdjustCharHead(strPtr[0].getUnsafeBytes(), s, p - 1, p);
+                        s = begin;
+                        p = s + realSize;
+                        pp = enc.leftAdjustCharHead(strBytes, s, p - 1, p);
                         if (extraLimit != 0 &&
-                                StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, strPtr[0].getUnsafeBytes(), pp, p))) {
+                                StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, strBytes, pp, p))) {
                             limit_p[0] = 1;
                             extraLimit--;
                         } else {
@@ -826,6 +840,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         } finally {
             if (locked) fptr.unlock();
         }
+
 
         return str;
     }
@@ -2304,7 +2319,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context) {
         IRubyObject separator = prepareGetsSeparator(context, null, null);
-        IRubyObject result = getline(context, separator);
+        IRubyObject result = getlineInner(context, separator, -1, false, null);
 
         if (!result.isNil()) context.setLastLine(result);
 
@@ -2314,10 +2329,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject arg) {
-        IRubyObject separator = prepareGetsSeparator(context, arg, null);
-        long limit = prepareGetsLimit(context, arg, null);
+        boolean chomp = false;
+        IRubyObject rs = null;
+        IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, arg);
+        long limit = -1;
+        if (opt.isNil()) {
+            rs = prepareGetsSeparator(context, arg, null);
+            limit = prepareGetsLimit(context, arg, null);
+        } else {
+            IRubyObject chompKwarg = ArgsUtil.extractKeywordArg(context, "chomp", opt);
+            if (chompKwarg != null) {
+                chomp = chompKwarg.isTrue();
+            }
+            rs = prepareGetsSeparator(context, null, null);
+        }
 
-        IRubyObject result = getline(context, separator, limit);
+        IRubyObject result = getlineInner(context, rs, (int) limit, chomp, null);
 
         if (!result.isNil()) context.setLastLine(result);
 
@@ -2327,9 +2354,38 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg) {
+        boolean chomp = false;
+        IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, limit_arg);
+        long limit;
+        if (opt.isNil()) {
+            rs = prepareGetsSeparator(context, rs, limit_arg);
+            limit = prepareGetsLimit(context, rs, limit_arg);
+        } else {
+            IRubyObject chompKwarg = ArgsUtil.extractKeywordArg(context, "chomp", opt);
+            if (chompKwarg != null) {
+                chomp = chompKwarg.isTrue();
+            }
+            rs = prepareGetsSeparator(context, rs, null);
+            limit = prepareGetsLimit(context, rs, null);
+        }
+        IRubyObject result = getlineInner(context, rs, (int) limit, chomp, null);
+
+        if (!result.isNil()) context.setLastLine(result);
+
+        return result;
+    }
+
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg, IRubyObject opt) {
+        boolean chomp = false;
+        long limit = -1;
+        IRubyObject chompKwarg = ArgsUtil.extractKeywordArg(context, "chomp", opt);
+        if (chompKwarg != null) {
+            chomp = chompKwarg.isTrue();
+        }
         rs = prepareGetsSeparator(context, rs, limit_arg);
-        long limit = prepareGetsLimit(context, rs, limit_arg);
-        IRubyObject result = getline(context, rs, limit);
+        limit = prepareGetsLimit(context, rs, limit_arg);
+        IRubyObject result = getlineInner(context, rs, (int) limit, chomp, null);
 
         if (!result.isNil()) context.setLastLine(result);
 

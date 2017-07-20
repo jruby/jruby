@@ -578,8 +578,19 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         IRubyObject str = context.nil;
         int n, limit = -1;
+        boolean chomp = false;
 
-        switch (args.length) {
+        int argc = args.length;
+
+        IRubyObject opt = ArgsUtil.getOptionsArg(runtime, args);
+        if (!opt.isNil()) {
+            argc--;
+            IRubyObject chompKwarg = ArgsUtil.extractKeywordArg(context, "chomp", opt);
+            if (chompKwarg != null) {
+                chomp = chompKwarg.isTrue();
+            }
+        }
+        switch (argc) {
             case 0:
                 str = runtime.getGlobalVariables().get("$/");
                 break;
@@ -622,39 +633,52 @@ public class StringIO extends RubyObject implements EncodingCapable {
             int s = begin + ptr.pos;
             int e = begin + string.getRealSize();
             int p;
+            int w = 0;
 
             if (limit > 0 && s + limit < e) {
                 e = ptr.enc.rightAdjustCharHead(stringBytes, s, s + limit, e);
             }
             if (str.isNil()) {
-                str = strioSubstr(runtime, ptr.pos, e - s);
+                if (chomp) {
+                    w = chompNewlineWidth(stringBytes, s, e);
+                }
+                str = strioSubstr(runtime, ptr.pos, e - s - w);
             } else if ((n = ((RubyString) str).size()) == 0) {
                 // this is not an exact port; the original confused me
                 p = s;
                 // remove leading \n
-                while (stringBytes[p] == '\n') {
+                while (stringBytes[p + (((p + 1 < e) && (stringBytes[p] == '\r') && false)?1:0)] == '\n') {
+                    p += (stringBytes[p] == '\r')?1:0;
                     if (++p == e) {
                         return context.nil;
                     }
                 }
                 s = p;
                 // find next \n or end; if followed by \n, include it too
-                p = StringSupport.memchr(stringBytes, p, '\n', e - p);
-                if (p != -1) {
-                    if (++p < e && stringBytes[p] == '\n') {
+                while ((p = StringSupport.memchr(stringBytes, p, '\n', e - p)) != -1 && (p != e)) {
+                    if (stringBytes[++p] == '\n') {
                         e = p + 1;
-                    } else {
-                        e = p;
+                        w = (chomp ? 1 : 0);
+                        break;
+                    }
+            	    else if (stringBytes[p] == '\r' && p < e && stringBytes[p + 1] == '\n') {
+                        e = p + 2;
+                        w = (chomp ? 2 : 0);
+                        break;
                     }
                 }
-                str = strioSubstr(runtime, s - begin, e - s);
+                if (w == 0 && chomp) {
+                    w = chompNewlineWidth(stringBytes, s, e);
+                }
+                str = strioSubstr(runtime, s - begin, e - s - w);
             } else if (n == 1) {
                 RubyString strStr = (RubyString) str;
                 ByteList strByteList = strStr.getByteList();
                 if ((p = StringSupport.memchr(stringBytes, s, strByteList.get(0), e - s)) != -1) {
                     e = p + 1;
+                    w = (chomp ? ((p > s && stringBytes[p-1] == '\r')?1:0) + 1 : 0);
                 }
-                str = strioSubstr(runtime, ptr.pos, e - s);
+                str = strioSubstr(runtime, ptr.pos, e - s - w);
             } else {
                 if (n < e - s) {
                     RubyString strStr = (RubyString) str;
@@ -669,13 +693,21 @@ public class StringIO extends RubyObject implements EncodingCapable {
                         e = s + pos + n;
                     }
                 }
-                str = strioSubstr(runtime, ptr.pos, e - s);
+                str = strioSubstr(runtime, ptr.pos, e - s - w);
             }
             ptr.pos = e - begin;
             ptr.lineno++;
         }
 
         return str;
+    }
+
+    private static int chompNewlineWidth(byte[] bytes, int s, int e) {
+        if (e > s && bytes[--e] == '\n') {
+            if (e > s && bytes[--e] == '\r') return 2;
+            return 1;
+        }
+        return 0;
     }
 
     @JRubyMethod(name = {"length", "size"})
