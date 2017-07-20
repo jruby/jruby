@@ -389,7 +389,7 @@ public class RubyRational extends RubyNumeric {
 
         if (a2 == context.nil) {
             if (!(a1 instanceof RubyNumeric && f_integer_p(context, a1).isTrue())) {
-                return TypeConverter.convertToType(a1, context.runtime.getRational(), "to_r");
+                return TypeConverter.convertToType(context, a1, context.runtime.getRational(), sites(context).to_r_checked);
             }
             return newInstance(context, recv, a1);
         } else {
