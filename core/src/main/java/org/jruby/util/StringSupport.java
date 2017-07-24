@@ -42,7 +42,9 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
@@ -1716,6 +1718,15 @@ public final class StringSupport {
     }
 
     public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, Block block, boolean wantarray) {
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
+        if (opts.isNil()) {
+            return rbStrEnumerateLines(str, context, name, arg, context.nil, block, wantarray);
+        } else {
+            return rbStrEnumerateLines(str, context, name, context.runtime.getGlobalVariables().get("$/"), opts, block, wantarray);
+        }
+    }
+
+    public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, IRubyObject opts, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
 
         Encoding enc;
@@ -1723,10 +1734,17 @@ public final class StringSupport {
         int ptr, pend, subptr, subend, rsptr, hit, adjusted;
         int pos, len, rslen;
         boolean paragraph_mode = false;
+        boolean rsnewline = false;
+        boolean chomp = false;
 
         IRubyObject ary = null;
 
         rs = arg;
+
+        if (!opts.isNil()) {
+            IRubyObject _chomp = ArgsUtil.extractKeywordArg(context, "chomp", opts);
+            chomp = _chomp != null || _chomp.isTrue();
+        }
 
         if (block.isGiven()) {
             if (wantarray) {
@@ -1744,7 +1762,7 @@ public final class StringSupport {
             if (wantarray) {
                 ary = runtime.newEmptyArray();
             } else {
-                return enumeratorize(runtime, str, name, arg);
+                return enumeratorize(runtime, str, name, Helpers.arrayOf(arg, opts));
             }
         }
 
@@ -1767,29 +1785,35 @@ public final class StringSupport {
         rs = rs.convertToString();
         rslen = ((RubyString)rs).size();
 
-        if (rs == context.runtime.getGlobalVariables().get("$/"))
+        IRubyObject defaultSep = context.runtime.getGlobalVariables().get("$/");
+        if (rs == defaultSep)
             enc = str.getEncoding();
         else
             enc = str.checkEncoding((RubyString) rs);
 
         byte[] rsbytes;
+        ByteList rsByteList = ((RubyString) rs).getByteList();
         if (rslen == 0) {
             rsbytes = RubyIO.PARAGRAPH_SEPARATOR.unsafeBytes();
             rsptr = RubyIO.PARAGRAPH_SEPARATOR.begin();
             rslen = 2;
             paragraph_mode = true;
+            rsnewline = true;
         } else {
-
-            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
-            rsptr = ((RubyString)rs).getByteList().begin();
+            rsbytes = rsByteList.unsafeBytes();
+            rsptr = rsByteList.begin();
+            if (rsByteList.length() == enc.minLength() &&
+                    enc.isNewLine(rsbytes, rsptr, rsByteList.length())) {
+                rsnewline = true;
+            }
         }
 
-        if ((rs == context.runtime.getGlobalVariables().get("$/") || paragraph_mode) && !enc.isAsciiCompatible()) {
+        if ((rs == defaultSep || paragraph_mode) && !enc.isAsciiCompatible()) {
             rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
             rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
-            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
-            rsptr = ((RubyString)rs).getByteList().begin();
-            rslen = ((RubyString)rs).getByteList().realSize();
+            rsbytes = rsByteList.unsafeBytes();
+            rsptr = rsByteList.begin();
+            rslen = rsByteList.realSize();
         }
 
         while (subptr < pend) {
@@ -1803,8 +1827,22 @@ public final class StringSupport {
             }
             subend = hit + rslen;
             if (paragraph_mode) {
-                while (subend < pend && enc.isNewLine(strBytes, subend, pend)) {
+                int[] n = {0};
+                while (subend < pend) {
+                    if (EncodingUtils.encAscget(strBytes, subend, pend, n, enc) != '\r') {
+                        n[0] = 0;
+                    }
+                    if (!enc.isNewLine(strBytes, subend + n[0], pend)) break;
+                    subend += n[0];
                     subend += enc.length(strBytes, subend, pend);
+                }
+            }
+            hit = subend;
+            if (chomp) {
+                if (rsnewline) {
+                    subend = chomp_newline(strBytes, subptr, subend, enc);
+                } else {
+                    subend -= rslen;
                 }
             }
             line = str.substr(runtime, subptr - ptr, subend - subptr);
@@ -1814,10 +1852,13 @@ public final class StringSupport {
                 block.yieldSpecific(context, line);
                 str.modifyCheck(strBytes, len);
             }
-            subptr = subend;
+            subptr = hit;
         }
 
         if (subptr != pend) {
+            if (chomp && paragraph_mode) {
+                pend = chomp_newline(strBytes, subptr, pend, enc);
+            }
             line = str.substr(runtime, subptr - ptr, pend - subptr);
             if (wantarray) {
                 ((RubyArray) ary).push(line);
@@ -1827,6 +1868,17 @@ public final class StringSupport {
         }
 
         return wantarray ? ary : orig;
+    }
+
+    private static int chomp_newline(byte[] bytes, int p, int e, Encoding enc) {
+        int prev = enc.prevCharHead(bytes, p, e, e);
+        if (enc.isNewLine(bytes, prev, e)) {
+            e = prev;
+            prev = enc.prevCharHead(bytes, p, e, e);
+            if (prev != -1 && EncodingUtils.encAscget(bytes, prev, e, null, enc) == '\r')
+                e = prev;
+        }
+        return e;
     }
 
     public static int memsearch(byte[] xBytes, int x0, int m, byte[] yBytes, int y0, int n, Encoding enc) {
