@@ -2907,10 +2907,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             pos = StringSupport.offset(
                     value.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(),
                     pos, singleByteOptimizable());
-            if (regSub.length() > 0) {
-                pos = regSub.search(context, this, pos, true);
-                pos = subLength(pos);
-            }
+            pos = regSub.search(context, this, pos, true);
+            pos = subLength(pos);
+            if (pos >= 0) return RubyFixnum.newFixnum(context.runtime, pos);
         } else if (sub instanceof RubyString) {
             Encoding enc = checkEncoding((RubyString) sub);
             pos = StringSupport.rindex(value,
