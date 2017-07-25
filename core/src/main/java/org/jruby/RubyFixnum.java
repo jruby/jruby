@@ -642,7 +642,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      * also note that RubyFloat doesn't override Numeric.div
      */
     @Override
-    public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
+    public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         checkZeroDivisionError(context, other);
 
         return idiv(context, other, sites(context).div);
@@ -1334,6 +1334,12 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return runtime.newBoolean(value > 0);
         }
         return sites(context).basic_op_gt.call(context, this, this, RubyFixnum.zero(runtime));
+    }
+
+    @Override
+    protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
+        long bytes = 8; // sizeof(long)
+        return (-0.415241 * ndigits - 0.125 > bytes);
     }
 
     private static JavaSites.FixnumSites sites(ThreadContext context) {

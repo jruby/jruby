@@ -2,6 +2,7 @@ exclude :test_at, "MRI uses less precision than JRuby, which causes it to produc
 exclude :test_at_rational, "MRI uses less precision than JRuby, which causes it to produce incorrect values"
 exclude :test_future, "needs investigation"
 exclude :test_marshal_nsec_191, "needs investigation"
+exclude :test_num_exact_error, "error message formatting"
 exclude :test_past, "needs investigation"
 exclude :test_plus_type, "needs investigation"
 exclude :test_reinitialize, "needs investigation"

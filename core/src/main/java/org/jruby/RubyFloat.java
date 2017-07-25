@@ -748,7 +748,6 @@ public class RubyFloat extends RubyNumeric {
 
         final Ruby runtime = context.runtime;
         RubyFixnum one = RubyFixnum.one(runtime);
-        RubyFixnum two = RubyFixnum.two(runtime);
 
         IRubyObject eps, a, b;
         if (args.length != 0) {
@@ -756,24 +755,30 @@ public class RubyFloat extends RubyNumeric {
             a = f_sub(context, this, eps);
             b = f_add(context, this, eps);
         } else {
+            IRubyObject flt;
+            IRubyObject p, q;
             long[] exp = new long[1];
+
+            // float_decode_internal
             double f = frexp(value, exp);
             f = ldexp(f, DBL_MANT_DIG);
             long n = exp[0] - DBL_MANT_DIG;
 
+            RubyInteger rf = RubyBignum.newBignorm(runtime, f);
+            RubyFixnum rn = RubyFixnum.newFixnum(runtime, n);
 
-            IRubyObject rf = RubyNumeric.dbl2ival(runtime, f);
-            IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
+            if (rf.zero_p(context).isTrue() || fix2int(rn) >= 0) {
+                return RubyRational.newRationalRaw(runtime, rf.op_lshift(context, rn));
+            }
 
-            if (f_zero_p(context, rf) || !(f_negative_p(context, rn) || f_zero_p(context, rn)))
-                return RubyRational.newRationalRaw(runtime, f_lshift(context,rf,rn));
+            RubyInteger two_times_f, den;
 
-            a = RubyRational.newRationalRaw(runtime,
-                    f_sub(context,f_mul(context, two, rf),one),
-                    f_lshift(context, one, f_sub(context,one,rn)));
-            b = RubyRational.newRationalRaw(runtime,
-                    f_add(context,f_mul(context, two, rf),one),
-                    f_lshift(context, one, f_sub(context,one,rn)));
+            RubyFixnum two = RubyFixnum.two(runtime);
+            two_times_f = (RubyInteger) two.op_mul(context, rf);
+            den = (RubyInteger) RubyFixnum.one(runtime).op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
+
+            a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, RubyFixnum.one(runtime)), den);
+            b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, RubyFixnum.one(runtime)), den);
         }
 
         if (sites(context).op_equal.call(context, a, a, b).isTrue()) return f_to_r(context, this);
@@ -949,16 +954,9 @@ public class RubyFloat extends RubyNumeric {
             return this;
         }
 
-        if (Double.isInfinite(value)) {
+        if (Double.isNaN(value)) {
             if (ndigits <= 0) throw context.runtime.newFloatDomainError("NaN");
             return this;
-        }
-        double binexp;
-        // Missing binexp values for NaN and (-|+)Infinity.  frexp man page just says unspecified.
-        if (value == 0) {
-            binexp = 0;
-        } else {
-            binexp = Math.ceil(Math.log(value)/Math.log(2));
         }
 
         if (ndigits < 0) {
@@ -1026,7 +1024,10 @@ public class RubyFloat extends RubyNumeric {
     }
 
     private static double roundHalfUp(double xs) {
-        return Math.floor((Math.floor((xs + 0.5) * 2.0)) / 2.0);
+        if (xs < 0.0) {
+            return Math.round(xs * -1.0) * -1.0;
+        }
+        return Math.round(xs);
     }
 
     private static double roundHalfEven(double x, double s) {

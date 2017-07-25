@@ -2907,10 +2907,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             pos = StringSupport.offset(
                     value.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(),
                     pos, singleByteOptimizable());
-            if (regSub.length() > 0) {
-                pos = regSub.search(context, this, pos, true);
-                pos = subLength(pos);
-            }
+            pos = regSub.search(context, this, pos, true);
+            pos = subLength(pos);
+            if (pos >= 0) return RubyFixnum.newFixnum(context.runtime, pos);
         } else if (sub instanceof RubyString) {
             Encoding enc = checkEncoding((RubyString) sub);
             pos = StringSupport.rindex(value,
@@ -5005,12 +5004,19 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_each_line
      *
      */
+    @JRubyMethod(name = "each_line")
     public IRubyObject each_line(ThreadContext context, Block block) {
-        return each_lineCommon(context, context.runtime.getGlobalVariables().get("$/"), block);
+        return StringSupport.rbStrEnumerateLines(this, context, "each_line", context.runtime.getGlobalVariables().get("$/"), block, false);
     }
 
+    @JRubyMethod(name = "each_line")
     public IRubyObject each_line(ThreadContext context, IRubyObject arg, Block block) {
-        return each_lineCommon(context, arg, block);
+        return StringSupport.rbStrEnumerateLines(this, context, "each_line", arg, block, false);
+    }
+
+    @JRubyMethod(name = "each_line")
+    public IRubyObject each_line(ThreadContext context, IRubyObject arg, IRubyObject opts, Block block) {
+        return StringSupport.rbStrEnumerateLines(this, context, "each_line", arg, opts, block, false);
     }
 
     public IRubyObject each_lineCommon(ThreadContext context, IRubyObject sep, Block block) {
@@ -5061,14 +5067,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
-    @JRubyMethod(name = "each_line")
+    @Deprecated
     public IRubyObject each_line19(ThreadContext context, Block block) {
-        return StringSupport.rbStrEnumerateLines(this, context, "each_line", context.runtime.getGlobalVariables().get("$/"), block, false);
+        return each_line(context, block);
     }
 
-    @JRubyMethod(name = "each_line")
+    @Deprecated
     public IRubyObject each_line19(ThreadContext context, IRubyObject arg, Block block) {
-        return StringSupport.rbStrEnumerateLines(this, context, "each_line", arg, block, false);
+        return each_line(context, arg, block);
     }
 
     public IRubyObject lines(ThreadContext context, Block block) {

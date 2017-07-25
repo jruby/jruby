@@ -40,9 +40,8 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -50,14 +49,13 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.Numeric;
 import org.jruby.util.StringSupport;
 
+import java.math.RoundingMode;
+
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.util.Numeric.checkInteger;
-import static org.jruby.util.Numeric.f_gcd;
-import static org.jruby.util.Numeric.f_lcm;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.util.Numeric.*;
 
 /** Implementation of the Integer class.
  *
@@ -438,45 +436,127 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @JRubyMethod(name = "round")
-    public IRubyObject round(ThreadContext context, IRubyObject arg) {
-        int ndigits = RubyNumeric.num2int(arg);
-        return round(context, ndigits);
+    public IRubyObject round(ThreadContext context, IRubyObject _digits) {
+        return round(context, _digits, context.nil);
+    }
+
+    @JRubyMethod(name = "round")
+    public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
+        Ruby runtime = context.runtime;
+        int ndigits = 0;
+
+        // options (only "half" right now)
+        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts);
+        ndigits = num2int(_digits);
+
+        RoundingMode roundingMode = getRoundingMode(context, opts);
+
+        if (ndigits > 0) {
+            return RubyKernel.new_float19(runtime.getFloat(), this);
+        }
+        if (ndigits == 0) {
+            return this;
+        }
+
+        return roundShared(context, ndigits, roundingMode);
     }
 
     public IRubyObject round(ThreadContext context, int ndigits) {
-        if (ndigits > 0) return RubyKernel.new_float(this, this);
-        if (ndigits == 0) return this;
+        return roundShared(context, ndigits, RoundingMode.HALF_UP);
+    }
+
+    /*
+     * MRI: rb_int_round
+     */
+    protected IRubyObject roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
         Ruby runtime = context.runtime;
 
-        long bytes = (this instanceof RubyFixnum) ? 8 : RubyFixnum.fix2long(callMethod("size"));
-        /* If 10**N/2 > this, return 0 */
-        /* We have log_256(10) > 0.415241 and log_256(1/2)=-0.125 */
-        if (-0.415241 * ndigits - 0.125 > bytes) {
+        RubyNumeric f, h, n, r;
+
+        if (int_round_zero_p(context, ndigits)) {
             return RubyFixnum.zero(runtime);
         }
 
-        IRubyObject f = Numeric.int_pow(context, 10, -ndigits);
-
+        f = (RubyNumeric) int_pow(context, 10, -ndigits);
         if (this instanceof RubyFixnum && f instanceof RubyFixnum) {
-            long x = ((RubyFixnum)this).getLongValue();
-            long y = ((RubyFixnum)f).getLongValue();
+            long x = fix2long(this), y = fix2long(f);
             boolean neg = x < 0;
             if (neg) x = -x;
-            x = (x + y / 2) / y * y;
+            x = doRound(context, roundingMode, x, y);
             if (neg) x = -x;
             return RubyFixnum.newFixnum(runtime, x);
-        } else if (f instanceof RubyFloat) {
-            return RubyFixnum.zero(runtime);
-        } else {
-            IRubyObject h = sites(context).op_quo.call(context, f, f, RubyFixnum.two(runtime));
-            IRubyObject r = sites(context).op_mod.call(context, this, this, f);
-            IRubyObject n = sites(context).op_minus.call(context, this, this, r);
-            CallSite op = sites(context).op_lt.call(context, this, this, RubyFixnum.zero(runtime)).isTrue()
-                    ? sites(context).op_le
-                    : sites(context).op_lt;
-            if (!op.call(context, r, r, h).isTrue()) n = sites(context).op_plus.call(context, n, n, f);
-            return n;
         }
+        if (f instanceof RubyFloat) {
+	        /* then int_pow overflow */
+            return RubyFixnum.zero(runtime);
+        }
+        h = (RubyNumeric) f.idiv(context, int2fix(runtime, 2));
+        r = (RubyNumeric) this.op_mod(context, f);
+        n = (RubyNumeric) this.op_minus(context, r);
+        r = (RubyNumeric) r.op_cmp(context, h);
+        if (r.isPositive(context).isTrue() ||
+                (r.zero_p(context).isTrue() && doRoundCheck(context, roundingMode, this, n, f))) {
+            n = (RubyNumeric) n.op_plus(context, f);
+        }
+        return n;
+    }
+
+    private static long doRound(ThreadContext context, RoundingMode roundingMode, long n, long f) {
+        switch (roundingMode) {
+            case HALF_UP:
+                return int_round_half_up(n, f);
+            case HALF_DOWN:
+                return int_round_half_down(n, f);
+            case HALF_EVEN:
+                return int_round_half_even(n, f);
+        }
+        throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+    }
+
+    private static boolean doRoundCheck(ThreadContext context, RoundingMode roundingMode, RubyInteger num, RubyNumeric n, IRubyObject f) {
+        switch (roundingMode) {
+            case HALF_UP:
+                return int_half_p_half_up(context, num, n, f);
+            case HALF_DOWN:
+                return int_half_p_half_down(context, num, n, f);
+            case HALF_EVEN:
+                return int_half_p_half_even(context, num, n, f);
+        }
+        throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+    }
+
+    protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
+        long bytes = num2long(sites(context).size.call(context, this, this));
+        return (-0.415241 * ndigits - 0.125 > bytes);
+    }
+
+    protected static long int_round_half_even(long x, long y)
+    {
+        long z = +(x + y / 2) / y;
+        if ((z * y - x) * 2 == y) {
+            z &= ~1;
+        }
+        return z * y;
+    }
+
+    protected static long int_round_half_up(long x, long y) {
+        return (x + y / 2) / y * y;
+    }
+
+    protected static long int_round_half_down(long x, long y) {
+        return (x + y / 2 - 1) / y * y;
+    }
+
+    protected static boolean int_half_p_half_even(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
+        return n.div(context, f).convertToInteger().odd_p(context).isTrue();
+    }
+
+    protected static boolean int_half_p_half_up(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
+        return num.isPositive(context).isTrue();
+    }
+
+    protected static boolean int_half_p_half_down(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
+        return num.isNegative(context).isTrue();
     }
 
     /** integer_to_r
@@ -535,8 +615,8 @@ public abstract class RubyInteger extends RubyNumeric {
         if (y instanceof RubyInteger && !((RubyInteger) y).zero_p(context).isTrue()) {
             IRubyObject gcd = gcd(context, y);
             if (!((RubyInteger) gcd).zero_p(context).isTrue()) {
-                x = (RubyInteger) op_idiv(context, gcd);
-                y = ((RubyInteger) y).op_idiv(context, gcd);
+                x = (RubyInteger) div(context, gcd);
+                y = ((RubyInteger) y).div(context, gcd);
             }
         }
         return x.fdivDouble(context, y);
@@ -604,10 +684,11 @@ public abstract class RubyInteger extends RubyNumeric {
 
     // MRI: rb_int_idiv, polymorphism handles fixnum vs bignum
     @JRubyMethod(name = "div")
-    public abstract IRubyObject op_idiv(ThreadContext context, IRubyObject other);
+    @Override
+    public abstract IRubyObject idiv(ThreadContext context, IRubyObject other);
 
     public final IRubyObject div_div(ThreadContext context, IRubyObject other) {
-        return op_idiv(context, other);
+        return div(context, other);
     }
 
     @JRubyMethod(name = "/")
@@ -760,5 +841,10 @@ public abstract class RubyInteger extends RubyNumeric {
     @Deprecated
     public final IRubyObject round19(ThreadContext context, IRubyObject arg) {
         return round(context, arg);
+    }
+
+    @Deprecated
+    public final IRubyObject op_idiv(ThreadContext context, IRubyObject arg) {
+        return div(context, arg);
     }
 }

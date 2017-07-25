@@ -1547,7 +1547,7 @@ public class OpenFile implements Finalizable {
     }
 
     // rb_io_getline_fast
-    public IRubyObject getlineFast(ThreadContext context, Encoding enc, RubyIO io) {
+    public IRubyObject getlineFast(ThreadContext context, Encoding enc, RubyIO io, boolean chomp) {
         Ruby runtime = context.runtime;
         IRubyObject str = null;
         ByteList strByteList;
@@ -1564,22 +1564,28 @@ public class OpenFile implements Finalizable {
                     byte[] pBytes = READ_DATA_PENDING_PTR();
                     int p = READ_DATA_PENDING_OFF();
                     int e;
+                    int chomplen = 0;
 
                     e = memchr(pBytes, p, '\n', pending);
                     if (e != -1) {
                         pending = (int) (e - p + 1);
+                        if (chomp) {
+                            chomplen = ((pending > 1 &&  pBytes[e - 1] == '\r')?1:0) + 1;
+                        }
                     }
                     if (str == null) {
-                        str = RubyString.newString(runtime, pBytes, p, pending);
+                        str = RubyString.newString(runtime, pBytes, p, pending - chomplen);
                         strByteList = ((RubyString) str).getByteList();
                         rbuf.off += pending;
                         rbuf.len -= pending;
                     } else {
-                        ((RubyString) str).resize(len + pending);
+                        ((RubyString) str).resize(len + pending - chomplen);
                         strByteList = ((RubyString) str).getByteList();
-                        readBufferedData(strByteList.unsafeBytes(), strByteList.begin() + len, pending);
+                        readBufferedData(strByteList.unsafeBytes(), strByteList.begin() + len, pending - chomplen);
+                        rbuf.off += chomplen;
+                        rbuf.len -= chomplen;
                     }
-                    len += pending;
+                    len += pending - chomplen;
                     if (cr != StringSupport.CR_BROKEN)
                         pos += StringSupport.codeRangeScanRestartable(enc, strByteList.unsafeBytes(), strByteList.begin() + pos, strByteList.begin() + len, cr);
                     if (e != -1) break;

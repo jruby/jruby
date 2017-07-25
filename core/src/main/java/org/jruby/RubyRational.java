@@ -752,12 +752,9 @@ public class RubyRational extends RubyNumeric {
     /** nurat_idiv
      * 
      */
-    public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
-        return op_idiv19(context, other);
-    }
-
     @JRubyMethod(name = "div")
-    public IRubyObject op_idiv19(ThreadContext context, IRubyObject other) {
+    @Override
+    public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         return f_floor(context, f_div(context, this, other));
@@ -826,7 +823,7 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_floor
     private IRubyObject mriFloor(ThreadContext context) {
-        return num.op_idiv(context, den);
+        return num.idiv(context, den);
     }
 
     /**
@@ -845,7 +842,7 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_ceil
     private IRubyObject mriCeil(ThreadContext context) {
-        return ((RubyInteger) ((RubyInteger) num.op_uminus()).op_idiv(context, den)).op_uminus();
+        return ((RubyInteger) ((RubyInteger) num.op_uminus()).idiv(context, den)).op_uminus();
     }
     
     @JRubyMethod(name = "to_i")
@@ -868,9 +865,9 @@ public class RubyRational extends RubyNumeric {
 
     private IRubyObject mriTruncate(ThreadContext context) {
         if (num.isNegative(context).isTrue()) {
-            return ((RubyInteger) ((RubyInteger) num.op_uminus()).op_idiv(context, den)).op_uminus();
+            return ((RubyInteger) ((RubyInteger) num.op_uminus()).idiv(context, den)).op_uminus();
         }
-        return num.op_idiv(context, den);
+        return num.idiv(context, den);
     }
 
     @JRubyMethod(name = "round")
@@ -923,21 +920,24 @@ public class RubyRational extends RubyNumeric {
         s = this.op_mul(context, b);
 
         if (s instanceof RubyFloat) {
-            if (((RubyFloat) n).getDoubleValue() < 0.0) {
+            if (((RubyInteger) n).isNegative(context).isTrue()) {
                 return RubyFixnum.zero(runtime);
             }
             return this;
         }
 
+        RubyClass metaClass = getMetaClass();
+        RubyFixnum one = RubyFixnum.one(runtime);
         if (!(s instanceof RubyRational)) {
-            s = RubyRational.newRational(context, getMetaClass(), s, RubyFixnum.one(runtime));
+            s = RubyRational.newRational(context, metaClass, s, one);
         }
 
         s = ((RubyRational) s).doRound(context, mode);
 
-        s = RubyRational.newRational(context, getMetaClass(), s, RubyFixnum.one(runtime));
+        s = RubyRational.newRational(context, metaClass, s, one);
+        s = ((RubyRational) s).op_div(context, b);
 
-        if (s instanceof RubyRational && ((RubyInteger) n).op_cmp(context, RubyFixnum.one(runtime)).convertToInteger().getLongValue() < 0) {
+        if (s instanceof RubyRational && ((RubyInteger) n).op_cmp(context, one).convertToInteger().getLongValue() < 0) {
             s = ((RubyRational) s).truncate(context);
         }
 
@@ -979,7 +979,7 @@ public class RubyRational extends RubyNumeric {
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
         num = (RubyInteger) num.op_minus(context, RubyFixnum.one(runtime));
         den = (RubyInteger) den.op_mul(context, RubyFixnum.two(runtime));
-        num = (RubyInteger) num.op_idiv(context, den);
+        num = (RubyInteger) num.idiv(context, den);
 
         if (neg.isTrue())
             num = (RubyInteger) num.op_uminus();
@@ -1031,7 +1031,7 @@ public class RubyRational extends RubyNumeric {
 
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
         den = (RubyInteger) den.op_mul(context, RubyFixnum.two(runtime));
-        num = (RubyInteger) num.op_idiv(context, den);
+        num = (RubyInteger) num.idiv(context, den);
 
         if (neg.isTrue()) {
             num = (RubyInteger) num.op_uminus();
@@ -1343,6 +1343,11 @@ public class RubyRational extends RubyNumeric {
     @Deprecated
     public IRubyObject op_ceil(ThreadContext context, IRubyObject n) {
         return ceil(context, n);
+    }
+
+    @Deprecated
+    public IRubyObject op_idiv19(ThreadContext context, IRubyObject other) {
+        return idiv(context, other);
     }
 
     private static JavaSites.RationalSites sites(ThreadContext context) {

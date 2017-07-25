@@ -82,6 +82,7 @@ public class JavaSites {
         public final CallSite convert_rational = new FunctionalCachingCallSite("convert");
         public final CheckedSites to_hash_checked = new CheckedSites("to_hash");
         public final CallSite write = new FunctionalCachingCallSite("write");
+        public final CallSite call = new FunctionalCachingCallSite("call");
     }
 
     public static class ArraySites {
@@ -164,6 +165,7 @@ public class JavaSites {
         public final CallSite op_mod = new FunctionalCachingCallSite("%");
         public final CachingCallSite op_lt = new FunctionalCachingCallSite("<");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CheckedSites op_lt_checked = new CheckedSites("<");
         public final CheckedSites op_gt_checked = new CheckedSites(">");
         public final CallSite op_uminus = new FunctionalCachingCallSite("-@");
         public final CallSite zero = new FunctionalCachingCallSite("zero?");
@@ -203,6 +205,7 @@ public class JavaSites {
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite op_quo = new FunctionalCachingCallSite("/");
         public final CallSite op_mod = new FunctionalCachingCallSite("%");
+        public final CallSite size = new FunctionalCachingCallSite("size");
     }
 
     public static class FixnumSites {
