@@ -1026,7 +1026,10 @@ public class RubyFloat extends RubyNumeric {
     }
 
     private static double roundHalfUp(double xs) {
-        return Math.floor((Math.floor((xs + 0.5) * 2.0)) / 2.0);
+        if (xs < 0.0) {
+            return Math.round(xs * -1.0) * -1.0;
+        }
+        return Math.round(xs);
     }
 
     private static double roundHalfEven(double x, double s) {
