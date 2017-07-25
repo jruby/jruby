@@ -47,6 +47,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
+import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -101,7 +102,12 @@ public class ParserSupport {
     public RubySymbol symbol(ByteList bytes) {
         return getRuntime().newSymbol(bytes);
     }
-    
+
+    @Deprecated
+    public RubySymbol symbol(String string) {
+        return getRuntime().newSymbol(string);
+    }
+
     public ParserConfiguration getConfiguration() {
         return configuration;
     }
@@ -158,25 +164,25 @@ public class ParserSupport {
             }
             return currentScope.declare(node.getPosition(), name);
         case CONSTDECLNODE: // CONSTANT
-            return new ConstNode(node.getPosition(), ((INameNode) node).getByteName());
+            return new ConstNode(node.getPosition(), ((ISymbolNameNode) node).getSymbolName());
         case INSTASGNNODE: // INSTANCE VARIABLE
-            return new InstVarNode(node.getPosition(), ((INameNode) node).getByteName());
+            return new InstVarNode(node.getPosition(), ((ISymbolNameNode) node).getSymbolName());
         case CLASSVARDECLNODE:
         case CLASSVARASGNNODE:
-            return new ClassVarNode(node.getPosition(), ((INameNode) node).getByteName());
+            return new ClassVarNode(node.getPosition(), ((ISymbolNameNode) node).getSymbolName());
         case GLOBALASGNNODE:
-            return new GlobalVarNode(node.getPosition(), ((INameNode) node).getByteName());
+            return new GlobalVarNode(node.getPosition(), ((ISymbolNameNode) node).getSymbolName());
         }
 
         getterIdentifierError(node.getPosition(), ((INameNode) node).getName());
         return null;
     }
 
-    public Node declareIdentifier(ByteList name) {
+    public Node declareIdentifier(RubySymbol name) {
         if (name.equals(lexer.getCurrentArg())) {
             warn(ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
         }
-        return currentScope.declare(lexer.tokline, symbol(name));
+        return currentScope.declare(lexer.tokline, name);
     }
 
     @Deprecated
@@ -188,8 +194,8 @@ public class ParserSupport {
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
-    public AssignableNode assignableLabelOrIdentifier(ByteList name, Node value) {
-        return currentScope.assign(lexer.getPosition(), symbol(name), makeNullNil(value));
+    public AssignableNode assignableLabelOrIdentifier(RubySymbol name, Node value) {
+        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
     }
 
     @Deprecated
@@ -198,8 +204,8 @@ public class ParserSupport {
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
-    public AssignableNode assignableKeyword(ByteList name, Node value) {
-        return currentScope.assignKeyword(lexer.getPosition(), symbol(name), makeNullNil(value));
+    public AssignableNode assignableKeyword(RubySymbol name, Node value) {
+        return currentScope.assignKeyword(lexer.getPosition(), name, makeNullNil(value));
     }
 
     @Deprecated
@@ -284,10 +290,9 @@ public class ParserSupport {
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
-    public AssignableNode assignableInCurr(ByteList name, Node value) {
-        RubySymbol symbol = symbol(name);
-        currentScope.addVariableThisScope(symbol);
-        return currentScope.assign(lexer.getPosition(), symbol, makeNullNil(value));
+    public AssignableNode assignableInCurr(RubySymbol name, Node value) {
+        currentScope.addVariableThisScope(name);
+        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
     }
 
     @Deprecated
@@ -296,20 +301,18 @@ public class ParserSupport {
         return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
     }
 
-    public Node getOperatorCallNode(Node firstNode, ByteList operator) {
-        checkExpression(firstNode);
+    public Node getOperatorCallNode(Node firstNode, RubySymbol operator) {
+        value_expr(lexer, firstNode);
 
         return new CallNode(firstNode.getPosition(), firstNode, operator, null, null, false);
     }
 
     @Deprecated
     public Node getOperatorCallNode(Node firstNode, String operator) {
-        value_expr(lexer, firstNode);
-
-        return new CallNode(firstNode.getPosition(), firstNode, operator, null, null);
+        return getOperatorCallNode(firstNode, symbol(operator));
     }
     
-    public Node getOperatorCallNode(Node firstNode, ByteList operator, Node secondNode) {
+    public Node getOperatorCallNode(Node firstNode, RubySymbol operator, Node secondNode) {
         return getOperatorCallNode(firstNode, operator, secondNode, null);
     }
 
@@ -318,7 +321,7 @@ public class ParserSupport {
         return getOperatorCallNode(firstNode, operator, secondNode, null);
     }
 
-    public Node getOperatorCallNode(Node firstNode, ByteList operator, Node secondNode, ISourcePosition defaultPosition) {
+    public Node getOperatorCallNode(Node firstNode, RubySymbol operator, Node secondNode, ISourcePosition defaultPosition) {
         if (defaultPosition != null) {
             firstNode = checkForNilNode(firstNode, defaultPosition);
             secondNode = checkForNilNode(secondNode, defaultPosition);
@@ -340,7 +343,7 @@ public class ParserSupport {
         checkExpression(firstNode);
         checkExpression(secondNode);
 
-        return new CallNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode), null);
+        return new CallNode(firstNode.getPosition(), firstNode, symbol(operator), new ArrayNode(secondNode.getPosition(), secondNode), null, false);
     }
 
     public Node getMatchNode(Node firstNode, Node secondNode) {
@@ -385,8 +388,8 @@ public class ParserSupport {
      * @param name of the attribute being set
      * @return an AttrAssignNode
      */
-    public Node attrset(Node receiver, ByteList name) {
-        return attrset(receiver, lexer.DOT, name);
+    public Node attrset(Node receiver, RubySymbol name) {
+        return attrset(receiver, symbol(lexer.DOT), name);
     }
 
     @Deprecated
@@ -394,18 +397,17 @@ public class ParserSupport {
         return attrset(receiver, ".", name);
     }
 
-    public Node attrset(Node receiver, ByteList callType, ByteList name) {
-        checkExpression(receiver);
+    public Node attrset(Node receiver, RubySymbol callType, RubySymbol name) {
+        value_expr(lexer, receiver);
 
-
-        return new_attrassign(receiver.getPosition(), receiver, name.append('='), null, isLazy(callType));
+        // FIXME: Not sure if I need to worry about this modifying backing store or not here?
+        name =  symbol(name.getBytes().dup().append('='));
+        return new_attrassign(receiver.getPosition(), receiver, name, null, isLazy(callType));
     }
 
     @Deprecated
     public Node attrset(Node receiver, String callType, String name) {
-        value_expr(lexer, receiver);
-
-        return new_attrassign(receiver.getPosition(), receiver, name + "=", null, isLazy(callType));
+        return attrset(receiver, symbol(callType), symbol(name));
     }
 
     public void backrefAssignError(Node node) {
@@ -685,7 +687,7 @@ public class ParserSupport {
         case DREGEXPNODE: {
             ISourcePosition position = node.getPosition();
 
-            return new Match2Node(position, node, new GlobalVarNode(position, DOLLAR_UNDERSCORE));
+            return new Match2Node(position, node, new GlobalVarNode(position, symbol(DOLLAR_UNDERSCORE)));
         }
         case ANDNODE:
             leftNode = cond0(((AndNode) node).getFirstNode());
@@ -739,7 +741,7 @@ public class ParserSupport {
 
         if (node instanceof FixnumNode) {
             warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
-            return getOperatorCallNode(node, lexer.EQ_EQ, new GlobalVarNode(node.getPosition(), lexer.DOLLAR_DOT));
+            return getOperatorCallNode(node, symbol(lexer.EQ_EQ), new GlobalVarNode(node.getPosition(), symbol(lexer.DOLLAR_DOT)));
         } 
 
         return node;
@@ -861,7 +863,7 @@ public class ParserSupport {
     }
 
     // FIXME: Currently this is passing in position of receiver
-    public Node new_opElementAsgnNode(Node receiverNode, ByteList operatorName, Node argsNode, Node valueNode) {
+    public Node new_opElementAsgnNode(Node receiverNode, RubySymbol operatorName, Node argsNode, Node valueNode) {
         value_expr(lexer, valueNode);
 
         ISourcePosition position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
@@ -875,20 +877,20 @@ public class ParserSupport {
 
     @Deprecated
     public Node new_opElementAsgnNode(Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
-        return new_opElementAsgnNode(receiverNode, StringSupport.stringAsByteList(operatorName), argsNode, valueNode);
+        return new_opElementAsgnNode(receiverNode, symbol(operatorName), argsNode, valueNode);
     }
 
 
-    public Node newOpAsgn(ISourcePosition position, Node receiverNode, ByteList callType, Node valueNode, ByteList variableName, ByteList operatorName) {
+    public Node newOpAsgn(ISourcePosition position, Node receiverNode, RubySymbol callType, Node valueNode, RubySymbol variableName, RubySymbol operatorName) {
         return new OpAsgnNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
     }
 
     @Deprecated
     public Node newOpAsgn(ISourcePosition position, Node receiverNode, String callType, Node valueNode, String variableName, String operatorName) {
-        return new OpAsgnNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
+        return newOpAsgn(position, receiverNode, symbol(callType), valueNode, symbol(variableName), symbol(operatorName));
     }
 
-    public Node newOpConstAsgn(ISourcePosition position, Node lhs, ByteList operatorName, Node rhs) {
+    public Node newOpConstAsgn(ISourcePosition position, Node lhs, RubySymbol operatorName, Node rhs) {
         // FIXME: Maybe need to fixup position?
         if (lhs != null) {
             return new OpAsgnConstDeclNode(position, lhs, operatorName, rhs);
@@ -899,29 +901,25 @@ public class ParserSupport {
 
     @Deprecated
     public Node newOpConstAsgn(ISourcePosition position, Node lhs, String operatorName, Node rhs) {
-        // FIXME: Maybe need to fixup position?
-        if (lhs != null) {
-            return new OpAsgnConstDeclNode(position, lhs, operatorName, rhs);
-        } else {
-            return new BeginNode(position, NilImplicitNode.NIL);
-        }
+        return newOpConstAsgn(position, lhs, symbol(operatorName), rhs);
     }
 
     public boolean isLazy(String callType) {
         return "&.".equals(callType);
     }
 
-    public boolean isLazy(ByteList callType) {
-        return callType == lexer.AMPERSAND_DOT;
+    public boolean isLazy(RubySymbol callType) {
+        // FIXME: do not endlessly lookup  (instead make isLazy get passed directly from parser instead of the value . or &.
+        return callType == symbol(lexer.AMPERSAND_DOT);
     }
     
-    public Node new_attrassign(ISourcePosition position, Node receiver, ByteList name, Node args, boolean isLazy) {
+    public Node new_attrassign(ISourcePosition position, Node receiver, RubySymbol name, Node args, boolean isLazy) {
         return new AttrAssignNode(position, receiver, name, args, isLazy);
     }
 
     @Deprecated
     public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args, boolean isLazy) {
-        return new AttrAssignNode(position, receiver, name, args, isLazy);
+        return new_attrassign(position, receiver, symbol(name), args, isLazy);
     }
     
     private boolean isNumericOperator(String name) {
@@ -943,7 +941,7 @@ public class ParserSupport {
         return false;
     }
 
-    public Node new_call(Node receiver, ByteList callType, ByteList name, Node argsNode, Node iter) {
+    public Node new_call(Node receiver, RubySymbol callType, RubySymbol name, Node argsNode, Node iter) {
         if (argsNode instanceof BlockPassNode) {
             if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
 
@@ -961,15 +959,15 @@ public class ParserSupport {
             if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
 
             BlockPassNode blockPass = (BlockPassNode) argsNode;
-            return new CallNode(position(receiver, argsNode), receiver, name, blockPass.getArgsNode(), blockPass, isLazy(callType));
+            return new CallNode(position(receiver, argsNode), receiver, symbol(name), blockPass.getArgsNode(), blockPass, isLazy(callType));
         }
 
-        return new CallNode(position(receiver, argsNode), receiver, name, argsNode, iter, isLazy(callType));
+        return new CallNode(position(receiver, argsNode), receiver, symbol(name), argsNode, iter, isLazy(callType));
 
     }
 
-    public Node new_call(Node receiver, ByteList name, Node argsNode, Node iter) {
-        return new_call(receiver, lexer.DOT, name, argsNode, iter);
+    public Node new_call(Node receiver, RubySymbol name, Node argsNode, Node iter) {
+        return new_call(receiver, symbol(lexer.DOT), name, argsNode, iter);
     }
 
     @Deprecated
@@ -977,7 +975,7 @@ public class ParserSupport {
         return new_call(receiver, ".", name, argsNode, iter);
     }
 
-    public Colon2Node new_colon2(ISourcePosition position, Node leftNode, ByteList name) {
+    public Colon2Node new_colon2(ISourcePosition position, Node leftNode, RubySymbol name) {
         if (leftNode == null) return new Colon2ImplicitNode(position, name);
 
         return new Colon2ConstNode(position, leftNode, name);
@@ -985,18 +983,16 @@ public class ParserSupport {
 
     @Deprecated
     public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
-        if (leftNode == null) return new Colon2ImplicitNode(position, name);
-
-        return new Colon2ConstNode(position, leftNode, name);
+        return new_colon2(position, leftNode, symbol(name));
     }
 
-    public Colon3Node new_colon3(ISourcePosition position, ByteList name) {
+    public Colon3Node new_colon3(ISourcePosition position, RubySymbol name) {
         return new Colon3Node(position, name);
     }
 
     @Deprecated
     public Colon3Node new_colon3(ISourcePosition position, String name) {
-        return new Colon3Node(position, name);
+        return new_colon3(position, symbol(name));
     }
 
     public void frobnicate_fcall_args(FCallNode fcall, Node args, Node iter) {
@@ -1018,13 +1014,13 @@ public class ParserSupport {
         node.setPosition(orig.getPosition());
     }
 
-    public Node new_fcall(ByteList operation) {
+    public Node new_fcall(RubySymbol operation) {
         return new FCallNode(lexer.tokline, operation);
     }
 
     @Deprecated
     public Node new_fcall(String operation) {
-        return new FCallNode(lexer.tokline, operation);
+        return new_fcall(symbol(operation));
     }
 
     public Node new_super(ISourcePosition position, Node args) {
@@ -1261,11 +1257,11 @@ public class ParserSupport {
     }
 
     public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg,
-                                        ByteList keywordRestArgName, BlockArgNode blockArg) {
+                                        RubySymbol keywordRestArgName, BlockArgNode blockArg) {
         if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
 
-        ByteList restKwargsName = keywordRestArgName;
-        RubySymbol symbol = symbol(restKwargsName);
+        RubySymbol restKwargsName = keywordRestArgName;
+        RubySymbol symbol = restKwargsName;
 
         int slot = currentScope.exists(symbol);
         if (slot == -1) slot = currentScope.addVariable(symbol);
@@ -1278,7 +1274,7 @@ public class ParserSupport {
     @Deprecated
     public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg, 
             String keywordRestArgName, BlockArgNode blockArg) {
-        return new_args_tail(position, keywordArg, StringSupport.stringAsByteList(keywordRestArgName), blockArg);
+        return new_args_tail(position, keywordArg, symbol(keywordRestArgName), blockArg);
     }
 
     public Node remove_duplicate_keys(HashNode hash) {
@@ -1336,8 +1332,8 @@ public class ParserSupport {
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
-    public boolean is_local_id(ByteList name) {
-        return lexer.isIdentifierChar(name.charAt(0));
+    public boolean is_local_id(RubySymbol name) {
+        return lexer.isIdentifierChar(name.getBytes().charAt(0));
     }
 
     @Deprecated
@@ -1353,7 +1349,7 @@ public class ParserSupport {
         return ((ListNode) list).add(item);
     }
 
-    public Node new_bv(ByteList identifier) {
+    public Node new_bv(RubySymbol identifier) {
         if (!is_local_id(identifier)) {
             getterIdentifierError(lexer.getPosition(), identifier.toString());
         }
@@ -1372,17 +1368,17 @@ public class ParserSupport {
         return arg_var(identifier);
     }
 
-    public ArgumentNode arg_var(ByteList name) {
-        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(symbol(name)));
+    public ArgumentNode arg_var(RubySymbol name) {
+        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name));
     }
 
     @Deprecated
     public ArgumentNode arg_var(String name) {
-        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name));
+        return arg_var(symbol(name));
     }
 
-    public ByteList formal_argument(ByteList identifier) {
-        lexer.validateFormalIdentifier(identifier);
+    public RubySymbol formal_argument(RubySymbol identifier) {
+        lexer.validateFormalIdentifier(identifier.getBytes());
 
         return shadowing_lvar(identifier);
     }
@@ -1394,18 +1390,15 @@ public class ParserSupport {
         return shadowing_lvar(identifier);
     }
 
-    // 1.9
-    public ByteList shadowing_lvar(ByteList name) {
-        if (name.realSize() == 1 && name.charAt(0) == '_') return name;
-
-        RubySymbol symbol = symbol(name);
+    public RubySymbol shadowing_lvar(RubySymbol name) {
+        if (name == symbol("_")) return name;
 
         StaticScope current = getCurrentScope();
-        if (current.exists(symbol) >= 0) yyerror("duplicated argument name");
+        if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
-        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(symbol) >= 0 &&
+        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
                 Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), "shadowing outer local variable - " + StringSupport.byteListAsString(name));
+            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), "shadowing outer local variable - " + name.asJavaString());
         }
 
         return name;
@@ -1413,17 +1406,7 @@ public class ParserSupport {
 
     @Deprecated
     public String shadowing_lvar(String name) {
-        if (name == "_") return name;
-
-        StaticScope current = getCurrentScope();
-        if (current.exists(name) >= 0) yyerror("duplicated argument name");
-
-        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
-                Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(), "shadowing outer local variable - " + name);
-        }
-
-        return name;
+        return shadowing_lvar(symbol(name)).asJavaString();
     }
 
     // 1.9

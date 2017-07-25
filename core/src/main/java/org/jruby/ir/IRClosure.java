@@ -51,7 +51,7 @@ public class IRClosure extends IRScope {
 
     // Used by other constructions and by IREvalScript as well
     protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, String prefix) {
-        super(manager, lexicalParent, null, lineNumber, staticScope);
+        super(manager, lexicalParent, (RubySymbol) null, lineNumber, staticScope);
 
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");

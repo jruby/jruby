@@ -25,6 +25,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.util.StringSupport;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -70,7 +71,7 @@ public abstract class IRScope implements ParseResult {
     private int scopeId;
 
     /** Name */
-    private String name;
+    private RubySymbol name;
 
     /** Starting line for this scope's definition */
     private final int lineNumber;
@@ -150,7 +151,13 @@ public abstract class IRScope implements ParseResult {
         setupLexicalContainment();
     }
 
+    @Deprecated
     public IRScope(IRManager manager, IRScope lexicalParent, String name,
+                   int lineNumber, StaticScope staticScope) {
+        this(manager, lexicalParent, manager.getRuntime().newSymbol(name), lineNumber, staticScope);
+    }
+
+    public IRScope(IRManager manager, IRScope lexicalParent, RubySymbol name,
             int lineNumber, StaticScope staticScope) {
         this.manager = manager;
         this.lexicalParent = lexicalParent;
@@ -336,11 +343,21 @@ public abstract class IRScope implements ParseResult {
         return n;
     }
 
+    @Deprecated
     public String getName() {
+        return StringSupport.byteListAsString(name.getBytes());
+    }
+
+    @Deprecated
+    public void setName(String name) { // This is for IRClosure and IRMethod ;(
+        this.name = getManager().getRuntime().newSymbol(name);
+    }
+
+    public RubySymbol getSymbol() {
         return name;
     }
 
-    public void setName(String name) { // This is for IRClosure and IRMethod ;(
+    public void setSymbol(RubySymbol name) {
         this.name = name;
     }
 

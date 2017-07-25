@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -16,19 +17,20 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
+import org.jruby.util.StringSupport;
 
 /**
  * Search for a constant within the current module.  If it cannot find then
  * call const_missing.
  */
 public class SearchModuleForConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    String   constName;
+    RubySymbol constName;
     private final boolean  noPrivateConsts;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public SearchModuleForConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
+    public SearchModuleForConstInstr(Variable result, Operand currentModule, RubySymbol constName, boolean noPrivateConsts) {
         super(Operation.SEARCH_MODULE_FOR_CONST, result, currentModule);
 
         this.constName = constName;
@@ -40,7 +42,7 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
     }
 
     public String getConstName() {
-        return constName;
+        return StringSupport.byteListAsString(constName.getBytes());
     }
 
     public boolean isNoPrivateConsts() {
@@ -59,9 +61,11 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
     }
 
     private Object cache(Ruby runtime, RubyModule module) {
-        Object constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+        // FIXME: switch to use Symbol 8859_1
+        String name = getConstName();
+        Object constant = noPrivateConsts ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
         if (constant != null) {
-            Invalidator invalidator = runtime.getConstantInvalidator(constName);
+            Invalidator invalidator = runtime.getConstantInvalidator(name);
             cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator, module.hashCode());
         }
         return constant;
@@ -71,12 +75,12 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getCurrentModule());
-        e.encode(getConstName());
+        e.encode(constName);
         e.encode(isNoPrivateConsts());
     }
 
     public static SearchModuleForConstInstr decode(IRReaderDecoder d) {
-        return new SearchModuleForConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
+        return new SearchModuleForConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeSymbol(), d.decodeBoolean());
     }
 
     @Override
@@ -90,7 +94,7 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
         Object result = !ConstantCache.isCachedFrom(module, cache) ? cache(context.runtime, module) : cache.value;
 
         if (result == null) {
-            result = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
+            result = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(getConstName()));
         }
 
         return result;

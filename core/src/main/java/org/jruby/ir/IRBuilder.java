@@ -26,6 +26,7 @@ import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.StringSupport;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -422,7 +423,7 @@ public class IRBuilder {
             case COLON3NODE: return buildColon3((Colon3Node) node);
             case COMPLEXNODE: return buildComplex((ComplexNode) node);
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node);
-            case CONSTNODE: return searchConst(((ConstNode) node).getName());
+            case CONSTNODE: return searchConst(((ConstNode) node).getSymbolName());
             case DASGNNODE: return buildDAsgn((DAsgnNode) node);
             case DEFINEDNODE: return buildGetDefinition(((DefinedNode) node).getExpressionNode());
             case DEFNNODE: return buildDefn((MethodDefNode) node);
@@ -1364,9 +1365,8 @@ public class IRBuilder {
         Node superNode = classNode.getSuperNode();
         Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? null : build(superNode);
-        String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath);
-        IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope());
+        IRClassBody body = new IRClassBody(manager, scope, cpath.getSymbolName(), classNode.getLine(), classNode.getScope());
         Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
 
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), classVar, NullBlock.INSTANCE));
@@ -1469,7 +1469,7 @@ public class IRBuilder {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            return putConstant(constDeclNode.getName(), value);
+            return putConstant(constDeclNode.getSymbolName(), value);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             return putConstant((Colon2Node) constNode, value);
         } else { // colon3, assign in Object
@@ -1477,20 +1477,23 @@ public class IRBuilder {
         }
     }
 
-    private Operand putConstant(String name, Operand value) {
-        addInstr(new PutConstInstr(findContainerModule(), name, value));
+    private Operand putConstant(RubySymbol name, Operand value) {
+        // FIXME: 8859_1 use instead of Java charset once constants support that
+        addInstr(new PutConstInstr(findContainerModule(), StringSupport.byteListAsString(name.getBytes()), value));
 
         return value;
     }
 
     private Operand putConstant(Colon3Node node, Operand value) {
-        addInstr(new PutConstInstr(new ObjectClass(), node.getName(), value));
+        // FIXME: 8859_1 use instead of Java charset once constants support that
+        addInstr(new PutConstInstr(new ObjectClass(), StringSupport.byteListAsString(node.getSymbolName().getBytes()), value));
 
         return value;
     }
 
     private Operand putConstant(Colon2Node node, Operand value) {
-        addInstr(new PutConstInstr(build(node.getLeftNode()), node.getName(), value));
+        // FIXME: 8859_1 use instead of Java charset once constants support that
+        addInstr(new PutConstInstr(build(node.getLeftNode()), StringSupport.byteListAsString(node.getSymbolName().getBytes()), value));
 
         return value;
     }
@@ -1503,11 +1506,11 @@ public class IRBuilder {
         return putConstant((Colon3Node) constNode, value);
     }
 
-    private Operand searchModuleForConst(Operand startingModule, String name) {
+    private Operand searchModuleForConst(Operand startingModule, RubySymbol name) {
         return addResultInstr(new SearchModuleForConstInstr(createTemporaryVariable(), startingModule, name, true));
     }
 
-    private Operand searchConst(String name) {
+    private Operand searchConst(RubySymbol name) {
         return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, startingSearchScope(), false));
     }
 
@@ -1515,14 +1518,14 @@ public class IRBuilder {
         Node lhs = colon2.getLeftNode();
 
         // Colon2ImplicitNode - (module|class) Foo.  Weird, but it is a wrinkle of AST inheritance.
-        if (lhs == null) return searchConst(colon2.getName());
+        if (lhs == null) return searchConst(colon2.getSymbolName());
 
         // Colon2ConstNode (Left::name)
-        return searchModuleForConst(build(lhs), colon2.getName());
+        return searchModuleForConst(build(lhs), colon2.getSymbolName());
     }
 
     public Operand buildColon3(Colon3Node node) {
-        return searchModuleForConst(new ObjectClass(), node.getName());
+        return searchModuleForConst(new ObjectClass(), node.getSymbolName());
     }
 
     public Operand buildComplex(ComplexNode node) {
@@ -1729,7 +1732,8 @@ public class IRBuilder {
             Label defLabel = getNewLabel();
             Label doneLabel = getNewLabel();
             Variable tmpVar  = createTemporaryVariable();
-            String constName = ((ConstNode) node).getName();
+            // FIXME: constants still stored as Java charsets still makes us not directly user the symbol
+            String constName = StringSupport.byteListAsString(((ConstNode) node).getSymbolName().getBytes());
             addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), constName));
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
@@ -1748,7 +1752,8 @@ public class IRBuilder {
             // This runtime library would be used both by the interpreter & the compiled code!
 
             final Colon3Node colon = (Colon3Node) node;
-            final String name = colon.getName();
+            // FIXME: 8859_1 symbol should be used once we no longer store as Java charsets
+            final String name = StringSupport.byteListAsString(colon.getSymbolName().getBytes());
             final Variable errInfo = createTemporaryVariable();
 
             // store previous exception for restoration if we rescue something
@@ -3138,9 +3143,8 @@ public class IRBuilder {
 
     public Operand buildModule(ModuleNode moduleNode) {
         Colon3Node cpath = moduleNode.getCPath();
-        String moduleName = cpath.getName();
         Operand container = getContainerFromCPath(cpath);
-        IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope());
+        IRModuleBody body = new IRModuleBody(manager, scope, cpath.getSymbolName(), moduleNode.getLine(), moduleNode.getScope());
         Variable moduleVar = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
 
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));

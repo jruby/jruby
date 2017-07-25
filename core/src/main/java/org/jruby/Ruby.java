@@ -700,17 +700,17 @@ public final class Ruby implements Constantizable {
     private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
         ISourcePosition pos = oldRoot.getPosition();
         BlockNode newBody = new BlockNode(pos);
-        newBody.add(new GlobalAsgnNode(pos, "$/", new StrNode(pos, ((RubyString) globalVariables.get("$/")).getByteList())));
+        newBody.add(new GlobalAsgnNode(pos, newSymbol("$/"), new StrNode(pos, ((RubyString) globalVariables.get("$/")).getByteList())));
 
-        if (processLineEndings) newBody.add(new GlobalAsgnNode(pos, "$\\", new GlobalVarNode(pos, "$/")));
+        if (processLineEndings) newBody.add(new GlobalAsgnNode(pos, newSymbol("$\\"), new GlobalVarNode(pos, newSymbol("$/"))));
 
-        GlobalVarNode dollarUnderscore = new GlobalVarNode(pos, "$_");
+        GlobalVarNode dollarUnderscore = new GlobalVarNode(pos, newSymbol("$_"));
 
         BlockNode whileBody = new BlockNode(pos);
         newBody.add(new WhileNode(pos, new VCallNode(pos, "gets"), whileBody));
 
-        if (processLineEndings) whileBody.add(new CallNode(pos, dollarUnderscore, "chop!", null, null));
-        if (split) whileBody.add(new GlobalAsgnNode(pos, "$F", new CallNode(pos, dollarUnderscore, "split", null, null)));
+        if (processLineEndings) whileBody.add(new CallNode(pos, dollarUnderscore, newSymbol("chop!"), null, null, false));
+        if (split) whileBody.add(new GlobalAsgnNode(pos, newSymbol("$F"), new CallNode(pos, dollarUnderscore, newSymbol("split"), null, null, false)));
 
         if (oldRoot.getBodyNode() instanceof BlockNode) {   // common case n stmts
             whileBody.addAll(((BlockNode) oldRoot.getBodyNode()));
@@ -718,7 +718,7 @@ public final class Ruby implements Constantizable {
             whileBody.add(oldRoot.getBodyNode());
         }
 
-        if (printing) whileBody.add(new FCallNode(pos, "puts", new ArrayNode(pos, dollarUnderscore), null));
+        if (printing) whileBody.add(new FCallNode(pos, newSymbol("puts"), new ArrayNode(pos, dollarUnderscore), null));
 
         return new RootNode(pos, oldRoot.getScope(), newBody, oldRoot.getFile());
     }

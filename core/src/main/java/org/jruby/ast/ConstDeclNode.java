@@ -33,30 +33,25 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.ast.types.INameNode;
+import org.jruby.RubySymbol;
+import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Declaration (and assignment) of a Constant.
  */
-public class ConstDeclNode extends AssignableNode implements INameNode {
-    private final ByteList name;
-    private final INameNode constNode;
+public class ConstDeclNode extends AssignableNode implements ISymbolNameNode {
+    private final RubySymbol name;
+    private final ISymbolNameNode constNode;
 
     // TODO: Split this into two sub-classes so that name and constNode can be specified separately.
-    public ConstDeclNode(ISourcePosition position, ByteList name, INameNode constNode, Node valueNode) {
+    public ConstDeclNode(ISourcePosition position, RubySymbol name, ISymbolNameNode constNode, Node valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;        
         this.constNode = constNode;
-    }
-
-    @Deprecated
-    public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
-        this(position, StringSupport.stringAsByteList(name), constNode, valueNode);
     }
 
     public NodeType getNodeType() {
@@ -77,11 +72,15 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
      * @return name
      */
     public String getName() {
-    	return name == null ? constNode.getName() : StringSupport.byteListAsString(name);
+    	return name == null ? constNode.getName() : name.asJavaString();
     }
 
     public ByteList getByteName() {
-        return name == null ? constNode.getByteName() : name;
+        return name == null ? constNode.getByteName() : name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
+        return name == null ? constNode.getSymbolName() : name;
     }
 
     /**

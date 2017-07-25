@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -17,9 +18,12 @@ public class IRScriptBody extends IRScope {
     private String fileName;
 
     public IRScriptBody(IRManager manager, String sourceName, StaticScope staticScope) {
+        this(manager, manager.getRuntime().newSymbol(sourceName), staticScope);
+    }
+    public IRScriptBody(IRManager manager, RubySymbol sourceName, StaticScope staticScope) {
         super(manager, null, sourceName, 0, staticScope);
         this.toplevelScope = null;
-        this.fileName = sourceName;
+        this.fileName = sourceName.asJavaString();
 
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);

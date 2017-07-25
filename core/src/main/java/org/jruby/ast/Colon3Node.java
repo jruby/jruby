@@ -33,29 +33,24 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.ast.types.INameNode;
+import org.jruby.RubySymbol;
+import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Global scope node (::FooBar).  This is used to gain access to the global scope (that of the 
  * Object class) when referring to a constant or method.
  */
-public class Colon3Node extends Node implements INameNode {
-    protected ByteList name;
+public class Colon3Node extends Node implements ISymbolNameNode {
+    protected RubySymbol name;
 
-    public Colon3Node(ISourcePosition position, ByteList name) {
+    public Colon3Node(ISourcePosition position, RubySymbol name) {
         this(position, name, false);
     }
 
-    @Deprecated
-    public Colon3Node(ISourcePosition position, String name) {
-        this(position, StringSupport.stringAsByteList(name), false);
-    }
-
-    protected Colon3Node(ISourcePosition position, ByteList name, boolean containsAssignment) {
+    protected Colon3Node(ISourcePosition position, RubySymbol name, boolean containsAssignment) {
         super(position, containsAssignment);
         this.name = name;
     }
@@ -77,18 +72,18 @@ public class Colon3Node extends Node implements INameNode {
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
     }
 }

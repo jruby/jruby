@@ -34,35 +34,25 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /** 
  * Represents a method call with self as an implicit receiver.
  */
 public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
-    private ByteList name;
+    private RubySymbol name;
     protected Node argsNode;
     protected Node iterNode;
 
-    public FCallNode(ISourcePosition position, ByteList name) {
+    public FCallNode(ISourcePosition position, RubySymbol name) {
         this(position, name, null, null);
     }
 
-    @Deprecated
-    public FCallNode(ISourcePosition position, String name) {
-        this(position, name, null, null);
-    }
-
-    @Deprecated
-    public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
-        this(position, StringSupport.stringAsByteList(name), argsNode, iterNode);
-    }
-
-    public FCallNode(ISourcePosition position, ByteList name, Node argsNode, Node iterNode) {
+    public FCallNode(ISourcePosition position, RubySymbol name, Node argsNode, Node iterNode) {
         super(position, argsNode != null && argsNode.containsVariableAssignment() || iterNode != null && iterNode.containsVariableAssignment());
         this.name = name;
         this.argsNode = argsNode;
@@ -119,11 +109,11 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
-        return name;
+        return name.getBytes();
     }
     
     public List<Node> childNodes() {

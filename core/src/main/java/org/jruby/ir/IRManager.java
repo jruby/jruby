@@ -39,7 +39,7 @@ public class IRManager {
     private final CompilerPass optimizeDelegationPass = new OptimizeDelegationPass();
 
     private int dummyMetaClassCount = 0;
-    private final IRModuleBody object = new IRClassBody(this, null, "Object", 0, null);
+    private final IRModuleBody object;
     private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
@@ -72,6 +72,7 @@ public class IRManager {
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
         jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_JIT_PASSES, DEFAULT_JIT_PASSES);
         safePasses = CompilerPass.getPassesFromString(null, SAFE_COMPILER_PASSES);
+        object = new IRClassBody(this, null, "Object", 0, null);
 
         if (RubyInstanceConfig.IR_DEBUG_IGV != null) instrsListener = new IGVInstrListener();
     }

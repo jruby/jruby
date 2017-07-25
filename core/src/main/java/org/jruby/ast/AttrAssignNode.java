@@ -30,22 +30,22 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.ast.types.INameNode;
+import org.jruby.RubySymbol;
+import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Node that represents an assignment of either an array element or attribute.
  */
-public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
+public class AttrAssignNode extends Node implements ISymbolNameNode, IArgumentNode {
     protected final Node receiverNode;
-    private ByteList name;
+    private RubySymbol name;
     private Node argsNode;
     private final boolean isLazy;
 
-    public AttrAssignNode(ISourcePosition position, Node receiverNode, ByteList name, Node argsNode, boolean isLazy) {
+    public AttrAssignNode(ISourcePosition position, Node receiverNode, RubySymbol name, Node argsNode, boolean isLazy) {
         super(position, receiverNode != null && receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
@@ -58,11 +58,6 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         this.name = name;
         this.argsNode = argsNode;
         this.isLazy = isLazy;
-    }
-
-    @Deprecated
-    public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, boolean isLazy) {
-        this(position, receiverNode, StringSupport.stringAsByteList(name), argsNode, isLazy);
     }
 
     public NodeType getNodeType() {
@@ -83,10 +78,14 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
      * @return name
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
 

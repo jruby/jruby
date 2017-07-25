@@ -30,34 +30,22 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.ast.types.INameNode;
+import org.jruby.RubySymbol;
+import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Simple Node for named entities.  Things like the name of a method will make a node
  * for the name.  Also local variables will make a ArgumentNode. In the case of a local
  * variable we will also keep a list of it's location.
  */
-public class ArgumentNode extends Node implements INameNode {
-    private ByteList identifier;
+public class ArgumentNode extends Node implements ISymbolNameNode {
+    private RubySymbol identifier;
     private int location;
 
-    @Deprecated
-    public ArgumentNode(ISourcePosition position, String identifier) {
-        super(position, false);
-
-        this.identifier = StringSupport.stringAsByteList(identifier);
-    }
-
-    @Deprecated
-    public ArgumentNode(ISourcePosition position, String identifier, int location) {
-        this(position, StringSupport.stringAsByteList(identifier), location);
-    }
-
-    public ArgumentNode(ISourcePosition position, ByteList identifier, int location) {
+    public ArgumentNode(ISourcePosition position, RubySymbol identifier, int location) {
         super(position, false);
 
         this.identifier = identifier;
@@ -93,16 +81,15 @@ public class ArgumentNode extends Node implements INameNode {
     }
 
     public String getName() {
-        return StringSupport.byteListAsString(identifier);
+        return identifier.asJavaString();
     }
 
     public ByteList getByteName() {
-        return identifier;
+        return identifier.getBytes();
     }
 
-    @Deprecated
-    public void setName(String name) {
-        this.identifier = StringSupport.stringAsByteList(name);
+    public RubySymbol getSymbolName() {
+        return identifier;
     }
 
     public List<Node> childNodes() {

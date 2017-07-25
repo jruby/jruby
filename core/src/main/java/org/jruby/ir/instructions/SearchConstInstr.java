@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -15,24 +16,25 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
+import org.jruby.util.StringSupport;
 
 // Const search:
 // - looks up lexical scopes
 // - then inheritance hierarchy if lexical search fails
 // - then invokes const_missing if inheritance search fails
 public class SearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private final String   constName;
-    private final boolean  noPrivateConsts;
+    private final RubySymbol constName;
+    private final boolean noPrivateConsts;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public SearchConstInstr(Variable result, String constName, Operand startingScope, boolean noPrivateConsts) {
+    public SearchConstInstr(Variable result, RubySymbol constName, Operand startingScope, boolean noPrivateConsts) {
         super(Operation.SEARCH_CONST, result, startingScope);
 
         assert result != null: "SearchConstInstr result is null";
 
-        this.constName       = constName;
+        this.constName = constName;
         this.noPrivateConsts = noPrivateConsts;
     }
 
@@ -42,6 +44,11 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
     }
 
     public String getConstName() {
+        // FIXME: when stored as 8859_1 vs actual java charset
+        return StringSupport.byteListAsString(constName.getBytes());
+    }
+
+    public RubySymbol getConstSymbol() {
         return constName;
     }
 
@@ -57,13 +64,13 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getConstName());
+        e.encode(getConstSymbol());
         e.encode(getStartingScope());
         e.encode(isNoPrivateConsts());
     }
 
     public static SearchConstInstr decode(IRReaderDecoder d) {
-        return new SearchConstInstr(d.decodeVariable(), d.decodeString(), d.decodeOperand(), d.decodeBoolean());
+        return new SearchConstInstr(d.decodeVariable(), d.decodeSymbol(), d.decodeOperand(), d.decodeBoolean());
     }
 
     @Override
@@ -77,25 +84,26 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
 
     public Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // Lexical lookup
+        String name = getConstName();
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
         StaticScope staticScope = (StaticScope) getStartingScope().retrieve(context, self, currScope, currDynScope, temp);
-        Object constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+        Object constant = (staticScope == null) ? object.getConstant(name) : staticScope.getConstantInner(name);
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
-            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
         }
 
         // Call const_missing or cache
         if (constant == null) {
-            constant = module.callMethod(context, "const_missing", runtime.fastNewSymbol(constName));
+            constant = module.callMethod(context, "const_missing", runtime.fastNewSymbol(name));
         } else {
             // recache
-            Invalidator invalidator = runtime.getConstantInvalidator(constName);
+            Invalidator invalidator = runtime.getConstantInvalidator(name);
             cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator);
         }
 

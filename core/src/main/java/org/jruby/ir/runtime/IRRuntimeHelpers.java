@@ -41,6 +41,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;

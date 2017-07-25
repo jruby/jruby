@@ -33,10 +33,10 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  *
@@ -44,28 +44,22 @@ import org.jruby.util.StringSupport;
 public class OpAsgnNode extends Node {
     private final Node receiverNode;
     private final Node valueNode;
-    private final ByteList variableName;
-    private final ByteList operatorName;
-    private final ByteList variableNameAsgn;
+    private final RubySymbol variableName;
+    private final RubySymbol operatorName;
+    private final RubySymbol variableNameAsgn;
     private final boolean isLazy;
 
-    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, ByteList variableName, ByteList operatorName, boolean isLazy) {
+    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, RubySymbol variableName, RubySymbol operatorName, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment());
 
-        assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";
 
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
         this.variableName = variableName;
         this.operatorName = operatorName;
-        this.variableNameAsgn = ((ByteList) variableName.clone()).append('=');
+        this.variableNameAsgn = variableName.getRuntime().newSymbol(((ByteList) variableName.getBytes().clone()).append('='));
         this.isLazy = isLazy;
-    }
-
-    @Deprecated
-    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName, boolean isLazy) {
-        this(position, receiverNode, valueNode, StringSupport.stringAsByteList(variableName), StringSupport.stringAsByteList(operatorName), isLazy);
     }
 
     public NodeType getNodeType() {
@@ -85,7 +79,7 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getOperatorName() {
-        return StringSupport.byteListAsString(operatorName);
+        return operatorName.asJavaString();
     }
 
     /**
@@ -109,11 +103,11 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getVariableName() {
-        return StringSupport.byteListAsString(variableName);
+        return variableName.asJavaString();
     }
     
     public String getVariableNameAsgn() {
-        return StringSupport.byteListAsString(variableNameAsgn);
+        return variableNameAsgn.asJavaString();
     }
     
     public List<Node> childNodes() {

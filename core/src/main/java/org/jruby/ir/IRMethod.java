@@ -16,7 +16,14 @@ public class IRMethod extends IRScope {
 
     private DefNode defn;
 
+    @Deprecated
     public IRMethod(IRManager manager, IRScope lexicalParent, DefNode defn, String name,
+                    boolean isInstanceMethod, int lineNumber, StaticScope staticScope, boolean needsCodeCoverage) {
+        this(manager, lexicalParent, defn, manager.getRuntime().newSymbol(name), isInstanceMethod,
+                lineNumber, staticScope, needsCodeCoverage);
+    }
+
+    public IRMethod(IRManager manager, IRScope lexicalParent, DefNode defn, RubySymbol name,
             boolean isInstanceMethod, int lineNumber, StaticScope staticScope, boolean needsCodeCoverage) {
         super(manager, lexicalParent, name, lineNumber, staticScope);
 
