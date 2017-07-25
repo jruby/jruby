@@ -958,13 +958,6 @@ public class RubyFloat extends RubyNumeric {
             if (ndigits <= 0) throw context.runtime.newFloatDomainError("NaN");
             return this;
         }
-        double binexp;
-        // Missing binexp values for NaN and (-|+)Infinity.  frexp man page just says unspecified.
-        if (value == 0) {
-            binexp = 0;
-        } else {
-            binexp = Math.ceil(Math.log(value)/Math.log(2));
-        }
 
         if (ndigits < 0) {
             return ((RubyInteger) truncate(context)).round(context, ndigits);
