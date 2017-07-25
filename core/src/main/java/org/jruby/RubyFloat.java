@@ -954,7 +954,7 @@ public class RubyFloat extends RubyNumeric {
             return this;
         }
 
-        if (Double.isInfinite(value)) {
+        if (Double.isNaN(value)) {
             if (ndigits <= 0) throw context.runtime.newFloatDomainError("NaN");
             return this;
         }
