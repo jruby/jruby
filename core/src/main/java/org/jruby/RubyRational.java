@@ -823,7 +823,7 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_floor
     private IRubyObject mriFloor(ThreadContext context) {
-        return num.op_idiv(context, den);
+        return num.idiv(context, den);
     }
 
     /**
@@ -842,7 +842,7 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_ceil
     private IRubyObject mriCeil(ThreadContext context) {
-        return ((RubyInteger) ((RubyInteger) num.op_uminus()).op_idiv(context, den)).op_uminus();
+        return ((RubyInteger) ((RubyInteger) num.op_uminus()).idiv(context, den)).op_uminus();
     }
     
     @JRubyMethod(name = "to_i")
@@ -865,9 +865,9 @@ public class RubyRational extends RubyNumeric {
 
     private IRubyObject mriTruncate(ThreadContext context) {
         if (num.isNegative(context).isTrue()) {
-            return ((RubyInteger) ((RubyInteger) num.op_uminus()).op_idiv(context, den)).op_uminus();
+            return ((RubyInteger) ((RubyInteger) num.op_uminus()).idiv(context, den)).op_uminus();
         }
-        return num.op_idiv(context, den);
+        return num.idiv(context, den);
     }
 
     @JRubyMethod(name = "round")
@@ -976,7 +976,7 @@ public class RubyRational extends RubyNumeric {
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
         num = (RubyInteger) num.op_minus(context, RubyFixnum.one(runtime));
         den = (RubyInteger) den.op_mul(context, RubyFixnum.two(runtime));
-        num = (RubyInteger) num.op_idiv(context, den);
+        num = (RubyInteger) num.idiv(context, den);
 
         if (neg.isTrue())
             num = (RubyInteger) num.op_uminus();
@@ -1028,7 +1028,7 @@ public class RubyRational extends RubyNumeric {
 
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
         den = (RubyInteger) den.op_mul(context, RubyFixnum.two(runtime));
-        num = (RubyInteger) num.op_idiv(context, den);
+        num = (RubyInteger) num.idiv(context, den);
 
         if (neg.isTrue()) {
             num = (RubyInteger) num.op_uminus();
