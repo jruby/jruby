@@ -920,21 +920,24 @@ public class RubyRational extends RubyNumeric {
         s = this.op_mul(context, b);
 
         if (s instanceof RubyFloat) {
-            if (((RubyFloat) n).getDoubleValue() < 0.0) {
+            if (((RubyInteger) n).isNegative(context).isTrue()) {
                 return RubyFixnum.zero(runtime);
             }
             return this;
         }
 
+        RubyClass metaClass = getMetaClass();
+        RubyFixnum one = RubyFixnum.one(runtime);
         if (!(s instanceof RubyRational)) {
-            s = RubyRational.newRational(context, getMetaClass(), s, RubyFixnum.one(runtime));
+            s = RubyRational.newRational(context, metaClass, s, one);
         }
 
         s = ((RubyRational) s).doRound(context, mode);
 
-        s = RubyRational.newRational(context, getMetaClass(), s, RubyFixnum.one(runtime));
+        s = RubyRational.newRational(context, metaClass, s, one);
+        s = ((RubyRational) s).op_div(context, b);
 
-        if (s instanceof RubyRational && ((RubyInteger) n).op_cmp(context, RubyFixnum.one(runtime)).convertToInteger().getLongValue() < 0) {
+        if (s instanceof RubyRational && ((RubyInteger) n).op_cmp(context, one).convertToInteger().getLongValue() < 0) {
             s = ((RubyRational) s).truncate(context);
         }
 
