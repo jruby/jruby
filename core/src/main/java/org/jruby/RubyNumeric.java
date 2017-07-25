@@ -56,6 +56,7 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.TypeConverter;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 
@@ -1410,18 +1411,36 @@ public class RubyNumeric extends RubyObject {
     }
 
     // MRI: macro FIXABLE, RB_FIXABLE
+    // Note: this should not be NaN or +-Inf
     public static boolean fixable(double f) {
-        return posFixable(f) && negFixable(f);
+        long l = (long) f;
+        if (l == RubyFixnum.MIN ||
+                l == RubyFixnum.MAX){
+            BigInteger bigint = BigDecimal.valueOf(f).toBigInteger();
+            return posFixable(bigint) && negFixable(bigint);
+        } else {
+            return posFixable(l) && negFixable(l);
+        }
     }
 
     // MRI: macro POSFIXABLE, RB_POSFIXABLE
-    public static boolean posFixable(double f) {
-        return f <= RubyFixnum.MAX;
+    public static boolean posFixable(BigInteger f) {
+        return f.compareTo(RubyBignum.LONG_MAX) <= 0;
     }
 
     // MRI: macro NEGFIXABLE, RB_NEGFIXABLE
-    public static boolean negFixable(double f) {
-        return f >= RubyFixnum.MIN;
+    public static boolean negFixable(BigInteger f) {
+        return f.compareTo(RubyBignum.LONG_MIN) >= 0;
+    }
+
+    // MRI: macro POSFIXABLE, RB_POSFIXABLE
+    public static boolean posFixable(long l) {
+        return l <= RubyFixnum.MAX;
+    }
+
+    // MRI: macro NEGFIXABLE, RB_NEGFIXABLE
+    public static boolean negFixable(long l) {
+        return l >= RubyFixnum.MIN;
     }
 
     private static class NumFuncall1 implements ThreadContext.RecursiveFunctionEx<CallSite> {
