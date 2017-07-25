@@ -89,9 +89,27 @@ public class RubyBignum extends RubyInteger {
         return newBignum(runtime, BigInteger.valueOf(value));
     }
 
+    /**
+     * Return a Bignum for the given value, or raise FloatDomainError if it is out of range.
+     *
+     * Note this method may return Bignum that are in Fixnum range.
+     */
     public static RubyBignum newBignum(Ruby runtime, double value) {
         try {
             return newBignum(runtime, new BigDecimal(value).toBigInteger());
+        } catch (NumberFormatException nfe) {
+            throw runtime.newFloatDomainError(Double.toString(value));
+        }
+    }
+
+    /**
+     * Return a Bignum or Fixnum (Integer) for the given value, or raise FloatDomainError if it is out of range.
+     *
+     * MRI: rb_dbl2big
+     */
+    public static RubyInteger newBignorm(Ruby runtime, double value) {
+        try {
+            return bignorm(runtime, new BigDecimal(value).toBigInteger());
         } catch (NumberFormatException nfe) {
             throw runtime.newFloatDomainError(Double.toString(value));
         }

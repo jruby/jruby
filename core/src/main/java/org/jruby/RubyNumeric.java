@@ -95,13 +95,6 @@ public class RubyNumeric extends RubyObject {
 
     public static final double DBL_EPSILON=2.2204460492503131e-16;
 
-    private static IRubyObject convertToNum(double val, Ruby runtime) {
-        if (val >= (double) RubyFixnum.MAX || val < (double) RubyFixnum.MIN) {
-            return RubyBignum.newBignum(runtime, val);
-        }
-        return RubyFixnum.newFixnum(runtime, (long) val);
-    }
-
     public RubyNumeric(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
@@ -264,7 +257,7 @@ public class RubyNumeric extends RubyObject {
         if (fixable(val)) {
             return RubyFixnum.newFixnum(runtime, (long) val);
         }
-        return RubyBignum.newBignum(runtime, val);
+        return RubyBignum.newBignorm(runtime, val);
     }
 
     /** rb_num2dbl and NUM2DBL
