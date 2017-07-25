@@ -255,7 +255,7 @@ public class RubyNumeric extends RubyObject {
      * MRI: macro DBL2IVAL
      */
     public static IRubyObject dbl2ival(Ruby runtime, double val) {
-        if (fixable(val)) {
+        if (fixable(runtime, val)) {
             return RubyFixnum.newFixnum(runtime, (long) val);
         }
         return RubyBignum.newBignorm(runtime, val);
@@ -1411,8 +1411,11 @@ public class RubyNumeric extends RubyObject {
     }
 
     // MRI: macro FIXABLE, RB_FIXABLE
-    // Note: this should not be NaN or +-Inf
-    public static boolean fixable(double f) {
+    // Note: this does additional checks for inf and nan
+    public static boolean fixable(Ruby runtime, double f) {
+        if (Double.isNaN(f) || Double.isInfinite(f))  {
+            throw runtime.newFloatDomainError(Double.toString(f));
+        }
         long l = (long) f;
         if (l == RubyFixnum.MIN ||
                 l == RubyFixnum.MAX){
