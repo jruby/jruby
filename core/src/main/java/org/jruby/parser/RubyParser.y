@@ -172,8 +172,8 @@ public class RubyParser {
   modifier_rescue keyword_alias keyword_defined keyword_BEGIN keyword_END
   keyword__LINE__ keyword__FILE__ keyword__ENCODING__ keyword_do_lambda 
 
-%token <RubySymbol> tIDENTIFIER
-%token <ByteList> tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
+%token <RubySymbol> tIDENTIFIER tCONSTANT
+%token <ByteList> tFID tGVAR tIVAR tCVAR tLABEL
 %token <StrNode> tCHAR
 %type <RubySymbol> sym symbol fname operation operation2 operation3 op cname
 %type <RubySymbol> f_norm_arg restarg_mark
@@ -513,11 +513,11 @@ command_asgn    : lhs '=' command_rhs {
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, support.symbol($3), support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, support.symbol($4));
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_rhs {
                     ISourcePosition pos = $1.getPosition();
-                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, support.symbol($3)), support.symbol($4), $5);
+                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), support.symbol($4), $5);
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_rhs {
@@ -697,7 +697,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 | tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.getPosition(), support.symbol($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
                     $$ = new ClassVarAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
@@ -740,7 +740,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.attrset($1, $3);
                 }
                 | primary_value call_op tCONSTANT {
-                    $$ = support.attrset($1, $2, support.symbol($3));
+                    $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -749,7 +749,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
 
                     ISourcePosition position = support.getPosition($1);
 
-                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, $1, support.symbol($3)), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                 }
                 | tCOLON3 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -758,7 +758,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
 
                     ISourcePosition position = lexer.getPosition();
 
-                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon3(position, support.symbol($2)), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon3(position, $2), NilImplicitNode.NIL);
                 }
                 | backref {
                     support.backrefAssignError($1);
@@ -776,7 +776,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 | tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.getPosition(), support.symbol($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
                     $$ = new ClassVarAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
@@ -819,7 +819,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.attrset($1, $3);
                 }
                 | primary_value call_op tCONSTANT {
-                    $$ = support.attrset($1, $2, support.symbol($3));
+                    $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -828,7 +828,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
 
                     ISourcePosition position = support.getPosition($1);
 
-                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, $1, support.symbol($3)), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                 }
                 | tCOLON3 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
@@ -837,7 +837,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
 
                     ISourcePosition position = lexer.getPosition();
 
-                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon3(position, support.symbol($2)), NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon3(position, $2), NilImplicitNode.NIL);
                 }
                 | backref {
                     support.backrefAssignError($1);
@@ -847,7 +847,7 @@ cname           : tIDENTIFIER {
                     support.yyerror("class/module name must be CONSTANT");
                 }
                 | tCONSTANT {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
 
 cpath           : tCOLON3 cname {
@@ -865,7 +865,7 @@ fname          : tIDENTIFIER {
                    $$ = $1;
                }
                | tCONSTANT {
-                   $$ = support.symbol($1);
+                   $$ = $1;
                }
                | tFID  {
                    $$ = support.symbol($1);
@@ -1156,7 +1156,7 @@ arg             : lhs '=' arg_rhs {
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, support.symbol($3), support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, support.symbol($4));
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
@@ -1164,11 +1164,11 @@ arg             : lhs '=' arg_rhs {
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = support.getPosition($1);
-                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, support.symbol($3)), support.symbol($4), $5);
+                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), support.symbol($4), $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = lexer.getPosition();
-                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, support.symbol($1)), support.symbol($3), $4);
+                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, $2), support.symbol($3), $4);
                 }
                 | backref tOP_ASGN arg_rhs {
                     support.backrefAssignError($1);
@@ -1477,10 +1477,10 @@ primary         : literal
                     }
                 }
                 | primary_value tCOLON2 tCONSTANT {
-                    $$ = support.new_colon2(support.getPosition($1), $1, support.symbol($3));
+                    $$ = support.new_colon2(support.getPosition($1), $1, $3);
                 }
                 | tCOLON3 tCONSTANT {
-                    $$ = support.new_colon3(lexer.getPosition(), support.symbol($2));
+                    $$ = support.new_colon3(lexer.getPosition(), $2);
                 }
                 | tLBRACK aref_args tRBRACK {
                     ISourcePosition position = support.getPosition($2);
@@ -2248,7 +2248,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new GlobalVarNode(lexer.getPosition(), support.symbol($1));
                 }
                 | tCONSTANT {
-                    $$ = new ConstNode(lexer.getPosition(), support.symbol($1));
+                    $$ = new ConstNode(lexer.getPosition(), $1);
                 }
                 | tCVAR {
                     $$ = new ClassVarNode(lexer.getPosition(), support.symbol($1));
@@ -2289,7 +2289,7 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                 | tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.getPosition(), support.symbol($1), null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
                     $$ = new ClassVarAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
@@ -2664,7 +2664,7 @@ operation       : tIDENTIFIER {
                     $$ = $1;
                 }
                 | tCONSTANT {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
                 | tFID {
                     $$ = support.symbol($1);
@@ -2675,7 +2675,7 @@ operation2      : tIDENTIFIER  {
                     $$ = $1;
                 }
                 | tCONSTANT {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
                 | tFID {
                     $$ = support.symbol($1);

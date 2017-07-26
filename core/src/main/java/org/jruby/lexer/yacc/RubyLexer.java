@@ -67,6 +67,7 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.parser.RubyParser.tCONSTANT;
 import static org.jruby.parser.RubyParser.tIDENTIFIER;
 
 /*
@@ -751,7 +752,7 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.tFID: System.err.print("tFID[" + value() + "],"); break;
             case RubyParser.tGVAR: System.err.print("tGVAR[" + value() + "],"); break;
             case RubyParser.tIVAR: System.err.print("tIVAR[" + value() +"],"); break;
-            case RubyParser.tCONSTANT: System.err.print("tCONSTANT["+ value() +"],"); break;
+            case tCONSTANT: System.err.print("tCONSTANT["+ value() +"],"); break;
             case RubyParser.tCVAR: System.err.print("tCVAR,"); break;
             case RubyParser.tINTEGER: System.err.print("tINTEGER,"); break;
             case RubyParser.tFLOAT: System.err.print("tFLOAT,"); break;
@@ -1087,7 +1088,7 @@ public class RubyLexer extends LexingCommon {
         }
 
         // FIXME: Move all to symbols then push symbol back to caller and change this signature.
-        if (result == tIDENTIFIER) {
+        if (result == tIDENTIFIER || result == tCONSTANT) {
             yaccValue = parserSupport.symbol(value);
         } else {
             yaccValue = value;
@@ -1522,7 +1523,7 @@ public class RubyLexer extends LexingCommon {
             tempVal = createTokenByteList();
 
             if (result == 0 && Character.isUpperCase(StringSupport.preciseCodePoint(getEncoding(), tempVal.unsafeBytes(), tempVal.begin(), tempVal.begin() + 1))) {
-                result = RubyParser.tCONSTANT;
+                result = tCONSTANT;
             } else {
                 result = tIDENTIFIER;
             }
