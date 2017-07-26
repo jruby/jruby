@@ -172,8 +172,8 @@ public class RubyParser {
   modifier_rescue keyword_alias keyword_defined keyword_BEGIN keyword_END
   keyword__LINE__ keyword__FILE__ keyword__ENCODING__ keyword_do_lambda 
 
-%token <RubySymbol> tIDENTIFIER tCONSTANT tFID
-%token <ByteList> tGVAR tIVAR tCVAR tLABEL
+%token <RubySymbol> tIDENTIFIER tCONSTANT tFID tGVAR
+%token <ByteList> tIVAR tCVAR tLABEL
 %token <StrNode> tCHAR
 %type <RubySymbol> sym symbol fname operation operation2 operation3 op cname
 %type <RubySymbol> f_norm_arg restarg_mark
@@ -426,7 +426,7 @@ stmt            : keyword_alias fitem {
                     $$ = new VAliasNode($1, $2, $3);
                 }
                 | keyword_alias tGVAR tBACK_REF {
-                    $$ = new VAliasNode($1, $2, $<BackRefNode>3.getByteName());
+                    $$ = new VAliasNode($1, $2, support.symbol($<BackRefNode>3.getByteName()));
                 }
                 | keyword_alias tGVAR tNTH_REF {
                     support.yyerror("can't make alias for the number variables");
@@ -692,7 +692,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new InstAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
                 }
                 | tGVAR {
-                    $$ = new GlobalAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
+                    $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
@@ -771,7 +771,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                    $$ = new InstAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
                 }
                 | tGVAR {
-                   $$ = new GlobalAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
+                   $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
@@ -2168,7 +2168,7 @@ string_content  : tSTRING_CONTENT {
                 }
 
 string_dvar     : tGVAR {
-                     $$ = new GlobalVarNode(lexer.getPosition(), support.symbol($1));
+                     $$ = new GlobalVarNode(lexer.getPosition(), $1);
                 }
                 | tIVAR {
                      $$ = new InstVarNode(lexer.getPosition(), support.symbol($1));
@@ -2192,7 +2192,7 @@ sym             : fname {
                     $$ = support.symbol($1);
                 }
                 | tGVAR {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
                 | tCVAR {
                     $$ = support.symbol($1);
@@ -2245,7 +2245,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                    $$ = new InstVarNode(lexer.getPosition(), support.symbol($1));
                 }
                 | tGVAR {
-                    $$ = new GlobalVarNode(lexer.getPosition(), support.symbol($1));
+                    $$ = new GlobalVarNode(lexer.getPosition(), $1);
                 }
                 | tCONSTANT {
                     $$ = new ConstNode(lexer.getPosition(), $1);
@@ -2284,7 +2284,7 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new InstAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
                 }
                 | tGVAR {
-                    $$ = new GlobalAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
+                    $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");

@@ -1082,18 +1082,14 @@ public class RubyLexer extends LexingCommon {
         }
     }
 
-    private int identifierToken(int result, ByteList value) {
+    private int identifierToken(int result, RubySymbol value) {
         if (result == tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
-                parserSupport.getCurrentScope().isDefined(parserSupport.symbol(value)) >= 0) {
+                parserSupport.getCurrentScope().isDefined(value) >= 0) {
             setState(EXPR_END|EXPR_LABEL);
         }
 
-        // FIXME: Move all to symbols then push symbol back to caller and change this signature.
-        if (result == tIDENTIFIER || result == tCONSTANT || result == tFID) {
-            yaccValue = parserSupport.symbol(value);
-        } else {
-            yaccValue = value;
-        }
+        yaccValue = value;
+
         return result;
     }
     
@@ -1316,7 +1312,7 @@ public class RubyLexer extends LexingCommon {
 
                 last_state = lex_state;
                 setState(EXPR_END);
-                yaccValue = createTokenByteList();
+                yaccValue = parserSupport.symbol(createTokenByteList());
                 return RubyParser.tGVAR;
 
             }
@@ -1339,7 +1335,7 @@ public class RubyLexer extends LexingCommon {
         case '<':       /* $<: reading filename */
         case '>':       /* $>: default output handle */
         case '\"':      /* $": already loaded files */
-            yaccValue = new ByteList(new byte[] {'$', (byte) c}, USASCII_ENCODING);
+            yaccValue = parserSupport.symbol(new ByteList(new byte[] {'$', (byte) c}, USASCII_ENCODING));
             return RubyParser.tGVAR;
 
 
@@ -1352,7 +1348,7 @@ public class RubyLexer extends LexingCommon {
                 pushback('-');
                 return '$';
             }
-            yaccValue = createTokenByteList();
+            yaccValue = parserSupport.symbol(createTokenByteList());
             /* xxx shouldn't check if valid option variable */
             return RubyParser.tGVAR;
 
@@ -1362,7 +1358,7 @@ public class RubyLexer extends LexingCommon {
         case '+':       /* $+: string matches last paren. */
             // Explicit reference to these vars as symbols...
             if (isLexState(last_state, EXPR_FNAME)) {
-                yaccValue = new ByteList(new byte[] {'$', (byte) c}, USASCII_ENCODING);
+                yaccValue = parserSupport.symbol(new ByteList(new byte[] {'$', (byte) c}, USASCII_ENCODING));
                 return RubyParser.tGVAR;
             }
             
@@ -1376,7 +1372,7 @@ public class RubyLexer extends LexingCommon {
             } while (Character.isDigit(c));
             pushback(c);
             if (isLexState(last_state, EXPR_FNAME)) {
-                yaccValue = createTokenByteList();
+                yaccValue = parserSupport.symbol(createTokenByteList());
                 return RubyParser.tGVAR;
             }
 
@@ -1395,7 +1391,7 @@ public class RubyLexer extends LexingCommon {
         case '0':
             setState(EXPR_END);
 
-            return identifierToken(RubyParser.tGVAR, new ByteList(new byte[] {'$', (byte) c}));
+            return identifierToken(RubyParser.tGVAR, parserSupport.symbol(new ByteList(new byte[] {'$', (byte) c})));
         default:
             if (!isIdentifierChar(c)) {
                 if (c == EOF || Character.isSpaceChar(c)) {
@@ -1411,7 +1407,7 @@ public class RubyLexer extends LexingCommon {
 
             tokadd_ident(c);
 
-            return identifierToken(RubyParser.tGVAR, createTokenByteList());  // $blah
+            return identifierToken(RubyParser.tGVAR, parserSupport.symbol(createTokenByteList()));  // $blah
         }
     }
 
@@ -1574,7 +1570,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_END);
         }
 
-        return identifierToken(result, tempVal);
+        return identifierToken(result, parserSupport.symbol(tempVal));
     }
 
     private int leftBracket(boolean spaceSeen) throws IOException {
