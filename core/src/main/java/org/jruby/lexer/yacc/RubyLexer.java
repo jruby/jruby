@@ -67,6 +67,8 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.parser.RubyParser.tIDENTIFIER;
+
 /*
  * This is a port of the MRI lexer to Java.
  */
@@ -745,7 +747,7 @@ public class RubyLexer extends LexingCommon {
         switch (token) {
             case RubyParser.yyErrorCode: System.err.print("yyErrorCode,"); break;
             // MISSING tokens
-            case RubyParser.tIDENTIFIER: System.err.print("tIDENTIFIER["+ value() + "],"); break;
+            case tIDENTIFIER: System.err.print("tIDENTIFIER["+ value() + "],"); break;
             case RubyParser.tFID: System.err.print("tFID[" + value() + "],"); break;
             case RubyParser.tGVAR: System.err.print("tGVAR[" + value() + "],"); break;
             case RubyParser.tIVAR: System.err.print("tIVAR[" + value() +"],"); break;
@@ -1079,12 +1081,17 @@ public class RubyLexer extends LexingCommon {
     }
 
     private int identifierToken(int result, ByteList value) {
-        if (result == RubyParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
+        if (result == tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
                 parserSupport.getCurrentScope().isDefined(parserSupport.symbol(value)) >= 0) {
             setState(EXPR_END|EXPR_LABEL);
         }
 
-        yaccValue = value;
+        // FIXME: Move all to symbols then push symbol back to caller and change this signature.
+        if (result == tIDENTIFIER) {
+            yaccValue = parserSupport.symbol(value);
+        } else {
+            yaccValue = value;
+        }
         return result;
     }
     
@@ -1502,7 +1509,7 @@ public class RubyLexer extends LexingCommon {
 
                     if (c2 != '~' && c2 != '>' &&
                             (c2 != '=' || peek('>'))) {
-                        result = RubyParser.tIDENTIFIER;
+                        result = tIDENTIFIER;
                         pushback(c2);
                     } else {
                         pushback(c2);
@@ -1517,7 +1524,7 @@ public class RubyLexer extends LexingCommon {
             if (result == 0 && Character.isUpperCase(StringSupport.preciseCodePoint(getEncoding(), tempVal.unsafeBytes(), tempVal.begin(), tempVal.begin() + 1))) {
                 result = RubyParser.tCONSTANT;
             } else {
-                result = RubyParser.tIDENTIFIER;
+                result = tIDENTIFIER;
             }
         }
         

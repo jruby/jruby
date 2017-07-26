@@ -172,7 +172,8 @@ public class RubyParser {
   modifier_rescue keyword_alias keyword_defined keyword_BEGIN keyword_END
   keyword__LINE__ keyword__FILE__ keyword__ENCODING__ keyword_do_lambda 
 
-%token <ByteList> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
+%token <RubySymbol> tIDENTIFIER
+%token <ByteList> tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
 %token <StrNode> tCHAR
 %type <RubySymbol> sym symbol fname operation operation2 operation3 op cname
 %type <RubySymbol> f_norm_arg restarg_mark
@@ -508,7 +509,7 @@ command_asgn    : lhs '=' command_rhs {
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, support.symbol($3), support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, support.symbol($4));
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
@@ -521,7 +522,7 @@ command_asgn    : lhs '=' command_rhs {
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, support.symbol($2), $5, support.symbol($3), support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, support.symbol($2), $5, $3, support.symbol($4));
                 }
                 | backref tOP_ASGN command_rhs {
                     support.backrefAssignError($1);
@@ -685,7 +686,7 @@ mlhs_post       : mlhs_item {
                 }
 
 mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
-                   $$ = support.assignableLabelOrIdentifier(support.symbol($1), null);
+                   $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
                     $$ = new InstAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
@@ -733,10 +734,10 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.aryset($1, $3);
                 }
                 | primary_value call_op tIDENTIFIER {
-                    $$ = support.attrset($1, $2, support.symbol($3));
+                    $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
-                    $$ = support.attrset($1, support.symbol($3));
+                    $$ = support.attrset($1, $3);
                 }
                 | primary_value call_op tCONSTANT {
                     $$ = support.attrset($1, $2, support.symbol($3));
@@ -764,7 +765,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 }
 
 lhs             : /*mri:user_variable*/ tIDENTIFIER {
-                    $$ = support.assignableLabelOrIdentifier(support.symbol($1), null);
+                    $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
                    $$ = new InstAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
@@ -812,10 +813,10 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.aryset($1, $3);
                 }
                 | primary_value call_op tIDENTIFIER {
-                    $$ = support.attrset($1, $2, support.symbol($3));
+                    $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
-                    $$ = support.attrset($1, support.symbol($3));
+                    $$ = support.attrset($1, $3);
                 }
                 | primary_value call_op tCONSTANT {
                     $$ = support.attrset($1, $2, support.symbol($3));
@@ -861,7 +862,7 @@ cpath           : tCOLON3 cname {
 
 // RubySymbol:fname - A function name [!null]
 fname          : tIDENTIFIER {
-                   $$ = support.symbol($1);
+                   $$ = $1;
                }
                | tCONSTANT {
                    $$ = support.symbol($1);
@@ -1151,7 +1152,7 @@ arg             : lhs '=' arg_rhs {
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, support.symbol($3), support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, support.symbol($4));
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
@@ -1159,7 +1160,7 @@ arg             : lhs '=' arg_rhs {
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, support.symbol($2), $5, support.symbol($3), support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, support.symbol($2), $5, $3, support.symbol($4));
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = support.getPosition($1);
@@ -1821,7 +1822,7 @@ bv_decls        : bvar {
                 }
 
 bvar            : tIDENTIFIER {
-                    support.new_bv(support.symbol($1));
+                    support.new_bv($1);
                 }
                 | f_bad_arg {
                     $$ = null;
@@ -2238,7 +2239,7 @@ simple_numeric  : tINTEGER {
 
 // [!null]
 var_ref         : /*mri:user_variable*/ tIDENTIFIER {
-                    $$ = support.declareIdentifier(support.symbol($1));
+                    $$ = support.declareIdentifier($1);
                 }
                 | tIVAR {
                    $$ = new InstVarNode(lexer.getPosition(), support.symbol($1));
@@ -2277,7 +2278,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
 
 // [!null]
 var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
-                    $$ = support.assignableLabelOrIdentifier(support.symbol($1), null);
+                    $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
                     $$ = new InstAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
@@ -2443,7 +2444,7 @@ f_norm_arg      : f_bad_arg {
                     $$ = $1; // Not really reached
                 }
                 | tIDENTIFIER {
-                    $$ = support.formal_argument(support.symbol($1));
+                    $$ = support.formal_argument($1);
                 }
 
 f_arg_asgn      : f_norm_arg {
@@ -2527,7 +2528,7 @@ kwrest_mark     : tPOW {
 
 // RubySymbol:f_kwrest
 f_kwrest        : kwrest_mark tIDENTIFIER {
-                    RubySymbol identifier = support.symbol($2);
+                    RubySymbol identifier = $2;
                     support.shadowing_lvar(identifier);
                     $$ = identifier;
                 }
@@ -2568,11 +2569,11 @@ restarg_mark    : tSTAR2 {
 
 // [!null]
 f_rest_arg      : restarg_mark tIDENTIFIER {
-                    if (!support.is_local_id(support.symbol($2))) {
+                    if (!support.is_local_id($2)) {
                         support.yyerror("rest argument must be local variable");
                     }
                     
-                    $$ = new RestArgNode(support.arg_var(support.shadowing_lvar(support.symbol($2))));
+                    $$ = new RestArgNode(support.arg_var(support.shadowing_lvar($2)));
                 }
                 | restarg_mark {
                     $$ = new UnnamedRestArgNode(lexer.getPosition(), support.symbol(""), support.getCurrentScope().addVariable(support.symbol(LexingCommon.STAR)));
@@ -2588,11 +2589,11 @@ blkarg_mark     : tAMPER2 {
 
 // f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg     : blkarg_mark tIDENTIFIER {
-                    if (!support.is_local_id(support.symbol($2))) {
+                    if (!support.is_local_id($2)) {
                         support.yyerror("block argument must be local variable");
                     }
                     
-                    $$ = new BlockArgNode(support.arg_var(support.shadowing_lvar(support.symbol($2))));
+                    $$ = new BlockArgNode(support.arg_var(support.shadowing_lvar($2)));
                 }
 
 opt_f_block_arg : ',' f_block_arg {
@@ -2660,7 +2661,7 @@ assoc           : arg_value tASSOC arg_value {
 
 // RubySymbol
 operation       : tIDENTIFIER {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
                 | tCONSTANT {
                     $$ = support.symbol($1);
@@ -2671,7 +2672,7 @@ operation       : tIDENTIFIER {
 
 // RubySymbol
 operation2      : tIDENTIFIER  {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
                 | tCONSTANT {
                     $$ = support.symbol($1);
@@ -2685,7 +2686,7 @@ operation2      : tIDENTIFIER  {
 
 // RubySymbol
 operation3      : tIDENTIFIER {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
                 | tFID {
                     $$ = support.symbol($1);
