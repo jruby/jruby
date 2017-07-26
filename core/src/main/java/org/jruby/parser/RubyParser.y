@@ -172,8 +172,8 @@ public class RubyParser {
   modifier_rescue keyword_alias keyword_defined keyword_BEGIN keyword_END
   keyword__LINE__ keyword__FILE__ keyword__ENCODING__ keyword_do_lambda 
 
-%token <RubySymbol> tIDENTIFIER tCONSTANT
-%token <ByteList> tFID tGVAR tIVAR tCVAR tLABEL
+%token <RubySymbol> tIDENTIFIER tCONSTANT tFID
+%token <ByteList> tGVAR tIVAR tCVAR tLABEL
 %token <StrNode> tCHAR
 %type <RubySymbol> sym symbol fname operation operation2 operation3 op cname
 %type <RubySymbol> f_norm_arg restarg_mark
@@ -868,7 +868,7 @@ fname          : tIDENTIFIER {
                    $$ = $1;
                }
                | tFID  {
-                   $$ = support.symbol($1);
+                   $$ = $1;
                }
                | op {
                    lexer.setState(EXPR_ENDFN);
@@ -1444,7 +1444,7 @@ primary         : literal
                 | var_ref
                 | backref
                 | tFID {
-                     $$ = support.new_fcall(support.symbol($1));
+                     $$ = support.new_fcall($1);
                 }
                 | keyword_begin {
                     $$ = lexer.getCmdArgumentState().getStack();
@@ -2667,7 +2667,7 @@ operation       : tIDENTIFIER {
                     $$ = $1;
                 }
                 | tFID {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
 
 // RubySymbol
@@ -2678,7 +2678,7 @@ operation2      : tIDENTIFIER  {
                     $$ = $1;
                 }
                 | tFID {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
                 | op {
                     $$ = $1;
@@ -2689,7 +2689,7 @@ operation3      : tIDENTIFIER {
                     $$ = $1;
                 }
                 | tFID {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
                 | op {
                     $$ = $1;

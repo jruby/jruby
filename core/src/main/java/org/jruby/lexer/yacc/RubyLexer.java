@@ -68,6 +68,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.parser.RubyParser.tCONSTANT;
+import static org.jruby.parser.RubyParser.tFID;
 import static org.jruby.parser.RubyParser.tIDENTIFIER;
 
 /*
@@ -749,7 +750,7 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.yyErrorCode: System.err.print("yyErrorCode,"); break;
             // MISSING tokens
             case tIDENTIFIER: System.err.print("tIDENTIFIER["+ value() + "],"); break;
-            case RubyParser.tFID: System.err.print("tFID[" + value() + "],"); break;
+            case tFID: System.err.print("tFID[" + value() + "],"); break;
             case RubyParser.tGVAR: System.err.print("tGVAR[" + value() + "],"); break;
             case RubyParser.tIVAR: System.err.print("tIVAR[" + value() +"],"); break;
             case tCONSTANT: System.err.print("tCONSTANT["+ value() +"],"); break;
@@ -1088,7 +1089,7 @@ public class RubyLexer extends LexingCommon {
         }
 
         // FIXME: Move all to symbols then push symbol back to caller and change this signature.
-        if (result == tIDENTIFIER || result == tCONSTANT) {
+        if (result == tIDENTIFIER || result == tCONSTANT || result == tFID) {
             yaccValue = parserSupport.symbol(value);
         } else {
             yaccValue = value;
@@ -1501,7 +1502,7 @@ public class RubyLexer extends LexingCommon {
         last_state = lex_state;
         ByteList tempVal;
         if (lastBangOrPredicate) {
-            result = RubyParser.tFID;
+            result = tFID;
             tempVal = createTokenByteList();
         } else {
             if (isLexState(lex_state, EXPR_FNAME)) {
