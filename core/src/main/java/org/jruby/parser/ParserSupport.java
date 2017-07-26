@@ -1113,6 +1113,11 @@ public class ParserSupport {
         return new KeyValuePair<>(key, value);
     }
 
+    public Node asSymbol(ISourcePosition position, RubySymbol value) {
+        return new SymbolNode(position, value);
+    }
+
+    @Deprecated
     public Node asSymbol(ISourcePosition position, ByteList value) {
         return new SymbolNode(position, symbol(value));
     }

@@ -172,8 +172,7 @@ public class RubyParser {
   modifier_rescue keyword_alias keyword_defined keyword_BEGIN keyword_END
   keyword__LINE__ keyword__FILE__ keyword__ENCODING__ keyword_do_lambda 
 
-%token <RubySymbol> tIDENTIFIER tCONSTANT tFID tGVAR
-%token <ByteList> tIVAR tCVAR tLABEL
+%token <RubySymbol> tIDENTIFIER tCONSTANT tFID tGVAR tIVAR tCVAR tLABEL
 %token <StrNode> tCHAR
 %type <RubySymbol> sym symbol fname operation operation2 operation3 op cname
 %type <RubySymbol> f_norm_arg restarg_mark
@@ -689,7 +688,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                    $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
-                    $$ = new InstAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
+                    $$ = new InstAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 }
                 | tGVAR {
                     $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
@@ -700,7 +699,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
-                    $$ = new ClassVarAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     support.compile_error("Can't assign to nil");
@@ -768,7 +767,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
-                   $$ = new InstAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
+                   $$ = new InstAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 }
                 | tGVAR {
                    $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
@@ -779,7 +778,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
-                    $$ = new ClassVarAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     support.compile_error("Can't assign to nil");
@@ -2171,10 +2170,10 @@ string_dvar     : tGVAR {
                      $$ = new GlobalVarNode(lexer.getPosition(), $1);
                 }
                 | tIVAR {
-                     $$ = new InstVarNode(lexer.getPosition(), support.symbol($1));
+                     $$ = new InstVarNode(lexer.getPosition(), $1);
                 }
                 | tCVAR {
-                     $$ = new ClassVarNode(lexer.getPosition(), support.symbol($1));
+                     $$ = new ClassVarNode(lexer.getPosition(), $1);
                 }
                 | backref
 
@@ -2189,13 +2188,13 @@ sym             : fname {
                     $$ = $1;
                 }
                 | tIVAR {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
                 | tGVAR {
                     $$ = $1;
                 }
                 | tCVAR {
-                    $$ = support.symbol($1);
+                    $$ = $1;
                 }
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
@@ -2242,7 +2241,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.declareIdentifier($1);
                 }
                 | tIVAR {
-                   $$ = new InstVarNode(lexer.getPosition(), support.symbol($1));
+                   $$ = new InstVarNode(lexer.getPosition(), $1);
                 }
                 | tGVAR {
                     $$ = new GlobalVarNode(lexer.getPosition(), $1);
@@ -2251,7 +2250,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new ConstNode(lexer.getPosition(), $1);
                 }
                 | tCVAR {
-                    $$ = new ClassVarNode(lexer.getPosition(), support.symbol($1));
+                    $$ = new ClassVarNode(lexer.getPosition(), $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil { 
                     $$ = new NilNode(lexer.getPosition());
@@ -2281,7 +2280,7 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
-                    $$ = new InstAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
+                    $$ = new InstAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 }
                 | tGVAR {
                     $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
@@ -2292,7 +2291,7 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
-                    $$ = new ClassVarAsgnNode(lexer.getPosition(), support.symbol($1), NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     support.compile_error("Can't assign to nil");
@@ -2482,10 +2481,9 @@ f_arg           : f_arg_item {
 
 // RubySymbol: f_label
 f_label 	: tLABEL {
-                    RubySymbol label = support.symbol($1);
-                    support.arg_var(support.formal_argument(label));
-                    lexer.setCurrentArg(label);
-                    $$ = label;
+                    support.arg_var(support.formal_argument($1));
+                    lexer.setCurrentArg($1);
+                    $$ = $1;
                 }
 
 f_kw            : f_label arg_value {

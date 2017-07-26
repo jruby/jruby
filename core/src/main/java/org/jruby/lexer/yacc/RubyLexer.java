@@ -153,6 +153,10 @@ public class RubyLexer extends LexingCommon {
         warnings.warn(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "even though it seems like " + syn);
     }
 
+    private RubySymbol createTokenSymbol() {
+        return parserSupport.symbol(createTokenByteList());
+    }
+
     public enum Keyword {
         END ("end", new ByteList(new byte[] {'e', 'n', 'd'}, USASCII_ENCODING), RubyParser.keyword_end, RubyParser.keyword_end, EXPR_END),
         ELSE ("else", new ByteList(new byte[] {'e', 'l', 's', 'e'}, USASCII_ENCODING), RubyParser.keyword_else, RubyParser.keyword_else, EXPR_BEG),
@@ -276,14 +280,13 @@ public class RubyLexer extends LexingCommon {
 
     public int tokenize_ident(int result) {
         // FIXME: Get token from newtok index to lex_p?
-        ByteList value = createTokenByteList();
-        RubySymbol symbol = parserSupport.symbol(value);
+        RubySymbol symbol = createTokenSymbol();
 
         if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(symbol) >= 0) {
             setState(EXPR_END);
         }
 
-        yaccValue = value;
+        yaccValue = symbol;
         return result;
     }
 
@@ -1312,7 +1315,7 @@ public class RubyLexer extends LexingCommon {
 
                 last_state = lex_state;
                 setState(EXPR_END);
-                yaccValue = parserSupport.symbol(createTokenByteList());
+                yaccValue = createTokenSymbol();
                 return RubyParser.tGVAR;
 
             }
@@ -1348,7 +1351,7 @@ public class RubyLexer extends LexingCommon {
                 pushback('-');
                 return '$';
             }
-            yaccValue = parserSupport.symbol(createTokenByteList());
+            yaccValue = createTokenSymbol();
             /* xxx shouldn't check if valid option variable */
             return RubyParser.tGVAR;
 
@@ -1372,7 +1375,7 @@ public class RubyLexer extends LexingCommon {
             } while (Character.isDigit(c));
             pushback(c);
             if (isLexState(last_state, EXPR_FNAME)) {
-                yaccValue = parserSupport.symbol(createTokenByteList());
+                yaccValue = createTokenSymbol();
                 return RubyParser.tGVAR;
             }
 
@@ -1407,7 +1410,7 @@ public class RubyLexer extends LexingCommon {
 
             tokadd_ident(c);
 
-            return identifierToken(RubyParser.tGVAR, parserSupport.symbol(createTokenByteList()));  // $blah
+            return identifierToken(RubyParser.tGVAR, createTokenSymbol());  // $blah
         }
     }
 
@@ -1496,10 +1499,10 @@ public class RubyLexer extends LexingCommon {
         int result = 0;
 
         last_state = lex_state;
-        ByteList tempVal;
+        RubySymbol tempVal;
         if (lastBangOrPredicate) {
             result = tFID;
-            tempVal = createTokenByteList();
+            tempVal = createTokenSymbol();
         } else {
             if (isLexState(lex_state, EXPR_FNAME)) {
                 if ((c = nextc()) == '=') { 
@@ -1517,9 +1520,9 @@ public class RubyLexer extends LexingCommon {
                     pushback(c);
                 }
             }
-            tempVal = createTokenByteList();
+            tempVal = createTokenSymbol();
 
-            if (result == 0 && Character.isUpperCase(StringSupport.preciseCodePoint(getEncoding(), tempVal.unsafeBytes(), tempVal.begin(), tempVal.begin() + 1))) {
+            if (result == 0 && Character.isUpperCase(StringSupport.preciseCodePoint(getEncoding(), tempVal.getBytes().unsafeBytes(), tempVal.getBytes().begin(), tempVal.getBytes().begin() + 1))) {
                 result = tCONSTANT;
             } else {
                 result = tIDENTIFIER;
@@ -1536,7 +1539,7 @@ public class RubyLexer extends LexingCommon {
         }
 
         if (lex_state != EXPR_DOT) {
-            Keyword keyword = getKeyword(tempVal); // Is it is a keyword?
+            Keyword keyword = getKeyword(tempVal.getBytes()); // Is it is a keyword?
 
             if (keyword != null) {
                 int state = lex_state; // Save state at time keyword is encountered
@@ -1570,7 +1573,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_END);
         }
 
-        return identifierToken(result, parserSupport.symbol(tempVal));
+        return identifierToken(result, tempVal);
     }
 
     private int leftBracket(boolean spaceSeen) throws IOException {
