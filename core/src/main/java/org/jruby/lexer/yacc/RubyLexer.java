@@ -1103,7 +1103,7 @@ public class RubyLexer extends LexingCommon {
         case '&':
             setState(EXPR_BEG);
             if ((c = nextc()) == '=') {
-                yaccValue = AMPERSAND_AMPERSAND;
+                yaccValue = parserSupport.symbol(AMPERSAND_AMPERSAND);
                 setState(EXPR_BEG);
                 return RubyParser.tOP_ASGN;
             }
@@ -1111,7 +1111,7 @@ public class RubyLexer extends LexingCommon {
             yaccValue = AMPERSAND_AMPERSAND;
             return RubyParser.tANDOP;
         case '=':
-            yaccValue = AMPERSAND;
+            yaccValue = parserSupport.symbol(AMPERSAND);
             setState(EXPR_BEG);
             return RubyParser.tOP_ASGN;
         case '.':
@@ -1226,7 +1226,7 @@ public class RubyLexer extends LexingCommon {
         int c = nextc();
         if (c == '=') {
             setState(EXPR_BEG);
-            yaccValue = CARET;
+            yaccValue = parserSupport.symbol(CARET);
             return RubyParser.tOP_ASGN;
         }
 
@@ -1457,7 +1457,7 @@ public class RubyLexer extends LexingCommon {
         case '>':
             if ((c = nextc()) == '=') {
                 setState(EXPR_BEG);
-                yaccValue = GT_GT;
+                yaccValue = parserSupport.symbol(GT_GT);
                 return RubyParser.tOP_ASGN;
             }
             pushback(c);
@@ -1689,7 +1689,7 @@ public class RubyLexer extends LexingCommon {
         case '<':
             if ((c = nextc()) == '=') {
                 setState(EXPR_BEG);
-                yaccValue = LT_LT;
+                yaccValue = parserSupport.symbol(LT_LT);
                 return RubyParser.tOP_ASGN;
             }
             pushback(c);
@@ -1718,7 +1718,7 @@ public class RubyLexer extends LexingCommon {
         }
         if (c == '=') {
             setState(EXPR_BEG);
-            yaccValue = MINUS;
+            yaccValue = parserSupport.symbol(MINUS);
             return RubyParser.tOP_ASGN;
         }
         if (c == '>') {
@@ -1749,7 +1749,7 @@ public class RubyLexer extends LexingCommon {
 
         if (c == '=') {
             setState(EXPR_BEG);
-            yaccValue = PERCENT;
+            yaccValue = parserSupport.symbol(PERCENT);
             return RubyParser.tOP_ASGN;
         }
 
@@ -1771,7 +1771,7 @@ public class RubyLexer extends LexingCommon {
             setState(EXPR_BEG);
             if ((c = nextc()) == '=') {
                 setState(EXPR_BEG);
-                yaccValue = OR_OR;
+                yaccValue = parserSupport.symbol(OR_OR);
                 return RubyParser.tOP_ASGN;
             }
             pushback(c);
@@ -1779,7 +1779,7 @@ public class RubyLexer extends LexingCommon {
             return RubyParser.tOROP;
         case '=':
             setState(EXPR_BEG);
-            yaccValue = OR;
+            yaccValue = parserSupport.symbol(OR);
             return RubyParser.tOP_ASGN;
         default:
             setState(isAfterOperator() ? EXPR_ARG : EXPR_BEG|EXPR_LABEL);
@@ -1805,7 +1805,7 @@ public class RubyLexer extends LexingCommon {
         
         if (c == '=') {
             setState(EXPR_BEG);
-            yaccValue = PLUS;
+            yaccValue = parserSupport.symbol(PLUS);
             return RubyParser.tOP_ASGN;
         }
         
@@ -1961,7 +1961,7 @@ public class RubyLexer extends LexingCommon {
         
         if (c == '=') {
             setState(EXPR_BEG);
-            yaccValue = SLASH;
+            yaccValue = parserSupport.symbol(SLASH);
             return RubyParser.tOP_ASGN;
         }
         pushback(c);
@@ -1986,7 +1986,7 @@ public class RubyLexer extends LexingCommon {
         case '*':
             if ((c = nextc()) == '=') {
                 setState(EXPR_BEG);
-                yaccValue = STAR_STAR;
+                yaccValue = parserSupport.symbol(STAR_STAR);
                 return RubyParser.tOP_ASGN;
             }
 
@@ -2006,7 +2006,7 @@ public class RubyLexer extends LexingCommon {
             break;
         case '=':
             setState(EXPR_BEG);
-            yaccValue = STAR;
+            yaccValue = parserSupport.symbol(STAR);
             return RubyParser.tOP_ASGN;
         default:
             pushback(c);

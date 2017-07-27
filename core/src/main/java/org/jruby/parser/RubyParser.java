@@ -1967,15 +1967,14 @@ states[37] = new ParserState() {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
 
                     ISourcePosition pos = ((AssignableNode)yyVals[-2+yyTop]).getPosition();
-                    RubySymbol asgnOp = support.symbol(((ByteList)yyVals[-1+yyTop]));
-                    if (((ByteList)yyVals[-1+yyTop]) == lexer.OR_OR) {
+                    if (((RubySymbol)yyVals[-1+yyTop]).equals(support.symbol(lexer.OR_OR))) {
                         ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
                         yyVal = new OpAsgnOrNode(pos, support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
-                    } else if (((ByteList)yyVals[-1+yyTop]) == lexer.AMPERSAND_AMPERSAND) {
+                    } else if (((RubySymbol)yyVals[-1+yyTop]).equals(support.symbol(lexer.AMPERSAND_AMPERSAND))) {
                         ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
                         yyVal = new OpAsgnAndNode(pos, support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
                     } else {
-                        ((AssignableNode)yyVals[-2+yyTop]).setValueNode(support.getOperatorCallNode(support.gettable2(((AssignableNode)yyVals[-2+yyTop])), asgnOp, ((Node)yyVals[0+yyTop])));
+                        ((AssignableNode)yyVals[-2+yyTop]).setValueNode(support.getOperatorCallNode(support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((RubySymbol)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])));
                         ((AssignableNode)yyVals[-2+yyTop]).setPosition(pos);
                         yyVal = ((AssignableNode)yyVals[-2+yyTop]);
                     }
@@ -1985,35 +1984,35 @@ states[37] = new ParserState() {
 states[38] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
   /* FIXME: arg_concat logic missing for opt_call_args*/
-  yyVal = support.new_opElementAsgnNode(((Node)yyVals[-5+yyTop]), support.symbol(((ByteList)yyVals[-1+yyTop])), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.new_opElementAsgnNode(((Node)yyVals[-5+yyTop]), ((RubySymbol)yyVals[-1+yyTop]), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[39] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
-                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), support.symbol(((ByteList)yyVals[-1+yyTop])));
+                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), ((RubySymbol)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[40] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
-                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), support.symbol(((ByteList)yyVals[-1+yyTop])));
+                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), ((RubySymbol)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[41] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     ISourcePosition pos = ((Node)yyVals[-4+yyTop]).getPosition();
-                    yyVal = support.newOpConstAsgn(pos, support.new_colon2(pos, ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-2+yyTop])), support.symbol(((ByteList)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.newOpConstAsgn(pos, support.new_colon2(pos, ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-2+yyTop])), ((RubySymbol)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[42] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
-                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), support.symbol(((ByteList)yyVals[-3+yyTop])), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), support.symbol(((ByteList)yyVals[-1+yyTop])));
+                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), support.symbol(((ByteList)yyVals[-3+yyTop])), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), ((RubySymbol)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -3087,15 +3086,14 @@ states[220] = new ParserState() {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
 
                     ISourcePosition pos = ((AssignableNode)yyVals[-2+yyTop]).getPosition();
-                    RubySymbol asgnOp = support.symbol(((ByteList)yyVals[-1+yyTop]));
-                    if (((ByteList)yyVals[-1+yyTop]) == lexer.OR_OR) {
+                    if (((RubySymbol)yyVals[-1+yyTop]).equals(support.symbol(lexer.OR_OR))) {
                         ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
                         yyVal = new OpAsgnOrNode(pos, support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
-                    } else if (((ByteList)yyVals[-1+yyTop]) == lexer.AMPERSAND_AMPERSAND) {
+                    } else if (((RubySymbol)yyVals[-1+yyTop]).equals(support.symbol(lexer.AMPERSAND_AMPERSAND))) {
                         ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
                         yyVal = new OpAsgnAndNode(pos, support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
                     } else {
-                        ((AssignableNode)yyVals[-2+yyTop]).setValueNode(support.getOperatorCallNode(support.gettable2(((AssignableNode)yyVals[-2+yyTop])), asgnOp, ((Node)yyVals[0+yyTop])));
+                        ((AssignableNode)yyVals[-2+yyTop]).setValueNode(support.getOperatorCallNode(support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((RubySymbol)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])));
                         ((AssignableNode)yyVals[-2+yyTop]).setPosition(pos);
                         yyVal = ((AssignableNode)yyVals[-2+yyTop]);
                     }
@@ -3105,42 +3103,42 @@ states[220] = new ParserState() {
 states[221] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
   /* FIXME: arg_concat missing for opt_call_args*/
-                    yyVal = support.new_opElementAsgnNode(((Node)yyVals[-5+yyTop]), support.symbol(((ByteList)yyVals[-1+yyTop])), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.new_opElementAsgnNode(((Node)yyVals[-5+yyTop]), ((RubySymbol)yyVals[-1+yyTop]), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[222] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
-                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), support.symbol(((ByteList)yyVals[-1+yyTop])));
+                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), ((RubySymbol)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[223] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
-                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), support.symbol(((ByteList)yyVals[-1+yyTop])));
+                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), ((RubySymbol)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[224] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     value_expr(lexer, ((Node)yyVals[0+yyTop]));
-                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), support.symbol(((ByteList)yyVals[-3+yyTop])), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), support.symbol(((ByteList)yyVals[-1+yyTop])));
+                    yyVal = support.newOpAsgn(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), support.symbol(((ByteList)yyVals[-3+yyTop])), ((Node)yyVals[0+yyTop]), ((RubySymbol)yyVals[-2+yyTop]), ((RubySymbol)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[225] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     ISourcePosition pos = support.getPosition(((Node)yyVals[-4+yyTop]));
-                    yyVal = support.newOpConstAsgn(pos, support.new_colon2(pos, ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-2+yyTop])), support.symbol(((ByteList)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.newOpConstAsgn(pos, support.new_colon2(pos, ((Node)yyVals[-4+yyTop]), ((RubySymbol)yyVals[-2+yyTop])), ((RubySymbol)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[226] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     ISourcePosition pos = lexer.getPosition();
-                    yyVal = support.newOpConstAsgn(pos, new Colon3Node(pos, ((RubySymbol)yyVals[-2+yyTop])), support.symbol(((ByteList)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.newOpConstAsgn(pos, new Colon3Node(pos, ((RubySymbol)yyVals[-2+yyTop])), ((RubySymbol)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -5684,7 +5682,7 @@ states[644] = new ParserState() {
   }
 };
 }
-					// line 2740 "RubyParser.y"
+					// line 2738 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5699,4 +5697,4 @@ states[644] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10580 "-"
+					// line 10578 "-"

@@ -196,7 +196,7 @@ public class RubyParser {
 %token <ByteList> tANDDOT        /* &. */
 %token <ByteList> tCOLON2        /* :: */
 %token <ByteList> tCOLON3        /* :: at EXPR_BEG */
-%token <ByteList> tOP_ASGN       /* +=, -=  etc. */
+%token <RubySymbol> tOP_ASGN       /* +=, -=  etc. */
 %token <ByteList> tASSOC         /* => */
 %token <ISourcePosition> tLPAREN       /* ( */
 %token <ISourcePosition> tLPAREN2      /* ( Is just '(' in ruby and not a token */
@@ -489,39 +489,38 @@ command_asgn    : lhs '=' command_rhs {
                     value_expr(lexer, $3);
 
                     ISourcePosition pos = $1.getPosition();
-                    RubySymbol asgnOp = support.symbol($2);
-                    if ($2 == lexer.OR_OR) {
+                    if ($2.equals(support.symbol(lexer.OR_OR))) {
                         $1.setValueNode($3);
                         $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if ($2 == lexer.AMPERSAND_AMPERSAND) {
+                    } else if ($2.equals(support.symbol(lexer.AMPERSAND_AMPERSAND))) {
                         $1.setValueNode($3);
                         $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
                     } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
+                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), $2, $3));
                         $1.setPosition(pos);
                         $$ = $1;
                     }
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_rhs {
   // FIXME: arg_concat logic missing for opt_call_args
-  $$ = support.new_opElementAsgnNode($1, support.symbol($5), $3, $6);
+                    $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_rhs {
                     ISourcePosition pos = $1.getPosition();
-                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), support.symbol($4), $5);
+                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), $4, $5);
                 }
 
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, support.symbol($2), $5, $3, support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, support.symbol($2), $5, $3, $4);
                 }
                 | backref tOP_ASGN command_rhs {
                     support.backrefAssignError($1);
@@ -1132,42 +1131,41 @@ arg             : lhs '=' arg_rhs {
                     value_expr(lexer, $3);
 
                     ISourcePosition pos = $1.getPosition();
-                    RubySymbol asgnOp = support.symbol($2);
-                    if ($2 == lexer.OR_OR) {
+                    if ($2.equals(support.symbol(lexer.OR_OR))) {
                         $1.setValueNode($3);
                         $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if ($2 == lexer.AMPERSAND_AMPERSAND) {
+                    } else if ($2.equals(support.symbol(lexer.AMPERSAND_AMPERSAND))) {
                         $1.setValueNode($3);
                         $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
                     } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
+                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), $2, $3));
                         $1.setPosition(pos);
                         $$ = $1;
                     }
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
   // FIXME: arg_concat missing for opt_call_args
-                    $$ = support.new_opElementAsgnNode($1, support.symbol($5), $3, $6);
+                    $$ = support.new_opElementAsgnNode($1, $5, $3, $6);
                 }
                 | primary_value call_op tIDENTIFIER tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value call_op tCONSTANT tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, $2, $5, $3, $4);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg_rhs {
                     value_expr(lexer, $5);
-                    $$ = support.newOpAsgn(support.getPosition($1), $1, support.symbol($2), $5, $3, support.symbol($4));
+                    $$ = support.newOpAsgn(support.getPosition($1), $1, support.symbol($2), $5, $3, $4);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = support.getPosition($1);
-                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), support.symbol($4), $5);
+                    $$ = support.newOpConstAsgn(pos, support.new_colon2(pos, $1, $3), $4, $5);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = lexer.getPosition();
-                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, $2), support.symbol($3), $4);
+                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, $2), $3, $4);
                 }
                 | backref tOP_ASGN arg_rhs {
                     support.backrefAssignError($1);
