@@ -35,7 +35,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.RubySymbol;
-import org.jruby.ast.types.INameNode;
+import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
@@ -43,7 +43,7 @@ import org.jruby.util.ByteList;
 /** 
  * Represents a method call with self as an implicit receiver.
  */
-public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
+public class FCallNode extends Node implements ISymbolNameNode, IArgumentNode, BlockAcceptingNode {
     private RubySymbol name;
     protected Node argsNode;
     protected Node iterNode;
@@ -114,6 +114,10 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
 
     public ByteList getByteName() {
         return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
+        return name;
     }
     
     public List<Node> childNodes() {

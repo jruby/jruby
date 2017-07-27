@@ -552,7 +552,7 @@ public class StaticScope implements Serializable {
             return isBlockOrEval ? new DVarNode(position, ((depth << 16) | slot), name) : new LocalVarNode(position, ((depth << 16) | slot), name);
         }
 
-        return isBlockOrEval ? enclosingScope.declare(position, name, depth + 1) : new VCallNode(position, name.getBytes());
+        return isBlockOrEval ? enclosingScope.declare(position, name, depth + 1) : new VCallNode(position, name);
     }
 
     /**

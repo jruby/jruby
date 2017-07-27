@@ -707,7 +707,7 @@ public final class Ruby implements Constantizable {
         GlobalVarNode dollarUnderscore = new GlobalVarNode(pos, newSymbol("$_"));
 
         BlockNode whileBody = new BlockNode(pos);
-        newBody.add(new WhileNode(pos, new VCallNode(pos, "gets"), whileBody));
+        newBody.add(new WhileNode(pos, new VCallNode(pos, newSymbol("gets")), whileBody));
 
         if (processLineEndings) whileBody.add(new CallNode(pos, dollarUnderscore, newSymbol("chop!"), null, null, false));
         if (split) whileBody.add(new GlobalAsgnNode(pos, newSymbol("$F"), new CallNode(pos, dollarUnderscore, newSymbol("split"), null, null, false)));
