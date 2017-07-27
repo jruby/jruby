@@ -131,13 +131,17 @@ public class TypeConverter {
         return convertToType(context, obj, target, sites);
     }
 
-    // MRI: rb_to_float 1.9
-    public static RubyNumeric toFloat(Ruby runtime, IRubyObject obj) {
-        if (obj instanceof RubyFloat) return (RubyNumeric) obj;
-        if (!runtime.getNumeric().isInstance(obj)) throw runtime.newTypeError(obj, "Float");
-
-        return (RubyNumeric) convertToType(obj, runtime.getFloat(), "to_f", true);
+    // MRI: rb_to_float - adjusted to handle also Java numbers (non RubyNumeric types)
+    public static RubyFloat toFloat(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyNumeric) {
+            return ((RubyNumeric) obj).convertToFloat();
+        }
+        if (obj instanceof RubyString || obj.isNil()) {
+            throw runtime.newTypeError(obj, "Float");
+        }
+        return (RubyFloat) TypeConverter.convertToType(obj, runtime.getFloat(), "to_f", true);
     }
+
     /**
      * Checks that this object is of type DATA and then returns it, otherwise raises failure (MRI: Check_Type(obj, T_DATA))
      *
@@ -262,9 +266,10 @@ public class TypeConverter {
 
     // rb_check_to_integer
     public static IRubyObject checkIntegerType(Ruby runtime, IRubyObject obj, String method) {
+        if (method.equals("to_int")) return checkIntegerType(runtime.getCurrentContext(), obj);
+
         if (obj instanceof RubyFixnum) return obj;
 
-        if (method.equals("to_int")) return checkIntegerType(runtime.getCurrentContext(), obj);
         if (method.equals("to_i")) {
             ThreadContext context = runtime.getCurrentContext();
             TypeConverterSites sites = sites(context);
@@ -280,7 +285,6 @@ public class TypeConverter {
     // rb_check_to_float
     public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyFloat) return obj;
-        if (!(obj instanceof RubyNumeric)) return runtime.getNil();
 
         ThreadContext context = runtime.getCurrentContext();
         TypeConverterSites sites = sites(context);

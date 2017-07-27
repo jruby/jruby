@@ -25,7 +25,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.util.Numeric.checkInteger;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_cmp;
@@ -68,7 +67,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -208,25 +206,15 @@ public class RubyRational extends RubyNumeric {
         canonicalization = canonical;
     }
 
-    /** nurat_int_check
-     * 
-     */
-    static void intCheck(ThreadContext context, IRubyObject num) {
-        if (num instanceof RubyFixnum || num instanceof RubyBignum) return;
-        if (!(num instanceof RubyNumeric) || !num.callMethod(context, "integer?").isTrue()) {
-            Ruby runtime = num.getRuntime();
-            throw runtime.newTypeError("can't convert "
-                    + num.getMetaClass().getName() + " into Rational");
-        }
-    }
-
     /** nurat_int_value
      * 
      */
     static IRubyObject intValue(ThreadContext context, IRubyObject num) {
-        intCheck(context, num);
-        if (!(num instanceof RubyInteger)) num = num.callMethod(context, "to_f");
-        return num;
+        IRubyObject i;
+        if (( i = RubyInteger.toInteger(context, num) ) == null) {
+            throw context.runtime.newTypeError("can't convert " + num.getMetaClass().getName() + " into Rational");
+        }
+        return i;
     }
     
     /** nurat_s_canonicalize_internal
@@ -332,7 +320,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1) {
-        if (a1.isNil()) {
+        if (a1 == context.nil) {
             throw context.runtime.newTypeError("can't convert nil into Rational");
         }
 
@@ -344,7 +332,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
-        if (a1.isNil() || a2.isNil()) {
+        if (a1 == context.nil || a2 == context.nil) {
             throw context.runtime.newTypeError("can't convert nil into Rational");
         }
         
@@ -366,7 +354,7 @@ public class RubyRational extends RubyNumeric {
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
         } else {
-            if (a1 instanceof RubyObject && responds_to_to_r(context, a1)) {
+            if (a1 instanceof RubyObject && sites(context).respond_to_to_r.respondsTo(context, a1, a1)) {
                 a1 = f_to_r(context, a1);
             }
         }
@@ -378,27 +366,22 @@ public class RubyRational extends RubyNumeric {
         }
 
         if (a1 instanceof RubyRational) {
-            if (a2.isNil() || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
+            if (a2 == context.nil || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
         }
 
-        if (a2.isNil()) {
-            if (a1 instanceof RubyNumeric && !f_integer_p(context, a1).isTrue()) return a1;
+        if (a2 == context.nil) {
+            if (!(a1 instanceof RubyNumeric && f_integer_p(context, a1).isTrue())) {
+                return TypeConverter.convertToType(context, a1, context.runtime.getRational(), sites(context).to_r_checked);
+            }
             return newInstance(context, recv, a1);
         } else {
-            if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
+            if ((a1 instanceof RubyNumeric && a2 instanceof RubyNumeric) &&
                 (!f_integer_p(context, a1).isTrue() || !f_integer_p(context, a2).isTrue())) {
                 return f_div(context, a1, a2);
             }
             return newInstance(context, recv, a1, a2);
         }
     }
-
-    private static boolean responds_to_to_r(ThreadContext context, IRubyObject obj) {
-        return respond_to_to_r.respondsTo(context, obj, obj);
-    }
-
-    // TODO: wasn't sure whether to put this on NumericSites, here for now - should move
-    static final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
 
     /** nurat_numerator
      * 
@@ -808,10 +791,8 @@ public class RubyRational extends RubyNumeric {
         return f_negate(context, this);
     }
 
-    private IRubyObject op_roundCommonPre(ThreadContext context, IRubyObject n) {
-        checkInteger(context, n);
-        Ruby runtime = context.runtime;
-        return f_expt(context, RubyFixnum.newFixnum(runtime, 10), n);
+    private static IRubyObject op_roundCommonPre(ThreadContext context, IRubyObject n) {
+        return f_expt(context, RubyFixnum.newFixnum(context.runtime, 10), intValue(context, n));
     }
 
     private IRubyObject op_roundCommonPost(ThreadContext context, IRubyObject s, IRubyObject n, IRubyObject b) {
@@ -1043,8 +1024,8 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "marshal_load")
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
-        num = load.size() > 0 ? load.eltInternal(0) : context.runtime.getNil();
-        den = load.size() > 1 ? load.eltInternal(1) : context.runtime.getNil();
+        num = load.size() > 0 ? load.eltInternal(0) : context.nil;
+        den = load.size() > 1 ? load.eltInternal(1) : context.nil;
 
         if (f_zero_p(context, den)) {
             throw context.runtime.newZeroDivisionError();

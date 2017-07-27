@@ -201,20 +201,14 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public static long num2long(IRubyObject arg) {
-        if (arg instanceof RubyFixnum) {
-            return ((RubyFixnum) arg).getLongValue();
-        } else {
-            return other2long(arg);
-        }
+        return arg instanceof RubyFixnum ? ((RubyFixnum) arg).getLongValue() : other2long(arg);
     }
 
     private static long other2long(IRubyObject arg) throws RaiseException {
+        if (arg instanceof RubyFloat) return float2long((RubyFloat) arg);
+        if (arg instanceof RubyBignum) return RubyBignum.big2long((RubyBignum) arg);
         if (arg.isNil()) {
             throw arg.getRuntime().newTypeError("no implicit conversion from nil to integer");
-        } else if (arg instanceof RubyFloat) {
-            return float2long((RubyFloat)arg);
-        } else if (arg instanceof RubyBignum) {
-            return RubyBignum.big2long((RubyBignum) arg);
         }
         return arg.convertToInteger().getLongValue();
     }
@@ -246,42 +240,26 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public static double num2dbl(IRubyObject arg) {
-        Ruby runtime = arg.getRuntime();
+        if (arg instanceof RubyFloat) {
+            return ((RubyFloat) arg).getDoubleValue();
+        }
+        final Ruby runtime = arg.getRuntime();
+        if (arg instanceof RubyFixnum && !runtime.isFixnumReopened()) {
+            return ((RubyFixnum) arg).getDoubleValue();
+        }
+        if (arg instanceof RubyBignum && runtime.getBignum().searchMethod("to_f").isBuiltin()) {
+            return ((RubyBignum) arg).getDoubleValue();
+        }
+        if (arg instanceof RubyRational && runtime.getRational().searchMethod("to_f").isBuiltin()) {
+            return ((RubyRational) arg).getDoubleValue();
+        }
 
-        if (arg instanceof RubyBoolean || arg instanceof RubyNil) {
+        if (arg instanceof RubyBoolean || arg instanceof RubyString || arg.isNil()) {
             throw runtime.newTypeError("can't convert " + arg.inspect() + " into Float");
         }
 
-        if (arg instanceof RubyFloat) {
-            return ((RubyFloat) arg).getDoubleValue();
-        } else if (arg instanceof RubyBignum) {
-            if (runtime.getBignum().searchMethod("to_f").isBuiltin()) {
-                return ((RubyBignum) arg).getDoubleValue();
-            }
-        } else if (arg instanceof RubyRational) {
-            if (runtime.getRational().searchMethod("to_f").isBuiltin()) {
-                return ((RubyRational) arg).getDoubleValue();
-            }
-        }
-
-        IRubyObject val = numericToFloat(runtime, arg);
+        IRubyObject val = TypeConverter.convertToType(arg, runtime.getFloat(), "to_f");
         return ((RubyFloat) val).getDoubleValue();
-    }
-
-    private static IRubyObject numericToFloat(Ruby runtime, IRubyObject num) {
-        if (!(num instanceof RubyNumeric)) {
-            throw runtime.newTypeError("can't convert " + num.getType() + " into Float");
-        }
-
-        if (num instanceof RubyFloat) {
-            return num;
-        }
-
-        if (num instanceof RubyFixnum && !runtime.isFixnumReopened()) {
-            return ((RubyFixnum) num).to_f();
-        }
-
-        return TypeConverter.convertToType(num, runtime.getFloat(), "to_f");
     }
 
     /** rb_dbl_cmp (numeric.c)
@@ -767,8 +745,8 @@ public class RubyNumeric extends RubyObject {
     /** num_fdiv */
     @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
-        RubyFloat flote = this.convertToFloat();
-        return sites(context).op_quo.call(context, flote, flote, other);
+        RubyFloat value = convertToFloat();
+        return sites(context).op_quo.call(context, value, value, other);
     }
 
     /** num_modulo

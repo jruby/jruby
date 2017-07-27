@@ -38,7 +38,6 @@ package org.jruby.util;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import org.jcodings.Encoding;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -50,10 +49,11 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.util.TypeConverter.toFloat;
 
 public class Pack {
     private static final byte[] sSp10 = "          ".getBytes();
@@ -83,23 +83,21 @@ public class Pack {
     private static final Converter[] converters = new Converter[256];
 
     private static long num2quad(IRubyObject arg) {
-        if (arg == arg.getRuntime().getNil()) {
-            return 0L;
-        }
-        else if (arg instanceof RubyBignum) {
-            BigInteger big = ((RubyBignum)arg).getValue();
+        if (arg.isNil()) return 0L;
+        if (arg instanceof RubyBignum) {
+            BigInteger big = ((RubyBignum) arg).getValue();
             return big.longValue();
         }
         return RubyNumeric.num2long(arg);
     }
 
     private static float obj2flt(Ruby runtime, IRubyObject o) {
-        return (float) TypeConverter.toFloat(runtime, o).getDoubleValue();        
+        return (float) toFloat(runtime, o).getDoubleValue();
     }
 
     private static double obj2dbl(Ruby runtime, IRubyObject o) {
-        return TypeConverter.toFloat(runtime, o).getDoubleValue();        
-    }    
+        return toFloat(runtime, o).getDoubleValue();
+    }
 
     static {
         uu_table =
