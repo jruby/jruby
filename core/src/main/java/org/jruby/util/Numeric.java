@@ -68,7 +68,7 @@ public class Numeric {
      * 
      */
     public static IRubyObject f_div(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (y instanceof RubyFixnum && ((RubyFixnum)y).getLongValue() == 1) return x;
+        if (y instanceof RubyFixnum && ((RubyFixnum) y).getLongValue() == 1) return x;
         return sites(context).op_quo.call(context, x, x, y);
     }
 
@@ -343,6 +343,7 @@ public class Numeric {
      */
     public static boolean f_zero_p(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyInteger) return ((RubyInteger) x).signum() == 0;
+        if (x instanceof RubyFloat) return ((RubyFloat) x).signum() == 0;
         return sites(context).op_equals.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
     }
     
@@ -350,7 +351,7 @@ public class Numeric {
      * 
      */
     public static boolean f_one_p(ThreadContext context, IRubyObject x) {
-        if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == 1;
+        if (x instanceof RubyFixnum) return ((RubyFixnum) x).getLongValue() == 1;
         return sites(context).op_equals.call(context, x, x, RubyFixnum.one(context.runtime)).isTrue();
     }
 
@@ -358,16 +359,17 @@ public class Numeric {
     *
     */
     public static boolean f_minus_one_p(ThreadContext context, IRubyObject x) {
-        if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == -1;
+        if (x instanceof RubyFixnum) return ((RubyFixnum) x).getLongValue() == -1;
         return sites(context).op_equals.call(context, x, x, RubyFixnum.minus_one(context.runtime)).isTrue();
     }
 
    /** f_odd_p
     *
     */
-    public static boolean f_odd_p(ThreadContext context, IRubyObject integer) {
-        Ruby runtime = context.runtime;
-        return (((RubyFixnum) sites(context).op_mod.call(context, integer, integer, RubyFixnum.two(runtime))).getLongValue() != 0);
+    public static boolean f_odd_p(ThreadContext context, IRubyObject i) {
+        if (i instanceof RubyFixnum) return ((RubyFixnum) i).getLongValue() % 2 != 0;
+        RubyFixnum two = RubyFixnum.two(context.runtime);
+        return (((RubyFixnum) sites(context).op_mod.call(context, i, i, two)).getLongValue() != 0);
     }
 
     /**

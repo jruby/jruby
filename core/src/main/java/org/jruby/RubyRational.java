@@ -763,31 +763,32 @@ public class RubyRational extends RubyNumeric {
     /** nurat_mod
      * 
      */
-    public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
-        return op_mod19(context, other);
-    }
-
     @JRubyMethod(name = {"modulo", "%"})
-    public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         return f_sub(context, this, f_mul(context, other, f_floor(context, f_div(context, this, other))));
     }
 
+    @Deprecated
+    public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
+        return op_mod(context, other);
+    }
+
     /** nurat_divmod
      * 
      */
-    public IRubyObject op_divmod(ThreadContext context, IRubyObject other) {
-        return op_divmod19(context, other);
-    }
-
     @JRubyMethod(name = "divmod")
-    public IRubyObject op_divmod19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_divmod(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         IRubyObject val = f_floor(context, f_div(context, this, other));
         return context.runtime.newArray(val, f_sub(context, this, f_mul(context, other, val)));
+    }
 
+    @Deprecated
+    public IRubyObject op_divmod19(ThreadContext context, IRubyObject other) {
+        return op_divmod(context, other);
     }
 
     /** nurat_rem
@@ -1347,6 +1348,11 @@ public class RubyRational extends RubyNumeric {
 
     @Deprecated
     public IRubyObject op_idiv19(ThreadContext context, IRubyObject other) {
+        return idiv(context, other);
+    }
+
+    @Deprecated
+    public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
         return idiv(context, other);
     }
 

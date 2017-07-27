@@ -57,7 +57,6 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.KernelSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -76,7 +75,6 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -1521,8 +1519,8 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "rand", module = true, optional = 1, visibility = PRIVATE)
-    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return RubyRandom.randCommon19(context, recv, arg);
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyRandom.randKernel(context, args);
     }
 
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)

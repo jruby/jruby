@@ -92,6 +92,10 @@ import static org.jruby.util.io.EncodingUtils.vperm;
  **/
 @JRubyClass(name="File", parent="IO", include="FileTest")
 public class RubyFile extends RubyIO implements EncodingCapable {
+
+    static final ByteList SLASH = new ByteList(new byte[] { '/' }, false);
+    static final ByteList BACKSLASH = new ByteList(new byte[] { '\\' }, false);
+
     public static RubyClass createFileClass(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
 
@@ -107,13 +111,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         fileClass.kindOf = new RubyModule.JavaClassKindOf(RubyFile.class);
 
         // file separator constants
-        RubyString separator = RubyString.newString(runtime, new ByteList(new byte[] { '/' }, false));
+        RubyString separator = RubyString.newString(runtime, SLASH);
         separator.freeze(context);
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);
 
         if (File.separatorChar == '\\') {
-            RubyString altSeparator = RubyString.newString(runtime, new ByteList(new byte[] { '\\' }, false));
+            RubyString altSeparator = RubyString.newString(runtime, BACKSLASH);
             altSeparator.freeze(context);
             fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
         } else {
@@ -1153,7 +1157,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         long[] atimeval = null;
         long[] mtimeval = null;
 
-        if (args[0] != runtime.getNil() || args[1] != runtime.getNil()) {
+        if (args[0] != context.nil || args[1] != context.nil) {
             atimeval = extractTimeval(context, args[0]);
             mtimeval = extractTimeval(context, args[1]);
         }

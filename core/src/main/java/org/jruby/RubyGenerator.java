@@ -60,7 +60,7 @@ public class RubyGenerator extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
-        IRubyObject proc;
+        final IRubyObject proc;
 
         if (args.length == 0) {
             proc = RubyProc.newProc(runtime, block, Block.Type.PROC);
@@ -76,7 +76,9 @@ public class RubyGenerator extends RubyObject {
             }
         }
 
-        return init(runtime, proc);
+        // generator_init
+        this.proc = proc;
+        return this;
     }
 
     // generator_init_copy
@@ -96,15 +98,7 @@ public class RubyGenerator extends RubyObject {
     // generator_each
     @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        return ((RubyProc) proc).call19(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args), Block.NULL_BLOCK);
-    }
-
-
-    // generator_init
-    private IRubyObject init(Ruby runtime, IRubyObject proc) {
-        this.proc = proc;
-
-        return this;
+        return ((RubyProc) proc).call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args), Block.NULL_BLOCK);
     }
 
     private IRubyObject proc;

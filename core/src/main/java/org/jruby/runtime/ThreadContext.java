@@ -456,7 +456,7 @@ public final class ThreadContext {
                                IRubyObject self, Block block) {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
-        stack[index].updateFrame(clazz, self, name, block, callNumber);
+        stack[index].updateFrame(clazz, self, name, block);
         if (index + 1 == stack.length) {
             expandFrameStack();
         }
@@ -465,7 +465,7 @@ public final class ThreadContext {
     private void pushEvalFrame(IRubyObject self) {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
-        stack[index].updateFrameForEval(self, callNumber);
+        stack[index].updateFrameForEval(self);
         if (index + 1 == stack.length) {
             expandFrameStack();
         }

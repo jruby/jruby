@@ -3026,7 +3026,7 @@ public class IRBuilder {
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {
-        return copyAndReturnValue(new StringLiteral(literalNode.getName()));
+        return new StringLiteral(literalNode.getName());
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
