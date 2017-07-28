@@ -2385,7 +2385,7 @@ public class JVMVisitor extends IRVisitor {
     public void Hash(Hash hash) {
         List<KeyValuePair<Operand, Operand>> pairs = hash.getPairs();
         Iterator<KeyValuePair<Operand, Operand>> iter = pairs.iterator();
-        boolean kwargs = hash.isKWArgsHash && pairs.get(0).getKey() == Symbol.KW_REST_ARG_DUMMY;
+        boolean kwargs = hash.isKWArgsHash && ((Symbol) pairs.get(0).getKey()).getBytes().length() == 0; // FIXME: need to get to Manager == this..KW_REST_ARG_DUMMY;
 
         jvmMethod().loadContext();
         if (kwargs) {

@@ -1,9 +1,9 @@
 package org.jruby.ir.instructions;
 
 import java.util.Arrays;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -20,9 +20,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
-    private final ByteList missingConst;
+    private final RubySymbol missingConst;
 
-    public ConstMissingInstr(Variable result, Operand currentModule, ByteList missingConst, boolean isPotentiallyRefined) {
+    public ConstMissingInstr(Variable result, Operand currentModule, RubySymbol missingConst, boolean isPotentiallyRefined) {
         // FIXME: Missing encoding knowledge of the constant name.
         super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, "const_missing", currentModule,
                 new Operand[]{new Symbol(missingConst)}, null, isPotentiallyRefined);
@@ -31,6 +31,10 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     }
 
     public ByteList getMissingConst() {
+        return missingConst.getBytes();
+    }
+
+    public RubySymbol getMissingConstSymbol() {
         return missingConst;
     }
 
@@ -45,11 +49,11 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
         e.encode(getOperation());
         e.encode(getResult());
         e.encode(getReceiver());
-        e.encode(getMissingConst());
+        e.encode(getMissingConstSymbol());
     }
 
     public static ConstMissingInstr decode(IRReaderDecoder d) {
-        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeByteList(), d.getCurrentScope().maybeUsingRefinements());
+        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeSymbol(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override
@@ -65,7 +69,7 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyModule module = (RubyModule) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
-        return module.callMethod(context, "const_missing", context.runtime.newSymbol(missingConst));
+        return module.callMethod(context, "const_missing", missingConst);
     }
 
     @Override

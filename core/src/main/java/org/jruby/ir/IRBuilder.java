@@ -1,12 +1,9 @@
 package org.jruby.ir;
 
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
-import org.jruby.ast.types.INameNode;
 import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -2084,7 +2081,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, true);
         addInstr(new DefineInstanceMethodInstr(method));
         // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
+        return new Symbol(method.getSymbolName());
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
@@ -2092,7 +2089,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, false);
         addInstr(new DefineClassMethodInstr(container, method));
         // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
+        return new Symbol(method.getSymbolName());
     }
 
     protected LocalVariable getArgVariable(String name, int depth) {
@@ -2292,7 +2289,7 @@ public class IRBuilder {
                 Variable av = getNewLocalVariable(argName, 0);
                 Label l = getNewLabel();
                 if (scope instanceof IRMethod) addKeyArgDesc(kasgn, argName.asJavaString());
-                addInstr(new ReceiveKeywordArgInstr(av, argName.asJavaString(), required));
+                addInstr(new ReceiveKeywordArgInstr(av, argName, required));
                 addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
 
                 // Required kwargs have no value and check_arity will throw if they are not provided.
@@ -3821,7 +3818,7 @@ public class IRBuilder {
     }
 
     public Operand buildSymbol(SymbolNode node) {
-        return new Symbol(node.getByteName());
+        return new Symbol(node.getSymbolName());
     }
 
     public Operand buildTrue() {
@@ -4119,11 +4116,11 @@ public class IRBuilder {
 
         if (builder != null) {  // Still in currently building scopes
             for (Instr instr : builder.instructions) {
-                extractCallOperands(callArgs, keywordArgs, instr);
+                extractCallOperands(scope, callArgs, keywordArgs, instr);
             }
         } else {               // walked out past the eval to already build scopes
             for (Instr instr : scope.interpreterContext.getInstructions()) {
-                extractCallOperands(callArgs, keywordArgs, instr);
+                extractCallOperands(scope, callArgs, keywordArgs, instr);
             }
         }
 
@@ -4131,14 +4128,14 @@ public class IRBuilder {
     }
 
 
-    private static void extractCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
+    private static void extractCallOperands(IRScope scope, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
         if (instr instanceof ReceiveKeywordRestArgInstr) {
             // Always add the keyword rest arg to the beginning
-            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
+            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(scope.getManager().KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
         } else if (instr instanceof ReceiveKeywordArgInstr) {
             ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr) instr;
             // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
-            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
+            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName), rkai.getResult()));
         } else if (instr instanceof ReceiveRestArgInstr) {
             callArgs.add(new Splat(((ReceiveRestArgInstr) instr).getResult()));
         } else if (instr instanceof ReceiveArgBase) {

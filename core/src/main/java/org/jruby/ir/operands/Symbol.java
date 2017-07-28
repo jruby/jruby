@@ -7,22 +7,17 @@ import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class Symbol extends ImmutableLiteral {
-    public static final Symbol KW_REST_ARG_DUMMY = new Symbol("", ASCIIEncoding.INSTANCE);
+    private final RubySymbol symbol;
 
-    private final ByteList bytes;
-
-    public Symbol(String name, Encoding encoding) {
-        super();
-
-        this.bytes = new ByteList(name.getBytes(encoding.getCharset()), encoding);
-    }
-
-    public Symbol(ByteList bytes) {
-        this.bytes = bytes;
+    public Symbol(RubySymbol symbol) {
+        this.symbol = symbol;
     }
 
     @Override
@@ -31,14 +26,11 @@ public class Symbol extends ImmutableLiteral {
     }
 
     public ByteList getBytes() {
-        return bytes;
+        return symbol.getBytes();
     }
 
-    public String getString() { return RubyString.byteListToString(bytes); }
-
-    @Override
-    public Object createCacheObject(ThreadContext context) {
-        return RubySymbol.newSymbol(context.runtime, bytes);
+    public String getString() {
+        return symbol.asJavaString();
     }
 
     @Override
@@ -46,8 +38,14 @@ public class Symbol extends ImmutableLiteral {
         return true;
     }
 
+    // Note: Not needed for interp since it never needs to be looked up.
+    @Override
+    public Object createCacheObject(ThreadContext context) {
+        return symbol;
+    }
+
     public Encoding getEncoding() {
-        return bytes.getEncoding();
+        return symbol.getEncoding();
     }
 
     @Override
@@ -58,16 +56,20 @@ public class Symbol extends ImmutableLiteral {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getString());
-        e.encode(getEncoding());
+        e.encode(symbol);
     }
 
     public static Symbol decode(IRReaderDecoder d) {
-        return new Symbol(d.decodeString(), d.decodeEncoding());
+        return new Symbol(d.decodeSymbol());
     }
 
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Symbol(this);
+    }
+
+    @Override
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        return symbol;
     }
 }

@@ -2,6 +2,7 @@ package org.jruby.ir;
 
 import java.util.EnumSet;
 
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.LineNumberInstr;
@@ -61,6 +62,7 @@ public class IRManager {
     private List<CompilerPass> safePasses;
     private final RubyInstanceConfig config;
     private Ruby runtime;
+    public final Symbol KW_REST_ARG_DUMMY;
 
     // If true then code will not execute (see ir/ast tool)
     private boolean dryRun = false;
@@ -75,6 +77,8 @@ public class IRManager {
         object = new IRClassBody(this, null, "Object", 0, null);
 
         if (RubyInstanceConfig.IR_DEBUG_IGV != null) instrsListener = new IGVInstrListener();
+
+         KW_REST_ARG_DUMMY = new Symbol(runtime.newSymbol(""));
     }
 
     public Ruby getRuntime() {

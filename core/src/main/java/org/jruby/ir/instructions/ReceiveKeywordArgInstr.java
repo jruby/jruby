@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -13,10 +14,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArityInstr {
-    public final String argName;
+    public final RubySymbol argName;
     public final int required;
 
-    public ReceiveKeywordArgInstr(Variable result, String argName, int required) {
+    public ReceiveKeywordArgInstr(Variable result, RubySymbol argName, int required) {
         super(Operation.RECV_KW_ARG, result, -1);
         this.argName = argName;
         this.required = required;
@@ -46,12 +47,12 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     }
 
     public static ReceiveKeywordArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeString(), d.decodeInt());
+        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeSymbol(), d.decodeInt());
     }
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
-        return IRRuntimeHelpers.receiveKeywordArg(context, args, required, argName, acceptsKeywordArgument);
+        return IRRuntimeHelpers.receiveKeywordArg(context, args, required, argName.asJavaString(), acceptsKeywordArgument);
     }
 
     @Override

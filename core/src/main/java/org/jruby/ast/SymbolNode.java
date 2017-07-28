@@ -38,16 +38,15 @@ import org.jcodings.Encoding;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.ILiteralNode;
-import org.jruby.ast.types.INameNode;
+import org.jruby.ast.types.ISymbolNameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Represents a symbol (:symbol_name).
  */
-public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
+public class SymbolNode extends Node implements ILiteralNode, ISymbolNameNode, SideEffectFree {
     private final RubySymbol name;
 
     public SymbolNode(ISourcePosition position, RubySymbol value) {
@@ -84,6 +83,10 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
 
     public ByteList getByteName() {
         return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
+        return name;
     }
 
     public List<Node> childNodes() {
