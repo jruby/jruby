@@ -31,12 +31,14 @@ package org.jruby.internal.runtime.methods;
 import java.util.Arrays;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
+import org.jruby.util.StringSupport;
 
 /**
  * A method type for attribute writers (as created by attr_writer or attr_accessor).
@@ -45,8 +47,14 @@ public class AttrReaderMethod extends JavaMethodZero {
     private MethodData methodData;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
+    public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, RubySymbol variableName) {
+        // FIXME: JavaMethods need to be RubySymbols to work with non java charsets
+        super(implementationClass, visibility, StringSupport.byteListAsString(variableName.getBytes()));
+    }
+
+    @Deprecated
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
-        super(implementationClass, visibility, variableName);
+        this(implementationClass, visibility, implementationClass.getRuntime().newSymbol(variableName));
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
@@ -78,6 +86,6 @@ public class AttrReaderMethod extends JavaMethodZero {
     // Used by racc extension, needed for backward-compat with 1.7.
     @Deprecated
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfiguration, String variableName) {
-        this(implementationClass, visibility, variableName);
+        this(implementationClass, visibility, implementationClass.getRuntime().newSymbol(variableName));
     }
 }

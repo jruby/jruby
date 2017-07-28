@@ -91,6 +91,7 @@ import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.StringSupport;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1546,8 +1547,10 @@ public class RubyClass extends RubyModule {
             final Set<String> instanceMethods = new HashSet<String>(getMethods().size());
 
             // define instance methods
-            for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
-                final String methodName = methodEntry.getKey();
+            for (Map.Entry<RubySymbol,DynamicMethod> methodEntry : getMethods().entrySet()) {
+                // FIXME: this unravels too much to convert this to Symbol.  Accept limitation for now plus
+                // we cannot reify all ruby method names so this might be a touch different?
+                final String methodName = StringSupport.byteListAsString(methodEntry.getKey().getBytes());
 
                 if ( ! JavaNameMangler.willMethodMangleOk(methodName) ) {
                     LOG.debug("{} method: '{}' won't be part of reified Java class", getName(), methodName);
@@ -1656,8 +1659,8 @@ public class RubyClass extends RubyModule {
             }
 
             // define class/static methods
-            for (Map.Entry<String,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
-                String methodName = methodEntry.getKey();
+            for (Map.Entry<RubySymbol,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
+                String methodName = StringSupport.byteListAsString(methodEntry.getKey().getBytes());
 
                 if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
 

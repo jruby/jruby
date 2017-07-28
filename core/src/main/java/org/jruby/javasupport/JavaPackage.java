@@ -34,6 +34,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -44,6 +45,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassProvider;
+import org.jruby.util.TypeConverter;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -245,12 +247,8 @@ public class JavaPackage extends RubyModule {
         return respond_to_missing(context, name, includePrivate.isTrue());
     }
 
-    private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        final String name = mname.asJavaString();
-        if ( BlankSlateWrapper.handlesMethod(name) != null ) {
-            return context.runtime.getFalse(); // not missing!
-        }
-        return context.runtime.getTrue();
+    private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject name, final boolean includePrivate) {
+        return context.runtime.newBoolean(BlankSlateWrapper.handlesMethod(TypeConverter.checkID(name)) == null);
     }
 
     @JRubyMethod(name = "method_missing", visibility = Visibility.PRIVATE)
@@ -345,16 +343,22 @@ public class JavaPackage extends RubyModule {
         }
 
         @Override
-        protected DynamicMethod searchMethodCommon(String name) {
+        protected DynamicMethod searchMethodCommon(RubySymbol name) {
             // this module is special and only searches itself;
 
             // TODO implement a switch to allow for 'more-aligned' behavior
 
-            return (name = handlesMethod(name)) != null ? superClass.searchMethodInner(name) : NullMethod.INSTANCE;
+            RubySymbol methodName = handlesMethod(name);
+            return methodName != null ? superClass.searchMethodInner(methodName) : NullMethod.INSTANCE;
         }
 
-        private static String handlesMethod(final String name) {
-            switch (name) {
+        @Deprecated
+        protected DynamicMethod searchMethodCommon(String name) {
+            return searchMethodCommon(getRuntime().newSymbol(name));
+        }
+
+        private static RubySymbol handlesMethod(RubySymbol name) {
+            switch (name.asJavaString()) {
                 case "class" : case "singleton_class" : return name;
                 case "object_id" : case "name" : return name;
                 // these are handled already at the JavaPackage.class :
@@ -377,21 +381,23 @@ public class JavaPackage extends RubyModule {
                     return name;
 
                 // NOTE: these should maybe get re-thought and deprecated (for now due compatibility)
-                case "__constants__" : return "constants";
-                case "__methods__" : return "methods";
+                case "__constants__" : return name.getRuntime().newSymbol("constants");
+                case "__methods__" : return name.getRuntime().newSymbol("methods");
             }
 
-            final int last = name.length() - 1;
+            // FIXME: Not sure if this works with mbc but do we need to worry about that in JI support?
+            String stringName = name.asJavaString();
+            final int last = stringName.length() - 1;
             if ( last >= 0 ) {
-                switch (name.charAt(last)) {
+                switch (stringName.charAt(last)) {
                     case '?' : case '!' : case '=' :
                         return name;
                 }
-                switch (name.charAt(0)) {
+                switch (stringName.charAt(0)) {
                     case '<' : case '>' : case '=' : // e.g. ==
                         return name;
                     case '_' : // e.g. __send__
-                        if ( last > 0 && name.charAt(1) == '_' ) {
+                        if ( last > 0 && stringName.charAt(1) == '_' ) {
                             return name;
                         }
                 }

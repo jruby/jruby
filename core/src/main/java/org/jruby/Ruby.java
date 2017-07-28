@@ -65,6 +65,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.MRIRecursionGuard;
+import org.jruby.util.StringSupport;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -1302,22 +1303,26 @@ public final class Ruby implements Constantizable {
         objectClass = RubyClass.createBootstrapClass(this, "Object", basicObjectClass, RubyObject.OBJECT_ALLOCATOR);
         moduleClass = RubyClass.createBootstrapClass(this, "Module", objectClass, RubyModule.MODULE_ALLOCATOR);
         classClass = RubyClass.createBootstrapClass(this, "Class", moduleClass, RubyClass.CLASS_ALLOCATOR);
+        symbolClass = RubyClass.createBootstrapClass(this, "Symbol", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         basicObjectClass.setMetaClass(classClass);
         objectClass.setMetaClass(basicObjectClass);
         moduleClass.setMetaClass(classClass);
         classClass.setMetaClass(classClass);
+        symbolClass.setMetaClass(classClass);
 
         RubyClass metaClass;
         metaClass = basicObjectClass.makeMetaClass(classClass);
         metaClass = objectClass.makeMetaClass(metaClass);
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
+        symbolClass.makeMetaClass(classClass);
 
         RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
         RubyObject.createObjectClass(this, objectClass);
         RubyModule.createModuleClass(this, moduleClass);
         RubyClass.createClassClass(this, classClass);
+        RubySymbol.createSymbolClass(this, symbolClass);
 
         // set constants now that they're initialized
         basicObjectClass.setConstant("BasicObject", basicObjectClass);
@@ -1378,7 +1383,7 @@ public final class Ruby implements Constantizable {
 
         encodingService = new EncodingService(this);
 
-        RubySymbol.createSymbolClass(this);
+        RubySymbol.finishCreatingSymbolClass(this, symbolClass);
 
         if (profile.allowClass("ThreadGroup")) {
             RubyThreadGroup.createThreadGroupClass(this);
@@ -3491,7 +3496,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RubySymbol newSymbol(String name) {
-        return symbolTable.getSymbol(name);
+        return symbolTable.getSymbol(new String(name.getBytes(), RubyEncoding.ISO));
     }
 
     public RubySymbol newSymbol(String name, Encoding encoding) {
@@ -4448,11 +4453,17 @@ public final class Ruby implements Constantizable {
      * @param name the name of the method
      * @param method
      */
-    void addProfiledMethod(final String name, final DynamicMethod method) {
+    void addProfiledMethod(final RubySymbol name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
 
-        getProfilingService().addProfiledMethod( name, method );
+        // FIXME: profiled methods must end up as symbols eventually
+        getProfilingService().addProfiledMethod(StringSupport.byteListAsString(name.getBytes()), method );
+    }
+
+    @Deprecated
+    void addProfiledMethod(final String name, final DynamicMethod method) {
+        addProfiledMethod(newSymbol(name), method);
     }
 
     /**

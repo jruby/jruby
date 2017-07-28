@@ -64,6 +64,7 @@ import org.jruby.util.SipHashInline;
 import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
+import java.nio.charset.Charset;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.util.StringSupport.CR_7BIT;
@@ -117,9 +118,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         this(runtime, internedSymbol, symbolBytesFromString(runtime, internedSymbol));
     }
 
-    public static RubyClass createSymbolClass(Ruby runtime) {
-        RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setSymbol(symbolClass);
+    public static RubyClass createSymbolClass(Ruby runtime, RubyClass symbolClass) {
+        runtime.getObject().setConstant("Symbol", symbolClass);
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.setClassIndex(ClassIndex.SYMBOL);
         symbolClass.setReifiedClass(RubySymbol.class);
@@ -128,9 +128,20 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         symbolClass.defineAnnotatedMethods(RubySymbol.class);
         symbolMetaClass.undefineMethod("new");
 
-        symbolClass.includeModule(runtime.getComparable());
-
         return symbolClass;
+    }
+
+    /**
+     * Since symbols are needed before any methods are defined on any bootstrapping types
+     * Symbol is now also a bootstrap class.  However, we cannot include modules like
+     * Enumerable since it has not been defined at bootstrap init.  Therefore we have
+     * this post hook to do this later setup during core initialization.
+     *
+     * @param runtime of this ruby instance
+     * @param symbolClass the class we are finishing up during core creation
+     */
+    public static void finishCreatingSymbolClass(Ruby runtime, RubyClass symbolClass) {
+        symbolClass.includeModule(runtime.getComparable());
     }
 
     @Override
@@ -219,6 +230,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return runtime.getSymbolTable().getSymbol(bytes, false);
     }
 
+    @Deprecated
     public static RubySymbol newHardSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name, true);
     }
@@ -229,6 +241,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newSymbol;
     }
 
+    @Deprecated
     public static RubySymbol newHardSymbol(Ruby runtime, String name, Encoding encoding) {
         RubySymbol newSymbol = runtime.getSymbolTable().getSymbol(RubyString.encodeBytelist(name, encoding));
 
@@ -659,6 +672,30 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static ByteList symbolBytesFromString(Ruby runtime, String internedSymbol) {
         return new ByteList(ByteList.plain(internedSymbol), USASCIIEncoding.INSTANCE, false);
+    }
+
+    /**
+     * Make an instance variable out of this symbol (e.g. :foo will generate :@foo).
+     * @return the new symbol
+     */
+    public RubySymbol instanceVariableFromSymbol() {
+        ByteList bytes = getBytes().dup();
+
+        bytes.prepend((byte) '@');
+
+        return newSymbol(getRuntime(), bytes);
+    }
+
+    /**
+     * Make an instance variable out of this symbol (e.g. :foo will generate :foo=).
+     * @return the new symbol
+     */
+    public RubySymbol accessorFromSymbol() {
+        ByteList bytes = getBytes().dup();
+
+        bytes.append((byte) '=');
+
+        return newSymbol(getRuntime(), bytes);
     }
 
     @Override

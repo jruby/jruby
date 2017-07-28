@@ -189,7 +189,7 @@ public class TypeConverter {
      * For 2.2 compatibility, we also force all incoming identifiers to get anchored as hard-referenced symbols.
      */
     public static RubySymbol checkID(Ruby runtime, String name) {
-        return RubySymbol.newHardSymbol(runtime, name.intern());
+        return runtime.newSymbol(name);
     }
 
     /**

@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
  *
  * @deprecated no longer used - probably needs revamp if needed  to be re-usable
  */
+@Deprecated
 public class BlankSlateWrapper extends IncludedModuleWrapper {
     public BlankSlateWrapper(Ruby runtime, RubyClass superClass, RubyModule delegate) {
         super(runtime, superClass, delegate);
@@ -33,13 +34,13 @@ public class BlankSlateWrapper extends IncludedModuleWrapper {
 
         // do not go to superclasses except for special methods :
         if (name.equals("__constants__")) {
-            return superClass.searchMethodInner("constants");
+            return superClass.searchMethodInner(getRuntime().newSymbol("constants"));
         }
         if (name.equals("__methods__")) {
-            return superClass.searchMethodInner("methods");
+            return superClass.searchMethodInner(getRuntime().newSymbol("methods"));
         }
         if (KEEP.matcher(name).find()) {
-            return superClass.searchMethodInner(name);
+            return superClass.searchMethodInner(getRuntime().newSymbol(name));
         }
 
         return NullMethod.getInstance();

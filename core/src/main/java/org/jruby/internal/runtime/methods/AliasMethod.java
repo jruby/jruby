@@ -31,6 +31,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -42,63 +43,78 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class AliasMethod extends DynamicMethod {
     private DynamicMethod oldMethod;
-    private String oldName;
+    private RubySymbol oldName;
 
-    public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, String oldName) {
+    public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, RubySymbol oldName) {
         super(implementationClass, oldMethod.getVisibility());
 
         this.oldName = oldName;
         this.oldMethod = oldMethod;
     }
 
+    @Deprecated
+    public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, String oldName) {
+        this(implementationClass, oldMethod, implementationClass.getRuntime().newSymbol(oldName));
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        return oldMethod.call(context, self, klazz, oldName);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString());
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
-        return oldMethod.call(context, self, klazz, oldName, arg);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString(), arg);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, arg2);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString(), arg1, arg2);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, arg2, arg3);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString(), arg1, arg2, arg3);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
-        return oldMethod.call(context, self, klazz, oldName, args);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString(), args);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, block);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString(), block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, block);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString(), arg1, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, arg2, block);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString(), arg1, arg2, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, arg2, arg3, block);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString(), arg1, arg2, arg3, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, args, block);
+        // FIXME: should become symbol
+        return oldMethod.call(context, self, klazz, oldName.asJavaString(), args, block);
     }
 
     public DynamicMethod dup() {
@@ -110,8 +126,9 @@ public class AliasMethod extends DynamicMethod {
         return oldMethod.getArity();
     }
 
+    // FIXME: should become symbol
     public String getOldName() {
-        return oldName;
+        return oldName.asJavaString();
     }
     
     @Override

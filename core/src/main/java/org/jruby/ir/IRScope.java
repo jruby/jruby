@@ -345,7 +345,7 @@ public abstract class IRScope implements ParseResult {
 
     @Deprecated
     public String getName() {
-        return StringSupport.byteListAsString(name.getBytes());
+        return name.asJavaString();
     }
 
     @Deprecated
@@ -353,7 +353,7 @@ public abstract class IRScope implements ParseResult {
         this.name = getManager().getRuntime().newSymbol(name);
     }
 
-    public RubySymbol getSymbol() {
+    public RubySymbol getSymbolName() {
         return name;
     }
 

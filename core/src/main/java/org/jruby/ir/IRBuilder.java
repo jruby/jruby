@@ -2075,7 +2075,7 @@ public class IRBuilder {
     static final ArgumentDescriptor[] NO_ARG_DESCS = new ArgumentDescriptor[0];
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getLine(), defNode.getScope(), needsCodeCoverage());
+        return new IRMethod(manager, scope, defNode, defNode.getSymbolName(), isInstanceMethod, defNode.getLine(), defNode.getScope(), needsCodeCoverage());
 
         //return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
     }

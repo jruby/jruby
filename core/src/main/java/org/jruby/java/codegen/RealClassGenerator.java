@@ -91,7 +91,7 @@ public abstract class RealClassGenerator {
                 final String name = method.getName();
                 if ( Modifier.isStatic(method.getModifiers()) ) continue;
                 if ( implClass != null ) { // only override default methods if present in implementing class
-                    if ( ! Modifier.isAbstract(method.getModifiers()) && ! implClass.getMethods().containsKey(name) ) {
+                    if ( ! Modifier.isAbstract(method.getModifiers()) && ! implClass.getMethods().containsKey(implClass.getRuntime().newSymbol(name)) ) {
                         continue;
                     }
                 }

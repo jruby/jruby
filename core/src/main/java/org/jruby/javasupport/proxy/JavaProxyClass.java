@@ -56,6 +56,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyNil;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -64,6 +65,7 @@ import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.StringSupport;
 
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
@@ -662,13 +664,15 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
                 if (methodNames == null) {
                     // lock in the overridden methods for the new class, and any as-yet uninstantiated ancestor class.
-                    Map<String, DynamicMethod> methods;
+                    Map<RubySymbol, DynamicMethod> methods;
                     synchronized(methods = ancestor.getMethods()) {
                         methodNames = new ArrayList<>(methods.size());
-                        for (String methodName: methods.keySet()) {
-                            if ( ! isExcludedMethod(methodName) ) {
-                                names.add(methodName);
-                                methodNames.add(methodName);
+                        for (RubySymbol methodName: methods.keySet()) {
+                            // FIXME: Determine how to handle m17n names which are not valid Java charset names.
+                            String mname = StringSupport.byteListAsString(methodName.getBytes());
+                            if ( ! isExcludedMethod(mname) ) {
+                                names.add(mname);
+                                methodNames.add(mname);
                             }
                         }
                     }
@@ -679,11 +683,13 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 }
             }
             else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
-                Map<String, DynamicMethod> methods;
+                Map<RubySymbol, DynamicMethod> methods;
                 synchronized(methods = ancestor.getMethods()) {
-                    for (String methodName: methods.keySet()) {
-                        if ( ! isExcludedMethod(methodName) ) {
-                            names.add(methodName);
+                    for (RubySymbol methodName: methods.keySet()) {
+                        // FIXME: Determine how to handle m17n names which are not valid Java charset names.
+                        String mname = StringSupport.byteListAsString(methodName.getBytes());
+                        if ( ! isExcludedMethod(mname) ) {
+                            names.add(mname);
                         }
                     }
                 }

@@ -31,24 +31,32 @@ package org.jruby.internal.runtime.methods;
 import java.util.Arrays;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
+import org.jruby.util.StringSupport;
 
 /**
  * A method type for attribute writers (as created by attr_writer or attr_accessor).
  */
 public class AttrWriterMethod extends JavaMethodOne {
     private MethodData methodData;
-    private final String variableName;
+    private final RubySymbol variableName;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
-    public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
-        super(implementationClass, visibility, variableName + "=");
+    public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, RubySymbol variableName) {
+        // FIXME: JavaMethods need to be RubySymbols to work with non java charsets
+        super(implementationClass, visibility, variableName.accessorFromSymbol().asJavaString());
         this.variableName = variableName;
+    }
+
+    @Deprecated
+    public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
+        this(implementationClass, visibility, implementationClass.getRuntime().newSymbol(variableName));
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {
@@ -57,13 +65,14 @@ public class AttrWriterMethod extends JavaMethodOne {
     }
     
     public String getVariableName() {
-        return variableName;
+        return StringSupport.byteListAsString(variableName.getBytes());
     }
 
     private VariableAccessor verifyAccessor(RubyClass cls) {
         VariableAccessor localAccessor = accessor;
         if (localAccessor.getClassId() != cls.id) {
-            localAccessor = cls.getVariableAccessorForWrite(variableName);
+            // FIXME: Change to use symbol once we change ivar tables.
+            localAccessor = cls.getVariableAccessorForWrite(StringSupport.byteListAsString(variableName.getBytes()));
             accessor = localAccessor;
         }
         return localAccessor;
@@ -72,7 +81,8 @@ public class AttrWriterMethod extends JavaMethodOne {
     @Override
     public MethodData getMethodData() {
         if (methodData == null){
-            methodData = new MethodData(name, "dummyfile", Arrays.asList(variableName));
+            // FIXME: Use symbol once MethodData is converted to Symbols
+            methodData = new MethodData(name, "dummyfile", Arrays.asList(StringSupport.byteListAsString(variableName.getBytes())));
         }
         return methodData;
     }

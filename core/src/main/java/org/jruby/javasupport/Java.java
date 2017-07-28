@@ -1484,8 +1484,8 @@ public class Java implements Library {
 
             // add a default initialize if one does not already exist and this is a Java-hierarchy class
             if ( NEW_STYLE_EXTENSION &&
-                ! ( RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey("initialize") ) ) {
-                clazz.addMethod("initialize", new DummyInitialize(clazz));
+                ! ( RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey(clazz.getRuntime().newSymbol("initialize")) ) ) {
+                clazz.addMethod(clazz.getRuntime().newSymbol("initialize"), new DummyInitialize(clazz));
             }
         }
         clazz.setReifiedClass(proxyImplClass);

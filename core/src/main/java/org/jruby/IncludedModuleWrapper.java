@@ -107,12 +107,12 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    public Map<String, DynamicMethod> getMethods() {
+    public Map<RubySymbol, DynamicMethod> getMethods() {
         return origin.getMethods();
     }
 
     @Override
-    public Map<String, DynamicMethod> getMethodsForWrite() {
+    public Map<RubySymbol, DynamicMethod> getMethodsForWrite() {
         return origin.getMethodsForWrite();
     }
 
@@ -209,7 +209,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    protected DynamicMethod searchMethodCommon(String name) {
+    protected DynamicMethod searchMethodCommon(RubySymbol name) {
         // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
         RubyModule module = origin;
         RubyModule methodLoc = origin.getMethodLocation();
@@ -224,5 +224,10 @@ public class IncludedModuleWrapper extends IncludedModule {
         if (method != null) return method.isNull() ? null : method;
 
         return null;
+    }
+
+    @Deprecated
+    protected DynamicMethod searchMethodCommon(String name) {
+        return searchMethodCommon(getRuntime().newSymbol(name));
     }
 }

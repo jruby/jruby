@@ -44,9 +44,9 @@ public class PrependedModule extends IncludedModule {
     public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule origin) {
         super(runtime, superClass, origin);
         methods = origin.methods;
-        origin.methods = new ConcurrentHashMap<String, DynamicMethod>(0, 0.9f, 1);
+        origin.methods = new ConcurrentHashMap<RubySymbol, DynamicMethod>(0, 0.9f, 1);
         origin.methodLocation = this;
-        for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
+        for (Map.Entry<RubySymbol, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
             method.setImplementationClass(this);
             method.setDefinedClass(origin);

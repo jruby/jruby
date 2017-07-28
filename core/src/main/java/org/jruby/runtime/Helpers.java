@@ -1821,22 +1821,26 @@ public class Helpers {
         return args;
     }
 
-    public static RubySymbol addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
+    public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
         containingClass.addMethod(name, method);
 
-        RubySymbol sym = runtime.fastNewSymbol(name);
         if (visibility == Visibility.MODULE_FUNCTION) {
-            addModuleMethod(containingClass, name, method, context, sym);
+            addModuleMethod(containingClass, name, method, context, name);
         }
 
         if (!containingClass.isRefinement()) {
-            callNormalMethodHook(containingClass, context, sym);
+            callNormalMethodHook(containingClass, context, name);
         }
 
-        return sym;
+        return name;
     }
 
-    private static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, RubySymbol sym) {
+    @Deprecated
+    public static RubySymbol addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
+        return addInstanceMethod(containingClass, runtime.newSymbol(name), method, visibility, context, runtime);
+    }
+
+    private static void addModuleMethod(RubyModule containingClass, RubySymbol name, DynamicMethod method, ThreadContext context, RubySymbol sym) {
         DynamicMethod singletonMethod = method.dup();
         singletonMethod.setImplementationClass(containingClass.getSingletonClass());
         singletonMethod.setVisibility(Visibility.PUBLIC);
