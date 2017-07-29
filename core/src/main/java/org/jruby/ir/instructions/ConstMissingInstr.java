@@ -24,7 +24,7 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
 
     public ConstMissingInstr(Variable result, Operand currentModule, RubySymbol missingConst, boolean isPotentiallyRefined) {
         // FIXME: Missing encoding knowledge of the constant name.
-        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, "const_missing", currentModule,
+        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, missingConst.getRuntime().newSymbol("const_missing"), currentModule,
                 new Operand[]{new Symbol(missingConst)}, null, isPotentiallyRefined);
 
         this.missingConst = missingConst;

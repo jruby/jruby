@@ -82,6 +82,10 @@ public class OpAsgnNode extends Node {
         return operatorName.asJavaString();
     }
 
+    public RubySymbol getOperatorSymbolName() {
+        return operatorName;
+    }
+
     /**
      * Gets the receiverNode.
      * @return Returns a Node
@@ -102,12 +106,22 @@ public class OpAsgnNode extends Node {
      * Gets the varibaleName.
      * @return Returns a String
      */
+    @Deprecated
     public String getVariableName() {
         return variableName.asJavaString();
     }
-    
+
+    public RubySymbol getVariableSymbolName() {
+        return variableName;
+    }
+
+    @Deprecated
     public String getVariableNameAsgn() {
         return variableNameAsgn.asJavaString();
+    }
+
+    public RubySymbol getVariableSymbolNameAsgn() {
+        return variableNameAsgn;
     }
     
     public List<Node> childNodes() {

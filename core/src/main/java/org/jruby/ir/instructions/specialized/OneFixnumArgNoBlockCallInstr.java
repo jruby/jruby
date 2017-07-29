@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions.specialized;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
@@ -16,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class OneFixnumArgNoBlockCallInstr extends CallInstr {
     private final long fixNum;
 
-    public OneFixnumArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, boolean potentiallyRefined) {
+    public OneFixnumArgNoBlockCallInstr(CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, boolean potentiallyRefined) {
         super(Operation.CALL_1F, callType, result, name, receiver, args, null, potentiallyRefined);
 
         assert args.length == 1;
@@ -26,7 +27,7 @@ public class OneFixnumArgNoBlockCallInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneFixnumArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
+        return new OneFixnumArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getSymbolName(), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), isPotentiallyRefined());
     }
 

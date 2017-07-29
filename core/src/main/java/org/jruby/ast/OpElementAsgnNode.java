@@ -92,6 +92,10 @@ public class OpElementAsgnNode extends Node {
         return operatorName.asJavaString();
     }
 
+    public RubySymbol getOperatorSymbolName() {
+        return operatorName;
+    }
+
     /**
      * Gets the receiverNode.
      * @return Returns a Node

@@ -875,7 +875,7 @@ public class IRBuilder {
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
-        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
+        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getSymbolName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
         addInstr(new CopyInstr(result, lastArg));
 
         if (attrAssignNode.isLazy()) {
@@ -893,7 +893,7 @@ public class IRBuilder {
         Operand obj = build(attrAssignNode.getReceiverNode());
         Operand[] args = setupCallArgs(attrAssignNode.getArgsNode());
         args = addArg(args, value);
-        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args, scope.maybeUsingRefinements()));
+        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getSymbolName(), args, scope.maybeUsingRefinements()));
         return value;
     }
 
@@ -1048,7 +1048,7 @@ public class IRBuilder {
                 !scope.maybeUsingRefinements() &&
                 callNode.getIterNode() == null) {
             StrNode keyNode = (StrNode) argsAry.get(0);
-            addInstr(ArrayDerefInstr.create(result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFileName(), keyNode.getLine())));
+            addInstr(ArrayDerefInstr.create(scope, result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFileName(), keyNode.getLine())));
             return result;
         }
 
@@ -1061,7 +1061,7 @@ public class IRBuilder {
         Operand[] args = setupCallArgs(callArgsNode);
         Operand block = setupCallClosure(callNode.getIterNode());
 
-        CallInstr callInstr = CallInstr.create(scope, result, callNode.getName(), receiver, args, block);
+        CallInstr callInstr = CallInstr.create(scope, result, callNode.getSymbolName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if ( callNode.getName().equals("new") &&
@@ -2690,7 +2690,7 @@ public class IRBuilder {
         }
 
         determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-        CallInstr callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
+        CallInstr callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getSymbolName(), buildSelf(), args, block);
         receiveBreakException(block, callInstr);
         return result;
     }
@@ -2764,7 +2764,7 @@ public class IRBuilder {
         if (nearestNonClosureBuilder == null) {
             Variable excType = createTemporaryVariable();
             addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError"));
-            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), "new", excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
+            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), manager.getRuntime().newSymbol("new"), excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
             addInstr(new ThrowExceptionInstr(exc));
             return buildNil();
         }
@@ -2834,7 +2834,7 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode());
         Operand  forBlock = buildForIter(forNode);
-        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, "each", receiver, NO_ARGS, forBlock, scope.maybeUsingRefinements());
+        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, manager.getRuntime().newSymbol("each"), receiver, NO_ARGS, forBlock, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
         return result;
@@ -3078,7 +3078,7 @@ public class IRBuilder {
         addResultInstr(new GetGlobalVariableInstr(tempLastLine, "$_"));
 
         if (result == null) result = createTemporaryVariable();
-        return addResultInstr(new MatchInstr(result, regexp, tempLastLine));
+        return addResultInstr(new MatchInstr(scope, result, regexp, tempLastLine));
     }
 
     public Operand buildMatch2(Variable result, Match2Node matchNode) {
@@ -3087,7 +3087,7 @@ public class IRBuilder {
 
         if (result == null) result = createTemporaryVariable();
 
-        addInstr(new MatchInstr(result, receiver, value));
+        addInstr(new MatchInstr(scope, result, receiver, value));
 
         if (matchNode instanceof Match2CaptureNode) {
             Match2CaptureNode m2c = (Match2CaptureNode)matchNode;
@@ -3117,7 +3117,7 @@ public class IRBuilder {
 
         if (result == null) result = createTemporaryVariable();
 
-        return addResultInstr(new MatchInstr(result, receiver, value));
+        return addResultInstr(new MatchInstr(scope, result, receiver, value));
     }
 
     private Operand getContainerFromCPath(Colon3Node cpath) {
@@ -3200,7 +3200,7 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, v1));
         }
 
-        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
+        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableSymbolName(), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -3211,7 +3211,7 @@ public class IRBuilder {
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode());
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {v2}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableSymbolNameAsgn(), v1, new Operand[] {v2}, null));
             // It is readerValue = v2.
             // readerValue = writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
@@ -3225,10 +3225,10 @@ public class IRBuilder {
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode());
             Variable setValue = createTemporaryVariable();
-            addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorName(), readerValue, new Operand[]{v2}, null));
+            addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorSymbolName(), readerValue, new Operand[]{v2}, null));
 
             // set attr
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableSymbolNameAsgn(), v1, new Operand[] {setValue}, null));
             // Returning writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
             if (!opAsgnNode.isLazy()) return setValue;
@@ -3273,7 +3273,7 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
-        addInstr(CallInstr.create(scope, result, node.getOperator(), lhs, new Operand[] { rhs }, null));
+        addInstr(CallInstr.create(scope, result, node.getOperatorSymbol(), lhs, new Operand[] { rhs }, null));
         return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, result)));
     }
 
@@ -3349,12 +3349,12 @@ public class IRBuilder {
         Label endLabel = getNewLabel();
         Variable elt = createTemporaryVariable();
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
-        addInstr(CallInstr.create(scope, callType, elt, "[]", array, argList, null));
+        addInstr(CallInstr.create(scope, callType, elt, manager.getRuntime().newSymbol("[]"), array, argList, null));
         addInstr(BEQInstr.create(elt, truthy, endLabel));
         Operand value = build(opElementAsgnNode.getValueNode());
 
         argList = addArg(argList, value);
-        addInstr(CallInstr.create(scope, callType, elt, "[]=", array, argList, null));
+        addInstr(CallInstr.create(scope, callType, elt, manager.getRuntime().newSymbol("[]="), array, argList, null));
         addInstr(new CopyInstr(elt, value));
 
         addInstr(new LabelInstr(endLabel));
@@ -3368,15 +3368,15 @@ public class IRBuilder {
         Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
         Variable elt = createTemporaryVariable();
-        addInstr(CallInstr.create(scope, callType, elt, "[]", array, argList, null)); // elt = a[args]
+        addInstr(CallInstr.create(scope, callType, elt, manager.getRuntime().newSymbol("[]"), array, argList, null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode());                                       // Load 'value'
-        String  operation = opElementAsgnNode.getOperatorName();
+        RubySymbol operation = opElementAsgnNode.getOperatorSymbolName();
         addInstr(CallInstr.create(scope, callType, elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = createTemporaryVariable();
         argList = addArg(argList, elt);
-        addInstr(CallInstr.create(scope, callType, tmp, "[]=", array, argList, null));   // a[args] = elt
+        addInstr(CallInstr.create(scope, callType, tmp, manager.getRuntime().newSymbol("[]="), array, argList, null));   // a[args] = elt
         return elt;
     }
 
@@ -3784,16 +3784,16 @@ public class IRBuilder {
         Variable ret = createTemporaryVariable();
         if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody) {
             if (((IRMethod) scope).isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new InstanceSuperInstr(ret, scope.getCurrentModuleVariable(), getSymbolName(), args, block, scope.maybeUsingRefinements());
             } else {
-                superInstr = new ClassSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new ClassSuperInstr(ret, scope.getCurrentModuleVariable(), getSymbolName(), args, block, scope.maybeUsingRefinements());
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
             // This is because the super can be part of a block that will be used by 'define_method' to define
             // a new method.  In that case, the method called by super will be determined by the 'name' argument
             // to 'define_method'.
-            superInstr = new UnresolvedSuperInstr(ret, buildSelf(), args, block, scope.maybeUsingRefinements());
+            superInstr = new UnresolvedSuperInstr(scope, ret, buildSelf(), args, block, scope.maybeUsingRefinements());
         }
         receiveBreakException(block, superInstr);
         return ret;
@@ -3809,7 +3809,7 @@ public class IRBuilder {
     }
 
     private Operand buildSuperInScriptBody() {
-        return addResultInstr(new UnresolvedSuperInstr(createTemporaryVariable(), buildSelf(), NO_ARGS, null, scope.maybeUsingRefinements()));
+        return addResultInstr(new UnresolvedSuperInstr(scope, createTemporaryVariable(), buildSelf(), NO_ARGS, null, scope.maybeUsingRefinements()));
     }
 
     public Operand buildSValue(SValueNode node) {
@@ -3898,7 +3898,7 @@ public class IRBuilder {
     public Operand buildVCall(Variable result, VCallNode node) {
         if (result == null) result = createTemporaryVariable();
 
-        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getName(), buildSelf(), NO_ARGS, null));
+        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getSymbolName(), buildSelf(), NO_ARGS, null));
     }
 
     public Operand buildWhile(final WhileNode whileNode) {
@@ -3974,7 +3974,7 @@ public class IRBuilder {
                     next = getNewLabel();
                     addInstr(BNEInstr.create(next, new Fixnum(depthFromSuper), scopeDepth));
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-                    addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args,  block, scope.maybeUsingRefinements()));
+                    addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args,  block, scope.maybeUsingRefinements()));
                     addInstr(new JumpInstr(allDoneLabel));
 
                     // We may run out of live builds and walk int already built scopes if zsuper in an eval
@@ -3988,7 +3988,7 @@ public class IRBuilder {
                 // If we hit a method, this is known to always succeed
                 if (superScope instanceof IRMethod) {
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-                    addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
+                    addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
                 } //else {
                 // FIXME: Do or don't ... there is no try
                     /* Control should never get here in the runtime */
@@ -4089,6 +4089,10 @@ public class IRBuilder {
 
     public String getName() {
         return scope.getName();
+    }
+
+    public RubySymbol getSymbolName() {
+        return scope.getSymbolName();
     }
 
     private Label getNewLabel() {

@@ -28,19 +28,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     private final FrozenString key;
 
-    public static ArrayDerefInstr create(Variable result, Operand obj, FrozenString arg0) {
-        return new ArrayDerefInstr(result, obj, arg0);
+    public static ArrayDerefInstr create(IRScope scope, Variable result, Operand obj, FrozenString arg0) {
+        return new ArrayDerefInstr(scope, result, obj, arg0);
     }
 
-    public ArrayDerefInstr(Variable result, Operand obj, FrozenString arg0) {
-        super(Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result, "[]", obj, new Operand[] {arg0}, false);
+    public ArrayDerefInstr(IRScope scope, Variable result, Operand obj, FrozenString arg0) {
+        super(Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("[]"), obj, new Operand[] {arg0}, false);
 
         key = arg0;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ArrayDerefInstr((Variable) getResult().cloneForInlining(ii), getReceiver().cloneForInlining(ii), key);
+        return new ArrayDerefInstr(ii.getScope(), (Variable) getResult().cloneForInlining(ii), getReceiver().cloneForInlining(ii), key);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     }
 
     public static ArrayDerefInstr decode(IRReaderDecoder d) {
-        return create(d.decodeVariable(), d.decodeOperand(), (FrozenString) d.decodeOperand());
+        return create(d.getCurrentScope(), d.decodeVariable(), d.decodeOperand(), (FrozenString) d.decodeOperand());
     }
 
     @Override

@@ -1,6 +1,6 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyArray;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -13,9 +13,7 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.util.ArraySupport;
-
-import java.util.ArrayList;
-import java.util.List;
+;
 import java.util.Map;
 
 import static org.jruby.ir.IRFlags.*;
@@ -25,7 +23,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     public transient final long callSiteId;
     private final CallType callType;
-    protected String name;
+    protected RubySymbol name;
     protected transient CallSite callSite;
     protected transient int argsCount;
     protected transient boolean hasClosure;
@@ -39,7 +37,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean procNew;
     private boolean potentiallyRefined;
 
-    protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure,
+    protected CallBase(Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                        boolean potentiallyRefined) {
         super(op, arrayifyOperands(receiver, args, closure));
 
@@ -83,6 +81,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     public String getName() {
+        return name.asJavaString();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
 
@@ -143,15 +145,15 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return dontInline;
     }
 
-    protected static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
+    protected static CallSite getCallSiteFor(CallType callType, RubySymbol name, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
-        if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
+        if (potentiallyRefined) return new RefinedCachingCallSite(name.asJavaString(), callType);
 
         switch (callType) {
-            case NORMAL: return MethodIndex.getCallSite(name);
-            case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
-            case VARIABLE: return MethodIndex.getVariableCallSite(name);
+            case NORMAL: return MethodIndex.getCallSite(name.asJavaString());
+            case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name.asJavaString());
+            case VARIABLE: return MethodIndex.getVariableCallSite(name.asJavaString());
             case SUPER: return MethodIndex.getSuperCallSite();
             case UNKNOWN:
         }

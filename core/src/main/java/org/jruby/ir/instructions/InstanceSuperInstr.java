@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -17,7 +18,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InstanceSuperInstr extends CallInstr {
-    public InstanceSuperInstr(Variable result, Operand definingModule, String name, Operand[] args, Operand closure,
+    public InstanceSuperInstr(Variable result, Operand definingModule, RubySymbol name, Operand[] args, Operand closure,
                               boolean isPotentiallyRefined) {
         super(Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
     }
@@ -28,7 +29,7 @@ public class InstanceSuperInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new InstanceSuperInstr(ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), getName(),
+        return new InstanceSuperInstr(ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), getSymbolName(),
                 cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
@@ -36,7 +37,7 @@ public class InstanceSuperInstr extends CallInstr {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super");
         int callTypeOrdinal = d.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, calltype(ord):  "+ callTypeOrdinal);
-        String methAddr = d.decodeString();
+        RubySymbol methAddr = d.decodeSymbol();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, methaddr:  "+ methAddr);
         Operand receiver = d.decodeOperand();
         int argsCount = d.decodeInt();

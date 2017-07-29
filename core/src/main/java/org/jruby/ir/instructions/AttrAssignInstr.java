@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -19,7 +20,7 @@ import static org.jruby.ir.IRFlags.*;
 // Instruction representing Ruby code of the form: "a[i] = 5"
 // which is equivalent to: a.[]=(i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
-    public static AttrAssignInstr create(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
+    public static AttrAssignInstr create(Operand obj, RubySymbol attr, Operand[] args, boolean isPotentiallyRefined) {
         if (!containsArgSplat(args) && args.length == 1) {
             return new OneArgOperandAttrAssignInstr(obj, attr, args, isPotentiallyRefined);
         }
@@ -27,7 +28,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
         return new AttrAssignInstr(obj, attr, args, isPotentiallyRefined);
     }
 
-    public AttrAssignInstr(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
+    public AttrAssignInstr(Operand obj, RubySymbol attr, Operand[] args, boolean isPotentiallyRefined) {
         super(Operation.ATTR_ASSIGN, obj instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL, attr, obj, args, null, isPotentiallyRefined);
     }
 
@@ -49,7 +50,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new AttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii), isPotentiallyRefined());
+        return new AttrAssignInstr(getReceiver().cloneForInlining(ii), getSymbolName(), cloneCallArgs(ii), isPotentiallyRefined());
     }
 
     @Override
@@ -62,7 +63,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     }
 
     public static AttrAssignInstr decode(IRReaderDecoder d) {
-        return create(d.decodeOperand(), d.decodeString(), d.decodeOperandArray(), d.getCurrentScope().maybeUsingRefinements());
+        return create(d.decodeOperand(), d.decodeSymbol(), d.decodeOperandArray(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

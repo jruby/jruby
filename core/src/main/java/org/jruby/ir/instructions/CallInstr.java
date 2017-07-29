@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -23,11 +24,11 @@ import org.jruby.runtime.CallType;
 public class CallInstr extends CallBase implements ResultInstr {
     protected transient Variable result;
 
-    public static CallInstr create(IRScope scope, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+    public static CallInstr create(IRScope scope, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure) {
         return create(scope, CallType.NORMAL, result, name, receiver, args, closure);
     }
 
-    public static CallInstr create(IRScope scope, CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+    public static CallInstr create(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure) {
         boolean isPotentiallyRefined = scope.maybeUsingRefinements();
 
         if (!containsArgSplat(args)) {
@@ -50,12 +51,12 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
 
-    public CallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure,
+    public CallInstr(CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                      boolean potentiallyRefined) {
         this(Operation.CALL, callType, result, name, receiver, args, closure, potentiallyRefined);
     }
 
-    protected CallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver, Operand[] args,
+    protected CallInstr(Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
                         Operand closure, boolean potentiallyRefined) {
         super(op, callType, name, receiver, args, closure, potentiallyRefined);
 
@@ -76,7 +77,7 @@ public class CallInstr extends CallBase implements ResultInstr {
         int callTypeOrdinal = d.decodeInt();
         CallType callType = CallType.fromOrdinal(callTypeOrdinal);
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - calltype:  " + callType);
-        String methAddr = d.decodeString();
+        RubySymbol methAddr = d.decodeSymbol();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - methaddr:  " + methAddr);
         Operand receiver = d.decodeOperand();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - receiver:  " + receiver);
@@ -109,12 +110,12 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     public Instr discardResult() {
-        return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), getClosureArg(), isPotentiallyRefined());
+        return NoResultCallInstr.create(getCallType(), getSymbolName(), getReceiver(), getCallArgs(), getClosureArg(), isPotentiallyRefined());
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
+        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getSymbolName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
