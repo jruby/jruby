@@ -1994,7 +1994,6 @@ public class EncodingUtils {
         Ruby runtime = context.runtime;
 
         int n;
-        RubyString str;
         switch (n = enc.codeToMbcLength(code)) {
             case ErrorCodes.ERR_INVALID_CODE_POINT_VALUE:
                 throw runtime.newRangeError("invalid codepoint " + Integer.toHexString(code) + " in " + enc);
@@ -2002,14 +2001,14 @@ public class EncodingUtils {
             case 0:
                 throw runtime.newRangeError(Integer.toString(code) + " out of char range");
         }
-        str = RubyString.newStringLight(runtime, n);
-        ByteList strBytes = str.getByteList();
+        ByteList strBytes = new ByteList(n);
+        strBytes.setEncoding(enc);
+        strBytes.length(n);
         enc.codeToMbc(code, strBytes.unsafeBytes(), strBytes.begin());
         if (enc.length(strBytes.unsafeBytes(), strBytes.begin(), strBytes.realSize()) != n) {
             throw runtime.newRangeError("invalid codepoint " + Integer.toHexString(code) + " in " + enc);
         }
-        strBytes.length(n);
-        return str;
+        return RubyString.newString(runtime, strBytes);
 
     }
 

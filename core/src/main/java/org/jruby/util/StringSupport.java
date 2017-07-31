@@ -31,6 +31,8 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
+import org.jcodings.exception.EncodingError;
+import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -448,7 +450,16 @@ public final class StringSupport {
     }
 
     public static int codeLength(Encoding enc, int c) {
-        return enc.codeToMbcLength(c);
+        int i = enc.codeToMbcLength(c);
+        return checkCodepointError(i);
+    }
+
+    public static int checkCodepointError(int i) {
+        if (i < 0) {
+            // for backward compat with code expecting exceptions
+            throw new EncodingException(EncodingError.fromCode(i));
+        }
+        return i;
     }
 
     public static long getAscii(Encoding enc, byte[]bytes, int p, int end) {
