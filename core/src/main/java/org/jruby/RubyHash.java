@@ -1186,7 +1186,7 @@ public class RubyHash extends RubyObject implements Map {
         if (value == null) {
             if (block.isGiven()) return block.yield(context, key);
 
-            throw runtime.newKeyError("key not found: :" + key);
+            throw runtime.newKeyError("key not found: " + key.inspect());
         }
 
         return value;
