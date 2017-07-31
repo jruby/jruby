@@ -1564,18 +1564,24 @@ public class Sprintf {
 
     private static int round(byte[] bytes, int nDigits, int roundPos, boolean roundDown) {
         int next = roundPos + 1;
-        if (next >= nDigits || bytes[next] < '5' ||
-                // MRI rounds up on nnn5nnn, but not nnn5 --
-                // except for when they do
-                (roundDown && bytes[next] == '5' && next == nDigits - 1)) {
-            return nDigits;
-        }
+        if (next >= nDigits) return nDigits;
+        if (bytes[next] < '5') return nDigits;
+        if (roundDown && bytes[next] == '5' && next == nDigits - 1) return nDigits;
+
         if (roundPos < 0) { // "%.0f" % 0.99
             System.arraycopy(bytes,0,bytes,1,nDigits);
             bytes[0] = '1';
             return nDigits + 1;
         }
+        // round half to even
+        if (roundPos + 1 < nDigits && bytes[roundPos + 1] == '5') {
+            if ((bytes[roundPos] - '0') % 2 == 0) {
+                // round down
+                return nDigits;
+            }
+        }
         bytes[roundPos] += 1;
+        
         while (bytes[roundPos] > '9') {
             bytes[roundPos] = '0';
             roundPos--;
