@@ -38,6 +38,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
+import org.jruby.RubyInteger;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -1019,9 +1020,32 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "ungetc")
     public IRubyObject ungetc(ThreadContext context, IRubyObject arg) {
-        // TODO: Not a line-by-line port.
-        checkReadable();
-        return ungetbyte(context, arg);
+        Encoding enc, enc2;
+
+        checkModifiable();
+        if (arg.isNil()) return arg;
+        if (arg instanceof RubyInteger) {
+            int len, cc = ((RubyInteger) arg).getIntValue();
+            byte[] buf = new byte[16];
+
+            enc = getEncoding();
+            len = enc.codeToMbcLength(cc);
+            if (len <= 0) EncodingUtils.encUintChr(context, cc, enc);
+            enc.codeToMbc(cc, buf, 0);
+            ungetbyteCommon(buf, 0, len);
+            return context.nil;
+        } else {
+            arg = arg.convertToString();
+            enc = getEncoding();
+            RubyString argStr = (RubyString) arg;
+            enc2 = argStr.getEncoding();
+            if (enc != enc2 && enc != ASCIIEncoding.INSTANCE) {
+                argStr = EncodingUtils.strConvEnc(context, argStr, enc2, enc);
+            }
+            ByteList argBytes = argStr.getByteList();
+            ungetbyteCommon(argBytes.unsafeBytes(), argBytes.begin(), argBytes.realSize());
+            return context.nil;
+        }
     }
 
     private void ungetbyteCommon(int c) {
@@ -1046,27 +1070,30 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     private void ungetbyteCommon(RubyString ungetBytes) {
         ByteList ungetByteList = ungetBytes.getByteList();
-        int len = ungetByteList.getRealSize();
+        ungetbyteCommon(ungetByteList.unsafeBytes(), ungetByteList.begin(), ungetByteList.realSize());
+    }
+
+    private void ungetbyteCommon(byte[] ungetBytes, int ungetBegin, int ungetLen) {
         final int start; // = ptr.pos;
 
-        if (len == 0) return;
+        if (ungetLen == 0) return;
 
         StringIOData ptr = this.ptr;
 
         synchronized (ptr) {
             ptr.string.modify();
 
-            if (len > ptr.pos) {
+            if (ungetLen > ptr.pos) {
                 start = 0;
             } else {
-                start = ptr.pos - len;
+                start = ptr.pos - ungetLen;
             }
 
-            ByteList bytes = ptr.string.getByteList();
+            ByteList byteList = ptr.string.getByteList();
 
-            if (isEndOfString()) bytes.length(Math.max(ptr.pos, len));
+            if (isEndOfString()) byteList.length(Math.max(ptr.pos, ungetLen));
 
-            bytes.replace(start, ptr.pos - start, ungetBytes.getByteList());
+            byteList.replace(start, ptr.pos - start, ungetBytes, ungetBegin, ungetLen);
 
             ptr.pos = start;
         }
