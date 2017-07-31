@@ -47,6 +47,7 @@ import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -118,6 +119,11 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     public void setEncoding(Encoding enc) {
         ptr.enc = enc;
+    }
+
+    @JRubyMethod(name = "new", rest = true, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return RubyIO.newInstance(context, recv, args, block);
     }
 
     @JRubyMethod(meta = true, rest = true)
