@@ -190,49 +190,6 @@ public class RuntimeCache {
         callSites = new CallSite[size];
     }
 
-    /**
-     * Given a packed descriptor listing methods and their type, populate the
-     * call site cache.
-     *
-     * The format of the methods portion of the descriptor is
-     * name1;type1;name2;type2 where type1 and type2 are a single capital letter
-     * N, F, V, or S for the four main call types. After the method portion,
-     * the other cache sizes are provided as a packed String of char values
-     * representing the numeric sizes. @see RuntimeCache#initOthers.
-     *
-     * @param descriptor The descriptor to use for populating call sites and caches
-     */
-    public final void initFromDescriptor(String descriptor) {
-        String[] pieces = descriptor.split("\uFFFF");
-        CallSite[] sites = new CallSite[pieces.length - 1 / 2];
-
-        // if there's no call sites, don't process it
-        if (pieces[0].length() != 0) {
-            for (int i = 0; i < pieces.length - 1; i+=2) {
-                switch (pieces[i + 1].charAt(0)) {
-                case 'N':
-                    sites[i/2] = MethodIndex.getCallSite(pieces[i]);
-                    break;
-                case 'F':
-                    sites[i/2] = MethodIndex.getFunctionalCallSite(pieces[i]);
-                    break;
-                case 'V':
-                    sites[i/2] = MethodIndex.getVariableCallSite(pieces[i]);
-                    break;
-                case 'S':
-                    sites[i/2] = MethodIndex.getSuperCallSite();
-                    break;
-                default:
-                    throw new RuntimeException("Unknown call type: " + pieces[i + 1] + " for method " + pieces[i]);
-                }
-            }
-
-            this.callSites = sites;
-        }
-
-        initOthers(pieces[pieces.length - 1]);
-    }
-
     private static final int SCOPE = 0;
     private static final int SYMBOL = SCOPE + 1;
     private static final int FIXNUM = SYMBOL + 1;

@@ -381,10 +381,6 @@ public abstract class AbstractScript implements Script {
         this.filename = filename;
     }
 
-    public final void initFromDescriptor(String descriptor) {
-        runtimeCache.initFromDescriptor(descriptor);
-    }
-
     public void setRootScope(StaticScope scope) {
         runtimeCache.scopes[0] = scope;
     }
