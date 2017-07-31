@@ -5460,6 +5460,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      * @see org.jruby.util.Pack#unpack
      */
     @JRubyMethod
+    public RubyArray unpack(ThreadContext context, IRubyObject obj, Block block) {
+        return Pack.unpackWithBlock(context, context.runtime, this.value, stringValue(obj).value, block);
+    }
+
     public RubyArray unpack(IRubyObject obj) {
         return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
     }
