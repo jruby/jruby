@@ -1422,7 +1422,7 @@ public class RubyNumeric extends RubyObject {
             BigInteger bigint = BigDecimal.valueOf(f).toBigInteger();
             return posFixable(bigint) && negFixable(bigint);
         } else {
-            return posFixable(l) && negFixable(l);
+            return posFixable(f) && negFixable(f);
         }
     }
 
@@ -1437,12 +1437,12 @@ public class RubyNumeric extends RubyObject {
     }
 
     // MRI: macro POSFIXABLE, RB_POSFIXABLE
-    public static boolean posFixable(long l) {
+    public static boolean posFixable(double l) {
         return l <= RubyFixnum.MAX;
     }
 
     // MRI: macro NEGFIXABLE, RB_NEGFIXABLE
-    public static boolean negFixable(long l) {
+    public static boolean negFixable(double l) {
         return l >= RubyFixnum.MIN;
     }
 
