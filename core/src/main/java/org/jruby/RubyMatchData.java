@@ -439,6 +439,7 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod(rest = true)
     public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
+        check();
         Ruby runtime = context.runtime;
 
         RubyArray result = RubyArray.newArray(runtime, args.length);
