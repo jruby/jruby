@@ -2008,6 +2008,7 @@ public class EncodingUtils {
         if (enc.length(strBytes.unsafeBytes(), strBytes.begin(), strBytes.realSize()) != n) {
             throw runtime.newRangeError("invalid codepoint " + Integer.toHexString(code) + " in " + enc);
         }
+        strBytes.length(n);
         return str;
 
     }
