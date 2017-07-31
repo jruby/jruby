@@ -2262,6 +2262,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      *
      */
     public RubyString append(IRubyObject other) {
+        modifyCheck();
+
         if (other instanceof RubyFixnum) {
             cat(ConvertBytes.longToByteList(((RubyFixnum) other).getLongValue()));
             return this;
@@ -2279,6 +2281,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public RubyString append19(IRubyObject other) {
+        modifyCheck();
+
         if (other instanceof RubyFixnum) {
             cat19(ConvertBytes.longToByteList(((RubyFixnum) other).getLongValue()), StringSupport.CR_7BIT);
             return this;
