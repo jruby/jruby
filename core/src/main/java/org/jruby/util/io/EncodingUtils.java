@@ -4,6 +4,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.ascii.AsciiTables;
+import org.jcodings.exception.ErrorCodes;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
@@ -1993,19 +1994,22 @@ public class EncodingUtils {
     public static IRubyObject encUintChr(ThreadContext context, int code, Encoding enc) {
         Ruby runtime = context.runtime;
 
-        if (!Character.isValidCodePoint(code)) {
-            // inefficient to create a fixnum for this
-            return new RubyFixnum(runtime, code).chr19(context);
+        int n;
+        switch (n = enc.codeToMbcLength(code)) {
+            case ErrorCodes.ERR_INVALID_CODE_POINT_VALUE:
+                throw runtime.newRangeError("invalid codepoint " + Integer.toHexString(code) + " in " + enc);
+            case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
+            case 0:
+                throw runtime.newRangeError(Integer.toString(code) + " out of char range");
         }
-
-        char[] chars = Character.toChars(code);
-        RubyString str = RubyString.newString(runtime, new String(chars), enc);
-//        ByteList strByteList = str.getByteList();
-//        if (StringSupport.preciseLength(enc, strByteList.unsafeBytes(), strByteList.getBegin(), strByteList.getBegin() + strByteList.getRealSize()) != n) {
-//            rb_raise(rb_eRangeError, "invalid codepoint 0x%X in %s", code, rb_enc_name(enc));
-//        }
-        return str;
-
+        ByteList strBytes = new ByteList(n);
+        strBytes.setEncoding(enc);
+        strBytes.length(n);
+        enc.codeToMbc(code, strBytes.unsafeBytes(), strBytes.begin());
+        if (enc.length(strBytes.unsafeBytes(), strBytes.begin(), strBytes.realSize()) != n) {
+            throw runtime.newRangeError("invalid codepoint " + Integer.toHexString(code) + " in " + enc);
+        }
+        return RubyString.newString(runtime, strBytes);
     }
 
     // rb_enc_mbcput
