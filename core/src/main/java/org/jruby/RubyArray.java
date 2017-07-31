@@ -4643,19 +4643,23 @@ float_loop:
         Ruby runtime = context.runtime;
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
         RubyString str;
+        IRubyObject buffer = context.nil;
 
-        try {
-            IRubyObject buffer = ArgsUtil.extractKeywordArg(context, "buffer", opts);
+        if (!opts.isNil()) {
+            buffer = ArgsUtil.extractKeywordArg(context, "buffer", opts);
             if (!buffer.isNil() && !(buffer instanceof RubyString)) {
                 throw runtime.newTypeError("buffer must be String, not " + buffer.getType().getName());
             }
-            if (buffer.isNil()) {
-                str = buffer.convertToString();
-            } else {
-                str = RubyString.newString(runtime, "");
-            }
-            return str.append(pack(context, obj));
+        }
 
+        if (!buffer.isNil()) {
+            str = (RubyString) buffer;
+        } else {
+            str = RubyString.newString(runtime, "");
+        }
+
+        try {
+            return str.append(pack(context, obj));
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(context.runtime, e);
         }
