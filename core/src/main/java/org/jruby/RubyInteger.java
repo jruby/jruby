@@ -50,6 +50,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 import java.math.RoundingMode;
 
@@ -320,18 +321,22 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "chr")
     public RubyString chr(ThreadContext context) {
         Ruby runtime = context.runtime;
-        int value = (int) getLongValue();
-        if (value >= 0 && value <= 0xFF) {
-            ByteList bytes = SINGLE_CHAR_BYTELISTS[value];
-            return RubyString.newStringShared(runtime, bytes, bytes.getEncoding());
-        } else {
-            Encoding enc = runtime.getDefaultInternalEncoding();
-            if (value > 0xFF && (enc == null || enc == ASCIIEncoding.INSTANCE)) {
+
+        // rb_num_to_uint
+        long i = getLongValue() & 0xFFFFFFFFL;
+        int c = (int) i;
+
+        Encoding enc;
+
+        if (0xff < i) {
+            enc = runtime.getDefaultInternalEncoding();
+            if (enc == null) {
                 throw runtime.newRangeError(toString() + " out of char range");
             }
-            if (enc == null) enc = USASCIIEncoding.INSTANCE;
-            return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, value), enc, 0);
+            return chrCommon(context, c, enc);
         }
+
+        return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[c]);
     }
 
     @Deprecated
@@ -342,17 +347,29 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "chr")
     public RubyString chr(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        long value = getLongValue();
+
+        // rb_num_to_uint
+        long i = getLongValue() & 0xFFFFFFFFL;
+
         Encoding enc;
         if (arg instanceof RubyEncoding) {
             enc = ((RubyEncoding)arg).getEncoding();
         } else {
             enc =  arg.convertToString().toEncoding(runtime);
         }
-        if (enc == ASCIIEncoding.INSTANCE && value >= 0x80) {
-            return chr19(context);
+        return chrCommon(context, i, enc);
+    }
+
+    private RubyString chrCommon(ThreadContext context, long value, Encoding enc) {
+        if (value > 0xFFFFFFFFL) {
+            throw context.runtime.newRangeError(this + " out of char range");
         }
-        return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, value), enc, 0);
+        int c = (int) value;
+        if (enc == null) enc = ASCIIEncoding.INSTANCE;
+        if (enc == ASCIIEncoding.INSTANCE && c >= 0x80) {
+            return chr(context);
+        }
+        return EncodingUtils.encUintChr(context, c, enc);
     }
 
     @Deprecated
