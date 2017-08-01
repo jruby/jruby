@@ -4,6 +4,9 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.ascii.AsciiTables;
+import org.jcodings.exception.EncodingError;
+import org.jcodings.exception.EncodingException;
+import org.jcodings.exception.ErrorCodes;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
@@ -1990,27 +1993,62 @@ public class EncodingUtils {
     }
 
     // rb_enc_uint_chr
-    public static IRubyObject encUintChr(ThreadContext context, int code, Encoding enc) {
+    public static RubyString encUintChr(ThreadContext context, int code, Encoding enc) {
         Ruby runtime = context.runtime;
 
-        if (!Character.isValidCodePoint(code)) {
-            // inefficient to create a fixnum for this
-            return new RubyFixnum(runtime, code).chr19(context);
+        long i = code & 0xFFFFFFFFL;
+
+        int n;
+        switch (n = EncodingUtils.encCodelen(context, code, enc)) {
+            case ErrorCodes.ERR_INVALID_CODE_POINT_VALUE:
+                throw runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
+            case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
+            case 0:
+                throw runtime.newRangeError(Long.toString(i) + " out of char range");
         }
 
-        char[] chars = Character.toChars(code);
-        RubyString str = RubyString.newString(runtime, new String(chars), enc);
-//        ByteList strByteList = str.getByteList();
-//        if (StringSupport.preciseLength(enc, strByteList.unsafeBytes(), strByteList.getBegin(), strByteList.getBegin() + strByteList.getRealSize()) != n) {
-//            rb_raise(rb_eRangeError, "invalid codepoint 0x%X in %s", code, rb_enc_name(enc));
-//        }
-        return str;
+        ByteList strBytes = new ByteList(n);
+        strBytes.setEncoding(enc);
+        strBytes.length(n);
+        byte[] bytes = strBytes.unsafeBytes();
+        int begin = strBytes.begin();
+        int end = strBytes.realSize();
+
+        encMbcput(context, code, bytes, begin, enc);
+        if (StringSupport.preciseLength(enc, bytes, begin, end) != n) {
+            throw runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
+        }
+
+        return RubyString.newString(runtime, strBytes);
 
     }
 
-    // rb_enc_mbcput
+    // rb_enc_mbcput with Java exception
     public static void encMbcput(int c, byte[] buf, int p, Encoding enc) {
-        enc.codeToMbc(c, buf, p);
+        int len = enc.codeToMbc(c, buf, p);
+        if (len < 0) {
+            throw new EncodingException(EncodingError.fromCode(len));
+        }
+    }
+
+    // rb_enc_mbcput with Ruby exception
+    public static void encMbcput(ThreadContext context, int c, byte[] buf, int p, Encoding enc) {
+        int len = enc.codeToMbc(c, buf, p);
+
+        // in MRI, this check occurs within some of the individual encoding functions, such as the
+        // US-ASCII check for values >= 0x80. In MRI, unlike in JRuby, we can't throw Ruby errors
+        // from within encoding logic, so we try to reproduce the expected results via normal
+        // error codes here.
+        // See MRI's rb_enc_mbcput and related downstream encoding functions.
+        if (len < 0) {
+            switch (len) {
+                case ErrorCodes.ERR_INVALID_CODE_POINT_VALUE:
+                    throw context.runtime.newRangeError("invalid codepoint " + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
+                case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
+                    throw context.runtime.newRangeError("" + (c & 0xFFFFFFFFL) + " out of char range");
+            }
+            throw context.runtime.newEncodingError(EncodingError.fromCode(len).getMessage());
+        }
     }
 
     // rb_enc_codepoint_len
@@ -2225,6 +2263,14 @@ public class EncodingUtils {
         }
 
         return charset;
+    }
+
+    public static int encCodelen(ThreadContext context, int c, Encoding enc) {
+        int n = enc.codeToMbcLength(c);
+        if (n == 0) {
+            throw context.runtime.newArgumentError("invalid codepoint " + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
+        }
+        return n;
     }
 
 }
