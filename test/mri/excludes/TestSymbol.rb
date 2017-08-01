@@ -1,3 +1,4 @@
+exclude :test_casecmp, "missing 2.4 case-folding logic (#4731)"
 exclude :test_ascii_incomat_inspect, "needs investigation"
 exclude :test_inspect, "needs investigation"
 exclude :test_to_proc_arg, "we have plans to do different caching here, see 69662ab8cd1616a2ee076488226a473648fc6267"
