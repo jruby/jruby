@@ -1473,7 +1473,7 @@ public class PopenExecutor {
                 break;
 
             case INTEGER:
-                if (!(val instanceof RubyFixnum)) {
+                if (!(key instanceof RubyFixnum)) {
                     return ST_STOP;
                 }
             case FILE:
