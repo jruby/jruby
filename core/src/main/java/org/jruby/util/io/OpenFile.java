@@ -508,7 +508,14 @@ public class OpenFile implements Finalizable {
         boolean locked = lock();
         try {
             if (fd.chSelect != null) {
-                return thread.select(fd.chSelect, this, ops & fd.chSelect.validOps(), timeout);
+                int realOps = ops & fd.chSelect.validOps();
+
+                if ((realOps & SelectionKey.OP_WRITE) != (ops & SelectionKey.OP_WRITE)) {
+                    // MRI or poll or select appears to return ready for write select on a read-only channel
+                    return true;
+                }
+
+                return thread.select(fd.chSelect, this, realOps, timeout);
 
             } else if (fd.chSeek != null) {
                 return fd.chSeek.position() != -1

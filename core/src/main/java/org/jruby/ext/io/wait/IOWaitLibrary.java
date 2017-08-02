@@ -147,21 +147,19 @@ public class IOWaitLibrary implements Library {
                     case "rw":
                     case "read_write":
                     case "readable_writable":
-                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
-                        ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
                     default:
                         throw context.runtime.newArgumentError("unsupported mode: " + sym);
                 }
-
-                throw context.runtime.newArgumentError("unsupported mode: " + sym);
+            } else {
+                throw context.runtime.newArgumentError("unsupported mode: " + argv[1].getType());
             }
-        } else if (argv.length == 1) {
+        } else {
             ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
         }
 
-        if ((ops & SelectionKey.OP_READ) != 0) {
-            if (fptr.readPending() != 0) return context.tru;
-        }
+        if ((ops & SelectionKey.OP_READ) == SelectionKey.OP_READ && fptr.readPending() != 0) return context.tru;
 
         long tv = prepareTimeout(context, argv);
 
@@ -179,6 +177,7 @@ public class IOWaitLibrary implements Library {
         IRubyObject timeout;
         long tv;
         switch (argv.length) {
+            case 2:
             case 1:
                 timeout = argv[0];
                 break;
