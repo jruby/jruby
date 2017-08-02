@@ -31,8 +31,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
+import org.jruby.RubySymbol;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
@@ -90,40 +92,18 @@ public class IOWaitLibrary implements Library {
         return runtime.newBoolean(fptr.readyNow(context));
     }
 
-    @JRubyMethod(name = {"wait", "wait_readable"}, optional = 1)
+    @JRubyMethod(optional = 1)
     public static IRubyObject wait_readable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
         RubyIO io = (RubyIO)_io;
-        Ruby runtime = context.runtime;
-        OpenFile fptr;
-        boolean i;
-//        ioctl_arg n;
-        IRubyObject timeout;
-        long tv;
+        OpenFile fptr = io.getOpenFileChecked();
 
-        fptr = io.getOpenFileChecked();
         fptr.checkReadable(context);
 
-        switch (argv.length) {
-            case 1:
-                timeout = argv[0];
-                break;
-            default:
-                timeout = context.nil;
-        }
+        long tv = prepareTimeout(context, argv);
 
-        if (timeout.isNil()) {
-            tv = -1;
-        }
-        else {
-            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
-            if (tv < 0) throw runtime.newArgumentError("time interval must be positive");
-        }
+        if (fptr.readPending() != 0) return context.tru;
 
-        if (fptr.readPending() != 0) return runtime.getTrue();
-        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_READ | SelectionKey.OP_ACCEPT, tv);
-        fptr.checkClosed();
-        if (ready) return io;
-        return context.nil;
+        return doWait(context, io, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
     }
 
     /**
@@ -132,14 +112,72 @@ public class IOWaitLibrary implements Library {
     @JRubyMethod(optional = 1)
     public static IRubyObject wait_writable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
         RubyIO io = (RubyIO)_io;
-        Ruby runtime = context.runtime;
-        OpenFile fptr;
-        IRubyObject timeout;
-        long tv;
 
-        fptr = io.getOpenFileChecked();
+        OpenFile fptr = io.getOpenFileChecked();
+
         fptr.checkWritable(context);
 
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, io, fptr, tv, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE);
+    }
+
+    @JRubyMethod(optional = 2)
+    public static IRubyObject wait(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
+        RubyIO io = (RubyIO)_io;
+
+        OpenFile fptr = io.getOpenFileChecked();
+
+        int ops = 0;
+
+        if (argv.length == 2) {
+            if (argv[1] instanceof RubySymbol) {
+                RubySymbol sym = (RubySymbol) argv[1];
+                switch (sym.toString()) {
+                    case "r":
+                    case "read":
+                    case "readable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+                        break;
+                    case "w":
+                    case "write":
+                    case "writable":
+                        ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                        break;
+                    case "rw":
+                    case "read_write":
+                    case "readable_writable":
+                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+                        ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
+                    default:
+                        throw context.runtime.newArgumentError("unsupported mode: " + sym);
+                }
+
+                throw context.runtime.newArgumentError("unsupported mode: " + sym);
+            }
+        } else if (argv.length == 1) {
+            ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+        }
+
+        if ((ops & SelectionKey.OP_READ) != 0) {
+            if (fptr.readPending() != 0) return context.tru;
+        }
+
+        long tv = prepareTimeout(context, argv);
+
+        return doWait(context, io, fptr, tv, ops);
+    }
+
+    private static IRubyObject doWait(ThreadContext context, RubyIO io, OpenFile fptr, long tv, int ops) {
+        boolean ready = fptr.ready(context.runtime, context.getThread(), ops, tv);
+        fptr.checkClosed();
+        if (ready) return io;
+        return context.nil;
+    }
+
+    private static long prepareTimeout(ThreadContext context, IRubyObject[] argv) {
+        IRubyObject timeout;
+        long tv;
         switch (argv.length) {
             case 1:
                 timeout = argv[0];
@@ -147,19 +185,14 @@ public class IOWaitLibrary implements Library {
             default:
                 timeout = context.nil;
         }
+
         if (timeout.isNil()) {
             tv = -1;
         }
         else {
             tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
-            if (tv < 0) throw runtime.newArgumentError("time interval must be positive");
+            if (tv < 0) throw context.runtime.newArgumentError("time interval must be positive");
         }
-
-        boolean ready = fptr.ready(runtime, context.getThread(), SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE, tv);
-
-        fptr.checkClosed();
-        if (ready)
-            return io;
-        return context.nil;
+        return tv;
     }
 }
