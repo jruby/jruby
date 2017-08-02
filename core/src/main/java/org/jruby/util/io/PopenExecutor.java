@@ -371,19 +371,15 @@ public class PopenExecutor {
                     if (key instanceof RubySymbol) {
                         switch (key.toString()) {
                             case "gid" :
-                                //runtime.getWarnings().warn(IRubyWarnings.ID.UNSUPPORTED_SUBPROCESS_OPTION, "popen does not support :gid option in JRuby");
-                                //break;
                                 throw runtime.newNotImplementedError("popen does not support :gid option in JRuby");
                             case "uid" :
-                                //runtime.getWarnings().warn(IRubyWarnings.ID.UNSUPPORTED_SUBPROCESS_OPTION, "popen does not support :uid option in JRuby");
-                                //break;
                                 throw runtime.newNotImplementedError("popen does not support :uid option in JRuby");
                             default :
                                 throw runtime.newArgumentError("wrong exec option symbol: " + key);
                         }
                     }
                     else {
-                        throw runtime.newArgumentError("wrong exec option");
+                        throw runtime.newArgumentError("wrong exec option: " + key);
                     }
                 }
 
@@ -1322,7 +1318,7 @@ public class PopenExecutor {
 //        rb_secure(2);
 
         boolean redirect = false;
-        switch (key.getMetaClass().getRealClass().getClassIndex()) {
+        switch (key.getType().getClassIndex()) {
             case SYMBOL:
                 id = key.toString();
 //                #ifdef HAVE_SETPGID
