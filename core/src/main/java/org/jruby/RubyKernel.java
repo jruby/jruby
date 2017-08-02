@@ -730,13 +730,8 @@ public class RubyKernel {
     /** Returns an Array with the names of all global variables.
      *
      */
-    public static RubyArray global_variables(ThreadContext context, IRubyObject recv) {
-        return global_variables19(context, recv);
-    }
-
-    // In 1.9, return symbols
     @JRubyMethod(name = "global_variables", module = true, visibility = PRIVATE)
-    public static RubyArray global_variables19(ThreadContext context, IRubyObject recv) {
+    public static RubyArray global_variables(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         RubyArray globalVariables = runtime.newArray();
 
@@ -745,6 +740,10 @@ public class RubyKernel {
         }
 
         return globalVariables;
+    }
+
+    public static RubyArray global_variables19(ThreadContext context, IRubyObject recv) {
+        return global_variables(context, recv);
     }
 
     /** Returns an Array with the names of all local variables.
