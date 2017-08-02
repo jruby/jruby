@@ -727,11 +727,13 @@ public class StringIO extends RubyObject implements EncodingCapable {
     public IRubyObject set_pos(IRubyObject arg) {
         checkInitialized();
 
-        int p = RubyNumeric.fix2int(arg);
+        long p = RubyNumeric.fix2long(arg);
 
         if (p < 0) throw getRuntime().newErrnoEINVALError(arg.toString());
 
-        ptr.pos = p;
+        if (p > Integer.MAX_VALUE) throw getRuntime().newArgumentError("JRuby does not support StringIO larger than " + Integer.MAX_VALUE + " bytes");
+
+        ptr.pos = (int)p;
 
         return arg;
     }
