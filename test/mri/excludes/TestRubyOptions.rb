@@ -1,3 +1,4 @@
+exclude :test_assignment_in_conditional, "line numbers don't match MRI"
 exclude :test_chdir, "needs investigation"
 exclude :test_copyright, "needs investigation"
 exclude :test_debug, "needs investigation"
