@@ -1803,7 +1803,6 @@ public final class StringSupport {
             enc = str.checkEncoding((RubyString) rs);
 
         byte[] rsbytes;
-        ByteList rsByteList = ((RubyString) rs).getByteList();
         if (rslen == 0) {
             rsbytes = RubyIO.PARAGRAPH_SEPARATOR.unsafeBytes();
             rsptr = RubyIO.PARAGRAPH_SEPARATOR.begin();
@@ -1811,6 +1810,7 @@ public final class StringSupport {
             paragraph_mode = true;
             rsnewline = true;
         } else {
+            ByteList rsByteList = ((RubyString) rs).getByteList();
             rsbytes = rsByteList.unsafeBytes();
             rsptr = rsByteList.begin();
             if (rsByteList.length() == enc.minLength() &&
@@ -1822,6 +1822,7 @@ public final class StringSupport {
         if ((rs == defaultSep || paragraph_mode) && !enc.isAsciiCompatible()) {
             rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
             rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+            ByteList rsByteList = ((RubyString) rs).getByteList();
             rsbytes = rsByteList.unsafeBytes();
             rsptr = rsByteList.begin();
             rslen = rsByteList.realSize();
