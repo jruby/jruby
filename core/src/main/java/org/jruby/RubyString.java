@@ -5085,21 +5085,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return each_line(context, arg, block);
     }
 
-    public IRubyObject lines(ThreadContext context, Block block) {
-        return lines20(context, block);
-    }
-
-    public IRubyObject lines(ThreadContext context, IRubyObject arg, Block block) {
-        return lines20(context, arg, block);
-    }
-
     @JRubyMethod(name = "lines")
-    public IRubyObject lines20(ThreadContext context, Block block) {
+    public IRubyObject lines(ThreadContext context, Block block) {
         return StringSupport.rbStrEnumerateLines(this, context, "lines", context.runtime.getGlobalVariables().get("$/"), block, true);
     }
 
     @JRubyMethod(name = "lines")
-    public IRubyObject lines20(ThreadContext context, IRubyObject arg, Block block) {
+    public IRubyObject lines(ThreadContext context, IRubyObject arg, Block block) {
         return StringSupport.rbStrEnumerateLines(this, context, "lines", arg, block, true);
     }
 
@@ -5970,5 +5962,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @Deprecated
     public RubyArray split19(ThreadContext context, IRubyObject arg0, boolean useBackref) {
         return splitCommon19(arg0, useBackref, flags, flags, context, useBackref);
+    }
+
+    @Deprecated
+    public IRubyObject lines20(ThreadContext context, Block block) {
+        return lines(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject lines20(ThreadContext context, IRubyObject arg, Block block) {
+        return lines(context, arg, block);
     }
 }
