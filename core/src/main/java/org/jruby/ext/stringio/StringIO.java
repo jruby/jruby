@@ -339,7 +339,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     }
 
     // MRI: strio_each
-    @JRubyMethod(name = "each", writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "each")
     public IRubyObject each(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", Helpers.arrayOf(arg0, arg1, arg2));
 
@@ -363,19 +363,49 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
     }
 
-    private static boolean isLastArg0(final IRubyObject[] args) {
-        final int len = args.length;
-        return len > 0 &&
-            ! args[len - 1].isNil() &&
-            args[len - 1].checkStringType19().isNil() &&
-            RubyNumeric.num2long( args[len - 1] ) == 0 ;
+    @JRubyMethod(name = "each_line")
+    public IRubyObject each_line(ThreadContext context, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line");
+
+        return each(context, block);
     }
 
-    @JRubyMethod(name = "each_line", optional = 2, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "each_line")
+    public IRubyObject each_line(ThreadContext context, IRubyObject arg0, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0);
+
+        return each(context, arg0, block);
+    }
+
+    @JRubyMethod(name = "each_line")
+    public IRubyObject each_line(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1);
+
+        return each(context, arg0, arg1, block);
+    }
+
+    @JRubyMethod(name = "each_line")
+    public IRubyObject each_line(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1, arg2);
+
+        return each(context, arg0, arg1, arg2, block);
+    }
+
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", args);
-
-        return each(context, args, block);
+        switch (args.length) {
+            case 0:
+                return each_line(context, block);
+            case 1:
+                return each_line(context, args[0], block);
+            case 2:
+                return each_line(context, args[0], args[1], block);
+            case 3:
+                return each_line(context, args[0], args[1], args[2], block);
+            default:
+                Arity.raiseArgumentError(context, args.length, 0, 3);
+                throw new RuntimeException("BUG");
+        }
     }
 
     @JRubyMethod(name = "lines", optional = 2)
@@ -557,7 +587,15 @@ public class StringIO extends RubyObject implements EncodingCapable {
     private static final Getline.Callback<StringIO, IRubyObject> GETLINE = new Getline.Callback<StringIO, IRubyObject>() {
         @Override
         public IRubyObject getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            return self.getline(context, rs, limit, chomp);
+            if (limit == 0) {
+                return RubyString.newEmptyString(context.runtime);
+            }
+
+            IRubyObject result = self.getline(context, rs, limit, chomp);
+
+            context.setLastLine(result);
+
+            return result;
         }
     };
 
@@ -565,6 +603,10 @@ public class StringIO extends RubyObject implements EncodingCapable {
         @Override
         public StringIO getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
             IRubyObject line;
+
+            if (limit == 0) {
+                throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
+            }
 
             while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
                 block.yieldSpecific(context, line);
@@ -592,11 +634,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     private IRubyObject getline(ThreadContext context, final IRubyObject rs, int limit, boolean chomp) {
         Ruby runtime = context.runtime;
 
-        IRubyObject str = context.nil;
-
-        if (limit == 0) {
-            throw runtime.newArgumentError("invalid limit: 0 for each_line");
-        }
+        IRubyObject str;
 
         checkReadable();
 

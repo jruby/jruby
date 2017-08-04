@@ -2268,7 +2268,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private static final Getline.Callback<RubyIO, IRubyObject> GETLINE = new Getline.Callback<RubyIO, IRubyObject>() {
         @Override
         public IRubyObject getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            return self.getlineInner(context, rs, limit, chomp, null);
+            IRubyObject result = self.getlineInner(context, rs, limit, chomp, null);
+
+            if (!result.isNil()) context.setLastLine(result);
+
+            return result;
         }
     };
 
