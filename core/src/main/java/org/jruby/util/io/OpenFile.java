@@ -23,6 +23,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -41,8 +42,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -149,7 +150,7 @@ public class OpenFile implements Finalizable {
 
     private final Ruby runtime;
 
-    protected List<RubyThread> blockingThreads;
+    protected volatile Set<RubyThread> blockingThreads;
 
     public void clearStdio() {
         stdio_file = null;
@@ -2609,14 +2610,19 @@ public class OpenFile implements Finalizable {
      * @param thread A thread blocking on this IO
      */
     public void addBlockingThread(RubyThread thread) {
-        boolean locked = lock();
-        try {
-            if (blockingThreads == null) {
-                blockingThreads = new ArrayList<RubyThread>(1);
+        Set<RubyThread> blockingThreads = this.blockingThreads;
+
+        if (blockingThreads == null) {
+            synchronized (this) {
+                blockingThreads = this.blockingThreads;
+                if (blockingThreads == null) {
+                    this.blockingThreads = blockingThreads = new HashSet<RubyThread>(1);
+                }
             }
+        }
+
+        synchronized (blockingThreads) {
             blockingThreads.add(thread);
-        } finally {
-            if (locked) unlock();
         }
     }
 
@@ -2628,15 +2634,13 @@ public class OpenFile implements Finalizable {
     public void removeBlockingThread(RubyThread thread) {
         boolean locked = lock();
         try {
+            Set<RubyThread> blockingThreads = this.blockingThreads;
+
             if (blockingThreads == null) {
                 return;
             }
-            for (int i = 0; i < blockingThreads.size(); i++) {
-                if (blockingThreads.get(i) == thread) {
-                    // not using remove(Object) here to avoid the equals() call
-                    blockingThreads.remove(i);
-                }
-            }
+
+            blockingThreads.remove(thread);
         } finally {
             if (locked) unlock();
         }
@@ -2645,20 +2649,43 @@ public class OpenFile implements Finalizable {
     /**
      * Fire an IOError in all threads blocking on this IO object
      */
-    public void interruptBlockingThreads() {
-        boolean locked = lock();
-        try {
-            if (blockingThreads == null) {
-                return;
-            }
-            for (int i = 0; i < blockingThreads.size(); i++) {
-                RubyThread thread = blockingThreads.get(i);
+    public void interruptBlockingThreads(ThreadContext context) {
+        Set<RubyThread> blockingThreads = this.blockingThreads;
+
+        if (blockingThreads == null) {
+            return;
+        }
+
+        synchronized (blockingThreads) {
+            for (RubyThread thread : blockingThreads) {
+                // If it's the current thread, ignore it since we're the one doing the interrupting
+                if (thread == context.getThread()) continue;
 
                 // raise will also wake the thread from selection
-                thread.raise(new IRubyObject[]{runtime.newIOError("stream closed").getException()}, Block.NULL_BLOCK);
+                RubyException exception = (RubyException) runtime.getIOError().newInstance(context, runtime.newString("stream closed"), Block.NULL_BLOCK);
+                thread.raise(Helpers.arrayOf(exception), Block.NULL_BLOCK);
             }
-        } finally {
-            if (locked) unlock();
+        }
+    }
+
+    /**
+     * Wait until all blocking threads have exited their blocking area. Use in combination with
+     * interruptBlockingThreads to ensure every blocking thread has moved on before proceding to
+     * manipulate the IO.
+     */
+    public void waitForBlockingThreads(ThreadContext context) {
+        Set<RubyThread> blockingThreads = this.blockingThreads;
+
+        if (blockingThreads == null) {
+            return;
+        }
+
+        while (blockingThreads.size() > 0) {
+            try {
+                context.getThread().sleep(1);
+            } catch (InterruptedException ie) {
+                break;
+            }
         }
     }
 

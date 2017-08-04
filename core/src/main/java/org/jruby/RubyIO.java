@@ -2035,7 +2035,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (fptr.fd() == null) return runtime.getNil();
 
             // interrupt waiting threads
-            fptr.interruptBlockingThreads();
+            fptr.interruptBlockingThreads(context);
+            fptr.waitForBlockingThreads(context);
             fptr.cleanup(runtime, false);
 
             if (fptr.getProcess() != null) {
@@ -4353,7 +4354,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     public void addBlockingThread(RubyThread thread) {
         OpenFile fptr = openFile;
-        if (openFile != null) openFile.addBlockingThread(thread);
+        if (fptr != null) fptr.addBlockingThread(thread);
     }
 
     /**
@@ -4362,14 +4363,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * @param thread A thread blocking on this IO
      */
     public void removeBlockingThread(RubyThread thread) {
-        if (openFile != null) openFile.removeBlockingThread(thread);
-    }
-
-    /**
-     * Fire an IOError in all threads blocking on this IO object
-     */
-    protected void interruptBlockingThreads() {
-        if (openFile != null) openFile.interruptBlockingThreads();
+        OpenFile fptr = this.openFile;
+        if (fptr != null) fptr.removeBlockingThread(thread);
     }
 
     /**
