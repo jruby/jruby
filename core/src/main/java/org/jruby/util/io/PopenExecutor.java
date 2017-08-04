@@ -149,7 +149,7 @@ public class PopenExecutor {
 
         if (prog == null)
             prog = argv[0];
-        prog = dlnFindExeR(runtime, prog, null);
+        prog = dlnFindExeR(runtime, prog, eargp.path_env);
         if (prog == null) {
             errno = Errno.ENOENT;
             return -1;
@@ -216,7 +216,7 @@ public class PopenExecutor {
     long procSpawnSh(Ruby runtime, String str, ExecArg eargp) {
         long status;
 
-        String shell = dlnFindExeR(runtime, "sh", null);
+        String shell = dlnFindExeR(runtime, "sh", eargp.path_env);
 
 //        System.out.println("before: " + shell + ", fa=" + eargp.fileActions + ", a=" + eargp.attributes + ", argv=" + Arrays.asList("sh", "-c", str));
         status = runtime.getPosix().posix_spawnp(
@@ -317,10 +317,11 @@ public class PopenExecutor {
     }
 
     static void execargSetenv(ThreadContext context, Ruby runtime, ExecArg eargp, IRubyObject env) {
-        eargp.env_modification = !env.isNil() ? checkExecEnv(context, (RubyHash)env) : null;
+        eargp.env_modification = !env.isNil() ? checkExecEnv(context, (RubyHash)env, eargp) : null;
     }
 
-    public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash) {
+    // MRI: rb_check_exec_env
+    public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash, ExecArg pathArg) {
         Ruby runtime = context.runtime;
         RubyArray env;
 
@@ -339,6 +340,10 @@ public class PopenExecutor {
 
             key = key.convertToString().export(context);
             if (!val.isNil()) val = val.convertToString().export(context);
+
+            if (key.convertToString().toString().equalsIgnoreCase("PATH")) {
+                pathArg.path_env = val;
+            }
 
             env.push(runtime.newArray(key, val));
         }
@@ -1799,7 +1804,7 @@ public class PopenExecutor {
         }
 
         if (!env.isNil()) {
-            eargp.env_modification = checkExecEnv(context, (RubyHash) env);
+            eargp.env_modification = checkExecEnv(context, (RubyHash) env, eargp);
         }
 
         prog = prog.export(context);
@@ -1899,7 +1904,7 @@ public class PopenExecutor {
 
         if (!eargp.use_shell) {
             String abspath;
-            abspath = dlnFindExeR(runtime, eargp.command_name.toString(), null);
+            abspath = dlnFindExeR(runtime, eargp.command_name.toString(), eargp.path_env);
             if (abspath != null)
                 eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, RubyString.newString(runtime, abspath));
             else
@@ -1941,10 +1946,8 @@ public class PopenExecutor {
 
     }
 
-    private static String dlnFindExeR(Ruby runtime, String fname, String path) {
-        if (path != null) throw new RuntimeException("BUG: dln_find_exe_r with path is not supported yet");
-        // FIXME: need to reencode path as same
-        File exePath = ShellLauncher.findPathExecutable(runtime, fname);
+    private static String dlnFindExeR(Ruby runtime, String fname, IRubyObject path) {
+        File exePath = ShellLauncher.findPathExecutable(runtime, fname, path);
         return exePath != null ? exePath.getAbsolutePath() : null;
     }
 
@@ -1977,6 +1980,7 @@ public class PopenExecutor {
         String chdir_dir;
         List<SpawnFileAction> fileActions = new ArrayList();
         List<SpawnAttribute> attributes = new ArrayList();
+        IRubyObject path_env;
 
         boolean pgroup_given() {
             return (flags & 0x1) != 0;
