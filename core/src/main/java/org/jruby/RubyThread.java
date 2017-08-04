@@ -83,6 +83,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BlockingIO;
+import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1798,7 +1799,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public boolean select(Channel channel, OpenFile fptr, int ops, long timeout) {
         // Use selectables but only if they're not associated with a file (which has odd select semantics)
-        if (channel instanceof SelectableChannel && (fptr == null || !fptr.fd().isNativeFile)) {
+        ChannelFD fd = fptr == null ? null : fptr.fd();
+        if (channel instanceof SelectableChannel && fd != null) {
             SelectableChannel selectable = (SelectableChannel)channel;
 
             synchronized (selectable.blockingLock()) {

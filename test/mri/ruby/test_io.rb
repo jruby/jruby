@@ -3392,6 +3392,8 @@ __END__
               while r.gets
               end
             rescue IOError
+            rescue Errno::EBADF
+              # close below may happen before gets above, causing EBADF instead of IOError
             end
           end
         end
