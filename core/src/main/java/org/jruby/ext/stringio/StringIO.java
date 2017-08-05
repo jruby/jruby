@@ -622,6 +622,10 @@ public class StringIO extends RubyObject implements EncodingCapable {
             RubyArray ary = context.runtime.newArray();
             IRubyObject line;
 
+            if (limit == 0) {
+                throw context.runtime.newArgumentError("invalid limit: 0 for readlines");
+            }
+
             while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
                 ary.append(line);
             }
