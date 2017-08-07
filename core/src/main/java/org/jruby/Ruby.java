@@ -252,7 +252,18 @@ public final class Ruby implements Constantizable {
 
         constant = OptoFactory.newConstantWrapper(Ruby.class, this);
 
-        getJRubyClassLoader(); // force JRubyClassLoader to init if possible
+        // force JRubyClassLoader to init if possible
+        if (!Ruby.isSecurityRestricted()) {
+            if (config.isClassloaderDelegate()){
+                jrubyClassLoader = new JRubyClassLoader(config.getLoader());
+            }
+            else {
+                jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
+            }
+        }
+        else {
+            jrubyClassLoader = null; // a NullClassLoader object would be better ...
+        }
 
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
@@ -2524,16 +2535,24 @@ public final class Ruby implements Constantizable {
         return invalidByteSequenceError;
     }
 
-    private RubyRandom.RandomType defaultRand;
+    RubyRandom.RandomType defaultRand;
+
+    /**
+     * @deprecated internal API, to be hidden
+     */
     public RubyRandom.RandomType getDefaultRand() {
         return defaultRand;
     }
 
+    /**
+     * @deprecated internal API, to be hidden
+     */
     public void setDefaultRand(RubyRandom.RandomType defaultRand) {
         this.defaultRand = defaultRand;
     }
 
     private RubyHash charsetMap;
+    @Deprecated // no longer used (internal API)
     public RubyHash getCharsetMap() {
         if (charsetMap == null) charsetMap = new RubyHash(this);
         return charsetMap;
@@ -2595,24 +2614,7 @@ public final class Ruby implements Constantizable {
         return loader;
     }
 
-    /**
-     * TODO the property {@link #jrubyClassLoader} will only be set in constructor. in the first call of
-     * {@link #getJRubyClassLoader() getJRubyClassLoader}. So the field {@link #jrubyClassLoader} can be final
-     * set in the constructor directly and we avoid the synchronized here.
-     *
-     * @return
-     */
-    public synchronized JRubyClassLoader getJRubyClassLoader() {
-        // FIXME: Get rid of laziness and handle restricted access elsewhere
-        if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
-            if (config.isClassloaderDelegate()){
-                jrubyClassLoader = new JRubyClassLoader(config.getLoader());
-            }
-            else {
-                jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
-            }
-        }
-
+    public JRubyClassLoader getJRubyClassLoader() {
         return jrubyClassLoader;
     }
 
@@ -3345,9 +3347,9 @@ public final class Ruby implements Constantizable {
      * release the runtime loader but not otherwise - you should do that manually.
      */
     public void releaseClassLoader() {
-        if ( jrubyClassLoader != null ) {
-            getJRubyClassLoader().close();
-            jrubyClassLoader = null;
+        if (jrubyClassLoader != null) {
+            jrubyClassLoader.close();
+            //jrubyClassLoader = null;
         }
     }
 
@@ -4590,6 +4592,9 @@ public final class Ruby implements Constantizable {
         return coverageData;
     }
 
+    /**
+     * @deprecated internal API, to be removed
+     */
     public Random getRandom() {
         return random;
     }
@@ -4979,7 +4984,7 @@ public final class Ruby implements Constantizable {
 
     // Java support
     private JavaSupport javaSupport;
-    private JRubyClassLoader jrubyClassLoader;
+    private final JRubyClassLoader jrubyClassLoader;
 
     // Management/monitoring
     private BeanManager beanManager;
@@ -5115,7 +5120,7 @@ public final class Ruby implements Constantizable {
     private static ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
 
     /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
-    private final Random random;
+    final Random random;
 
     /** The runtime-local seed for hash randomization */
     private final long hashSeedK0;

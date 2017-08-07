@@ -302,8 +302,8 @@ public class RubyRange extends RubyObject {
         return context.runtime.newFixnum(hash);
     }
 
-    private IRubyObject inspectValue(final ThreadContext context, IRubyObject value) {
-        return context.safeRecurse(INSPECT_RECURSIVE, value, value, "inspect", true);
+    private static RubyString inspectValue(final ThreadContext context, IRubyObject value) {
+        return (RubyString) context.safeRecurse(INSPECT_RECURSIVE, value, value, "inspect", true);
     }
 
     private static class InspectRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
@@ -320,10 +320,15 @@ public class RubyRange extends RubyObject {
 
     private static final byte[] DOTDOTDOT = new byte[]{'.', '.', '.'};
 
+    @Override
+    public IRubyObject inspect() {
+        return inspect(getRuntime().getCurrentContext());
+    }
+
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(final ThreadContext context) {
-        RubyString i1 = ((RubyString) inspectValue(context, begin)).strDup(context.runtime);
-        RubyString i2 = (RubyString) inspectValue(context, end);
+    public RubyString inspect(final ThreadContext context) {
+        RubyString i1 = inspectValue(context, begin).strDup(context.runtime);
+        RubyString i2 = inspectValue(context, end);
         i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);
         i1.infectBy(i2);
@@ -331,9 +336,18 @@ public class RubyRange extends RubyObject {
         return i1;
     }
 
+    @Override
+    public IRubyObject to_s() {
+        return to_s(getRuntime());
+    }
+
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(final ThreadContext context) {
-        RubyString i1 = begin.asString().strDup(context.runtime);
+        return to_s(context.runtime);
+    }
+
+    private RubyString to_s(final Ruby runtime) {
+        RubyString i1 = begin.asString().strDup(runtime);
         RubyString i2 = end.asString();
         i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);

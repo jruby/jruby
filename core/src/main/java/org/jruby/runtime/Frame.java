@@ -17,7 +17,7 @@
  * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -57,49 +57,49 @@ import org.jruby.runtime.builtin.IRubyObject;
  * and for some core methods. In general, a frame is required for a method to
  * show up in a backtrace, and so some methods only use frame for backtrace
  * information (so-called "backtrace frames").
- * 
+ *
  * @see ThreadContext
  */
 public final class Frame {
     /** The class against which this call is executing. */
     private RubyModule klazz;
-    
+
     /** The 'self' for this frame. */
     private IRubyObject self;
-    
+
     /** The name of the method being invoked in this frame. */
     private String name;
 
     /**
      * The block that was passed in for this frame (as either a block or a &amp;block argument).
      * The frame captures the block for super/zsuper, but also for Proc.new (with no arguments)
-     * and also for block_given?.  Both of those methods needs access to the block of the 
+     * and also for block_given?.  Both of those methods needs access to the block of the
      * previous frame to work.
-     */ 
+     */
     private Block block = Block.NULL_BLOCK;
 
     /** The current visibility for anything defined under this frame */
     private Visibility visibility = Visibility.PUBLIC;
-    
+
     /** backref **/
     private IRubyObject backRef;
-    
+
     /** lastline **/
     private IRubyObject lastLine;
-    
+
     /** whether this frame has been captured into a binding **/
     private boolean captured;
 
     /** A dummy frame **/
     public static final Frame DUMMY = new Frame();
-    
+
     /**
      * Empty constructor, since Frame objects are pre-allocated and updated
      * when needed.
      */
     public Frame() {
     }
-    
+
     /**
      * Copy constructor, since Frame objects are pre-allocated and updated
      * when needed.
@@ -119,13 +119,13 @@ public final class Frame {
      * and method.
      */
     public void updateFrame() {
-        updateFrame(null, null, null, Block.NULL_BLOCK, 0);
+        updateFrame(null, null, null, Block.NULL_BLOCK);
     }
 
     /**
      * Update the frame with caller information and method name, so it will
      * show up correctly in call stacks.
-     * 
+     *
      * @param name The name of the method being called
      */
     public void updateFrame(String name) {
@@ -135,7 +135,7 @@ public final class Frame {
     /**
      * Update the frame based on information from another frame. Used for
      * cloning frames (for blocks, usually) and when entering class bodies.
-     * 
+     *
      * @param frame The frame whose data to duplicate in this frame
      */
     public void updateFrame(Frame frame) {
@@ -150,15 +150,13 @@ public final class Frame {
 
     /**
      * Update the frame based on the given values.
-     * 
+     *
      * @param klazz The class against which the method is being called
      * @param self The 'self' for the method
      * @param name The name under which the method is being invoked
      * @param block The block passed to the method
-     * @param jumpTarget The target for non-local jumps (return in block)
      */
-    public void updateFrame(RubyModule klazz, IRubyObject self, String name,
-                 Block block, int jumpTarget) {
+    public void updateFrame(RubyModule klazz, IRubyObject self, String name, Block block) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
 
         this.self = self;
@@ -170,11 +168,10 @@ public final class Frame {
 
     /**
      * Update the frame based on the given values.
-     * 
+     *
      * @param self The 'self' for the method
-     * @param jumpTarget The target for non-local jumps (return in block)
      */
-    public void updateFrameForEval(IRubyObject self, int jumpTarget) {
+    public void updateFrameForEval(IRubyObject self) {
         this.self = self;
         this.name = null;
         this.visibility = Visibility.PRIVATE;
@@ -190,13 +187,13 @@ public final class Frame {
         this.block = Block.NULL_BLOCK;
         this.backRef = null;
         this.lastLine = null;
-        
+
         return this;
     }
-    
+
     /**
      * Clone this frame.
-     * 
+     *
      * @return A new frame with duplicate information to the target frame
      */
     public Frame duplicate() {
@@ -215,9 +212,9 @@ public final class Frame {
         return backtraceFrame;
     }
 
-    /** 
+    /**
      * Return class that we are calling against
-     * 
+     *
      * @return The class we are calling against
      */
     public RubyModule getKlazz() {
@@ -226,7 +223,7 @@ public final class Frame {
 
     /**
      * Set the class we are calling against.
-     * 
+     *
      * @param klazz the new class
      */
     public void setKlazz(RubyModule klazz) {
@@ -235,16 +232,16 @@ public final class Frame {
 
     /**
      * Set the method name associated with this frame
-     * 
+     *
      * @param name the new name
      */
     public void setName(String name) {
         this.name = name;
     }
 
-    /** 
+    /**
      * Get the method name associated with this frame
-     * 
+     *
      * @return the method name
      */
     public String getName() {
@@ -253,76 +250,76 @@ public final class Frame {
 
     /**
      * Get the self associated with this frame
-     * 
+     *
      * @return The self for the frame
      */
     public IRubyObject getSelf() {
         return self;
     }
 
-    /** 
+    /**
      * Set the self associated with this frame
-     * 
+     *
      * @param self The new value of self
      */
     public void setSelf(IRubyObject self) {
         this.self = self;
     }
-    
+
     /**
      * Get the visibility at the time of this frame
-     * 
+     *
      * @return The visibility
      */
     public Visibility getVisibility() {
         return visibility;
     }
-    
+
     /**
      * Change the visibility associated with this frame
-     * 
+     *
      * @param visibility The new visibility
      */
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
     }
-    
+
     /**
      * Retrieve the block associated with this frame.
-     * 
+     *
      * @return The block of this frame or NULL_BLOCK if no block given
      */
     public Block getBlock() {
         return block;
     }
-    
+
     public IRubyObject getBackRef(IRubyObject nil) {
         IRubyObject backRef = this.backRef;
         return backRef == null ? nil : backRef;
     }
-    
+
     public IRubyObject setBackRef(IRubyObject backRef) {
         return this.backRef = backRef;
     }
-    
+
     public IRubyObject getLastLine(IRubyObject nil) {
         IRubyObject lastLine = this.lastLine;
         return lastLine == null ? nil : lastLine;
     }
-    
+
     public IRubyObject setLastLine(IRubyObject lastLine) {
         return this.lastLine = lastLine;
     }
-    
+
     public void setCaptured(boolean captured) {
         this.captured = captured;
     }
-    
+
     public Frame capture() {
         captured = true;
         return this;
     }
-    
+
     public boolean isCaptured() {
         return captured;
     }

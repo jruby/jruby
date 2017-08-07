@@ -260,6 +260,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         runtime.addToObjectSpace(useObjectSpace, this);
     }
 
+    @Deprecated
     protected void taint(Ruby runtime) {
         if (!isTaint()) {
         	testFrozen();

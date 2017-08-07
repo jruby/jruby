@@ -183,9 +183,8 @@ public class RubyFloat extends RubyNumeric {
     	return this;
     }
 
-    protected int compareValue(RubyNumeric other) {
-        double otherVal = other.getDoubleValue();
-        return getValue() > otherVal ? 1 : getValue() < otherVal ? -1 : 0;
+    public int signum() {
+        return (int) Math.signum(value); // NOTE: (int) NaN ?
     }
 
     public static RubyFloat newFloat(Ruby runtime, double value) {
