@@ -917,7 +917,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public boolean isAlive(){
-        return threadImpl.isAlive() && status.get() != Status.ABORTING;
+        return threadImpl.isAlive() && status.get() != Status.DEAD;
     }
 
     @JRubyMethod(name = "[]", required = 1)
@@ -1156,6 +1156,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         synchronized (rubyThread) {
             rubyThread.pollThreadEvents(context);
+            Status oldStatus = rubyThread.status.get();
             try {
                 // attempt to decriticalize all if we're the critical thread
                 receiver.getRuntime().getThreadService().setCritical(false);
@@ -1163,8 +1164,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 rubyThread.status.set(Status.SLEEP);
                 rubyThread.wait();
             } catch (InterruptedException ie) {
+            } finally {
                 rubyThread.pollThreadEvents(context);
-                rubyThread.status.set(Status.RUN);
+                rubyThread.status.set(oldStatus);
             }
         }
 
@@ -1521,6 +1523,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (currentThread == runtime.getThreadService().getMainThread()) {
             // rb_exit to hard exit process...not quite right for us
         }
+
+        status.set(Status.ABORTING);
+
         return genericKill(runtime, currentThread);
     }
 
