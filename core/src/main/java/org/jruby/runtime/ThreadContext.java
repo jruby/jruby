@@ -44,6 +44,7 @@ import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
@@ -1141,7 +1142,7 @@ public final class ThreadContext {
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
     }
 
-    private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;
+    private Map<RubySymbol, Map<IRubyObject, IRubyObject>> symToGuards;
 
     private static class RecursiveError extends Error implements Unrescuable {
         public RecursiveError(Object tag) {
@@ -1159,7 +1160,12 @@ public final class ThreadContext {
         IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
     }
 
+    @Deprecated
     public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, T state, IRubyObject obj, String name, boolean outer) {
+        return safeRecurse(func, state, obj, obj.getRuntime().newSymbol(name), outer);
+    }
+
+    public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, T state, IRubyObject obj, RubySymbol name, boolean outer) {
         Map<IRubyObject, IRubyObject> guards = safeRecurseGetGuards(name);
 
         boolean outermost = outer && !guards.containsKey(NEVER);
@@ -1197,8 +1203,8 @@ public final class ThreadContext {
         }
     }
 
-    private Map<IRubyObject, IRubyObject> safeRecurseGetGuards(String name) {
-        Map<String, Map<IRubyObject, IRubyObject>> symToGuards = this.symToGuards;
+    private Map<IRubyObject, IRubyObject> safeRecurseGetGuards(RubySymbol name) {
+        Map<RubySymbol, Map<IRubyObject, IRubyObject>> symToGuards = this.symToGuards;
         if (symToGuards == null) {
             this.symToGuards = symToGuards = new HashMap<>();
         }

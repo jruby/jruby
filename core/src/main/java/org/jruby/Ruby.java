@@ -52,6 +52,8 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.ext.ffi.Struct;
+import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.SizedQueue;
@@ -1310,6 +1312,8 @@ public final class Ruby implements Constantizable {
         moduleClass.setMetaClass(classClass);
         classClass.setMetaClass(classClass);
         symbolClass.setMetaClass(classClass);
+
+        sites = new JavaSites(this);
 
         RubyClass metaClass;
         metaClass = basicObjectClass.makeMetaClass(classClass);
@@ -4906,6 +4910,16 @@ public final class Ruby implements Constantizable {
 
     private RubyThreadGroup defaultThreadGroup;
 
+    private StructLayout.FieldIO structLayoutDefaultIO;
+
+    public void setStructLayoutDefaultIO(StructLayout.FieldIO defaultIO) {
+        this.structLayoutDefaultIO = defaultIO;
+    }
+
+    public StructLayout.FieldIO getStructLayoutDefaultIO() {
+        return structLayoutDefaultIO;
+    }
+
     /**
      * All the core classes we keep hard references to. These are here largely
      * so that if someone redefines String or Array we won't start blowing up
@@ -5186,7 +5200,8 @@ public final class Ruby implements Constantizable {
         }
     };
 
-    public final JavaSites sites = new JavaSites();
+    // FIXME: Removed final here but we cannot setup sites until we have RubySymbol bootstrapped
+    public JavaSites sites;
 
     private volatile MRIRecursionGuard mriRecursionGuard;
 

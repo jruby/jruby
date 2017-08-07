@@ -51,7 +51,6 @@ import java.util.Set;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.ObjectSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -345,7 +344,7 @@ public class RubyObject extends RubyBasicObject {
      */
     public final void callInit(IRubyObject[] args, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, args, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", args, block);
     }
 
     /**
@@ -353,7 +352,7 @@ public class RubyObject extends RubyBasicObject {
      */
     public final void callInit(Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", block);
     }
 
     /**
@@ -361,7 +360,7 @@ public class RubyObject extends RubyBasicObject {
      */
     public final void callInit(IRubyObject arg0, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", arg0, block);
     }
 
     /**
@@ -369,7 +368,7 @@ public class RubyObject extends RubyBasicObject {
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", arg0, arg1, block);
     }
 
     /**
@@ -377,27 +376,27 @@ public class RubyObject extends RubyBasicObject {
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         ThreadContext context = getRuntime().getCurrentContext();
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", arg0, arg1, arg2, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject[] args, Block block) {
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, args, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", args, block);
     }
 
     public final void callInit(ThreadContext context, Block block) {
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject arg0, Block block) {
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", arg0, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", arg0, arg1, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
+        metaClass.initializeCacheEntry(context).method.call(context, this, metaClass, "initialize", arg0, arg1, arg2, block);
     }
 
     /**

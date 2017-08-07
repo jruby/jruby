@@ -6,8 +6,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class AsetCallSite extends NormalCachingCallSite {
-    public AsetCallSite() {
-        super("[]=");
+    public AsetCallSite(Ruby runtime) {
+        super(runtime.newSymbol("[]="));
     }
 
     @Override

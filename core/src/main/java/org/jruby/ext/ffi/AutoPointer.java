@@ -89,12 +89,12 @@ public class AutoPointer extends Pointer {
 
         Object ffiHandle = getMetaClass().getFFIHandle();
         if (!(ffiHandle instanceof ClassData)) {
-            getMetaClass().setFFIHandle(ffiHandle = new ClassData());
+            getMetaClass().setFFIHandle(ffiHandle = new ClassData(context));
         }
         ClassData classData = (ClassData) ffiHandle;
 
         // If no release method is defined, then memory leaks will result.
-        DynamicMethod releaseMethod = classData.releaseCallSite.retrieveCache(getMetaClass().getMetaClass(), classData.releaseCallSite.getMethodName()).method;
+        DynamicMethod releaseMethod = classData.releaseCallSite.retrieveCache(getMetaClass().getMetaClass(), classData.releaseCallSite.getMethodSymbolName()).method;
         if (releaseMethod.isUndefined()) {
             throw runtime.newRuntimeError("release method undefined");
 
@@ -126,11 +126,11 @@ public class AutoPointer extends Pointer {
 
         Object ffiHandle = releaser.getMetaClass().getFFIHandleAccessorField().getVariableAccessorForRead().get(releaser);
         if (!(ffiHandle instanceof ReleaserData)) {
-            getMetaClass().setFFIHandle(ffiHandle = new ReleaserData());
+            getMetaClass().setFFIHandle(ffiHandle = new ReleaserData(context));
         }
 
         ReleaserData releaserData = (ReleaserData) ffiHandle;
-        DynamicMethod releaseMethod = releaserData.releaseCallSite.retrieveCache(releaser.getMetaClass(), releaserData.releaseCallSite.getMethodName()).method;
+        DynamicMethod releaseMethod = releaserData.releaseCallSite.retrieveCache(releaser.getMetaClass(), releaserData.releaseCallSite.getMethodSymbolName()).method;
         // If no release method is defined, then memory leaks will result.
         if (releaseMethod.isUndefined()) {
             throw context.runtime.newRuntimeError("call method undefined");
@@ -272,10 +272,18 @@ public class AutoPointer extends Pointer {
     }
 
     private static final class ClassData {
-        private final CachingCallSite releaseCallSite = new FunctionalCachingCallSite("release");
+        private final CachingCallSite releaseCallSite;
+
+        public ClassData(ThreadContext context) {
+            releaseCallSite = new FunctionalCachingCallSite(context.runtime.newSymbol("release"));
+        }
     }
 
     private static final class ReleaserData {
-        private final CachingCallSite releaseCallSite = new FunctionalCachingCallSite("call");
+        private final CachingCallSite releaseCallSite;
+
+        public ReleaserData(ThreadContext context) {
+            releaseCallSite = new FunctionalCachingCallSite(context.runtime.newSymbol("call"));
+        }
     }
 }

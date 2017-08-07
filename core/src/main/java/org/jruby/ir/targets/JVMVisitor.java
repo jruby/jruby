@@ -567,7 +567,7 @@ public class JVMVisitor extends IRVisitor {
 
         compileCallCommon(
                 jvmMethod(),
-                attrAssignInstr.getName(),
+                attrAssignInstr.getSymbolName(),
                 callArgs,
                 attrAssignInstr.getReceiver(),
                 callArgs.length,
@@ -584,7 +584,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().invokeArrayDeref(file, lastLine);
+        jvmMethod().invokeArrayDeref(arrayderefinstr.getSymbolName(), file, lastLine);
         jvmStoreLocal(arrayderefinstr.getResult());
     }
 
@@ -830,7 +830,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().invokeinterface(p(IRubyObject.class), "setFrozen", sig(void.class, boolean.class));
 
         // invoke the "`" method on self
-        jvmMethod().invokeSelf(file, lastLine, "`", 1, BlockPassType.NONE, CallType.FUNCTIONAL, false);
+        jvmMethod().invokeSelf(file, lastLine, instr.getSymbolName(), 1, BlockPassType.NONE, CallType.FUNCTIONAL, false);
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1062,7 +1062,7 @@ public class JVMVisitor extends IRVisitor {
         }
 
         IRBytecodeAdapter m = jvmMethod();
-        String name = callInstr.getName();
+        RubySymbol name = callInstr.getSymbolName();
         Operand[] args = callInstr.getCallArgs();
         Operand receiver = callInstr.getReceiver();
         int numArgs = args.length;
@@ -1074,7 +1074,7 @@ public class JVMVisitor extends IRVisitor {
         compileCallCommon(m, name, args, receiver, numArgs, closure, blockPassType, callType, result, callInstr.isPotentiallyRefined());
     }
 
-    private void compileCallCommon(IRBytecodeAdapter m, String name, Operand[] args, Operand receiver, int numArgs, Operand closure, BlockPassType blockPassType, CallType callType, Variable result, boolean isPotentiallyRefined) {
+    private void compileCallCommon(IRBytecodeAdapter m, RubySymbol name, Operand[] args, Operand receiver, int numArgs, Operand closure, BlockPassType blockPassType, CallType callType, Variable result, boolean isPotentiallyRefined) {
         m.loadContext();
         m.loadSelf(); // caller
         visit(receiver);
@@ -1162,7 +1162,7 @@ public class JVMVisitor extends IRVisitor {
 
         @Override
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
-        String name = classsuperinstr.getName();
+        RubySymbol name = classsuperinstr.getSymbolName();
         Operand[] args = classsuperinstr.getCallArgs();
         Operand definingModule = classsuperinstr.getDefiningModule();
         boolean[] splatMap = classsuperinstr.splatMap();
@@ -1332,7 +1332,7 @@ public class JVMVisitor extends IRVisitor {
         visit(eqqinstr.getArg1());
         visit(eqqinstr.getArg2());
         String siteName = jvmMethod().getUniqueSiteName("===");
-        IRBytecodeAdapter.cacheCallSite(jvmAdapter(), jvmMethod().getClassData().clsName, siteName, "===", CallType.FUNCTIONAL, false);
+        IRBytecodeAdapter.cacheCallSite(jvmAdapter(), jvmMethod().getClassData().clsName, siteName, eqqinstr.getSymbolName(), CallType.FUNCTIONAL, false);
         jvmAdapter().ldc(eqqinstr.isSplattedValue());
         jvmMethod().invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
         jvmStoreLocal(eqqinstr.getResult());
@@ -1405,7 +1405,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) {
-        String name = instancesuperinstr.getName();
+        RubySymbol name = instancesuperinstr.getSymbolName();
         Operand[] args = instancesuperinstr.getCallArgs();
         Operand definingModule = instancesuperinstr.getDefiningModule();
         boolean[] splatMap = instancesuperinstr.splatMap();
@@ -1414,7 +1414,7 @@ public class JVMVisitor extends IRVisitor {
         superCommon(name, instancesuperinstr, args, definingModule, splatMap, closure);
     }
 
-    private void superCommon(String name, CallInstr instr, Operand[] args, Operand definingModule, boolean[] splatMap, Operand closure) {
+    private void superCommon(RubySymbol name, CallInstr instr, Operand[] args, Operand definingModule, boolean[] splatMap, Operand closure) {
         IRBytecodeAdapter m = jvmMethod();
         Operation operation = instr.getOperation();
 
@@ -1511,7 +1511,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void MatchInstr(MatchInstr matchInstr) {
-        compileCallCommon(jvmMethod(), "=~", matchInstr.getCallArgs(), matchInstr.getReceiver(), 1, null, BlockPassType.NONE, CallType.NORMAL, matchInstr.getResult(), false);
+        compileCallCommon(jvmMethod(), matchInstr.getSymbolName(), matchInstr.getCallArgs(), matchInstr.getReceiver(), 1, null, BlockPassType.NONE, CallType.NORMAL, matchInstr.getResult(), false);
     }
 
     @Override
@@ -1528,7 +1528,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void NoResultCallInstr(NoResultCallInstr noResultCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = noResultCallInstr.getName();
+        RubySymbol name = noResultCallInstr.getSymbolName();
         Operand[] args = noResultCallInstr.getCallArgs();
         Operand receiver = noResultCallInstr.getReceiver();
         int numArgs = args.length;
@@ -1541,7 +1541,7 @@ public class JVMVisitor extends IRVisitor {
 
     public void oneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = oneFixnumArgNoBlockCallInstr.getName();
+        RubySymbol name = oneFixnumArgNoBlockCallInstr.getSymbolName();
         long fixnum = oneFixnumArgNoBlockCallInstr.getFixnumArg();
         Operand receiver = oneFixnumArgNoBlockCallInstr.getReceiver();
         Variable result = oneFixnumArgNoBlockCallInstr.getResult();
@@ -1566,7 +1566,7 @@ public class JVMVisitor extends IRVisitor {
 
     public void oneFloatArgNoBlockCallInstr(OneFloatArgNoBlockCallInstr oneFloatArgNoBlockCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = oneFloatArgNoBlockCallInstr.getName();
+        RubySymbol name = oneFloatArgNoBlockCallInstr.getSymbolName();
         double flote = oneFloatArgNoBlockCallInstr.getFloatArg();
         Operand receiver = oneFloatArgNoBlockCallInstr.getReceiver();
         Variable result = oneFloatArgNoBlockCallInstr.getResult();
@@ -1791,7 +1791,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadArgs();
         jvmAdapter().pushInt(instr.required);
-        jvmAdapter().ldc(instr.argName);
+        // FIXME: should be symbol
+        jvmAdapter().ldc(instr.argName.asJavaString());
         jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
         jvmMethod().invokeIRHelper("receiveKeywordArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, String.class, boolean.class));
         jvmStoreLocal(instr.getResult());
@@ -2178,7 +2179,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) {
-        String name = unresolvedsuperinstr.getName();
+        RubySymbol name = unresolvedsuperinstr.getSymbolName();
         Operand[] args = unresolvedsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
@@ -2222,7 +2223,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ZSuperInstr(ZSuperInstr zsuperinstr) {
-        String name = zsuperinstr.getName();
+        RubySymbol name = zsuperinstr.getSymbolName();
         Operand[] args = zsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;

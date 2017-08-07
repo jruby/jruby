@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -22,23 +24,18 @@ public class EQQInstr extends TwoOperandResultBaseInstr implements FixedArityIns
     // treating the array as a single value.
     private boolean splattedValue;
 
-    public EQQInstr(Variable result, Operand v1, Operand v2, boolean splattedValue) {
+    public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue) {
         super(Operation.EQQ, result, v1, v2);
 
         assert result != null: "EQQInstr result is null";
 
-        this.callSite = new FunctionalCachingCallSite("===");
+        this.callSite = new FunctionalCachingCallSite(scope.getManager().getRuntime().newSymbol("==="));
         this.splattedValue = splattedValue;
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
         return new String[] { "splat: " + splattedValue };
-    }
-
-    @Deprecated
-    public EQQInstr(Variable result, Operand v1, Operand v2) {
-        this(result, v1, v2, true);
     }
 
     public Operand getArg1() {
@@ -53,9 +50,13 @@ public class EQQInstr extends TwoOperandResultBaseInstr implements FixedArityIns
         return splattedValue;
     }
 
+    public RubySymbol getSymbolName() {
+        return callSite.methodName;
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
-        return new EQQInstr(ii.getRenamedVariable(result), getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), isSplattedValue());
+        return new EQQInstr(ii.getScope(), ii.getRenamedVariable(result), getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), isSplattedValue());
     }
 
     @Override
@@ -67,7 +68,7 @@ public class EQQInstr extends TwoOperandResultBaseInstr implements FixedArityIns
     }
 
     public static EQQInstr decode(IRReaderDecoder d) {
-        return new EQQInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+        return new EQQInstr(d.getCurrentScope(), d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
     }
 
     @Override

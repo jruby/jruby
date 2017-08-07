@@ -101,6 +101,10 @@ public final class StructLayout extends Type {
     public static RubyClass createStructLayoutClass(Ruby runtime, RubyModule module) {
         RubyClass layoutClass = runtime.defineClassUnder(CLASS_NAME, module.getClass("Type"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, module);
+
+        // FIXME: We need non-static field for anything containing symbol.  I stuffed what was a static reference to Ruby as a work-around.
+        runtime.setStructLayoutDefaultIO(new DefaultFieldIO(runtime));
+
         layoutClass.defineAnnotatedMethods(StructLayout.class);
         layoutClass.defineAnnotatedConstants(StructLayout.class);
         layoutClass.setReifiedClass(StructLayout.class);
@@ -486,7 +490,7 @@ public final class StructLayout extends Type {
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          *
-         * @param runtime The ruby runtime
+         * @param context The ruby runtime
          * @param cache The value cache
          * @param ptr The struct memory area.
          * @param value The ruby value to write to the native struct member.
@@ -515,11 +519,11 @@ public final class StructLayout extends Type {
         }
     }
 
-    interface FieldIO {
+    public interface FieldIO {
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          *
-         * @param runtime The ruby runtime
+         * @param context The thread context
          * @param cache The value cache
          * @param ptr The struct memory area.
          * @param value The ruby value to write to the native struct member.
@@ -550,10 +554,14 @@ public final class StructLayout extends Type {
         public abstract boolean isValueReferenceNeeded();
     }
 
-    static final class DefaultFieldIO implements FieldIO {
-        public static final FieldIO INSTANCE = new DefaultFieldIO();
-        private final CachingCallSite getCallSite = new FunctionalCachingCallSite("get");
-        private final CachingCallSite putCallSite = new FunctionalCachingCallSite("put");
+    public static final class DefaultFieldIO implements FieldIO {
+        private final CachingCallSite getCallSite;
+        private final CachingCallSite putCallSite;
+
+        public DefaultFieldIO(Ruby runtime) {
+            this.getCallSite = new FunctionalCachingCallSite(runtime.newSymbol("get"));
+            this.putCallSite = new FunctionalCachingCallSite(runtime.newSymbol("put"));
+        }
 
         public IRubyObject get(ThreadContext context, Storage cache, Member m, AbstractMemory ptr) {
             return getCallSite.call(context, m.field, m.field, ptr);
@@ -596,7 +604,7 @@ public final class StructLayout extends Type {
 
 
         Field(Ruby runtime, RubyClass klass) {
-            this(runtime, klass, DefaultFieldIO.INSTANCE);
+            this(runtime, klass, runtime.getStructLayoutDefaultIO());
         }
 
         Field(Ruby runtime, RubyClass klass, FieldIO io) {
@@ -843,7 +851,7 @@ public final class StructLayout extends Type {
     public static final class InnerStructField extends Field {
 
         public InnerStructField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass, DefaultFieldIO.INSTANCE);
+            super(runtime, klass, runtime.getStructLayoutDefaultIO());
         }
         
         @Override
@@ -873,7 +881,7 @@ public final class StructLayout extends Type {
     public static final class ArrayField extends Field {
 
         public ArrayField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass, DefaultFieldIO.INSTANCE);
+            super(runtime, klass, runtime.getStructLayoutDefaultIO());
         }
 
         @Override
@@ -902,7 +910,7 @@ public final class StructLayout extends Type {
     public static final class MappedField extends Field {
 
         public MappedField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass, DefaultFieldIO.INSTANCE);
+            super(runtime, klass, runtime.getStructLayoutDefaultIO());
         }
 
         @JRubyMethod(required = 4, visibility = PRIVATE)

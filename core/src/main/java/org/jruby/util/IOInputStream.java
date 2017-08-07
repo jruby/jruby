@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import org.jcodings.Encoding;
 
+import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
@@ -51,8 +52,8 @@ public class IOInputStream extends InputStream {
     private final IRubyObject io;
     private final InputStream in;
     private final IRubyObject numOne;
-    private static final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
-    private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private final CallSite readAdapter;
+    private final CallSite closeAdapter;
 
     /**
      * Creates a new InputStream with the object provided.
@@ -67,6 +68,9 @@ public class IOInputStream extends InputStream {
         this.in = ((io instanceof RubyIO) && !((RubyIO)io).isClosed() && ((RubyIO)io).isBuiltin("read"))
                 ? ((RubyIO)io).getInStream() : null;
         this.numOne = RubyFixnum.one(this.io.getRuntime());
+        Ruby runtime = io.getRuntime();
+        readAdapter = MethodIndex.getFunctionalCallSite(runtime.newSymbol("read"));
+        closeAdapter =  MethodIndex.getFunctionalCallSite(runtime.newSymbol("close"));
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.headius.invokebinder.Signature;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.operands.Operand;
@@ -60,7 +61,7 @@ public abstract class IRBytecodeAdapter {
      * @param callType the type of call
      * @param isPotentiallyRefined whether the call might be refined
      */
-    public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, String rubyName, CallType callType, boolean isPotentiallyRefined) {
+    public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, RubySymbol rubyName, CallType callType, boolean isPotentiallyRefined) {
         // call site object field
         method.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, siteName, ci(CachingCallSite.class), null, null).visitEnd();
 
@@ -70,12 +71,22 @@ public abstract class IRBytecodeAdapter {
         Label doCall = new Label();
         method.ifnonnull(doCall);
         method.pop();
-        method.ldc(rubyName);
+
+        // FIXME: generalize this (symbol from a bytelist)
+        // FIXME: This is using String but it should use bytelist
+        method.aload(0); // TC
+        method.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        method.dup();
+        method.ldc(rubyName.getBytes().toString());
+        method.ldc(rubyName.getBytes().getEncoding().toString());
+        method.invokestatic(p(IRRuntimeHelpers.class), "newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
+        method.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, ByteList.class));
+
         Class<? extends CachingCallSite> siteClass;
         String signature;
         if (isPotentiallyRefined) {
             siteClass = RefinedCachingCallSite.class;
-            signature = sig(siteClass, String.class, String.class);
+            signature = sig(siteClass, RubySymbol.class, String.class);
             method.ldc(callType.name());
         } else {
             switch (callType) {
@@ -91,7 +102,7 @@ public abstract class IRBytecodeAdapter {
                 default:
                     throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
             }
-            signature = sig(siteClass, String.class);
+            signature = sig(siteClass, RubySymbol.class);
         }
         method.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), signature);
         method.dup();
@@ -365,7 +376,7 @@ public abstract class IRBytecodeAdapter {
      * @param arity arity of the call
      * @param blockPassType what type of closure is passed
      */
-    public abstract void invokeOther(String file, int line, String name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined);
+    public abstract void invokeOther(String file, int line, RubySymbol name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined);
 
     /**
      * Invoke the array dereferencing method ([]) on an object other than self.
@@ -376,7 +387,7 @@ public abstract class IRBytecodeAdapter {
      * @param file
      * @param line
      */
-    public abstract void invokeArrayDeref(String file, int line);
+    public abstract void invokeArrayDeref(RubySymbol name, String file, int line);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.
@@ -385,7 +396,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType);
+    public abstract void invokeOtherOneFixnum(String file, int line, RubySymbol name, long fixnum, CallType callType);
 
     /**
      * Invoke a float-receiving method on an object other than self.
@@ -394,7 +405,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType);
+    public abstract void invokeOtherOneFloat(String file, int line, RubySymbol name, double flote, CallType callType);
 
     public enum BlockPassType {
         NONE(false, false),
@@ -433,7 +444,7 @@ public abstract class IRBytecodeAdapter {
      * @param blockPassType what type of closure is passed
      * @param callType
      */
-    public abstract void invokeSelf(String file, int line, String name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined);
+    public abstract void invokeSelf(String file, int line, RubySymbol name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined);
 
     /**
      * Invoke a superclass method from an instance context.
@@ -447,7 +458,7 @@ public abstract class IRBytecodeAdapter {
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeInstanceSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a class context.
@@ -461,7 +472,7 @@ public abstract class IRBytecodeAdapter {
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeClassSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from an unresolved context.
@@ -475,7 +486,7 @@ public abstract class IRBytecodeAdapter {
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeUnresolvedSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Invoke a superclass method from a zsuper in a block.
@@ -489,7 +500,7 @@ public abstract class IRBytecodeAdapter {
      * @param hasClosure whether a block is passed
      * @param splatmap a map of arguments to be splatted back into arg list
      */
-    public abstract void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
+    public abstract void invokeZSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap);
 
     /**
      * Lookup a constant from current context.

@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.runtime.ThreadContext;
@@ -7,8 +8,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class LeCallSite extends NormalCachingCallSite {
 
-    public LeCallSite() {
-        super("<=");
+    public LeCallSite(Ruby runtime) {
+        super(runtime.newSymbol("<="));
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {

@@ -357,26 +357,6 @@ public abstract class AbstractScript implements Script {
         runtimeCache.encodings[index] = EncodingDB.getEncodings().get(encStr.getBytes()).getEncoding();
     }
 
-    public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {
-        callSites[index] = MethodIndex.getCallSite(name);
-        return callSites;
-    }
-
-    public static CallSite[] setFunctionalCallSite(CallSite[] callSites, int index, String name) {
-        callSites[index] = MethodIndex.getFunctionalCallSite(name);
-        return callSites;
-    }
-
-    public static CallSite[] setVariableCallSite(CallSite[] callSites, int index, String name) {
-        callSites[index] = MethodIndex.getVariableCallSite(name);
-        return callSites;
-    }
-
-    public static CallSite[] setSuperCallSite(CallSite[] callSites, int index) {
-        callSites[index] = MethodIndex.getSuperCallSite();
-        return callSites;
-    }
-
     public final void setFilename(String filename) {
         this.filename = filename;
     }

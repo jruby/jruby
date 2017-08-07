@@ -509,7 +509,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        BlockBody body = new SymbolProcBody(context.runtime, symbol);
+        BlockBody body = new SymbolProcBody(context.runtime, this);
 
         return RubyProc.newProc(context.runtime,
                                 new Block(body, Binding.DUMMY),
@@ -1094,7 +1094,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private static final class SymbolProcBody extends ContextAwareBlockBody {
         private final CallSite site;
 
-        public SymbolProcBody(Ruby runtime, String symbol) {
+        public SymbolProcBody(Ruby runtime, RubySymbol symbol) {
             super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
             this.site = MethodIndex.getFunctionalCallSite(symbol);
         }
@@ -1146,7 +1146,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         public String getFile() {
-            return site.methodName;
+            return site.methodName.asJavaString();
         }
 
         @Override

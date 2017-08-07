@@ -61,7 +61,7 @@ import static org.jruby.util.CodegenUtils.sig;
  *
  * CON FIXME: These are all dirt-stupid impls that will not be as efficient.
  */
-public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
+public class IRBytecodeAdapter6 extends IRBytecodeAdapter {
 
     public static final String SUPER_SPLAT_UNRESOLVED = sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class, boolean[].class));
     public static final String SUPER_NOSPLAT_UNRESOLVED = sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, JVM.OBJECT_ARRAY, Block.class));
@@ -383,11 +383,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void invokeOther(String file, int line, String name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined) {
+    public void invokeOther(String file, int line, RubySymbol name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined) {
         invoke(file, line, name, arity, blockPassType, CallType.NORMAL, isPotentiallyRefined);
     }
 
-    public void invokeArrayDeref(String file, int line) {
+    public void invokeArrayDeref(RubySymbol name, String file, int line) {
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyString.class));
 
@@ -402,7 +402,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null);
 
         adapter2.aloadMany(0, 1, 2, 3);
-        cacheCallSite(adapter2, getClassData().clsName, methodName, "[]", CallType.FUNCTIONAL, false);
+        cacheCallSite(adapter2, getClassData().clsName, methodName, name, CallType.FUNCTIONAL, false);
         adapter2.invokestatic(p(IRRuntimeHelpers.class), "callOptimizedAref", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyString.class, CallSite.class));
         adapter2.areturn();
         adapter2.end();
@@ -411,7 +411,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invoke(String file, int lineNumber, String name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined) {
+    public void invoke(String file, int lineNumber, RubySymbol name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
         SkinnyMethodAdapter adapter2;
@@ -457,7 +457,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             }
         }
 
-        String methodName = getUniqueSiteName(name);
+        // FIXME: Not sure if this works or not with non-Java charset names.
+        String methodName = getUniqueSiteName(name.asJavaString());
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -531,8 +532,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType) {
-        if (!MethodIndex.hasFastFixnumOps(name)) {
+    public void invokeOtherOneFixnum(String file, int line, RubySymbol name, long fixnum, CallType callType) {
+        if (!MethodIndex.hasFastFixnumOps(name.asJavaString())) {
             pushFixnum(fixnum);
             if (callType == CallType.NORMAL) {
                 invokeOther(file, line, name, 1, BlockPassType.NONE, false);
@@ -546,7 +547,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
 
-        String methodName = "invokeOtherOneFixnum" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+        // FIXME: Not sure if this works with non-Java charset names
+        String methodName = "invokeOtherOneFixnum" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name.asJavaString());
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -567,8 +569,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         Label doCall = new Label();
         adapter2.ifnonnull(doCall);
         adapter2.pop();
-        adapter2.ldc(name);
-        adapter2.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, String.class));
+        // FIXME: generalize this (symbol from a bytelist)
+        // FIXME: This is using String but it should use bytelist
+        adapter2.aload(0); // TC
+        adapter2.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        adapter2.dup();
+        adapter2.ldc(name.getBytes().toString());
+        adapter2.ldc(name.getBytes().getEncoding().toString());
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
+        adapter2.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, ByteList.class));
+
+        adapter2.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, RubySymbol.class));
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CallSite.class));
 
@@ -587,8 +598,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType) {
-        if (!MethodIndex.hasFastFloatOps(name)) {
+    public void invokeOtherOneFloat(String file, int line, RubySymbol name, double flote, CallType callType) {
+        if (!MethodIndex.hasFastFloatOps(name.asJavaString())) {
             pushFloat(flote);
             if (callType == CallType.NORMAL) {
                 invokeOther(file, line, name, 1, BlockPassType.NONE, false);
@@ -602,7 +613,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));
 
-        String methodName = "invokeOtherOneFloat" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
+        // FIXME: Not sure if this works with non-java charset names.
+        String methodName = "invokeOtherOneFloat" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name.asJavaString());
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -623,8 +635,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         Label doCall = new Label();
         adapter2.ifnonnull(doCall);
         adapter2.pop();
-        adapter2.ldc(name);
-        adapter2.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, String.class));
+        // FIXME: generalize this (symbol from a bytelist)
+        // FIXME: This is using String but it should use bytelist
+        adapter2.aload(0); // TC
+        adapter2.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        adapter2.dup();
+        adapter2.ldc(name.getBytes().toString());
+        adapter2.ldc(name.getBytes().getEncoding().toString());
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
+        adapter2.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, ByteList.class));
+
+        adapter2.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, RubySymbol.class));
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CallSite.class));
 
@@ -643,37 +664,37 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeSelf(String file, int line, String name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined) {
+    public void invokeSelf(String file, int line, RubySymbol name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
         invoke(file, line, name, arity, blockPassType, callType, isPotentiallyRefined);
     }
 
-    public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeInstanceSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to instance super has more than " + MAX_ARGUMENTS + " arguments");
 
         performSuper(file, line, name, arity, hasClosure, splatmap, "instanceSuper", "instanceSuperSplatArgs", false);
     }
 
-    public void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeClassSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to class super has more than " + MAX_ARGUMENTS + " arguments");
 
         performSuper(file, line, name, arity, hasClosure, splatmap, "classSuper", "classSuperSplatArgs", false);
     }
 
-    public void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeUnresolvedSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to unresolved super has more than " + MAX_ARGUMENTS + " arguments");
 
         performSuper(file, line, name, arity, hasClosure, splatmap, "unresolvedSuper", "unresolvedSuperSplatArgs", true);
     }
 
-    public void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeZSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to zsuper has more than " + MAX_ARGUMENTS + " arguments");
 
         performSuper(file, line, name, arity, hasClosure, splatmap, "zSuper", "zSuperSplatArgs", true);
     }
 
-    private void performSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap, String superHelper, String splatHelper, boolean unresolved) {
+    private void performSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap, String superHelper, String splatHelper, boolean unresolved) {
         SkinnyMethodAdapter adapter2;
         String incomingSig;
         String outgoingSig;
@@ -700,7 +721,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             }
         }
 
-        String methodName = "invokeSuper" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
+        // FIXME: Not sure if this is correct when non-Java-charset name or not?
+        String methodName = "invokeSuper" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name.asJavaString());
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
@@ -714,7 +736,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         // CON FIXME: make these offsets programmatically determined
         adapter2.aload(0);
         adapter2.aload(2);
-        if (!unresolved) adapter2.ldc(name);
+        if (!unresolved) adapter2.ldc(name.asJavaString());
         if (!unresolved) adapter2.aload(3);
 
         buildArrayFromLocals(adapter2, 4, arity);

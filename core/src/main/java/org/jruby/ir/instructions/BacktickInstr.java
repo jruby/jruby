@@ -2,6 +2,8 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -20,17 +22,24 @@ import org.jruby.runtime.builtin.IRubyObject;
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this string operand could get converted to calls
 public class BacktickInstr extends NOperandResultBaseInstr {
-    public BacktickInstr(Variable result, Operand[] pieces) {
+    private final RubySymbol name;
+    public BacktickInstr(IRScope scope, Variable result, Operand[] pieces) {
         super(Operation.BACKTICK_STRING, result, pieces);
+
+        name = scope.getManager().getRuntime().newSymbol("`");
     }
 
     public Operand[] getPieces() {
         return getOperands();
     }
 
+    public RubySymbol getSymbolName() {
+        return name;
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BacktickInstr(ii.getRenamedVariable(result), cloneOperands(ii));
+        return new BacktickInstr(ii.getScope(), ii.getRenamedVariable(result), cloneOperands(ii));
     }
 
     @Override
@@ -40,7 +49,7 @@ public class BacktickInstr extends NOperandResultBaseInstr {
     }
 
     public static BacktickInstr decode(IRReaderDecoder d) {
-        return new BacktickInstr(d.decodeVariable(), d.decodeOperandArray());
+        return new BacktickInstr(d.getCurrentScope(), d.decodeVariable(), d.decodeOperandArray());
     }
 
     @Override

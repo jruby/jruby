@@ -10,7 +10,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -25,8 +24,8 @@ public final class MappedType extends Type {
     private final Type realType;
     private final IRubyObject converter;
     private final boolean isReferenceRequired;
-    private final CachingCallSite toNativeCallSite = new FunctionalCachingCallSite("to_native");
-    private final CachingCallSite fromNativeCallSite = new FunctionalCachingCallSite("from_native");
+    private final CachingCallSite toNativeCallSite;
+    private final CachingCallSite fromNativeCallSite;
 
     public static RubyClass createConverterTypeClass(Ruby runtime, RubyModule ffiModule) {
         final RubyClass Type = ffiModule.getClass("Type");
@@ -43,6 +42,8 @@ public final class MappedType extends Type {
         this.realType = nativeType;
         this.converter = converter;
         this.isReferenceRequired = isRefererenceRequired;
+        this.toNativeCallSite = new FunctionalCachingCallSite(runtime.newSymbol("to_native"));
+        this.fromNativeCallSite = new FunctionalCachingCallSite(runtime.newSymbol("from_native"));
     }
 
     @JRubyMethod(name = "new", meta = true)

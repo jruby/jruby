@@ -1,13 +1,14 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ModCallSite extends NormalCachingCallSite {
 
-    public ModCallSite() {
-        super("%");
+    public ModCallSite(Ruby runtime) {
+        super(runtime.newSymbol("%"));
     }
 
     @Override

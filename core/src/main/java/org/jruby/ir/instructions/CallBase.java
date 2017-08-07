@@ -148,13 +148,13 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     protected static CallSite getCallSiteFor(CallType callType, RubySymbol name, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
-        if (potentiallyRefined) return new RefinedCachingCallSite(name.asJavaString(), callType);
+        if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
 
         switch (callType) {
-            case NORMAL: return MethodIndex.getCallSite(name.asJavaString());
-            case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name.asJavaString());
-            case VARIABLE: return MethodIndex.getVariableCallSite(name.asJavaString());
-            case SUPER: return MethodIndex.getSuperCallSite();
+            case NORMAL: return MethodIndex.getCallSite(name);
+            case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
+            case VARIABLE: return MethodIndex.getVariableCallSite(name);
+            case SUPER: return MethodIndex.getSuperCallSite(name.getRuntime());
             case UNKNOWN:
         }
 

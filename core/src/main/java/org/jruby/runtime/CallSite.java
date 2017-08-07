@@ -28,6 +28,7 @@
 
 package org.jruby.runtime;
 
+import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -35,7 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public abstract class CallSite {
     /** The method name this site calls and caches */
-    public final String methodName;
+    public final RubySymbol methodName;
     /** The type of call this site makes */
     protected final CallType callType;
 
@@ -46,7 +47,7 @@ public abstract class CallSite {
      * @param callType the type of call to perform (normal, functional, etc)
      * @see org.jruby.runtime.CallType
      */
-    public CallSite(String methodName, CallType callType) {
+    public CallSite(RubySymbol methodName, CallType callType) {
         this.methodName = methodName;
         this.callType = callType;
     }
@@ -202,7 +203,7 @@ public abstract class CallSite {
      * @param block the block argument to pass
      * @return the result of the call
      */
-    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg3, Block block);
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
 
     /**
      * Call the site's method against the target object passing one argument and

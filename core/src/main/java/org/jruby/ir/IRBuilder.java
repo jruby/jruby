@@ -1160,7 +1160,7 @@ public class IRBuilder {
                 Node exprNodes = whenNode.getExpressionNodes();
                 boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
-                addInstr(new EQQInstr(eqqResult, expression, value, needsSplat));
+                addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat));
                 v1 = eqqResult;
                 v2 = manager.getTrue();
             }
@@ -1306,7 +1306,7 @@ public class IRBuilder {
                     expression = ((StringLiteral) expression).frozenString;
                 }
 
-                addInstr(new EQQInstr(eqqResult, expression, value, true));
+                addInstr(new EQQInstr(scope, eqqResult, expression, value, true));
                 v1 = eqqResult;
                 v2 = manager.getTrue();
             }
@@ -2528,7 +2528,7 @@ public class IRBuilder {
         }
 
         if (result == null) result = createTemporaryVariable();
-        return addResultInstr(new BacktickInstr(result, pieces));
+        return addResultInstr(new BacktickInstr(scope, result, pieces));
     }
 
     /* ****************************************************************
@@ -3906,7 +3906,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(),
+        return addResultInstr(new BacktickInstr(scope, createTemporaryVariable(),
                 new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFileName(), node.getLine())}));
     }
 

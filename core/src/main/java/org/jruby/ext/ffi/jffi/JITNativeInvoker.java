@@ -6,15 +6,10 @@ import org.jruby.RubyModule;
 import org.jruby.ext.ffi.*;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Type;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.util.cli.Options;
-
-import java.util.Arrays;
 
 /**
  *
@@ -49,11 +44,14 @@ abstract public class JITNativeInvoker extends NativeInvoker {
 
     public JITNativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
         super(implementationClass, function, signature);
+
         this.arity = signature.getParameterCount();
         this.function = function;
         this.callContext = function.getCallContext();
         this.functionAddress = function.getFunctionAddress();
         this.signature = signature;
+
+        Ruby runtime = implementationClass.getRuntime();
 
         // Get any result and parameter converters needed
         resultConverter = DataConverters.getResultConverter(signature.getResultType());
@@ -69,13 +67,13 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         parameterInfo3 = getParameterInfo(signature, 3);
         parameterInfo4 = getParameterInfo(signature, 4);
         parameterInfo5 = getParameterInfo(signature, 5);
-        parameterCallSite0 = getParameterCallSite(signature, 0);
-        parameterCallSite1 = getParameterCallSite(signature, 1);
-        parameterCallSite2 = getParameterCallSite(signature, 2);
-        parameterCallSite3 = getParameterCallSite(signature, 3);
-        parameterCallSite4 = getParameterCallSite(signature, 4);
-        parameterCallSite5 = getParameterCallSite(signature, 5);
-        parameterCallSite6 = getParameterCallSite(signature, 6);
+        parameterCallSite0 = getParameterCallSite(runtime, signature, 0);
+        parameterCallSite1 = getParameterCallSite(runtime, signature, 1);
+        parameterCallSite2 = getParameterCallSite(runtime, signature, 2);
+        parameterCallSite3 = getParameterCallSite(runtime, signature, 3);
+        parameterCallSite4 = getParameterCallSite(runtime, signature, 4);
+        parameterCallSite5 = getParameterCallSite(runtime, signature, 5);
+        parameterCallSite6 = getParameterCallSite(runtime, signature, 6);
     }
 
     @SuppressWarnings("deprecation")
@@ -116,7 +114,7 @@ abstract public class JITNativeInvoker extends NativeInvoker {
 
         return ObjectParameterInfo.create(i, ObjectParameterInfo.ARRAY, ObjectParameterInfo.BYTE, flags);
     }
-    private static CachingCallSite getParameterCallSite(Signature signature, int parameterIndex) {
+    private static CachingCallSite getParameterCallSite(Ruby runtime, Signature signature, int parameterIndex) {
         if (signature.getParameterCount() <= parameterIndex) {
             return null;
         }
@@ -128,13 +126,13 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         switch (nativeType) {
             case STRING:
             case TRANSIENT_STRING:
-                return new FunctionalCachingCallSite("to_str");
+                return new FunctionalCachingCallSite(runtime.newSymbol("to_str"));
 
             case POINTER:
             case BUFFER_IN:
             case BUFFER_OUT:
             case BUFFER_INOUT:
-                return new FunctionalCachingCallSite("to_ptr");
+                return new FunctionalCachingCallSite(runtime.newSymbol("to_ptr"));
 
             default:
                 return null;

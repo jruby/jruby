@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -30,8 +31,8 @@ public class SuperCallSite extends CallSite {
         }
     }
     
-    public SuperCallSite() {
-        super("super", CallType.SUPER);
+    public SuperCallSite(Ruby runtime) {
+        super(runtime.newSymbol("super"), CallType.SUPER);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {

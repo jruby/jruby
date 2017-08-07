@@ -13,6 +13,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyHash;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
@@ -125,35 +126,37 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
     }
 
-    public void invokeOther(String file, int line, String name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined) {
+    public void invokeOther(String file, int line, RubySymbol name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (isPotentiallyRefined) {
             super.invokeOther(file, line, name, arity, blockPassType, isPotentiallyRefined);
             return;
         }
 
+        // FIXME: Not sure how much we care what is displayed by this if a non-Java charset name.
+        String handleName = "invoke:" + JavaNameMangler.mangleMethodName(name.asJavaString());
         if (blockPassType.given()) {
             if (arity == -1) {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             } else {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             }
         } else {
             if (arity == -1) {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), NormalInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), NormalInvokeSite.BOOTSTRAP, false, file, line);
             } else {
-                adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP, false, file, line);
             }
         }
     }
 
     @Override
-    public void invokeArrayDeref(String file, int line) {
+    public void invokeArrayDeref(RubySymbol name, String file, int line) {
         adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP, file, line);
     }
 
-    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType) {
-        if (!MethodIndex.hasFastFixnumOps(name)) {
+    public void invokeOtherOneFixnum(String file, int line, RubySymbol name, long fixnum, CallType callType) {
+        if (!MethodIndex.hasFastFixnumOps(name.asJavaString())) {
             pushFixnum(fixnum);
             if (callType == CallType.NORMAL) {
                 invokeOther(file, line, name, 1, BlockPassType.NONE,false);
@@ -166,7 +169,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
         adapter.invokedynamic(
-                "fixnumOperator:" + JavaNameMangler.mangleMethodName(name),
+                "fixnumOperator:" + JavaNameMangler.mangleMethodName(name.asJavaString()),
                 signature,
                 Bootstrap.getFixnumOperatorHandle(),
                 fixnum,
@@ -175,8 +178,8 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 0);
     }
 
-    public void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType) {
-        if (!MethodIndex.hasFastFloatOps(name)) {
+    public void invokeOtherOneFloat(String file, int line, RubySymbol name, double flote, CallType callType) {
+        if (!MethodIndex.hasFastFloatOps(name.asJavaString())) {
             pushFloat(flote);
             if (callType == CallType.NORMAL) {
                 invokeOther(file, line, name, 1, BlockPassType.NONE, false);
@@ -189,7 +192,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
         
         adapter.invokedynamic(
-            "floatOperator:" + JavaNameMangler.mangleMethodName(name),
+            "floatOperator:" + JavaNameMangler.mangleMethodName(name.asJavaString()),
             signature,
             Bootstrap.getFloatOperatorHandle(),
             flote,
@@ -198,7 +201,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             0);
     }
 
-    public void invokeSelf(String file, int line, String name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined) {
+    public void invokeSelf(String file, int line, RubySymbol name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (isPotentiallyRefined) {
             super.invokeSelf(file, line, name, arity, blockPassType, callType, isPotentiallyRefined);
@@ -206,62 +209,72 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
 
         String action = callType == CallType.FUNCTIONAL ? "callFunctional" : "callVariable";
+        // FIXME: Not sure how much we care what is displayed by this if a non-Java charset name.
+        String handleName = action + ":" + JavaNameMangler.mangleMethodName(name.asJavaString());
         if (blockPassType != BlockPassType.NONE) {
             if (arity == -1) {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             } else {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             }
         } else {
             if (arity == -1) {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, file, line);
             } else {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, file, line);
             }
         }
     }
 
-    public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeInstanceSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to instance super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
+        // FIXME: Not sure how much we care what is displayed by this if a non-Java charset name.
+        String handleName = "invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name.asJavaString());
         if (hasClosure) {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
         } else {
-            adapter.invokedynamic("invokeInstanceSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
         }
     }
 
-    public void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeClassSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to class super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
+        // FIXME: Not sure how much we care what is displayed by this if a non-Java charset name.
+        String handleName = "invokeClassSuper:" + JavaNameMangler.mangleMethodName(name.asJavaString());
         if (hasClosure) {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
         } else {
-            adapter.invokedynamic("invokeClassSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
         }
     }
 
-    public void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeUnresolvedSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to unresolved super has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
+        // FIXME: Not sure how much we care what is displayed by this if a non-Java charset name.
+        String handleName = "invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name.asJavaString());
         if (hasClosure) {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
         } else {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
         }
     }
 
-    public void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
+    public void invokeZSuper(String file, int line, RubySymbol name, int arity, boolean hasClosure, boolean[] splatmap) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to zsuper has more than " + MAX_ARGUMENTS + " arguments");
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
+        // FIXME: Not sure how much we care what is displayed by this if a non-Java charset name.
+        String handleName = "invokeZSuper:" + JavaNameMangler.mangleMethodName(name.asJavaString());
         if (hasClosure) {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
         } else {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic(handleName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
         }
     }
 

@@ -588,7 +588,8 @@ public class RubyNumeric extends RubyObject {
             @Override
             public IRubyObject call(ThreadContext context, JavaSites.CheckedSites site, IRubyObject obj, boolean recur) {
                 if (recur) {
-                    throw context.runtime.newNameError("recursive call to " + site.methodName, site.methodName);
+                    // FIXME: Need to make newNameError with Symbol
+                    throw context.runtime.newNameError("recursive call to " + site.methodName, site.methodName.asJavaString());
                 }
                 return x.getMetaClass().finvokeChecked(context, x, site, obj);
             }
@@ -1456,7 +1457,8 @@ public class RubyNumeric extends RubyObject {
         @Override
         public IRubyObject call(ThreadContext context, CallSite site, IRubyObject obj, boolean recur) {
             if (recur) {
-                String name = site.methodName;
+                // FIXME: MBC names will get misreported potentially
+                String name = site.methodName.asJavaString();
                 if (name.length() > 0 && Character.isLetterOrDigit(name.charAt(0))) {
                     throw context.runtime.newNameError(name, obj, name);
                 } else {
@@ -1471,7 +1473,8 @@ public class RubyNumeric extends RubyObject {
         @Override
         public IRubyObject call(ThreadContext context, CallSite site, IRubyObject obj, boolean recur) {
             if (recur) {
-                String name = site.methodName;
+                // FIXME: MBC names will get misreported potentially
+                String name = site.methodName.asJavaString();
                 if (name.length() > 0 && Character.isLetterOrDigit(name.charAt(0))) {
                     throw context.runtime.newNameError(name, obj, name);
                 } else if (name.length() == 2 && name.charAt(1) == '@') {

@@ -1,13 +1,14 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BitAndCallSite extends NormalCachingCallSite {
 
-    public BitAndCallSite() {
-        super("&");
+    public BitAndCallSite(Ruby runtime) {
+        super(runtime.newSymbol("&"));
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {

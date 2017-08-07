@@ -238,14 +238,6 @@ public class RubyClass extends RubyModule {
         return obj;
     }
 
-    public CallSite getBaseCallSite(int idx) {
-        return baseCallSites[idx];
-    }
-
-    public CallSite[] getBaseCallSites() {
-        return baseCallSites;
-    }
-
     public CallSite[] getExtraCallSites() {
         return extraCallSites;
     }
@@ -735,9 +727,11 @@ public class RubyClass extends RubyModule {
 
         DynamicMethod me = sites.site.retrieveCache(klass).method;
         if (!checkFuncallCallable(context, me, CallType.FUNCTIONAL, self)) {
-            return checkFuncallMissing(context, klass, self, sites.methodName, sites.respond_to_missing, sites.method_missing, args);
+            // FIXME: Broken for mbc strings which are not Java charsets
+            return checkFuncallMissing(context, klass, self, sites.methodName.asJavaString(), sites.respond_to_missing, sites.method_missing, args);
         }
-        return me.call(context, self, klass, sites.methodName, args);
+        // FIXME: Broken for mbc strings which are not Java charsets
+        return me.call(context, self, klass, sites.methodName.asJavaString(), args);
     }
 
     // MRI: rb_check_funcall_default
@@ -747,9 +741,11 @@ public class RubyClass extends RubyModule {
 
         DynamicMethod me = sites.site.retrieveCache(klass).method;
         if (!checkFuncallCallable(context, me, CallType.FUNCTIONAL, self)) {
-            return checkFuncallMissing(context, klass, self, sites.methodName, sites.respond_to_missing, sites.method_missing);
+            // FIXME: Broken for mbc strings which are not Java charsets
+            return checkFuncallMissing(context, klass, self, sites.methodName.asJavaString(), sites.respond_to_missing, sites.method_missing);
         }
-        return me.call(context, self, klass, sites.methodName);
+        // FIXME: Broken for mbc strings which are not Java charsets
+        return me.call(context, self, klass, sites.methodName.asJavaString());
     }
 
     // MRI: check_funcall_exec
@@ -987,41 +983,52 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, getMetaClass(), "inherited", subclass, Block.NULL_BLOCK);
     }
 
+    protected CacheEntry initializeCacheEntry(ThreadContext context) {
+        CacheEntry entry = initializeCallCacheEntry;
+        if (entry == null) {
+            DynamicMethod method = searchMethod(context.runtime.newSymbol("initialize"));
+            entry = new CacheEntry(method, getGeneration());
+            initializeCallCacheEntry = entry;
+        }
+
+        return entry;
+    }
+
     /** rb_class_new_instance
     *
     */
     @JRubyMethod(name = "new", omit = true)
     public IRubyObject newInstance(ThreadContext context, Block block) {
         IRubyObject obj = allocate();
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, block);
+        initializeCacheEntry(context).method.call(context, obj, this, "initialize", block);
         return obj;
     }
 
     @JRubyMethod(name = "new", omit = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, Block block) {
         IRubyObject obj = allocate();
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, block);
+        initializeCacheEntry(context).method.call(context, obj, this, "initialize", arg0, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", omit = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         IRubyObject obj = allocate();
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, block);
+        initializeCacheEntry(context).method.call(context, obj, this, "initialize", arg0, arg1, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", omit = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         IRubyObject obj = allocate();
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, arg2, block);
+        initializeCacheEntry(context).method.call(context, obj, this, "initialize", arg0, arg1, arg2, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", rest = true, omit = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject obj = allocate();
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, args, block);
+        initializeCacheEntry(context).method.call(context, obj, this, "initialize", args, block);
         return obj;
     }
 
@@ -2324,33 +2331,12 @@ public class RubyClass extends RubyModule {
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
     private Set<RubyClass> subclasses;
-    public static final int CS_IDX_INITIALIZE = 0;
-    public enum CS_NAMES {
-        INITIALIZE("initialize");
 
-        CS_NAMES(String id) {
-            this.id = id;
-        }
-
-        private static final CS_NAMES[] VALUES = values();
-        public static final int length = VALUES.length;
-
-        public static CS_NAMES fromOrdinal(int ordinal) {
-            if (ordinal < 0 || ordinal >= VALUES.length) {
-                throw new RuntimeException("invalid rest: " + ordinal);
-            }
-            return VALUES[ordinal];
-        }
-
-        public final String id;
-    }
-
-    private final CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
-    {
-        for(int i = 0; i < baseCallSites.length; i++) {
-            baseCallSites[i] = MethodIndex.getFunctionalCallSite(CS_NAMES.fromOrdinal(i).id);
-        }
-    }
+    /**
+     * Because we need classes during bootstrap to callsite cache initialize and RubySymbol has not yet
+     * come into being we just maintain the cache entry manually.
+     */
+    private CacheEntry initializeCallCacheEntry;
 
     private CallSite[] extraCallSites;
 

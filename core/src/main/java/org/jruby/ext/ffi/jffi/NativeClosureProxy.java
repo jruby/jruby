@@ -25,7 +25,7 @@ final class NativeClosureProxy implements Closure {
     private final CallSite callSite;
 
     NativeClosureProxy(Ruby runtime, NativeFunctionInfo closureInfo, Object proc) {
-        this(runtime, closureInfo, proc,  new FunctionalCachingCallSite("call"));
+        this(runtime, closureInfo, proc,  new FunctionalCachingCallSite(runtime.newSymbol("call")));
     }
 
     NativeClosureProxy(Ruby runtime, NativeFunctionInfo closureInfo, Object proc, CallSite callSite) {

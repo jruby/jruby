@@ -201,15 +201,18 @@ public class DataConverters {
     }
     
     public static final class CallbackDataConverter extends NativeDataConverter {
-        private final CachingCallSite callSite = new FunctionalCachingCallSite("call");
+        private final CachingCallSite callSite;
         private final NativeCallbackFactory callbackFactory;
         private final NativeFunctionInfo functionInfo;
 
         public CallbackDataConverter(CallbackInfo cbInfo) {
-            this.callbackFactory = CallbackManager.getInstance().getCallbackFactory(cbInfo.getRuntime(), cbInfo);
-            this.functionInfo = new NativeFunctionInfo(cbInfo.getRuntime(),
+            Ruby runtime = cbInfo.getRuntime();
+            this.callbackFactory = CallbackManager.getInstance().getCallbackFactory(runtime, cbInfo);
+            this.functionInfo = new NativeFunctionInfo(runtime,
                     cbInfo.getReturnType(), cbInfo.getParameterTypes(),
                     cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT);
+
+            callSite = new FunctionalCachingCallSite(runtime.newSymbol("call"));
         }
         
         public NativeType nativeType() {

@@ -50,7 +50,7 @@ import org.jruby.runtime.MethodIndex;
  */
 public abstract class IOChannel implements Channel {
     private final IRubyObject io;
-    private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private final CallSite closeAdapter;
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -59,6 +59,8 @@ public abstract class IOChannel implements Channel {
      */
     protected IOChannel(final IRubyObject io) {
         this.io = io;
+
+        closeAdapter = MethodIndex.getFunctionalCallSite(io.getRuntime().newSymbol("close"));
     }
     
     public void close() throws IOException {
@@ -88,7 +90,7 @@ public abstract class IOChannel implements Channel {
 
     protected CallSite initReadSite() {
         if(io.respondsTo("read")) {
-            return MethodIndex.getFunctionalCallSite("read");
+            return MethodIndex.getFunctionalCallSite(io.getRuntime().newSymbol("read"));
         } else {
             throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `read' method");
         }
@@ -96,9 +98,9 @@ public abstract class IOChannel implements Channel {
 
     protected CallSite initWriteSite() {
         if(io.respondsTo("write")) {
-            return MethodIndex.getFunctionalCallSite("write");
+            return MethodIndex.getFunctionalCallSite(io.getRuntime().newSymbol("write"));
         } else if (io.respondsTo("<<")) {
-            return MethodIndex.getFunctionalCallSite("<<");
+            return MethodIndex.getFunctionalCallSite(io.getRuntime().newSymbol("<<"));
         } else {
             throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `write' method");
         }

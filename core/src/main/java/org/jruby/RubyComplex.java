@@ -438,11 +438,8 @@ public class RubyComplex extends RubyNumeric {
     }
 
     private static boolean responds_to_to_c(ThreadContext context, IRubyObject obj) {
-        return respond_to_to_c.respondsTo(context, obj, obj);
+        return sites(context).respond_to_to_c.respondsTo(context, obj, obj);
     }
-
-    // TODO: wasn't sure whether to put this on NumericSites, here for now - should move
-    static final RespondToCallSite respond_to_to_c = new RespondToCallSite("to_c");
 
     /** nucomp_s_convert
      * 

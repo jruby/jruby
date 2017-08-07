@@ -1562,22 +1562,22 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static FunctionalCachingCallSite newFunctionalCachingCallSite(String name) {
+    public static FunctionalCachingCallSite newFunctionalCachingCallSite(RubySymbol name) {
         return new FunctionalCachingCallSite(name);
     }
 
     @JIT
-    public static NormalCachingCallSite newNormalCachingCallSite(String name) {
+    public static NormalCachingCallSite newNormalCachingCallSite(RubySymbol name) {
         return new NormalCachingCallSite(name);
     }
 
     @JIT
-    public static VariableCachingCallSite newVariableCachingCallSite(String name) {
+    public static VariableCachingCallSite newVariableCachingCallSite(RubySymbol name) {
         return new VariableCachingCallSite(name);
     }
 
     @JIT
-    public static RefinedCachingCallSite newRefinedCachingCallSite(String name, String callType) {
+    public static RefinedCachingCallSite newRefinedCachingCallSite(RubySymbol name, String callType) {
         return new RefinedCachingCallSite(name, CallType.valueOf(callType));
     }
 

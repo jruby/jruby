@@ -197,7 +197,12 @@ public class Helpers {
         return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, block);
     }
 
+    @Deprecated
     public static DynamicMethod selectMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType) {
+        return selectMethodMissing(context, receiver, visibility, context.runtime.newSymbol(name), callType);
+    }
+
+    public static DynamicMethod selectMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, RubySymbol name, CallType callType) {
         Ruby runtime = context.runtime;
 
         if (name.equals("method_missing")) {

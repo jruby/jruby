@@ -36,6 +36,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jruby.Ruby;
+import org.jruby.RubySymbol;
+import org.jruby.ir.JIT;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
@@ -94,9 +97,9 @@ public class MethodIndex {
     public static final Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
     public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
 
-    public static CallSite getCallSite(String name) {
+    public static CallSite getCallSite(RubySymbol name) {
         // fast and safe respond_to? call site logic
-        if (name.equals("respond_to?")) return new RespondToCallSite();
+        if (name.asJavaString().equals("respond_to?")) return new RespondToCallSite(name.getRuntime());
 
         // only use fast ops if we're not tracing
         if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED &&
@@ -154,22 +157,25 @@ public class MethodIndex {
         return FIXNUM_OPS.get(name);
     }
 
-    public static CallSite getFastFixnumOpsCallSite(String name) {
-        switch (name) {
-            case "+" : return new PlusCallSite();
-            case "-" : return new MinusCallSite();
-            case "*" : return new MulCallSite();
-            case "<" : return new LtCallSite();
-            case "<=" : return new LeCallSite();
-            case ">" : return new GtCallSite();
-            case ">=" : return new GeCallSite();
-            case "==" : return new EqCallSite();
-            case "<=>" : return new CmpCallSite();
-            case "&" : return new BitAndCallSite();
-            case "|" : return new BitOrCallSite();
-            case "^" : return new XorCallSite();
-            case ">>" : return new ShiftRightCallSite();
-            case "<<" : return new ShiftLeftCallSite();
+    @JIT
+    public static CallSite getFastFixnumOpsCallSite(RubySymbol name) {
+        Ruby runtime = name.getRuntime();
+
+        switch (name.asJavaString()) {
+            case "+" : return new PlusCallSite(runtime);
+            case "-" : return new MinusCallSite(runtime);
+            case "*" : return new MulCallSite(runtime);
+            case "<" : return new LtCallSite(runtime);
+            case "<=" : return new LeCallSite(runtime);
+            case ">" : return new GtCallSite(runtime);
+            case ">=" : return new GeCallSite(runtime);
+            case "==" : return new EqCallSite(runtime);
+            case "<=>" : return new CmpCallSite(runtime);
+            case "&" : return new BitAndCallSite(runtime);
+            case "|" : return new BitOrCallSite(runtime);
+            case "^" : return new XorCallSite(runtime);
+            case ">>" : return new ShiftRightCallSite(runtime);
+            case "<<" : return new ShiftLeftCallSite(runtime);
         }
         return new NormalCachingCallSite(name);
     }
@@ -182,40 +188,34 @@ public class MethodIndex {
         return FLOAT_OPS.get(name);
     }
 
-    public static CallSite getFastFloatOpsCallSite(String name) {
-        if (name.equals("+")) {
-            return new PlusCallSite();
-        } else if (name.equals("-")) {
-            return new MinusCallSite();
-        } else if (name.equals("*")) {
-            return new MulCallSite();
-        } else if (name.equals("<")) {
-            return new LtCallSite();
-        } else if (name.equals("<=")) {
-            return new LeCallSite();
-        } else if (name.equals(">")) {
-            return new GtCallSite();
-        } else if (name.equals(">=")) {
-            return new GeCallSite();
-        } else if (name.equals("==")) {
-            return new EqCallSite();
-        } else if (name.equals("<=>")) {
-            return new CmpCallSite();
+    public static CallSite getFastFloatOpsCallSite(RubySymbol name) {
+        Ruby runtime = name.getRuntime();
+
+        switch (name.asJavaString()) {
+            case "+": return new PlusCallSite(runtime);
+            case "-": return new MinusCallSite(runtime);
+            case "*": return new MulCallSite(runtime);
+            case "<": return new LtCallSite(runtime);
+            case "<=": return new LeCallSite(runtime);
+            case ">": return new GtCallSite(runtime);
+            case ">=": return new GeCallSite(runtime);
+            case "==": return new EqCallSite(runtime);
+            case "<=>": return new CmpCallSite(runtime);
         }
 
         return new NormalCachingCallSite(name);
     }
 
-    public static CallSite getFunctionalCallSite(String name) {
+    public static CallSite getFunctionalCallSite(RubySymbol name) {
         return new FunctionalCachingCallSite(name);
     }
 
-    public static CallSite getVariableCallSite(String name) {
+    public static CallSite getVariableCallSite(RubySymbol name) {
         return new VariableCachingCallSite(name);
     }
 
-    public static CallSite getSuperCallSite() {
-        return new SuperCallSite();
+    public static CallSite getSuperCallSite(Ruby runtime) {
+        return new SuperCallSite(runtime);
     }
 
     public static void addFrameAwareMethods(String... methods) {

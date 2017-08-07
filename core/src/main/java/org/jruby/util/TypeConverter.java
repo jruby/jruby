@@ -111,7 +111,8 @@ public class TypeConverter {
     public static IRubyObject convertToType(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(context, obj, target, sites, true);
-        if (!target.isInstance(val)) throw newTypeError(context.runtime, obj, target, sites.methodName, val);
+        // FIXME: Type may report weird name on non-java charset method name
+        if (!target.isInstance(val)) throw newTypeError(context.runtime, obj, target, sites.methodName.asJavaString(), val);
         return val;
     }
 
@@ -225,7 +226,8 @@ public class TypeConverter {
         IRubyObject val = convertToType(context, obj, target, sites, false);
         if (val.isNil()) return val;
         if (!target.isInstance(val)) {
-            throw newTypeError(context.runtime, obj, target, sites.methodName, val);
+            // FIXME: Type may report weird name on non-java charset method name
+            throw newTypeError(context.runtime, obj, target, sites.methodName.asJavaString(), val);
         }
         return val;
     }

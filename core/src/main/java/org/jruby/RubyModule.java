@@ -1312,7 +1312,7 @@ public class RubyModule extends RubyObject {
      * @param refinedScope the scope containing refinements to search
      * @return the method or UndefinedMethod
      */
-    public DynamicMethod searchWithRefinements(String name, StaticScope refinedScope) {
+    public DynamicMethod searchWithRefinements(RubySymbol name, StaticScope refinedScope) {
         DynamicMethod method = searchMethodWithRefinementsInner(name, refinedScope);
 
         if (method instanceof CacheableMethod) {
@@ -1324,6 +1324,11 @@ public class RubyModule extends RubyObject {
         }
 
         return UndefinedMethod.INSTANCE;
+    }
+
+    @Deprecated
+    public DynamicMethod searchWithRefinements(String name, StaticScope refinedScope) {
+        return searchWithRefinements(getRuntime().newSymbol(name), refinedScope);
     }
 
     /**
@@ -1918,7 +1923,7 @@ public class RubyModule extends RubyObject {
 
     public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
         final CallSite site;
-        public RespondToMissingMethod(RubyModule implClass, Visibility vis, String methodName) {
+        public RespondToMissingMethod(RubyModule implClass, Visibility vis, RubySymbol methodName) {
             super(implClass, vis);
 
             setParameterList(REST);
@@ -1946,18 +1951,22 @@ public class RubyModule extends RubyObject {
 
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
+    public IRubyObject newMethod(IRubyObject receiver, final RubySymbol methodName, boolean bound,
+                                 Visibility visibility, boolean respondToMissing, boolean priv) {
         DynamicMethod method = searchMethod(methodName);
 
         if (method.isUndefined() || (visibility != null && method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
-                if (receiver.respondsToMissing(methodName, priv)) {
+                // FIXME: Broken for mbc strings which are not Java charsets
+                if (receiver.respondsToMissing(methodName.asJavaString(), priv)) {
                     method = new RespondToMissingMethod(this, PUBLIC, methodName);
                 } else {
-                    throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName);
+                    // FIXME: Broken for mbc strings which are not Java charsets
+                    throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName.asJavaString());
                 }
             } else {
-                throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName);
+                // FIXME: Broken for mbc strings which are not Java charsets
+                throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName.asJavaString());
             }
         }
 
@@ -1969,13 +1978,20 @@ public class RubyModule extends RubyObject {
 
         AbstractRubyMethod newMethod;
         if (bound) {
-            newMethod = RubyMethod.newMethod(implementationModule, methodName, originModule, methodName, method, receiver);
+            // FIXME: Broken for mbc strings which are not Java charsets
+            newMethod = RubyMethod.newMethod(implementationModule, methodName.asJavaString(), originModule, methodName.asJavaString(), method, receiver);
         } else {
-            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, methodName, method);
+            // FIXME: Broken for mbc strings which are not Java charsets
+            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, methodName.asJavaString(), originModule, methodName.asJavaString(), method);
         }
         newMethod.infectBy(this);
 
         return newMethod;
+    }
+
+    @Deprecated
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
+        return newMethod(receiver, getRuntime().newSymbol(methodName), bound, visibility, respondToMissing, priv);
     }
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
@@ -2011,7 +2027,7 @@ public class RubyModule extends RubyObject {
             IRMethod method = closure.convertToMethod(name);
             if (method != null) {
                 newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
-                Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+                Helpers.addInstanceMethod(this, nameSym, newMethod, visibility, context, runtime);
                 return nameSym;
             }
         }
@@ -2024,7 +2040,7 @@ public class RubyModule extends RubyObject {
 
         newMethod = createProcMethod(name, visibility, proc);
 
-        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+        Helpers.addInstanceMethod(this, nameSym, newMethod, visibility, context, runtime);
 
         return nameSym;
     }

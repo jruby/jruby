@@ -399,11 +399,8 @@ public class RubyRational extends RubyNumeric {
     }
 
     private static boolean responds_to_to_r(ThreadContext context, IRubyObject obj) {
-        return respond_to_to_r.respondsTo(context, obj, obj);
+        return sites(context).respond_to_to_r.respondsTo(context, obj, obj);
     }
-
-    // TODO: wasn't sure whether to put this on NumericSites, here for now - should move
-    static final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
 
     /** nurat_numerator
      * 

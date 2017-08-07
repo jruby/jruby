@@ -21,7 +21,7 @@ public class NativeCallbackFactory {
     private final NativeFunctionInfo closureInfo;
     private final CallbackInfo callbackInfo;
     private final RubyClass callbackClass;
-    private final CachingCallSite callSite = new FunctionalCachingCallSite("call");
+    private final CachingCallSite callSite;
 
     public NativeCallbackFactory(Ruby runtime, CallbackInfo cbInfo) {
         this.runtime = runtime;
@@ -29,6 +29,7 @@ public class NativeCallbackFactory {
         this.closurePool = com.kenai.jffi.ClosureManager.getInstance().getClosurePool(closureInfo.callContext);
         this.callbackInfo = cbInfo;
         this.callbackClass = runtime.getModule("FFI").getClass("Callback");
+        this.callSite = new FunctionalCachingCallSite(runtime.newSymbol("call"));
     }
 
     public final Pointer getCallback(RubyObject callable) {
@@ -65,8 +66,8 @@ public class NativeCallbackFactory {
     }
 
     NativeCallbackPointer newCallback(IRubyObject callable, CachingCallSite callSite) {
-        if (callSite.retrieveCache(callable.getMetaClass(), callSite.getMethodName()).method.isUndefined()) {
-            throw runtime.newArgumentError("callback does not respond to :" + callSite.getMethodName());
+        if (callSite.retrieveCache(callable.getMetaClass(), callSite.getMethodSymbolName()).method.isUndefined()) {
+            throw runtime.newArgumentError("callback does not respond to :" + callSite.getMethodSymbolName());
         }
 
         return new NativeCallbackPointer(runtime, callbackClass,

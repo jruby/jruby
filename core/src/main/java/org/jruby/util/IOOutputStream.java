@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.Ruby;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
@@ -52,7 +53,7 @@ public class IOOutputStream extends OutputStream {
     private final IRubyObject io;
     private final OutputStream out;
     private final CallSite writeAdapter;
-    private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private final CallSite closeAdapter;
     private final Encoding encoding;
 
     /**
@@ -62,11 +63,13 @@ public class IOOutputStream extends OutputStream {
      */
     public IOOutputStream(final IRubyObject io, Encoding encoding, boolean checkAppend, boolean verifyCanWrite) {
         this.io = io;
-        CallSite writeSite = MethodIndex.getFunctionalCallSite("write");
+        Ruby runtime = io.getRuntime();
+        closeAdapter = MethodIndex.getFunctionalCallSite(runtime.newSymbol("close"));
+        CallSite writeSite = MethodIndex.getFunctionalCallSite(runtime.newSymbol("write"));
         if (io.respondsTo("write")) {
             writeAdapter = writeSite;
         } else if (checkAppend && io.respondsTo("<<")) {
-            writeAdapter = MethodIndex.getFunctionalCallSite("<<");
+            writeAdapter = MethodIndex.getFunctionalCallSite(runtime.newSymbol("<<"));
         } else if (verifyCanWrite) {
             throw io.getRuntime().newArgumentError("Object: " + io + " is not a legal argument to this wrapper, " +
                         "cause it doesn't respond to \"write\".");
