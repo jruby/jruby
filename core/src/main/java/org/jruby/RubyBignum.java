@@ -1114,6 +1114,11 @@ public class RubyBignum extends RubyInteger {
         return (-0.415241 * ndigits - 0.125 > bytes);
     }
 
+    @Override
+    public boolean isImmediate() {
+        return true;
+    }
+
     @Deprecated
     public final IRubyObject op_pow(final ThreadContext context, final long other) {
         if (other >= 0) {
