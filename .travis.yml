@@ -65,7 +65,7 @@ matrix:
     - env: PHASE='-Posgi'
       jdk: openjdk7
     - env: PHASE='-Pj2ee'
-      jdk: oraclejdk7
+      jdk: oraclejdk8
     # These next two started crashing on JDK7 in March 2015, possibly due to JVM issues on Travis's Docker-based env
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
       jdk: oraclejdk8
