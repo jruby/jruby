@@ -1,0 +1,2 @@
+fails:WeakRef#weakref_alive? returns true if the object is reachable
+fails:WeakRef#weakref_alive? returns a falsey value if the object is no longer reachable
