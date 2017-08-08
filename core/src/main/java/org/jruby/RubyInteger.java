@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -643,12 +644,11 @@ public abstract class RubyInteger extends RubyNumeric {
 
     static IRubyObject toInteger(ThreadContext context, IRubyObject num) {
         if (num instanceof RubyInteger) return num;
-        if (num instanceof RubyNumeric && !num.callMethod(context, "integer?").isTrue()) {
+        if (num instanceof RubyNumeric && !integer_p(context).call(context, num, num).isTrue()) { // num.integer?
             return null;
         }
         if (num instanceof RubyString) return null; // do not want String#to_i
-        if (num.respondsTo("to_i")) return num.callMethod(context, "to_i");
-        return null;
+        return num.checkCallMethod(context, sites(context).to_i_checked);
     }
 
     @JRubyMethod(name = "digits")
@@ -800,6 +800,10 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public IRubyObject size() {
         return size(getRuntime().getCurrentContext());
+    }
+
+    private static CallSite integer_p(ThreadContext context) {
+        return context.sites.Numeric.integer;
     }
 
     private static JavaSites.IntegerSites sites(ThreadContext context) {
