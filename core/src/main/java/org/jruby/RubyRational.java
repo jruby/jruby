@@ -848,7 +848,7 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_ceil
     private IRubyObject mriCeil(ThreadContext context) {
-        return ((RubyInteger) ((RubyInteger) num.op_uminus()).idiv(context, den)).op_uminus();
+        return ((RubyInteger) ((RubyInteger) num.op_uminus(context)).idiv(context, den)).op_uminus(context);
     }
     
     @JRubyMethod(name = "to_i")
@@ -871,7 +871,7 @@ public class RubyRational extends RubyNumeric {
 
     private IRubyObject mriTruncate(ThreadContext context) {
         if (num.isNegative(context).isTrue()) {
-            return ((RubyInteger) ((RubyInteger) num.op_uminus()).idiv(context, den)).op_uminus();
+            return ((RubyInteger) ((RubyInteger) num.op_uminus(context)).idiv(context, den)).op_uminus(context);
         }
         return num.idiv(context, den);
     }
@@ -979,7 +979,7 @@ public class RubyRational extends RubyNumeric {
         neg = num.isNegative(context);
 
         if (neg.isTrue()) {
-            num = (RubyInteger) num.op_uminus();
+            num = (RubyInteger) num.op_uminus(context);
         }
 
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
@@ -988,7 +988,7 @@ public class RubyRational extends RubyNumeric {
         num = (RubyInteger) num.idiv(context, den);
 
         if (neg.isTrue())
-            num = (RubyInteger) num.op_uminus();
+            num = (RubyInteger) num.op_uminus(context);
 
         return num;
     }
@@ -1032,7 +1032,7 @@ public class RubyRational extends RubyNumeric {
         neg = num.isNegative(context);
 
         if (neg.isTrue()) {
-            num = (RubyInteger) num.op_uminus();
+            num = (RubyInteger) num.op_uminus(context);
         }
 
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
@@ -1040,7 +1040,7 @@ public class RubyRational extends RubyNumeric {
         num = (RubyInteger) num.idiv(context, den);
 
         if (neg.isTrue()) {
-            num = (RubyInteger) num.op_uminus();
+            num = (RubyInteger) num.op_uminus(context);
         }
 
         return num;

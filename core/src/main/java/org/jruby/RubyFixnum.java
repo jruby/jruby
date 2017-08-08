@@ -1192,9 +1192,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject op_lshift(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof RubyFixnum)) return RubyBignum.newBignum(context.runtime, value).op_lshift(other);
+        if (!(other instanceof RubyFixnum)) {
+            return RubyBignum.newBignum(context.runtime, value).op_lshift(context, other);
+        }
 
-        return op_lshift(((RubyFixnum)other).getLongValue());
+        return op_lshift(((RubyFixnum) other).getLongValue());
     }
 
     public IRubyObject op_lshift(long width) {
@@ -1213,9 +1215,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject op_rshift(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof RubyFixnum)) return RubyBignum.newBignum(context.runtime, value).op_rshift(other);
+        if (!(other instanceof RubyFixnum)) {
+            return RubyBignum.newBignum(context.runtime, value).op_rshift(context, other);
+        }
 
-        return op_rshift(((RubyFixnum)other).getLongValue());
+        return op_rshift(((RubyFixnum) other).getLongValue());
     }
 
     public IRubyObject op_rshift(long width) {
