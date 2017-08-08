@@ -225,9 +225,12 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "birthtime")
     public IRubyObject birthtime() {
         checkInitialized();
-        FileTime btime = RubyFile.getBirthtimeWithNIO(file.absolutePath());
-        if (btime != null) return getRuntime().newTime(btime.toMillis());
-        return ctime();
+        FileTime btime = null;
+
+        if (file == null || (btime = RubyFile.getBirthtimeWithNIO(file.absolutePath())) == null) {
+            return ctime();
+        }
+        return getRuntime().newTime(btime.toMillis());
     }
 
     @JRubyMethod(name = "dev")
