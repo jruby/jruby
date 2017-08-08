@@ -666,12 +666,13 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(IRubyObject other) {
-        if (getMetaClass() == other.getMetaClass()) return getRuntime().newArray(other, this);
+        final Ruby runtime = getRuntime();
+        if (getMetaClass() == other.getMetaClass()) return runtime.newArray(other, this);
 
-        IRubyObject cdr = RubyKernel.new_float(this, this);
-        IRubyObject car = RubyKernel.new_float(this, other);
+        IRubyObject cdr = RubyKernel.new_float(runtime, this);
+        IRubyObject car = RubyKernel.new_float(runtime, other);
 
-        return getRuntime().newArray(car, cdr);
+        return runtime.newArray(car, cdr);
     }
 
     /** num_uplus

@@ -255,7 +255,8 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "coerce", required = 1)
     @Override
     public IRubyObject coerce(IRubyObject other) {
-        return getRuntime().newArray(RubyKernel.new_float(this, other), this);
+        final Ruby runtime = getRuntime();
+        return runtime.newArray(RubyKernel.new_float(runtime, other), this);
     }
 
     /** flo_uminus

@@ -888,13 +888,7 @@ public class Sprintf {
                     arg = args.getArg();
 
                     if (!(arg instanceof RubyFloat)) {
-                        // FIXME: what is correct 'recv' argument?
-                        // (this does produce the desired behavior)
-                        if (usePrefixForZero) {
-                            arg = RubyKernel.new_float(arg,arg);
-                        } else {
-                            arg = RubyKernel.new_float19(arg,arg);
-                        }
+                        arg = RubyKernel.new_float(runtime.getFloat(), arg);
                     }
                     double dval = ((RubyFloat)arg).getDoubleValue();
                     boolean nan = dval != dval;

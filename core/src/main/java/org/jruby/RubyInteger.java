@@ -35,7 +35,6 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
-import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
@@ -49,7 +48,6 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
 import java.math.RoundingMode;
@@ -374,24 +372,6 @@ public abstract class RubyInteger extends RubyNumeric {
         return chr(context, arg);
     }
 
-    private ByteList fromEncodedBytes(Ruby runtime, Encoding enc, long value) {
-        int n = value < 0 ? 0 : enc.codeToMbcLength((int)value);
-
-        if (n <= 0) throw runtime.newRangeError(this.toString() + " out of char range");
-
-        ByteList bytes = new ByteList(n);
-
-        enc.codeToMbc((int)value, bytes.getUnsafeBytes(), 0);
-        boolean ok = StringSupport.preciseLength(enc, bytes.unsafeBytes(), 0, n) == n;
-
-        if (!ok) {
-            throw runtime.newRangeError("invalid codepoint " + String.format("0x%x in ", value) + enc.getCharsetName());
-        }
-
-        bytes.setRealSize(n);
-        return bytes;
-    }
-
     /** int_ord
      *
      */
@@ -444,18 +424,17 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @JRubyMethod(name = "round")
-    public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
+    public IRubyObject round(ThreadContext context, IRubyObject digits, IRubyObject _opts) {
         Ruby runtime = context.runtime;
-        int ndigits = 0;
 
         // options (only "half" right now)
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts);
-        ndigits = num2int(_digits);
+        int ndigits = num2int(digits);
 
         RoundingMode roundingMode = getRoundingMode(context, opts);
 
         if (ndigits > 0) {
-            return RubyKernel.new_float19(runtime.getFloat(), this);
+            return RubyKernel.new_float(runtime, this);
         }
         if (ndigits == 0) {
             return this;

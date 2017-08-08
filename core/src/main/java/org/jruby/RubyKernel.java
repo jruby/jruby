@@ -383,35 +383,47 @@ public class RubyKernel {
         return sites(context).convert_rational.call(context, rational, rational, arg0, arg1);
     }
 
-    public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
-        return new_float19(recv, object);
+    @Deprecated
+    public static RubyFloat new_float19(IRubyObject recv, IRubyObject object) {
+        return new_float(recv, object);
     }
 
     @JRubyMethod(name = "Float", module = true, visibility = PRIVATE)
-    public static RubyFloat new_float19(IRubyObject recv, IRubyObject object) {
-        Ruby runtime = recv.getRuntime();
-        if(object instanceof RubyFixnum){
-            return RubyFloat.newFloat(runtime, ((RubyFixnum)object).getDoubleValue());
-        } else if (object instanceof RubyFloat) {
-            return (RubyFloat)object;
-        } else if(object instanceof RubyBignum){
-            return RubyFloat.newFloat(runtime, RubyBignum.big2dbl((RubyBignum)object));
-        } else if(object instanceof RubyString){
-            if(((RubyString) object).getByteList().getRealSize() == 0){ // rb_cstr_to_dbl case
+    public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
+        return new_float(recv.getRuntime(), object);
+    }
+
+    static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
+        if (object instanceof RubyInteger){
+            return new_float(runtime, (RubyInteger) object);
+        }
+        if (object instanceof RubyFloat) {
+            return (RubyFloat) object;
+        }
+        if (object instanceof RubyString){
+            RubyString str = (RubyString) object;
+            ByteList bytes = str.getByteList();
+            if (bytes.getRealSize() == 0){ // rb_cstr_to_dbl case
                 throw runtime.newArgumentError("invalid value for Float(): " + object.inspect());
             }
-            RubyString arg = (RubyString)object;
-            if (arg.toString().startsWith("0x")) {
-                return ConvertBytes.byteListToInum(runtime, arg.getByteList(), 16, true).toFloat();
+            if (str.toString().startsWith("0x")) {
+                return ConvertBytes.byteListToInum(runtime, bytes, 16, true).toFloat();
             }
-            return RubyNumeric.str2fnum(runtime, arg, true);
-        } else if(object.isNil()){
-            throw runtime.newTypeError("can't convert nil into Float");
-        } else {
-            ThreadContext context = runtime.getCurrentContext();
-            KernelSites sites = sites(context);
-            return (RubyFloat)TypeConverter.convertToType(context, object, runtime.getFloat(), sites.to_f_checked);
+            return RubyNumeric.str2fnum(runtime, str, true);
         }
+        if (object.isNil()){
+            throw runtime.newTypeError("can't convert nil into Float");
+        }
+        ThreadContext context = runtime.getCurrentContext();
+        KernelSites sites = sites(context);
+        return (RubyFloat) TypeConverter.convertToType(context, object, runtime.getFloat(), sites.to_f_checked);
+    }
+
+    static RubyFloat new_float(final Ruby runtime, RubyInteger num) {
+        if (num instanceof RubyBignum) {
+            return RubyFloat.newFloat(runtime, RubyBignum.big2dbl((RubyBignum) num));
+        }
+        return RubyFloat.newFloat(runtime, ((RubyFixnum) num).getDoubleValue());
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
