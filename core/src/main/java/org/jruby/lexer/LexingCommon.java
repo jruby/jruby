@@ -13,6 +13,7 @@ import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
+import org.jruby.javasupport.ext.JavaLang;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
@@ -904,41 +905,101 @@ public abstract class LexingCommon {
     public static final String magicString = "^[^\\S]*([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*[^\\S]*$";
     public static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
 
-
-    // MRI: parser_magic_comment
-    public boolean parseMagicComment(Ruby runtime, ByteList magicLine) throws IOException {
-        int length = magicLine.length();
+    public boolean parser_magic_comment(ByteList magicLine) {
+        boolean indicator = false;
+        int vbeg, vend;
+        int length = magicLine.realSize();
+        int str = 0;
+        int end;
 
         if (length <= 7) return false;
         int beg = magicCommentMarker(magicLine, 0);
         if (beg >= 0) {
-            int end = magicCommentMarker(magicLine, beg);
+            end = magicCommentMarker(magicLine, beg);
             if (end < 0) return false;
+            indicator = true;
+            str = beg;
             length = end - beg - 3; // -3 is to backup over end just found
-        } else {
-            beg = 0;
         }
 
-        int begin = magicLine.getBegin() + beg;
-        Matcher matcher = magicRegexp.matcher(magicLine.unsafeBytes(), begin, begin + length);
-        int result = RubyRegexp.matcherSearch(runtime, matcher, begin, begin + length, Option.NONE);
+        /* %r"([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*" */
+        while (length > 0) {
+            int i;
+            long n = 0;
 
-        if (result < 0) return false;
+            for (; length > 0; str++, --length) {
+                char c = magicLine.charAt(str);
 
-        // Regexp is guaranteed to have three matches
-        int begs[] = matcher.getRegion().beg;
-        int ends[] = matcher.getRegion().end;
-        String name = magicLine.subSequence(beg + begs[1], beg + ends[1]).toString().replace('-', '_');
-        ByteList value = magicLine.makeShared(beg + begs[2], ends[2] - begs[2]);
+                switch (c) {
+                    case '\'': case '"': case ':': case ';': continue;
+                }
+                if (!Character.isWhitespace(c)) break;
+            }
 
-        if ("coding".equals(name) || "encoding".equals(name)) {
-            magicCommentEncoding(value);
-        } else if ("frozen_string_literal".equals(name)) {
-            setCompileOptionFlag(name, value);
-        } else if ("warn_indent".equals(name)) {
-            setTokenInfo(name, value);
-        } else {
-            return false;
+            for (beg = str; length > 0; str++, --length) {
+                char c = magicLine.charAt(str);
+
+                switch (c) {
+                    case '\'': case '"': case ':': case ';': break;
+                    default:
+                        if (Character.isWhitespace(c)) break;
+                    continue;
+                }
+                break;
+            }
+            for (end = str; length > 0 && Character.isWhitespace(magicLine.charAt(str)); str++, --length);
+            if (length == 0) break;
+            char c = magicLine.charAt(str);
+            if (c != ':') {
+                if (!indicator) return false;
+                continue;
+            }
+
+            do {
+                str++;
+            } while (--length > 0 && Character.isWhitespace(magicLine.charAt(str)));
+            if (length == 0) break;
+            if (magicLine.charAt(str) == '"') {
+                for (vbeg = ++str; --length > 0 && str < length && magicLine.charAt(str) != '"'; str++) {
+                    if (magicLine.charAt(str) == '\\') {
+                        --length;
+                        ++str;
+                    }
+                }
+                vend = str;
+                if (length > 0) {
+                    --length;
+                    ++str;
+                }
+            } else {
+                for (vbeg = str; length > 0 && magicLine.charAt(str) != '"' && magicLine.charAt(str) != ';' && !Character.isWhitespace(magicLine.charAt(str)); --length, str++);
+                vend = str;
+            }
+            if (indicator) {
+                while (length > 0 && (magicLine.charAt(str) == ';' || Character.isWhitespace(magicLine.charAt(str)))) {
+                    --length;
+                    str++;
+                }
+            } else {
+                while (length > 0 && Character.isWhitespace(magicLine.charAt(str))) {
+                    --length;
+                    str++;
+                }
+                if (length > 0) return false;
+            }
+
+            String name = magicLine.subSequence(beg, end).toString().replace('-', '_');
+            ByteList value = magicLine.makeShared(vbeg, vend - vbeg);
+
+            if ("coding".equals(name) || "encoding".equals(name)) {
+                magicCommentEncoding(value);
+            } else if ("frozen_string_literal".equals(name)) {
+                setCompileOptionFlag(name, value);
+            } else if ("warn_indent".equals(name)) {
+                setTokenInfo(name, value);
+            } else {
+                return false;
+            }
         }
 
         return true;
