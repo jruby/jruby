@@ -325,7 +325,6 @@ public abstract class InvokeSite extends MutableCallSite {
     MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, DynamicMethod method, SwitchPoint switchPoint) {
         MethodHandle fallback;
         MethodHandle gwt;
-        String bind = "bind";
 
         CacheAction cacheAction = testThresholds(testClass);
         switch (cacheAction) {
