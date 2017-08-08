@@ -887,13 +887,10 @@ public class Sprintf {
                 case 'g': {
                     arg = args.getArg();
 
-                    if (!(arg instanceof RubyFloat)) {
-                        arg = RubyKernel.new_float(runtime.getFloat(), arg);
-                    }
-                    double dval = ((RubyFloat)arg).getDoubleValue();
+                    double dval = RubyKernel.new_float(runtime.getFloat(), arg).getDoubleValue();
                     boolean nan = dval != dval;
                     boolean inf = dval == Double.POSITIVE_INFINITY || dval == Double.NEGATIVE_INFINITY;
-                    boolean negative = dval < 0.0d || (dval == 0.0d && (new Float(dval)).equals(new Float(-0.0)));
+                    boolean negative = dval < 0.0d || (dval == 0.0d && Double.doubleToLongBits(dval) == Double.doubleToLongBits(-0.0));
 
                     byte[] digits;
                     int nDigits = 0;
