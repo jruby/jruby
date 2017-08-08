@@ -393,6 +393,8 @@ public class RubyKernel {
         return new_float(recv.getRuntime(), object);
     }
 
+    private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
+
     static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
         if (object instanceof RubyInteger){
             return new_float(runtime, (RubyInteger) object);
@@ -406,7 +408,8 @@ public class RubyKernel {
             if (bytes.getRealSize() == 0){ // rb_cstr_to_dbl case
                 throw runtime.newArgumentError("invalid value for Float(): " + object.inspect());
             }
-            if (str.toString().startsWith("0x")) {
+
+            if (bytes.startsWith(ZEROx)) { // startsWith("0x")
                 return ConvertBytes.byteListToInum(runtime, bytes, 16, true).toFloat();
             }
             return RubyNumeric.str2fnum(runtime, str, true);
