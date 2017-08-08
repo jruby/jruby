@@ -222,9 +222,11 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     static IRubyObject intValue(ThreadContext context, IRubyObject num) {
-        intCheck(context, num);
-        if (!(num instanceof RubyInteger)) num = num.callMethod(context, "to_f");
-        return num;
+        IRubyObject i;
+        if (( i = RubyInteger.toInteger(context, num) ) == null) {
+            throw context.runtime.newTypeError("can't convert " + num.getMetaClass().getName() + " into Rational");
+        }
+        return i;
     }
     
     /** nurat_s_canonicalize_internal

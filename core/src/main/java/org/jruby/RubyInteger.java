@@ -607,7 +607,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcd")
     public IRubyObject gcd(ThreadContext context, IRubyObject other) {
-        return f_gcd(context, this, toInteger(context, other));
+        return f_gcd(context, this, RubyInteger.intValue(context, other));
     }
 
     // MRI: rb_int_fdiv_double and rb_int_fdiv in one
@@ -631,7 +631,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "lcm")
     public IRubyObject lcm(ThreadContext context, IRubyObject other) {
-        return f_lcm(context, this, toInteger(context, other));
+        return f_lcm(context, this, RubyInteger.intValue(context, other));
     }
 
     /** rb_gcdlcm
@@ -639,16 +639,26 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcdlcm")
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
-        other = toInteger(context, other);
+        other = RubyInteger.intValue(context, other);
         return context.runtime.newArray(f_gcd(context, this, other), f_lcm(context, this, other));
+    }
+
+    static IRubyObject intValue(ThreadContext context, IRubyObject num) {
+        IRubyObject i;
+        if (( i = RubyInteger.toInteger(context, num) ) == null) {
+            throw context.runtime.newTypeError("not an integer");
+        }
+        return i;
     }
 
     static IRubyObject toInteger(ThreadContext context, IRubyObject num) {
         if (num instanceof RubyInteger) return num;
         if (num instanceof RubyNumeric && !num.callMethod(context, "integer?").isTrue()) {
-            throw context.runtime.newTypeError("not an integer");
+            return null;
         }
-        return num.callMethod(context, "to_i");
+        if (num instanceof RubyString) return null; // do not want String#to_i
+        if (num.respondsTo("to_i")) return num.callMethod(context, "to_i");
+        return null;
     }
 
     @JRubyMethod(name = "digits")
