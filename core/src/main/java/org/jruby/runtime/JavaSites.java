@@ -396,7 +396,6 @@ public class JavaSites {
     }
 
     public static class WarningSites {
-        public final CheckedSites to_int_checked = new CheckedSites("to_str");
         public final CallSite warn = new FunctionalCachingCallSite("warn");
         public final CallSite write = new FunctionalCachingCallSite("write");
     }
