@@ -142,9 +142,8 @@ public abstract class RubyInteger extends RubyNumeric {
 
     private static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
         // We must avoid "i++" integer overflow when (to == Long.MAX_VALUE).
-        Ruby runtime = context.runtime;
         if (block.getSignature() == Signature.NO_ARGUMENTS) {
-            IRubyObject nil = runtime.getNil();
+            IRubyObject nil = context.nil;
             long i;
             for (i = from; i < to; i++) {
                 block.yield(context, nil);
@@ -153,6 +152,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 block.yield(context, nil);
             }
         } else {
+            Ruby runtime = context.runtime;
             long i;
             for (i = from; i < to; i++) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
@@ -205,9 +205,8 @@ public abstract class RubyInteger extends RubyNumeric {
 
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {
         // We must avoid "i--" integer overflow when (to == Long.MIN_VALUE).
-        Ruby runtime = context.runtime;
         if (block.getSignature() == Signature.NO_ARGUMENTS) {
-            IRubyObject nil = runtime.getNil();
+            IRubyObject nil = context.nil;
             long i;
             for (i = from; i > to; i--) {
                 block.yield(context, nil);
@@ -216,6 +215,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 block.yield(context, nil);
             }
         } else {
+            Ruby runtime = context.runtime;
             long i;
             for (i = from; i > to; i--) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
@@ -227,9 +227,8 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     private static void duckDownto(ThreadContext context, IRubyObject from, IRubyObject to, Block block) {
-        Ruby runtime = context.runtime;
         IRubyObject i = from;
-        RubyFixnum one = RubyFixnum.one(runtime);
+        RubyFixnum one = RubyFixnum.one(context.runtime);
         while (true) {
             if (sites(context).op_lt.call(context, i, i, to).isTrue()) {
                 break;
