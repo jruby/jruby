@@ -507,30 +507,39 @@ public class IRRuntimeHelpers {
                 return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
             }
 
-            Tuple<RubyHash, RubyHash> hashes = new Tuple<>(RubyHash.newSmallHash(context.runtime), RubyHash.newSmallHash(context.runtime));
-
+            DivvyKeywordsVisitor visitor = new DivvyKeywordsVisitor();
             // We know toHash makes null, nil, or Hash
-            ((RubyHash) kwargs).visitAll(context, DivvyKeywordsVisitor, hashes);
+            ((RubyHash) kwargs).visitAll(context, visitor, null);
 
-            if (!hashes.b.isEmpty()) { // rest args exists too expand args
+            if (visitor.syms == null) {
+                // no symbols, use empty kwargs hash
+                visitor.syms = RubyHash.newSmallHash(context.runtime);
+            }
+
+            if (visitor.others != null) { // rest args exists too expand args
                 IRubyObject[] newArgs = new IRubyObject[args.length + 1];
                 System.arraycopy(args, 0, newArgs, 0, args.length);
                 args = newArgs;
-                args[args.length - 2] = hashes.b; // opt args
+                args[args.length - 2] = visitor.others; // opt args
             }
-            args[args.length - 1] = hashes.a; // kwargs hash
+            args[args.length - 1] = visitor.syms; // kwargs hash
         }
 
         return args;
     }
 
-    private static final RubyHash.VisitorWithState<Tuple<RubyHash, RubyHash>> DivvyKeywordsVisitor = new RubyHash.VisitorWithState<Tuple<RubyHash, RubyHash>>() {
+    private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
+        RubyHash syms;
+        RubyHash others;
+
         @Override
-        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Tuple<RubyHash, RubyHash> hashes) {
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object unused) {
             if (key instanceof RubySymbol) {
-                hashes.a.op_aset(context, key, value);
+                if (syms == null) syms = RubyHash.newSmallHash(context.runtime);
+                syms.fastASetSmall(key, value);
             } else {
-                hashes.b.op_aset(context, key, value);
+                if (others == null) others = RubyHash.newSmallHash(context.runtime);
+                others.fastASetSmall(key, value);
             }
         }
     };
