@@ -115,18 +115,22 @@ public class TypeConverter {
         return val;
     }
 
+    @Deprecated // not-used
     public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
         return convertToType(obj, target, convertMethod, raise);
     }
 
+    @Deprecated // not-used
     public static IRubyObject convertToType19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites, boolean raise) {
         return convertToType(context, obj, target, sites, raise);
     }
 
+    @Deprecated // not-used
     public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod) {
         return convertToType(obj, target, convertMethod);
     }
 
+    @Deprecated // not-used
     public static IRubyObject convertToType19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
         return convertToType(context, obj, target, sites);
     }
@@ -399,9 +403,7 @@ public class TypeConverter {
 
             if (base != 0) {
                 tmp = TypeConverter.checkStringType(context.runtime, val);
-                if (!tmp.isNil()) {
-                    continue;
-                }
+                if (tmp != context.nil) continue;
                 raiseIntegerBaseError(context);
             }
 
@@ -409,10 +411,7 @@ public class TypeConverter {
         }
 
         tmp = TypeConverter.convertToType(context, val, runtime.getString(), "to_int", false);
-        if (tmp.isNil()) {
-            return val.convertToInteger("to_i");
-        }
-        return tmp;
+        return (tmp != context.nil) ? tmp : val.convertToInteger("to_i");
     }
 
     // MRI: rb_Array
