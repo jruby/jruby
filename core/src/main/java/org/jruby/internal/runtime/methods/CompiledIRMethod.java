@@ -212,4 +212,8 @@ public class CompiledIRMethod extends AbstractIRMethod {
         return getClass().getName() + '@' + Integer.toHexString(hashCode()) + ' ' + method + ' ' + getSignature();
     }
 
+    public boolean hasKwargs() {
+        return hasKwargs;
+    }
+
 }
