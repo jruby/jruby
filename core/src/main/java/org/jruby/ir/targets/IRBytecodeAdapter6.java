@@ -27,6 +27,8 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -37,6 +39,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -742,20 +745,26 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void searchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
+        adapter.ldc(name);
+        adapter.ldc(noPrivateConsts);
+        invokeIRHelper("searchConst", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class, boolean.class));
     }
 
     public void searchModuleForConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchModuleForConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
+        adapter.ldc(name);
+        adapter.ldc(noPrivateConsts);
+        invokeIRHelper("searchModuleForConst", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class));
     }
 
     public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("inheritanceSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
+        adapter.ldc(name);
+        adapter.ldc(noPrivateConsts);
+        invokeIRHelper("inheritedSearchConst", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class));
     }
 
     public void lexicalSearchConst(String name) {
-        adapter.invokedynamic("lexicalSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), ConstantLookupSite.BOOTSTRAP, name, 0);
-    }
+        adapter.ldc(name);
+        invokeIRHelper("lexicalSearchConst", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class));}
 
     public void pushNil() {
         loadContext();
@@ -839,6 +848,50 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter2.end();
 
         // call it from original method to get accessor
+        adapter.invokestatic(className, methodName, incomingSig);
+    }
+
+    private void cacheGlobalAccessor(String name) {
+        SkinnyMethodAdapter adapter2;
+        String incomingSig = sig(GlobalVariable.class, params(ThreadContext.class));
+
+        String methodName = "global" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
+
+        adapter2 = new SkinnyMethodAdapter(
+                adapter.getClassVisitor(),
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                methodName,
+                incomingSig,
+                null,
+                null);
+
+        // call site object field
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(GlobalVariable.class), null, null).visitEnd();
+
+        final String className = getClassData().clsName;
+
+        // retrieve accessor, verifying if non-null
+        adapter2.getstatic(className, methodName, ci(GlobalVariable.class));
+        adapter2.dup();
+        Label get = new Label();
+        adapter2.ifnull(get);
+        adapter2.areturn();
+
+        adapter2.label(get);
+        adapter2.pop();
+        adapter2.aload(0);
+        adapter2.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        adapter2.invokevirtual(p(Ruby.class), "getGlobalVariables", sig(GlobalVariables.class));
+        adapter2.ldc(name);
+        adapter2.invokevirtual(p(GlobalVariables.class), "getVariable", sig(GlobalVariable.class, String.class));
+        adapter2.dup();
+        adapter2.putstatic(className, methodName, ci(GlobalVariable.class));
+        adapter2.areturn();
+
+        adapter2.end();
+
+        // call it from original method to get accessor
+        loadContext();
         adapter.invokestatic(className, methodName, incomingSig);
     }
 
@@ -957,22 +1010,18 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     @Override
     public void getGlobalVariable(String name, String file, int line) {
-        loadContext();
-        adapter.invokedynamic(
-                "get:" + JavaNameMangler.mangleMethodName(name),
-                sig(IRubyObject.class, ThreadContext.class),
-                Bootstrap.global(),
-                file, line);
+        cacheGlobalAccessor(name);
+        adapter.invokevirtual(p(GlobalVariable.class), "getAccessor", sig(IAccessor.class));
+        adapter.invokeinterface(p(IAccessor.class), "getValue", sig(IRubyObject.class));
     }
 
     @Override
     public void setGlobalVariable(String name, String file, int line) {
-        loadContext();
-        adapter.invokedynamic(
-                "set:" + JavaNameMangler.mangleMethodName(name),
-                sig(void.class, IRubyObject.class, ThreadContext.class),
-                Bootstrap.global(),
-                file, line);
+        cacheGlobalAccessor(name);
+        adapter.invokevirtual(p(GlobalVariable.class), "getAccessor", sig(IAccessor.class));
+        adapter.swap();
+        adapter.invokeinterface(p(IAccessor.class), "setValue", sig(IRubyObject.class, IRubyObject.class));
+        adapter.pop();;
     }
 
     @Override

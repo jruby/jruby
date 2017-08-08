@@ -37,9 +37,11 @@ import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.collections.IntHashMap;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
 class MethodJITTask implements Runnable {
+    public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private JITCompiler jitCompiler;
     private final String className;
     private final MixedModeIRMethod method;
@@ -113,7 +115,7 @@ class MethodJITTask implements Runnable {
             }
 
             String variableName = context.getVariableName();
-            MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
+            MethodHandle variable = LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
             IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
 
             if (signatures.size() == 0) {
@@ -132,7 +134,7 @@ class MethodJITTask implements Runnable {
                     method.completeBuild(
                             new CompiledIRMethod(
                                     variable,
-                                    JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()),
+                                    LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()),
                                     entry.getKey(),
                                     method.getIRScope(),
                                     method.getVisibility(),

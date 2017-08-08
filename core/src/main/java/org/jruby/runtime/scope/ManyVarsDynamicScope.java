@@ -5,9 +5,9 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import org.jruby.util.invoke.MethodHandle;
+import org.jruby.util.invoke.MethodHandles;
+import org.jruby.util.invoke.MethodType;
 
 /**
  * Represents the the dynamic portion of scoping information.  The variableValues are the

@@ -49,7 +49,17 @@ public class OptoFactory {
     }
 
     public static Invalidator newConstantInvalidator() {
-        return new SwitchPointInvalidator();
+        if (indyEnabled() && indyConstants()) {
+            try {
+                return new SwitchPointInvalidator();
+            } catch (Error e) {
+                disableIndy();
+                throw e;
+            } catch (Throwable t) {
+                disableIndy();
+            }
+        }
+        return new ObjectIdentityInvalidator();
     }
 
     private static Boolean indyEnabled() {
@@ -57,7 +67,11 @@ public class OptoFactory {
     }
 
     public static Invalidator newGlobalInvalidator(int maxFailures) {
-        return new FailoverSwitchPointInvalidator(maxFailures);
+        if (indyEnabled()) {
+            return new FailoverSwitchPointInvalidator(maxFailures);
+        } else{
+            return new ObjectIdentityInvalidator();
+        }
     }
 
     public static Invalidator newMethodInvalidator(RubyModule module) {

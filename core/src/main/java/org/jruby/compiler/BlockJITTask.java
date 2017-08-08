@@ -33,7 +33,10 @@ import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.util.OneShotClassLoader;
 
+import java.lang.invoke.MethodHandles;
+
 class BlockJITTask implements Runnable {
+    public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private JITCompiler jitCompiler;
     private final String className;
     private final MixedModeIRBlockBody body;
@@ -81,7 +84,7 @@ class BlockJITTask implements Runnable {
             // blocks only have variable-arity
             body.completeBuild(
                     new CompiledIRBlockBody(
-                            JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
+                            LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
                             body.getIRScope(),
                             ((IRClosure) body.getIRScope()).getSignature().encode()));
         } catch (Throwable t) {

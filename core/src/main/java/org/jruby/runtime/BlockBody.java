@@ -50,7 +50,6 @@ import java.lang.invoke.MethodHandles;
 public abstract class BlockBody {
 
     protected final Signature signature;
-    protected volatile MethodHandle testBlockBody;
 
     public BlockBody(Signature signature) {
         this.signature = signature;
@@ -70,19 +69,6 @@ public abstract class BlockBody {
 
     public boolean canCallDirect() {
         return false;
-    }
-
-    public MethodHandle getTestBlockBody() {
-        final MethodHandle testBlockBody = this.testBlockBody;
-        if (testBlockBody != null) return testBlockBody;
-
-        return this.testBlockBody = Binder.from(boolean.class, ThreadContext.class, Block.class).drop(0).append(this).invoke(TEST_BLOCK_BODY);
-    }
-
-    private static final MethodHandle TEST_BLOCK_BODY = Binder.from(boolean.class, Block.class, BlockBody.class).invokeStaticQuiet(MethodHandles.lookup(), BlockBody.class, "testBlockBody");
-
-    public static boolean testBlockBody(Block block, BlockBody body) {
-        return block.getBody() == body;
     }
 
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {

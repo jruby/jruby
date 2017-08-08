@@ -20,12 +20,10 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.GlobalSite;
-import org.jruby.runtime.invokedynamic.InvocationLinker;
-import org.jruby.runtime.invokedynamic.MathLinker;
-import org.jruby.runtime.invokedynamic.VariableSite;
+import org.jruby.runtime.invokedynamic.*;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
@@ -38,7 +36,13 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.invoke.*;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.SwitchPoint;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
@@ -657,7 +661,7 @@ public class Bootstrap {
         VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name());
 
         // produce nil if the variable has not been initialize
-        MethodHandle nullToNil = self.getRuntime().getNullToNilHandle();
+        MethodHandle nullToNil = (MethodHandle) self.getRuntime().getNullToNilHandle();
 
         // get variable value and filter with nullToNil
         MethodHandle getValue;
@@ -1012,4 +1016,26 @@ public class Bootstrap {
     public static Block constructBlock(Binding binding, CompiledIRBlockBody body) throws Throwable {
         return new Block(body, binding);
     }
+
+    /* Not the best place for this but better than tying Ruby to indy. */
+    public static Object createNullToNilHandle(Ruby runtime) {
+        IRubyObject nilObject = runtime.getNil();
+        MethodHandle nullToNil = Binder.from(IRubyObject.class, Object.class)
+                .append(nilObject)
+                .cast(IRubyObject.class, IRubyObject.class, IRubyObject.class)
+                .invokeStaticQuiet(lookup(), Helpers.class, "nullToNil");
+
+        return nullToNil;
+    }
+
+    /* Not the best place for this but better than tying RubyModule to indy. */
+    public static Object createIdTest(RubyModule module) {
+        return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
+                .insert(2, module.id)
+                .invoke(testModuleMatch);
+    }
+
+    private static final MethodHandle testModuleMatch = Binder
+            .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
+            .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testModuleMatch");
 }

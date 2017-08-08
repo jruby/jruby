@@ -35,7 +35,12 @@ package org.jruby;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.concurrent.TimeUnit;
 
 import jnr.posix.NanosecondFileStat;
@@ -225,8 +230,20 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "birthtime")
     public IRubyObject birthtime() {
         checkInitialized();
-        FileTime btime = RubyFile.getBirthtimeWithNIO(file.absolutePath());
-        if (btime != null) return getRuntime().newTime(btime.toMillis());
+        try {
+            FileTime btime = null;
+            Path path = Paths.get(file.absolutePath());
+            PosixFileAttributeView view = Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+            try {
+                if (view != null) {
+                    btime = view.readAttributes().creationTime();
+                    return getRuntime().newTime(btime.toMillis());
+                }
+            } catch (IOException ioe) {
+                // ignore, just fall back on ctime
+            }
+        } catch (NoClassDefFoundError e) {
+        }
         return ctime();
     }
 

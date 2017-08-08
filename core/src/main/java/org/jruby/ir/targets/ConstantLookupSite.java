@@ -8,22 +8,16 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.invoke.MutableCallSite;
-import java.lang.invoke.SwitchPoint;
+import java.lang.invoke.*;
 
 import static java.lang.invoke.MethodHandles.guardWithTest;
-import static org.jruby.util.CodegenUtils.p;
-import static org.jruby.util.CodegenUtils.sig;
 
 /**
  * Created by headius on 1/31/16.
@@ -37,7 +31,7 @@ public class ConstantLookupSite extends MutableCallSite {
 
     private final SiteTracker tracker = new SiteTracker();
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(ConstantLookupSite.class), "constLookup", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class));
+    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, CodegenUtils.p(ConstantLookupSite.class), "constLookup", CodegenUtils.sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class));
 
     public ConstantLookupSite(MethodType type, String name, boolean publicOnly) {
         super(type);
@@ -248,7 +242,7 @@ public class ConstantLookupSite extends MutableCallSite {
         MethodHandle fallback = getFallback(module, cachingFallback);
 
         // Test that module is same as before
-        target = guardWithTest(module.getIdTest(), target, fallback);
+        target = guardWithTest((MethodHandle) module.getIdTest(), target, fallback);
 
         // Global invalidation
         SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();

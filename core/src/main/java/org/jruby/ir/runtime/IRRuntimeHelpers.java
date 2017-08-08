@@ -38,6 +38,8 @@ import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.runtime.opto.ConstantCache;
+import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
@@ -1187,6 +1189,18 @@ public class IRRuntimeHelpers {
         }
 
         return constant;
+    }
+
+    @JIT
+    public static IRubyObject searchModuleForConst(ThreadContext context, IRubyObject cmVal, String constName, boolean noPrivateConsts) {
+        if (!(cmVal instanceof RubyModule)) throw context.runtime.newTypeError(cmVal + " is not a type/class");
+
+        RubyModule module = (RubyModule) cmVal;
+        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+
+        if (constant != null) return constant;
+
+        return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
     }
 
     @JIT
