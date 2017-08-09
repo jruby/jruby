@@ -56,7 +56,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
 
 /**
- * rational.c (as of revision: 20011)
+ * Ruby Rational impl (MRI: rational.c).
  */
 @JRubyClass(name = "Rational", parent = "Numeric")
 public class RubyRational extends RubyNumeric {
@@ -526,7 +526,7 @@ public class RubyRational extends RubyNumeric {
             return f_addsub(context, getMetaClass(), num, den, (RubyInteger) other, RubyFixnum.one(context.runtime), true);
         }
         if (other instanceof RubyFloat) {
-            return f_add(context, f_to_f(context, this), other);
+            return f_add(context, r_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
             return op_plus(context, (RubyRational) other);
@@ -548,7 +548,7 @@ public class RubyRational extends RubyNumeric {
             return f_addsub(context, getMetaClass(), num, den, (RubyInteger) other, RubyFixnum.one(context.runtime), false);
         }
         if (other instanceof RubyFloat) {
-            return f_sub(context, f_to_f(context, this), other);
+            return f_sub(context, r_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
             return op_minus(context, (RubyRational) other);
@@ -614,7 +614,7 @@ public class RubyRational extends RubyNumeric {
             return op_mul(context, (RubyInteger) other);
         }
         if (other instanceof RubyFloat) {
-            return f_mul(context, f_to_f(context, this), other);
+            return f_mul(context, r_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
             RubyRational otherRational = (RubyRational) other;
@@ -636,7 +636,8 @@ public class RubyRational extends RubyNumeric {
             return op_div(context, (RubyInteger) other);
         }
         if (other instanceof RubyFloat) {
-            return f_to_f(context, this).callMethod(context, "/", other);
+            IRubyObject fval = r_to_f(context, this);
+            return context.sites.Float.op_quo.call(context, fval, fval, other); // fval / other
         }
         if (other instanceof RubyRational) {
             if (((RubyRational) other).isZero()) {
@@ -661,7 +662,7 @@ public class RubyRational extends RubyNumeric {
     @Override
     @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
-        return f_div(context, f_to_f(context, this), other);
+        return f_div(context, r_to_f(context, this), other);
     }
 
     /** nurat_expt
@@ -699,7 +700,7 @@ public class RubyRational extends RubyNumeric {
             return fix_expt(context, (RubyInteger) other, ((RubyInteger) other).signum());
         }
         if (other instanceof RubyFloat || other instanceof RubyRational) {
-            return f_expt(context, f_to_f(context, this), other);
+            return f_expt(context, r_to_f(context, this), other);
         }
         return coerceBin(context, sites(context).op_exp, other);
     }
@@ -755,7 +756,7 @@ public class RubyRational extends RubyNumeric {
             return f_cmp(context, this, RubyRational.newRationalBang(context, getMetaClass(), other));
         }
         if (other instanceof RubyFloat) {
-            return f_cmp(context, f_to_f(context, this), other);
+            return f_cmp(context, r_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
             RubyRational otherRational = (RubyRational) other;
@@ -783,7 +784,7 @@ public class RubyRational extends RubyNumeric {
             return op_equal(context, (RubyInteger) other);
         }
         if (other instanceof RubyFloat) {
-            return f_equal(context, f_to_f(context, this), other);
+            return f_equal(context, r_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
             return op_equal(context, (RubyRational) other);
@@ -818,7 +819,7 @@ public class RubyRational extends RubyNumeric {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             return runtime.newArray(RubyRational.newRationalBang(context, getMetaClass(), other), this);
         } else if (other instanceof RubyFloat) {
-            return runtime.newArray(other, f_to_f(context, this));
+            return runtime.newArray(other, r_to_f(context, this));
         } else if (other instanceof RubyRational) {
             return runtime.newArray(other, this);
         } else if (other instanceof RubyComplex) {
@@ -1464,5 +1465,9 @@ public class RubyRational extends RubyNumeric {
 
     private static JavaSites.RationalSites sites(ThreadContext context) {
         return context.sites.Rational;
+    }
+
+    private static IRubyObject r_to_f(ThreadContext context, RubyRational r) {
+        return sites(context).to_f.call(context, r, r); 
     }
 }
