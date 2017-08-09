@@ -29,9 +29,13 @@
  */
 package org.jruby.embed.internal;
 
-import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.embed.LocalVariableBehavior;
+import org.jruby.util.JarResource;
+
+import java.io.File;
+import java.net.URL;
+import java.util.Map;
 
 /**
  *
@@ -54,6 +58,18 @@ public class SingleThreadLocalContextProvider extends AbstractLocalContextProvid
 
     private LocalContext getLocalContext() {
         return instance;
+    }
+
+    private void terminateJarIndexCacheEntries() {
+        for (URL url : getRuntime().getJRubyClassLoader().getTempUrls()){
+            // Remove reference from jar cache
+            String jarPath = url.getPath();
+            JarResource.removeJarResource(jarPath);
+
+            // Delete temp jar on disk
+            File jarFile = new File(jarPath);
+            jarFile.delete();
+        }
     }
 
     @Override
@@ -79,6 +95,8 @@ public class SingleThreadLocalContextProvider extends AbstractLocalContextProvid
     @Override
     public void terminate() {
         getLocalContext().remove();
+
+        terminateJarIndexCacheEntries();
     }
 
 }
