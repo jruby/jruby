@@ -8,7 +8,7 @@ import java.util.jar.JarEntry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-abstract class JarResource extends AbstractFileResource {
+public abstract class JarResource extends AbstractFileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
 
     private static final JarCache jarCache = new JarCache();
@@ -77,6 +77,10 @@ abstract class JarResource extends AbstractFileResource {
         }
 
         return null;
+    }
+
+    public static boolean removeJarResource(String jarPath){
+        return jarCache.remove(jarPath);
     }
 
     private final String jarPrefix;
