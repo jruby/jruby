@@ -527,6 +527,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return metaClass;
     }
 
+    static RubyClass getMetaClass(IRubyObject arg) {
+        return ((RubyBasicObject) arg).metaClass;
+    }
+
     /** rb_singleton_class
      *
      * Note: this method is specialized for RubyFixnum, RubySymbol,

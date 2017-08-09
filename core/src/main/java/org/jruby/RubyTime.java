@@ -647,7 +647,7 @@ public class RubyTime extends RubyObject {
             throw context.runtime.newTypeError("time + time?");
         }
 
-        double adjustMillis = RubyNumeric.num2dbl(numExact(context, other)) * 1000;
+        double adjustMillis = RubyNumeric.num2dbl(context, numExact(context, other)) * 1000;
         return opPlusMillis(context.runtime, adjustMillis);
     }
 
@@ -690,9 +690,9 @@ public class RubyTime extends RubyObject {
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) return opMinus(context.runtime, (RubyTime) other);
 
-        return opMinus(context.runtime, RubyNumeric.num2dbl(numExact(context, other)));
+        return opMinus(context.runtime, RubyNumeric.num2dbl(context, numExact(context, other)));
     }
-
+    
     @Deprecated
     public IRubyObject op_minus19(ThreadContext context, IRubyObject other) {
         return op_minus(context, other);
@@ -1260,7 +1260,7 @@ public class RubyTime extends RubyObject {
         arg2 = numExact(context, arg2);
 
         if (arg1 instanceof RubyFloat || arg1 instanceof RubyRational) {
-            double dbl = RubyNumeric.num2dbl(arg1);
+            double dbl = RubyNumeric.num2dbl(context, arg1);
             millisecs = (long) (dbl * 1000);
             nanosecs = ((long) (dbl * 1000000000)) % 1000000;
         } else {
@@ -1275,12 +1275,12 @@ public class RubyTime extends RubyObject {
 
         if (arg2 instanceof RubyFloat || arg2 instanceof RubyRational) {
             if (runtime.newSymbol("microsecond").eql(unit) || runtime.newSymbol("usec").eql(unit)) {
-                double micros = RubyNumeric.num2dbl(arg2);
+                double micros = RubyNumeric.num2dbl(context, arg2);
                 double nanos = micros * 1000;
                 millisecs += (long) (nanos / 1000000);
                 nanosecs += (long) (nanos % 1000000);
             } else if (runtime.newSymbol("millisecond").eql(unit)) {
-                double millis = RubyNumeric.num2dbl(arg2);
+                double millis = RubyNumeric.num2dbl(context, arg2);
                 double nanos = millis * 1000000;
                 millisecs += (long) (nanos / 1000000);
                 nanosecs += (long) (nanos % 1000000);
@@ -1742,7 +1742,7 @@ public class RubyTime extends RubyObject {
 
             // 1.9 will observe fractional seconds *if* not given usec
             if (args[5] != context.nil && args[6] == context.nil) {
-                double secs = RubyFloat.num2dbl(args[5]);
+                double secs = RubyFloat.num2dbl(context, args[5]);
                 int int_millis = (int) (secs * 1000) % 1000;
                 instant = chrono.millis().add(instant, int_millis);
                 nanos = ((long) (secs * 1000000000) % 1000000);

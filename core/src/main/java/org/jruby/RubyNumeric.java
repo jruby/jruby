@@ -272,28 +272,33 @@ public class RubyNumeric extends RubyObject {
         return RubyBignum.newBignorm(runtime, val);
     }
 
+    public static double num2dbl(IRubyObject arg) {
+        return num2dbl(arg.getRuntime().getCurrentContext(), arg);
+    }
+
     /** rb_num2dbl and NUM2DBL
      *
      */
-    public static double num2dbl(IRubyObject arg) {
-        if (arg instanceof RubyFloat) {
-            return ((RubyFloat) arg).getDoubleValue();
+    public static double num2dbl(ThreadContext context, IRubyObject arg) {
+        switch (((RubyBasicObject) arg).getNativeClassIndex()) {
+            case FLOAT:
+                return ((RubyFloat) arg).getDoubleValue();
+            case FIXNUM:
+                if (context.sites.Fixnum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyFixnum) arg).getDoubleValue();
+                break;
+            case BIGNUM:
+                if (context.sites.Bignum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyBignum) arg).getDoubleValue();
+                break;
+            case RATIONAL:
+                if (context.sites.Rational.to_f.isBuiltin(getMetaClass(arg))) return ((RubyRational) arg).getDoubleValue();
+                break;
+            case STRING:
+            case NIL:
+            case TRUE:
+            case FALSE:
+                throw context.runtime.newTypeError(str(context.runtime, "can't convert ", arg.inspect(), " into Float"));
         }
-        final Ruby runtime = arg.getRuntime();
-        if (arg instanceof RubyFixnum && !runtime.isFixnumReopened()) {
-            return ((RubyFixnum) arg).getDoubleValue();
-        }
-        if (arg instanceof RubyBignum && runtime.getBignum().searchMethod("to_f").isBuiltin()) {
-            return ((RubyBignum) arg).getDoubleValue();
-        }
-        if (arg instanceof RubyRational && runtime.getRational().searchMethod("to_f").isBuiltin()) {
-            return ((RubyRational) arg).getDoubleValue();
-        }
-        if (arg instanceof RubyBoolean || arg instanceof RubyString || arg.isNil()) {
-            throw runtime.newTypeError(str(runtime, "can't convert ", arg.inspect(), " into Float"));
-        }
-
-        IRubyObject val = TypeConverter.convertToType(arg, runtime.getFloat(), "to_f");
+        IRubyObject val = TypeConverter.convertToType(arg, context.runtime.getFloat(), "to_f");
         return ((RubyFloat) val).getDoubleValue();
     }
 
@@ -302,8 +307,7 @@ public class RubyNumeric extends RubyObject {
      */
     public static IRubyObject dbl_cmp(Ruby runtime, double a, double b) {
         if (Double.isNaN(a) || Double.isNaN(b)) return runtime.getNil();
-        return a == b ? RubyFixnum.zero(runtime) : a > b ?
-                RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
+        return a == b ? RubyFixnum.zero(runtime) : a > b ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
     }
 
     public static long fix2long(IRubyObject arg) {
@@ -1022,7 +1026,7 @@ public class RubyNumeric extends RubyObject {
             }
         }
 
-        r = num.getMetaClass().finvokeChecked(context, num, sites(context).op_gt_checked, zero);
+        r = getMetaClass(num).finvokeChecked(context, num, sites(context).op_gt_checked, zero);
         if (r == null) {
             ((RubyNumeric) num).coerceFailed(context, zero);
         }
@@ -1093,9 +1097,9 @@ public class RubyNumeric extends RubyObject {
     }
 
     static void floatStep(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, boolean excl, Block block) {
-        double beg = num2dbl(from);
-        double end = num2dbl(to);
-        double unit = num2dbl(step);
+        double beg = num2dbl(context, from);
+        double end = num2dbl(context, to);
+        double unit = num2dbl(context, step);
 
         double n = floatStepSize(beg, end, unit, excl);
         long i;
@@ -1432,7 +1436,7 @@ public class RubyNumeric extends RubyObject {
 
     protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {
         IRubyObject zero = RubyFixnum.zero(context.runtime);
-        IRubyObject r = num.getMetaClass().finvokeChecked(context, num, site, zero);
+        IRubyObject r = getMetaClass(num).finvokeChecked(context, num, site, zero);
         if (r == null) {
             RubyComparable.cmperr(num, zero);
         }

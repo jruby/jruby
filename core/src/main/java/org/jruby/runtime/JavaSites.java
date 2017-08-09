@@ -254,6 +254,7 @@ public class JavaSites {
         public final CheckedSites checked_op_and = new CheckedSites("&");
         public final CheckedSites checked_op_or = new CheckedSites("|");
         public final CheckedSites checked_op_xor = new CheckedSites("^");
+        public final CachingCallSite to_f = new FunctionalCachingCallSite("to_f");
     }
 
     public static class BignumSites {
@@ -274,6 +275,7 @@ public class JavaSites {
         public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
         public final CachingCallSite basic_op_lt = new FunctionalCachingCallSite("<");
         public final CachingCallSite basic_op_gt = new FunctionalCachingCallSite(">");
+        public final CachingCallSite to_f = new FunctionalCachingCallSite("to_f");
     }
 
     public static class FloatSites {
@@ -415,6 +417,7 @@ public class JavaSites {
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CheckedSites to_r_checked = new CheckedSites("to_r");
         public final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
+        public final CachingCallSite to_f = new FunctionalCachingCallSite("to_f");
     }
 
     public static class RangeSites {

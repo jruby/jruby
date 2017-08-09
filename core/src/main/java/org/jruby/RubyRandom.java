@@ -731,7 +731,7 @@ public class RubyRandom extends RubyObject {
 
         if (random != null) return random.genrandReal();
 
-        double d = RubyNumeric.num2dbl(Helpers.invoke(context, obj, "rand"));
+        double d = RubyNumeric.num2dbl(context, Helpers.invoke(context, obj, "rand"));
 
         if (d < 0.0 || d >= 1.0) throw context.runtime.newRangeError("random number too big: " + d);
 

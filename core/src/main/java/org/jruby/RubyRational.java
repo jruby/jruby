@@ -834,13 +834,13 @@ public class RubyRational extends RubyNumeric {
 
     @Override
     public IRubyObject idiv(ThreadContext context, IRubyObject other) {
-        if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
+        if (num2dbl(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         return f_floor(context, f_div(context, this, other));
     }
 
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
-        if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
+        if (num2dbl(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         return f_sub(context, this, f_mul(context, other, f_floor(context, f_div(context, this, other))));
     }
@@ -855,7 +855,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "divmod")
     public IRubyObject op_divmod(ThreadContext context, IRubyObject other) {
-        if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
+        if (num2dbl(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         IRubyObject val = f_floor(context, f_div(context, this, other));
         return context.runtime.newArray(val, f_sub(context, this, f_mul(context, other, val)));
@@ -1177,7 +1177,7 @@ public class RubyRational extends RubyNumeric {
             return e > 0 ? Double.MAX_VALUE : 0;
         }
 
-        double f = RubyNumeric.num2dbl(myNum) / RubyNumeric.num2dbl(myDen);
+        double f = RubyNumeric.num2dbl(context, myNum) / RubyNumeric.num2dbl(context, myDen);
 
         if (minus) f = -f;
 
