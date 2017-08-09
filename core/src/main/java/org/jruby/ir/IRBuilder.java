@@ -1061,9 +1061,12 @@ public class IRBuilder {
             return result;
         }
 
-        Label lazyLabel = getNewLabel();
-        Label endLabel = getNewLabel();
+        Label lazyLabel = null;
+        Label endLabel = null;
+
         if (callNode.isLazy()) {
+            lazyLabel = getNewLabel();
+            endLabel = getNewLabel();
             addInstr(new BNilInstr(lazyLabel, receiver));
         }
 
