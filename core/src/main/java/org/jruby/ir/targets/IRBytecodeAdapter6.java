@@ -1017,5 +1017,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         invokeIRHelper("prepareBlock", sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class, BlockBody.class));
     }
 
+    @Override
+    public void callEqq(boolean isSplattedValue) {
+        String siteName = getUniqueSiteName("===");
+        IRBytecodeAdapter.cacheCallSite(adapter, getClassData().clsName, siteName, "===", CallType.FUNCTIONAL, false);
+        adapter.ldc(isSplattedValue);
+        invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
+    }
+
     private final Map<Object, String> cacheFieldNames = new HashMap<>();
 }
