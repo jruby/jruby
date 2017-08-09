@@ -12,7 +12,7 @@ public class ModCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
-        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
+        if (self instanceof RubyFixnum && isBuiltin(self.getMetaClass())) {
             return ((RubyFixnum) self).op_mod(context, fixnum);
         }
         return super.call(context, caller, self, fixnum);
@@ -20,7 +20,7 @@ public class ModCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
-        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
+        if (self instanceof RubyFixnum && isBuiltin(self.getMetaClass())) {
             return ((RubyFixnum) self).op_mod(context, arg);
         }
         return super.call(context, caller, self, arg);
