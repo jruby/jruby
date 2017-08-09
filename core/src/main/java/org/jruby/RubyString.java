@@ -1103,12 +1103,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         JavaSites.CheckedSites sites = sites(context).to_str_checked;
         if (sites.respond_to_X.respondsTo(context, this, other)) {
             IRubyObject tmp = TypeConverter.checkStringType(context, sites, other);
-            if (tmp instanceof RubyString)
-              return runtime.newFixnum(op_cmp((RubyString)tmp));
+            if (tmp instanceof RubyString) return runtime.newFixnum(op_cmp((RubyString) tmp));
         } else {
             return invcmp(context, sites(context).recursive_cmp, this, other);
         }
-        return runtime.getNil();
+        return context.nil;
     }
 
     /** rb_str_equal
