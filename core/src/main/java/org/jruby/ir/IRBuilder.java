@@ -874,10 +874,12 @@ public class IRBuilder {
         boolean containsAssignment = attrAssignNode.containsVariableAssignment();
         Operand obj = buildWithOrder(attrAssignNode.getReceiverNode(), containsAssignment);
 
-        Label lazyLabel = getNewLabel();
-        Label endLabel = getNewLabel();
+        Label lazyLabel = null;
+        Label endLabel = null;
         if (result == null) result = createTemporaryVariable();
         if (attrAssignNode.isLazy()) {
+            lazyLabel = getNewLabel();
+            endLabel = getNewLabel();
             addInstr(new BNilInstr(lazyLabel, obj));
         }
 
@@ -3212,10 +3214,12 @@ public class IRBuilder {
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode());
 
-        Label lazyLabel = getNewLabel();
-        Label endLabel = getNewLabel();
+        Label lazyLabel = null;
+        Label endLabel = null;
         Variable result = createTemporaryVariable();
         if (opAsgnNode.isLazy()) {
+            lazyLabel = getNewLabel();
+            endLabel = getNewLabel();
             addInstr(new BNilInstr(lazyLabel, v1));
         }
 
