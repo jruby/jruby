@@ -1225,7 +1225,7 @@ opt_call_args   : none
                 }
    
 
-// [!null]
+// [!null] - ArgsCatNode, SplatNode, ArrayNode, HashNode, BlockPassNode
 call_args       : command {
                     $$ = support.newArrayNode(support.getPosition($1), $1);
                 }
@@ -1243,6 +1243,7 @@ call_args       : command {
                 | block_arg {
                 }
 
+// [!null] - ArgsCatNode, SplatNode, ArrayNode, HashNode, BlockPassNode
 command_args    : /* none */ {
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
                     lexer.getCmdArgumentState().begin();

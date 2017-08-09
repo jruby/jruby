@@ -128,6 +128,11 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         return receiverNode;
     }
 
+    /**
+     * Is this call lazily execute because it was on right hand side of the lonely (&.) operator?
+     *
+     * @return true if so.
+     */
     public boolean isLazy() {
         return isLazy;
     }
