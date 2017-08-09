@@ -5,35 +5,38 @@ import org.jruby.RubyFloat;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class LtCallSite extends NormalCachingCallSite {
+public class LtCallSite extends NormalCachingCallSite2 {
 
     public LtCallSite() {
         super("<");
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
-        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
-            return ((RubyFixnum) self).op_lt(context, fixnum);
-        } else if (self instanceof RubyFloat && !context.runtime.isFloatReopened()) {
-            return ((RubyFloat) self).op_lt(context, fixnum);
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long arg) {
+        if (self instanceof RubyFixnum) {
+            if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_lt(context, arg);
+        } else if (self instanceof RubyFloat) {
+            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_lt(context, arg);
         }
-        return super.call(context, caller, self, fixnum);
-    }
-
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote) {
-        if (self instanceof RubyFloat && !context.runtime.isFloatReopened()) {
-            return ((RubyFloat) self).op_lt(context, flote);
-        }
-        return super.call(context, caller, self, flote);
+        return super.call(context, caller, self, arg);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
-        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
-            return ((RubyFixnum) self).op_lt(context, arg);
-        } else if (self instanceof RubyFloat && !context.runtime.isFloatReopened()) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double arg) {
+        if (self instanceof RubyFloat && isBuiltin2(self.getMetaClass())) {
             return ((RubyFloat) self).op_lt(context, arg);
         }
         return super.call(context, caller, self, arg);
     }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
+        if (self instanceof RubyFixnum) {
+            if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_lt(context, arg);
+        } else if (self instanceof RubyFloat) {
+            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_lt(context, arg);
+        }
+        return super.call(context, caller, self, arg);
+    }
+
 }
