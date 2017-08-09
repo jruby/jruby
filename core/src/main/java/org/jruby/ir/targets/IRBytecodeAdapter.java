@@ -652,6 +652,13 @@ public abstract class IRBytecodeAdapter {
      */
     public abstract void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className);
 
+    /**
+     * Perform a === call appropriate for a case/when statement.
+     *
+     * Stack required: context, case value, when value
+     */
+    public abstract void callEqq(boolean isSplattedValue);
+
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
