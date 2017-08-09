@@ -485,7 +485,7 @@ public class Bootstrap {
             // Temporary fix for missing kwargs dup+splitting logic from frobnicate, called by CompiledIRMethod but
             // skipped by indy's direct binding.
             if (compiledIRMethod.hasKwargs()) return null;
-            
+
             // attempt IR direct binding
             // TODO: this will have to expand when we start specializing arities
 

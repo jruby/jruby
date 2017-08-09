@@ -1328,11 +1328,16 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void EQQInstr(EQQInstr eqqinstr) {
-        jvmMethod().loadContext();
-        visit(eqqinstr.getArg1());
-        visit(eqqinstr.getArg2());
-        jvmMethod().callEqq(eqqinstr.isSplattedValue());
-        jvmStoreLocal(eqqinstr.getResult());
+        if (!eqqinstr.isSplattedValue() && !(eqqinstr.getArg2() instanceof UndefinedValue)) {
+            // FIXME: eqq for case/when can be refined but we don't handle that
+            compileCallCommon(jvmMethod(), "===", Helpers.arrayOf(eqqinstr.getArg2()), eqqinstr.getArg1(), 1, null, BlockPassType.NONE, CallType.FUNCTIONAL, eqqinstr.getResult(), false);
+        } else {
+            jvmMethod().loadContext();
+            visit(eqqinstr.getArg1());
+            visit(eqqinstr.getArg2());
+            jvmMethod().callEqq(eqqinstr.isSplattedValue());
+            jvmStoreLocal(eqqinstr.getResult());
+        }
     }
 
     @Override
