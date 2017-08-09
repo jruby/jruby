@@ -408,11 +408,6 @@ public class IRRuntimeHelpers {
         return isUndefValue ? receiver : callSite.call(context, receiver, receiver, value);
     }
 
-    @Deprecated
-    public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite callSite) {
-        return isEQQ(context, receiver, value, callSite, true);
-    }
-
     public static IRubyObject newProc(Ruby runtime, Block block) {
         return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
     }
