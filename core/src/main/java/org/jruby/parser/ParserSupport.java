@@ -118,6 +118,8 @@ public class ParserSupport {
         return node2 == null ? node1 : new ArgsCatNode(position, node1, node2);
     }
 
+    // firstNode is ArgsCatNode, SplatNode, ArrayNode, HashNode
+    // secondNode is null or not
     public Node arg_blk_pass(Node firstNode, BlockPassNode secondNode) {
         if (secondNode != null) {
             secondNode.setArgsNode(firstNode);
