@@ -592,7 +592,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param length number of element pairs
      */
-    public abstract void hash(int length);
+    public abstract void hash(int length, boolean fake);
 
     /**
      * Construct a Hash based on keyword arguments pasesd to this method, for use in zsuper

@@ -109,10 +109,12 @@ public class Bootstrap {
     }
 
     public static CallSite hash(Lookup lookup, String name, MethodType type) {
-        MethodHandle handle = Binder
-                .from(lookup, type)
-                .collect(1, IRubyObject[].class)
-                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "hash");
+        Binder binder = Binder
+                .from(lookup, type);
+        if (type.parameterCount() != 3) {
+            binder = binder.collect(1, IRubyObject[].class);
+        }
+        MethodHandle handle = binder.invokeStaticQuiet(LOOKUP, Bootstrap.class, name);
         CallSite site = new ConstantCallSite(handle);
         return site;
     }
@@ -287,6 +289,31 @@ public class Bootstrap {
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }
+        return hash;
+    }
+
+    public static IRubyObject fakeHash(ThreadContext context, IRubyObject[] pairs) {
+        Ruby runtime = context.runtime;
+        RubyHash hash = context.fakeKwargs;
+        context.clearKwargs();
+        for (int i = 0; i < pairs.length;) {
+            hash.fastASetSmall(runtime, pairs[i++], pairs[i++], false);
+        }
+        return hash;
+    }
+
+    public static IRubyObject hash(ThreadContext context, IRubyObject key, IRubyObject value) {
+        Ruby runtime = context.runtime;
+        RubyHash hash = RubyHash.newHash(runtime);
+        hash.fastASetCheckString(runtime, key, value);
+        return hash;
+    }
+
+    public static IRubyObject fakeHash(ThreadContext context, IRubyObject key, IRubyObject value) {
+        Ruby runtime = context.runtime;
+        RubyHash hash = context.fakeKwargs;
+        context.clearKwargs();
+        hash.fastASetCheckString(runtime, key, value);
         return hash;
     }
 
@@ -484,7 +511,7 @@ public class Bootstrap {
 
             // Temporary fix for missing kwargs dup+splitting logic from frobnicate, called by CompiledIRMethod but
             // skipped by indy's direct binding.
-            if (compiledIRMethod.hasKwargs()) return null;
+//            if (compiledIRMethod.hasKwargs()) return null;
 
             // attempt IR direct binding
             // TODO: this will have to expand when we start specializing arities

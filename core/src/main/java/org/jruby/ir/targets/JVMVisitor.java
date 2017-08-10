@@ -2406,7 +2406,7 @@ public class JVMVisitor extends IRVisitor {
         if (kwargs) {
             jvmMethod().kwargsHash(pairs.size() - 1);
         } else {
-            jvmMethod().hash(pairs.size());
+            jvmMethod().hash(pairs.size(), hash.isKWArgsHash);
         }
     }
 

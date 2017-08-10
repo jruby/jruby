@@ -270,4 +270,16 @@ public class RubyNil extends RubyObject implements Constantizable {
         }
         return null;
     }
+
+    public boolean isTrue() {
+        return false;
+    }
+
+    public boolean isNil() {
+        return true;
+    }
+
+    public boolean isFalse() {
+        return true;
+    }
 }

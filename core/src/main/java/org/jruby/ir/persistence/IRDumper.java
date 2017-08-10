@@ -308,6 +308,10 @@ public class IRDumper extends IRVisitor {
             print("=>");
             visit(pair.getValue());
         }
+        if (comma == true) {
+            print(",isKwargs=");
+            print(hash.isKWArgsHash);
+        }
     }
     public void IRException(IRException irexception) { print(irexception.getType()); }
     public void Label(Label label) { print(label.toString()); }

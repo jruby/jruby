@@ -27,7 +27,7 @@ public class Hash extends Operand {
 
     // Is this a hash used to represent a keyword hash to be setup for ZSuper?
     // SSS FIXME: Quick hack for now - this should probably be done with an overloaded operand.
-    final public boolean isKWArgsHash;
+    public boolean isKWArgsHash;
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean isKWArgsHash) {
         super();

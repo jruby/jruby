@@ -157,6 +157,14 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         public static IRubyObject false_to_s(IRubyObject f) {
             return RubyString.newUSASCIIString(f.getRuntime(), "false");
         }
+
+        public boolean isFalse() {
+            return true;
+        }
+
+        public boolean isTrue() {
+            return false;
+        }
     }
     
     public static class True extends RubyBoolean {

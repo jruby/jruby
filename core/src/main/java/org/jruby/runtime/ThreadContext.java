@@ -44,11 +44,13 @@ import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.BacktraceData;
@@ -205,6 +207,8 @@ public final class ThreadContext {
 
         this.runtimeCache = runtime.getRuntimeCache();
         this.sites = runtime.sites;
+
+        this.fakeKwargs = new IRRuntimeHelpers.FakeKwargsHash(runtime);
 
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
@@ -1246,5 +1250,54 @@ public final class ThreadContext {
         if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US, true);
 
         return dateFormat;
+    }
+
+    public final IRubyObject[] keywords = new IRubyObject[100];
+    public final IRubyObject[] values = new IRubyObject[100];
+    public final IRRuntimeHelpers.FakeKwargsHash fakeKwargs;
+
+    public void clearKwargs() {
+        for (int i = 0; i < keywords.length; i++) {
+            if (keywords[i] == null) break;
+            keywords[i] = null;
+        }
+    }
+
+    public void setKwarg(IRubyObject keyword, IRubyObject value) {
+        for (int i = 0; i < keywords.length; i++) {
+            if (keywords[i] == null) {
+                keywords[i] = keyword;
+                values[i] = value;
+                return;
+            }
+        }
+    }
+
+    public int findKwarg(RubySymbol keyword) {
+        int length = keywords.length;
+        for (int i = 0; i < length; i++) {
+            IRubyObject key = keywords[i];
+            if (key == null) break;
+            if (key == NEVER) continue;
+            if (keyword == key) return i;
+        }
+        return -1;
+    }
+
+    public IRubyObject getKwarg(RubySymbol keyword) {
+        int length = keywords.length;
+        for (int i = 0; i < length; i++) {
+            IRubyObject key = keywords[i];
+            if (key == null) break;
+            if (key == NEVER) continue;
+            if (keyword == key) return values[i];
+        }
+        return null;
+    }
+
+    public IRubyObject deleteKwarg(int i) {
+        IRubyObject value = values[i];
+        keywords[i] = NEVER;
+        return value;
     }
 }

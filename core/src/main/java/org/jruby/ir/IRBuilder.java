@@ -640,6 +640,18 @@ public class IRBuilder {
                 boolean hasAssignments = args.containsVariableAssignment();
 
                 for (int i = 0; i < numberOfArgs; i++) {
+                    if (i + 1 == numberOfArgs) {
+                        if (children[i] instanceof HashNode) {
+                            HashNode hashNode = (HashNode) children[i];
+
+                            if (hashNode.hasOnlySymbolKeys()) {
+                                // build hash with kwargs bit
+                                builtArgs[i] = buildHash(hashNode, true);
+
+                                continue;
+                            }
+                        }
+                    }
                     builtArgs[i] = buildWithOrder(children[i], hasAssignments);
                 }
                 return builtArgs;
@@ -2882,6 +2894,10 @@ public class IRBuilder {
     }
 
     public Operand buildHash(HashNode hashNode) {
+        return buildHash(hashNode, false);
+    }
+
+    public Operand buildHash(HashNode hashNode, boolean asKwargs) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         boolean hasAssignments = hashNode.containsVariableAssignment();
         Variable hash = null;
@@ -2909,7 +2925,7 @@ public class IRBuilder {
         }
 
         if (hash == null) {           // non-**arg ordinary hash
-            hash = copyAndReturnValue(new Hash(args));
+            hash = copyAndReturnValue(new Hash(args, asKwargs));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
         }

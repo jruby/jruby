@@ -517,7 +517,7 @@ public class RubyHash extends RubyObject implements Map {
         internalPut(key, value, true);
     }
 
-    private final void internalPutSmall(final IRubyObject key, final IRubyObject value) {
+    protected void internalPutSmall(final IRubyObject key, final IRubyObject value) {
         internalPutSmall(key, value, true);
     }
 
@@ -549,8 +549,11 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // get implementation
+    public IRubyObject internalGet(IRubyObject key) {
+        return internalGetEntry(key).value;
+    }
 
-    protected IRubyObject internalGet(IRubyObject key) { // specialized for value
+    public IRubyObject internalGet(ThreadContext context, IRubyObject key) { // specialized for value
         return internalGetEntry(key).value;
     }
 

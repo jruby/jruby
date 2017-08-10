@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -20,7 +21,10 @@ public class EQQInstr extends TwoOperandResultBaseInstr implements FixedArityIns
     private final CallSite callSite;
     // This is a splatted value and eqq should compare each element in the array vs
     // treating the array as a single value.
-    private boolean splattedValue;
+    private final boolean splattedValue;
+
+    /** can we follow the simple EQQ path? **/
+    private final boolean simpleEqq;
 
     public EQQInstr(Variable result, Operand v1, Operand v2, boolean splattedValue) {
         super(Operation.EQQ, result, v1, v2);
@@ -29,6 +33,12 @@ public class EQQInstr extends TwoOperandResultBaseInstr implements FixedArityIns
 
         this.callSite = new FunctionalCachingCallSite("===");
         this.splattedValue = splattedValue;
+
+        if (splattedValue || v2 instanceof UndefinedValue) {
+            simpleEqq = false;
+        } else {
+            simpleEqq = true;
+        }
     }
 
     @Override
@@ -55,7 +65,7 @@ public class EQQInstr extends TwoOperandResultBaseInstr implements FixedArityIns
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new EQQInstr(ii.getRenamedVariable(result), getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), isSplattedValue());
+        return new EQQInstr(ii.getRenamedVariable(result), getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), splattedValue);
     }
 
     @Override
@@ -74,7 +84,10 @@ public class EQQInstr extends TwoOperandResultBaseInstr implements FixedArityIns
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject recv = (IRubyObject) getArg1().retrieve(context, self, currScope, currDynScope, temp);
         IRubyObject value = (IRubyObject) getArg2().retrieve(context, self, currScope, currDynScope, temp);
-        return IRRuntimeHelpers.isEQQ(context, recv, value, callSite, isSplattedValue());
+        if (simpleEqq) {
+            return callSite.call(context, recv, recv, value);
+        }
+        return IRRuntimeHelpers.isEQQ(context, recv, value, callSite, splattedValue);
     }
 
     @Override

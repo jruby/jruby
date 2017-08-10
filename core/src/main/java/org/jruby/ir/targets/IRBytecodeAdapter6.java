@@ -881,13 +881,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(classData.clsName, methodName, incomingSig);
     }
 
-    public void hash(int length) {
+    public void hash(int length, boolean fake) {
         if (length > MAX_ARGUMENTS / 2) throw new NotCompilableException("literal hash has more than " + (MAX_ARGUMENTS / 2) + " pairs");
 
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length * 2));
 
-        final String methodName = "hash:" + length;
+        final String methodName = fake ? "fakehash:" : "hash:" + length;
         final ClassData classData = getClassData();
 
         if (!classData.hashMethodsDefined.contains(length)) {
@@ -903,7 +903,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             adapter2.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
             buildArrayFromLocals(adapter2, 1, length * 2);
 
-            adapter2.invokestatic(p(IRRuntimeHelpers.class), "constructHashFromArray", sig(RubyHash.class, Ruby.class, IRubyObject[].class));
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), fake ? "constructFakeHashFromArray" : "constructHashFromArray", sig(RubyHash.class, Ruby.class, IRubyObject[].class));
             adapter2.areturn();
             adapter2.end();
 

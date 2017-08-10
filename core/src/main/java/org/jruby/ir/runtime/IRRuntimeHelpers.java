@@ -502,22 +502,29 @@ public class IRRuntimeHelpers {
                 return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
             }
 
-            DivvyKeywordsVisitor visitor = new DivvyKeywordsVisitor();
-            // We know toHash makes null, nil, or Hash
-            ((RubyHash) kwargs).visitAll(context, visitor, null);
+            IRubyObject syms;
+            if (kwargs instanceof FakeKwargsHash) {
+                syms = kwargs;
+            } else {
 
-            if (visitor.syms == null) {
-                // no symbols, use empty kwargs hash
-                visitor.syms = RubyHash.newSmallHash(context.runtime);
-            }
+                DivvyKeywordsVisitor visitor = new DivvyKeywordsVisitor();
+                // We know toHash makes null, nil, or Hash
+                ((RubyHash) kwargs).visitAll(context, visitor, null);
 
-            if (visitor.others != null) { // rest args exists too expand args
-                IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-                System.arraycopy(args, 0, newArgs, 0, args.length);
-                args = newArgs;
-                args[args.length - 2] = visitor.others; // opt args
+                if (visitor.syms == null) {
+                    // no symbols, use empty kwargs hash
+                    visitor.syms = RubyHash.newSmallHash(context.runtime);
+                }
+
+                if (visitor.others != null) { // rest args exists too expand args
+                    IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+                    System.arraycopy(args, 0, newArgs, 0, args.length);
+                    args = newArgs;
+                    args[args.length - 2] = visitor.others; // opt args
+                }
+                syms = visitor.syms;
             }
-            args[args.length - 1] = visitor.syms; // kwargs hash
+            args[args.length - 1] = syms; // kwargs hash
         }
 
         return args;
@@ -563,6 +570,37 @@ public class IRRuntimeHelpers {
         }
 
         return null;
+    }
+
+    public static class FakeKwargsHash extends RubyHash {
+        private final Ruby runtime;
+
+        public FakeKwargsHash(Ruby runtime) {
+            super(runtime);
+
+            this.runtime = runtime;
+        }
+
+        @Override
+        public IRubyObject internalGet(ThreadContext context, IRubyObject key) {
+            if (key instanceof RubySymbol) {
+                return context.getKwarg((RubySymbol) key);
+            }
+            return null;
+        }
+
+        @Override
+        public IRubyObject delete(ThreadContext context, IRubyObject key, Block block) {
+            if (key instanceof RubySymbol) {
+                return context.deleteKwarg(context.findKwarg((RubySymbol) key));
+            }
+            return null;
+        }
+
+        @Override
+        public void internalPutSmall(final IRubyObject key, final IRubyObject value) {
+            runtime.getCurrentContext().setKwarg(key, value);
+        }
     }
 
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
@@ -949,11 +987,13 @@ public class IRRuntimeHelpers {
     public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String argName, boolean acceptsKeywordArgument) {
         RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
 
-        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
+        if (keywordArguments == null) {
+            return UndefinedValue.UNDEFINED;
+        }
 
         RubySymbol keywordName = context.runtime.newSymbol(argName);
 
-        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
+        if (keywordArguments.internalGet(context, keywordName) == null) return UndefinedValue.UNDEFINED;
 
         // SSS FIXME: Can we use an internal delete here?
         // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
@@ -1151,6 +1191,25 @@ public class IRRuntimeHelpers {
         boolean useSmallHash = length <= 10;
 
         RubyHash hash = useSmallHash ? RubyHash.newHash(runtime) : RubyHash.newSmallHash(runtime);
+        for (int i = 0; i < pairs.length;) {
+            if (useSmallHash) {
+                hash.fastASetSmall(runtime, pairs[i++], pairs[i++], true);
+            } else {
+                hash.fastASet(runtime, pairs[i++], pairs[i++], true);
+            }
+
+        }
+        return hash;
+    }
+
+    @JIT
+    public static RubyHash constructFakeHashFromArray(Ruby runtime, IRubyObject[] pairs) {
+        int length = pairs.length / 2;
+        boolean useSmallHash = length <= 10;
+
+        runtime.getCurrentContext().clearKwargs();
+
+        RubyHash hash = runtime.getCurrentContext().fakeKwargs;
         for (int i = 0; i < pairs.length;) {
             if (useSmallHash) {
                 hash.fastASetSmall(runtime, pairs[i++], pairs[i++], true);

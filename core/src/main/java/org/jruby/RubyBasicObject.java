@@ -400,23 +400,23 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * #NIL_F} flag for more information.
      */
     @Override
-    public final boolean isNil() {
-        return (flags & NIL_F) != 0;
+    public boolean isNil() {
+        return false;
     }
 
     /**
      * Is this value a truthy value or not? Based on the {@link #FALSE_F} flag.
      */
     @Override
-    public final boolean isTrue() {
-        return (flags & FALSE_F) == 0;
+    public boolean isTrue() {
+        return true;
     }
 
     /**
      * Is this value a falsey value or not? Based on the {@link #FALSE_F} flag.
      */
-    public final boolean isFalse() {
-        return (flags & FALSE_F) != 0;
+    public boolean isFalse() {
+        return false;
     }
 
     /**
