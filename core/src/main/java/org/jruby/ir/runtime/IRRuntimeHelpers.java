@@ -716,14 +716,14 @@ public class IRRuntimeHelpers {
         return RubyRegexp.nth_match(matchNumber, context.getBackRef());
     }
 
-    public static void defineAlias(ThreadContext context, IRubyObject self, DynamicScope currDynScope, String newNameString, String oldNameString) {
+    public static void defineAlias(ThreadContext context, IRubyObject self, DynamicScope currDynScope, IRubyObject newNameString, IRubyObject oldNameString) {
         if (self == null || self instanceof RubyFixnum || self instanceof RubySymbol) {
             throw context.runtime.newTypeError("no class to make alias");
         }
 
         RubyModule module = findInstanceMethodContainer(context, currDynScope, self);
-        module.defineAlias(newNameString, oldNameString);
-        module.callMethod(context, "method_added", context.runtime.newSymbol(newNameString));
+        module.alias_method(context, newNameString, oldNameString);
+        module.callMethod(context, "method_added", newNameString);
     }
 
     public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope, IRubyObject arg) {
