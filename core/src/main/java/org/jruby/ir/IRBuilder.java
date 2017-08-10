@@ -1,6 +1,5 @@
 package org.jruby.ir;
 
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -629,13 +628,24 @@ public class IRBuilder {
     }
 
     protected Operand[] buildCallArgs(Node args) {
+        return buildCallArgsExcept(args, null);
+    }
+
+    /**
+     * build each argument to a call but if we detect what appears to be a literal simple keyword argument
+     * signature we will pass that along to be excluded in the build here (we will build it separately).
+     * @param args for a call to be built
+     * @param excludeKeywordArg do not build the last one since it is a keyword arg
+     * @return the operands for the call.
+     */
+    protected Operand[] buildCallArgsExcept(Node args, Node excludeKeywordArg) {
         switch (args.getNodeType()) {
             case ARGSCATNODE:
             case ARGSPUSHNODE:
                 return new Operand[] { new Splat(addResultInstr(new BuildSplatInstr(createTemporaryVariable(), build(args), false))) };
             case ARRAYNODE: {
                 Node[] children = ((ListNode) args).children();
-                int numberOfArgs = children.length;
+                int numberOfArgs = children.length - (excludeKeywordArg != null ? 1 : 0);
                 Operand[] builtArgs = new Operand[numberOfArgs];
                 boolean hasAssignments = args.containsVariableAssignment();
 
@@ -1026,7 +1036,6 @@ public class IRBuilder {
     }
 
     public Operand buildCall(Variable result, CallNode callNode) {
-        Node callArgsNode = callNode.getArgsNode();
         Node receiverNode = callNode.getReceiverNode();
 
         // Frozen string optimization: check for "string".freeze
@@ -1063,18 +1072,22 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, receiver));
         }
 
-        Operand[] args = setupCallArgs(callArgsNode);
-        Operand block = setupCallClosure(callNode.getIterNode());
+        HashNode keywordArgs = getPossibleKeywordArgument(callNode.getArgsNode());
 
-        CallInstr callInstr = CallInstr.create(scope, result, callNode.getName(), receiver, args, block);
-
-        // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if ( callNode.getName().equals("new") &&
-             receiverNode instanceof ConstNode &&
-             ((ConstNode)receiverNode).getName().equals("Proc")) {
-            callInstr.setProcNew(true);
+        CallInstr callInstr;
+        Operand block;
+        if (keywordArgs != null) {
+            Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
+            List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
+            block = setupCallClosure(callNode.getIterNode());
+            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, callNode.getName(), receiver, args, block, kwargs);
+        } else {
+            Operand[] args = setupCallArgs(callNode.getArgsNode());
+            block = setupCallClosure(callNode.getIterNode());
+            callInstr = CallInstr.create(scope, result, callNode.getName(), receiver, args, block);
         }
 
+        determineIfProcNew(receiverNode, callNode.getName(), callInstr);
         receiveBreakException(block, callInstr);
 
         if (callNode.isLazy()) {
@@ -1085,6 +1098,47 @@ public class IRBuilder {
         }
 
         return result;
+    }
+
+    private List<KeyValuePair<Operand, Operand>> buildKeywordArguments(HashNode keywordArgs) {
+        List<KeyValuePair<Operand, Operand>> kwargs = new ArrayList<>();
+        for (KeyValuePair<Node, Node> pair: keywordArgs.getPairs()) {
+            kwargs.add(new KeyValuePair<Operand, Operand>((Symbol) build(pair.getKey()), build(pair.getValue())));
+        }
+        return kwargs;
+    }
+
+    private void determineIfProcNew(Node receiverNode, String name, CallInstr callInstr) {
+        // This is to support the ugly Proc.new with no block, which must see caller's frame
+        if (name.equals("new") && receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().equals("Proc")) {
+            callInstr.setProcNew(true);
+        }
+    }
+
+    /*
+     * This will ignore complexity of a hash which contains restkwargs and only return simple
+     * last argument which happens to be all key symbol hashnode which is not empty
+     */
+    private HashNode getPossibleKeywordArgument(Node argsNode) {
+        // Block pass wraps itself around the main args list so don't hold that against it.
+        if (argsNode instanceof BlockPassNode) {
+            return null; //getPossibleKeywordArgument(((BlockPassNode) argsNode).getArgsNode());
+        }
+
+        if (argsNode instanceof ArrayNode) {
+            ArrayNode argsList = (ArrayNode) argsNode;
+
+            if (argsList.isEmpty()) return null;
+
+            Node lastNode = argsList.getLast();
+
+            if (lastNode instanceof HashNode) {
+                HashNode hash = (HashNode) lastNode;
+                if (hash.hasOnlySymbolKeys() && !hash.isEmpty()) return (HashNode) lastNode;
+            }
+        }
+
+        return null;
     }
 
     public Operand buildCase(CaseNode caseNode) {
@@ -2671,28 +2725,41 @@ public class IRBuilder {
 
     public Operand buildFCall(Variable result, FCallNode fcallNode) {
         Node      callArgsNode = fcallNode.getArgsNode();
-        Operand[] args         = setupCallArgs(callArgsNode);
-        Operand   block        = setupCallClosure(fcallNode.getIterNode());
 
         if (result == null) result = createTemporaryVariable();
 
-        determineIfMaybeUsingMethod(fcallNode.getName(), args);
+        HashNode keywordArgs = getPossibleKeywordArgument(fcallNode.getArgsNode());
 
-        // We will stuff away the iters AST source into the closure in the hope we can convert
-        // this closure to a method.
-        if (fcallNode.getName().equals("define_method") && block instanceof WrappedIRClosure) {
-            IRClosure closure = ((WrappedIRClosure) block).getClosure();
+        CallInstr callInstr;
+        Operand block;
+        if (keywordArgs != null) {
+            Operand[] args = buildCallArgsExcept(fcallNode.getArgsNode(), keywordArgs);
+            List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
+            block = setupCallClosure(fcallNode.getIterNode());
+            callInstr = CallInstr.createWithKwargs(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block, kwargs);
+        } else {
+            Operand[] args         = setupCallArgs(callArgsNode);
+            block        = setupCallClosure(fcallNode.getIterNode());
+            determineIfMaybeUsingMethod(fcallNode.getName(), args);
 
-            // To convert to a method we need its variable scoping to appear like a normal method.
-            if (!closure.getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) &&
-                    fcallNode.getIterNode() instanceof IterNode) {
-                closure.setSource((IterNode) fcallNode.getIterNode());
+            // We will stuff away the iters AST source into the closure in the hope we can convert
+            // this closure to a method.
+            if (fcallNode.getName().equals("define_method") && block instanceof WrappedIRClosure) {
+                IRClosure closure = ((WrappedIRClosure) block).getClosure();
+
+                // To convert to a method we need its variable scoping to appear like a normal method.
+                if (!closure.getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) &&
+                        fcallNode.getIterNode() instanceof IterNode) {
+                    closure.setSource((IterNode) fcallNode.getIterNode());
+                }
             }
+
+            callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
         }
 
         determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
-        CallInstr callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
         receiveBreakException(block, callInstr);
+
         return result;
     }
 

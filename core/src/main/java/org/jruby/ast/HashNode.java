@@ -76,7 +76,7 @@ public class HashNode extends Node implements ILiteralNode {
             containsVariableAssignment = true;
         }
 
-        if (!(pair.getKey() instanceof SymbolNode)) hasOnlySymbolKeys = false;
+        if (!(pair.getKey() instanceof SymbolNode) || pair.getKey() == null) hasOnlySymbolKeys = false;
 
         pairs.add(pair);
 
