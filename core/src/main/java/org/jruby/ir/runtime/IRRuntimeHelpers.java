@@ -723,7 +723,6 @@ public class IRRuntimeHelpers {
 
         RubyModule module = findInstanceMethodContainer(context, currDynScope, self);
         module.alias_method(context, newNameString, oldNameString);
-        module.callMethod(context, "method_added", newNameString);
     }
 
     public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope, IRubyObject arg) {
