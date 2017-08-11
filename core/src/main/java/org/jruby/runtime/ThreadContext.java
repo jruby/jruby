@@ -43,6 +43,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
@@ -530,7 +531,36 @@ public final class ThreadContext {
      * @return the value of $~
      */
     public IRubyObject getBackRef() {
-        return getCurrentFrame().getBackRef(nil);
+        return frameStack[frameIndex].getBackRef(nil);
+    }
+
+    /**
+     * MRI: rb_reg_last_match
+     */
+    public IRubyObject last_match() {
+        return RubyRegexp.nth_match(0, frameStack[frameIndex].getBackRef(nil));
+    }
+
+    /**
+     * MRI: rb_reg_match_pre
+     */
+    public IRubyObject match_pre() {
+        return RubyRegexp.match_pre(frameStack[frameIndex].getBackRef(nil));
+    }
+
+
+    /**
+     * MRI: rb_reg_match_post
+     */
+    public IRubyObject match_post() {
+        return RubyRegexp.match_post(frameStack[frameIndex].getBackRef(nil));
+    }
+
+    /**
+     * MRI: rb_reg_match_last
+     */
+    public IRubyObject match_last() {
+        return RubyRegexp.match_last(frameStack[frameIndex].getBackRef(nil));
     }
 
     /**
