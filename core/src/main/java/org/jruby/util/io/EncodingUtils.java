@@ -1709,38 +1709,38 @@ public class EncodingUtils {
     // rb_enc_str_buf_cat
     public static void encStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding enc) {
         encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(),
-                enc, StringSupport.CR_UNKNOWN, null);
+                enc, StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, ByteList ptr) {
         encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(),
-                ptr.getEncoding(), StringSupport.CR_UNKNOWN, null);
+                ptr.getEncoding(), StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes) {
-        encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, USASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN, null);
+        encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, USASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, Encoding enc) {
-        encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, enc, StringSupport.CR_UNKNOWN, null);
+        encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, enc, StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len, Encoding enc) {
         encCrStrBufCat(runtime, str, ptrBytes, ptr, len,
-                enc, StringSupport.CR_UNKNOWN, null);
+                enc, StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, CharSequence cseq) {
         byte[] utf8 = RubyEncoding.encodeUTF8(cseq.toString());
-        encCrStrBufCat(runtime, str, utf8, 0, utf8.length, UTF8Encoding.INSTANCE, StringSupport.CR_UNKNOWN, null);
+        encCrStrBufCat(runtime, str, utf8, 0, utf8.length, UTF8Encoding.INSTANCE, StringSupport.CR_UNKNOWN);
     }
 
     // rb_enc_cr_str_buf_cat
-    public static void encCrStrBufCat(Ruby runtime, CodeRangeable str, ByteList ptr, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
-        encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(), ptrEnc, ptr_cr, ptr_cr_ret);
+    public static int encCrStrBufCat(Ruby runtime, CodeRangeable str, ByteList ptr, Encoding ptrEnc, int ptr_cr) {
+        return encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(), ptrEnc, ptr_cr);
     }
 
-    public static void encCrStrBufCat(Ruby runtime, CodeRangeable str, byte[] ptrBytes, int ptr, int len, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
+    public static int encCrStrBufCat(Ruby runtime, CodeRangeable str, byte[] ptrBytes, int ptr, int len, Encoding ptrEnc, int ptr_cr) {
         Encoding strEnc = str.getByteList().getEncoding();
         Encoding resEnc;
         int str_cr, res_cr;
@@ -1757,13 +1757,13 @@ public class EncodingUtils {
         } else {
             if (!EncodingUtils.encAsciicompat(strEnc) || !EncodingUtils.encAsciicompat(ptrEnc)) {
                 if (len == 0) {
-                    return;
+                    return ptr_cr;
                 }
                 if (str.getByteList().getRealSize() == 0) {
                     rbStrBufCat(runtime, str, ptrBytes, ptr, len);
                     str.getByteList().setEncoding(ptrEnc);
                     str.setCodeRange(ptr_cr);
-                    return;
+                    return ptr_cr;
                 }
                 incompatible = true;
             }
@@ -1777,9 +1777,6 @@ public class EncodingUtils {
                     }
                 }
             }
-        }
-        if (ptr_cr_ret != null) {
-            ptr_cr_ret[0] = ptr_cr;
         }
 
         if (incompatible ||
@@ -1818,6 +1815,8 @@ public class EncodingUtils {
         strBufCat(runtime, str, ptrBytes, ptr, len);
         str.getByteList().setEncoding(resEnc);
         str.setCodeRange(res_cr);
+
+        return ptr_cr;
     }
 
     // econv_args

@@ -1343,9 +1343,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // rb_str_buf_append against ptr
     public final int cat19(ByteList other, int codeRange) {
-        int[] ptr_cr_ret = {codeRange};
-        EncodingUtils.encCrStrBufCat(getRuntime(), this, other, other.getEncoding(), codeRange, ptr_cr_ret);
-        return ptr_cr_ret[0];
+        return EncodingUtils.encCrStrBufCat(getRuntime(), this, other, other.getEncoding(), codeRange);
     }
 
     public final RubyString cat(RubyString str) {
@@ -1380,16 +1378,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // rb_enc_str_buf_cat
     public final int cat(byte[]bytes, int p, int len, Encoding enc) {
-        int[] ptr_cr_ret = {CR_UNKNOWN};
-        EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, CR_UNKNOWN, ptr_cr_ret);
-        return ptr_cr_ret[0];
+        int cr = CR_UNKNOWN;
+        cr = EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, cr);
+        return cr;
     }
 
     // rb_str_buf_cat_ascii
     public final RubyString catAscii(byte[]bytes, int ptr, int ptrLen) {
         Encoding enc = value.getEncoding();
         if (enc.isAsciiCompatible()) {
-            EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, ptr, ptrLen), enc, CR_7BIT, null);
+            EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, ptr, ptrLen), enc, CR_7BIT);
         } else {
             byte buf[] = new byte[enc.maxLength()];
             int end = ptr + ptrLen;
@@ -1397,7 +1395,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 int c = bytes[ptr];
                 int len = codeLength(enc, c);
                 EncodingUtils.encMbcput(c, buf, 0, enc);
-                EncodingUtils.encCrStrBufCat(getRuntime(), this, buf, 0, len, enc, CR_VALID, null);
+                EncodingUtils.encCrStrBufCat(getRuntime(), this, buf, 0, len, enc, CR_VALID);
                 ptr++;
             }
         }
