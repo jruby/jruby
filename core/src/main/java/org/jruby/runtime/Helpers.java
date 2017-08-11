@@ -2001,13 +2001,13 @@ public class Helpers {
         }
     }
 
+    @Deprecated
     public static RubyArray argsPush(ThreadContext context, RubyArray first, IRubyObject second) {
         return ((RubyArray)first.dup()).append(second);
     }
 
-    @Deprecated
-    public static RubyArray argsPush(RubyArray first, IRubyObject second) {
-        return argsPush(first.getRuntime().getCurrentContext(), first, second);
+    public static RubyArray argsPush(IRubyObject first, IRubyObject second) {
+        return ((RubyArray)first.dup()).append(second);
     }
 
     public static RubyArray argsCat(ThreadContext context, IRubyObject first, IRubyObject second) {
