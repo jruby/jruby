@@ -34,7 +34,6 @@ public enum Operation {
 
     /** control-flow **/
     JUMP(OpFlags.f_is_jump_or_branch),
-    BEQ(OpFlags.f_is_jump_or_branch),
     BNE(OpFlags.f_is_jump_or_branch),
     B_UNDEF(OpFlags.f_is_jump_or_branch),
     B_NIL(OpFlags.f_is_jump_or_branch),

@@ -586,15 +586,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void BEQInstr(BEQInstr beqInstr) {
-        jvmMethod().loadContext();
-        visit(beqInstr.getArg1());
-        visit(beqInstr.getArg2());
-        jvmMethod().invokeHelper("BEQ", boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
-        jvmAdapter().iftrue(getJVMLabel(beqInstr.getJumpTarget()));
-    }
-
-    @Override
     public void BFalseInstr(BFalseInstr bFalseInstr) {
         Operand arg1 = bFalseInstr.getArg1();
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed

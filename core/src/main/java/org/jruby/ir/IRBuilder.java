@@ -837,7 +837,7 @@ public class IRBuilder {
             Label l = getNewLabel();
             Operand v1 = build(andNode.getFirstNode());
             Variable ret = getValueInTemporaryVariable(v1);
-            addInstr(BEQInstr.create(v1, manager.getFalse(), l));
+            addInstr(createBranch(v1, manager.getFalse(), l));
             Operand v2 = build(andNode.getSecondNode());
             addInstr(new CopyInstr(ret, v2));
             addInstr(new LabelInstr(l));
@@ -1188,42 +1188,12 @@ public class IRBuilder {
 
             Variable eqqResult = createTemporaryVariable();
             labels.add(bodyLabel);
-            Operand v1, v2;
-            if (whenNode.getExpressionNodes() instanceof ListNode
-                    // DNode produces a proper result, so we don't want the special ListNode handling below
-                    // FIXME: This is obviously gross, and we need a better way to filter out non-expression ListNode here
-                    // See GH #2423
-                    && !(whenNode.getExpressionNodes() instanceof DNode)) {
-                // Note about refactoring:
-                // - BEQInstr has a quick implementation when the second operand is a boolean literal
-                //   If it can be fixed to do this even on the first operand, we can switch around
-                //   v1 and v2 in the UndefinedValue scenario and DRY out this code.
-                // - Even with this asymmetric implementation of BEQInstr, you might be tempted to
-                //   switch around v1 and v2 in the else case.  But, that is equivalent to this Ruby code change:
-                //      (v1 == value) instead of (value == v1)
-                //   It seems that they should be identical, but the first one is v1.==(value) and the second one is
-                //   value.==(v1).  This is just fine *if* the Ruby programmer has implemented an algebraically
-                //   symmetric "==" method on those objects.  If not, then, the results might be unexpected where the
-                //   code (intentionally or otherwise) relies on this asymmetry of "==".  While it could be argued
-                //   that this a Ruby code bug, we will just try to preserve the order of the == check as it appears
-                //   in the Ruby code.
-                if (value == UndefinedValue.UNDEFINED)  {
-                    v1 = build(whenNode.getExpressionNodes());
-                    v2 = manager.getTrue();
-                } else {
-                    v1 = value;
-                    v2 = build(whenNode.getExpressionNodes());
-                }
-            } else {
-                Operand expression = buildWithOrder(whenNode.getExpressionNodes(), whenNode.containsVariableAssignment());
-                Node exprNodes = whenNode.getExpressionNodes();
-                boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
+            Operand expression = buildWithOrder(whenNode.getExpressionNodes(), whenNode.containsVariableAssignment());
+            Node exprNodes = whenNode.getExpressionNodes();
+            boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
-                addInstr(new EQQInstr(eqqResult, expression, value, needsSplat));
-                v1 = eqqResult;
-                v2 = manager.getTrue();
-            }
-            addInstr(BEQInstr.create(v1, v2, bodyLabel));
+            addInstr(new EQQInstr(eqqResult, expression, value, needsSplat));
+            addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
             // preserving the order (or maybe not, since we would have to sort the constants first
@@ -1331,45 +1301,15 @@ public class IRBuilder {
 
             Variable eqqResult = createTemporaryVariable();
             labels.add(bodyLabel);
-            Operand v1, v2;
-            if (whenNode.getExpressionNodes() instanceof ListNode
-                    // DNode produces a proper result, so we don't want the special ListNode handling below
-                    // FIXME: This is obviously gross, and we need a better way to filter out non-expression ListNode here
-                    // See GH #2423
-                    && !(whenNode.getExpressionNodes() instanceof DNode)) {
-                // Note about refactoring:
-                // - BEQInstr has a quick implementation when the second operand is a boolean literal
-                //   If it can be fixed to do this even on the first operand, we can switch around
-                //   v1 and v2 in the UndefinedValue scenario and DRY out this code.
-                // - Even with this asymmetric implementation of BEQInstr, you might be tempted to
-                //   switch around v1 and v2 in the else case.  But, that is equivalent to this Ruby code change:
-                //      (v1 == value) instead of (value == v1)
-                //   It seems that they should be identical, but the first one is v1.==(value) and the second one is
-                //   value.==(v1).  This is just fine *if* the Ruby programmer has implemented an algebraically
-                //   symmetric "==" method on those objects.  If not, then, the results might be unexpected where the
-                //   code (intentionally or otherwise) relies on this asymmetry of "==".  While it could be argued
-                //   that this a Ruby code bug, we will just try to preserve the order of the == check as it appears
-                //   in the Ruby code.
-                if (value == UndefinedValue.UNDEFINED)  {
-                    v1 = build(whenNode.getExpressionNodes());
-                    v2 = manager.getTrue();
-                } else {
-                    v1 = value;
-                    v2 = build(whenNode.getExpressionNodes());
-                }
-            } else {
-                Operand expression = build(whenNode.getExpressionNodes());
+            Operand expression = build(whenNode.getExpressionNodes());
 
-                // use frozen string for direct literal strings in `when`
-                if (expression instanceof StringLiteral) {
-                    expression = ((StringLiteral) expression).frozenString;
-                }
-
-                addInstr(new EQQInstr(eqqResult, expression, value, false));
-                v1 = eqqResult;
-                v2 = manager.getTrue();
+            // use frozen string for direct literal strings in `when`
+            if (expression instanceof StringLiteral) {
+                expression = ((StringLiteral) expression).frozenString;
             }
-            addInstr(BEQInstr.create(v1, v2, bodyLabel));
+
+            addInstr(new EQQInstr(eqqResult, expression, value, false));
+            addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
             // preserving the order (or maybe not, since we would have to sort the constants first
@@ -1674,7 +1614,7 @@ public class IRBuilder {
             for (Node elt: array.children()) {
                 Operand result = buildGetDefinition(elt);
 
-                addInstr(BEQInstr.create(result, manager.getNil(), undefLabel));
+                addInstr(createBranch(result, manager.getNil(), undefLabel));
             }
 
             addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.EXPRESSION.getText())));
@@ -1752,7 +1692,7 @@ public class IRBuilder {
                             }
                     )
             );
-            addInstr(BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
+            addInstr(createBranch(tmpVar, manager.getNil(), undefLabel));
             Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), DefinedMessage.SUPER.getText());
             return buildDefnCheckIfThenPaths(undefLabel, superDefnVal);
         }
@@ -1832,7 +1772,7 @@ public class IRBuilder {
                     Label done = getNewLabel();
                     Variable result = createTemporaryVariable();
                     Operand test = buildGetDefinition(((Colon2Node) colon).getLeftNode());
-                    addInstr(BEQInstr.create(test, manager.getNil(), bad));
+                    addInstr(createBranch(test, manager.getNil(), bad));
                     Operand lhs = build(((Colon2Node) colon).getLeftNode());
                     addInstr(
                             new RuntimeHelperCall(
@@ -1887,7 +1827,7 @@ public class IRBuilder {
                             }
                     )
             );
-            addInstr(BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
+            addInstr(createBranch(tmpVar, manager.getNil(), undefLabel));
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), "method");
             return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
         }
@@ -1899,7 +1839,7 @@ public class IRBuilder {
                 public Operand run() {
                     final Label undefLabel = getNewLabel();
                     Operand receiverDefn = buildGetDefinition(callNode.getReceiverNode());
-                    addInstr(BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
+                    addInstr(createBranch(receiverDefn, manager.getNil(), undefLabel));
                     Variable tmpVar = createTemporaryVariable();
                     addInstr(
                             new RuntimeHelperCall(
@@ -1932,7 +1872,7 @@ public class IRBuilder {
                 public Operand run() {
                     final Label  undefLabel = getNewLabel();
                     Operand receiverDefn = buildGetDefinition(attrAssign.getReceiverNode());
-                    addInstr(BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
+                    addInstr(createBranch(receiverDefn, manager.getNil(), undefLabel));
                     /* --------------------------------------------------------------------------
                      * This basically combines checks from CALLNODE and FCALLNODE
                      *
@@ -1961,7 +1901,7 @@ public class IRBuilder {
                                     }
                             )
                     );
-                    addInstr(BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
+                    addInstr(createBranch(tmpVar, manager.getNil(), undefLabel));
                     Operand argsCheckDefn = buildGetArgumentDefinition(attrAssign.getArgsNode(), "assignment");
                     return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
                 }
@@ -1993,7 +1933,7 @@ public class IRBuilder {
     protected Variable buildDefinitionCheck(ResultInstr definedInstr, String definedReturnValue) {
         Label undefLabel = getNewLabel();
         addInstr((Instr) definedInstr);
-        addInstr(BEQInstr.create(definedInstr.getResult(), manager.getFalse(), undefLabel));
+        addInstr(createBranch(definedInstr.getResult(), manager.getFalse(), undefLabel));
         return buildDefnCheckIfThenPaths(undefLabel, new FrozenString(definedReturnValue));
     }
 
@@ -2012,7 +1952,7 @@ public class IRBuilder {
                     break;
                 } else if (!def.hasKnownValue()) { // Optimization!
                     failPathReqd = true;
-                    addInstr(BEQInstr.create(def, manager.getNil(), failLabel));
+                    addInstr(createBranch(def, manager.getNil(), failLabel));
                 }
             }
         } else {
@@ -2021,7 +1961,7 @@ public class IRBuilder {
                 rv = manager.getNil();
             } else if (!def.hasKnownValue()) { // Optimization!
                 failPathReqd = true;
-                addInstr(BEQInstr.create(def, manager.getNil(), failLabel));
+                addInstr(createBranch(def, manager.getNil(), failLabel));
             }
         }
 
@@ -2872,7 +2812,7 @@ public class IRBuilder {
         addInstr(new LabelInstr(s2Label));
 
         // For exclusive ranges/flips, we dont evaluate s2's condition if s1's condition was satisfied
-        if (flipNode.isExclusive()) addInstr(BEQInstr.create(returnVal, manager.getTrue(), doneLabel));
+        if (flipNode.isExclusive()) addInstr(createBranch(returnVal, manager.getTrue(), doneLabel));
 
         // Are we in state 2?
         addInstr(BNEInstr.create(doneLabel, flipState, s2));
@@ -3001,7 +2941,7 @@ public class IRBuilder {
         Label    falseLabel = getNewLabel();
         Label    doneLabel  = getNewLabel();
         Operand  thenResult;
-        addInstr(BEQInstr.create(build(actualCondition), manager.getFalse(), falseLabel));
+        addInstr(createBranch(build(actualCondition), manager.getFalse(), falseLabel));
 
         boolean thenNull = false;
         boolean elseNull = false;
@@ -3278,7 +3218,7 @@ public class IRBuilder {
         String opName = opAsgnNode.getOperatorName();
         if (opName.equals("||") || opName.equals("&&")) {
             l = getNewLabel();
-            addInstr(BEQInstr.create(readerValue, opName.equals("||") ? manager.getTrue() : manager.getFalse(), l));
+            addInstr(createBranch(readerValue, opName.equals("||") ? manager.getTrue() : manager.getFalse(), l));
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode());
@@ -3360,7 +3300,7 @@ public class IRBuilder {
         Label    l  = getNewLabel();
         Operand  v1 = build(andNode.getFirstNode());
         Variable result = getValueInTemporaryVariable(v1);
-        addInstr(BEQInstr.create(v1, manager.getFalse(), l));
+        addInstr(createBranch(v1, manager.getFalse(), l));
         Operand v2 = build(andNode.getSecondNode());  // This does the assignment!
         addInstr(new CopyInstr(result, v2));
         addInstr(new LabelInstr(l));
@@ -3385,7 +3325,7 @@ public class IRBuilder {
             l2 = getNewLabel();
             v1 = buildGetDefinition(orNode.getFirstNode());
             addInstr(new CopyInstr(flag, v1));
-            addInstr(BEQInstr.create(flag, manager.getNil(), l2)); // if v1 is undefined, go to v2's computation
+            addInstr(createBranch(flag, manager.getNil(), l2)); // if v1 is undefined, go to v2's computation
         }
         v1 = build(orNode.getFirstNode()); // build of 'x'
         addInstr(new CopyInstr(flag, v1));
@@ -3393,7 +3333,7 @@ public class IRBuilder {
         if (needsDefnCheck) {
             addInstr(new LabelInstr(l2));
         }
-        addInstr(BEQInstr.create(flag, manager.getTrue(), l1));  // if v1 is defined and true, we are done!
+        addInstr(createBranch(flag, manager.getTrue(), l1));  // if v1 is defined and true, we are done!
         Operand v2 = build(orNode.getSecondNode()); // This is an AST node that sets x = y, so nothing special to do here.
         addInstr(new CopyInstr(result, v2));
         addInstr(new LabelInstr(l1));
@@ -3421,7 +3361,7 @@ public class IRBuilder {
         Variable elt = createTemporaryVariable();
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
         addInstr(CallInstr.create(scope, callType, elt, "[]", array, argList, null));
-        addInstr(BEQInstr.create(elt, truthy, endLabel));
+        addInstr(createBranch(elt, truthy, endLabel));
         Operand value = build(opElementAsgnNode.getValueNode());
 
         argList = addArg(argList, value);
@@ -3475,7 +3415,7 @@ public class IRBuilder {
         Label endOfExprLabel = getNewLabel();
         Operand left = build(orNode.getFirstNode());
         Variable result = getValueInTemporaryVariable(left);
-        addInstr(BEQInstr.create(left, manager.getTrue(), endOfExprLabel));
+        addInstr(createBranch(left, manager.getTrue(), endOfExprLabel));
         Operand right  = build(orNode.getSecondNode());
         addInstr(new CopyInstr(result, right));
         addInstr(new LabelInstr(endOfExprLabel));
@@ -3670,7 +3610,7 @@ public class IRBuilder {
 
     private void outputExceptionCheck(Operand excType, Operand excObj, Label caughtLabel) {
         Variable eqqResult = addResultInstr(new RescueEQQInstr(createTemporaryVariable(), excType, excObj));
-        addInstr(BEQInstr.create(eqqResult, manager.getTrue(), caughtLabel));
+        addInstr(createBranch(eqqResult, manager.getTrue(), caughtLabel));
     }
 
     private void buildRescueBodyInternal(RescueBodyNode rescueBodyNode, Variable rv, Variable exc, Label endLabel) {
@@ -3923,7 +3863,7 @@ public class IRBuilder {
             addInstr(new LabelInstr(loop.loopStartLabel));
             if (isLoopHeadCondition) {
                 Operand cv = build(conditionNode);
-                addInstr(BEQInstr.create(cv, isWhile ? manager.getFalse() : manager.getTrue(), setupResultLabel));
+                addInstr(createBranch(cv, isWhile ? manager.getFalse() : manager.getTrue(), setupResultLabel));
             }
 
             // Redo jumps here
@@ -3941,7 +3881,7 @@ public class IRBuilder {
                 addInstr(new JumpInstr(loop.loopStartLabel));
             } else {
                 Operand cv = build(conditionNode);
-                addInstr(BEQInstr.create(cv, isWhile ? manager.getTrue() : manager.getFalse(), loop.iterStartLabel));
+                addInstr(createBranch(cv, isWhile ? manager.getTrue() : manager.getFalse(), loop.iterStartLabel));
             }
 
             // Loop result -- nil always
@@ -4218,5 +4158,48 @@ public class IRBuilder {
         }
 
         return callArgs.toArray(new Operand[callArgs.size()]);
+    }
+
+    public static Instr createBranch(Operand v1, Operand v2, Label jmpTarget) {
+        if (v2 instanceof Boolean) {
+            Boolean lhs = (Boolean) v2;
+
+            if (lhs.isTrue()) {
+                if (v1 instanceof Boolean) {
+                    if (((Boolean) v1).isTrue()) { // true == true -> just jump
+                        return new JumpInstr(jmpTarget);
+                    } else {                       // false == true (this will never jump)
+                        return NopInstr.NOP;
+                    }
+                } else {
+                    return new BTrueInstr(jmpTarget, v1);
+                }
+            } else if (lhs.isFalse()) {
+                if (v1 instanceof Boolean) {
+                    if (((Boolean) v1).isFalse()) { // false == false -> just jump
+                        return new JumpInstr(jmpTarget);
+                    } else {                        // true == false (this will never jump)
+                        return NopInstr.NOP;
+                    }
+                } else {
+                    return new BFalseInstr(jmpTarget, v1);
+                }
+            }
+        } else if (v2 instanceof Nil) {
+            if (v1 instanceof Nil) { // nil == nil -> just jump
+                return new JumpInstr(jmpTarget);
+            } else {
+                return new BNilInstr(jmpTarget, v1);
+            }
+        }
+        if (v2 == UndefinedValue.UNDEFINED) {
+            if (v1 == UndefinedValue.UNDEFINED) {
+                return new JumpInstr(jmpTarget);
+            } else {
+                return new BUndefInstr(jmpTarget, v1);
+            }
+        }
+
+        throw new RuntimeException("BUG: no BEQ");
     }
 }
