@@ -973,13 +973,13 @@ public class JVMVisitor extends IRVisitor {
         csByteList.setEncoding(compoundstring.getEncoding());
         jvmMethod().pushString(csByteList, StringSupport.CR_UNKNOWN);
         for (Operand p : compoundstring.getPieces()) {
-//            if ((p instanceof StringLiteral) && (compoundstring.isSameEncodingAndCodeRange((StringLiteral)p))) {
-//                jvmMethod().pushByteList(((StringLiteral)p).bytelist);
-//                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class));
-//            } else {
-                visit(p);
+            visit(p);
+            if (p instanceof StringLiteral) {
+                // append19 with a RubyString ends up in cat19, so we skip the type checks
+                jvmAdapter().invokevirtual(p(RubyString.class), "cat19", sig(RubyString.class, RubyString.class));
+            } else {
                 jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
-//            }
+            }
         }
         if (compoundstring.isFrozen()) {
             jvmMethod().loadContext();
