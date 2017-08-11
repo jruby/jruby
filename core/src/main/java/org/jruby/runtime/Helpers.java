@@ -2244,20 +2244,17 @@ public class Helpers {
         return new IRubyObject[] { value };
     }
 
-    public static boolean BEQ(ThreadContext context, IRubyObject value1, IRubyObject value2) {
-        return value1.op_equal(context, value2).isTrue();
+    public static RubyString appendByteList(RubyString target, ByteList source) {
+        target.getByteList().append(source);
+        return target;
     }
 
+    @JIT
     public static boolean BNE(ThreadContext context, IRubyObject value1, IRubyObject value2) {
         boolean eql = value2 == context.nil || value2 == UndefinedValue.UNDEFINED ?
                 value1 == value2 : value1.op_equal(context, value2).isTrue();
 
         return !eql;
-    }
-
-    public static RubyString appendByteList(RubyString target, ByteList source) {
-        target.getByteList().append(source);
-        return target;
     }
 
     @Deprecated
