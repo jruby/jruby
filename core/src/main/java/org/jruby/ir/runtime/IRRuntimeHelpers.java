@@ -1974,6 +1974,9 @@ public class IRRuntimeHelpers {
         return RubyArray.newArray(context.runtime, obj0, obj1);
     }
 
+    @JIT @Interp
+
+
     private static IRRuntimeHelpersSites sites(ThreadContext context) {
         return context.sites.IRRuntimeHelpers;
     }
