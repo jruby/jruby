@@ -2024,17 +2024,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.runtime;
-
-        if (this == obj) {
-            return runtime.getTrue();
-        }
+        if (this == obj) return context.runtime.getTrue();
 
         if (!(obj instanceof RubyArray)) {
-            if (obj == context.nil) return runtime.getFalse();
+            if (obj == context.nil) return context.runtime.getFalse();
 
             if (!sites(context).respond_to_to_ary.respondsTo(context, obj, obj)) {
-                return runtime.getFalse();
+                return context.runtime.getFalse();
             }
             return Helpers.rbEqual(context, obj, this);
         }
@@ -4998,8 +4994,6 @@ float_loop:
     }
 
     public int lastIndexOf(Object element) {
-        int myBegin = 0;
-
         if (element != null) {
             IRubyObject convertedElement = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element);
 
@@ -5129,6 +5123,15 @@ float_loop:
 
     public void clear() {
         rb_clear();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (other instanceof RubyArray) {
+            return op_equal(getRuntime().getCurrentContext(), (RubyArray) other).isTrue();
+        }
+        return false;
     }
 
     private IRubyObject safeArrayRef(IRubyObject[] values, int i) {
