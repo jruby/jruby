@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -16,7 +17,7 @@ import java.util.List;
 /**
  * Represents a frozen string value.
  */
-public class FrozenString extends ImmutableLiteral implements Stringable {
+public class FrozenString extends ImmutableLiteral<RubyString> implements Stringable {
     // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 
     public final ByteList bytelist;
@@ -80,11 +81,6 @@ public class FrozenString extends ImmutableLiteral implements Stringable {
     }
 
     @Override
-    public void addUsedVariables(List<Variable> l) {
-        /* Do nothing */
-    }
-
-    @Override
     public int hashCode() {
         return bytelist.hashCode();
     }
@@ -105,7 +101,7 @@ public class FrozenString extends ImmutableLiteral implements Stringable {
     }
 
     @Override
-    public Object createCacheObject(ThreadContext context) {
+    public RubyString createCacheObject(ThreadContext context) {
         return IRRuntimeHelpers.newFrozenString(context, bytelist, coderange, file, line);
     }
 

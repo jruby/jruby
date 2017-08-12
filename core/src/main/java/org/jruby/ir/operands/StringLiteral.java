@@ -83,8 +83,7 @@ public class StringLiteral extends Operand implements Stringable {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        RubyString string = (RubyString) frozenString.retrieve(context, self, currScope, currDynScope, temp);
-        return string.strDup(context.runtime);
+        return frozenString.retrieve(context, self, currScope, currDynScope, temp).strDup(context.runtime);
     }
 
     @Override
