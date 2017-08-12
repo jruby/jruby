@@ -49,7 +49,7 @@ class BlockJITTask implements Runnable {
     public void run() {
         try {
             String key = SexpMaker.sha1(body.getIRScope());
-            JVMVisitor visitor = new JVMVisitor();
+            JVMVisitor visitor = new JVMVisitor(jitCompiler.runtime);
             BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, jitCompiler.runtime, body, visitor);
 
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();

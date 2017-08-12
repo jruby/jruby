@@ -73,10 +73,11 @@ public class JVMVisitor extends IRVisitor {
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", SELF_BLOCK_NAME, "scope", "self", "args", BLOCK_ARG_NAME, "superName", "type"}, ThreadContext.class, Block.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
-    public JVMVisitor() {
+    public JVMVisitor(Ruby runtime) {
         this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
         this.methodIndex = 0;
         this.scopeMap = new HashMap();
+        this.runtime = runtime;
     }
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
@@ -982,11 +983,14 @@ public class JVMVisitor extends IRVisitor {
             }
         }
         if (compoundstring.isFrozen()) {
-            jvmMethod().loadContext();
-            jvmAdapter().swap();
-            jvmAdapter().ldc(compoundstring.getFile());
-            jvmAdapter().ldc(compoundstring.getLine());
-            jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, ThreadContext.class, RubyString.class, String.class, int.class));
+            if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
+                jvmMethod().loadContext();
+                jvmAdapter().ldc(compoundstring.getFile());
+                jvmAdapter().ldc(compoundstring.getLine());
+                jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class, ThreadContext.class, String.class, int.class));
+            } else {
+                jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
+            }
         }
         jvmStoreLocal(compoundstring.getResult());
     }
@@ -2597,7 +2601,8 @@ public class JVMVisitor extends IRVisitor {
         return jvm.method();
     }
 
-    private JVM jvm;
+    private final JVM jvm;
+    private final Ruby runtime;
     private int methodIndex;
     private Map<String, IRScope> scopeMap;
     private String file;

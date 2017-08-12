@@ -2495,7 +2495,8 @@ public class IRBuilder {
         }
 
         if (result == null) result = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), node.isFrozen(), getFileName(), node.getLine()));
+        boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), node.isFrozen(), debuggingFrozenStringLiteral, getFileName(), node.getLine()));
         return result;
     }
 
@@ -2507,7 +2508,8 @@ public class IRBuilder {
         }
 
         if (result == null) result = createTemporaryVariable();
-        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), false, getFileName(), node.getLine()));
+        boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
+        addInstr(new BuildCompoundStringInstr(result, pieces, node.getEncoding(), false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
         return copyAndReturnValue(new DynamicSymbol(result));
     }
 

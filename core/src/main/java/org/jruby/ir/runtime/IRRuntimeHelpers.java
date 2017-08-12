@@ -1899,13 +1899,15 @@ public class IRRuntimeHelpers {
         return string;
     }
 
+    @JIT @Interp
     public static RubyString freezeLiteralString(RubyString string) {
         string.setFrozen(true);
 
         return string;
     }
 
-    public static RubyString freezeLiteralString(ThreadContext context, RubyString string, String file, int line) {
+    @JIT @Interp
+    public static RubyString freezeLiteralString(RubyString string, ThreadContext context, String file, int line) {
         Ruby runtime = context.runtime;
 
         if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {

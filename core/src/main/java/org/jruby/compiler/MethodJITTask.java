@@ -26,6 +26,7 @@
 package org.jruby.compiler;
 
 import org.jruby.MetaClass;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
@@ -77,8 +78,9 @@ class MethodJITTask implements Runnable {
             }
 
             String key = SexpMaker.sha1(method.getIRScope());
-            JVMVisitor visitor = new JVMVisitor();
-            MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, jitCompiler.runtime, method, visitor);
+            Ruby runtime = jitCompiler.runtime;
+            JVMVisitor visitor = new JVMVisitor(runtime);
+            MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
 
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();
             generator.compile(context);
@@ -88,7 +90,7 @@ class MethodJITTask implements Runnable {
             // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
             // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
             // mechanism of getting all method sizes.
-            Class sourceClass = visitor.defineFromBytecode(method.getIRScope(), generator.bytecode(), new OneShotClassLoader(jitCompiler.runtime.getJRubyClassLoader()));
+            Class sourceClass = visitor.defineFromBytecode(method.getIRScope(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
 
             if (sourceClass == null) {
                 // class could not be found nor generated; give up on JIT and bail out
