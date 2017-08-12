@@ -1,6 +1,7 @@
 package org.jruby.ir.runtime;
 
 import com.headius.invokebinder.Signature;
+import jnr.ffi.annotations.In;
 import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
@@ -1898,6 +1899,12 @@ public class IRRuntimeHelpers {
         return string;
     }
 
+    public static RubyString freezeLiteralString(RubyString string) {
+        string.setFrozen(true);
+
+        return string;
+    }
+
     public static RubyString freezeLiteralString(ThreadContext context, RubyString string, String file, int line) {
         Ruby runtime = context.runtime;
 
@@ -1975,7 +1982,10 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-
+    public static RubyString getFileNameStringFromScope(ThreadContext context, StaticScope currScope) {
+        // FIXME: Not very efficient to do all this every time
+        return context.runtime.newString(currScope.getIRScope().getFileName());
+    }
 
     private static IRRuntimeHelpersSites sites(ThreadContext context) {
         return context.sites.IRRuntimeHelpers;
