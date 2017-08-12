@@ -77,17 +77,18 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class, ByteList.class), RegexpObjectSite.BOOTSTRAP, options);
     }
 
-    public void pushDRegexp(Runnable callback, RegexpOptions options, int arity) {
+    public void pushDRegexp(Runnable callback, int options, int arity) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("dynamic regexp has more than " + MAX_ARGUMENTS + " elements");
 
         String cacheField = null;
         Label done = null;
 
-        if (options.isOnce()) {
+        boolean once = RegexpOptions.isOnce(options);
+        if (once) {
             // need to cache result forever
             cacheField = "dregexp" + getClassData().callSiteCount.getAndIncrement();
             done = new Label();
-            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
+            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_VOLATILE, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
             adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
             adapter.dup();
             adapter.ifnonnull(done);
@@ -97,7 +98,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         // We may evaluate these operands multiple times or the upstream instrs that created them, which is a bug (jruby/jruby#2798).
         // However, only one dregexp will ever come out of the indy call.
         callback.run();
-        adapter.invokedynamic("dregexp", sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity)), DRegexpObjectSite.BOOTSTRAP, options.toEmbeddedOptions());
+        adapter.invokedynamic("dregexp", sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity)), DRegexpObjectSite.BOOTSTRAP, options);
 
         if (done != null) {
             adapter.dup();

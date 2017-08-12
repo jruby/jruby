@@ -43,7 +43,8 @@ public interface ReOptions {
     int RE_OPTION_ONCE         = 128; // odd...but it is odd in ruby too.    
     int RE_LITERAL             = 256; // reusing regexp_options since we used 
                                       // and we won't escape regexp_options.
-    int RE_DEFAULT = 512; // Only for RubyRegexp. for kcode default
+    int RE_DEFAULT             = 512; // Only for RubyRegexp. for kcode default
+    int RE_JAVA                = 1024;
 
     @Deprecated
     int RE_OPTION_LONGEST      = 16;

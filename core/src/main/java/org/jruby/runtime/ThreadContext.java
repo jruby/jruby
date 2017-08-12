@@ -1259,7 +1259,12 @@ public final class ThreadContext {
     public boolean exceptionRequiresBacktrace = true;
 
     public Encoding[] encodingHolder() {
-        if (encodingHolder == null) encodingHolder = new Encoding[1];
+        Encoding[] encodingHolder = this.encodingHolder;
+        if (encodingHolder == null) {
+            this.encodingHolder = encodingHolder = new Encoding[1];
+        } else {
+            encodingHolder[0] = null;
+        }
         return encodingHolder;
     }
 

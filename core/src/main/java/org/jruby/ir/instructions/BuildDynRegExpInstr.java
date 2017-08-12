@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jcodings.Encoding;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
@@ -39,17 +40,21 @@ public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
         }
     };
 
-    final private RegexpOptions options;
+    final private int options;
     final private RECache reCache;
 
     // Only used by cloning
-    private BuildDynRegExpInstr(Variable result, Operand[] pieces, RegexpOptions options, RECache reCache) {
+    private BuildDynRegExpInstr(Variable result, Operand[] pieces, int embedded, RECache reCache) {
         super(Operation.BUILD_DREGEXP, result, pieces);
-        this.options = options;
+        this.options = embedded;
         this.reCache = reCache;
     }
 
     public BuildDynRegExpInstr(Variable result, Operand[] pieces, RegexpOptions options) {
+        this(result, pieces, options.toEmbeddedOptions());
+    }
+
+    public BuildDynRegExpInstr(Variable result, Operand[] pieces, int options) {
         super(Operation.BUILD_DREGEXP, result, pieces);
         this.options = options;
         this.reCache = new RECache();
@@ -59,7 +64,7 @@ public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
        return getOperands();
     }
 
-    public RegexpOptions getOptions() {
+    public int getOptions() {
        return options;
     }
 
@@ -78,41 +83,46 @@ public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
         return new BuildDynRegExpInstr(ii.getRenamedVariable(result), cloneOperands(ii), options, this.reCache);
     }
 
-    private RubyString[] retrievePieces(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        Operand[] operands = getOperands();
-        int length = operands.length;
-        RubyString[] strings = new RubyString[length];
-        for (int i = 0; i < length; i++) {
-            strings[i] = (RubyString) operands[i].retrieve(context, self, currScope, currDynScope, temp);
-        }
-        return strings;
-    }
-
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getPieces());
-        e.encode(getOptions().toEmbeddedOptions());
+        e.encode(getOptions());
     }
 
     public static BuildDynRegExpInstr decode(IRReaderDecoder d) {
         return new BuildDynRegExpInstr(d.decodeVariable(),
-                d.decodeOperandArray(),RegexpOptions.fromEmbeddedOptions(d.decodeInt()));
+                d.decodeOperandArray(),d.decodeInt());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // FIXME (from RegexpNode.java): 1.9 should care about internal or external encoding and not kcode.
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
-        if (reCache.rubyRegexp == null || !options.isOnce() || context.runtime.getKCode() != reCache.rubyRegexp.getKCode()) {
-            RubyString[] pieces  = retrievePieces(context, self, currScope, currDynScope, temp);
-            RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+        boolean once = RegexpOptions.isOnce(options);
+        if (reCache.rubyRegexp == null || !once || context.runtime.getKCode() != reCache.rubyRegexp.getKCode()) {
+            RubyString pattern = preprocessPattern(context, currScope, currDynScope, self, temp);
             RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
             re.setLiteral();
-            reCache.updateCache(options.isOnce(), re);
+            reCache.updateCache(once, re);
         }
 
         return reCache.rubyRegexp;
+    }
+
+    private RubyString preprocessPattern(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        Operand[] operands = getOperands();
+        int length = operands.length;
+        RubyString pattern = null;
+        Encoding[] regexpEnc = context.encodingHolder();
+
+        for (int i = 0; i < length; i++) {
+            pattern = RubyRegexp.preprocessDRegexpElement(context.runtime, pattern, regexpEnc, (RubyString) operands[i].retrieve(context, self, currScope, currDynScope, temp), RegexpOptions.isEncodingNone(options));
+        }
+
+        if (regexpEnc[0] != null) pattern.setEncoding(regexpEnc[0]);
+
+        return pattern;
     }
 
     @Override

@@ -175,15 +175,20 @@ public class RegexpSupport {
     // rb_enc_reg_raise
     public static void raiseRegexpError19(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
         // TODO: we loose encoding information here, fix it
+        throw runtime.newRegexpError(err + ": " + regexpDescription19(runtime, bytes, options.toEmbeddedOptions(), enc));
+    }
+
+    public static void raiseRegexpError19(Ruby runtime, ByteList bytes, Encoding enc, int options, String err) {
+        // TODO: we loose encoding information here, fix it
         throw runtime.newRegexpError(err + ": " + regexpDescription19(runtime, bytes, options, enc));
     }
 
     // rb_enc_reg_error_desc
-    public static ByteList regexpDescription19(Ruby runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
+    public static ByteList regexpDescription19(Ruby runtime, ByteList bytes, int options, Encoding enc) {
         return regexpDescription19(runtime, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize(), options, enc);
     }
 
-    private static ByteList regexpDescription19(Ruby runtime, byte[] s, int start, int len, RegexpOptions options, Encoding enc) {
+    private static ByteList regexpDescription19(Ruby runtime, byte[] s, int start, int len, int options, Encoding enc) {
         ByteList description = new ByteList();
         description.setEncoding(enc);
         description.append((byte)'/');
@@ -193,7 +198,7 @@ public class RegexpSupport {
         appendRegexpString19(runtime, description, s, start, len, enc, resultEnc);
         description.append((byte)'/');
         appendOptions(description, options);
-        if (options.isEncodingNone()) description.append((byte) 'n');
+        if (RegexpOptions.isEncodingNone(options)) description.append((byte) 'n');
         return description;
     }
 
@@ -273,9 +278,13 @@ public class RegexpSupport {
 
     // option_to_str
     public static void appendOptions(ByteList to, RegexpOptions options) {
-        if (options.isMultiline()) to.append((byte)'m');
-        if (options.isIgnorecase()) to.append((byte)'i');
-        if (options.isExtended()) to.append((byte)'x');
+        appendOptions(to, options.toEmbeddedOptions());
+    }
+
+    public static void appendOptions(ByteList to, int options) {
+        if (RegexpOptions.isMultiline(options)) to.append((byte)'m');
+        if (RegexpOptions.isIgnorecase(options)) to.append((byte)'i');
+        if (RegexpOptions.isExtended(options)) to.append((byte)'x');
     }
 
     public static int readEscapedByte(Ruby runtime, byte[] to, int toP, byte[] bytes, int p, int end, ByteList str, ErrorMode mode) {
@@ -491,5 +500,10 @@ public class RegexpSupport {
         if ((0xd800 <= code && code <= 0xdfff) /* Surrogates */ || 0x10ffff < code) {
             raisePreprocessError(runtime, str, "invalid Unicode range", mode);
         }
+    }
+
+    @Deprecated
+    public static ByteList regexpDescription19(Ruby runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
+        return regexpDescription19(runtime, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize(), options.toEmbeddedOptions(), enc);
     }
 }

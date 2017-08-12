@@ -1426,74 +1426,122 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject[] pieces, int embeddedOptions) {
-        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
-        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, RubyString[] pieces, int options) {
+        Ruby runtime = context.runtime;
+        boolean encodingNone = RegexpOptions.isEncodingNone(options);
+
+        RubyString pattern = RubyRegexp.preprocessDRegexp(runtime, pieces, encodingNone);
+
+        RubyRegexp re = RubyRegexp.newDRegexp(runtime, pattern, options);
         re.setLiteral();
 
         return re;
     }
 
     @JIT
-    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, int embeddedOptions) {
-        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, options);
-        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, RubyString piece0, int options) {
+        RubyString pattern = null;
+        Encoding[] regexpEnc = context.encodingHolder();
+        Ruby runtime = context.runtime;
+        boolean encodingNone = RegexpOptions.isEncodingNone(options);
+
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece0, encodingNone);
+
+        if (regexpEnc[0] != null) pattern.setEncoding(regexpEnc[0]);
+
+        RubyRegexp re = RubyRegexp.newDRegexpEmbeddedOptions(runtime, pattern, options);
         re.setLiteral();
 
         return re;
     }
 
     @JIT
-    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, int embeddedOptions) {
-        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, options);
-        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, RubyString piece0, RubyString piece1, int options) {
+        RubyString pattern = null;
+        Encoding[] regexpEnc = context.encodingHolder();
+        Ruby runtime = context.runtime;
+        boolean encodingNone = RegexpOptions.isEncodingNone(options);
+
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece0, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece1, encodingNone);
+
+        if (regexpEnc[0] != null) pattern.setEncoding(regexpEnc[0]);
+
+        RubyRegexp re = RubyRegexp.newDRegexpEmbeddedOptions(runtime, pattern, options);
         re.setLiteral();
 
         return re;
     }
 
     @JIT
-    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, int embeddedOptions) {
-        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, options);
-        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, RubyString piece0, RubyString piece1, RubyString piece2, int options) {
+        RubyString pattern = null;
+        Encoding[] regexpEnc = context.encodingHolder();
+        Ruby runtime = context.runtime;
+        boolean encodingNone = RegexpOptions.isEncodingNone(options);
+
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece0, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece1, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece2, encodingNone);
+
+        if (regexpEnc[0] != null) pattern.setEncoding(regexpEnc[0]);
+
+        RubyRegexp re = RubyRegexp.newDRegexpEmbeddedOptions(runtime, pattern, options);
         re.setLiteral();
 
         return re;
     }
 
     @JIT
-    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, int embeddedOptions) {
-        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, options);
-        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, RubyString piece0, RubyString piece1, RubyString piece2, RubyString piece3, int options) {
+        RubyString pattern = null;
+        Encoding[] regexpEnc = context.encodingHolder();
+        Ruby runtime = context.runtime;
+        boolean encodingNone = RegexpOptions.isEncodingNone(options);
+
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece0, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece1, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece2, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece3, encodingNone);
+
+        if (regexpEnc[0] != null) pattern.setEncoding(regexpEnc[0]);
+
+        RubyRegexp re = RubyRegexp.newDRegexpEmbeddedOptions(runtime, pattern, options);
         re.setLiteral();
 
         return re;
     }
 
     @JIT
-    public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, int embeddedOptions) {
-        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, arg4, options);
-        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
+    public static RubyRegexp newDynamicRegexp(ThreadContext context, RubyString piece0, RubyString piece1, RubyString piece2, RubyString piece3, RubyString piece4, int options) {
+        RubyString pattern = null;
+        Encoding[] regexpEnc = context.encodingHolder();
+        Ruby runtime = context.runtime;
+        boolean encodingNone = RegexpOptions.isEncodingNone(options);
+
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece0, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece1, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece2, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece3, encodingNone);
+        pattern = RubyRegexp.preprocessDRegexpElement(runtime, pattern, regexpEnc, piece4, encodingNone);
+
+        if (regexpEnc[0] != null) pattern.setEncoding(regexpEnc[0]);
+
+        RubyRegexp re = RubyRegexp.newDRegexpEmbeddedOptions(runtime, pattern, options);
         re.setLiteral();
 
         return re;
     }
 
     public static RubyRegexp newLiteralRegexp(ThreadContext context, ByteList source, RegexpOptions options) {
-        RubyRegexp re = RubyRegexp.newRegexp(context.runtime, source, options);
-        re.setLiteral();
-        return re;
+        return newLiteralRegexp(context, source, options.toEmbeddedOptions());
     }
 
     @JIT
     public static RubyRegexp newLiteralRegexp(ThreadContext context, ByteList source, int embeddedOptions) {
-        return newLiteralRegexp(context, source, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
+        RubyRegexp re = RubyRegexp.newRegexp(context.runtime, source, embeddedOptions);
+        re.setLiteral();
+        return re;
     }
 
     @JIT

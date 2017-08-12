@@ -259,10 +259,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         builder.append('_');
     }
 
-    public void pushDRegexp(final Runnable callback, final RegexpOptions options, final int arity) {
+    public void pushDRegexp(final Runnable callback, final int options, final int arity) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("dynamic regexp has more than " + MAX_ARGUMENTS + " elements");
 
-        String incomingSig = sig(RubyRegexp.class, params(ThreadContext.class, IRubyObject.class, arity, int.class));
+        String incomingSig = sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity, int.class));
         ClassData classData = getClassData();
         String className = classData.clsName;
 
@@ -270,7 +270,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String atomicRefField = null;
         Label done = new Label();
 
-        if (options.isOnce()) {
+        boolean once = RegexpOptions.isOnce(options);
+        if (once) {
             // need to cache result forever, but do it atomically so first one wins
 
             // TODO: this might be better in a static initializer than lazy + sync to construct?
@@ -296,7 +297,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         // We may evaluate these operands multiple times or the upstream instrs that created them, which is a bug (jruby/jruby#2798).
         // However, the atomic reference will ensure we only cache the first dregexp to win.
         callback.run();
-        adapter.ldc(options.toEmbeddedOptions());
+        adapter.ldc(options);
 
         if (arity >= 1 && arity <= 5) {
             // use pre-made version from IR helpers
@@ -315,10 +316,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                         null);
 
                 adapter2.aload(0);
-                buildArrayFromLocals(adapter2, 1, arity);
+                buildArrayFromLocals(adapter2, 1, arity, RubyString[].class);
                 adapter2.iload(1 + arity);
 
-                adapter2.invokestatic(p(IRRuntimeHelpers.class), "newDynamicRegexp", sig(RubyRegexp.class, ThreadContext.class, IRubyObject[].class, int.class));
+                adapter2.invokestatic(p(IRRuntimeHelpers.class), "newDynamicRegexp", sig(RubyRegexp.class, ThreadContext.class, RubyString[].class, int.class));
                 adapter2.areturn();
                 adapter2.end();
 
@@ -328,7 +329,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             adapter.invokestatic(className, methodName, incomingSig);
         }
 
-        if (options.isOnce()) {
+        if (once) {
             // do the CAS
             adapter.invokevirtual(p(AtomicReference.class), "compareAndSet", sig(boolean.class, Object.class, Object.class));
             adapter.pop();
@@ -511,13 +512,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public static void buildArrayFromLocals(SkinnyMethodAdapter adapter2, int base, int arity) {
+        buildArrayFromLocals(adapter2, base, arity, IRubyObject[].class);
+    }
+
+    public static void buildArrayFromLocals(SkinnyMethodAdapter adapter2, int base, int arity, Class arrayType) {
         if (arity == 0) {
-            adapter2.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+            adapter2.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(arrayType));
             return;
         }
 
         adapter2.pushInt(arity);
-        adapter2.invokestatic(p(Helpers.class), "anewarrayIRubyObjects", sig(IRubyObject[].class, int.class));
+        adapter2.invokestatic(p(Helpers.class), "anewarrayIRubyObjects", sig(arrayType, int.class));
 
         for (int i = 0; i < arity;) {
             int j = 0;
@@ -526,7 +531,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 j++;
             }
             adapter2.pushInt(i);
-            adapter2.invokestatic(p(Helpers.class), "aastoreIRubyObjects", sig(IRubyObject[].class, params(IRubyObject[].class, IRubyObject.class, j, int.class)));
+            adapter2.invokestatic(p(Helpers.class), "aastoreIRubyObjects", sig(arrayType, params(arrayType, arrayType.getComponentType(), j, int.class)));
             i += j;
         }
     }

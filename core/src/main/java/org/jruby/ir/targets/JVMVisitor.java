@@ -999,13 +999,13 @@ public class JVMVisitor extends IRVisitor {
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) {
         final IRBytecodeAdapter m = jvmMethod();
 
-        if (instr.getOptions().isOnce() && instr.getRegexp() != null) {
-            visit(new Regexp(instr.getRegexp().source().convertToString().getByteList(), instr.getOptions()));
+        if (RegexpOptions.isOnce(instr.getOptions()) && instr.getRegexp() != null) {
+            Regexp(instr.getRegexp().source().convertToString().getByteList(), instr.getOptions());
             jvmStoreLocal(instr.getResult());
             return;
         }
 
-        RegexpOptions options = instr.getOptions();
+        int options = instr.getOptions();
         final Operand[] operands = instr.getPieces();
 
         Runnable r = new Runnable() {
@@ -2480,7 +2480,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Regexp(Regexp regexp) {
-        jvmMethod().pushRegexp(regexp.getSource(), regexp.options.toEmbeddedOptions());
+        Regexp(regexp.getSource(), regexp.options);
+    }
+
+    private void Regexp(ByteList source, int options) {
+        jvmMethod().pushRegexp(source, options);
     }
 
     @Override

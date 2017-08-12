@@ -295,7 +295,7 @@ public class RubyMatchData extends RubyObject {
         if (pattern instanceof Regex) return (Regex) pattern;
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Match (missing pattern)");
         // when a regexp is avoided for matching we lazily instantiate one from the unquoted string :
-        Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(getRuntime(), (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
+        Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(getRuntime(), (RubyString) pattern, RegexpOptions.newEmbeddedOptions());
         this.pattern = regexPattern;
         return regexPattern;
     }

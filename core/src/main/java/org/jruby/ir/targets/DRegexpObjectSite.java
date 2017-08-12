@@ -4,6 +4,7 @@ import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.SmartBinder;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
@@ -21,14 +22,14 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class DRegexpObjectSite extends ConstructObjectSite {
-    protected final RegexpOptions options;
+    protected final int embeddedOptions;
     private volatile RubyRegexp cache;
     private static final AtomicReferenceFieldUpdater UPDATER = AtomicReferenceFieldUpdater.newUpdater(DRegexpObjectSite.class, RubyRegexp.class, "cache");
 
     public DRegexpObjectSite(MethodType type, int embeddedOptions) {
         super(type);
 
-        options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        this.embeddedOptions = embeddedOptions;
     }
 
     public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(DRegexpObjectSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class));
@@ -39,8 +40,12 @@ public class DRegexpObjectSite extends ConstructObjectSite {
 
     @Override
     public Binder prepareBinder() {
-        // collect dregexp args into an array
+        if (type().parameterCount() - 1 <= MAX_ARITY) { // 5 arity max minus ThreadContext
+            return Binder
+                    .from(type());
+        }
 
+        // collect dregexp args into an array
         String[] argNames = new String[type().parameterCount()];
         Class[] argTypes = new Class[argNames.length];
 
@@ -59,21 +64,80 @@ public class DRegexpObjectSite extends ConstructObjectSite {
                 .binder();
     }
 
-    // dynamic regexp
     public RubyRegexp construct(ThreadContext context, RubyString[] pieces) throws Throwable {
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
-        RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
-        re.setLiteral();
+        RubyRegexp cache = this.cache;
+        if (cache != null) return cache;
 
-        if (options.isOnce()) {
-            if (cache != null) {
-                // we cached a value, so re-call this site's target handle to get it
-                return cache;
-            }
+        int options = this.embeddedOptions;
 
+        RubyRegexp re = IRRuntimeHelpers.newDynamicRegexp(context, pieces, options);
+
+        return constructAndCache(re, options);
+    }
+
+    private static final int MAX_ARITY = 5;
+
+    public RubyRegexp construct(ThreadContext context, RubyString piece) throws Throwable {
+        RubyRegexp cache = this.cache;
+        if (cache != null) return cache;
+
+        int options = this.embeddedOptions;
+
+        RubyRegexp re = IRRuntimeHelpers.newDynamicRegexp(context, piece, options);
+
+        return constructAndCache(re, options);
+    }
+
+    public RubyRegexp construct(ThreadContext context, RubyString piece0, RubyString piece1) throws Throwable {
+        RubyRegexp cache = this.cache;
+        if (cache != null) return cache;
+
+        int options = this.embeddedOptions;
+
+        RubyRegexp re = IRRuntimeHelpers.newDynamicRegexp(context, piece0, piece1, options);
+
+        return constructAndCache(re, options);
+    }
+
+    public RubyRegexp construct(ThreadContext context, RubyString piece0, RubyString piece1, RubyString piece2) throws Throwable {
+        RubyRegexp cache = this.cache;
+        if (cache != null) return cache;
+
+        int options = this.embeddedOptions;
+
+        RubyRegexp re = IRRuntimeHelpers.newDynamicRegexp(context, piece0, piece1, piece2, options);
+
+        return constructAndCache(re, options);
+    }
+
+    public RubyRegexp construct(ThreadContext context, RubyString piece0, RubyString piece1, RubyString piece2, RubyString piece3) throws Throwable {
+        RubyRegexp cache = this.cache;
+        if (cache != null) return cache;
+
+        int options = this.embeddedOptions;
+
+        RubyRegexp re = IRRuntimeHelpers.newDynamicRegexp(context, piece0, piece1, piece2, piece3, options);
+
+        return constructAndCache(re, options);
+    }
+
+    public RubyRegexp construct(ThreadContext context, RubyString piece0, RubyString piece1, RubyString piece2, RubyString piece3, RubyString piece4) throws Throwable {
+        RubyRegexp cache = this.cache;
+        if (cache != null) return cache;
+
+        int options = this.embeddedOptions;
+
+        RubyRegexp re = IRRuntimeHelpers.newDynamicRegexp(context, piece0, piece1, piece2, piece3, piece4, options);
+
+        return constructAndCache(re, options);
+    }
+
+    private RubyRegexp constructAndCache(RubyRegexp re, int options) {
+        if (RegexpOptions.isOnce(options)) {
             // we don't care if this succeeds, just that it only gets set once
-            UPDATER.compareAndSet(this, null, cache);
+            UPDATER.compareAndSet(this, null, re);
 
+            // use the set-once cache and constantize the site
             setTarget(Binder.from(type()).dropAll().constant(cache));
         }
 

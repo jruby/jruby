@@ -319,7 +319,7 @@ public abstract class IRBytecodeAdapter {
      * @param options options for the regexp
      * @param arity number of Strings passed in
      */
-    public abstract void pushDRegexp(Runnable callback, RegexpOptions options, int arity);
+    public abstract void pushDRegexp(Runnable callback, int options, int arity);
 
     /**
      * Push a symbol on the stack.

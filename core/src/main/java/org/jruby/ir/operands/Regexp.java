@@ -12,10 +12,14 @@ import org.jruby.util.RegexpOptions;
  * Represents a literal regexp from ruby, constructed on first traversal and then cached.
  */
 public class Regexp extends ImmutableLiteral {
-    final public RegexpOptions options;
+    final public int options;
     final private ByteList source;
 
     public Regexp(ByteList source, RegexpOptions options) {
+        this(source, options.toEmbeddedOptions());
+    }
+
+    public Regexp(ByteList source, int options) {
         super();
 
         this.source = source;
@@ -45,7 +49,7 @@ public class Regexp extends ImmutableLiteral {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(source);
-        e.encode(options.toEmbeddedOptions());
+        e.encode(options);
     }
 
     public static Regexp decode(IRReaderDecoder d) {
