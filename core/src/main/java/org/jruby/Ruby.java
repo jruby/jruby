@@ -5155,7 +5155,7 @@ public final class Ruby implements Constantizable {
 
     private final FilenoUtil filenoUtil;
 
-    private Interpreter interpreter = new Interpreter();
+    private final Interpreter interpreter = new Interpreter();
 
     /**
      * A representation of this runtime as a JIT-optimizable constant. Used for e.g. invokedynamic binding of runtime
@@ -5187,5 +5187,5 @@ public final class Ruby implements Constantizable {
     // For strptime processing we cache the parsed format strings since most applications
     // reuse the same formats over and over.  This is also unbounded (for now) since all applications
     // I know of use very few of them.  Even if there are many the size of these lists are modest.
-    private Map<String, List<StrptimeToken>> strptimeFormatCache = new ConcurrentHashMap<>();
+    private final Map<String, List<StrptimeToken>> strptimeFormatCache = new ConcurrentHashMap<>();
 }
