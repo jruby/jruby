@@ -372,18 +372,20 @@ public class RubyModule extends RubyObject {
 
     // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
     // FIXME: synchronization is still wrong in CP code
-    public synchronized void addClassProvider(ClassProvider provider) {
+    public final synchronized void addClassProvider(ClassProvider provider) {
+        Set<ClassProvider> classProviders = this.classProviders;
         if (!classProviders.contains(provider)) {
-            Set<ClassProvider> cp = new HashSet<ClassProvider>(classProviders);
+            Set<ClassProvider> cp = new HashSet<>(classProviders.size() + 1);
+            cp.addAll(classProviders);
             cp.add(provider);
-            classProviders = cp;
+            this.classProviders = cp;
         }
     }
 
-    public synchronized void removeClassProvider(ClassProvider provider) {
-        Set<ClassProvider> cp = new HashSet<ClassProvider>(classProviders);
+    public final synchronized void removeClassProvider(ClassProvider provider) {
+        Set<ClassProvider> cp = new HashSet<>(classProviders);
         cp.remove(provider);
-        classProviders = cp;
+        this.classProviders = cp;
     }
 
     private void checkForCyclicInclude(RubyModule m) throws RaiseException {
@@ -399,6 +401,9 @@ public class RubyModule extends RubyObject {
     }
 
     private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
+        Set<ClassProvider> classProviders = this.classProviders;
+        if (classProviders == Collections.EMPTY_SET) return null;
+
         RubyClass clazz;
         for (ClassProvider classProvider: classProviders) {
             if ((clazz = classProvider.defineClassUnder(this, name, superClazz)) != null) {
@@ -409,6 +414,9 @@ public class RubyModule extends RubyObject {
     }
 
     private RubyModule searchProvidersForModule(String name) {
+        Set<ClassProvider> classProviders = this.classProviders;
+        if (classProviders == Collections.EMPTY_SET) return null;
+
         RubyModule module;
         for (ClassProvider classProvider: classProviders) {
             if ((module = classProvider.defineModuleUnder(this, name)) != null) {
@@ -1667,7 +1675,7 @@ public class RubyModule extends RubyObject {
                 if (tmp != superClazz) throw runtime.newTypeError("superclass mismatch for class " + name);
                 // superClazz = null;
             }
-        } else if (classProviders != null && (clazz = searchProvidersForClass(name, superClazz)) != null) {
+        } else if ((clazz = searchProvidersForClass(name, superClazz)) != null) {
             // reopen a java class
         } else {
             if (superClazz == null) superClazz = runtime.getObject();
@@ -1716,7 +1724,7 @@ public class RubyModule extends RubyObject {
         if (moduleObj != null) {
             if (!moduleObj.isModule()) throw runtime.newTypeError(name + " is not a module");
             module = (RubyModule)moduleObj;
-        } else if (classProviders != null && (module = searchProvidersForModule(name)) != null) {
+        } else if ((module = searchProvidersForModule(name)) != null) {
             // reopen a java module
         } else {
             module = RubyModule.newModule(runtime, name, this, true);
