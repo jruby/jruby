@@ -817,10 +817,6 @@ public abstract class RealClassGenerator {
         }
     }
 
-    public static boolean isCacheOk(CacheEntry entry, IRubyObject self) {
-        return CacheEntry.typeOk(entry, self.getMetaClass()) && entry.method != UndefinedMethod.INSTANCE;
-    }
-
     public static int calcBaseIndex(final Class[] params, int baseIndex) {
         for (Class paramType : params) {
             if (paramType == double.class || paramType == long.class) {
