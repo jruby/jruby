@@ -299,15 +299,15 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public MethodHandle getIdTest() {
+    public final MethodHandle getIdTest() {
         MethodHandle idTest = this.idTest;
         if (idTest != null) return idTest;
         return this.idTest = newIdTest();
     }
 
-    protected MethodHandle newIdTest() {
+    protected final MethodHandle newIdTest() {
         return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
-                .insert(2,id)
+                .insert(2, id)
                 .invoke(testModuleMatch);
     }
 
