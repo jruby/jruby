@@ -70,6 +70,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.ArraySupport;
+import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
@@ -81,7 +82,6 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
 import static org.jruby.util.io.EncodingUtils.encStrBufCat;
-import static org.jruby.util.io.EncodingUtils.strBufCat;
 
 import org.jruby.runtime.ivars.VariableTableManager;
 
@@ -805,10 +805,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String cname = getMetaClass().getRealClass().getName();
         String hex = Integer.toHexString(System.identityHashCode(this));
         /* 6:tags 16:addr 1:eos */
-        RubyString str = RubyString.newString(getRuntime(),
-            new StringBuilder(2 + cname.length() + 3 + hex.length() + 1).
-            append("#<").append(cname).append(":0x").append(hex).append('>')
-        );
+        ByteList bytes = new ByteList(2 + cname.length() + 3 + hex.length() + 1);
+        bytes.append('#').append('<');
+        bytes.append(cname.getBytes(RubyEncoding.UTF8));
+        bytes.append(':').append('0').append('x');
+        bytes.append(hex.getBytes());
+        bytes.append('>');
+        RubyString str = RubyString.newString(getRuntime(), bytes, UTF8Encoding.INSTANCE);
         str.setTaint(isTaint());
         return str;
     }
