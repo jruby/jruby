@@ -459,11 +459,16 @@ public class RubyModule extends RubyObject {
         return this.methods;
     }
 
-    public synchronized Map<String, DynamicMethod> getMethodsForWrite() {
-        Map<String, DynamicMethod> myMethods = this.methods;
-        return myMethods == Collections.EMPTY_MAP ?
-            this.methods = new ConcurrentHashMap<String, DynamicMethod>(0, 0.9f, 1) :
-            myMethods;
+    public Map<String, DynamicMethod> getMethodsForWrite() {
+        Map<String, DynamicMethod> methods = this.methods;
+        if (methods != Collections.EMPTY_MAP) return methods;
+
+        synchronized (this) {
+            methods = this.methods;
+            return methods == Collections.EMPTY_MAP ?
+                this.methods = new ConcurrentHashMap<>(0, 0.9f, 1) :
+                    methods;
+        }
     }
 
     // note that addMethod now does its own put, so any change made to
