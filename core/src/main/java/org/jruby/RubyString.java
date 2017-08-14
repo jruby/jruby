@@ -482,6 +482,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return new RubyString(runtime, runtime.getString(), bytes, encoding);
     }
 
+    static RubyString newString(Ruby runtime, byte b) {
+        return new RubyString(runtime, runtime.getString(), RubyInteger.singleCharByteList(b));
+    }
+
     public static RubyString newUnicodeString(Ruby runtime, String str) {
         Encoding defaultInternal = runtime.getDefaultInternalEncoding();
         if (defaultInternal == UTF16BEEncoding.INSTANCE) {
@@ -1060,11 +1064,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @Override
     public IRubyObject checkStringType() {
-        return this;
-    }
-
-    @Override
-    public IRubyObject checkStringType19() {
         return this;
     }
 
@@ -4093,7 +4092,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return false;
     }
 
-    private static final ByteList SPACE_BYTELIST = new ByteList(new byte[] { ' ' }, false);
+    private static final ByteList SPACE_BYTELIST = RubyInteger.singleCharByteList((byte) ' ');
 
     private IRubyObject justify19(Ruby runtime, IRubyObject arg0, int jflag) {
         RubyString result = justifyCommon(runtime, SPACE_BYTELIST,
