@@ -3534,14 +3534,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         v = ((RubyHash) opt).op_aref(context, runtime.newSymbol("open_args"));
-        if ( ! v.isNil() ) {
+        if (v != context.nil) {
             v = v.convertToArray();
 
             RubyArray args = runtime.newArray( ((RubyArray) v).size() + 1 );
             args.push(path);
             args.concat(v);
 
-            return RubyKernel.open19(context, recv, args.toJavaArray(), Block.NULL_BLOCK);
+            return RubyKernel.open(context, recv, args.toJavaArrayMaybeUnsafe(), Block.NULL_BLOCK);
         }
 
         return ioOpen(context, path, context.nil, context.nil, opt);
@@ -3564,7 +3564,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
         perm = (vperm(pm) == null || vperm(pm).isNil()) ? 0666 : RubyNumeric.num2int(vperm(pm));
 
-        if ( ! ( cmd = PopenExecutor.checkPipeCommand(context, filename) ).isNil() ) {
+        if (( cmd = PopenExecutor.checkPipeCommand(context, filename) ) != context.nil) {
             return PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags_p[0]), fmode_p[0], convconfig);
         }
         return ((RubyFile) runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);
@@ -3582,10 +3582,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(meta = true, required = 1, optional = 2)
     public static IRubyObject binread(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        IRubyObject nil = runtime.getNil();
         IRubyObject path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
-        IRubyObject length = nil;
-        IRubyObject offset = nil;
+        IRubyObject length, offset;
+        length = offset = context.nil;
 
         if (args.length > 2) {
             offset = args[2];
@@ -3610,11 +3609,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = "read", meta = true, required = 1, optional = 3)
     public static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
-        IRubyObject nil = runtime.getNil();
         IRubyObject path = args[0];
-        IRubyObject length = nil;
-        IRubyObject offset = nil;
-        IRubyObject options = nil;
+        IRubyObject length, offset, options;
+        length = offset = options = context.nil;
 
         { // rb_scan_args logic, basically
             if (args.length > 3) {

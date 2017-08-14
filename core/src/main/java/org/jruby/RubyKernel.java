@@ -266,20 +266,14 @@ public class RubyKernel {
         return format;
     }
 
-    private static IRubyObject[] popenArgs(Ruby runtime, String pipedArg, IRubyObject[] args) {
-            IRubyObject command = runtime.newString(pipedArg.substring(1));
-
-            if (args.length >= 2) return new IRubyObject[] { command, args[1] };
-
-            return new IRubyObject[] { command };
-    }
-
-    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return open19(context, recv, args, block);
+    @Deprecated
+    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return open(context, recv, args, block);
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 3, module = true, visibility = PRIVATE)
-    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {Ruby runtime = context.runtime;
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
         //        ID to_open = 0;
         boolean redirect = false;
         int argc = args.length;
@@ -291,11 +285,11 @@ public class RubyKernel {
             } else {
                 IRubyObject tmp = args[0];
                 tmp = RubyFile.get_path(context, tmp);
-                if (tmp.isNil()) {
+                if (tmp == context.nil) {
                     redirect = true;
                 } else {
                     IRubyObject cmd = PopenExecutor.checkPipeCommand(context, tmp);
-                    if (!cmd.isNil()) {
+                    if (cmd != context.nil) {
                         args[0] = cmd;
                         return PopenExecutor.popen(context, args, runtime.getIO(), block);
                     }
