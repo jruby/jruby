@@ -1883,12 +1883,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     protected RubyString joinStrings(RubyString sep, int max, RubyString result) {
         IRubyObject first = eltOk(0);
         if (max > 0 && first instanceof EncodingCapable) {
-            result.setEncoding(((EncodingCapable)first).getEncoding());
+            result.setEncoding(((EncodingCapable) first).getEncoding());
         }
 
         try {
             for (int i = 0; i < max; i++) {
-                if (i > 0 && sep != null) result.append19(sep);
+                if (i > 0 && sep != null) result.cat19(sep);
                 result.append19(eltInternal(i));
             }
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -1899,8 +1899,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     // 1.9 MRI: ary_join_1
-    private RubyString joinAny(ThreadContext context, IRubyObject obj, RubyString sep,
-            int i, RubyString result) {
+    private RubyString joinAny(ThreadContext context, RubyString sep, int i, RubyString result) {
         assert i >= 0 : "joining elements before beginning of array";
 
         RubyClass arrayClass = context.runtime.getArray();
@@ -1914,8 +1913,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (val instanceof RubyString) {
                 result.append19(val);
             } else if (val instanceof RubyArray) {
-                obj = val;
-                recursiveJoin(context, obj, sep, result, val);
+                recursiveJoin(context, val, sep, result, (RubyArray) val);
             } else {
                 IRubyObject tmp = val.checkStringType();
                 if (tmp != context.nil) {
@@ -1926,9 +1924,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 if (to_ary_checked == null) to_ary_checked = sites(context).to_ary_checked;
 
                 tmp = TypeConverter.convertToTypeWithCheck(context, val, arrayClass, to_ary_checked);
-                if (!tmp.isNil()) {
-                    obj = val;
-                    recursiveJoin(context, obj, sep, result, tmp);
+                if (tmp != context.nil) {
+                    recursiveJoin(context, val, sep, result, (RubyArray) tmp);
                 } else {
                     result.append19(RubyString.objAsString(context, val));
                 }
@@ -1939,11 +1936,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     private void recursiveJoin(final ThreadContext context, final IRubyObject outValue,
-            final RubyString sep, final RubyString result, final IRubyObject ary) {
+                               final RubyString sep, final RubyString result, final RubyArray ary) {
 
-        Ruby runtime = context.runtime;
-
-        if (ary == this) throw runtime.newArgumentError("recursive array join");
+        if (ary == this) throw context.runtime.newArgumentError("recursive array join");
 
         context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result), outValue, "join", true);
     }
@@ -1972,17 +1967,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (tmp == context.nil || tmp != val) {
                 len += (realLength - i) * 10;
                 RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
-                RubyString sepStringFinal = sepString;
-                int iFinal = i;
 
-                return joinAny(context, RubyArray.this, sepStringFinal, iFinal, joinStrings(sepStringFinal, iFinal, result));
+                return joinAny(context, sepString, i, joinStrings(sepString, i, result));
             }
 
             len += ((RubyString) tmp).getByteList().length();
         }
 
-        return joinStrings(sepString, realLength,
-                (RubyString) RubyString.newStringLight(runtime, len).infectBy(this));
+        return joinStrings(sepString, realLength, (RubyString) RubyString.newStringLight(runtime, len).infectBy(this));
     }
 
     @JRubyMethod(name = "join")
@@ -5009,14 +5001,14 @@ float_loop:
 
     private static class JoinRecursive implements ThreadContext.RecursiveFunctionEx<JoinRecursive.State> {
         protected static class State {
-            private final IRubyObject ary;
-            private final IRubyObject outValue;
+            private final RubyArray ary;
+            //private final IRubyObject outValue;
             private final RubyString sep;
             private final RubyString result;
 
-            public State(IRubyObject ary, IRubyObject outValue, RubyString sep, RubyString result) {
+            State(RubyArray ary, IRubyObject outValue, RubyString sep, RubyString result) {
                 this.ary = ary;
-                this.outValue = outValue;
+                //this.outValue = outValue;
                 this.sep = sep;
                 this.result = result;
             }
@@ -5025,8 +5017,7 @@ float_loop:
         public IRubyObject call(ThreadContext context, State state, IRubyObject obj, boolean recur) {
             if (recur) throw context.runtime.newArgumentError("recursive array join");
 
-            RubyArray recAry = ((RubyArray) state.ary);
-            recAry.joinAny(context, state.outValue, state.sep, 0, state.result);
+            state.ary.joinAny(context, state.sep, 0, state.result);
 
             return context.nil;
         }
