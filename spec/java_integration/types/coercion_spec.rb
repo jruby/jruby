@@ -721,12 +721,13 @@ end
 describe "Class\#to_java" do
   describe "when passed java.lang.Class.class" do
     cls = java.lang.Class
-    it "coerces core classes to their Java class object" do
-      # TODO: add all core, native types here
-      [Object, Array, String, Hash, File, IO].each do |rubycls|
-        expect(rubycls.to_java(cls)).to eq(eval("cls.forName('org.jruby.Ruby#{rubycls}')"))
-      end
-    end
+
+    # NOTE: moved to a Java test @see org.jruby.javasupport.TestJavaClass#testToJava
+    # it "coerces core classes to their Java class object" do
+    #   [Object, Array, String, Hash, File, IO].each do |rubycls|
+    #     expect(rubycls.to_java(cls)).to eq(eval("cls.forName('org.jruby.Ruby#{rubycls}')"))
+    #   end
+    # end
 
     class UserKlass < Object; end
 
@@ -747,17 +748,19 @@ describe "Class\#to_java" do
   end
 
   describe "when passed java.lang.Object.class" do
-    it "coerces core classes to their Ruby class object" do
-      [Object, Array, String, Hash, File, IO].each do |rubycls|
-        expect(rubycls.to_java(java.lang.Object)).to eq(rubycls)
-      end
-      BasicObject.to_java(java.lang.Object).should == BasicObject if defined? BasicObject
-      [Bignum, Dir, ENV, FalseClass, Fixnum, Float, Kernel, Struct, Symbol, Thread].each do |clazz|
-        expect(clazz.to_java(java.lang.Object)).to eq(clazz)
-      end
-      expect(Exception.to_java(java.lang.Object)).to eq Exception
-      expect(StandardError.to_java(java.lang.Object)).to eq StandardError
-    end
+
+    # NOTE: moved to a Java test @see org.jruby.javasupport.TestJavaClass#testToJavaObject
+    # it "coerces core classes to their Ruby class object" do
+    #   [Object, Array, String, Hash, File, IO].each do |rubycls|
+    #     expect(rubycls.to_java(java.lang.Object)).to eq(rubycls)
+    #   end
+    #   BasicObject.to_java(java.lang.Object).should == BasicObject if defined? BasicObject
+    #   [Bignum, Dir, ENV, FalseClass, Integer, Float, Kernel, Struct, Symbol, Thread].each do |clazz|
+    #     expect(clazz.to_java(java.lang.Object)).to eq(clazz)
+    #   end
+    #   expect(Exception.to_java(java.lang.Object)).to eq Exception
+    #   expect(StandardError.to_java(java.lang.Object)).to eq StandardError
+    # end
 
     it "coerces user classes/modules to their Ruby class object" do
       clazz = Class.new
