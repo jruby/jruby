@@ -49,6 +49,9 @@ public class TestJavaClass extends junit.framework.TestCase {
         type = runtime.getClass("Class").toJava(java.lang.Class.class);
         assertSame(RubyClass.class, type);
 
+        type = runtime.getClass("Struct").toJava(java.lang.Class.class);
+        assertSame(RubyStruct.class, type);
+
         type = runtime.getClass("Thread").toJava(java.lang.Class.class);
         assertSame(RubyThread.class, type);
 
