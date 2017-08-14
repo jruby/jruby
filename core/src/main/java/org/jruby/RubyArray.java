@@ -1059,14 +1059,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject insert(IRubyObject arg1, IRubyObject arg2) {
         modifyCheck();
 
-        long pos = RubyNumeric.num2long(arg1);
+        insert(RubyNumeric.num2long(arg1), arg2);
+        return this;
+    }
 
+    private void insert(long pos, IRubyObject val) {
         if (pos == -1) pos = realLength;
         if (pos < 0) pos++;
 
-        spliceOne(pos, arg2); // rb_ary_new4
-
-        return this;
+        spliceOne(pos, val); // rb_ary_new4
     }
 
     @Deprecated
@@ -4969,9 +4970,8 @@ float_loop:
         return previous;
     }
 
-    // TODO: make more efficient by not creating IRubyArray[]
     public void add(int index, Object element) {
-        insert(new IRubyObject[]{RubyFixnum.newFixnum(getRuntime(), index), JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element)});
+        insert(index, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element));
     }
 
     public Object remove(int index) {
@@ -5109,8 +5109,7 @@ float_loop:
         return new RubyArrayConversionListIterator(index);
 	}
 
-    // TODO: list.subList(from, to).clear() is supposed to clear the sublist from the list.
-    // How can we support this operation?
+    // TODO: list.subList(from, to).clear() is supposed to clear the sublist from the list
     public List subList(int fromIndex, int toIndex) {
         if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
             throw new IndexOutOfBoundsException();
@@ -5134,10 +5133,6 @@ float_loop:
         return false;
     }
 
-    private IRubyObject safeArrayRef(IRubyObject[] values, int i) {
-        return safeArrayRef(getRuntime(), values, i);
-    }
-
     private static IRubyObject safeArrayRef(Ruby runtime, IRubyObject[] values, int i) {
         try {
             return values[i];
@@ -5158,10 +5153,6 @@ float_loop:
         }
     }
 
-    //private IRubyObject safeArrayRefSet(IRubyObject[] values, int i, IRubyObject value) {
-    //    return safeArrayRefSet(getRuntime(), values, i, value);
-    //}
-
     private static IRubyObject safeArrayRefSet(Ruby runtime, IRubyObject[] values, int i, IRubyObject value) {
         try {
             IRubyObject tmp = values[i];
@@ -5171,10 +5162,6 @@ float_loop:
             throw concurrentModification(runtime, e);
         }
     }
-
-    //private IRubyObject safeArrayRefCondSet(IRubyObject[] values, int i, boolean doSet, IRubyObject value) {
-    //    return safeArrayRefCondSet(getRuntime(), values, i, doSet, value);
-    //}
 
     private static IRubyObject safeArrayRefCondSet(Ruby runtime, IRubyObject[] values, int i, boolean doSet, IRubyObject value) {
         try {
