@@ -89,7 +89,7 @@ module JRuby
     def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
       irscope = compile_ir(content, filename, extra_position_info, &block)
 
-      visitor = org.jruby.ir.targets.JVMVisitor.new
+      visitor = org.jruby.ir.targets.JVMVisitor.new JRuby.runtime
       context = org.jruby.ir.targets.JVMVisitorMethodContext.new
       bytes = visitor.compile_to_bytecode(irscope, context)
       static_scope = irscope.static_scope;
