@@ -3447,7 +3447,7 @@ public class RubyModule extends RubyObject {
 
         String name = validateConstant(rubyName);
 
-        setConstantVisibility(context, name, true);
+        setConstantVisibility(context.runtime, name, true);
         invalidateConstantCache(name);
 
         return this;
@@ -3467,7 +3467,7 @@ public class RubyModule extends RubyObject {
 
         String name = validateConstant(rubyName);
 
-        setConstantVisibility(context, name, false);
+        setConstantVisibility(context.runtime, name, false);
         invalidateConstantCache(name);
         return this;
     }
@@ -3502,11 +3502,11 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
-    private void setConstantVisibility(ThreadContext context, String name, boolean hidden) {
+    final void setConstantVisibility(Ruby runtime, String name, boolean hidden) {
         ConstantEntry entry = getConstantMap().get(name);
 
         if (entry == null) {
-            throw context.runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
+            throw runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
         }
 
         storeConstant(name, entry.value, hidden);
