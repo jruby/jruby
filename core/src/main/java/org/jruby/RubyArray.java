@@ -68,7 +68,6 @@ import org.jruby.util.Pack;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
-import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -1917,8 +1916,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 obj = val;
                 recursiveJoin(context, obj, sep, result, val);
             } else {
-                IRubyObject tmp = val.checkStringType19();
-                if (!tmp.isNil()) {
+                IRubyObject tmp = val.checkStringType();
+                if (tmp != context.nil) {
                     result.append19(tmp);
                     continue;
                 }
@@ -1957,19 +1956,19 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
         if (realLength == 0) return RubyString.newEmptyString(runtime, USASCIIEncoding.INSTANCE);
 
-        if (sep.isNil()) sep = runtime.getGlobalVariables().get("$,");
+        if (sep == context.nil) sep = runtime.getGlobalVariables().get("$,");
 
         int len = 1;
         RubyString sepString = null;
-        if (!sep.isNil()) {
+        if (sep != context.nil) {
             sepString = sep.convertToString();
             len += sepString.size() * (realLength - 1);
         }
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject val = eltOk(i);
-            IRubyObject tmp = val.checkStringType19();
-            if (tmp.isNil() || tmp != val) {
+            IRubyObject tmp = val.checkStringType();
+            if (tmp == context.nil || tmp != val) {
                 len += (realLength - i) * 10;
                 RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
                 RubyString sepStringFinal = sepString;
@@ -4802,7 +4801,8 @@ float_loop:
                 long aLong = ((RubyFixnum) a).getLongValue();
                 long bLong = ((RubyFixnum) b).getLongValue();
                 return Long.compare(aLong, bLong);
-            } else if (a instanceof RubyString && b instanceof RubyString) {
+            }
+            if (a instanceof RubyString && b instanceof RubyString) {
                 return ((RubyString) a).op_cmp((RubyString) b);
             }
         }

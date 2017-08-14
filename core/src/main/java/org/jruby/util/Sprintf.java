@@ -599,7 +599,7 @@ public class Sprintf {
                     arg = args.getArg();
 
                     int c; int n;
-                    tmp = arg.checkStringType19();
+                    tmp = arg.checkStringType();
                     if (!tmp.isNil()) {
                         if (((RubyString)tmp).strLength() != 1) {
                             throw runtime.newArgumentError("%c requires a character");

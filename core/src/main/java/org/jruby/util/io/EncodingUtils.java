@@ -332,7 +332,7 @@ public class EncodingUtils {
         if (intenc != null) {
             if (intenc.isNil()) {
                 intencoding = null;
-            } else if (!(tmp = intenc.checkStringType19()).isNil()) {
+            } else if (!(tmp = intenc.checkStringType()).isNil()) {
                 String p = tmp.toString();
                 if (p.equals("-")) {
                     intencoding = null;
@@ -350,7 +350,7 @@ public class EncodingUtils {
         if (!encoding.isNil()) {
             extracted = true;
 
-            if (!(tmp = encoding.checkStringType19()).isNil()) {
+            if (!(tmp = encoding.checkStringType()).isNil()) {
                 parseModeEncoding(context, ioEncodable, tmp.asJavaString(), fmode_p);
             } else {
                 ioExtIntToEncs(context, ioEncodable, rbToEncoding(context, encoding), null, 0);
@@ -773,7 +773,7 @@ public class EncodingUtils {
     public static Encoding toEncodingIndex(ThreadContext context, IRubyObject enc) {
         if (enc instanceof RubyEncoding) {
             return ((RubyEncoding)enc).getEncoding();
-        } else if ((enc = enc.checkStringType19()).isNil()) {
+        } else if ((enc = enc.checkStringType()).isNil()) {
             return null;
         }
         if (!((RubyString)enc).getEncoding().isAsciiCompatible()) {

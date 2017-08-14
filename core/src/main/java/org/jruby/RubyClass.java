@@ -1220,7 +1220,7 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod(name = "inherited", required = 1, visibility = PRIVATE)
     public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
-        return runtime.getNil();
+        return context.nil;
     }
 
     /** rb_class_inherited (reversed semantics!)
@@ -1244,7 +1244,7 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
 
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
+            if (metaClass == runtime.getBasicObject().getMetaClass()) return context.nil;
             throw runtime.newTypeError("uninitialized class");
         }
 
@@ -1252,7 +1252,7 @@ public class RubyClass extends RubyModule {
             superClazz = superClazz.superClass;
         }
 
-        return superClazz != null ? superClazz : runtime.getNil();
+        return superClazz != null ? superClazz : context.nil;
     }
 
     private void checkNotInitialized() {

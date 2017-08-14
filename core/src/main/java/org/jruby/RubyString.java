@@ -3868,7 +3868,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (pat instanceof RubyRegexp) return pat;
 
         if (!(pat instanceof RubyString)) {
-            val = pat.checkStringType19();
+            val = pat.checkStringType();
             if (val.isNil()) {
                 TypeConverter.checkType(context, pat, context.runtime.getRegexp());
             }

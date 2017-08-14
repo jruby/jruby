@@ -1104,7 +1104,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (!v2.isNil()) {
             holder.enc2 = EncodingUtils.rbToEncoding(context, v1);
-            tmp = v2.checkStringType19();
+            tmp = v2.checkStringType();
 
             if (!tmp.isNil()) {
                 RubyString internalAsString = (RubyString)tmp;
@@ -1138,7 +1138,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 EncodingUtils.SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(holder.getEnc2(), ecflags);
                 ecopts_p[0] = context.nil;
             } else {
-                tmp = v1.checkStringType19();
+                tmp = v1.checkStringType();
                 if (!tmp.isNil() && EncodingUtils.encAsciicompat(EncodingUtils.encGet(context, tmp))) {
                     EncodingUtils.parseModeEncoding(context, holder, tmp.asJavaString(), null);
                     EncodingUtils.SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(holder.getEnc2(), ecflags);

@@ -38,10 +38,8 @@ import java.lang.invoke.SwitchPoint;
 
 import org.jcodings.Encoding;
 import org.jruby.*;
-import org.jruby.ast.executable.AbstractScript;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Helpers;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;

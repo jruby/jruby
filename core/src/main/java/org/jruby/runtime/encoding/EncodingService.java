@@ -268,7 +268,7 @@ public final class EncodingService {
             final String name = RubyNKF.NKFCharsetMap.get(id);
             if ( name != null ) return getEncodingFromNKFName(name);
         }
-        if ( ( arg = arg.checkStringType19() ).isNil() ) {
+        if ( ( arg = arg.checkStringType() ).isNil() ) {
             return null;
         }
         if ( ! ((RubyString) arg).getEncoding().isAsciiCompatible() ) {
