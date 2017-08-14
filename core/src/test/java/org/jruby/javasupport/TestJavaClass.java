@@ -54,6 +54,9 @@ public class TestJavaClass extends junit.framework.TestCase {
 
         type = runtime.getClass("Exception").toJava(java.lang.Class.class);
         assertSame(RubyException.class, type);
+
+        type = runtime.getClass("NameError").toJava(java.lang.Class.class);
+        assertSame(RubyNameError.class, type);
     }
 
     @Test
