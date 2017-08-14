@@ -43,7 +43,7 @@ module JITSpecUtils
 
   def compile_to_method(src, filename, lineno)
     node = JRuby.parse(src, filename, false, lineno)
-    oj = org.jruby
+    runtime = JRuby.runtime
 
     # This logic is a mix of logic from InterpretedIRMethod's JIT, o.j.Ruby's script compilation, and IRScriptBody's
     # interpret. We need to figure out a cleaner path.
@@ -51,30 +51,28 @@ module JITSpecUtils
     scope = node.getStaticScope
     currModule = scope.getModule
     if currModule == nil
-      currModule = JRuby.runtime.top_self.class
-      scope.setModule(currModule)
+      scope.setModule currModule = runtime.top_self.class
     end
 
-    method = oj.ir.IRBuilder.build_root(JRuby.runtime.getIRManager(), node).scope
+    method = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
     method.prepareForCompilation
 
-    compiler = oj.ir.targets.JVMVisitor.new
-    compiled = compiler.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
-    scriptMethod = compiled.getMethod(
-        "RUBY$script",
-        oj.runtime.ThreadContext.java_class,
-        oj.parser.StaticScope.java_class,
-        oj.runtime.builtin.IRubyObject.java_class,
-        oj.runtime.builtin.IRubyObject[].java_class,
-        oj.runtime.Block.java_class,
-        oj.RubyModule.java_class,
+    compiler = org.jruby.ir.targets.JVMVisitor.new(runtime)
+    compiled = compiler.compile(method, org.jruby.util.OneShotClassLoader.new(runtime.getJRubyClassLoader()))
+    scriptMethod = compiled.getMethod("RUBY$script",
+        org.jruby.runtime.ThreadContext.java_class,
+        org.jruby.parser.StaticScope.java_class,
+        org.jruby.runtime.builtin.IRubyObject.java_class,
+        org.jruby.runtime.builtin.IRubyObject[].java_class,
+        org.jruby.runtime.Block.java_class,
+        org.jruby.RubyModule.java_class,
         java.lang.String.java_class)
     handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod)
 
-    return oj.internal.runtime.methods.CompiledIRMethod.new(
+    return org.jruby.internal.runtime.methods.CompiledIRMethod.new(
         handle,
         method,
-        oj.runtime.Visibility::PUBLIC,
+        org.jruby.runtime.Visibility::PUBLIC,
         currModule,
         false)
   end
