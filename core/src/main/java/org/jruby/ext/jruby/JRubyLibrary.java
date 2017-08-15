@@ -95,12 +95,12 @@ public class JRubyLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject reference0(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return Java.getInstance(context.runtime, obj);
+        return Java.wrapJavaObject(context.runtime, obj);
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject runtime(ThreadContext context, IRubyObject recv) {
-        return Java.getInstance(context.runtime, context.runtime); // context.nil.getRuntime()
+        return Java.wrapJavaObject(context.runtime, context.runtime); // context.nil.getRuntime()
     }
 
     /**
