@@ -82,8 +82,8 @@ module JRuby
     end
   end
 
-  # NOTE: This is not a public API and is subject to change at our whim
-  # @private
+  # NOTE: This is not a public API and is subject to change at our whim.
+  # @private no longer used - to be removed
   module IR
     def self.debug=(value)
       org.jruby.RubyInstanceConfig.IR_DEBUG = !!value
@@ -109,6 +109,7 @@ module JRuby
       org.jruby.RubyInstanceConfig.IR_VISUALIZER
     end
   end
+  deprecate_constant :IR
 
   class CompiledScript
 
