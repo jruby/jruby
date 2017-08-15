@@ -1151,29 +1151,32 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_values_at (internal)
      *
      */
-    private final IRubyObject values_at(long olen, IRubyObject[] args) {
+    private final IRubyObject values_at(final int olen, IRubyObject[] args) {
         RubyArray result = newArray(getRuntime(), args.length);
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof RubyFixnum) {
-                result.append(entry(((RubyFixnum)args[i]).getLongValue()));
+            final IRubyObject arg = args[i];
+            if ( arg instanceof RubyFixnum ) {
+                result.append( entry(((RubyFixnum) arg).getLongValue()) );
                 continue;
             }
 
-            long beglen[];
-            if (!(args[i] instanceof RubyRange)) {
-            } else if ((beglen = ((RubyRange) args[i]).begLen(olen, 0)) == null) {
+            final int[] begLen;
+            if ( ! ( arg instanceof RubyRange ) ) {
+                // do result.append
+            }
+            else if ( ( begLen = ((RubyRange) arg).begLenInt(olen, 0) ) == null ) {
                 continue;
-            } else {
-                int beg = (int) beglen[0];
-                int len = (int) beglen[1];
-                int end = len;
-                for (int j = 0; j < end; j++) {
-                    result.append(entry(j + beg));
+            }
+            else {
+                final int beg = begLen[0];
+                final int len = begLen[1];
+                for (int j = 0; j < len; j++) {
+                    result.append( entry(j + beg) );
                 }
                 continue;
             }
-            result.append(entry(RubyNumeric.num2long(args[i])));
+            result.append( entry(RubyNumeric.num2long(arg)) );
         }
 
         Helpers.fillNil(result.values, result.realLength, result.values.length, getRuntime());
