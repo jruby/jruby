@@ -39,6 +39,7 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
@@ -117,6 +118,40 @@ public class JRubyLibrary implements Library {
             throw context.runtime.newTypeError("got " + obj.inspect() + ", expected Java-wrapped Ruby object");
         }
         return (IRubyObject) unwrapped;
+    }
+
+    /**
+     * Run the provided (required) block with the "global runtime" set to the current runtime,
+     * for libraries that expect to operate against the global runtime.
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject with_current_runtime_as_global(ThreadContext context, IRubyObject recv, Block block) {
+        final Ruby current = context.runtime;
+        final Ruby global = Ruby.getGlobalRuntime();
+        try {
+            if (current != global) {
+                current.useAsGlobalRuntime();
+            }
+            return block.yield(context, runtime(context, recv)); // previously yield (without an argument)
+        }
+        finally {
+            if (Ruby.getGlobalRuntime() != global) {
+                global.useAsGlobalRuntime();
+            }
+        }
+    }
+
+    @JRubyMethod(module = true, rest = true, optional = 1) // (loader = JRuby.runtime.jruby_class_loader)
+    public static IRubyObject set_context_class_loader(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        final ClassLoader loader;
+        if (args.length == 0 || args[0] == context.nil) {
+            loader = context.runtime.getJRubyClassLoader();
+        }
+        else {
+            loader = JavaUtil.unwrapJavaObject(args[0]);
+        }
+        java.lang.Thread.currentThread().setContextClassLoader(loader);
+        return Java.wrapJavaObject(context.runtime, loader); // reference0
     }
 
     /**

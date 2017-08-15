@@ -2,40 +2,25 @@ module JRuby
   class << self
     # Get a Java integration reference to the given (Ruby) object.
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
-    def reference(obj); end
+    def reference(obj); end if false
 
     # Turn a Java integration reference (to a Ruby object) back into a normal Ruby object reference.
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
-    def dereference(obj); end
+    def dereference(obj); end if false
 
     # Get the current JRuby runtime.
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
-    def runtime; end
+    def runtime; end if false
 
-    # Run the provided (required) block with the "global runtime" set to the
-    # current runtime, for libraries that expect to operate against the global
-    # runtime.
-    def with_current_runtime_as_global
-      current = JRuby.runtime
-      global = org.jruby.Ruby.global_runtime
+    # Run the provided (required) block with the "global runtime" set to the current runtime,
+    # for libraries that expect to operate against the global runtime.
+    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
+    def with_current_runtime_as_global; end if false
 
-      begin
-        if current != global
-          current.use_as_global_runtime
-        end
-        yield
-      ensure
-        if org.jruby.Ruby.global_runtime != global
-          global.use_as_global_runtime
-        end
-      end
-    end
-
-    # Change the current threads context classloader.  By, default call
-    # with no arguments to replace it with JRuby's class loader.
-    def set_context_class_loader(loader = JRuby.runtime.jruby_class_loader)
-      java.lang.Thread.currentThread.setContextClassLoader loader
-    end
+    # Change the current threads context classloader.
+    # By, default call with no arguments to replace it with JRuby's class loader.
+    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
+    def set_context_class_loader(loader = nil); end if false
 
     DEFAULT_FILENAME = '-'.dup; private_constant :DEFAULT_FILENAME
     class org::jruby::Ruby
@@ -45,8 +30,7 @@ module JRuby
     # Parse the given block or the provided content, returning a JRuby AST node.
     def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
       if block
-        block_r = reference0(block)
-        body = block_r.body
+        body = reference0(block).body
 
         if org.jruby.runtime.CompiledBlock === body
           raise ArgumentError, "cannot get parse tree from compiled block"
@@ -68,7 +52,6 @@ module JRuby
     alias ast_for parse
 
     def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
-      runtime = JRuby.runtime
       manager = org.jruby.ir.IRManager.new(runtime.instance_config)
       manager.dry_run = true
       if filename.equal?(DEFAULT_FILENAME)
