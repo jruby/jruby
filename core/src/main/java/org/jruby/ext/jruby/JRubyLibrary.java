@@ -109,21 +109,14 @@ public class JRubyLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject dereference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        Object unwrapped;
-
-        if (obj instanceof JavaProxy) {
-            unwrapped = ((JavaProxy)obj).getObject();
-        } else if (obj.dataGetStruct() instanceof JavaObject) {
-            unwrapped = JavaUtil.unwrapJavaObject(obj);
-        } else {
-            throw context.runtime.newTypeError("got " + obj + ", expected wrapped Java object");
+        Object unwrapped = JavaUtil.unwrapIfJavaObject(obj);
+        if (unwrapped == obj) {
+            throw context.runtime.newTypeError("got " + obj.inspect() + ", expected wrapped Java object");
         }
-
         if (!(unwrapped instanceof IRubyObject)) {
-            throw context.runtime.newTypeError("got " + obj + ", expected Java-wrapped Ruby object");
+            throw context.runtime.newTypeError("got " + obj.inspect() + ", expected Java-wrapped Ruby object");
         }
-
-        return (IRubyObject)unwrapped;
+        return (IRubyObject) unwrapped;
     }
 
     /**
