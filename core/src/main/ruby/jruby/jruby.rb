@@ -1,17 +1,16 @@
 module JRuby
   class << self
-    # Get a Java integration reference to the given object
+    # Get a Java integration reference to the given (Ruby) object.
+    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
     def reference(obj); end
 
-    # Turn a Java integration reference to a Ruby object back into a normal Ruby
-    # object reference.
+    # Turn a Java integration reference (to a Ruby object) back into a normal Ruby object reference.
+    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
     def dereference(obj); end
 
     # Get the current JRuby runtime.
-    def runtime
-      # reference nil, since it is guaranteed to be a normal object
-      reference0(nil).runtime
-    end
+    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
+    def runtime; end
 
     # Run the provided (required) block with the "global runtime" set to the
     # current runtime, for libraries that expect to operate against the global

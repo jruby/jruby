@@ -30,18 +30,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.jruby;
 
-import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
@@ -78,8 +75,7 @@ public class JRubyLibrary implements Library {
     public static class JRubyConfig {
         @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
-            return context.runtime.newBoolean(
-                    context.runtime.getInstanceConfig().isDisableGems());
+            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
         }
     }
 
@@ -90,20 +86,21 @@ public class JRubyLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject reference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        Ruby runtime = context.runtime;
-
-        return Java.getInstance(runtime, obj, false);
+        return Java.getInstance(context.runtime, obj, false);
     }
 
     /**
-     * Wrap the given object as in Java integration and return the wrapper. This
-     * version does not use ObjectProxyCache.
+     * Wrap the given object as in Java integration and return the wrapper.
+     * This version does not use ObjectProxyCache.
      */
     @JRubyMethod(module = true)
     public static IRubyObject reference0(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        Ruby runtime = context.runtime;
+        return Java.getInstance(context.runtime, obj);
+    }
 
-        return Java.getInstance(runtime, obj);
+    @JRubyMethod(module = true)
+    public static IRubyObject runtime(ThreadContext context, IRubyObject recv) {
+        return Java.getInstance(context.runtime, context.runtime); // context.nil.getRuntime()
     }
 
     /**
@@ -140,8 +137,5 @@ public class JRubyLibrary implements Library {
     public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
-    
-    public static class MethodExtensions {
 
-    }
 }
