@@ -1108,7 +1108,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            return this.block.yieldSpecific(context, packEnumValues(context, iargs), context.runtime.newFixnum(index++));
+            return this.block.call(context, packEnumValues(context, iargs), context.runtime.newFixnum(index++));
         }
     }
 
