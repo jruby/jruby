@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyArray;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -14,8 +13,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.util.ArraySupport;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static org.jruby.ir.IRFlags.*;
@@ -26,9 +23,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     public transient final long callSiteId;
     private final CallType callType;
     protected String name;
-    protected transient CallSite callSite;
-    protected transient int argsCount;
-    protected transient boolean hasClosure;
+    protected final transient CallSite callSite;
+    protected final transient int argsCount;
+    protected final transient boolean hasClosure;
 
     private transient boolean flagsComputed;
     private transient boolean canBeEval;
