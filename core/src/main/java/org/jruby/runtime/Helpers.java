@@ -1563,12 +1563,13 @@ public class Helpers {
         containingClass.addMethod(name, method);
 
         RubySymbol sym = runtime.fastNewSymbol(name);
-        if (visibility == Visibility.MODULE_FUNCTION) {
-            addModuleMethod(containingClass, name, method, context, sym);
-        }
 
         if (!containingClass.isRefinement()) {
             callNormalMethodHook(containingClass, context, sym);
+        }
+
+        if (visibility == Visibility.MODULE_FUNCTION) {
+            addModuleMethod(containingClass, name, method, context, sym);
         }
 
         return sym;
