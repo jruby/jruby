@@ -1084,6 +1084,7 @@ public class IRBuilder {
             callInstr.setProcNew(true);
         }
 
+        determineIfWeNeedLineNumber(callNode);
         receiveBreakException(block, callInstr);
 
         if (callNode.isLazy()) {
