@@ -187,7 +187,12 @@ module Racc
     Racc_Runtime_Core_Version_R = '1.4.6'
     Racc_Runtime_Core_Revision_R = %w$originalRevision: 1.8 $[1]
     begin
-      require 'racc/cparse'
+     if Object.const_defined?(:RUBY_ENGINE) and RUBY_ENGINE == 'jruby'
+       require 'racc/cparse-jruby.jar'
+       com.headius.racc.Cparse.new.load(JRuby.runtime, false)
+     else
+       require 'racc/cparse'
+     end
     # Racc_Runtime_Core_Version_C  = (defined in extension)
       Racc_Runtime_Core_Revision_C = Racc_Runtime_Core_Id_C.split[2]
       unless new.respond_to?(:_racc_do_parse_c, true)
