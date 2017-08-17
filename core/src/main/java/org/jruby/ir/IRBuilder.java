@@ -1087,6 +1087,7 @@ public class IRBuilder {
             callInstr = CallInstr.create(scope, result, callNode.getName(), receiver, args, block);
         }
 
+        determineIfWeNeedLineNumber(callNode);
         determineIfProcNew(receiverNode, callNode.getName(), callInstr);
         receiveBreakException(block, callInstr);
 
