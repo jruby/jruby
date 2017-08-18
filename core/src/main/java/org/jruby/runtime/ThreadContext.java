@@ -1122,7 +1122,7 @@ public final class ThreadContext {
         isProfiling = true;
         // use new profiling data every time profiling is started, useful in
         // case users keep a reference to previous data after profiling stop
-        profileCollection = getRuntime().getProfilingService().newProfileCollection( this );
+        profileCollection = runtime.getProfilingService().newProfileCollection( this );
     }
 
     public void stopProfiling() {
@@ -1273,7 +1273,7 @@ public final class ThreadContext {
 
     @Deprecated
     public org.jruby.util.RubyDateFormat getRubyDateFormat() {
-        if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US, true);
+        if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US);
 
         return dateFormat;
     }
