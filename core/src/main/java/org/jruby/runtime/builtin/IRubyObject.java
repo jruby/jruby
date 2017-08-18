@@ -325,6 +325,7 @@ public interface IRubyObject {
      * @return the object wrapped.
      */
     Object dataGetStruct();
+    @Deprecated // not used at all
     Object dataGetStructChecked();
     
     /**
