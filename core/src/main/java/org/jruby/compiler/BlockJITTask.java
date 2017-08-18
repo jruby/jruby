@@ -47,6 +47,9 @@ class BlockJITTask implements Runnable {
     }
 
     public void run() {
+        // We synchronize against the JITCompiler object so at most one code body will jit at once in a given runtime.
+        // This works around unsolved concurrency issues within the process of preparing and jitting the IR.
+        // See #4739 for a reproduction script that produced various errors without this.
         synchronized (jitCompiler) {
             try {
                 String key = SexpMaker.sha1(body.getIRScope());
