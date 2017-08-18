@@ -178,6 +178,9 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
             }
 
             synchronized (this) {
+                // check call count again
+                if (callCount < 0) return;
+
                 if (callCount++ >= Options.JIT_THRESHOLD.load()) {
                     callCount = -1;
                     context.runtime.getJITCompiler().buildThresholdReached(context, this);
