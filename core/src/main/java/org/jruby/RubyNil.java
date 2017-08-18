@@ -118,7 +118,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     public Object constant() {
         return constant;
     }
-    
+
     // Methods of the Nil Class (nil_*):
     
     /** nil_to_i
@@ -162,9 +162,10 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_inspect
      *
      */
+    @Override
     @JRubyMethod
-    public static RubyString inspect(ThreadContext context, IRubyObject recv) {
-        return inspect(context.runtime);
+    public IRubyObject inspect() {
+        return RubyNil.inspect(getRuntime());
     }
 
     static final byte[] nilBytes = new byte[] { 'n','i','l' }; // RubyString.newUSASCIIString(runtime, "nil")

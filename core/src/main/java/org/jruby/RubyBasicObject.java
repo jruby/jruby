@@ -533,12 +533,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyClass getSingletonClass() {
-        RubyClass klass;
+        RubyClass klass = getMetaClass();
 
-        if (getMetaClass().isSingleton() && ((MetaClass)getMetaClass()).getAttached() == this) {
-            klass = getMetaClass();
+        if (klass.isSingleton() && ((MetaClass) klass).getAttached() == this) {
+            // no-op
         } else {
-            klass = makeMetaClass(getMetaClass());
+            klass = makeMetaClass(klass);
         }
 
         klass.setTaint(isTaint());
@@ -601,10 +601,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         final ThreadContext context = runtime.getCurrentContext();
         final RubySymbol mname = runtime.newSymbol(name);
-        final boolean respondToUndefined = respondTo.isUndefined();
 
         // respond_to? or respond_to_missing? is not defined, so we must dispatch to trigger method_missing
-        if ( respondToUndefined ) {
+        if ( respondTo.isUndefined() ) {
             return sites(context).respond_to.call(context, this, this, mname).isTrue();
         }
 
@@ -659,14 +658,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Will return the Java interface that most closely can represent
-     * this object, when working through JAva integration
-     * translations.
+     * this object, when working through Java integration translations.
+     * @return the true Java class of this (Ruby) object
      */
     @Override
     public Class getJavaClass() {
         Object obj = dataGetStruct();
         if (obj instanceof JavaObject) {
-            return ((JavaObject)obj).getValue().getClass();
+            return ((JavaObject) obj).getValue().getClass();
         }
         return getClass();
     }
@@ -676,13 +675,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will try to convert this object to a String using the Ruby
      * "to_str" if the object isn't already a String. If this still
      * doesn't work, will throw a Ruby TypeError.
-     *
+     * @return a (Java) string
      */
     @Override
     public String asJavaString() {
-        IRubyObject asString = checkStringType();
-        if(!asString.isNil()) return ((RubyString)asString).asJavaString();
-        throw getRuntime().newTypeError(inspect().toString() + " is not a string");
+        IRubyObject str = checkStringType();
+        if (!str.isNil()) return ((RubyString) str).asJavaString();
+        throw getRuntime().newTypeError(inspect() + " is not a string");
     }
 
     /** rb_obj_as_string
@@ -699,14 +698,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         BasicObjectSites sites = sites(context);
         IRubyObject str = sites.to_s.call(context, this, this);
 
-        if (!(str instanceof RubyString)) return (RubyString)anyToString();
+        if (!(str instanceof RubyString)) return (RubyString) anyToString();
         if (isTaint()) str.setTaint(true);
         return (RubyString) str;
     }
 
     /**
-     * Tries to convert this object to a Ruby Array using the "to_ary"
-     * method.
+     * Tries to convert this object to a Ruby Array using the "to_ary" method.
+     * @return array representation of this
      */
     @Override
     public RubyArray convertToArray() {
@@ -717,8 +716,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Tries to convert this object to a Ruby Hash using the "to_hash"
-     * method.
+     * Tries to convert this object to a Ruby Hash using the "to_hash" method.
+     * @return hash representation of this
      */
     @Override
     public RubyHash convertToHash() {
@@ -729,8 +728,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Tries to convert this object to a Ruby Float using the "to_f"
-     * method.
+     * Tries to convert this object to a Ruby Float using the "to_f" method.
+     * @return float representation of this
      */
     @Override
     public RubyFloat convertToFloat() {
@@ -741,8 +740,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Tries to convert this object to a Ruby Integer using the "to_int"
-     * method.
+     * Tries to convert this object to a Ruby Integer using the "to_int" method.
+     * @return an integer representation of this
      */
     @Override
     public RubyInteger convertToInteger() {
@@ -760,8 +759,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Tries to convert this object to a Ruby Integer using the
-     * supplied conversion method.
+     * Tries to convert this object to a Ruby Integer using the supplied conversion method.
+     * @param convertMethod conversion method to use e.g. "to_i"
+     * @return an integer representation of this
      */
     @Override
     public RubyInteger convertToInteger(String convertMethod) {
@@ -785,15 +785,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Tries to convert this object to a Ruby String using the
-     * "to_str" method.
+     * Tries to convert this object to a Ruby String using the "to_str" method.
+     * @return a string representation of this
      */
     @Override
     public RubyString convertToString() {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
-        return (RubyString) TypeConverter.convertToType(context, this, getRuntime().getString(), sites.to_str_checked);
+        return (RubyString) TypeConverter.convertToType(context, this, runtime.getString(), sites.to_str_checked);
     }
 
     /**
@@ -831,22 +831,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return TypeConverter.checkStringType(context, sites.to_str_checked, this);
     }
 
-    /** rb_check_string_type
-     *
-     * Tries to return a coerced string representation of this object,
-     * using "to_str". If that returns something other than a String
-     * or nil, an empty String will be returned.
-     *
+    /**
+     * @deprecated
+     * @see #checkStringType()
      */
     @Override
-    public IRubyObject checkStringType19() {
+    public final IRubyObject checkStringType19() {
         return checkStringType();
     }
 
     /** rb_check_array_type
     *
-    * Returns the result of trying to convert this object to an Array
-    * with "to_ary".
+    * Returns the result of trying to convert this object to an Array with "to_ary".
     */
     @Override
     public IRubyObject checkArrayType() {
@@ -895,8 +891,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Override
     public IRubyObject dup() {
-        Ruby runtime = getRuntime();
-
         if (isSpecialObject()) {
             return this;
         }
@@ -904,6 +898,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         IRubyObject dup = getMetaClass().getRealClass().allocate();
         if (isTaint()) dup.setTaint(true);
 
+        final Ruby runtime = getRuntime();
         initCopy(runtime.getCurrentContext(), dup, this, false);
 
         return dup;
@@ -1148,8 +1143,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if ((!isImmediate()) && !(this instanceof RubyModule) && hasVariables()) {
             return hashyInspect();
         }
-
-        if (isNil()) return RubyNil.inspect(getRuntime());
         return to_s();
     }
 
