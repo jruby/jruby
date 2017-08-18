@@ -25,6 +25,12 @@ public class Symbol extends ImmutableLiteral {
         this.bytes = bytes;
     }
 
+    public boolean equals(Object other) {
+        if (!(other instanceof Symbol)) return false;
+
+        return bytes.equals(((Symbol) other).bytes);
+    }
+
     @Override
     public OperandType getOperandType() {
         return OperandType.SYMBOL;
