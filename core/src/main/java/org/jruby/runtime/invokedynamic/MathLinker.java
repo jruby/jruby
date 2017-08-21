@@ -86,10 +86,12 @@ public class MathLinker {
     public static final MethodHandle FIXNUM_BOOLEAN = Binder.from(methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, long.class)).invokeStaticQuiet(lookup(), MathLinker.class, "fixnumBoolean");
     public static final MethodHandle FLOAT_OPERATOR = Binder.from(methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, double.class)).invokeStaticQuiet(lookup(), MathLinker.class, "floatOperator");
 
+    private static final CallType[] CALL_TYPES = CallType.values();
+
     public static CallSite fixnumOperatorBootstrap(Lookup lookup, String name, MethodType type, long value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
         List<String> names = StringSupport.split(name, ':');
         String operator = JavaNameMangler.demangleMethodName(names.get(1));
-        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.values()[callType], file, line, operator, true);
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CALL_TYPES[callType], file, line, operator, true);
 
         MethodHandle target = FIXNUM_OPERATOR;
         target = insertArguments(target, 3, site, value);
@@ -101,7 +103,7 @@ public class MathLinker {
     public static CallSite fixnumBooleanBootstrap(Lookup lookup, String name, MethodType type, long value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
         List<String> names = StringSupport.split(name, ':');
         String operator = JavaNameMangler.demangleMethodName(names.get(1));
-        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.values()[callType], file, line, operator, true);
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CALL_TYPES[callType], file, line, operator, true);
 
         MethodHandle target = FIXNUM_BOOLEAN;
         target = insertArguments(target, 3, site, value);
@@ -113,7 +115,7 @@ public class MathLinker {
     public static CallSite floatOperatorBootstrap(Lookup lookup, String name, MethodType type, double value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
         List<String> names = StringSupport.split(name, ':');
         String operator = JavaNameMangler.demangleMethodName(names.get(1));
-        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.values()[callType], file, line, operator, true);
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CALL_TYPES[callType], file, line, operator, true);
 
         MethodHandle target = FLOAT_OPERATOR;
 
