@@ -66,6 +66,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.ChannelHelper;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.ModeFlags;
@@ -1200,10 +1201,16 @@ public class ShellLauncher {
             } else {
                 verifyExecutable();
                 execArgs = args;
+                boolean nativeExecCanonicalizeSymlinks = Options.NATIVE_EXEC_CANONICALIZESYMLINKS.load();
+
                 try {
-                    execArgs[0] = executableFile.getCanonicalPath();
+                    if (nativeExecCanonicalizeSymlinks) {
+                        execArgs[0] = executableFile.getCanonicalPath();
+                    } else {
+                        execArgs[0] = executableFile.getAbsolutePath();
+                    }
                 } catch (IOException ioe) {
-                    // can't get the canonical path, will use as-is
+                    // can't get the canonical or absolute path, will use as-is
                 }
             }
         }
