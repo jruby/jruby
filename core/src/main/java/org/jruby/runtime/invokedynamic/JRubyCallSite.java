@@ -32,7 +32,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -46,14 +45,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
 public class JRubyCallSite extends MutableCallSite {
+
+    private static final AtomicLong SITE_ID = new AtomicLong(1);
+
     private final Lookup lookup;
     private final CallType callType;
     public CacheEntry entry = CacheEntry.NULL_CACHE;
-    private final Set<Integer> seenTypes = new HashSet<Integer>();
     private final boolean expression;
     private final String name;
-    private int clearCount;
-    private static final AtomicLong SITE_ID = new AtomicLong(1);
     private final long siteID = SITE_ID.getAndIncrement();
     private final String file;
     private final int line;
@@ -143,27 +142,6 @@ public class JRubyCallSite extends MutableCallSite {
     
     public String name() {
         return name;
-    }
-    
-    public synchronized boolean hasSeenType(int typeCode) {
-        return seenTypes.contains(typeCode);
-    }
-    
-    public synchronized void addType(int typeCode) {
-        seenTypes.add(typeCode);
-    }
-    
-    public synchronized int seenTypesCount() {
-        return seenTypes.size();
-    }
-    
-    public synchronized void clearTypes() {
-        seenTypes.clear();
-        clearCount++;
-    }
-    
-    public int clearCount() {
-        return clearCount;
     }
 
     public long siteID() {
