@@ -35,8 +35,10 @@ package org.jruby;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 
@@ -224,5 +226,19 @@ public class IncludedModuleWrapper extends IncludedModule {
         if (method != null) return method.isNull() ? null : method;
 
         return null;
+    }
+
+    @Override
+    protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
+        // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
+        RubyModule module = origin;
+        RubyModule methodLoc = origin.getMethodLocation();
+
+        for (; module != methodLoc; module = module.getSuperClass()) {
+            module.addMethodSymbols(runtime, seen, ary, not, visibility);
+        }
+
+        // one last add for method location
+        module.addMethodSymbols(runtime, seen, ary, not, visibility);
     }
 }
