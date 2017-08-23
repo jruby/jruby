@@ -2453,26 +2453,29 @@ public class RubyModule extends RubyObject {
         }
 
         for (; mod != null; mod = mod.getSuperClass()) {
-            RubyModule realType = mod.getNonIncludedClass();
-            for (Map.Entry entry : mod.getMethods().entrySet()) {
-                String methodName = (String) entry.getKey();
-
-                if (! seen.contains(methodName)) {
-                    seen.add(methodName);
-
-                    DynamicMethod method = (DynamicMethod) entry.getValue();
-                    if ((method.isImplementedBy(realType) || method.isImplementedBy(mod)) &&
-                        (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
-                        ! method.isUndefined()) {
-
-                        ary.append(runtime.newSymbol(methodName));
-                    }
-                }
-            }
+            mod.addMethodSymbols(runtime, seen, ary, not, visibility);
 
             if (mod.isIncluded() && !prepended) continue;
             if (obj && mod.isSingleton()) continue;
             if (!recur) break;
+        }
+    }
+
+    protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
+        for (Map.Entry entry : getMethods().entrySet()) {
+            String methodName = (String) entry.getKey();
+
+            if (! seen.contains(methodName)) {
+                seen.add(methodName);
+
+                DynamicMethod method = (DynamicMethod) entry.getValue();
+                if (//(method.isImplementedBy(realType) || method.isImplementedBy(mod)) &&
+                        (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
+                        ! method.isUndefined()) {
+
+                    ary.append(runtime.newSymbol(methodName));
+                }
+            }
         }
     }
 
