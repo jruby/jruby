@@ -308,7 +308,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private static RubyString makeShared(Ruby runtime, RubyString str, int index, int length) {
-        return str.makeShared19(runtime, index, length);
+        return str.makeShared(runtime, index, length);
     }
 
     private RubyArray match_array(Ruby runtime, int start) {

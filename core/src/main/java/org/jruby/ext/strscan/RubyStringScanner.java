@@ -227,7 +227,7 @@ public class RubyStringScanner extends RubyObject {
         int size = str.getByteList().getRealSize();
         if (beg > size) return runtime.getNil();
         if (end > size) end = size;
-        return str.makeSharedString19(runtime, beg, end - beg);
+        return str.makeSharedString(runtime, beg, end - beg);
     }
 
     private IRubyObject extractBegLen(Ruby runtime, int beg, int len) {
@@ -235,7 +235,7 @@ public class RubyStringScanner extends RubyObject {
         int size = str.getByteList().getRealSize();
         if (beg > size) return runtime.getNil();
         if (beg + len > size) len = size - beg;
-        return str.makeSharedString19(runtime, beg, len);
+        return str.makeSharedString(runtime, beg, len);
     }
 
     ThreadLocal<Matcher> currentMatcher = new ThreadLocal<>();

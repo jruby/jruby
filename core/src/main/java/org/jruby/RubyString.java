@@ -809,15 +809,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     /* rb_str_subseq */
     public final RubyString makeSharedString(Ruby runtime, int index, int len) {
-        return makeShared19(runtime, runtime.getString(), index, len);
+        return makeShared(runtime, runtime.getString(), value, index, len);
     }
 
-    public RubyString makeSharedString19(Ruby runtime, int index, int len) {
-        return makeShared19(runtime, runtime.getString(), value, index, len);
+    @Deprecated
+    public final RubyString makeSharedString19(Ruby runtime, int index, int len) {
+        return makeShared(runtime, runtime.getString(), value, index, len);
     }
 
     public final RubyString makeShared(Ruby runtime, int index, int len) {
-        return makeShared19(runtime, getType(), index, len);
+        return makeShared(runtime, getType(), value, index, len);
     }
 
     public final RubyString makeShared(Ruby runtime, RubyClass meta, int index, int len) {
@@ -836,19 +837,21 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return shared;
     }
 
+    @Deprecated
     public final RubyString makeShared19(Ruby runtime, int index, int len) {
-        return makeShared19(runtime, value, index, len);
+        return makeShared(runtime, value, index, len);
     }
 
+    @Deprecated
     public final RubyString makeShared19(Ruby runtime, RubyClass meta, int index, int len) {
-        return makeShared19(runtime, meta, value, index, len);
+        return makeShared(runtime, meta, value, index, len);
     }
 
-    private RubyString makeShared19(Ruby runtime, ByteList value, int index, int len) {
-        return makeShared19(runtime, getType(), value, index, len);
+    private RubyString makeShared(Ruby runtime, ByteList value, int index, int len) {
+        return makeShared(runtime, getType(), value, index, len);
     }
 
-    private RubyString makeShared19(Ruby runtime, RubyClass meta, ByteList value, int index, int len) {
+    private RubyString makeShared(Ruby runtime, RubyClass meta, ByteList value, int index, int len) {
         final RubyString shared;
         Encoding enc = value.getEncoding();
 
@@ -2534,7 +2537,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             final int mBeg = matcher.getBegin(), mEnd = matcher.getEnd();
 
             final RubyString repl; final int tuFlags;
-            IRubyObject subStr = makeShared19(runtime, mBeg, mEnd - mBeg);
+            IRubyObject subStr = makeShared(runtime, mBeg, mEnd - mBeg);
             if (hash == null) {
                 tuFlags = 0;
                 repl = objAsString(context, block.yield(context, subStr));
@@ -2728,7 +2731,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (repl != null) {     // string given
                 val = RubyRegexp.regsub19(context, repl, this, matcher, pattern);
             } else {
-                final RubyString substr = makeShared19(runtime, begz, endz - begz);
+                final RubyString substr = makeShared(runtime, begz, endz - begz);
                 if (hash != null) { // hash given
                     val = objAsString(context, hash.op_aref(context, substr));
                 } else {            // block given
@@ -2954,7 +2957,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         int end = Math.min(length, beg + len);
-        return makeShared19(runtime, beg, end - beg);
+        return makeShared(runtime, beg, end - beg);
     }
 
     /* str_byte_substr */
@@ -2973,7 +2976,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             len = 0;
         }
 
-        return makeShared19(runtime, beg, len);
+        return makeShared(runtime, beg, len);
     }
 
     /* str_byte_aref */
@@ -3040,7 +3043,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 if (p == -1) return runtime.getNil();
                 while (len-- > 0 && (p = enc.prevCharHead(bytes, s, p, e)) != -1) {} // nothing
                 if (p == -1) return runtime.getNil();
-                return makeShared19(runtime, p - s, e - p);
+                return makeShared(runtime, p - s, e - p);
             } else {
                 beg += StringSupport.strLengthFromRubyString(this, enc);
                 if (beg < 0) return runtime.getNil();
@@ -3069,7 +3072,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         } else {
             len = StringSupport.offset(enc, bytes, p, end, len);
         }
-        return makeShared19(runtime, p - s, len);
+        return makeShared(runtime, p - s, len);
     }
 
     /* rb_str_splice */
@@ -3611,7 +3614,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         for (int i = 1; i < match.numRegs(); i++) {
             int beg = match.begin(i);
             if (beg == -1) continue;
-            result.append(makeShared19(runtime, beg, match.end(i) - beg));
+            result.append(makeShared(runtime, beg, match.end(i) - beg));
         }
     }
 
@@ -3704,7 +3707,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     result.append(newEmptyString(runtime, getMetaClass()).infectBy(this));
                     break;
                 } else if (lastNull) {
-                    result.append(makeShared19(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
+                    result.append(makeShared(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
                     beg = start;
                 } else {
                     if ((ptr + start) == ptr + len) {
@@ -3716,7 +3719,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     continue;
                 }
             } else {
-                result.append(makeShared19(runtime, beg, end - beg));
+                result.append(makeShared(runtime, beg, end - beg));
                 beg = match.end(0);
                 start = beg;
             }
@@ -3771,7 +3774,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 }
             } else {
                 if (enc.isSpace(c)) {
-                    result.append(makeShared19(runtime, b, e - b));
+                    result.append(makeShared(runtime, b, e - b));
                     skip = true;
                     b = p - ptr;
                     if (limit) i++;
@@ -3781,7 +3784,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
         }
 
-        if (len > 0 && (limit || len > b || lim < 0)) result.append(makeShared19(runtime, b, len - b));
+        if (len > 0 && (limit || len > b || lim < 0)) result.append(makeShared(runtime, b, len - b));
         return result;
     }
 
@@ -3810,13 +3813,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 p = t;
                 continue;
             }
-            result.append(makeShared19(runtime, p, e - p));
+            result.append(makeShared(runtime, p, e - p));
             p = e + pattern.getRealSize();
             if (limit && lim <= ++i) break;
         }
 
         if (value.getRealSize() > 0 && (limit || value.getRealSize() > p || lim < 0)) {
-            result.append(makeShared19(runtime, p, value.getRealSize() - p));
+            result.append(makeShared(runtime, p, value.getRealSize() - p));
         }
 
         return result;
@@ -3885,22 +3888,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     public IRubyObject scan(ThreadContext context, IRubyObject arg, Block block) {
         return scan19(context, arg, block);
-    }
-
-    private IRubyObject populateCapturesForScan(Ruby runtime, Matcher matcher, int range, int tuFlags, boolean is19) {
-        Region region = matcher.getRegion();
-        RubyArray result = getRuntime().newArray(region.numRegs);
-        for (int i=1; i<region.numRegs; i++) {
-            int beg = region.beg[i];
-            if (beg == -1) {
-                result.append(runtime.getNil());
-            } else {
-                RubyString substr = is19 ? makeShared19(runtime, beg, region.end[i] - beg) : makeShared(runtime, beg, region.end[i] - beg);
-                substr.infectBy(tuFlags);
-                result.append(substr);
-            }
-        }
-        return result;
     }
 
     @JRubyMethod(name = "scan", reads = BACKREF, writes = BACKREF)
@@ -4271,9 +4258,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         return RubyArray.newArray(runtime, new IRubyObject[]{
-                makeShared19(runtime, 0, pos),
+                makeShared(runtime, 0, pos),
                 sep,
-                makeShared19(runtime, pos + sep.value.getRealSize(), value.getRealSize() - pos - sep.value.getRealSize())});
+                makeShared(runtime, pos + sep.value.getRealSize(), value.getRealSize() - pos - sep.value.getRealSize())});
     }
 
     private IRubyObject partitionMismatch(Ruby runtime) {
