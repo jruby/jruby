@@ -1,5 +1,3 @@
-require 'java'
-require 'jruby'
 
 class String
   
@@ -8,7 +6,9 @@ class String
   # 
   # May be useful in cases where you know how large a string will grow, and want
   # to pre-allocate the buffer for that size.
+  #
+  # @deprecated use String.new(capacity: size)
   def self.alloc(size)
-    org.jruby.RubyString.new_string_light(JRuby.runtime, size)
+    new(capacity: size)
   end
 end
