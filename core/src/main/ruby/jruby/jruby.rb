@@ -12,6 +12,11 @@ module JRuby
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
     def runtime; end if false
 
+    # Get the current runtime's config.
+    # Changes to the configuration won't be reflected in the runtime, meant to be read-only.
+    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
+    def config; end if false
+
     # Run the provided (required) block with the "global runtime" set to the current runtime,
     # for libraries that expect to operate against the global runtime.
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
@@ -52,7 +57,7 @@ module JRuby
     alias ast_for parse
 
     def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
-      manager = org.jruby.ir.IRManager.new(runtime.instance_config)
+      manager = org.jruby.ir.IRManager.new(config)
       manager.dry_run = true
       if filename.equal?(DEFAULT_FILENAME)
         node = parse(content, &block)
@@ -128,7 +133,7 @@ module JRuby
     end
 
     def inspect
-      "\#<JRuby::CompiledScript #{@name}>"
+      "\#<#{self.class.name} #{@name}>"
     end
 
     def inspect_bytecode

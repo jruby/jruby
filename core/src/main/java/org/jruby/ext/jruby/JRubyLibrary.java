@@ -105,6 +105,18 @@ public class JRubyLibrary implements Library {
     }
 
     /**
+     * JRuby.config a shortcut for JRuby.runtime.instance_config
+     * @param context
+     * @param recv
+     * @return a wrapped RubyInstanceConfig
+     * @since 9.2
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject config(ThreadContext context, IRubyObject recv) {
+        return Java.wrapJavaObject(context.runtime, context.runtime.getInstanceConfig());
+    }
+
+    /**
      * Unwrap the given Java-integration-wrapped object, returning the unwrapped
      * object. If the wrapped object is not a Ruby object, an error will raise.
      */
