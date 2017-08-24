@@ -30,19 +30,30 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.jruby;
 
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.java.proxies.JavaProxy;
+import org.jruby.ast.Node;
+import org.jruby.ast.RootNode;
+import org.jruby.ir.IRBuilder;
+import org.jruby.ir.IRManager;
+import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.ByteList;
+
+import java.io.ByteArrayInputStream;
 
 /**
  * Native part of require 'jruby'. Provides methods for swapping between the
@@ -176,6 +187,99 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.runtime.newFixnum(System.identityHashCode(obj));
+    }
+
+
+    @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
+    public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
+        return Java.wrapJavaObject(context.runtime, parseImpl(context, args, block));
+    }
+
+    private static Node parseImpl(ThreadContext context, IRubyObject[] args, Block block) {
+        if (block.isGiven()) {
+            throw context.runtime.newNotImplementedError("JRuby.parse with block returning AST no longer supported");
+        }
+
+        final RubyString content = args[0].convertToString();
+        final String filename;
+        boolean extra_position_info = false; int lineno = 0;
+
+        switch (args.length) {
+            case 1 :
+                filename = "";
+                break;
+            case 2 :
+                filename = args[1].convertToString().toString();
+                break;
+            case 3 :
+                filename = args[1].convertToString().toString();
+                extra_position_info = args[2].isTrue();
+                break;
+            case 4 :
+                filename = args[1].convertToString().toString();
+                extra_position_info = args[2].isTrue();
+                lineno = args[3].convertToInteger().getIntValue();
+                break;
+            default :
+                throw new AssertionError("unexpected arguments: " + java.util.Arrays.toString(args));
+        }
+
+        final ByteList bytes = content.getByteList();
+        final DynamicScope scope = null;
+
+        final Node parseResult;
+        if (content.getEncoding() == ASCIIEncoding.INSTANCE) {
+            // binary content, parse as though from a stream
+            ByteArrayInputStream stream = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
+            parseResult = context.runtime.parseFile(stream, filename, scope, lineno);
+        }
+        else {
+            parseResult = context.runtime.parse(bytes, filename, scope, lineno, extra_position_info);
+        }
+
+        return parseResult;
+    }
+
+    @JRubyMethod(module = true, name = "compile_ir", required = 1, optional = 3)
+    public static IRubyObject compile_ir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        // def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
+        return Java.wrapJavaObject(context.runtime, compileIR(context, args, block));
+    }
+
+    private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
+        RootNode result = (RootNode) parseImpl(context, args, block);
+        IRManager manager = new IRManager(context.runtime.getInstanceConfig());
+        IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, result).getScope();
+        scope.setTopLevelBindingScope(result.getScope());
+        return scope;
+    }
+
+    @JRubyMethod(module = true, name = "compile", required = 1, optional = 3)
+    public static IRubyObject compile(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        // def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
+        final Ruby runtime = context.runtime;
+
+        final RubyString content = args[0].convertToString();
+        args[0] = content;
+        final RubyString filename = args.length > 1 ? args[1].convertToString() : RubyString.newEmptyString(runtime);
+
+        IRScriptBody scope = compileIR(context, args, block);
+
+        JVMVisitor visitor = new JVMVisitor(runtime);
+        JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
+        byte[] bytes = visitor.compileToBytecode(scope, methodContext);
+
+        scope.getStaticScope().setModule( runtime.getTopSelf().getMetaClass() );
+
+        RubyClass CompiledScript = (RubyClass) runtime.getModule("JRuby").getConstantAt("CompiledScript");
+        // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
+        return CompiledScript.newInstance(context, new IRubyObject[] {
+                filename,
+                runtime.newString(scope.getName()),
+                content,
+                Java.getInstance(runtime, bytes)
+        }, Block.NULL_BLOCK);
     }
 
 }

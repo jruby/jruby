@@ -27,64 +27,18 @@ module JRuby
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
     def set_context_class_loader(loader = nil); end if false
 
-    DEFAULT_FILENAME = '-'.dup; private_constant :DEFAULT_FILENAME
-    class org::jruby::Ruby
-      java_alias :parse_bytelist, :parse, [org.jruby.util.ByteList, java.lang.String, org.jruby.runtime.DynamicScope, Java::int, Java::boolean]
-    end
-
     # Parse the given block or the provided content, returning a JRuby AST node.
-    def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
-      if block
-        body = reference0(block).body
+    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
+    def parse(content, filename = '', extra_position_info = false, lineno = 0); end if false
 
-        if org.jruby.runtime.CompiledBlock === body
-          raise ArgumentError, "cannot get parse tree from compiled block"
-        end
+    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
+    def compile_ir(content, filename = '', extra_position_info = false); end if false
 
-        body.body_node
-      else
-        content = content.to_str
-        filename = filename.to_str unless filename.equal?(DEFAULT_FILENAME)
+    # Parse and compile the given block or provided content.
+    # @return JRuby::CompiledScript instance
+    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
+    def compile(content, filename = '', extra_position_info = false); end if false
 
-        if content.encoding == Encoding::ASCII_8BIT
-          # binary content, parse as though from a stream
-          runtime.parse_file(filename, java.io.ByteArrayInputStream.new(content.to_java_bytes), nil)
-        else
-          runtime.parse_bytelist reference0(content).byte_list, filename, nil, lineno, extra_position_info
-        end
-      end
-    end
-    alias ast_for parse
-
-    def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
-      manager = org.jruby.ir.IRManager.new(config)
-      manager.dry_run = true
-      if filename.equal?(DEFAULT_FILENAME)
-        node = parse(content, &block)
-      else
-        node = parse(content, filename, extra_position_info, &block)
-      end
-
-      scope = org.jruby.ir.IRBuilder.build_root(manager, node).scope
-      scope.top_level_binding_scope = node.scope
-
-      scope
-    end
-
-    # Parse and compile the given block or provided content, returning a new
-    # CompiledScript instance.
-    def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
-      irscope = compile_ir(content, filename, extra_position_info, &block)
-
-      visitor = org.jruby.ir.targets.JVMVisitor.new JRuby.runtime
-      context = org.jruby.ir.targets.JVMVisitorMethodContext.new
-      bytes = visitor.compile_to_bytecode(irscope, context)
-      static_scope = irscope.static_scope;
-      top_self = JRuby.runtime.top_self
-      static_scope.module = top_self.class
-
-      CompiledScript.new(filename, irscope.name, content, bytes)
-    end
   end
 
   # NOTE: This is not a public API and is subject to change at our whim.
