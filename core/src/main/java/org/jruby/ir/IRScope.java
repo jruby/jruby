@@ -61,9 +61,9 @@ import static org.jruby.ir.IRFlags.*;
 public abstract class IRScope implements ParseResult {
     public static final Logger LOG = LoggerFactory.getLogger(IRScope.class);
 
-    private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
+    private static final Collection<IRClosure> NO_CLOSURES = Collections.EMPTY_LIST;
 
-    private static AtomicInteger globalScopeCount = new AtomicInteger();
+    private static final AtomicInteger globalScopeCount = new AtomicInteger();
 
     /** Unique global scope id */
     private int scopeId;
