@@ -5,15 +5,15 @@ require 'jruby'
 require 'jruby/compiler/java_class'
 
 module JRuby::Compiler
-  BAIS = java.io.ByteArrayInputStream
+  ByteArrayInputStream = java.io.ByteArrayInputStream
+  ByteArrayOutputStream = java.io.ByteArrayOutputStream
+
   Mangler = org.jruby.util.JavaNameMangler
   Opcodes = org.objectweb.asm.Opcodes rescue org.jruby.org.objectweb.asm.Opcodes
   ClassWriter = org.objectweb.asm.ClassWriter rescue org.jruby.org.objectweb.asm.ClassWriter
   SkinnyMethodAdapter = org.jruby.compiler.impl.SkinnyMethodAdapter
-  ByteArrayOutputStream = java.io.ByteArrayOutputStream
   IRWriterStream = org.jruby.ir.persistence.IRWriterStream
   IRWriter = org.jruby.ir.persistence.IRWriter
-  JavaFile = java.io.File
   MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
   DEFAULT_PREFIX = ""
 
@@ -131,7 +131,7 @@ module JRuby::Compiler
         end
 
         if options[:java] || options[:javac]
-          node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
+          node = runtime.parse_file(ByteArrayInputStream.new(source.to_java_bytes), filename, nil)
 
           ruby_script = JavaGenerator.generate_java(node, filename)
 
@@ -155,8 +155,7 @@ module JRuby::Compiler
           puts "Compiling #{filename}" if options[:verbose]
 
           scope = JRuby.compile_ir(source, filename)
-          bytes = ByteArrayOutputStream.new
-          stream = IRWriterStream.new(bytes)
+          stream = IRWriterStream.new bytes = ByteArrayOutputStream.new
           IRWriter.persist(stream, scope)
           string = String.from_java_bytes(bytes.to_byte_array, 'BINARY')
 
