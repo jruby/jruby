@@ -41,6 +41,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Represents a symbol (:symbol_name).
@@ -51,7 +52,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
     // Interned ident path (e.g. [':', ident]).
     public SymbolNode(ISourcePosition position, String name, Encoding encoding, int cr) {
         super(position, false);
-        this.bytes = new ByteList(name.getBytes(encoding.getCharset()), encoding);
+        this.bytes = new ByteList(name.getBytes(EncodingUtils.charsetForEncoding(encoding)), encoding);
     }
 
     // String path (e.g. [':', str_beg, str_content, str_end])
@@ -79,7 +80,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
      * @return Returns a String
      */
     public String getName() {
-        return new String(bytes.unsafeBytes(), bytes.getEncoding().getCharset());
+        return new String(bytes.unsafeBytes(), EncodingUtils.charsetForEncoding(bytes.getEncoding()));
     }
 
     public Encoding getEncoding() {

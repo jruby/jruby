@@ -48,6 +48,7 @@ import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1329,7 +1330,7 @@ public class EncodingUtils {
 
         EConv ec = TranscoderDB.open(encoding.getName(), toEncoding.getName(), ecflags);
 
-        byte[] inBytes = string.getBytes(encoding.getCharset());
+        byte[] inBytes = string.getBytes(EncodingUtils.charsetForEncoding(encoding));
         Ptr inPos = new Ptr(0);
 
         int inStop = inBytes.length;
@@ -2203,6 +2204,27 @@ public class EncodingUtils {
         }
         result.cat(buf);
         return buf.length;
+    }
+
+    /**
+     * Get an appropriate Java Charset for the given Encoding.
+     *
+     * This works around a bug in jcodings where it would return null as the charset for encodings that should have
+     * a match, like Windows-1252. This method is equivalent to enc.getCharset in jcodings 1.0.25 and higher.
+     *
+     * See https://github.com/jruby/jruby/issues/4716 for more information.
+     *
+     * @param enc the encoding for which to get a matching charset
+     * @return the matching charset
+     */
+    public static Charset charsetForEncoding(Encoding enc) {
+        Charset charset = enc.getCharset();
+
+        if (charset == null) {
+            charset = Charset.forName(enc.toString());
+        }
+
+        return charset;
     }
 
 }
