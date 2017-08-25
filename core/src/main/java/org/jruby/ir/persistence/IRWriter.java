@@ -10,16 +10,18 @@ import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 /**
- *  Write IR data out to persistent store.  IRReader is capable of re-reading this
+ * Write IR data out to persistent store.  IRReader is capable of re-reading this
  * information back into live IR data again.  This class knows the logical order of how
  * information will be written out but the IRWriterEncoder actually knows how to encode that
  * information.
  */
 public class IRWriter {
+
+    private IRWriter() { /* static methods only, for now */ }
+
     public static void persist(IRWriterEncoder file, IRScope script) throws IOException {
         file.startEncoding(script);
         persistScopeInstructions(file, script); // recursive dump of all scopes instructions
