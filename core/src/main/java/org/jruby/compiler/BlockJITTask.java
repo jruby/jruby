@@ -47,52 +47,57 @@ class BlockJITTask implements Runnable {
     }
 
     public void run() {
-        try {
-            String key = SexpMaker.sha1(body.getIRScope());
-            JVMVisitor visitor = new JVMVisitor();
-            BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, jitCompiler.runtime, body, visitor);
+        // We synchronize against the JITCompiler object so at most one code body will jit at once in a given runtime.
+        // This works around unsolved concurrency issues within the process of preparing and jitting the IR.
+        // See #4739 for a reproduction script that produced various errors without this.
+        synchronized (jitCompiler) {
+            try {
+                String key = SexpMaker.sha1(body.getIRScope());
+                JVMVisitor visitor = new JVMVisitor();
+                BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, jitCompiler.runtime, body, visitor);
 
-            JVMVisitorMethodContext context = new JVMVisitorMethodContext();
-            generator.compile(context);
+                JVMVisitorMethodContext context = new JVMVisitorMethodContext();
+                generator.compile(context);
 
-            // FIXME: reinstate active bytecode size check
-            // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
-            // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
-            // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
-            // mechanism of getting all body sizes.
-            Class sourceClass = visitor.defineFromBytecode(body.getIRScope(), generator.bytecode(), new OneShotClassLoader(jitCompiler.runtime.getJRubyClassLoader()));
+                // FIXME: reinstate active bytecode size check
+                // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
+                // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
+                // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
+                // mechanism of getting all body sizes.
+                Class sourceClass = visitor.defineFromBytecode(body.getIRScope(), generator.bytecode(), new OneShotClassLoader(jitCompiler.runtime.getJRubyClassLoader()));
 
-            if (sourceClass == null) {
-                // class could not be found nor generated; give up on JIT and bail out
-                jitCompiler.counts.failCount.incrementAndGet();
-                return;
-            } else {
-                generator.updateCounters(jitCompiler.counts, body.ensureInstrsReady());
-            }
-
-            // successfully got back a jitted body
-
-            if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + "." + methodName, "done jitting");
-            }
-
-            String jittedName = context.getVariableName();
-
-            // blocks only have variable-arity
-            body.completeBuild(
-                    new CompiledIRBlockBody(
-                            JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
-                            body.getIRScope(),
-                            ((IRClosure) body.getIRScope()).getSignature().encode()));
-        } catch (Throwable t) {
-            if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + "." + methodName, "Could not compile; passes run: " + body.getIRScope().getExecutedPasses(), t.getMessage());
-                if (jitCompiler.config.isJitLoggingVerbose()) {
-                    t.printStackTrace();
+                if (sourceClass == null) {
+                    // class could not be found nor generated; give up on JIT and bail out
+                    jitCompiler.counts.failCount.incrementAndGet();
+                    return;
+                } else {
+                    generator.updateCounters(jitCompiler.counts, body.ensureInstrsReady());
                 }
-            }
 
-            jitCompiler.counts.failCount.incrementAndGet();
+                // successfully got back a jitted body
+
+                String jittedName = context.getVariableName();
+
+                // blocks only have variable-arity
+                body.completeBuild(
+                        new CompiledIRBlockBody(
+                                JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
+                                body.getIRScope(),
+                                ((IRClosure) body.getIRScope()).getSignature().encode()));
+
+                if (jitCompiler.config.isJitLogging()) {
+                    JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + "." + methodName, "done jitting");
+                }
+            } catch (Throwable t) {
+                if (jitCompiler.config.isJitLogging()) {
+                    JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + "." + methodName, "Could not compile; passes run: " + body.getIRScope().getExecutedPasses(), t.getMessage());
+                    if (jitCompiler.config.isJitLoggingVerbose()) {
+                        t.printStackTrace();
+                    }
+                }
+
+                jitCompiler.counts.failCount.incrementAndGet();
+            }
         }
     }
 }

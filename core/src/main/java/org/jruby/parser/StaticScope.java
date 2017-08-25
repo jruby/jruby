@@ -114,7 +114,7 @@ public class StaticScope implements Serializable {
 
     private RubyModule overlayModule;
 
-    private MethodHandle constructor;
+    private volatile MethodHandle constructor;
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -187,8 +187,12 @@ public class StaticScope implements Serializable {
         }
     }
 
-    private MethodHandle acquireConstructor() {
-        MethodHandle constructor;
+    private synchronized MethodHandle acquireConstructor() {
+        // check again
+        MethodHandle constructor = this.constructor;
+
+        if (constructor != null) return constructor;
+
         int numberOfVariables = getNumberOfVariables();
 
         if (numberOfVariables > MAX_SPECIALIZED_SIZE) {
@@ -196,7 +200,9 @@ public class StaticScope implements Serializable {
         } else {
             constructor = DynamicScopeGenerator.generate(numberOfVariables);
         }
+
         this.constructor = constructor;
+
         return constructor;
     }
 
