@@ -4,9 +4,23 @@ import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 
+import java.lang.invoke.SwitchPoint;
+
 public class CacheEntry {
     public static final CacheEntry NULL_CACHE = new CacheEntry(UndefinedMethod.INSTANCE, 0);
     public final DynamicMethod method;
+
+    /** The current valid SwitchPoint for the method, invalidated when overridden */
+    protected final SwitchPoint[] validator = {new SwitchPoint()};
+
+    public void invalidate() {
+        SwitchPoint.invalidateAll(validator);
+    }
+
+    public SwitchPoint getValidator() {
+        return validator[0];
+    }
+
     public final int token;
 
     public CacheEntry(DynamicMethod method, int token) {

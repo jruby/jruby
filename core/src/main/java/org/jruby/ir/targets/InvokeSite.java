@@ -6,6 +6,7 @@ import com.headius.invokebinder.SmartBinder;
 import com.headius.invokebinder.SmartHandle;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -138,9 +139,9 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
+        SwitchPoint switchPoint = entry.getValidator();
 
         if (methodMissing(entry, caller)) {
             // Test thresholds so we don't do this forever (#4596)
@@ -399,6 +400,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         if (self instanceof RubySymbol ||
                 self instanceof RubyFixnum ||
+                self instanceof RubyBignum ||
                 self instanceof RubyFloat ||
                 self instanceof RubyNil ||
                 self instanceof RubyBoolean.True ||

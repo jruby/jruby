@@ -30,6 +30,7 @@
 
 package org.jruby.internal.runtime.methods;
 
+import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.jruby.MetaClass;

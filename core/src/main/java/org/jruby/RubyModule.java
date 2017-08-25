@@ -1201,6 +1201,7 @@ public class RubyModule extends RubyObject {
     }
 
     public final void addMethodInternal(String name, DynamicMethod method) {
+        searchWithCache(name).invalidate();
         synchronized(methodLocation.getMethodsForWrite()) {
             addMethodAtBootTimeOnly(name, method);
             invalidateCoreClasses();
@@ -1356,7 +1357,7 @@ public class RubyModule extends RubyObject {
         CacheEntry cacheEntry = methodLocation.getCachedMethods().get(name);
 
         if (cacheEntry != null) {
-            if (cacheEntry.token == getGeneration()) {
+            if (!cacheEntry.getValidator().hasBeenInvalidated()) {
                 return cacheEntry;
             }
         }
