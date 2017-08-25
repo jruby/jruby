@@ -6,11 +6,15 @@ module JRuby
   module ASM
 
     begin
-      const_set(:TraceClassVisitor, org.jruby.org.objectweb.asm.util.TraceClassVisitor)
-      const_set(:ClassReader, org.jruby.org.objectweb.asm.ClassReader)
+      Opcodes = org.jruby.org.objectweb.asm.Opcodes
+      ClassReader = org.jruby.org.objectweb.asm.ClassReader
+      ClassWriter = org.jruby.org.objectweb.asm.ClassWriter
+      TraceClassVisitor = org.jruby.org.objectweb.asm.util.TraceClassVisitor
     rescue
-      const_set(:TraceClassVisitor, org.objectweb.asm.util.TraceClassVisitor)
-      const_set(:ClassReader, org.objectweb.asm.ClassReader)
+      Opcodes = org.objectweb.asm.Opcodes
+      ClassReader = org.objectweb.asm.ClassReader
+      ClassWriter = org.objectweb.asm.ClassWriter
+      TraceClassVisitor = org.objectweb.asm.util.TraceClassVisitor
     end
 
   end
