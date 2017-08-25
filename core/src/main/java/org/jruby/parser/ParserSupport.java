@@ -688,13 +688,11 @@ public class ParserSupport {
             
             ByteList label = new ByteList(new byte[] {'F', 'L', 'I', 'P'}, USASCII_ENCODING);
             label.append(Long.toString(node.hashCode()).getBytes());
-            currentScope.getLocalScope().addVariable(label);
-            int slot = currentScope.isDefined(label);
-            
+
             return new FlipNode(node.getPosition(),
                     getFlipConditionNode(((DotNode) node).getBeginNode()),
                     getFlipConditionNode(((DotNode) node).getEndNode()),
-                    dotNode.isExclusive(), slot);
+                    dotNode.isExclusive(), currentScope.getLocalScope().addVariable(label));
         }
         case REGEXPNODE:
             if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
