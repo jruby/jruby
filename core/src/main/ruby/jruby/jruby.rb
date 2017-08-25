@@ -15,7 +15,7 @@ module JRuby
     # Get the current runtime's config.
     # Changes to the configuration won't be reflected in the runtime, meant to be read-only.
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
-    def config; end if false
+    # def config; end if false
 
     # Run the provided (required) block with the "global runtime" set to the current runtime,
     # for libraries that expect to operate against the global runtime.

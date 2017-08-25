@@ -122,7 +122,8 @@ public class JRubyLibrary implements Library {
      * @return a wrapped RubyInstanceConfig
      * @since 9.2
      */
-    @JRubyMethod(module = true)
+    // TODO needs to get fine tuned considering there's a CONFIG constant already
+    // @JRubyMethod(module = true)
     public static IRubyObject config(ThreadContext context, IRubyObject recv) {
         return Java.wrapJavaObject(context.runtime, context.runtime.getInstanceConfig());
     }
