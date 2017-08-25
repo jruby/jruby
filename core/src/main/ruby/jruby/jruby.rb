@@ -70,6 +70,8 @@ module JRuby
   end
   deprecate_constant :IR
 
+  # Helper struct returned from `JRuby.compile`.
+  # @see JRuby#compile
   class CompiledScript
 
     attr_reader :name, :class_name, :original_script, :code
@@ -82,6 +84,7 @@ module JRuby
       @code = bytes
     end
 
+    # Returns the original (.rb script content's
     def to_s
       @original_script
     end
@@ -90,30 +93,19 @@ module JRuby
       "\#<#{self.class.name} #{@name}>"
     end
 
+    # Inspects the compiled (Java) byte-code.
     def inspect_bytecode
-      JRuby.init_asm
-
       writer = java.io.StringWriter.new
-      reader = ClassReader.new(@code)
-      tracer = TraceClassVisitor.new(java.io.PrintWriter.new(writer))
+      reader = JRuby::ASM::ClassReader.new(@code)
+      tracer = JRuby::ASM::TraceClassVisitor.new(java.io.PrintWriter.new(writer))
 
-      reader.accept(tracer, ClassReader::SKIP_DEBUG)
+      reader.accept(tracer, JRuby::ASM::ClassReader::SKIP_DEBUG)
 
       writer.to_s
     end
 
   end
 
-  # @private
-  def self.init_asm
-    return if const_defined? :TraceClassVisitor
-    begin
-      const_set(:TraceClassVisitor, org.jruby.org.objectweb.asm.util.TraceClassVisitor)
-      const_set(:ClassReader, org.jruby.org.objectweb.asm.ClassReader)
-    rescue
-      const_set(:TraceClassVisitor, org.objectweb.asm.util.TraceClassVisitor)
-      const_set(:ClassReader, org.objectweb.asm.ClassReader)
-    end
-  end
+  autoload :ASM, 'jruby/asm.rb'
 
 end

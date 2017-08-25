@@ -1,8 +1,18 @@
 require 'test/unit'
-require 'jruby'
-require 'jruby/core_ext'
 
-class TestJrubyCoreExt < Test::Unit::TestCase
+class TestJRubyCoreExt < Test::Unit::TestCase
+
+  def setup
+    require 'jruby'; require 'jruby/core_ext'
+  end
+
+  def test_jrubyc_inspect_bytecode
+    compiled = JRuby.compile script = 'def foo; return :foo end; bar = foo()'
+    assert_equal script, compiled.to_s
+    assert bytecode = compiled.inspect_bytecode
+    assert_equal String, bytecode.class
+  end
+
   def test_subclasses
     superclass = Class.new
     sub1 = Class.new(superclass)
