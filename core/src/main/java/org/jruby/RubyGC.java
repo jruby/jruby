@@ -116,8 +116,7 @@ public class RubyGC {
     }
 
     private static void emptyImplementationWarning(Ruby runtime, ID id, String name) {
-        runtime.getWarnings().warnOnce(id,
-                name + " does nothing on JRuby");
+        runtime.getWarnings().warnOnce(id, name + " does nothing on JRuby");
     }
 
     public static int getCollectionCount() {
