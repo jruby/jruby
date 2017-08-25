@@ -2635,7 +2635,7 @@ public class Helpers {
         if (encoding == USASCIIEncoding.INSTANCE || encoding == ASCIIEncoding.INSTANCE) {
             return value.toString(); // raw
         } else if (encoding instanceof UnicodeEncoding) {
-            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), value.getEncoding().getCharset());
+            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), EncodingUtils.charsetForEncoding(value.getEncoding()));
         } else {
             return value.toString(); // raw
         }
@@ -2679,7 +2679,7 @@ public class Helpers {
      * @return the decoded string
      */
     public static String byteListToString(final ByteList bytes) {
-        final Charset charset = bytes.getEncoding().getCharset();
+        final Charset charset = EncodingUtils.charsetForEncoding(bytes.getEncoding());
         if ( charset != null ) {
             return new String(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize(), charset);
         }

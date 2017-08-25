@@ -9,6 +9,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.EncodingUtils;
 
 public class Symbol extends ImmutableLiteral {
     public static final Symbol KW_REST_ARG_DUMMY = new Symbol("", ASCIIEncoding.INSTANCE);
@@ -18,7 +19,7 @@ public class Symbol extends ImmutableLiteral {
     public Symbol(String name, Encoding encoding) {
         super();
 
-        this.bytes = new ByteList(name.getBytes(encoding.getCharset()), encoding);
+        this.bytes = new ByteList(name.getBytes(EncodingUtils.charsetForEncoding(encoding)), encoding);
     }
 
     public Symbol(ByteList bytes) {
