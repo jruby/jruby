@@ -5,6 +5,7 @@ import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.ISO8859_16Encoding;
+import org.jcodings.spi.ISO_8859_16;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
@@ -24,7 +25,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.encoding.ISO_8859_16;
 import org.jruby.util.io.EncodingUtils;
 
 public final class EncodingService {
