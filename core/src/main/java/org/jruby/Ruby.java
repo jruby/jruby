@@ -4296,11 +4296,13 @@ public final class Ruby implements Constantizable {
         return config;
     }
 
+    @Deprecated
     public boolean is2_0() {
         return true;
     }
 
     /** GET_VM_STATE_VERSION */
+    @Deprecated // not used
     public long getGlobalState() {
         synchronized(this) {
             return globalState;
@@ -4308,6 +4310,7 @@ public final class Ruby implements Constantizable {
     }
 
     /** INC_VM_STATE_VERSION */
+    @Deprecated // not used
     public void incGlobalState() {
         synchronized(this) {
             globalState = (globalState+1) & 0x8fffffff;
