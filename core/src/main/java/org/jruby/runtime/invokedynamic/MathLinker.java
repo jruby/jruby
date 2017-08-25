@@ -29,31 +29,35 @@ package org.jruby.runtime.invokedynamic;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.SwitchPoint;
+import java.util.List;
+
+import static java.lang.invoke.MethodHandles.*;
+import static java.lang.invoke.MethodType.*;
 
 import com.headius.invokebinder.Binder;
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.management.Runtime;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
-import java.lang.invoke.SwitchPoint;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class MathLinker {
+
     private static final Logger LOG = LoggerFactory.getLogger(MathLinker.class);
+    static { // enable DEBUG output
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.setDebugEnable(true);
+    }
+    private static final boolean LOG_BINDING = LOG.isDebugEnabled();
 
     public static final MethodHandle FIXNUM_TEST =
             Binder
@@ -83,8 +87,8 @@ public class MathLinker {
     public static final MethodHandle FLOAT_OPERATOR = Binder.from(methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, double.class)).invokeStaticQuiet(lookup(), MathLinker.class, "floatOperator");
 
     public static CallSite fixnumOperatorBootstrap(Lookup lookup, String name, MethodType type, long value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
-        String[] names = name.split(":");
-        String operator = JavaNameMangler.demangleMethodName(names[1]);
+        List<String> names = StringSupport.split(name, ':');
+        String operator = JavaNameMangler.demangleMethodName(names.get(1));
         JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.values()[callType], file, line, operator, true);
 
         MethodHandle target = FIXNUM_OPERATOR;
@@ -95,8 +99,8 @@ public class MathLinker {
     }
 
     public static CallSite fixnumBooleanBootstrap(Lookup lookup, String name, MethodType type, long value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
-        String[] names = name.split(":");
-        String operator = JavaNameMangler.demangleMethodName(names[1]);
+        List<String> names = StringSupport.split(name, ':');
+        String operator = JavaNameMangler.demangleMethodName(names.get(1));
         JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.values()[callType], file, line, operator, true);
 
         MethodHandle target = FIXNUM_BOOLEAN;
@@ -107,8 +111,8 @@ public class MathLinker {
     }
 
     public static CallSite floatOperatorBootstrap(Lookup lookup, String name, MethodType type, double value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
-        String[] names = name.split(":");
-        String operator = JavaNameMangler.demangleMethodName(names[1]);
+        List<String> names = StringSupport.split(name, ':');
+        String operator = JavaNameMangler.demangleMethodName(names.get(1));
         JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.values()[callType], file, line, operator, true);
 
         MethodHandle target = FLOAT_OPERATOR;
@@ -147,8 +151,8 @@ public class MathLinker {
         
         MethodHandle test = FIXNUM_TEST;
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
-        
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name + "\tFixnum operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
+
+        if (LOG_BINDING) LOG.debug(name + "\tFixnum operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
         
         // confirm it's a Fixnum
         target = guardWithTest(test, target, fallback);
@@ -180,8 +184,8 @@ public class MathLinker {
         
         MethodHandle test = FIXNUM_TEST;
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
-        
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name + "\tFixnum boolean operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
+
+        if (LOG_BINDING) LOG.debug(name + "\tFixnum boolean operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
         
         // confirm it's a Fixnum
         target = guardWithTest(test, target, fallback);
@@ -211,7 +215,7 @@ public class MathLinker {
             return entry.method.call(context, self, selfClass, operator, value);
         }
     }
-    
+
     public static boolean fixnumBooleanFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, RubyFixnum value) throws Throwable {
         return fixnumOperatorFail(context, caller, self, site, value).isTrue();
     }
@@ -326,8 +330,9 @@ public class MathLinker {
         
         MethodHandle test = FLOAT_TEST;
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
-        
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name + "\tFloat operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
+
+        if (LOG_BINDING) LOG.debug(name + "\tFloat operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
+
         site.setTarget(guardWithTest(test, target, fallback));
         
         // confirm it's a Float
@@ -345,7 +350,7 @@ public class MathLinker {
     public static boolean fixnumTest(IRubyObject self) {
         return self instanceof RubyFixnum;
     }
-    
+
     public static boolean floatTest(IRubyObject self) {
         return self instanceof RubyFloat;
     }
