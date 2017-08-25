@@ -248,10 +248,11 @@ public class JRubyLibrary implements Library {
     }
 
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
-        RootNode result = (RootNode) parseImpl(context, args, block);
+        RootNode node = (RootNode) parseImpl(context, args, block);
         IRManager manager = new IRManager(context.runtime.getInstanceConfig());
-        IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, result).getScope();
-        scope.setTopLevelBindingScope(result.getScope());
+        manager.setDryRun(true);
+        IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, node).getScope();
+        scope.setTopLevelBindingScope(node.getScope());
         return scope;
     }
 
