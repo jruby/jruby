@@ -1,7 +1,7 @@
 package org.jruby.runtime;
 
+import java.io.ByteArrayOutputStream;
 import org.jruby.RubyModule;
-import org.jruby.EvalType;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
@@ -13,8 +13,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-
-import java.io.ByteArrayOutputStream;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
@@ -155,7 +153,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
-    protected void promoteToFullBuild(ThreadContext context) {
+    private void promoteToFullBuild(ThreadContext context) {
         if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't Promote to full build during runtime boot
 
         if (callCount++ >= Options.JIT_THRESHOLD.load()) context.runtime.getJITCompiler().buildThresholdReached(context, this);
