@@ -285,7 +285,6 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         synchronized (this) {
             if (box.callCount >= 0) {
                 if (box.callCount++ >= Options.JIT_THRESHOLD.load()) {
-                    box.callCount = -1;
                     context.runtime.getJITCompiler().buildThresholdReached(context, this);
                 }
             }

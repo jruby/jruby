@@ -17,7 +17,7 @@ import org.jruby.util.log.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
-    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
@@ -160,7 +160,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         }
     }
 
-    protected void promoteToFullBuild(ThreadContext context) {
+    private void promoteToFullBuild(ThreadContext context) {
         if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
         if (callCount >= 0) {
@@ -182,7 +182,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
                 if (callCount < 0) return;
 
                 if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-                    callCount = -1;
                     context.runtime.getJITCompiler().buildThresholdReached(context, this);
                 }
             }
