@@ -739,9 +739,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public static RubyString newUsAsciiStringShared(Ruby runtime, byte[] bytes, int start, int length) {
-        byte[] copy = new byte[length];
-        System.arraycopy(bytes, start, copy, 0, length);
-        return newUsAsciiStringShared(runtime, new ByteList(copy, false));
+        RubyString str = newUsAsciiStringNoCopy(runtime, new ByteList(bytes, start, length, false));
+        str.shareLevel = SHARE_LEVEL_BUFFER;
+        return str;
     }
 
     @Override
