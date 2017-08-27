@@ -17,7 +17,43 @@ class TestJRubyCoreExt < Test::Unit::TestCase
     superclass = Class.new
     sub1 = Class.new(superclass)
     sub2 = Class.new(superclass)
-    assert_equal([sub1.to_s, sub2.to_s].sort, superclass.subclasses.map{|c| c.to_s}.sort)
+    assert_same_contents [sub1, sub2], superclass.subclasses
+  end
+
+  module Some; end
+  module Core; end
+
+  class Base < Object
+    extend  Some
+    include Core
+  end
+
+  class User < Base
+    include Enumerable
+    include Core
+  end
+  class Role < Base; end
+  class SuperUser < User; end
+
+  def test_subclasses_with_modules
+    subclasses = Base.subclasses
+    assert_equal ['TestJRubyCoreExt::Role', 'TestJRubyCoreExt::User'], subclasses.map(&:name).sort
+
+    assert_same_contents [ Role, User, SuperUser ], Base.subclasses(true)
+
+    assert_same_contents [ SuperUser ], User.subclasses
+
+    SuperUser.extend Module.new
+    SuperUser.send :include, Module.new
+    assert_equal [ SuperUser ], User.subclasses(true)
+    assert_equal [ ], SuperUser.subclasses
+    assert_equal [ ], SuperUser.subclasses(true)
+    klass = Class.new(SuperUser)
+    assert_equal [ klass ], SuperUser.subclasses
+    assert_equal [ SuperUser, klass ], User.subclasses(true)
+
+    assert User.to_java.subclasses(true).include? SuperUser
+    assert Base.to_java.subclasses # basically that () works
   end
 
   def test_with_current_runtime_as_global
@@ -29,4 +65,13 @@ class TestJRubyCoreExt < Test::Unit::TestCase
     end
     assert_equal other_runtime, org.jruby.Ruby.global_runtime
   end
+
+  private
+
+  def assert_same_contents(expect, actual)
+    exp = expect.inject({}) { |h, e| h[e] = nil; h }
+    act = actual.inject({}) { |h, e| h[e] = nil; h }
+    assert_equal exp, act
+  end
+
 end
