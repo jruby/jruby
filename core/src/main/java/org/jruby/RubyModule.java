@@ -38,8 +38,6 @@
 package org.jruby;
 
 import com.headius.invokebinder.Binder;
-import org.jcodings.Encoding;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
@@ -58,7 +56,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
+import org.jcodings.Encoding;
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
 import org.jruby.anno.JRubyClass;
@@ -118,9 +116,21 @@ import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import static org.jruby.anno.FrameField.*;
+import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.anno.FrameField.BLOCK;
+import static org.jruby.anno.FrameField.CLASS;
+import static org.jruby.anno.FrameField.FILENAME;
+import static org.jruby.anno.FrameField.JUMPTARGET;
+import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.anno.FrameField.LINE;
+import static org.jruby.anno.FrameField.METHODNAME;
+import static org.jruby.anno.FrameField.SCOPE;
+import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
-import static org.jruby.runtime.Visibility.*;
+import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.runtime.Visibility.PROTECTED;
+import static org.jruby.runtime.Visibility.PUBLIC;
 
 
 /**
@@ -1311,20 +1321,27 @@ public class RubyModule extends RubyObject {
      * @param cacheUndef Flag for caching UndefinedMethod. This should normally be true.
      * @return The method, or UndefinedMethod if not found
      */
-    public CacheEntry searchWithCache(String name, boolean cacheUndef) {
-        CacheEntry entry = cacheHit(name);
+    public final CacheEntry searchWithCache(String name, boolean cacheUndef) {
+        final CacheEntry entry = cacheHit(name);
+        return entry != null ? entry : searchWithCacheMiss(name, cacheUndef);
+    }
 
-        if (entry != null) return entry;
-
+    /**
+     * Search through this module and supermodules for method definitions after {@link RubyModule#cacheHit(String)}
+     * failed to return a result. Cache superclass definitions in this class.
+     * 
+     * @param name The name of the method to search for
+     * @param cacheUndef Flag for caching UndefinedMethod. This should normally be true.
+     * @return The method, or UndefinedMethod if not found
+     */
+    private CacheEntry searchWithCacheMiss(final String name, final boolean cacheUndef) {
         // we grab serial number first; the worst that will happen is we cache a later
         // update with an earlier serial number, which would just flush anyway
-        int token = getGeneration();
+        final int token = generation;
         DynamicMethod method = searchMethodInner(name);
-
         if (method instanceof CacheableMethod) {
             method = ((CacheableMethod) method).getMethodForCaching();
         }
-
         return method != null ? addToCache(name, method, token) : cacheUndef ? addToCache(name, UndefinedMethod.getInstance(), token) : cacheEntryFactory.newCacheEntry(name, method, token);
     }
 
