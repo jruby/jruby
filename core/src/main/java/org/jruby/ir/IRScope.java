@@ -340,7 +340,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setName(String name) { // This is for IRClosure and IRMethod ;(
-        this.name = name;
+        this.name = name.intern();
     }
 
     public void setFileName(String filename) {
@@ -1101,6 +1101,7 @@ public abstract class IRScope implements ParseResult {
 
     // Enebo: We should just make n primitive int and not take the hash hit
     protected int allocateNextPrefixedName(String prefix) {
+        prefix = prefix.intern();
         int index = getPrefixCountSize(prefix);
 
         nextVarIndex.put(prefix, index + 1);

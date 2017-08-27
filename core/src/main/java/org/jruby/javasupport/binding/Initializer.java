@@ -405,7 +405,7 @@ public abstract class Initializer {
             // no non-public inner classes
             if ( ! Modifier.isPublic(clazz.getModifiers()) ) continue;
 
-            final String simpleName = JavaClass.getSimpleName(clazz);
+            final String simpleName = JavaClass.getSimpleName(clazz).intern();
             if ( simpleName.length() == 0 ) continue;
 
             final RubyModule innerProxy = Java.getProxyClass(runtime, JavaClass.get(runtime, clazz));
@@ -555,7 +555,7 @@ public abstract class Initializer {
                 // first method of this name, add a collection for it
                 childMethods = new ArrayList<>(4);
                 childMethods.add(method); added++;
-                nameMethods.put(method.getName(), childMethods);
+                nameMethods.put(method.getName().intern(), childMethods);
             }
             else {
                 // we have seen other methods; check if we already have an equivalent one

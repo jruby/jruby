@@ -88,7 +88,7 @@ public class BlockArgNode extends Node implements INameNode {
      * @return it's name
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return StringSupport.byteListAsString(name).intern();
     }
 
     public ByteList getByteName() {

@@ -35,7 +35,6 @@ package org.jruby.javasupport.bsf;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
-
 import org.apache.bsf.BSFDeclaredBean;
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
@@ -43,7 +42,6 @@ import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.Ruby;
 import org.jruby.RubyRuntimeAdapter;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -54,6 +52,7 @@ import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.StringSupport;
 
 /** 
  * An implementation of a JRuby BSF implementation.
@@ -67,8 +66,10 @@ public class JRubyEngine extends BSFEngineImpl {
         ThreadContext context = runtime.getCurrentContext();
         try {
             // Construct local variables based on parameter names passed in
-            String[] names = new String[paramNames.size()];
-            paramNames.toArray(names);
+            final String[] names = (String[]) paramNames.toArray(StringSupport.EMPTY_STRING_ARRAY);
+            for (int i = 0; i < names.length; ++i) {
+                names[i] = names[i].intern();
+            }
             context.preBsfApply(names);
 
             // Populate values for the parameter names

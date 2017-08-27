@@ -121,7 +121,7 @@ final class ClassInitializer extends Initializer {
                 // we need to collect all methods, though we'll only
                 // install the ones that are named in this class
                 Method method = methods.get(i);
-                String name = method.getName();
+                String name = method.getName().intern();
 
                 if (Modifier.isStatic(method.getModifiers())) {
                     prepareStaticMethod(javaClass, state, method, name);

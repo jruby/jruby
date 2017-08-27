@@ -78,7 +78,7 @@ public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedN
      * Name of the local assignment.
      **/
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return StringSupport.byteListAsString(name).intern();
     }
 
     public ByteList getByteName() {

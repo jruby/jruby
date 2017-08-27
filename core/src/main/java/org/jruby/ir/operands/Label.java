@@ -27,7 +27,7 @@ public class Label extends Operand {
     public Label(String prefix, int id) {
         super();
 
-        this.prefix = prefix;
+        this.prefix = prefix.intern();
         this.id = id;
     }
 
@@ -101,7 +101,7 @@ public class Label extends Operand {
         // Check if this label was already created
         // Important! Program would not be interpreted correctly
         // if new name will be created every time
-        String fullLabel = prefix + '_' + id;
+        final String fullLabel = (prefix + '_' + id).intern();
         if (d.getVars().containsKey(fullLabel)) {
             return (Label) d.getVars().get(fullLabel);
         }

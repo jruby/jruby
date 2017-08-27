@@ -31,7 +31,6 @@
 package org.jruby.internal.runtime.methods;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import org.jruby.MetaClass;
 import org.jruby.PrependedModule;
 import org.jruby.RubyModule;
@@ -497,7 +496,7 @@ public abstract class DynamicMethod {
      * @param name the name to set
      */
     public void setName(String name) {
-        this.name = name;
+        this.name = name.intern();
     }
 
     /**

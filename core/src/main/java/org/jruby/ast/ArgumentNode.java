@@ -93,7 +93,7 @@ public class ArgumentNode extends Node implements INameNode {
     }
 
     public String getName() {
-        return StringSupport.byteListAsString(identifier);
+        return StringSupport.byteListAsString(identifier).intern();
     }
 
     public ByteList getByteName() {

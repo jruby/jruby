@@ -89,7 +89,7 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return StringSupport.byteListAsString(name).intern();
     }
 
     public ByteList getByteName() {

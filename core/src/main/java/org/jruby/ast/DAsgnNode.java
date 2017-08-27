@@ -78,7 +78,7 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return StringSupport.byteListAsString(name).intern();
     }
 
     public ByteList getByteName() {
