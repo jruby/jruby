@@ -72,9 +72,7 @@ public class Tempfile extends RubyFile implements Finalizable {
     private static ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyFile instance = new Tempfile(runtime, klass);
-
-            return instance;
+            return new Tempfile(runtime, klass);
         }
     };
 

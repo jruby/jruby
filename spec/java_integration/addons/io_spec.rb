@@ -99,4 +99,13 @@ describe "Ruby IO" do
     str = file.read(10)
     expect(str).to eq(String.from_java_bytes(bytes.array))
   end
+
+  it "is coercible to java.io.Files" do
+    file = Tempfile.new("io_spec").to_java 'java.io.File'
+    expect(java.io.File).to be === file
+    file = File.open(__FILE__).to_java java.io.File
+    expect(java.io.File).to be === file
+    expect(file.getPath).to eql __FILE__
+  end
+
 end
