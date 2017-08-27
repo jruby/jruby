@@ -1,31 +1,109 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import org.jcodings.specific.USASCIIEncoding;
+import java.io.ByteArrayOutputStream;
+import java.lang.invoke.MethodType;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import org.jcodings.Encoding;
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyComplex;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyProc;
+import org.jruby.RubyRange;
+import org.jruby.RubyRational;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.ir.*;
+import org.jruby.ir.IRClassBody;
+import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRModuleBody;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.*;
-import org.jruby.ir.instructions.boxing.*;
+import org.jruby.ir.instructions.boxing.AluInstr;
+import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
+import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
+import org.jruby.ir.instructions.boxing.BoxFloatInstr;
+import org.jruby.ir.instructions.boxing.UnboxBooleanInstr;
+import org.jruby.ir.instructions.boxing.UnboxFixnumInstr;
+import org.jruby.ir.instructions.boxing.UnboxFloatInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
-import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Array;
+import org.jruby.ir.operands.AsString;
+import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Boolean;
+import org.jruby.ir.operands.ClosureLocalVariable;
+import org.jruby.ir.operands.Complex;
+import org.jruby.ir.operands.CurrentScope;
+import org.jruby.ir.operands.DynamicSymbol;
+import org.jruby.ir.operands.Filename;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.operands.FrozenString;
+import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.Nil;
+import org.jruby.ir.operands.NthRef;
+import org.jruby.ir.operands.NullBlock;
+import org.jruby.ir.operands.ObjectClass;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Rational;
+import org.jruby.ir.operands.Regexp;
+import org.jruby.ir.operands.SValue;
+import org.jruby.ir.operands.ScopeModule;
+import org.jruby.ir.operands.Self;
+import org.jruby.ir.operands.Splat;
+import org.jruby.ir.operands.StandardError;
+import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.operands.Stringable;
+import org.jruby.ir.operands.Symbol;
+import org.jruby.ir.operands.SymbolProc;
+import org.jruby.ir.operands.TemporaryBooleanVariable;
+import org.jruby.ir.operands.TemporaryFixnumVariable;
+import org.jruby.ir.operands.TemporaryFloatVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
+import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.UnboxedBoolean;
+import org.jruby.ir.operands.UnboxedFixnum;
+import org.jruby.ir.operands.UnboxedFloat;
+import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.operands.UnexecutableNil;
+import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter.BlockPassType;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Binding;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
@@ -44,14 +122,10 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-import java.io.ByteArrayOutputStream;
-import java.lang.invoke.MethodType;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import static org.jruby.util.CodegenUtils.*;
+import static org.jruby.util.CodegenUtils.c;
+import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.sig;
 
 /**
  * Implementation of IRCompiler for the JVM.
@@ -399,20 +473,22 @@ public class JVMVisitor extends IRVisitor {
 
     protected Handle emitClosure(IRClosure closure, boolean print) {
         /* Compile the closure like a method */
-        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
+        final String name =
+            (JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++).intern();
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
-        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()));
+        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()).intern());
     }
 
     protected Handle emitModuleBody(IRModuleBody method) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
+        final String name =
+            (JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++).intern();
 
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false, true);
 
-        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
+        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()).intern());
     }
 
     public void visit(Instr instr) {

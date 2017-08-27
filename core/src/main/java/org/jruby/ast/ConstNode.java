@@ -42,7 +42,7 @@ import org.jruby.util.StringSupport;
 /**
  * The access to a Constant.
  */
-public class ConstNode extends Node implements INameNode {
+public final class ConstNode extends Node implements INameNode {
     private ByteList name;
 
     public ConstNode(ISourcePosition position, ByteList name) {
@@ -72,7 +72,7 @@ public class ConstNode extends Node implements INameNode {
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return StringSupport.byteListAsString(name).intern();
     }
 
     public ByteList getByteName() {

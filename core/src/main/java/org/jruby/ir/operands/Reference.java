@@ -13,7 +13,7 @@ public abstract class Reference extends Operand {
     public Reference(String name) {
         super();
 
-        this.name = name;
+        this.name = name.intern();
     }
 
     public String getName() {

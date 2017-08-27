@@ -20,7 +20,7 @@ import org.jruby.runtime.opto.Invalidator;
 // - looks up lexical scopes
 // - then inheritance hierarchy if lexical search fails
 // - then invokes const_missing if inheritance search fails
-public class SearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
+public final class SearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final String   constName;
     private final boolean  noPrivateConsts;
 
@@ -57,9 +57,9 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getConstName());
+        e.encode(constName);
         e.encode(getStartingScope());
-        e.encode(isNoPrivateConsts());
+        e.encode(noPrivateConsts);
     }
 
     public static SearchConstInstr decode(IRReaderDecoder d) {

@@ -97,7 +97,7 @@ public class DVarNode extends Node implements INameNode, IScopedNode, SideEffect
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return StringSupport.byteListAsString(name).intern();
     }
 
     public ByteList getByteName() {

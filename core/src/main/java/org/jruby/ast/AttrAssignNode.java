@@ -83,7 +83,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
      * @return name
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return StringSupport.byteListAsString(name).intern();
     }
 
     public ByteList getByteName() {

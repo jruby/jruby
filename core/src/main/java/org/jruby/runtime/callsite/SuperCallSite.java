@@ -21,7 +21,7 @@ public class SuperCallSite extends CallSite {
         public final CacheEntry cache;
 
         public SuperTuple(String name, CacheEntry cache) {
-            this.name = name;
+            this.name = name.intern();
             this.cache = cache;
         }
 

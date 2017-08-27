@@ -47,7 +47,7 @@ public abstract class CallSite {
      * @see org.jruby.runtime.CallType
      */
     public CallSite(String methodName, CallType callType) {
-        this.methodName = methodName;
+        this.methodName = methodName.intern();
         this.callType = callType;
     }
 

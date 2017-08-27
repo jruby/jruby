@@ -43,7 +43,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         this.callSiteId = callSiteCounter++;
         argsCount = args.length;
         hasClosure = closure != null;
-        this.name = name;
+        this.name = name.intern();
         this.callType = callType;
         this.callSite = getCallSiteFor(callType, name, potentiallyRefined);
         splatMap = IRRuntimeHelpers.buildSplatMap(args);

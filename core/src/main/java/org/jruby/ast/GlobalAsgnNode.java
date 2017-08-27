@@ -75,7 +75,7 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return StringSupport.byteListAsString(name).intern();
     }
 
     public ByteList getByteName() {

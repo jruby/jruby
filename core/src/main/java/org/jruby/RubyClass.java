@@ -30,21 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.javasupport.JavaClass;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.callsite.RespondToCallSite;
-import org.jruby.runtime.ivars.VariableAccessor;
-import static org.jruby.util.CodegenUtils.ci;
-import static org.jruby.util.CodegenUtils.p;
-import static org.jruby.util.CodegenUtils.sig;
-import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_SUPER;
-import static org.objectweb.asm.Opcodes.ACC_VARARGS;
-
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -60,7 +45,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
@@ -69,34 +53,49 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.codegen.Reified;
 import org.jruby.javasupport.Java;
-import org.jruby.runtime.Helpers;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.RespondToCallSite;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessorField;
 import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ArraySupport;
-import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
+
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.sig;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
+import static org.objectweb.asm.Opcodes.ACC_VARARGS;
 
 /**
  *
@@ -319,7 +318,7 @@ public class RubyClass extends RubyModule {
     }
 
     public Map<String, VariableAccessor> getVariableTableCopy() {
-        return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
+        return new HashMap<>(getVariableAccessorsForRead());
     }
 
     @Override

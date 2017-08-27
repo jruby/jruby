@@ -519,7 +519,7 @@ public class RubyModule extends RubyObject {
      * @param name the new base name of the class
      */
     public void setBaseName(String name) {
-        baseName = name;
+        baseName = name.intern();
         cachedName = null;
     }
 
@@ -1599,25 +1599,13 @@ public class RubyModule extends RubyObject {
      */
     public synchronized void defineAlias(String name, String oldName) {
         testFrozen("module");
+        name = name.intern();
+        oldName = oldName.intern();
         if (oldName.equals(name)) return;
 
         DynamicMethod method = searchForAliasMethod(getRuntime(), oldName);
 
         putMethod(name, new AliasMethod(this, method, oldName));
-
-        methodLocation.invalidateCoreClasses();
-        methodLocation.invalidateCacheDescendants();
-    }
-
-    public synchronized void defineAliases(List<String> aliases, String oldName) {
-        testFrozen("module");
-        DynamicMethod method = searchForAliasMethod(getRuntime(), oldName);
-
-        for (String name: aliases) {
-            if (oldName.equals(name)) continue;
-
-            putMethod(name, new AliasMethod(this, method, oldName));
-        }
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
@@ -3848,6 +3836,7 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn) {
+        name = name.intern();
         IRubyObject oldValue = fetchConstant(name);
 
         setParentForModule(name, value);

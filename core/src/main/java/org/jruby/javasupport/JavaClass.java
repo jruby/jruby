@@ -36,6 +36,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
@@ -47,7 +55,6 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.java.addons.ClassJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
@@ -58,15 +65,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 import static org.jruby.RubyModule.undefinedMethodMessage;
 
@@ -232,7 +230,7 @@ public class JavaClass extends JavaObject {
     public static JavaClass resolveType(final ThreadContext context, final IRubyObject type) {
         if (type instanceof RubyString || type instanceof RubySymbol) {
             final Ruby runtime = context.runtime;
-            final String className = type.toString();
+            final String className = type.toString().intern();
             JavaClass targetType = runtime.getJavaSupport().getNameClassMap().get(className);
             if ( targetType == null ) targetType = JavaClass.forNameVerbose(runtime, className);
             return targetType;
@@ -643,7 +641,7 @@ public class JavaClass extends JavaObject {
         final Ruby runtime = getRuntime();
         if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
 
-        final String methodName = args[0].asJavaString();
+        final String methodName = args[0].asJavaString().intern();
         try {
             Class<?>[] argumentTypes = getArgumentTypes(runtime, args, 1);
             @SuppressWarnings("unchecked")
@@ -660,7 +658,7 @@ public class JavaClass extends JavaObject {
         final Ruby runtime = getRuntime();
         if ( args.length < 1 ) throw runtime.newArgumentError(args.length, 1);
 
-        final String methodName = args[0].asJavaString();
+        final String methodName = args[0].asJavaString().intern();
 
         Class<?>[] argumentTypes = getArgumentTypes(runtime, args, 1);
 
@@ -671,7 +669,8 @@ public class JavaClass extends JavaObject {
         throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
     }
 
-    public static JavaCallable getMatchingCallable(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
+    private static JavaCallable getMatchingCallable(Ruby runtime, Class<?> javaClass,
+        String methodName, Class<?>[] argumentTypes) {
         if ( methodName.length() == 6 && "<init>".equals(methodName) ) {
             return JavaConstructor.getMatchingConstructor(runtime, javaClass, argumentTypes);
         }
@@ -692,7 +691,7 @@ public class JavaClass extends JavaObject {
             } else if ( arg.respondsTo("java_class") ) {
                 type = (JavaClass) arg.callMethod(runtime.getCurrentContext(), "java_class");
             } else {
-                type = forNameVerbose(runtime, arg.asJavaString());
+                type = forNameVerbose(runtime, arg.asJavaString().intern());
             }
             argumentTypes[ i - offset ] = type.javaClass();
         }
@@ -938,12 +937,12 @@ public class JavaClass extends JavaObject {
     public JavaField field(ThreadContext context, IRubyObject name) {
         Class<?> javaClass = javaClass();
         Ruby runtime = context.runtime;
-        String stringName = name.asJavaString();
+        final String stringName = name.asJavaString().intern();
 
         try {
             return new JavaField(runtime, javaClass.getField(stringName));
         } catch (NoSuchFieldException nsfe) {
-            String newName = JavaUtil.getJavaCasedName(stringName);
+            final String newName = JavaUtil.getJavaCasedName(stringName).intern();
             if(newName != null) {
                 try {
                     return new JavaField(runtime, javaClass.getField(newName));
@@ -957,12 +956,12 @@ public class JavaClass extends JavaObject {
     public JavaField declared_field(ThreadContext context, IRubyObject name) {
         Class<?> javaClass = javaClass();
         Ruby runtime = context.runtime;
-        String stringName = name.asJavaString();
+        final String stringName = name.asJavaString().intern();
 
         try {
             return new JavaField(runtime, javaClass.getDeclaredField(stringName));
         } catch (NoSuchFieldException nsfe) {
-            String newName = JavaUtil.getJavaCasedName(stringName);
+            final String newName = JavaUtil.getJavaCasedName(stringName).intern();
             if(newName != null) {
                 try {
                     return new JavaField(runtime, javaClass.getDeclaredField(newName));

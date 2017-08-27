@@ -71,7 +71,7 @@ public class KernelJavaAddons {
         return recv.getRuntime().getNil();
     }
 
-    static JavaClass resolveTargetType(ThreadContext context, IRubyObject type) {
+    private static JavaClass resolveTargetType(ThreadContext context, IRubyObject type) {
         JavaClass javaType = JavaClass.resolveType(context, type);
         if ( javaType == null ) throw context.runtime.newTypeError("unable to convert to type: " + type);
         return javaType;

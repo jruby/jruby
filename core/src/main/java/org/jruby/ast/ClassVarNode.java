@@ -72,7 +72,7 @@ public class ClassVarNode extends Node implements INameNode, SideEffectFree {
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return StringSupport.byteListAsString(name).intern();
     }
 
     public ByteList getByteName() {
