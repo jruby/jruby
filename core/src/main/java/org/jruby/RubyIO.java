@@ -565,22 +565,23 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // MRI: rb_io_reopen
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
+        final IRubyObject nil = context.nil;
         RubyIO file = this;
-        IRubyObject fname = context.nil, nmode = context.nil, opt = context.nil;
+        IRubyObject fname = nil, nmode = nil, opt = nil;
         int[] oflags_p = {0};
         OpenFile fptr;
 
         switch (args.length) {
             case 3:
                 opt = TypeConverter.checkHashType(runtime, args[2]);
-                if (opt.isNil()) throw getRuntime().newArgumentError(3, 2);
+                if (opt == nil) throw getRuntime().newArgumentError(3, 2);
             case 2:
-                if (opt.isNil()) {
+                if (opt == nil) {
                     opt = TypeConverter.checkHashType(runtime, args[1]);
-                    if (opt.isNil()) {
+                    if (opt == nil) {
                         nmode = args[1];
-                        opt = context.nil;
+                        opt = nil;
                     }
                 } else {
                     nmode = args[1];
@@ -590,8 +591,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         if (args.length == 1) {
             IRubyObject tmp = TypeConverter.ioCheckIO(runtime, fname);
-            if (!tmp.isNil()) {
-                return file.reopenIO(context, (RubyIO)tmp);
+            if (tmp != nil) {
+                return file.reopenIO(context, (RubyIO) tmp);
             }
         }
 
@@ -605,7 +606,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         boolean locked = fptr.lock();
         try {
-            if (!nmode.isNil() || !opt.isNil()) {
+            if (nmode != nil || opt != nil) {
                 ConvConfig convconfig = new ConvConfig();
                 Object vmode_vperm = vmodeVperm(nmode, null);
                 int[] fmode_p = {0};
@@ -1097,17 +1098,17 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // mri: io_encoding_set
     public void setEncoding(ThreadContext context, IRubyObject v1, IRubyObject v2, IRubyObject opt) {
+        final IRubyObject nil = context.nil;
         IOEncodable.ConvConfig holder = new IOEncodable.ConvConfig();
         int ecflags = openFile.encs.ecflags;
-        IRubyObject[] ecopts_p = {context.nil};
-        IRubyObject tmp;
+        IRubyObject[] ecopts_p = { nil };
 
-        if (!v2.isNil()) {
+        if (v2 != nil) {
             holder.enc2 = EncodingUtils.rbToEncoding(context, v1);
-            tmp = v2.checkStringType();
+            IRubyObject tmp = v2.checkStringType();
 
-            if (!tmp.isNil()) {
-                RubyString internalAsString = (RubyString)tmp;
+            if (tmp != nil) {
+                RubyString internalAsString = (RubyString) tmp;
 
                 // No encoding '-'
                 if (internalAsString.size() == 1 && internalAsString.asJavaString().equals("-")) {
@@ -1138,8 +1139,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 EncodingUtils.SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(holder.getEnc2(), ecflags);
                 ecopts_p[0] = context.nil;
             } else {
-                tmp = v1.checkStringType();
-                if (!tmp.isNil() && EncodingUtils.encAsciicompat(EncodingUtils.encGet(context, tmp))) {
+                IRubyObject tmp = v1.checkStringType();
+                if (tmp != nil && EncodingUtils.encAsciicompat(EncodingUtils.encGet(context, tmp))) {
                     EncodingUtils.parseModeEncoding(context, holder, tmp.asJavaString(), null);
                     EncodingUtils.SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(holder.getEnc2(), ecflags);
                     ecflags = EncodingUtils.econvPrepareOptions(context, opt, ecopts_p, ecflags);
@@ -1151,7 +1152,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             // enc, enc2 should be set by now
         }
 
-        int[] fmode_p = {openFile.getMode()};
+        int[] fmode_p = { openFile.getMode() };
         EncodingUtils.validateEncodingBinmode(context, fmode_p, ecflags, holder);
         openFile.setMode(fmode_p[0]);
 
@@ -1183,20 +1184,25 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return port;
     }
 
+    @Deprecated
     public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
-        return sysopen19(recv.getRuntime().getCurrentContext(), recv, args, block);
+        return sysopen(recv.getRuntime().getCurrentContext(), recv, args, block);
+    }
+
+    @Deprecated
+    public static IRubyObject sysopen19(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
+        return sysopen(context, recv, argv, block);
     }
 
     // rb_io_s_sysopen
     @JRubyMethod(name = "sysopen", required = 1, optional = 2, meta = true)
-    public static IRubyObject sysopen19(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
+    public static IRubyObject sysopen(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject fname, vmode, vperm;
         fname = vmode = vperm = context.nil;
         IRubyObject intmode;
         int oflags;
         ChannelFD fd;
-        int perm;
 
         switch (argv.length) {
             case 3:
@@ -1216,8 +1222,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             vmode = vmode.convertToString();
             oflags = OpenFile.ioModestrOflags(runtime, vmode.toString());
         }
-        if (vperm.isNil()) perm = 0666;
-        else              perm = RubyNumeric.num2int(vperm);
+        int perm = (vperm.isNil()) ? 0666 : RubyNumeric.num2int(vperm);
 
         StringSupport.checkStringSafety(context.runtime, fname);
         fname = ((RubyString)fname).dupFrozen();
