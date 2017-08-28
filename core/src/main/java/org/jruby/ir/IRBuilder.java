@@ -1049,6 +1049,7 @@ public class IRBuilder {
         Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
         if (result == null) result = createTemporaryVariable();
 
+        // obj["string"] optimization for Hash
         ArrayNode argsAry;
         if (
                 !callNode.isLazy() &&
