@@ -237,14 +237,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return fileClass;
     }
 
-    private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyFile instance = new RubyFile(runtime, klass);
-
-            instance.setMetaClass(klass);
-
-            return instance;
+            return new RubyFile(runtime, klass);
         }
     };
 
@@ -2011,6 +2007,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             throw runtime.newArgumentError("couldn't find HOME environment -- expanding `~'");
         }
         return (RubyString) home;
+    }
+
+    @Override
+    public Object toJava(Class target) {
+        if (target == java.io.File.class) {
+            final String path = getPath();
+            return path == null ? null : new java.io.File(path);
+        }
+        return super.toJava(target);
     }
 
     private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
