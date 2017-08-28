@@ -1934,7 +1934,7 @@ end
 class DateTime < Date
 
   def to_time
-    Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400).to_i).getlocal
+    Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400.0))
   end
 
   def to_date
