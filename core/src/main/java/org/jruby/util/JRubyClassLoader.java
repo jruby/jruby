@@ -64,7 +64,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static volatile File tempDir;
 
-    private List<URL> tempUrls = new ArrayList<URL>();
+    private List<String> cachedJarPaths = new ArrayList<String>();
 
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
@@ -91,7 +91,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                 in.close();
                 url = f.toURI().toURL();
 
-                tempUrls.add(url);
+                cachedJarPaths.add(url.getPath());
             }
             catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
@@ -166,8 +166,8 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         return "";
     }
 
-    public List<URL> getTempUrls(){
-        return tempUrls;
+    public List<String> getCachedJarPaths(){
+        return cachedJarPaths;
     }
 
     /**
