@@ -1091,20 +1091,25 @@ public class RubyClass extends RubyModule {
         setSuperClass(superClass);
     }
 
-    public Collection<RubyClass> subclasses(boolean includeDescendants) {
-        Set<RubyClass> mySubclasses = subclasses;
-        if (mySubclasses != null) {
-            Collection<RubyClass> mine = new ArrayList<RubyClass>(mySubclasses);
+    // introduced solely to provide some level of compatibility with previous
+    // Class#subclasses implementation ... `ruby_class.to_java.subclasses`
+    public final Collection<RubyClass> subclasses() {
+        return subclasses(false);
+    }
+
+    public synchronized Collection<RubyClass> subclasses(boolean includeDescendants) {
+        Set<RubyClass> subclasses = this.subclasses;
+        if (subclasses != null) {
+            Collection<RubyClass> mine = new ArrayList<>(subclasses);
             if (includeDescendants) {
-                for (RubyClass i: mySubclasses) {
-                    mine.addAll(i.subclasses(includeDescendants));
+                for (RubyClass klass: subclasses) {
+                    mine.addAll(klass.subclasses(includeDescendants));
                 }
             }
 
             return mine;
-        } else {
-            return Collections.EMPTY_LIST;
         }
+        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -1118,9 +1123,9 @@ public class RubyClass extends RubyModule {
      */
     public synchronized void addSubclass(RubyClass subclass) {
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> oldSubclasses = subclasses;
-            if (oldSubclasses == null) subclasses = oldSubclasses = new WeakHashSet<RubyClass>(4);
-            oldSubclasses.add(subclass);
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses == null) this.subclasses = subclasses = new WeakHashSet<>(4);
+            subclasses.add(subclass);
         }
     }
 
@@ -1131,10 +1136,10 @@ public class RubyClass extends RubyModule {
      */
     public synchronized void removeSubclass(RubyClass subclass) {
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> oldSubclasses = subclasses;
-            if (oldSubclasses == null) return;
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses == null) return;
 
-            oldSubclasses.remove(subclass);
+            subclasses.remove(subclass);
         }
     }
 
@@ -1146,11 +1151,11 @@ public class RubyClass extends RubyModule {
      */
     public synchronized void replaceSubclass(RubyClass subclass, RubyClass newSubclass) {
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> oldSubclasses = subclasses;
-            if (oldSubclasses == null) return;
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses == null) return;
 
-            oldSubclasses.remove(subclass);
-            oldSubclasses.add(newSubclass);
+            subclasses.remove(subclass);
+            subclasses.add(newSubclass);
         }
     }
 
@@ -1159,9 +1164,9 @@ public class RubyClass extends RubyModule {
         // make this class and all subclasses sync
         synchronized (runtime.getHierarchyLock()) {
             super.becomeSynchronized();
-            Set<RubyClass> mySubclasses = subclasses;
-            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.becomeSynchronized();
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses != null) {
+                for (RubyClass subclass : subclasses) subclass.becomeSynchronized();
             }
         }
     }
@@ -1183,9 +1188,9 @@ public class RubyClass extends RubyModule {
         super.invalidateCacheDescendants();
 
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> mySubclasses = subclasses;
-            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.invalidateCacheDescendants();
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses != null) {
+                for (RubyClass subclass : subclasses) subclass.invalidateCacheDescendants();
             }
         }
     }
@@ -1197,14 +1202,15 @@ public class RubyClass extends RubyModule {
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) cachedMethods.clear();
 
+        Set<RubyClass> subclasses = this.subclasses;
         // no subclasses, don't bother with lock and iteration
         if (subclasses == null || subclasses.isEmpty()) return;
 
         // cascade into subclasses
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> mySubclasses = subclasses;
-            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.addInvalidatorsAndFlush(invalidators);
+            subclasses = this.subclasses;
+            if (subclasses != null) {
+                for (RubyClass subclass : subclasses) subclass.addInvalidatorsAndFlush(invalidators);
             }
         }
     }
