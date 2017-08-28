@@ -444,7 +444,6 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private IRubyObject closeHalf(ThreadContext context, int closeHalf) {
-        Ruby runtime = context.runtime;
         OpenFile fptr;
 
         int otherHalf = closeHalf == OpenFile.READABLE ? OpenFile.WRITABLE : OpenFile.READABLE;
@@ -452,7 +451,7 @@ public class RubyBasicSocket extends RubyIO {
         fptr = getOpenFileChecked();
         if ((fptr.getMode() & otherHalf) == 0) {
             // shutdown fully
-            return rbIoClose(runtime);
+            return rbIoClose(context);
         }
 
         // shutdown half

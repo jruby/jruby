@@ -282,16 +282,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @Override
-    protected IRubyObject rbIoClose(Ruby runtime) {
+    protected IRubyObject rbIoClose(ThreadContext context) {
         // Make sure any existing lock is released before we try and close the file
         if (openFile.currentLock != null) {
             try {
                 openFile.currentLock.release();
             } catch (IOException e) {
-                throw getRuntime().newIOError(e.getMessage());
+                throw context.runtime.newIOError(e.getMessage());
             }
         }
-        return super.rbIoClose(runtime);
+        return super.rbIoClose(context);
     }
 
     @JRubyMethod(required = 1)

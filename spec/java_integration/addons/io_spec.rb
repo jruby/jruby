@@ -57,6 +57,18 @@ describe "Ruby IO" do
     expect(java.io.InputStream).to be === file.to_inputstream # old-naming
   end
 
+  it "is coercible using to_java to java.io.InputStream" do
+    file = File.open(__FILE__)
+    first_ten = file.read(10)
+    file.seek(0)
+    stream = file.to_java java.io.InputStream
+    expect(java.io.InputStream).to be === stream
+
+    bytes = "0000000000".to_java_bytes
+    expect(stream.read(bytes)).to eq(10)
+    expect(String.from_java_bytes(bytes)).to eq(first_ten)
+  end
+
   it "is coercible to java.io.OutputStream with IO#to_output_stream" do
     file = Tempfile.new("io_spec")
     stream = file.to_output_stream
@@ -70,6 +82,20 @@ describe "Ruby IO" do
     expect(str).to eq(String.from_java_bytes(bytes))
 
     expect(java.io.OutputStream).to be === file.to_outputstream # old-naming
+  end
+
+
+  it "is coercible using to_java to java.io.OutputStream" do
+    file = Tempfile.new("io_spec")
+    stream = file.to_java 'java.io.OutputStream'
+    expect(java.io.OutputStream).to be === stream
+
+    bytes = input_number.to_java_bytes
+    stream.write(bytes)
+    stream.flush
+    file.seek(0)
+    str = file.read(10)
+    expect(str).to eq(String.from_java_bytes(bytes))
   end
 
   it "gets an IO from a java.nio.channels.Channel" do

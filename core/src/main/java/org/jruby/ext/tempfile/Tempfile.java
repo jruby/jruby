@@ -169,8 +169,7 @@ public class Tempfile extends RubyFile implements Finalizable {
 
     @JRubyMethod(visibility = PUBLIC)
     public IRubyObject open(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (!isClosed()) rbIoClose(runtime);
+        if (!isClosed()) rbIoClose(context);
 
         // MRI doesn't do this, but we need to reset to blank slate
         openFile = null;
@@ -182,7 +181,7 @@ public class Tempfile extends RubyFile implements Finalizable {
 
     @JRubyMethod(visibility = PROTECTED)
     public IRubyObject _close(ThreadContext context) {
-        return !isClosed() ? super.close() : context.nil;
+        return !isClosed() ? super.close(context) : context.nil;
     }
 
     @JRubyMethod(optional = 1, visibility = PUBLIC)
@@ -252,12 +251,13 @@ public class Tempfile extends RubyFile implements Finalizable {
         }
     }
 
-    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return open19(context, recv, args, block);
+    @Deprecated
+    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return open(context, recv, args, block);
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
-    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass) recv;
         Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
 
@@ -277,10 +277,10 @@ public class Tempfile extends RubyFile implements Finalizable {
     public IRubyObject inspect() {
         StringBuilder val = new StringBuilder();
         val.append("#<Tempfile:").append(openFile.getPath());
-        if(!openFile.isOpen()) {
+        if (!openFile.isOpen()) {
             val.append(" (closed)");
         }
-        val.append(">");
+        val.append('>');
         return getRuntime().newString(val.toString());
     }
 

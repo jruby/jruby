@@ -1460,7 +1460,7 @@ public class RubyKernel {
 
             fptr = ((RubyIO)port).getOpenFileChecked();
             result = fptr.readAll(context, fptr.remainSize(), context.nil);
-            ((RubyIO)port).rbIoClose(runtime);
+            ((RubyIO)port).rbIoClose(context);
 
             return result;
         }
