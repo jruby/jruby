@@ -35,6 +35,7 @@ import org.jruby.util.JarResource;
 
 import java.io.File;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,9 +62,10 @@ public class SingleThreadLocalContextProvider extends AbstractLocalContextProvid
     }
 
     private void terminateJarIndexCacheEntries() {
-        for (URL url : getRuntime().getJRubyClassLoader().getTempUrls()){
+        List<String> cachedJarPaths = getRuntime().getJRubyClassLoader().getCachedJarPaths();
+
+        for (String jarPath : cachedJarPaths){
             // Remove reference from jar cache
-            String jarPath = url.getPath();
             JarResource.removeJarResource(jarPath);
 
             // Delete temp jar on disk
