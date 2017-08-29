@@ -39,8 +39,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "JRuby::FiberLocal")
 public final class JRubyFiberLocal extends JRubyExecutionContextLocal {
-    public static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
 
+    static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass type) {
             return new JRubyFiberLocal(runtime, type);
         }

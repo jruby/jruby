@@ -37,7 +37,6 @@ import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 
 public abstract class JRubyExecutionContextLocal extends RubyObject {
     private IRubyObject default_value;
@@ -49,8 +48,8 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         default_proc = null;
     }
 
-    @JRubyMethod(name = "initialize", required = 0, optional = 1, visibility = Visibility.PRIVATE)
-    public IRubyObject rubyInitialize(ThreadContext context, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "initialize", optional = 1, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             if (args.length != 0) {
                 throw context.runtime.newArgumentError("wrong number of arguments");
@@ -66,21 +65,17 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
                 throw context.runtime.newArgumentError("wrong number of arguments");
             }
         }
-        return context.runtime.getNil();
+        return context.nil;
     }
 
-    @JRubyMethod(name = "default", required = 0)
-    public IRubyObject getDefault(ThreadContext context) {
+    @JRubyMethod(name = "default")
+    public IRubyObject getDefault() {
         return default_value;
     }
 
-    @JRubyMethod(name = "default_proc", required = 0)
-    public IRubyObject getDefaultProc(ThreadContext context) {
-        if (default_proc != null) {
-            return default_proc;
-        } else {
-            return context.runtime.getNil();
-        }
+    @JRubyMethod(name = "default_proc")
+    public IRubyObject getDefaultProc() {
+        return (default_proc != null) ? default_proc : getRuntime().getNil();
     }
 
     @JRubyMethod(name = "value", required = 0)
@@ -91,16 +86,16 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         value = contextVariables.get(this);
         if (value != null) {
             return value;
-        } else if (default_proc != null) {
+        }
+        if (default_proc != null) {
             // pre-set for the sake of terminating recursive calls
-            contextVariables.put(this, context.runtime.getNil());
+            contextVariables.put(this, context.nil);
             final IRubyObject new_value;
             new_value = default_proc.call(context, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
             contextVariables.put(this, new_value);
             return new_value;
-        } else {
-            return default_value;
         }
+        return default_value;
     }
 
     @JRubyMethod(name = "value=", required = 1)
