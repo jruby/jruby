@@ -11,7 +11,7 @@ class String
   # @deprecated use `String.new(capacity: size)`
   def self.alloc(size)
     new(capacity: size)
-  end
+  end if false
 
   # Hashed in Ruby are seeded by default (might not be the same between runs).
   # The unseeded hash returns a 'raw' value based only on the byte content.

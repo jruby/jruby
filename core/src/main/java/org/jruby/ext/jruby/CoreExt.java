@@ -30,6 +30,7 @@ package org.jruby.ext.jruby;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
@@ -56,6 +57,11 @@ public abstract class CoreExt {
             }
 
             return runtime.newFixnum(((RubyString) recv).unseededStrHashCode(runtime));
+        }
+
+        @JRubyMethod(name = "alloc", meta = true)
+        public static RubyString alloc(ThreadContext context, IRubyObject recv, IRubyObject size) {
+            return RubyString.newStringLight(context.runtime, RubyInteger.fix2int(size));
         }
 
     }
