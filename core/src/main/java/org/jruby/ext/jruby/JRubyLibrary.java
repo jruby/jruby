@@ -53,6 +53,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
+import org.jruby.util.ClasspathLauncher;
 
 import java.io.ByteArrayInputStream;
 
@@ -189,6 +190,14 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.runtime.newFixnum(System.identityHashCode(obj));
+    }
+
+    @JRubyMethod(module = true) // for RubyGems' JRuby defaults
+    public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.runtime;
+        String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
+        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
+        return runtime.newString(launcher);
     }
 
 

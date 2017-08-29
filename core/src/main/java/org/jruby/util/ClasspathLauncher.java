@@ -20,7 +20,7 @@ public class ClasspathLauncher {
             // can't find it, hope it's in path
             javaCmd = "java";
         }
-        StringBuilder command = new StringBuilder(javaCmd + " -cp ");
+        StringBuilder command = new StringBuilder().append(javaCmd).append(" -cp ");
         if (classLoader instanceof URLClassLoader) {
             for(URL url : ((URLClassLoader) classLoader).getURLs()) {
                 String path = URLUtil.getPlatformPath(url);
