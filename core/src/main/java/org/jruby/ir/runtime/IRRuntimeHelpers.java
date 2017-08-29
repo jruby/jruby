@@ -1,28 +1,52 @@
 package org.jruby.ir.runtime;
 
 import com.headius.invokebinder.Signature;
-import jnr.ffi.annotations.In;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
+import java.util.Map;
 import org.jcodings.Encoding;
-import org.jruby.*;
+import org.jruby.EvalType;
+import org.jruby.MetaClass;
+import org.jruby.NativeException;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyLocalJumpError;
+import org.jruby.RubyMatchData;
+import org.jruby.RubyMethod;
+import org.jruby.RubyModule;
+import org.jruby.RubyNil;
+import org.jruby.RubyProc;
+import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
-import org.jruby.ir.Tuple;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
@@ -30,8 +54,17 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Binding;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IRRuntimeHelpersSites;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
@@ -46,12 +79,6 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
-import java.util.Map;
 
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(IRRuntimeHelpers.class);
@@ -493,11 +520,18 @@ public class IRRuntimeHelpers {
         }
     }
 
+    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, 
+        org.jruby.runtime.Signature signature) {
+        return frobnicateKwargsArgument(context, args, signature.required());
+    }
+
     public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
-        if (args.length <= requiredArgsCount) return args; // No kwarg because required args slurp them up.
+        // No kwarg because required args slurp them up.
+        return args.length <= requiredArgsCount ? args : frobnicateKwargsArgument(context, args);
+    }
 
+    private static IRubyObject[] frobnicateKwargsArgument(final ThreadContext context, IRubyObject[] args) {
         final IRubyObject kwargs = toHash(args[args.length - 1], context);
-
         if (kwargs != null) {
             if (kwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
                 return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
@@ -520,7 +554,6 @@ public class IRRuntimeHelpers {
             }
             args[args.length - 1] = visitor.syms; // kwargs hash
         }
-
         return args;
     }
 

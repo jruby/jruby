@@ -10,7 +10,6 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,8 +19,6 @@ public final class CompiledIRMethod extends AbstractIRMethod {
 
     private final MethodHandle specific;
     private final int specificArity;
-
-    private final int required;
 
     private final boolean hasKwargs;
 
@@ -44,12 +41,6 @@ public final class CompiledIRMethod extends AbstractIRMethod {
         assert method.hasExplicitCallProtocol();
 
         setHandle(variable);
-        final Signature sig = getSignature();
-        if (sig != null) {
-            required = sig.required();
-        } else {
-            required = -1;
-        }
     }
 
     public MethodHandle getHandleFor(int arity) {
@@ -78,7 +69,7 @@ public final class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, required);
+        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, signature);
 
         try {
             return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
@@ -143,7 +134,7 @@ public final class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, required);
+        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, signature);
 
         try {
             return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, implementationClass, name);

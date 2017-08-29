@@ -23,7 +23,7 @@ import org.jruby.util.cli.Options;
 
 public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Cloneable {
 
-    private final Signature signature;
+    protected final Signature signature;
     protected final IRScope method;
     protected final StaticScope staticScope;
     protected InterpreterContext interpreterContext = null;
