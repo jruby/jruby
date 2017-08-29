@@ -32,6 +32,7 @@ package org.jruby.ext.jruby;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -70,24 +71,30 @@ public class JRubyLibrary implements Library {
         // load Ruby parts of the 'jruby' library
         runtime.getLoadService().loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
 
-        // define JRuby module
-        RubyModule jrubyModule = runtime.getOrCreateModule("JRuby");
+        RubyModule JRuby = runtime.getOrCreateModule("JRuby");
 
-        jrubyModule.defineAnnotatedMethods(JRubyLibrary.class);
-        jrubyModule.defineAnnotatedMethods(JRubyUtilLibrary.class);
+        JRuby.defineAnnotatedMethods(JRubyLibrary.class);
+        JRuby.defineAnnotatedMethods(JRubyUtilLibrary.class);
 
-        RubyClass threadLocalClass = jrubyModule.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal.ALLOCATOR);
-        threadLocalClass.defineAnnotatedMethods(JRubyExecutionContextLocal.class);
+        JRuby.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal.ALLOCATOR)
+             .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
-        RubyClass fiberLocalClass = jrubyModule.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR);
-        fiberLocalClass.defineAnnotatedMethods(JRubyExecutionContextLocal.class);
+        JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR)
+             .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
-        RubyModule config = jrubyModule.defineModuleUnder("CONFIG");
-        config.getSingletonClass().defineAnnotatedMethods(JRubyConfig.class);
+        /**
+         * JRuby::CONFIG ~ shortcut for JRuby.runtime.instance_config
+         * @since 9.2
+         */
+        IRubyObject config = Java.getInstance(runtime, runtime.getInstanceConfig());
+        config.getMetaClass().defineAlias("rubygems_disabled?", "isDisableGems");
+        config.getMetaClass().defineAlias("did_you_mean_disabled?", "isDisableDidYouMean");
+        JRuby.setConstant("CONFIG", config);
     }
 
+    @Deprecated // old JRuby.defineModuleUnder("CONFIG")
     public static class JRubyConfig {
-        @JRubyMethod(name = "rubygems_disabled?")
+        // @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
             return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
         }
@@ -115,19 +122,6 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject runtime(ThreadContext context, IRubyObject recv) {
         return Java.wrapJavaObject(context.runtime, context.runtime); // context.nil.getRuntime()
-    }
-
-    /**
-     * JRuby.config a shortcut for JRuby.runtime.instance_config
-     * @param context
-     * @param recv
-     * @return a wrapped RubyInstanceConfig
-     * @since 9.2
-     */
-    // TODO needs to get fine tuned considering there's a CONFIG constant already
-    // @JRubyMethod(module = true)
-    public static IRubyObject config(ThreadContext context, IRubyObject recv) {
-        return Java.wrapJavaObject(context.runtime, context.runtime.getInstanceConfig());
     }
 
     /**
@@ -178,6 +172,19 @@ public class JRubyLibrary implements Library {
         }
         java.lang.Thread.currentThread().setContextClassLoader(loader);
         return Java.wrapJavaObject(context.runtime, loader); // reference0
+    }
+
+    @JRubyMethod(name = "security_restricted?", module = true)
+    public static RubyBoolean is_security_restricted(IRubyObject recv) {
+        final Ruby runtime = recv.getRuntime();
+        return RubyBoolean.newBoolean(runtime, Ruby.isSecurityRestricted());
+    }
+
+    // NOTE: its probably too late to set this when jruby library is booted (due the java library) ?
+    @JRubyMethod(name = "security_restricted=", module = true)
+    public static IRubyObject set_security_restricted(IRubyObject recv, IRubyObject arg) {
+        Ruby.setSecurityRestricted(arg.isTrue());
+        return is_security_restricted(recv);
     }
 
     /**

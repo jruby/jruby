@@ -12,14 +12,13 @@ module JRuby
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
     def runtime; end if false
 
-    # Get the current runtime's config.
-    # Changes to the configuration won't be reflected in the runtime, meant to be read-only.
+    # Provide the "identity" hash for an object (that `System.identityHashCode` would produce).
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
-    # def config; end if false
+    def identity_hash(obj); end if false
 
     # Run the provided (required) block with the "global runtime" set to the current runtime,
     # for libraries that expect to operate against the global runtime.
-    # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
+    # @note Mostly meant for dealing with legacy JRuby extensions.
     def with_current_runtime_as_global; end if false
 
     # Change the current threads context classloader.
@@ -35,9 +34,13 @@ module JRuby
     def compile_ir(content, filename = '', extra_position_info = false); end if false
 
     # Parse and compile the given block or provided content.
-    # @return JRuby::CompiledScript instance
+    # @return [JRuby::CompiledScript]
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
     def compile(content, filename = '', extra_position_info = false); end if false
+
+    # The current runtime's config (a `org.jruby.RubyInstanceConfig` instance).
+    # Changes to the configuration won't be reflected in the runtime, meant to be read-only.
+    CONFIG = runtime.instance_config if false
 
   end
 
