@@ -1,26 +1,27 @@
 package org.jruby.internal.runtime.methods;
 
+import java.lang.invoke.MethodHandle;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.lang.invoke.MethodHandle;
+public final class CompiledIRMethod extends AbstractIRMethod {
+    private final MethodHandle variable;
 
-public class CompiledIRMethod extends AbstractIRMethod {
-    protected final MethodHandle variable;
+    private final MethodHandle specific;
+    private final int specificArity;
 
-    protected final MethodHandle specific;
-    protected final int specificArity;
+    private final int required;
 
     private final boolean hasKwargs;
 
@@ -43,6 +44,12 @@ public class CompiledIRMethod extends AbstractIRMethod {
         assert method.hasExplicitCallProtocol();
 
         setHandle(variable);
+        final Signature sig = getSignature();
+        if (sig != null) {
+            required = sig.required();
+        } else {
+            required = -1;
+        }
     }
 
     public MethodHandle getHandleFor(int arity) {
@@ -71,7 +78,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
+        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, required);
 
         try {
             return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
@@ -136,7 +143,7 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, getSignature().required());
+        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, required);
 
         try {
             return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, implementationClass, name);
