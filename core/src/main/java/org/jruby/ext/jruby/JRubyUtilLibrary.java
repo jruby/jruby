@@ -53,34 +53,36 @@ import static org.jruby.util.URLUtil.getPath;
  */
 public class JRubyUtilLibrary implements Library {
 
+    @Deprecated // JRuby::Util no longer used by JRuby itself
     public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyModule JRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
         JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject gc(IRubyObject recv) {
+    public static IRubyObject gc(ThreadContext context, IRubyObject recv) {
         System.gc();
-        return recv.getRuntime().getNil();
+        return context.nil;
     }
 
-    @JRubyMethod(name = "objectspace", module = true)
+    @JRubyMethod(name = { "objectspace", "object_space?" }, alias = { "objectspace?" }, module = true)
     public static IRubyObject getObjectSpaceEnabled(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
         return RubyBoolean.newBoolean(runtime, runtime.isObjectSpaceEnabled());
     }
 
-    @JRubyMethod(name = "objectspace=", module = true)
+    @JRubyMethod(name = { "objectspace=", "object_space=" }, module = true)
     public static IRubyObject setObjectSpaceEnabled(IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = recv.getRuntime();
-        if (arg.isTrue()) {
+        final Ruby runtime = recv.getRuntime();
+        boolean enabled = arg.isTrue();
+        if (enabled) {
             runtime.getWarnings().warn("ObjectSpace impacts performance. See http://wiki.jruby.org/PerformanceTuning#dont-enable-objectspace");
         }
-        runtime.setObjectSpaceEnabled(arg.isTrue());
-        return runtime.getNil();
+        runtime.setObjectSpaceEnabled(enabled);
+        return runtime.newBoolean(enabled);
     }
 
-    @JRubyMethod(name = "classloader_resources", module = true)
+    @JRubyMethod(name = "classloader_resources", module = true) // used from RGs' JRuby defaults
     public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject arg) {
         Ruby runtime = recv.getRuntime();
         String resource = arg.convertToString().toString();
