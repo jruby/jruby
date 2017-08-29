@@ -4246,10 +4246,10 @@ public final class Ruby implements Constantizable {
         doNotReverseLookupEnabled = b;
     }
 
-    private ThreadLocal<Map<Object, Object>> inspect = new ThreadLocal<Map<Object, Object>>();
+    private final ThreadLocal<Map<Object, Object>> inspect = new ThreadLocal<>();
     public void registerInspecting(Object obj) {
         Map<Object, Object> val = inspect.get();
-        if (val == null) inspect.set(val = new IdentityHashMap<Object, Object>());
+        if (val == null) inspect.set(val = new IdentityHashMap<>(8));
         val.put(obj, null);
     }
 
