@@ -13,6 +13,12 @@ class TestJRubyCoreExt < Test::Unit::TestCase
     assert_equal String, bytecode.class
   end
 
+  def test_unseeded_hash; require 'jruby/core_ext/string.rb'
+    assert 'foo'.unseeded_hash.is_a?(Integer)
+    assert_not_equal '0'.unseeded_hash, ' '.unseeded_hash
+    assert_equal '123'.dup.unseeded_hash, "#{123}".unseeded_hash
+  end
+
   def test_subclasses
     superclass = Class.new
     sub1 = Class.new(superclass)

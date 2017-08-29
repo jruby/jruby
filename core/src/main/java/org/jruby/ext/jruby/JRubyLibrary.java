@@ -49,6 +49,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
@@ -282,6 +283,12 @@ public class JRubyLibrary implements Library {
                 content,
                 Java.getInstance(runtime, bytes)
         }, Block.NULL_BLOCK);
+    }
+
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
+        CoreExt.loadStringExtensions(context.runtime);
+        return context.nil;
     }
 
 }

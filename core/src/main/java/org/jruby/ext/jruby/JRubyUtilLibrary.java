@@ -54,11 +54,8 @@ import static org.jruby.util.URLUtil.getPath;
 public class JRubyUtilLibrary implements Library {
 
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyModule mJRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
-        mJRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
-
-        // core class utils
-        runtime.getString().defineAnnotatedMethods(StringUtils.class);
+        RubyModule JRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
+        JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
     }
 
     @JRubyMethod(module = true)
@@ -87,7 +84,7 @@ public class JRubyUtilLibrary implements Library {
     public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject arg) {
         Ruby runtime = recv.getRuntime();
         String resource = arg.convertToString().toString();
-        final List<RubyString> urlStrings = new ArrayList<RubyString>();
+        final List<RubyString> urlStrings = new ArrayList<>();
         try {
             Enumeration<URL> urls = runtime.getJRubyClassLoader().getResources(resource);
             while (urls.hasMoreElements()) {
@@ -96,20 +93,16 @@ public class JRubyUtilLibrary implements Library {
                 urlStrings.add(runtime.newString(urlString));
             }
             return RubyArray.newArray(runtime, urlStrings);
-        } catch (IOException ignore) {
         }
-        return runtime.newEmptyArray();
+        catch (IOException ignore) {
+            return runtime.newEmptyArray();
+        }
     }
 
+    @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'
     public static class StringUtils {
-        @JRubyMethod
         public static IRubyObject unseeded_hash(ThreadContext context, IRubyObject recv) {
-            Ruby runtime = context.runtime;
-            if (!(recv instanceof RubyString)) {
-                throw runtime.newTypeError(recv, runtime.getString());
-            }
-
-            return runtime.newFixnum(((RubyString)recv).unseededStrHashCode(runtime));
+            return CoreExt.String.unseeded_hash(context, recv);
         }
     }
 }
