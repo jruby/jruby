@@ -213,8 +213,8 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
         getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, arg1, arg2, arg3, true);
     }
 
-    public void invokedynamic(String arg0, String arg1, Handle arg2, Object... arg3) {
-        getMethodVisitor().visitInvokeDynamicInsn(arg0, arg1, arg2, arg3);
+    public void invokedynamic(String name, String desc, Handle handle, Object... args) {
+        getMethodVisitor().visitInvokeDynamicInsn(name, desc, handle, args);
     }
     
     public void aprintln() {
