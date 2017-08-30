@@ -225,14 +225,12 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     @orig_rubygems_gemdeps = ENV['RUBYGEMS_GEMDEPS']
     @orig_bundle_gemfile   = ENV['BUNDLE_GEMFILE']
     @orig_rubygems_host = ENV['RUBYGEMS_HOST']
-    @orig_bundle_disable_postit = ENV['BUNDLE_TRAMPOLINE_DISABLE']
     ENV.keys.find_all { |k| k.start_with?('GEM_REQUIREMENT_') }.each do |k|
       ENV.delete k
     end
     @orig_gem_env_requirements = ENV.to_hash
 
     ENV['GEM_VENDOR'] = nil
-    ENV['BUNDLE_TRAMPOLINE_DISABLE'] = 'true'
 
     @current_dir = Dir.pwd
     @fetcher     = nil
@@ -406,7 +404,6 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     ENV['RUBYGEMS_GEMDEPS'] = @orig_rubygems_gemdeps
     ENV['BUNDLE_GEMFILE']   = @orig_bundle_gemfile
     ENV['RUBYGEMS_HOST'] = @orig_rubygems_host
-    ENV['BUNDLE_TRAMPOLINE_DISABLE'] = @orig_bundle_disable_postit
 
     Gem.ruby = @orig_ruby if @orig_ruby
 
@@ -422,6 +419,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
     Gem::Specification._clear_load_cache
     Gem::Specification.unresolved_deps.clear
+    Gem::refresh
   end
 
   def common_installer_setup
@@ -496,7 +494,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
       system @git, 'add', gemspec
       system @git, 'commit', '-a', '-m', 'a non-empty commit message', '--quiet'
-      head = Gem::Util.popen('git', 'rev-parse', 'master').strip
+      head = Gem::Util.popen(@git, 'rev-parse', 'master').strip
     end
 
     return name, git_spec.version, directory, head
@@ -1510,6 +1508,8 @@ end
 begin
   gem 'rdoc'
   require 'rdoc'
+
+  require 'rubygems/rdoc'
 rescue LoadError, Gem::LoadError
 end
 
@@ -1526,3 +1526,4 @@ tmpdirs << (ENV['GEM_PATH'] = Dir.mktmpdir("path"))
 pid = $$
 END {tmpdirs.each {|dir| Dir.rmdir(dir)} if $$ == pid}
 Gem.clear_paths
+Gem.loaded_specs.clear
