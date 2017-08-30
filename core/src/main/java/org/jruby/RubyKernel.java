@@ -904,7 +904,7 @@ public class RubyKernel {
                 if (ex.getCause() == null && cause instanceof ConcreteJavaProxy) {
                     // allow raise java.lang.RuntimeException.new, cause: myCurrentException()
                     maybeThrowable = ((ConcreteJavaProxy) cause).getObject();
-                    if (maybeThrowable instanceof Throwable && ex != maybeThrowable) {
+                    if (maybeThrowable instanceof Throwable && ex != maybeThrowable && ex.getCause() == null) {
                         ex.initCause((Throwable) maybeThrowable);
                     }
                 }
