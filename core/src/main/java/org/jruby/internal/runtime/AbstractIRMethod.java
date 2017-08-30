@@ -65,7 +65,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
 
     public abstract InterpreterContext ensureInstrsReady();
 
-    public final Signature getSignature() {
+    public Signature getSignature() {
         return signature;
     }
 

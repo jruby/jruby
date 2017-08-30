@@ -17,7 +17,7 @@ import org.jruby.util.TypeConverter;
 /**
  * A representation of a Ruby method signature (argument layout, min/max, keyword layout, rest args).
  */
-public final class Signature {
+public class Signature {
     public enum Rest {
         NONE, NORM, ANON, STAR;
 

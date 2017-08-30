@@ -14,7 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public final class CompiledIRMethod extends AbstractIRMethod {
+public class CompiledIRMethod extends AbstractIRMethod {
     private final MethodHandle variable;
 
     private final MethodHandle specific;
