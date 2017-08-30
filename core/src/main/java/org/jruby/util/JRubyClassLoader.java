@@ -91,7 +91,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                 in.close();
                 url = f.toURI().toURL();
 
-                cachedJarPaths.add(url.getPath());
+                cachedJarPaths.add(URLUtil.getPath(url));
             }
             catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
