@@ -112,7 +112,11 @@ if org.jruby.platform.Platform::IS_WINDOWS
           wtarget = target.wincode
 
           unless CreateSymbolicLinkW(wlink, wtarget, flags)
-            raise SystemCallError.new('CreateSymbolicLink', FFI.errno)
+            errno = FFI.errno
+            # FIXME: in MRI all win calling methods call into a large map between windows errors and unixy ones.  We
+            # need to add that map or possibly expost whatever we have in jnr-posix
+            raise Errno::EACCES.new('File.symlink') if errno == 1314 # ERROR_PRIVILEGE_NOT_HELD
+            raise SystemCallError.new('File.symlink', errno)
           end
 
           0 # Comply with spec
