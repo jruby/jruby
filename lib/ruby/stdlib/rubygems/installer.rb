@@ -136,8 +136,9 @@ class Gem::Installer
   end
 
   ##
-  # Constructs an Installer instance that will install the gem located at
-  # +gem+.  +options+ is a Hash with the following keys:
+  # Constructs an Installer instance that will install the gem at +package+ which
+  # can either be a path or an instance of Gem::Package.  +options+ is a Hash
+  # with the following keys:
   #
   # :bin_dir:: Where to put a bin wrapper if needed.
   # :development:: Whether or not development dependencies should be installed.
@@ -157,6 +158,7 @@ class Gem::Installer
   # :wrappers:: Install wrappers if true, symlinks if false.
   # :build_args:: An Array of arguments to pass to the extension builder
   #               process. If not set, then Gem::Command.build_args is used
+  # :post_install_message:: Print gem post install message if true
 
   def initialize(package, options={})
     require 'fileutils'
@@ -214,7 +216,7 @@ class Gem::Installer
 
       ruby_executable = true
       existing = io.read.slice(%r{
-          ^(
+          ^\s*(
             gem \s |
             load \s Gem\.bin_path\( |
             load \s Gem\.activate_bin_path\(
@@ -471,7 +473,7 @@ class Gem::Installer
 
       unless File.exist? bin_path then
         # TODO change this to a more useful warning
-        warn "#{bin_path} maybe `gem pristine #{spec.name}` will fix it?"
+        warn "`#{bin_path}` does not exist, maybe `gem pristine #{spec.name}` will fix it?"
         next
       end
 
@@ -700,10 +702,17 @@ class Gem::Installer
       unpack or File.writable?(gem_home)
   end
 
+  def verify_spec_name
+    return if spec.name =~ Gem::Specification::VALID_NAME_PATTERN
+    raise Gem::InstallError, "#{spec} has an invalid name"
+  end
+
   ##
   # Return the text for an application file.
 
   def app_script_text(bin_file_name)
+    # note that the `load` lines cannot be indented, as old RG versions match
+    # against the beginning of the line
     return <<-TEXT
 #{shebang bin_file_name}
 #
@@ -726,7 +735,12 @@ if ARGV.first
   end
 end
 
+if Gem.respond_to?(:activate_bin_path)
 load Gem.activate_bin_path('#{spec.name}', '#{bin_file_name}', version)
+else
+gem #{spec.name.dump}, version
+load Gem.bin_path(#{spec.name.dump}, #{bin_file_name.dump}, version)
+end
 TEXT
   end
 
@@ -812,12 +826,14 @@ TEXT
   #
   # Version and dependency checks are skipped if this install is forced.
   #
-  # The dependent check will be skipped this install is ignoring dependencies.
+  # The dependent check will be skipped if the install is ignoring dependencies.
 
   def pre_install_checks
     verify_gem_home options[:unpack]
 
     ensure_loadable_spec
+
+    verify_spec_name
 
     if options[:install_as_default]
       Gem.ensure_default_gem_subdirectories gem_home

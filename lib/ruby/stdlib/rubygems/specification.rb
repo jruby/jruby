@@ -108,6 +108,8 @@ class Gem::Specification < Gem::BasicSpecification
 
   private_constant :LOAD_CACHE if defined? private_constant
 
+  VALID_NAME_PATTERN = /\A[a-zA-Z0-9\.\-\_]+\z/ # :nodoc:
+
   # :startdoc:
 
   ##
@@ -456,15 +458,16 @@ class Gem::Specification < Gem::BasicSpecification
   # * All strings must be UTF-8, no binary data is allowed
   #
   # You can use metadata to specify links to your gem's homepage, codebase,
-  # documentation, wiki, mailing list and issue tracker.
+  # documentation, wiki, mailing list, issue tracker and changelog.
   #
   #   s.metadata = {
-  #     "home" => "https://bestgemever.example.io",
-  #     "code" => "https://example.com/user/bestgemever",
-  #     "docs" => "https://www.example.info/gems/bestgemever/0.0.1",
-  #     "wiki" => "https://example.com/user/bestgemever/wiki",
-  #     "mail" => "https://groups.example.com/bestgemever",
-  #     "bugs" => "https://example.com/user/bestgemever/issues"
+  #     "bug_tracker_uri"   => "https://example.com/user/bestgemever/issues",
+  #     "changelog_uri"     => "https://example.com/user/bestgemever/CHANGELOG.md",
+  #     "documentation_uri" => "https://www.example.info/gems/bestgemever/0.0.1",
+  #     "homepage_uri"      => "https://bestgemever.example.io",
+  #     "mailing_list_uri"  => "https://groups.example.com/bestgemever",
+  #     "source_code_uri"   => "https://example.com/user/bestgemever",
+  #     "wiki_uri"          => "https://example.com/user/bestgemever/wiki"
   #   }
   #
   # These links will be used on your gem's page on rubygems.org and must pass
@@ -1032,6 +1035,13 @@ class Gem::Specification < Gem::BasicSpecification
   end
 
   ##
+  # Returns every spec that has the given +full_name+
+
+  def self.find_all_by_full_name(full_name)
+    stubs.select {|s| s.full_name == full_name }.map(&:to_spec)
+  end
+
+  ##
   # Find the best specification matching a +name+ and +requirements+. Raises
   # if the dependency doesn't resolve to a valid specification.
 
@@ -1049,6 +1059,7 @@ class Gem::Specification < Gem::BasicSpecification
   def self.find_by_path path
     path = path.dup.freeze
     spec = @@spec_with_requirable_file[path] ||= (stubs.find { |s|
+      next unless Gem::BundlerVersionFinder.compatible?(s)
       s.contains_requirable_file? path
     } || NOT_FOUND)
     spec.to_spec
@@ -1060,7 +1071,9 @@ class Gem::Specification < Gem::BasicSpecification
 
   def self.find_inactive_by_path path
     stub = stubs.find { |s|
-      s.contains_requirable_file? path unless s.activated?
+      next if s.activated?
+      next unless Gem::BundlerVersionFinder.compatible?(s)
+      s.contains_requirable_file? path
     }
     stub && stub.to_spec
   end
@@ -2124,7 +2137,7 @@ class Gem::Specification < Gem::BasicSpecification
     if $DEBUG
       super
     else
-      "#<#{self.class}:0x#{__id__.to_s(16)} #{full_name}>"
+      "#{super[0..-2]} #{full_name}>"
     end
   end
 
@@ -2690,9 +2703,15 @@ class Gem::Specification < Gem::BasicSpecification
       end
     end
 
-    unless String === name then
+    if !name.is_a?(String) then
       raise Gem::InvalidSpecificationException,
-            "invalid value for attribute name: \"#{name.inspect}\""
+            "invalid value for attribute name: \"#{name.inspect}\" must be a string"
+    elsif name !~ /[a-zA-Z]/ then
+      raise Gem::InvalidSpecificationException,
+            "invalid value for attribute name: #{name.dump} must include at least one letter"
+    elsif name !~ VALID_NAME_PATTERN then
+      raise Gem::InvalidSpecificationException,
+            "invalid value for attribute name: #{name.dump} can only include letters, numbers, dashes, and underscores"
     end
 
     if raw_require_paths.empty? then
@@ -2845,7 +2864,15 @@ http://spdx.org/licenses or '#{Gem::Licenses::NONSTANDARD}' for a nonstandard li
 
   def validate_metadata
     url_validation_regex = %r{\Ahttps?:\/\/([^\s:@]+:[^\s:@]*@)?[A-Za-z\d\-]+(\.[A-Za-z\d\-]+)+\.?(:\d{1,5})?([\/?]\S*)?\z}
-    link_keys = ["home", "code", "docs", "wiki", "mail", "bugs"]
+    link_keys = %w(
+      bug_tracker_uri
+      changelog_uri
+      documentation_uri
+      homepage_uri
+      mailing_list_uri
+      source_code_uri
+      wiki_uri
+    )
 
     metadata.each do|key, value|
       if !key.kind_of?(String)
