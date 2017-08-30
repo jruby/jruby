@@ -125,11 +125,12 @@ if org.jruby.platform.Platform::IS_WINDOWS
         # Returns whether or not +file+ is a symlink.
         #
         def self.symlink?(file)
-          return false unless File.exist?(file)
+          file = string_check(file)
 
-          bool  = false
-          wfile = string_check(file).wincode
+          return false if file =~ /^(classpath:|classloader:|uri:classloader|jar:)/ || !File.exist?(file)
 
+          file.slice!(5..-1) if file =~ /^file:/
+          wfile = checked.wincode
           attrib = GetFileAttributesW(wfile)
 
           if attrib == INVALID_FILE_ATTRIBUTES
@@ -145,15 +146,12 @@ if org.jruby.platform.Platform::IS_WINDOWS
                 raise SystemCallError.new('FindFirstFile', FFI.errno)
               end
 
-              if find_data[:dwReserved0] == IO_REPARSE_TAG_SYMLINK
-                bool = true
-              end
+              return true if find_data[:dwReserved0] == IO_REPARSE_TAG_SYMLINK
             ensure
               CloseHandle(handle)
             end
           end
-
-          bool
+          false
         end
 
         private
