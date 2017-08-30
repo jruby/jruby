@@ -58,6 +58,8 @@ import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
 import jnr.constants.platform.Fcntl;
 
+import java.io.Closeable;
+import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -111,9 +113,8 @@ import static org.jruby.util.io.ChannelHelper.*;
  * @author jpetersen
  */
 @JRubyClass(name="IO", include="Enumerable")
-public class RubyIO extends RubyObject implements IOEncodable {
-    // We use a highly uncommon string to represent the paragraph delimiter (100% soln not worth it)
-    public static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
+public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flushable {
+
     public static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
     public static final String CLOSED_STREAM_MSG = "closed stream";
 
@@ -1111,7 +1112,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 RubyString internalAsString = (RubyString) tmp;
 
                 // No encoding '-'
-                if (internalAsString.size() == 1 && internalAsString.asJavaString().equals("-")) {
+                if (isDash(internalAsString)) {
                     /* Special case - "-" => no transcoding */
                     holder.enc = holder.enc2;
                     holder.enc2 = null;
@@ -1174,11 +1175,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     public static IRubyObject ensureYieldClose(ThreadContext context, IRubyObject port, Block block) {
         if (block.isGiven()) {
-            Ruby runtime = context.runtime;
             try {
                 return block.yield(context, port);
             } finally {
-                ioClose(runtime, port);
+                ioClose(context, port);
             }
         }
         return port;
@@ -1995,20 +1995,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * MRI: rb_io_close_m
      */
     @JRubyMethod
-    public IRubyObject close() {
-        Ruby runtime = getRuntime();
-        if (isClosed()) {
-            return runtime.getNil();
-        }
-        return rbIoClose(runtime);
+    public IRubyObject close(final ThreadContext context) {
+        if (isClosed()) return context.nil;
+        return rbIoClose(context);
     }
 
+    public final void close() { close(getRuntime().getCurrentContext()); }
+
     // io_close
-    protected static IRubyObject ioClose(Ruby runtime, IRubyObject io) {
-        ThreadContext context = runtime.getCurrentContext();
+    protected static IRubyObject ioClose(ThreadContext context, IRubyObject io) {
         IOSites sites = sites(context);
         IRubyObject closed = io.checkCallMethod(context, sites.closed_checked);
         if (closed != null && closed.isTrue()) return io;
+        final Ruby runtime = context.runtime;
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             closed = io.checkCallMethod(context, sites.close_checked);
@@ -2025,8 +2024,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // rb_io_close
-    protected IRubyObject rbIoClose(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
+    protected IRubyObject rbIoClose(ThreadContext context) {
         OpenFile fptr;
         RubyIO write_io;
         OpenFile write_fptr;
@@ -2038,7 +2036,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             boolean locked = write_fptr.lock();
             try {
                 if (write_fptr != null && write_fptr.fd() != null) {
-                    write_fptr.cleanup(runtime, true);
+                    write_fptr.cleanup(context.runtime, true);
                 }
             } finally {
                 if (locked) write_fptr.unlock();
@@ -2049,8 +2047,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         boolean locked = fptr.lock();
         try {
-            if (fptr == null) return runtime.getNil();
-            if (fptr.fd() == null) return runtime.getNil();
+            if (fptr == null) return context.nil;
+            if (fptr.fd() == null) return context.nil;
+            final Ruby runtime = context.runtime;
 
             // interrupt waiting threads
             fptr.interruptBlockingThreads(context);
@@ -2080,7 +2079,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (locked) fptr.unlock();
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     // MRI: rb_io_close_write
@@ -2103,8 +2102,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
                 }
                 fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
-                if (!fptr.isReadable())
-                    return write_io.rbIoClose(runtime);
+                if (!fptr.isReadable()) return write_io.rbIoClose(context);
                 return context.nil;
             }
 
@@ -2127,7 +2125,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
 
-        write_io.rbIoClose(runtime);
+        write_io.rbIoClose(context);
         return context.nil;
     }
 
@@ -2149,8 +2147,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
                 }
                 fptr.setMode(fptr.getMode() & ~OpenFile.READABLE);
-                if (!fptr.isWritable())
-                    return rbIoClose(runtime);
+                if (!fptr.isWritable()) return rbIoClose(context);
                 return context.nil;
             }
 
@@ -2184,7 +2181,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (locked) fptr.unlock();
         }
 
-        return rbIoClose(runtime);
+        return rbIoClose(context);
     }
 
     @JRubyMethod(name = "close_on_exec=", notImplemented = true)
@@ -2209,6 +2206,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public RubyIO flush(ThreadContext context) {
         return flushRaw(context, true);
     }
+
+    public void flush() { flush(getRuntime().getCurrentContext()); }
 
     // rb_io_flush_raw
     protected RubyIO flushRaw(ThreadContext context, boolean sync) {
@@ -3721,7 +3720,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         try {
             return io.write(context, string, false);
         }
-        finally { ioClose(runtime, io); }
+        finally { ioClose(context, io); }
     }
 
     static IRubyObject seekBeforeAccess(ThreadContext context, RubyIO io, IRubyObject offset, int mode) {
@@ -3925,7 +3924,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         RubyPOpen pOpen = new RubyPOpen(runtime, args);
 
-        if ("-".equals(pOpen.cmd.toString())) {
+        if (isDash(pOpen.cmd)) {
             throw runtime.newNotImplementedError("popen(\"-\") is unimplemented");
         }
 
@@ -4084,16 +4083,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
         try {
             return block.yield(context, obj);
         } finally {
-            pipePairClose(context.runtime, r, w);
+            pipePairClose(context, r, w);
         }
     }
 
     // MRI: pipe_pair_close
-    private static void pipePairClose(Ruby runtime, RubyIO r, RubyIO w) {
+    private static void pipePairClose(ThreadContext context, RubyIO r, RubyIO w) {
         try {
-            ioClose(runtime, r);
+            ioClose(context, r);
         } finally {
-            ioClose(runtime, w);
+            ioClose(context, w);
         }
     }
 
@@ -4677,6 +4676,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return openFile.isBOM();
     }
 
+    @Override
+    public Object toJava(Class target) {
+        if (target == java.io.InputStream.class) {
+            getOpenFile().checkReadable(getRuntime().getCurrentContext());
+            return getInStream();
+        }
+        if (target == java.io.OutputStream.class) {
+            getOpenFile().checkWritable(getRuntime().getCurrentContext());
+            return getOutStream();
+        }
+        return super.toJava(target);
+    }
 
     // MRI: rb_io_ascii8bit_binmode
     protected RubyIO setAscii8bitBinmode() {
@@ -4688,10 +4699,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return this;
     }
 
+    private static boolean isDash(RubyString str) {
+        return str.size() == 1 && str.getByteList().get(0) == '-'; // "-".equals(str.toString());
+    }
+
     public final OpenFile MakeOpenFile() {
         Ruby runtime = getRuntime();
         if (openFile != null) {
-            rbIoClose(runtime);
+            rbIoClose(runtime.getCurrentContext());
             rb_io_fptr_finalize(runtime, openFile);
             openFile = null;
         }

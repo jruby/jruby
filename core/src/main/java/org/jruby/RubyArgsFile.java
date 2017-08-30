@@ -506,7 +506,7 @@ public class RubyArgsFile extends RubyObject {
 
     public static void argf_close(ThreadContext context, IRubyObject file) {
         if(file instanceof RubyIO) {
-            ((RubyIO)file).rbIoClose(context.runtime);
+            ((RubyIO) file).rbIoClose(context);
         } else {
             file.callMethod(context, "close");
         }

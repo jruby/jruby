@@ -696,17 +696,15 @@ public class RubySocket extends RubyBasicSocket {
         return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr.getAddress(), addr.getPort(), Sock.SOCK_DGRAM);
     }
 
+    @Override
     @JRubyMethod
-    public IRubyObject close() {
+    public IRubyObject close(final ThreadContext context) {
         if (getOpenFile() != null) {
-            Ruby runtime = getRuntime();
-            if (isClosed()) {
-                return runtime.getNil();
-            }
+            if (isClosed()) return context.nil;
             openFile.checkClosed();
-            return rbIoClose(runtime);
+            return rbIoClose(context);
         }
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @Override
