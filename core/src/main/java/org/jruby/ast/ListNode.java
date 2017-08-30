@@ -30,6 +30,7 @@
 package org.jruby.ast;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -40,7 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * In particular, f_arg production rule uses this to capture arg information for
  * the editor projects who want position info saved.
  */
-public class ListNode extends Node {
+public class ListNode extends Node implements Iterable<Node> {
     private static final Node[] EMPTY = new Node[0];
     private static final int INITIAL_SIZE = 4;
     private Node[] list;
@@ -173,5 +174,23 @@ public class ListNode extends Node {
     
     public Node get(int idx) {
         return list[idx];
+    }
+
+    @Override
+    public Iterator<Node> iterator() {
+        return new Iterator<Node>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < list.length;
+            }
+
+            @Override
+            public Node next() {
+                if (i >= list.length) throw new IndexOutOfBoundsException(i);
+                return list[i++];
+            }
+        };
     }
 }
