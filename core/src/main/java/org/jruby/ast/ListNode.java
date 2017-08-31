@@ -188,8 +188,13 @@ public class ListNode extends Node implements Iterable<Node> {
 
             @Override
             public Node next() {
-                if (i >= list.length) throw new IndexOutOfBoundsException(i);
+                if (i >= list.length) throw new IndexOutOfBoundsException(String.valueOf(i));
                 return list[i++];
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException("remove");
             }
         };
     }
