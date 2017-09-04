@@ -38,7 +38,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -47,21 +46,29 @@ import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.util.BasicObjectStubGenerator;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
-import static org.jruby.util.CodegenUtils.*;
-
 import org.jruby.util.Loader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
-import static org.objectweb.asm.Opcodes.*;
+
+import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.getBoxType;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.params;
+import static org.jruby.util.CodegenUtils.prettyParams;
+import static org.jruby.util.CodegenUtils.sig;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
+import static org.objectweb.asm.Opcodes.V1_6;
 
 /**
  * On fly .class generator (used for Ruby interface impls).
@@ -731,8 +738,8 @@ public abstract class RealClassGenerator {
                 mv.dup();
                 mv.pushInt(i);
                 // convert to IRubyObject
-                mv.aload(rubyIndex);
                 if (paramTypes[i].isPrimitive()) {
+                    mv.aload(rubyIndex);
                     if (paramType == byte.class || paramType == short.class || paramType == char.class || paramType == int.class) {
                         mv.iload(argIndex++);
                         mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, int.class));
@@ -751,9 +758,12 @@ public abstract class RealClassGenerator {
                         mv.iload(argIndex++);
                         mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, boolean.class));
                     }
-                } else {
+                } else if (!IRubyObject.class.isAssignableFrom(paramType)) {
+                    mv.aload(rubyIndex);
                     mv.aload(argIndex++);
                     mv.invokestatic(p(JavaUtil.class), "convertJavaToUsableRubyObject", sig(IRubyObject.class, Ruby.class, Object.class));
+                } else {
+                    mv.aload(argIndex++);
                 }
                 mv.aastore();
             }

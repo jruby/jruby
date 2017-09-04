@@ -48,12 +48,12 @@ public class LocalOptimizationPass extends CompilerPass {
 
         // For all variables used by val, record a reverse mapping to let us track
         // Read-After-Write scenarios when any of these variables are modified.
-        List<Variable> valVars = new ArrayList<Variable>();
+        List<Variable> valVars = new ArrayList<>();
         val.addUsedVariables(valVars);
         for (Variable v: valVars) {
            List<Variable> x = simplificationMap.get(v);
            if (x == null) {
-              x = new ArrayList<Variable>();
+              x = new ArrayList<>();
               simplificationMap.put(v, x);
            }
            x.add(res);
