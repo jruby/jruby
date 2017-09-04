@@ -153,7 +153,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    private static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
+    static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
         // We must avoid "i++" integer overflow when (to == Long.MAX_VALUE).
         if (block.getSignature() == Signature.NO_ARGUMENTS) {
             IRubyObject nil = context.nil;
