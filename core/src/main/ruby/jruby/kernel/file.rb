@@ -130,7 +130,7 @@ if org.jruby.platform.Platform::IS_WINDOWS
           return false if file =~ /^(classpath:|classloader:|uri:classloader|jar:)/ || !File.exist?(file)
 
           file.slice!(5..-1) if file =~ /^file:/
-          wfile = checked.wincode
+          wfile = file.wincode
           attrib = GetFileAttributesW(wfile)
 
           if attrib == INVALID_FILE_ATTRIBUTES
