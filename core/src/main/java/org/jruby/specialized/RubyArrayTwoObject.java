@@ -9,14 +9,11 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.EncodingUtils;
 
-import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
 
