@@ -956,7 +956,7 @@ eom
       code.each_line do |s|
         s.chomp!
         a.for(s) do
-          assert_ruby_status([], s, proc {RubyVM::InstructionSequence.compile(s).disasm})
+          assert_ruby_status([], s, proc {RubyVM::InstructionSequence.compile(s).disasm rescue s})
         end
       end
     end
