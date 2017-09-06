@@ -199,10 +199,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "cause")
     public IRubyObject cause(ThreadContext context) {
         assert cause != null;
-
-        if (cause == RubyBasicObject.UNDEF) return context.nil;
-
-        return cause;
+        return cause == RubyBasicObject.UNDEF ? context.nil : cause;
     }
 
     public void setCause(IRubyObject cause) {
@@ -211,7 +208,7 @@ public class RubyException extends RubyObject {
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
     public Object getCause() {
-        return cause;
+        return cause == RubyBasicObject.UNDEF ? null : cause;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {

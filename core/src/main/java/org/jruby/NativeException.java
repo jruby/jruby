@@ -76,7 +76,7 @@ public class NativeException extends RubyException {
     }
 
     @Deprecated
-    public IRubyObject cause(Block unusedBlock) {
+    public final IRubyObject cause(Block unusedBlock) {
         return cause();
     }
 
