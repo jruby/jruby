@@ -912,18 +912,12 @@ public class RubyKernel {
             // looks like someone's trying to raise a Java exception. Let them.
             Object maybeThrowable = exception.getObject();
 
-            if (maybeThrowable instanceof Throwable) {
-                final Throwable ex = (Throwable) maybeThrowable;
-                if (ex.getCause() == null && cause instanceof ConcreteJavaProxy) {
-                    // allow raise java.lang.RuntimeException.new, cause: myCurrentException()
-                    maybeThrowable = ((ConcreteJavaProxy) cause).getObject();
-                    if (maybeThrowable instanceof Throwable && ex != maybeThrowable && ex.getCause() == null) {
-                        ex.initCause((Throwable) maybeThrowable);
-                    }
-                }
-                Helpers.throwException(ex); return; // not reached
+            if (!(maybeThrowable instanceof Throwable)) {
+                throw runtime.newTypeError("can't raise a non-Throwable Java object");
             }
-            throw runtime.newTypeError("can't raise a non-Throwable Java object");
+
+            final Throwable ex = (Throwable) maybeThrowable;
+            Helpers.throwException(ex); return; // not reached
         }
     }
 
