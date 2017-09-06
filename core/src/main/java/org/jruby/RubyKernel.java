@@ -914,15 +914,11 @@ public class RubyKernel {
 
             if (maybeThrowable instanceof Throwable) {
                 final Throwable ex = (Throwable) maybeThrowable;
-                if (cause instanceof ConcreteJavaProxy) {
+                if (ex.getCause() == null && cause instanceof ConcreteJavaProxy) {
+                    // allow raise java.lang.RuntimeException.new, cause: myCurrentException()
                     maybeThrowable = ((ConcreteJavaProxy) cause).getObject();
-                    if (maybeThrowable instanceof Throwable && ex != maybeThrowable) {
-                        // we have a Throwable we can set for cause, do it under lock
-                        synchronized (ex) {
-                            if (ex.getCause() == null) {
-                                ex.initCause((Throwable) maybeThrowable);
-                            }
-                        }
+                    if (maybeThrowable instanceof Throwable && ex != maybeThrowable && ex.getCause() == null) {
+                        ex.initCause((Throwable) maybeThrowable);
                     }
                 }
                 Helpers.throwException(ex); return; // not reached
