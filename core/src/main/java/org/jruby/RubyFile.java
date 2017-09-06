@@ -1662,10 +1662,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 relativePath = canonicalizePath(relativePath);
             }
 
-            if (Platform.IS_WINDOWS && !preFix.contains("file:") && startsWithDriveLetterOnWindows(relativePath)) {
-                // this is basically for classpath:/ and uri:classloader:/
-                relativePath = relativePath.substring(2).replace('\\', '/');
+            if (Platform.IS_WINDOWS) {
+                // FIXME: If this is only for classLoader uri's then we probably don't need file: check here.
+                // Also can we ever get a drive letter in relative path now?
+                if (!preFix.contains("file:") && startsWithDriveLetterOnWindows(relativePath)) {
+                    // this is basically for classpath:/ and uri:classloader:/
+                    relativePath = relativePath.substring(2);
+                }
+                if (classloaderURI) {
+                    relativePath = relativePath.replace('\\', '/');
+                }
             }
+
+
 
             return concatStrings(runtime, preFix, extra, relativePath, enc);
         }
@@ -1782,7 +1791,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             path = JRubyFile.create(cwd, relativePath);
         }
 
-        String realPath = padSlashes + canonicalize(path.getAbsolutePath());
+        String canonicalPath = null;
+        if (Platform.IS_WINDOWS && uriParts != null && "classpath:".equals(uriParts[0])) {
+            // FIXME: This is all total madness.  we extract off classpath: earlier in processing
+            // and then build a absolute path which on windows will stick a drive letter onto it
+            // but this is bogus in a classpath file path.  I think the proper fix for expand path
+            // is to split out non-file: scheme format paths into a totally different method.  Weaving
+            // uri and non-uri paths into one super long method is so rife with hurt that I am literally
+            // crying on my keyboard.
+            String absolutePath = path.getAbsolutePath();
+            if (absolutePath.length() >= 2 && absolutePath.charAt(1) == ':') {
+                canonicalPath = canonicalize(absolutePath.substring(2));
+            }
+        }
+
+        if (canonicalPath == null) canonicalPath = canonicalize(path.getAbsolutePath());
+
+        String realPath = padSlashes + canonicalPath;
+
         if (realPath.startsWith("file:") && preFix.length() > 0) realPath = realPath.substring(5);
 
         if (canonicalize) {
