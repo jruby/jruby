@@ -880,7 +880,7 @@ public class RubyKernel {
         }
 
         if (runtime.isDebug()) {
-            printExceptionSummary(context, runtime, raise.getException());
+            printExceptionSummary(runtime, raise.getException());
         }
 
         if (forceCause || argc > 0 && raise.getException().cause == UNDEF && cause != raise.getException()) {
@@ -948,7 +948,7 @@ public class RubyKernel {
         }
     }
 
-    private static void printExceptionSummary(ThreadContext context, Ruby runtime, RubyException rEx) {
+    private static void printExceptionSummary(Ruby runtime, RubyException rEx) {
         RubyStackTraceElement[] elements = rEx.getBacktraceElements();
         RubyStackTraceElement firstElement = elements.length > 0 ? elements[0] : new RubyStackTraceElement("", "", "(empty)", 0, false);
         String msg = String.format("Exception `%s' at %s:%s - %s\n",
