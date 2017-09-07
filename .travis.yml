@@ -21,8 +21,7 @@ before_script:
   - echo $MAVEN_OPTS
 
 jdk:
-  - openjdk7
-#  - oraclejdk8
+  - oraclejdk8
 
 os:
   - linux
@@ -58,13 +57,13 @@ matrix:
     - env: PHASE='-Pdist'
       jdk: oraclejdk8
     - env: PHASE='-Pjruby-jars'
-      jdk: openjdk7
+      jdk: oraclejdk8
     - env: PHASE='-Pmain'
       jdk: oraclejdk8
     - env: PHASE='-Pcomplete'
       jdk: oraclejdk8
     - env: PHASE='-Posgi'
-      jdk: openjdk7
+      jdk: oraclejdk8
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk8
     # These next two started crashing on JDK7 in March 2015, possibly due to JVM issues on Travis's Docker-based env
@@ -76,15 +75,6 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
-  allow_failures:
-    #- env: PHASE='-Pj2ee'
-    #  jdk: oraclejdk7
-    # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
-    #- env: PHASE='-Pmain'
-    #  sudo: required
-    #  dist: trusty
-    #  group: edge
-    #  jdk: oraclejdk9
 
 install:
   - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
