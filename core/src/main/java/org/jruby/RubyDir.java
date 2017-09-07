@@ -160,14 +160,9 @@ public class RubyDir extends RubyObject {
         return dirs;
     }
 
-    private static RubyArray asRubyStringList(Ruby runtime, List<ByteList> dirs) {
+    private static RubyArray asRubyStringList(Ruby runtime, List<ByteList> dirs, Encoding enc) {
         final int size = dirs.size();
         if ( size == 0 ) return RubyArray.newEmptyArray(runtime);
-
-        Encoding enc = runtime.getDefaultExternalEncoding();
-        if (enc == null) {
-            enc = UTF8;
-        }
 
         IRubyObject[] dirStrings = new IRubyObject[ size ];
         for ( int i = 0; i < size; i++ ) {
@@ -198,7 +193,12 @@ public class RubyDir extends RubyObject {
             dirs = dirGlobs(context, getCWD(runtime), args, 0);
         }
 
-        return asRubyStringList(runtime, dirs);
+        Encoding enc = null;
+        if (args.length > 0) {
+          enc = args[0].asString().getEncoding();
+        }
+
+        return asRubyStringList(runtime, dirs, enc);
     }
 
     private static ByteList globArgumentAsByteList(ThreadContext context, IRubyObject arg) {
@@ -224,19 +224,19 @@ public class RubyDir extends RubyObject {
             dirs = dirGlobs(context, getCWD(runtime), ((RubyArray) tmp).toJavaArray(), flags);
         }
 
+        // fix me! Dir.glob([''.force_encoding(''), ''.force_encoding('')])
+        // each input pattern should respect the original encoding
+        Encoding enc = args[0].asString().getEncoding();
+
         if (block.isGiven()) {
             for (int i = 0; i < dirs.size(); i++) {
-                Encoding enc = runtime.getDefaultExternalEncoding();
-                if (enc == null) {
-                    enc = UTF8;
-                }
                 block.yield(context, RubyString.newString(runtime, dirs.get(i), enc));
             }
 
             return runtime.getNil();
         }
 
-        return asRubyStringList(runtime, dirs);
+        return asRubyStringList(runtime, dirs, enc);
     }
 
     /**
