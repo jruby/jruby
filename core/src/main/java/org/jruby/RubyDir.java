@@ -164,14 +164,9 @@ public class RubyDir extends RubyObject {
         final int size = dirs.size();
         if ( size == 0 ) return RubyArray.newEmptyArray(runtime);
 
-        Encoding enc = runtime.getDefaultExternalEncoding();
-        if (enc == null) {
-            enc = UTF8;
-        }
-
         IRubyObject[] dirStrings = new IRubyObject[ size ];
         for ( int i = 0; i < size; i++ ) {
-            dirStrings[i] = RubyString.newString(runtime, dirs.get(i), enc);
+            dirStrings[i] = RubyString.newStringNoCopy(runtime, dirs.get(i));
         }
         return RubyArray.newArrayMayCopy(runtime, dirStrings);
     }
@@ -226,11 +221,7 @@ public class RubyDir extends RubyObject {
 
         if (block.isGiven()) {
             for (int i = 0; i < dirs.size(); i++) {
-                Encoding enc = runtime.getDefaultExternalEncoding();
-                if (enc == null) {
-                    enc = UTF8;
-                }
-                block.yield(context, RubyString.newString(runtime, dirs.get(i), enc));
+                block.yield(context, RubyString.newString(runtime, dirs.get(i)));
             }
 
             return runtime.getNil();
