@@ -643,6 +643,26 @@ DO NOT MODIFIY - GENERATED CODE
       </modules>
     </profile>
     <profile>
+      <id>windows</id>
+      <build>
+        <defaultGoal>install</defaultGoal>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <version>2.15</version>
+              <configuration>
+                <skipTests>true</skipTests>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+      <modules>
+        <module>maven</module>
+      </modules>
+    </profile>
+    <profile>
       <id>osgi</id>
       <build>
         <defaultGoal>install</defaultGoal>

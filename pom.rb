@@ -198,7 +198,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  [ 'jruby-jars', 'main', 'complete', 'dist' ].each do |name|
+  [ 'jruby-jars', 'main', 'complete', 'dist', 'windows' ].each do |name|
 
     profile name do
 
