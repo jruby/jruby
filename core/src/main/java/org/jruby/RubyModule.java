@@ -3522,7 +3522,8 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
-    final void setConstantVisibility(Ruby runtime, String name, boolean hidden) {
+    // NOTE: internal API
+    public final void setConstantVisibility(Ruby runtime, String name, boolean hidden) {
         ConstantEntry entry = getConstantMap().get(name);
 
         if (entry == null) {
