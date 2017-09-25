@@ -125,6 +125,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         return jittedBody.yieldDirect(context, block, args, self);
     }
 
+    @Override
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
         if (callCount >= 0) promoteToFullBuild(context);
 
@@ -151,15 +152,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
             return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
-            // IMPORTANT: Do not clear eval-type in case this is reused in bindings!
-            // Ex: eval("...", foo.instance_eval { binding })
-            // The dyn-scope used for binding needs to have its eval-type set to INSTANCE_EVAL
-            binding.getFrame().setVisibility(oldVis);
-            if (ic.popDynScope()) {
-                context.postYield(binding, prevFrame);
-            } else {
-                context.postYieldNoScope(prevFrame);
-            }
+            postYield(context, ic, binding, oldVis, prevFrame);
         }
     }
 

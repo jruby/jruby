@@ -4,6 +4,8 @@ import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -193,8 +195,18 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         return commonYieldPath(context, block, Block.Type.NORMAL, args, self, Block.NULL_BLOCK);
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        throw new RuntimeException("commonYieldPath not implemented in base class. We should never get here.");
+    protected abstract IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) ;
+
+    static void postYield(ThreadContext context, InterpreterContext ic, Binding binding, Visibility oldVis, Frame prevFrame) {
+        // IMPORTANT: Do not clear eval-type in case this is reused in bindings!
+        // Ex: eval("...", foo.instance_eval { binding })
+        // The dyn-scope used for binding needs to have its eval-type set to INSTANCE_EVAL
+        binding.getFrame().setVisibility(oldVis);
+        if (ic.popDynScope()) {
+            context.postYield(binding, prevFrame);
+        } else {
+            context.postYieldNoScope(prevFrame);
+        }
     }
 
     public IRClosure getScope() {

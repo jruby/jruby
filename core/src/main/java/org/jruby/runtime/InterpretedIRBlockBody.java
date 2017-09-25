@@ -139,15 +139,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
             return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
-            // IMPORTANT: Do not clear eval-type in case this is reused in bindings!
-            // Ex: eval("...", foo.instance_eval { binding })
-            // The dyn-scope used for binding needs to have its eval-type set to INSTANCE_EVAL
-            binding.getFrame().setVisibility(oldVis);
-            if (ic.popDynScope()) {
-                context.postYield(binding, prevFrame);
-            } else {
-                context.postYieldNoScope(prevFrame);
-            }
+            postYield(context, ic, binding, oldVis, prevFrame);
         }
     }
 
