@@ -399,6 +399,17 @@ public class RubySet extends RubyObject implements Set {
         return set;
     }
 
+    @JRubyMethod
+    public IRubyObject compare_by_identity(ThreadContext context) {
+        this.hash.compare_by_identity(context);
+        return this;
+    }
+
+    @JRubyMethod(name = "compare_by_identity?")
+    public IRubyObject compare_by_identity_p(ThreadContext context) {
+        return this.hash.compare_by_identity_p(context);
+    }
+
     @JRubyMethod(visibility = Visibility.PROTECTED)
     public RubySet flatten_merge(final ThreadContext context, IRubyObject set) {
         flattenMerge(context, set, new IdentityHashMap());
