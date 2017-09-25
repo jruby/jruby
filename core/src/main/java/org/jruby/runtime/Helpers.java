@@ -2251,8 +2251,8 @@ public class Helpers {
         if (value == null) return IRubyObject.NULL_ARRAY;
 
         if (needsSplat) {
-            value = Helpers.aryToAry(context, value);
-            if (value instanceof RubyArray) return ((RubyArray) value).toJavaArrayMaybeUnsafe();
+            IRubyObject ary = Helpers.aryToAry(context, value);
+            if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArrayMaybeUnsafe();
         }
 
         return new IRubyObject[] { value };
