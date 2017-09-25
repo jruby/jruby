@@ -32,7 +32,6 @@ public class InterpreterContext {
 
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
     private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
-    private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
 
     public InterpreterEngine getEngine() {
         if (engine == null) {
@@ -50,7 +49,7 @@ public class InterpreterContext {
     }
 
     private InterpreterEngine engine;
-    public Callable<List<Instr>> instructionsCallback;
+    public final Callable<List<Instr>> instructionsCallback;
 
     private IRScope scope;
 
@@ -63,13 +62,14 @@ public class InterpreterContext {
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
+        this.instructionsCallback = null; // engine != null
     }
 
     public InterpreterContext(IRScope scope, Callable<List<Instr>> instructions) throws Exception {
-        this.instructionsCallback = instructions;
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
+        this.instructionsCallback = instructions;
     }
 
     private void retrieveFlags() {
