@@ -86,9 +86,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, args, block);
-        } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, args, block);
         }
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, args, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -120,9 +119,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, block);
-        } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, block);
         }
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -154,9 +152,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, arg0, block);
-        } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, block);
         }
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -188,9 +185,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, arg0, arg1, block);
-        } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, block);
         }
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -221,9 +217,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
-        } else {
-            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, arg2, block);
         }
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, arg2, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -247,7 +242,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     }
 
-    protected void doDebug() {
+    private void doDebug() {
         // FIXME: This is printing out IRScope CFG but JIT may be active and it might not reflect
         // currently executing.  Move into JIT and into interp since they will be getting CFG from
         // different sources
@@ -263,21 +258,20 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     @Override
     public void completeBuild(DynamicMethod newMethod) {
-        actualMethod = newMethod;
-        newMethod.serialNumber = this.serialNumber;
         setCallCount(-1);
+        newMethod.serialNumber = this.serialNumber;
+        actualMethod = newMethod;
         getImplementationClass().invalidateCacheDescendants();
     }
 
     private void tryJit(ThreadContext context) {
-        // don't JIT during runtime boot
-        if (!context.runtime.isBooting() && !Options.JIT_KERNEL.load()) {
-            synchronized (this) {
-                if (callCount >= 0) {
-                    if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-                        context.runtime.getJITCompiler().buildThresholdReached(context, this);
-                    }
-                }
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
+
+        synchronized (this) {
+            int callCount = this.callCount;
+            if (callCount >= 0 && callCount++ >= Options.JIT_THRESHOLD.load()) {
+                this.callCount = callCount;
+                context.runtime.getJITCompiler().buildThresholdReached(context, this);
             }
         }
     }
@@ -316,4 +310,5 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             this.callCount = callCount;
         }
     }
+
 }

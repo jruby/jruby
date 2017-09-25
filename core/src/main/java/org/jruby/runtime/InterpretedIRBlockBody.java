@@ -156,7 +156,9 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     private void promoteToFullBuild(ThreadContext context) {
         if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't Promote to full build during runtime boot
 
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) context.runtime.getJITCompiler().buildThresholdReached(context, this);
+        if (callCount++ >= Options.JIT_THRESHOLD.load()) {
+            context.runtime.getJITCompiler().buildThresholdReached(context, this);
+        }
     }
 
     public RubyModule getImplementationClass() {

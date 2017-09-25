@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
     private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
+
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
@@ -51,12 +52,14 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     public void setCallCount(int callCount) {
-        this.callCount = callCount;
+        synchronized (this) {
+            this.callCount = callCount;
+        }
     }
 
     @Override
     public void completeBuild(CompiledIRBlockBody blockBody) {
-        this.callCount = -1;
+        setCallCount(-1);
         blockBody.evalType = this.evalType; // share with parent
         this.jittedBody = blockBody;
     }
@@ -173,15 +176,14 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
                 if (Options.JIT_LOGGING.load()) {
                     LOG.info("JIT failed; no protocol found in block: " + closure);
                 }
-                callCount = -1;
+                setCallCount(-1);
                 return;
             }
 
             synchronized (this) {
-                // check call count again
-                if (callCount < 0) return;
-
-                if (callCount++ >= Options.JIT_THRESHOLD.load()) {
+                int callCount = this.callCount;
+                if (callCount >= 0 && callCount++ >= Options.JIT_THRESHOLD.load()) {
+                    this.callCount = callCount;
                     context.runtime.getJITCompiler().buildThresholdReached(context, this);
                 }
             }
