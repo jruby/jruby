@@ -33,7 +33,7 @@ env:
   matrix:
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
-    - PHASE='-Prake -Dtask=test:jruby:fullint'
+    #- PHASE='-Prake -Dtask=test:jruby:fullint' # included with OpenJDK bellow
     - PHASE='-Prake -Dtask=test:jruby:jit'
     - PHASE='-Prake -Dtask=test:jruby:aot'
     - PHASE='-Prake -Dtask=test:mri'
@@ -53,11 +53,15 @@ env:
 
 matrix:
   include:
+    - env: PHASE='-Ptest'
+      jdk: openjdk8
+    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
+      jdk: openjdk8
     # these profile do no need to run for all JDKs
     - env: PHASE='-Pdist'
-      jdk: oraclejdk8
+      jdk: openjdk8
     - env: PHASE='-Pjruby-jars'
-      jdk: oraclejdk8
+      jdk: openjdk8
     - env: PHASE='-Pmain'
       jdk: oraclejdk8
     - env: PHASE='-Pcomplete'
@@ -66,7 +70,6 @@ matrix:
       jdk: oraclejdk8
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk8
-    # These next two started crashing on JDK7 in March 2015, possibly due to JVM issues on Travis's Docker-based env
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
       jdk: oraclejdk8
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
