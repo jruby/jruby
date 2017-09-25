@@ -142,15 +142,13 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     private IRubyObject[] toAry(ThreadContext context, IRubyObject value) {
-        IRubyObject val0 = Helpers.aryToAry(value);
+        final IRubyObject ary = Helpers.aryToAry(context, value);
 
-        if (val0.isNil()) return new IRubyObject[] { value };
+        if (ary == context.nil) return new IRubyObject[] { value };
 
-        if (!(val0 instanceof RubyArray)) {
-            throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
-        }
+        if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArray();
 
-        return ((RubyArray)val0).toJavaArray();
+        throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
     }
 
     protected IRubyObject doYieldLambda(ThreadContext context, Block block, IRubyObject value) {

@@ -470,10 +470,10 @@ public class IRRuntimeHelpers {
                 if (argIsArray) {
                     RubyArray valArray = (RubyArray)value;
                     if (valArray.size() == 1) value = valArray.eltInternal(0);
-                    value = Helpers.aryToAry(value);
+                    value = Helpers.aryToAry(context, value);
                     return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
                 } else {
-                    IRubyObject val0 = Helpers.aryToAry(value);
+                    IRubyObject val0 = Helpers.aryToAry(context, value);
                     // FIXME: This logic exists in RubyProc and IRRubyBlockBody. consolidate when we do block call protocol work
                     if (val0.isNil()) {
                         return new IRubyObject[] { value };
@@ -1669,12 +1669,10 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 1 && args[0].respondsTo("to_ary")) {
-            IRubyObject newAry = Helpers.aryToAry(args[0]);
-            if (newAry.isNil()) {
-                args = new IRubyObject[] { args[0] };
-            } else if (newAry instanceof RubyArray) {
-                args = ((RubyArray) newAry).toJavaArray();
+        IRubyObject ary;
+        if (args.length == 1 && (ary = Helpers.aryOrToAry(context, args[0])) != context.nil) {
+            if (ary instanceof RubyArray) {
+                args = ((RubyArray) ary).toJavaArray();
             } else {
                 throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
             }

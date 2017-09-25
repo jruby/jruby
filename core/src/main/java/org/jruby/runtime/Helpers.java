@@ -1430,13 +1430,27 @@ public class Helpers {
     }
 
     public static IRubyObject aryToAry(IRubyObject value) {
+        return aryToAry(value.getRuntime().getCurrentContext(), value);
+    }
+
+    public static IRubyObject aryToAry(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(value, value.getRuntime().getArray(), "to_ary", false);
+            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
         }
 
-        return value.getRuntime().newArray(value);
+        return context.runtime.newArray(value);
+    }
+
+    public static IRubyObject aryOrToAry(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyArray) return value;
+
+        if (value.respondsTo("to_ary")) {
+            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
+        }
+
+        return context.nil;
     }
 
     @Deprecated // not used
@@ -2228,20 +2242,19 @@ public class Helpers {
     // . Array given to rest should pass itself
     // . Array with rest + other args should extract array
     // . Array with multiple values and NO rest should extract args if there are more than one argument
-    // Note: In 1.9 alreadyArray is only relevant from our internal Java code in core libs.
-    // We never use it from interpreter or JIT.
-    @Deprecated // not used
-    public static IRubyObject[] restructureBlockArgs19(IRubyObject value, Signature signature, Block.Type type, boolean needsSplat, boolean alreadyArray) {
-        return restructureBlockArgs(value, signature, type, needsSplat);
-    }
 
-    static IRubyObject[] restructureBlockArgs(IRubyObject value, Signature signature, Block.Type type, boolean needsSplat) {
+    static IRubyObject[] restructureBlockArgs(ThreadContext context,
+        IRubyObject value, Signature signature, Block.Type type, boolean needsSplat) {
+
         if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
-        if (value != null && needsSplat && !(value instanceof RubyArray)) value = Helpers.aryToAry(value);
-
         if (value == null) return IRubyObject.NULL_ARRAY;
-        if (needsSplat && value instanceof RubyArray) return ((RubyArray) value).toJavaArrayMaybeUnsafe();
+
+        if (needsSplat) {
+            value = Helpers.aryToAry(context, value);
+            if (value instanceof RubyArray) return ((RubyArray) value).toJavaArrayMaybeUnsafe();
+        }
+
         return new IRubyObject[] { value };
     }
 
