@@ -205,6 +205,11 @@ class TestIO < Test::Unit::TestCase
     assert_raises(Errno::EBADF) { f.close }
   end
 
+  def test_open_child_of_file
+    ensure_files @file
+    assert_raises(WINDOWS ? Errno::ENOENT : Errno::ENOTDIR) { File.open(File.join(@file, 'child')) }
+  end
+
   unless WINDOWS # Windows doesn't take kindly to perm mode tests
     def test_sysopen
       ensure_files @file
