@@ -173,6 +173,8 @@ class RegularFileResource extends AbstractFileResource {
                         throw new ResourceException.TooManySymlinks(absolutePath());
                     case EISDIR:
                         throw new ResourceException.FileIsDirectory(absolutePath());
+                    case ENOTDIR:
+                        throw new ResourceException.FileIsNotDirectory(absolutePath());
                     default:
                         throw new ResourceException.IOError(new IOException("unhandled errno: " + errno));
 
