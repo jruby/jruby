@@ -89,6 +89,11 @@ public abstract class JavaUtilRegex {
             return context.runtime.newBoolean(i);
         }
 
+        @JRubyMethod(name = "compile", required = 1)
+        public static java.util.regex.Pattern compile(final ThreadContext context, final IRubyObject self, IRubyObject regex) {
+            return java.util.regex.Pattern.compile(regex.asJavaString());
+        }
+
         private static java.util.regex.Matcher matcher(final IRubyObject self, final IRubyObject str) {
             final java.util.regex.Pattern regex = unwrapJavaObject(self);
             return regex.matcher((CharSequence) str.toJava(CharSequence.class));
