@@ -324,4 +324,14 @@ public abstract class CallSite {
      * @return the result of the call
      */
     public abstract IRubyObject callVarargsIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
+
+    /**
+     * Produce a string representation of this CallSite, for informational purposes. Subclasses can override this to
+     * provide more information.
+     *
+     * @return an informational string representation of this CallSite
+     */
+    public String toString() {
+        return  "CallSite(\"" + methodName + "\"," + callType + ")";
+    }
 }
