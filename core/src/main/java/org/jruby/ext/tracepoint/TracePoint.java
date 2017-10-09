@@ -215,6 +215,13 @@ public class TracePoint extends RubyObject {
     public IRubyObject self(ThreadContext context) {
         return binding.isNil() ? context.nil : ((RubyBinding)binding).getBinding().getSelf();
     }
+
+    @JRubyMethod(rest = true, meta = true)
+    public static IRubyObject trace(ThreadContext context, IRubyObject self, IRubyObject[] events, Block block) {
+        TracePoint tp = (TracePoint) self.callMethod(context, "new", events, block);
+        tp.enable(context, Block.NULL_BLOCK);
+        return tp;
+    }
     
     private void update(String eventName, String file, int line, String name, IRubyObject type, IRubyObject exception, IRubyObject returnValue, IRubyObject binding) {
         // TODO: missing exception, self, return value
