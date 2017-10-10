@@ -28,16 +28,16 @@ DO NOT MODIFIY - GENERATED CODE
   </organization>
   <licenses>
     <license>
-      <name>GPL 2</name>
+      <name>GPL-2.0</name>
       <url>http://www.gnu.org/licenses/gpl-2.0-standalone.html</url>
     </license>
     <license>
-      <name>LGPL 2.1</name>
+      <name>LGPL-2.1</name>
       <url>http://www.gnu.org/licenses/lgpl-2.1-standalone.html</url>
     </license>
     <license>
-      <name>EPL</name>
-      <url>http://www.eclipse.org/legal/epl-v10.html</url>
+      <name>EPL-2.0</name>
+      <url>http://www.eclipse.org/legal/epl-v20.html</url>
     </license>
   </licenses>
   <developers>
