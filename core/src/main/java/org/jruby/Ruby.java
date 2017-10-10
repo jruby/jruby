@@ -4642,7 +4642,7 @@ public final class Ruby implements Constantizable {
         if (dedupedRef == null || (deduped = dedupedRef.get()) == null) {
             deduped = string.strDup(this);
             deduped.setFrozen(true);
-            dedupMap.put(string, new WeakReference<RubyString>(deduped));
+            dedupMap.putIfAbsent(string, new WeakReference<RubyString>(deduped));
         } else if (deduped.getEncoding() != string.getEncoding()) {
             // if encodings don't match, new string loses; can't dedup
             deduped = string.strDup(this);
@@ -5149,7 +5149,7 @@ public final class Ruby implements Constantizable {
      *
      * Access must be synchronized.
      */
-    private Map<RubyString, WeakReference<RubyString>> dedupMap = Collections.synchronizedMap(new WeakHashMap<RubyString, WeakReference<RubyString>>());
+    private ConcurrentHashMap<RubyString, WeakReference<RubyString>> dedupMap = new ConcurrentHashMap<>();
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
