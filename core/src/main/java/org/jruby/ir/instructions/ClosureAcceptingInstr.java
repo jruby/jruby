@@ -8,4 +8,5 @@ import org.jruby.ir.operands.Operand;
  */
 public interface ClosureAcceptingInstr {
     public Operand getClosureArg();
+    public boolean hasLiteralClosure();
 }

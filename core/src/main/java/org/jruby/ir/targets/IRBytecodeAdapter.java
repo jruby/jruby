@@ -9,6 +9,8 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.instructions.ClosureAcceptingInstr;
+import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.CallType;
@@ -361,9 +363,9 @@ public abstract class IRBytecodeAdapter {
      *
      * @param name name of the method to invoke
      * @param arity arity of the call
-     * @param hasClosure whether a closure will be on the stack for passing
+     * @param blockPassType what type of closure is passed
      */
-    public abstract void invokeOther(String file, int line, String name, int arity, boolean hasClosure, boolean isPotentiallyRefined);
+    public abstract void invokeOther(String file, int line, String name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined);
 
     /**
      * Invoke the array dereferencing method ([]) on an object other than self.
@@ -394,6 +396,30 @@ public abstract class IRBytecodeAdapter {
      */
     public abstract void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType);
 
+    public enum BlockPassType {
+        NONE(false, false),
+        GIVEN(true, false),
+        LITERAL(true, true);
+
+        private final boolean given;
+        private final boolean literal;
+
+        BlockPassType(boolean given, boolean literal) {
+            this.given = given;
+            this.literal = literal;
+        }
+
+        public boolean given() {
+            return given;
+        }
+        public boolean literal() {
+            return literal;
+        }
+        public static BlockPassType fromIR(ClosureAcceptingInstr callInstr) {
+            Operand closure = callInstr.getClosureArg();
+            return closure != null ? ( callInstr.hasLiteralClosure() ? BlockPassType.LITERAL : BlockPassType.GIVEN) : BlockPassType.NONE;
+        }
+    }
 
     /**
      * Invoke a method on self.
@@ -404,10 +430,10 @@ public abstract class IRBytecodeAdapter {
      * @param line the line number where this call appears
      * @param name name of the method to invoke
      * @param arity arity of the call
-     * @param hasClosure whether a closure will be on the stack for passing
+     * @param blockPassType what type of closure is passed
      * @param callType
      */
-    public abstract void invokeSelf(String file, int line, String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined);
+    public abstract void invokeSelf(String file, int line, String name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined);
 
     /**
      * Invoke a superclass method from an instance context.
@@ -625,6 +651,13 @@ public abstract class IRBytecodeAdapter {
      * Stack required: context, self, dynamicScope
      */
     public abstract void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className);
+
+    /**
+     * Perform a === call appropriate for a case/when statement.
+     *
+     * Stack required: context, case value, when value
+     */
+    public abstract void callEqq(boolean isSplattedValue);
 
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;
