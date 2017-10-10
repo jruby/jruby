@@ -26,7 +26,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     archives "https://github.com/jruby/jruby/wiki/MailingLists"
   end
 
-  license 'GPL-2', 'http://www.gnu.org/licenses/gpl-2.0-standalone.html'
+  license 'GPL-2.0', 'http://www.gnu.org/licenses/gpl-2.0-standalone.html'
   license 'LGPL-2.1', 'http://www.gnu.org/licenses/lgpl-2.1-standalone.html'
   license 'EPL-2.0', 'http://www.eclipse.org/legal/epl-v20.html'
 
