@@ -272,7 +272,7 @@ public class RubyDir extends RubyObject {
     private static final String[] NO_FILES = StringSupport.EMPTY_STRING_ARRAY;
 
     private static String[] getEntries(ThreadContext context, FileResource dir, String path) {
-        if (!dir.isDirectory()) throw context.runtime.newErrnoENOENTError("No such directory: " + path);
+        if (!dir.isDirectory()) throw context.runtime.newErrnoENOTDIRError("No such directory: " + path);
         if (!dir.canRead()) throw context.runtime.newErrnoEACCESError(path);
 
         String[] list = dir.list();
