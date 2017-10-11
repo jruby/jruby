@@ -84,7 +84,9 @@ public class BeanManagerImpl implements BeanManager {
 
     public boolean tryRestartAgent() {
         try {
-            sun.management.Agent.startAgent();
+            Class agent = Class.forName("sun.management.Agent");
+            Method start = agent.getMethod("startAgent");
+            start.invoke(null);
             return true;
         } catch (Exception e) {
             return false;
