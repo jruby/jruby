@@ -1,6 +1,7 @@
 # frozen_string_literal: false
 require 'test/unit'
 require 'stringio'
+require "rbconfig/sizeof"
 require_relative '../ruby/ut_eof'
 
 class TestStringIO < Test::Unit::TestCase
@@ -389,6 +390,9 @@ class TestStringIO < Test::Unit::TestCase
     f.ungetc("y".ord)
     assert_equal("y", f.getc)
     assert_equal("2", f.getc)
+
+    assert_raise(RangeError) {f.ungetc(0x1ffffff)}
+    assert_raise(RangeError) {f.ungetc(0xffffffffffffff)}
   ensure
     f.close unless f.closed?
   end

@@ -889,6 +889,34 @@ class TestMethod < Test::Unit::TestCase
     assert_nil(m, Feature9781)
   end
 
+  def test_prepended_public_zsuper
+    mod = EnvUtil.labeled_module("Mod") {private def foo; :ok end}
+    mods = [mod]
+    obj = Object.new.extend(mod)
+    class << obj
+      public :foo
+    end
+    2.times do |i|
+      mods.unshift(mod = EnvUtil.labeled_module("Mod#{i}") {def foo; end})
+      obj.singleton_class.prepend(mod)
+    end
+    m = obj.method(:foo)
+    assert_equal(mods, mods.map {m.owner.tap {m = m.super_method}})
+    assert_nil(m)
+  end
+
+  def test_super_method_with_prepended_module
+    bug = '[ruby-core:81666] [Bug #13656] should be the method of the parent'
+    c1 = EnvUtil.labeled_class("C1") {def m; end}
+    c2 = EnvUtil.labeled_class("C2", c1) {def m; end}
+    c2.prepend(EnvUtil.labeled_module("M"))
+    m1 = c1.instance_method(:m)
+    m2 = c2.instance_method(:m).super_method
+    assert_equal(m1, m2, bug)
+    assert_equal(c1, m2.owner, bug)
+    assert_equal(m1.source_location, m2.source_location, bug)
+  end
+
   def rest_parameter(*rest)
     rest
   end

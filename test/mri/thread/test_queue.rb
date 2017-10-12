@@ -129,7 +129,7 @@ class TestQueue < Test::Unit::TestCase
   def test_thr_kill
     bug5343 = '[ruby-core:39634]'
     Dir.mktmpdir {|d|
-      timeout = 30
+      timeout = 60
       total_count = 250
       begin
         assert_normal_exit(<<-"_eom", bug5343, {:timeout => timeout, :chdir=>d})
@@ -543,5 +543,22 @@ class TestQueue < Test::Unit::TestCase
 
     # don't leak this thread
     assert_nothing_raised{counter.join}
+  end
+
+  def test_queue_with_trap
+    assert_in_out_err([], <<-INPUT, %w(INT INT exit), [])
+      q = Queue.new
+      trap(:INT){
+        q.push 'INT'
+      }
+      Thread.new{
+        loop{
+          Process.kill :INT, $$
+        }
+      }
+      puts q.pop
+      puts q.pop
+      puts 'exit'
+    INPUT
   end
 end

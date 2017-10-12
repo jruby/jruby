@@ -121,15 +121,19 @@ class TestProcess < Test::Unit::TestCase
     }
     assert_raise(ArgumentError) { Process.getrlimit(:FOO) }
     assert_raise(ArgumentError) { Process.getrlimit("FOO") }
-    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.getrlimit("\u{30eb 30d3 30fc}") }
+    EnvUtil.with_default_internal(Encoding::UTF_8) do
+      assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.getrlimit("\u{30eb 30d3 30fc}") }
+    end
   end
 
   def test_rlimit_value
     return unless rlimit_exist?
     assert_raise(ArgumentError) { Process.setrlimit(:FOO, 0) }
     assert_raise(ArgumentError) { Process.setrlimit(:CORE, :FOO) }
-    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.setrlimit("\u{30eb 30d3 30fc}", 0) }
-    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.setrlimit(:CORE, "\u{30eb 30d3 30fc}") }
+    EnvUtil.with_default_internal(Encoding::UTF_8) do
+      assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.setrlimit("\u{30eb 30d3 30fc}", 0) }
+      assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) { Process.setrlimit(:CORE, "\u{30eb 30d3 30fc}") }
+    end
     with_tmpchdir do
       s = run_in_child(<<-'End')
         cur, max = Process.getrlimit(:NOFILE)
@@ -181,7 +185,11 @@ class TestProcess < Test::Unit::TestCase
     io.close
 
     assert_raise(ArgumentError) { system(*TRUECOMMAND, :pgroup=>-1) }
-    assert_raise(Errno::EPERM) { Process.wait spawn(*TRUECOMMAND, :pgroup=>2) }
+    IO.popen([RUBY, '-egets'], 'w') do |f|
+      assert_raise(Errno::EPERM) {
+        Process.wait spawn(*TRUECOMMAND, :pgroup=>f.pid)
+      }
+    end
 
     io1 = IO.popen([RUBY, "-e", "print Process.getpgrp", :pgroup=>true])
     io2 = IO.popen([RUBY, "-e", "print Process.getpgrp", :pgroup=>io1.pid])
@@ -237,6 +245,22 @@ class TestProcess < Test::Unit::TestCase
       "p Process.getrlimit(:CORE), Process.getrlimit(:CPU)",
       :rlimit_core=>n, :rlimit_cpu=>3600]) {|io|
       assert_equal("[#{n}, #{n}]\n[3600, 3600]", io.read.chomp)
+    }
+
+    assert_raise(ArgumentError) do
+      system(RUBY, '-e', 'exit',  'rlimit_bogus'.to_sym => 123)
+    end
+    assert_separately([],<<-"end;") # [ruby-core:82033] [Bug #13744]
+      assert(system("#{RUBY}", "-e",
+                 "exit([3600,3600] == Process.getrlimit(:CPU))",
+             'rlimit_cpu'.to_sym => 3600))
+      assert_raise(ArgumentError) do
+        system("#{RUBY}", '-e', 'exit',  :rlimit_bogus => 123)
+      end
+    end;
+
+    assert_raise(ArgumentError, /rlimit_cpu/) {
+      system(RUBY, '-e', 'exit', "rlimit_cpu\0".to_sym => 3600)
     }
   end
 
@@ -2255,5 +2279,23 @@ EOS
       GC.stress = true
       system(bin, "--disable=gems", "-w", "-e", "puts ARGV", *args)
     end;
+  end
+
+  def test_to_hash_on_arguments
+    all_assertions do |a|
+      %w[Array String].each do |type|
+        a.for(type) do
+          assert_separately(['-', EnvUtil.rubybin], <<~"END;")
+          class #{type}
+            def to_hash
+              raise "[Bug-12355]: #{type}#to_hash is called"
+            end
+          end
+          ex = ARGV[0]
+          assert_equal(true, system([ex, ex], "-e", ""))
+          END;
+        end
+      end
+    end
   end
 end

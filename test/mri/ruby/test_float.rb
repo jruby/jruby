@@ -16,6 +16,8 @@ class TestFloat < Test::Unit::TestCase
     assert_in_delta(13.4 % 1, 0.4, 0.0001)
     assert_equal(36893488147419111424,
                  36893488147419107329.0.to_i)
+    assert_equal(1185151044158398820374743613440,
+                 1.1851510441583988e+30.to_i)
   end
 
   def nan_test(x,y)
@@ -442,6 +444,11 @@ class TestFloat < Test::Unit::TestCase
     assert_raise(TypeError) {1.0.round(nil)}
     def (prec = Object.new).to_int; 2; end
     assert_equal(1.0, 0.998.round(prec))
+
+    assert_equal(+5.02, +5.015.round(2))
+    assert_equal(-5.02, -5.015.round(2))
+    assert_equal(+1.26, +1.255.round(2))
+    assert_equal(-1.26, -1.255.round(2))
   end
 
   VS = [

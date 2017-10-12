@@ -512,6 +512,8 @@ class TestParse < Test::Unit::TestCase
     assert_raise(SyntaxError) { eval("?\v") }
     assert_raise(SyntaxError) { eval("?\r") }
     assert_raise(SyntaxError) { eval("?\f") }
+    assert_raise(SyntaxError) { eval("?\f") }
+    assert_raise(SyntaxError) { eval(" ?a\x8a".force_encoding("utf-8")) }
     assert_equal("\u{1234}", eval("?\u{1234}"))
     assert_equal("\u{1234}", eval('?\u{1234}'))
   end
@@ -872,6 +874,16 @@ x = __ENCODING__
     assert_warning(/named capture conflict/) {eval("a = 1; /(?<a>)/ =~ ''")}
     a = "\u{3042}"
     assert_warning(/#{a}/) {eval("#{a} = 1; /(?<#{a}>)/ =~ ''")}
+  end
+
+  def test_negative_line_number
+    bug = '[ruby-core:80920] [Bug #13523]'
+    obj = Object.new
+    obj.instance_eval("def t(e = false);raise if e; __LINE__;end", "test", -100)
+    assert_equal(-100, obj.t, bug)
+    assert_equal(-100, obj.method(:t).source_location[1], bug)
+    e = assert_raise(RuntimeError) {obj.t(true)}
+    assert_equal(-100, e.backtrace_locations.first.lineno, bug)
   end
 
 =begin

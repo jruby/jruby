@@ -1110,6 +1110,9 @@ class TestString < Test::Unit::TestCase
 
     assert_nil("foo".rindex(//, -100))
     assert_nil($~)
+
+    assert_equal(3, "foo".rindex(//))
+    assert_equal([3, 3], $~.offset(0))
   end
 
   def test_rjust
@@ -1483,6 +1486,10 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("Abc"), S("abc").sub("a") {m = $~; "A"})
     assert_equal(S("a"), m[0])
     assert_equal(/a/, m.regexp)
+    bug = '[ruby-core:78686] [Bug #13042] other than regexp has no name references'
+    assert_raise_with_message(IndexError, /oops/, bug) {
+      'hello'.gsub('hello', '\k<oops>')
+    }
   end
 
   def test_sub!

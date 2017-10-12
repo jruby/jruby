@@ -157,6 +157,15 @@ class TestSymbol < Test::Unit::TestCase
     assert_equal(1, first, bug11594)
   end
 
+  private def return_from_proc
+    Proc.new { return 1 }.tap(&:call)
+  end
+
+  def test_return_from_symbol_proc
+    bug12462 = '[ruby-core:75856] [Bug #12462]'
+    assert_equal(1, return_from_proc, bug12462)
+  end
+
   def test_to_proc_for_hash_each
     bug11830 = '[ruby-core:72205] [Bug #11830]'
     assert_normal_exit(<<-'end;', bug11830) # do
@@ -218,6 +227,35 @@ class TestSymbol < Test::Unit::TestCase
     m2 = :m2_block_given?.to_proc
     assert_equal([true, false], m2.call(self, m2) {}, "#{bug8531} nested with block")
     assert_equal([false, false], m2.call(self, m2), "#{bug8531} nested without block")
+  end
+
+  def test_block_curry_proc
+    assert_separately([], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+    b = proc { true }.curry
+    assert(b.call, "without block")
+    assert(b.call { |o| o.to_s }, "with block")
+    assert(b.call(&:to_s), "with sym block")
+    end;
+  end
+
+  def test_block_curry_lambda
+    assert_separately([], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+    b = lambda { true }.curry
+    assert(b.call, "without block")
+    assert(b.call { |o| o.to_s }, "with block")
+    assert(b.call(&:to_s), "with sym block")
+    end;
+  end
+
+  def test_block_method_to_proc
+    assert_separately([], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+    b = method(:tap).to_proc
+    assert(b.call { |o| o.to_s }, "with block")
+    assert(b.call(&:to_s), "with sym block")
+    end;
   end
 
   def test_succ
@@ -372,5 +410,15 @@ class TestSymbol < Test::Unit::TestCase
     assert_not_predicate(str, :frozen?)
     assert_equal str, str.to_sym.to_s
     assert_not_predicate(str, :frozen?, bug11721)
+  end
+
+  def test_hash_nondeterministic
+    ruby = EnvUtil.rubybin
+    refute_equal `#{ruby} -e 'puts :foo.hash'`, `#{ruby} -e 'puts :foo.hash'`,
+                 '[ruby-core:80430] [Bug #13376]'
+
+    sym = "dynsym_#{Random.rand(10000)}_#{Time.now}"
+    refute_equal `#{ruby} -e 'puts #{sym.inspect}.to_sym.hash'`,
+                 `#{ruby} -e 'puts #{sym.inspect}.to_sym.hash'`
   end
 end

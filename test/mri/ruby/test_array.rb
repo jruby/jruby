@@ -805,6 +805,15 @@ class TestArray < Test::Unit::TestCase
     assert_nothing_raised(RuntimeError, bug10748) {a.flatten(1)}
   end
 
+  def test_flattern_singleton_class
+    bug12738 = '[ruby-dev:49781] [Bug #12738]'
+    a = [[0]]
+    class << a
+      def m; end
+    end
+    assert_raise(NoMethodError, bug12738) { a.flatten.m }
+  end
+
   def test_flatten!
     a1 = @cls[ 1, 2, 3]
     a2 = @cls[ 5, 6 ]
@@ -840,6 +849,15 @@ class TestArray < Test::Unit::TestCase
     a = @cls[@cls[o]]
     assert_raise_with_message(RuntimeError, bug10748) {a.flatten!}
     assert_nothing_raised(RuntimeError, bug10748) {a.flatten!(1)}
+  end
+
+  def test_flattern_singleton_class!
+    bug12738 = '[ruby-dev:49781] [Bug #12738]'
+    a = [[0]]
+    class << a
+      def m; end
+    end
+    assert_nothing_raised(NameError, bug12738) { a.flatten!.m }
   end
 
   def test_flatten_with_callcc
@@ -1819,7 +1837,9 @@ class TestArray < Test::Unit::TestCase
 
     bug3708 = '[ruby-dev:42067]'
     assert_equal(b, @cls[0, 1, 2, 3, 4][1, 4].permutation.to_a, bug3708)
+  end
 
+  def test_permutation_stack_error
     bug9932 = '[ruby-core:63103] [Bug #9932]'
     assert_separately([], <<-"end;") #    do
       assert_nothing_raised(SystemStackError, "#{bug9932}") do
@@ -1851,8 +1871,10 @@ class TestArray < Test::Unit::TestCase
 
     a = @cls[0, 1, 2, 3, 4][1, 4].repeated_permutation(2)
     assert_empty(a.reject {|x| !x.include?(0)})
+  end
 
-    assert_separately([], <<-"end;") #    do
+  def test_repeated_permutation_stack_error
+    assert_separately([], <<-"end;", timeout: 30) #    do
       assert_nothing_raised(SystemStackError) do
         assert_equal(:ok, Array.new(100_000, nil).repeated_permutation(500_000) {break :ok})
       end
@@ -1886,8 +1908,10 @@ class TestArray < Test::Unit::TestCase
 
     a = @cls[0, 1, 2, 3, 4][1, 4].repeated_combination(2)
     assert_empty(a.reject {|x| !x.include?(0)})
+  end
 
-    assert_separately([], <<-"end;") #    do
+  def test_repeated_combination_stack_error
+    assert_separately([], <<-"end;", timeout: 20) #    do
       assert_nothing_raised(SystemStackError) do
         assert_equal(:ok, Array.new(100_000, nil).repeated_combination(500_000) {break :ok})
       end
@@ -2039,6 +2063,7 @@ class TestArray < Test::Unit::TestCase
     assert_equal([0], a.insert(1))
     assert_equal([0, 1], a.insert(1, 1))
     assert_raise(ArgumentError) { a.insert }
+    assert_raise(TypeError) { a.insert(Object.new) }
     assert_equal([0, 1, 2], a.insert(-1, 2))
     assert_equal([0, 1, 3, 2], a.insert(-2, 3))
     assert_raise(RuntimeError) { [0].freeze.insert(0)}
@@ -2101,6 +2126,11 @@ class TestArray < Test::Unit::TestCase
     }
     assert_equal(9, r)
     assert_equal(@cls[7, 8, 9, 10], a, bug10722)
+
+    bug13053 = '[ruby-core:78739] [Bug #13053] Array#select! can resize to negative size'
+    a = @cls[ 1, 2, 3, 4, 5 ]
+    a.select! {|i| a.clear if i == 5; false }
+    assert_equal(0, a.size, bug13053)
   end
 
   def test_delete2
@@ -2395,11 +2425,18 @@ class TestArray < Test::Unit::TestCase
 
   def test_combination_clear
     bug9939 = '[ruby-core:63149] [Bug #9939]'
-    assert_separately([], <<-'end;')
-      100_000.times {Array.new(1000)}
+    assert_nothing_raised(bug9939) {
       a = [*0..100]
       a.combination(3) {|*,x| a.clear}
-    end;
+    }
+
+    bug13052 = '[ruby-core:78738] [Bug #13052] Array#combination segfaults if the Array is modified during iteration'
+    assert_nothing_raised(bug13052) {
+      a = [*0..100]
+      a.combination(1) { a.clear }
+      a = [*0..100]
+      a.repeated_combination(1) { a.clear }
+    }
   end
 
   def test_product2

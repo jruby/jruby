@@ -155,9 +155,15 @@ class TestSyntax < Test::Unit::TestCase
   end
 
   def test_keyword_empty_splat
-    assert_separately([], <<-'end;')
+    assert_separately([], "#{<<-"begin;"}\n#{<<-'end;'}")
+    begin;
       bug10719 = '[ruby-core:67446] [Bug #10719]'
       assert_valid_syntax("foo(a: 1, **{})", bug10719)
+    end;
+    assert_separately([], "#{<<-"begin;"}\n#{<<-'end;'}")
+    begin;
+      bug13756 = '[ruby-core:82113] [Bug #13756]'
+      assert_valid_syntax("defined? foo(**{})", bug13756)
     end;
   end
 
@@ -453,8 +459,16 @@ WARN
     }
   end
 
+  def test_invalid_break
+    assert_syntax_error("def m; break; end", /Invalid break/)
+    assert_in_out_err([], '/#{break}/', [],  /Invalid break \(SyntaxError\)$/)
+    assert_in_out_err([], '/#{break}/o', [],  /Invalid break \(SyntaxError\)$/)
+  end
+
   def test_invalid_next
     assert_syntax_error("def m; next; end", /Invalid next/)
+    assert_in_out_err([], '/#{next}/', [],  /Invalid next \(SyntaxError\)$/)
+    assert_in_out_err([], '/#{next}/o', [],  /Invalid next \(SyntaxError\)$/)
   end
 
   def test_lambda_with_space
@@ -620,6 +634,10 @@ e"
     d
 eom
     assert_equal(expected, actual, bug7559)
+  end
+
+  def test_dedented_heredoc_invalid_identifer
+    assert_syntax_error('<<~ "#{}"', /unexpected <</)
   end
 
   def test_lineno_operation_brace_block

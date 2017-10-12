@@ -75,7 +75,6 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_global_new_with_rational
-    assert_equal(BigDecimal("0.3333333333333333E0"), BigDecimal(Rational(1, 3), 0))
     assert_equal(BigDecimal("0.333333333333333333333"), BigDecimal(1.quo(3), 21))
     assert_equal(BigDecimal("-0.333333333333333333333"), BigDecimal(-1.quo(3), 21))
     assert_raise(ArgumentError) { BigDecimal(1.quo(3)) }
@@ -460,6 +459,18 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(false, BigDecimal.new("NaN") > n1)
   end
 
+  def test_cmp_float_nan
+    assert_equal(nil, BigDecimal.new("1") <=> Float::NAN)
+  end
+
+  def test_cmp_float_pos_inf
+    assert_equal(-1, BigDecimal.new("1") <=> Float::INFINITY)
+  end
+
+  def test_cmp_float_neg_inf
+    assert_equal(+1, BigDecimal.new("1") <=> -Float::INFINITY)
+  end
+
   def test_cmp_failing_coercion
     n1 = BigDecimal.new("1")
     assert_equal(nil, n1 <=> nil)
@@ -510,6 +521,7 @@ class TestBigDecimal < Test::Unit::TestCase
     a.each_with_index do |x, i|
       assert_equal(i, h[x])
     end
+    assert_instance_of(String, b.hash.to_s)
   end
 
   def test_marshal
@@ -944,13 +956,6 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal([0, "NaN", 10, 0], BigDecimal.new("NaN").split)
     assert_equal([1, "Infinity", 10, 0], BigDecimal.new("Infinity").split)
     assert_equal([-1, "Infinity", 10, 0], BigDecimal.new("-Infinity").split)
-  end
-
-  def test_round_infinity
-    assert_equal "Infinity", BigDecimal("Infinity").round(0).to_s
-    assert_raise(FloatDomainError) do
-      BigDecimal("Infinity").round
-    end
   end
 
   def test_exponent
