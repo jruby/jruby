@@ -1496,7 +1496,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void exitSleep() {
-        status.set(Status.RUN);
+        if (status.get() != Status.ABORTING) {
+            status.set(Status.RUN);
+        }
     }
 
     @JRubyMethod(name = {"kill", "exit", "terminate"})
