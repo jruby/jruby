@@ -44,7 +44,7 @@ class TestDir < Test::Unit::TestCase
   end
 
   def test_nodir
-    assert_raise(Errno::ENOENT) { Dir.open(@nodir) }
+    assert_raise(Errno::ENOTDIR) { Dir.open(@nodir) }
   end
 
   def test_inspect
