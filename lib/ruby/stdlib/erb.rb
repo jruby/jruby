@@ -429,10 +429,10 @@ class ERB
       end
 
       def trim_line1(line)
-        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>\n|%>|\n|\z)/m) do |tokens|
+        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>\r?\n|%>|\n|\z)/m) do |tokens|
           tokens.each do |token|
             next if token.empty?
-            if token == "%>\n"
+            if token == "%>\n" || token == "%>\r\n"
               yield('%>')
               yield(:cr)
             else
@@ -444,11 +444,11 @@ class ERB
 
       def trim_line2(line)
         head = nil
-        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>\n|%>|\n|\z)/m) do |tokens|
+        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>\r?\n|%>|\n|\z)/m) do |tokens|
           tokens.each do |token|
             next if token.empty?
             head = token unless head
-            if token == "%>\n"
+            if token == "%>\n" || token == "%>\r\n"
               yield('%>')
               if is_erb_stag?(head)
                 yield(:cr)
@@ -465,12 +465,12 @@ class ERB
       end
 
       def explicit_trim_line(line)
-        line.scan(/(.*?)(^[ \t]*<%\-|<%\-|<%%|%%>|<%=|<%#|<%|-%>\n|-%>|%>|\z)/m) do |tokens|
+        line.scan(/(.*?)(^[ \t]*<%\-|<%\-|<%%|%%>|<%=|<%#|<%|-%>\r?\n|-%>|%>|\z)/m) do |tokens|
           tokens.each do |token|
             next if token.empty?
             if @stag.nil? && /[ \t]*<%-/ =~ token
               yield('<%')
-            elsif @stag && token == "-%>\n"
+            elsif @stag && token == "-%>\n" || token == "-%>\r\n"
               yield('%>')
               yield(:cr)
             elsif @stag && token == '-%>'
@@ -533,7 +533,7 @@ class ERB
               yield('<%')
             elsif elem == '-%>'
               yield('%>')
-              yield(:cr) if scanner.scan(/(\n|\z)/)
+              yield(:cr) if scanner.scan(/(\r?\n|\z)/)
             else
               yield(elem)
             end

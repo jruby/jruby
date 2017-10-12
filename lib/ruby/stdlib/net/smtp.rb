@@ -170,7 +170,7 @@ module Net
   #     Net::SMTP.start('your.smtp.server', 25, 'mail.from.domain',
   #                     'Your Account', 'Your Password', :cram_md5)
   #
-  class SMTP
+  class SMTP < Protocol
 
     Revision = %q$Revision$.split[1]
 
@@ -584,7 +584,7 @@ module Net
       s = ssl_socket(s, @ssl_context)
       logging "TLS connection started"
       s.sync_close = true
-      s.connect
+      ssl_socket_connect(s, @open_timeout)
       if @ssl_context.verify_mode != OpenSSL::SSL::VERIFY_NONE
         s.post_connection_check(@address)
       end
@@ -926,7 +926,15 @@ module Net
 
     private
 
+    def validate_line(line)
+      # A bare CR or LF is not allowed in RFC5321.
+      if /[\r\n]/ =~ line
+        raise ArgumentError, "A line must not contain CR or LF"
+      end
+    end
+
     def getok(reqline)
+      validate_line reqline
       res = critical {
         @socket.writeline reqline
         recv_response()
@@ -936,6 +944,7 @@ module Net
     end
 
     def get_response(reqline)
+      validate_line reqline
       @socket.writeline reqline
       recv_response()
     end
