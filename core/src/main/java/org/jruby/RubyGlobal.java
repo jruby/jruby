@@ -279,7 +279,7 @@ public class RubyGlobal {
         RubyIO stdin, stdout, stderr;
 
         // If we're the main for the process and native stdio is enabled, use default descriptors
-        if (runtime.getInstanceConfig().isHardExit() && Options.NATIVE_STDIO.load()) {
+        if (runtime.getPosix().isNative() && runtime.getInstanceConfig().isHardExit() && Options.NATIVE_STDIO.load()) {
             stdin = RubyIO.prepStdio(
                     runtime, runtime.getIn(), new NativeDeviceChannel(0), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
             stdout = RubyIO.prepStdio(
