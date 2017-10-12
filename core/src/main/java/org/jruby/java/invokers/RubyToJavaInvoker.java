@@ -45,8 +45,10 @@ import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
@@ -340,9 +342,12 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     static <T extends AccessibleObject> T setAccessible(T accessible) {
+        // TODO: Replace flag that's false on 9 with proper module checks
         if (!accessible.isAccessible() &&
-                !Ruby.isSecurityRestricted() ) {
-            try { accessible.setAccessible(true); }
+                !Ruby.isSecurityRestricted() &&
+                Options.JI_SETACCESSIBLE.load() &&
+                accessible instanceof Member) {
+            try { Helpers.trySetAccessible((Member) accessible); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);
@@ -362,8 +367,11 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
+        // TODO: Replace flag that's false on 9 with proper module checks
         if (!allAreAccessible(accessibles) &&
-                !Ruby.isSecurityRestricted() ) {
+                !Ruby.isSecurityRestricted() &&
+                Options.JI_SETACCESSIBLE.load() &&
+                allAreMember(accessibles)) {
             try { AccessibleObject.setAccessible(accessibles, true); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
@@ -375,6 +383,11 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     private static <T extends AccessibleObject> boolean allAreAccessible(T[] accessibles) {
         for (T accessible : accessibles) if (!accessible.isAccessible()) return false;
+        return true;
+    }
+
+    private static <T extends AccessibleObject> boolean allAreMember(T[] accessibles) {
+        for (T accessible : accessibles) if (!(accessible instanceof Member)) return false;
         return true;
     }
 

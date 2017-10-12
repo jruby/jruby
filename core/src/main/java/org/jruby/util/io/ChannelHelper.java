@@ -12,12 +12,14 @@ package org.jruby.util.io;
 
 import jnr.posix.util.FieldAccess;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.runtime.Helpers;
 
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -93,9 +95,9 @@ public abstract class ChannelHelper {
     public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
         while (filteredStream instanceof FilterOutputStream) {
             try {
-                OutputStream tmpStream = (OutputStream)
-                        FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
-                                "out", filteredStream);
+                Field out = FilterInputStream.class.getDeclaredField("out");
+                OutputStream tmpStream =
+                        Helpers.trySetAccessible(out) ? (OutputStream) out.get(filteredStream) : null;
 
                 // try to unwrap as a Drip stream
                 if (!(tmpStream instanceof FilterOutputStream)) {
@@ -131,9 +133,9 @@ public abstract class ChannelHelper {
     public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
         while (filteredStream instanceof FilterInputStream) {
             try {
-                InputStream tmpStream = (InputStream)
-                        FieldAccess.getProtectedFieldValue(FilterInputStream.class,
-                                "in", filteredStream);
+                Field in = FilterInputStream.class.getDeclaredField("in");
+                InputStream tmpStream =
+                        Helpers.trySetAccessible(in) ? (InputStream) in.get(filteredStream) : null;
 
                 // could not acquire
                 if (tmpStream == null) break;
@@ -161,7 +163,8 @@ public abstract class ChannelHelper {
     private static OutputStream unwrapDripStream(OutputStream stream) {
         if (isDripSwitchable(stream)) {
             try {
-                return (OutputStream) FieldAccess.getProtectedFieldValue(stream.getClass(), "out", stream);
+                Field out = stream.getClass().getDeclaredField("out");
+                return Helpers.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
             } catch (Exception e) {
             }
         }
@@ -171,7 +174,8 @@ public abstract class ChannelHelper {
     private static InputStream unwrapDripStream(InputStream stream) {
         if (isDripSwitchable(stream)) {
             try {
-                return (InputStream) FieldAccess.getProtectedFieldValue(stream.getClass(), "in", stream);
+                Field in = stream.getClass().getDeclaredField("in");
+                return Helpers.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
             } catch (Exception e) {
             }
         }

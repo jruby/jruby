@@ -1,6 +1,10 @@
 package org.jruby.runtime;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -2868,5 +2872,55 @@ public class Helpers {
 
         return !(checkVisibility &&
                 (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
+    }
+
+    /**
+     * When running on Java 9 this method will use module openness to do setAccessible, if possible.
+     *
+     * @param member the method, field, or constructor to attempt to setAccessible
+     * @return whether the setAccessible was successful
+     */
+    public static boolean trySetAccessible(Member member) {
+        if (!(member instanceof AccessibleObject)) return false;
+
+        AccessibleObject ao = (AccessibleObject) member;
+
+        if (ao.isAccessible()) return true;
+
+        if (getModule != null) {
+            try {
+                Class<?> declaringClass = member.getDeclaringClass();
+                Object module = getModule.invoke(declaringClass);
+                if ((Boolean) isOpen.invoke(module, declaringClass.getPackage().getName())) {
+                    ao.setAccessible(true);
+                    return true;
+                }
+                return false;
+            } catch (Exception e) {
+                return false;
+            }
+        } else {
+            try {
+                ao.setAccessible(true);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+    }
+
+    private static final Method getModule;
+    private static final Method isOpen;
+    static {
+        Method _getModule = null;
+        Method _isOpen = null;
+        try {
+            _getModule = Class.class.getMethod("getModule");
+            Class module = Class.forName("java.lang.Module");
+            _isOpen = module.getMethod("isOpen", String.class);
+        } catch (Exception e) {
+        }
+        getModule = _getModule;
+        isOpen = _isOpen;
     }
 }

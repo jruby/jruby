@@ -6,6 +6,7 @@ import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
+import org.jruby.runtime.Helpers;
 
 import java.io.FileDescriptor;
 import java.lang.reflect.Field;
@@ -24,30 +25,30 @@ public class FilenoUtil {
     }
 
     public static FileDescriptor getDescriptorFromChannel(Channel channel) {
-        if (SEL_CH_IMPL_GET_FD != null && SEL_CH_IMPL.isInstance(channel)) {
+        if (ReflectiveAccess.SEL_CH_IMPL_GET_FD != null && ReflectiveAccess.SEL_CH_IMPL.isInstance(channel)) {
             // Pipe Source and Sink, Sockets, and other several other selectable channels
             try {
-                return (FileDescriptor)SEL_CH_IMPL_GET_FD.invoke(channel);
+                return (FileDescriptor) ReflectiveAccess.SEL_CH_IMPL_GET_FD.invoke(channel);
             } catch (Exception e) {
                 // return bogus below
             }
-        } else if (FILE_CHANNEL_IMPL_FD != null && FILE_CHANNEL_IMPL.isInstance(channel)) {
+        } else if (ReflectiveAccess.FILE_CHANNEL_IMPL_FD != null && ReflectiveAccess.FILE_CHANNEL_IMPL.isInstance(channel)) {
             // FileChannels
             try {
-                return (FileDescriptor)FILE_CHANNEL_IMPL_FD.get(channel);
+                return (FileDescriptor) ReflectiveAccess.FILE_CHANNEL_IMPL_FD.get(channel);
             } catch (Exception e) {
                 // return bogus below
             }
-        } else if (FILE_DESCRIPTOR_FD != null) {
+        } else if (ReflectiveAccess.FILE_DESCRIPTOR_FD != null) {
             FileDescriptor unixFD = new FileDescriptor();
 
             // UNIX sockets, from jnr-unixsocket
             try {
                 if (channel instanceof UnixSocketChannel) {
-                    FILE_DESCRIPTOR_FD.set(unixFD, ((UnixSocketChannel)channel).getFD());
+                    ReflectiveAccess.FILE_DESCRIPTOR_FD.set(unixFD, ((UnixSocketChannel)channel).getFD());
                     return unixFD;
                 } else if (channel instanceof UnixServerSocketChannel) {
-                    FILE_DESCRIPTOR_FD.set(unixFD, ((UnixServerSocketChannel)channel).getFD());
+                    ReflectiveAccess.FILE_DESCRIPTOR_FD.set(unixFD, ((UnixServerSocketChannel)channel).getFD());
                     return unixFD;
                 }
             } catch (Exception e) {
@@ -110,7 +111,7 @@ public class FilenoUtil {
     }
 
     private static int getFilenoUsingReflection(Channel channel) {
-        if (FILE_DESCRIPTOR_FD != null) {
+        if (ReflectiveAccess.FILE_DESCRIPTOR_FD != null) {
             return filenoFrom(getDescriptorFromChannel(channel));
         }
         return -1;
@@ -119,7 +120,7 @@ public class FilenoUtil {
     public static int filenoFrom(FileDescriptor fd) {
         if (fd.valid()) {
             try {
-                return (Integer)FILE_DESCRIPTOR_FD.get(fd);
+                return (Integer) ReflectiveAccess.FILE_DESCRIPTOR_FD.get(fd);
             } catch (Exception e) {
                 // failed to get
             }
@@ -128,60 +129,67 @@ public class FilenoUtil {
         return -1;
     }
 
-    static {
-        Method getFD;
-        Class selChImpl;
-        try {
-            selChImpl = Class.forName("sun.nio.ch.SelChImpl");
-            try {
-                getFD = selChImpl.getMethod("getFD");
-                getFD.setAccessible(true);
-            } catch (Exception e) {
-                getFD = null;
-            }
-        } catch (Exception e) {
-            selChImpl = null;
-            getFD = null;
-        }
-        SEL_CH_IMPL = selChImpl;
-        SEL_CH_IMPL_GET_FD = getFD;
-
-        Field fd;
-        Class fileChannelImpl;
-        try {
-            fileChannelImpl = Class.forName("sun.nio.ch.FileChannelImpl");
-            try {
-                fd = fileChannelImpl.getDeclaredField("fd");
-                fd.setAccessible(true);
-            } catch (Exception e) {
-                fd = null;
-            }
-        } catch (Exception e) {
-            fileChannelImpl = null;
-            fd = null;
-        }
-        FILE_CHANNEL_IMPL = fileChannelImpl;
-        FILE_CHANNEL_IMPL_FD = fd;
-
-        Field ffd;
-        try {
-            ffd = FileDescriptor.class.getDeclaredField("fd");
-            ffd.setAccessible(true);
-        } catch (Exception e) {
-            ffd = null;
-        }
-        FILE_DESCRIPTOR_FD = ffd;
-    }
-
-    // FIXME shouldn't use static; may interfere with other runtimes in the same JVM
     public static final int FIRST_FAKE_FD = 100000;
     protected final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
     private final Map<Integer, ChannelFD> filenoMap = new ConcurrentHashMap<Integer, ChannelFD>();
     private final POSIX posix;
 
-    private static final Class SEL_CH_IMPL;
-    private static final Method SEL_CH_IMPL_GET_FD;
-    private static final Class FILE_CHANNEL_IMPL;
-    private static final Field FILE_CHANNEL_IMPL_FD;
-    private static final Field FILE_DESCRIPTOR_FD;
+    private static class ReflectiveAccess {
+        static {
+            Method getFD;
+            Class selChImpl;
+            try {
+                selChImpl = Class.forName("sun.nio.ch.SelChImpl");
+                try {
+                    getFD = selChImpl.getMethod("getFD");
+                    if (!Helpers.trySetAccessible(getFD)) {
+                        getFD = null;
+                    }
+                } catch (Exception e) {
+                    getFD = null;
+                }
+            } catch (Exception e) {
+                selChImpl = null;
+                getFD = null;
+            }
+            SEL_CH_IMPL = selChImpl;
+            SEL_CH_IMPL_GET_FD = getFD;
+
+            Field fd;
+            Class fileChannelImpl;
+            try {
+                fileChannelImpl = Class.forName("sun.nio.ch.FileChannelImpl");
+                try {
+                    fd = fileChannelImpl.getDeclaredField("fd");
+                    if (!Helpers.trySetAccessible(fd)) {
+                        fd = null;
+                    }
+                } catch (Exception e) {
+                    fd = null;
+                }
+            } catch (Exception e) {
+                fileChannelImpl = null;
+                fd = null;
+            }
+            FILE_CHANNEL_IMPL = fileChannelImpl;
+            FILE_CHANNEL_IMPL_FD = fd;
+
+            Field ffd;
+            try {
+                ffd = FileDescriptor.class.getDeclaredField("fd");
+                if (!Helpers.trySetAccessible(ffd)) {
+                    ffd = null;
+                }
+            } catch (Exception e) {
+                ffd = null;
+            }
+            FILE_DESCRIPTOR_FD = ffd;
+        }
+
+        private static final Class SEL_CH_IMPL;
+        private static final Method SEL_CH_IMPL_GET_FD;
+        private static final Class FILE_CHANNEL_IMPL;
+        private static final Field FILE_CHANNEL_IMPL_FD;
+        private static final Field FILE_DESCRIPTOR_FD;
+    }
 }
