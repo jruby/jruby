@@ -384,6 +384,21 @@ class TestIO < Test::Unit::TestCase
     assert(a)
   end
 
+  unless WINDOWS
+    # On Windows an error is raised when opening a directory instead of when reading.
+    def test_read_directory
+      File.open('.', 'r') do |f|
+        assert_raise(Errno::EISDIR) { f.read }
+      end
+    end
+
+    def test_gets_directory
+      File.open('.', 'r') do |f|
+        assert_raise(Errno::EISDIR) { f.gets }
+      end
+    end
+  end
+
   if (WINDOWS)
     #JRUBY-2158
     def test_null_open_windows

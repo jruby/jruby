@@ -281,6 +281,8 @@ public class Helpers {
                 case "Too many open files" : return Errno.EMFILE;
                 case "Message too large" : // Alpine Linux
                 case "Message too long" : return Errno.EMSGSIZE;
+                case "Is a directory":
+                    return Errno.EISDIR;
             }
             if (Platform.IS_WINDOWS && errorMessage.contains("connection was aborted")) return Errno.ECONNRESET;
         }
