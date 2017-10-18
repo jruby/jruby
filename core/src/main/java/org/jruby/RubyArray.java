@@ -1047,6 +1047,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject insert(IRubyObject arg) {
         modifyCheck();
 
+        // for type check
+        RubyNumeric.num2long(arg);
+
         return this;
     }
 
@@ -1078,11 +1081,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject insert(IRubyObject[] args) {
         modifyCheck();
 
+        long pos = RubyNumeric.num2long(args[0]);
+
         if (args.length == 1) return this;
 
         unpack();
-
-        long pos = RubyNumeric.num2long(args[0]);
 
         if (pos == -1) pos = realLength;
         if (pos < 0) pos++;
