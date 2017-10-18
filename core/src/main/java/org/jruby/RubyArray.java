@@ -3110,7 +3110,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject flatten(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
+        RubyArray result = new RubyArray(runtime, getMetaClass().getRealClass(), realLength);
         flatten(context, -1, result);
         result.infectBy(this);
         return result;
