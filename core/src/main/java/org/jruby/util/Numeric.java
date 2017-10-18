@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.math.BigInteger;
 import org.joni.Regex;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
@@ -41,7 +40,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 public class Numeric {
     public static final boolean CANON = true;
