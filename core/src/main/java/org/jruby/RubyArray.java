@@ -3831,7 +3831,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         } else if (n == 0) {
             block.yield(context, newEmptyArray(runtime));
         } else if (n == 1) {
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i < realLength; i++) {
                 block.yield(context, newArray(runtime, eltOk(i)));
             }
         } else {
