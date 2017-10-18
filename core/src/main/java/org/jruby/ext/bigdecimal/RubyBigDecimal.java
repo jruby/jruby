@@ -509,7 +509,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         double dblVal = arg.getDoubleValue();
 
-        if(Double.isNaN(dblVal)) throw runtime.newFloatDomainError("NaN");
+        if(Double.isNaN(dblVal)) return newNaN(runtime);
         if(Double.isInfinite(dblVal)) return newInfinity(runtime, dblVal == Double.POSITIVE_INFINITY ? 1 : -1);
 
         return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(dblVal, mathContext));
