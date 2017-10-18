@@ -500,23 +500,28 @@ public class Numeric {
         do {
             while (y % 2 == 0) {
                 if (!fitSqrtLong(x)) {
-                    IRubyObject v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, x))).op_pow(context, RubyFixnum.newFixnum(runtime, y));
-                    if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul19(context, v);
-                    return v;
+                    return bignumIntPow(context, x, y, neg, z, runtime);
                 }
                 x *= x;
                 y >>= 1;
             }
             
             if (multiplyOverflows(x, z)) {
-                IRubyObject v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, x))).op_pow(context, RubyFixnum.newFixnum(runtime, y));
-                if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul19(context, v);
-                return v;
+                return bignumIntPow(context, x, y, neg, z, runtime);
             }
             z = x * z;
         } while(--y != 0);
         if (neg) z = -z;
         return RubyFixnum.newFixnum(runtime, z);
+    }
+
+    // MRI: int_pow, bignum labeled portion
+    private static IRubyObject bignumIntPow(ThreadContext context, long x, long y, boolean neg, long z, Ruby runtime) {
+        IRubyObject v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, x))).op_pow(context, RubyFixnum.newFixnum(runtime, y));
+        if (v instanceof RubyFloat) /* infinity due to overflow */
+            return v;
+        if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul19(context, v);
+        return v;
     }
 
     public static boolean multiplyOverflows(long a, long b) {

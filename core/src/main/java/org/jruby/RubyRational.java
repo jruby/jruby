@@ -642,6 +642,14 @@ public class RubyRational extends RubyNumeric {
             } else {
                 tnum = tden = RubyFixnum.one(runtime);
             }
+            if (num instanceof RubyFloat) { /* infinity due to overflow */
+                if (den instanceof RubyFloat) return RubyNumeric.dbl2num(runtime, Double.NaN);
+                return num;
+            }
+            if (den instanceof RubyFloat) { /* infinity due to overflow */
+                num = RubyFixnum.zero(runtime);
+                den = RubyFixnum.one(runtime);
+            }
             return RubyRational.newRational(context, getMetaClass(), tnum, tden);
         } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return f_expt(context, f_to_f(context, this), other);
