@@ -10,9 +10,8 @@
  */
 package org.jruby.util.io;
 
-import jnr.posix.util.FieldAccess;
+import com.headius.modulator.Modulator;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.runtime.Helpers;
 
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
@@ -97,7 +96,7 @@ public abstract class ChannelHelper {
             try {
                 Field out = FilterInputStream.class.getDeclaredField("out");
                 OutputStream tmpStream =
-                        Helpers.trySetAccessible(out) ? (OutputStream) out.get(filteredStream) : null;
+                        Modulator.trySetAccessible(out) ? (OutputStream) out.get(filteredStream) : null;
 
                 // try to unwrap as a Drip stream
                 if (!(tmpStream instanceof FilterOutputStream)) {
@@ -135,7 +134,7 @@ public abstract class ChannelHelper {
             try {
                 Field in = FilterInputStream.class.getDeclaredField("in");
                 InputStream tmpStream =
-                        Helpers.trySetAccessible(in) ? (InputStream) in.get(filteredStream) : null;
+                        Modulator.trySetAccessible(in) ? (InputStream) in.get(filteredStream) : null;
 
                 // could not acquire
                 if (tmpStream == null) break;
@@ -164,7 +163,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field out = stream.getClass().getDeclaredField("out");
-                return Helpers.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
+                return Modulator.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
             } catch (Exception e) {
             }
         }
@@ -175,7 +174,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field in = stream.getClass().getDeclaredField("in");
-                return Helpers.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
+                return Modulator.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
             } catch (Exception e) {
             }
         }
