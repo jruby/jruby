@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
+import com.headius.modulator.Modulator;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -341,13 +342,13 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return (JavaProxy) self;
     }
 
-    static <T extends AccessibleObject> T setAccessible(T accessible) {
+    static <T extends AccessibleObject & Member> T setAccessible(T accessible) {
         // TODO: Replace flag that's false on 9 with proper module checks
         if (!accessible.isAccessible() &&
                 !Ruby.isSecurityRestricted() &&
                 Options.JI_SETACCESSIBLE.load() &&
                 accessible instanceof Member) {
-            try { Helpers.trySetAccessible((Member) accessible); }
+            try { Modulator.trySetAccessible(accessible); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);
