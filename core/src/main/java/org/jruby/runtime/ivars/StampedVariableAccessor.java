@@ -26,7 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.ivars;
 
-import com.headius.unsafe.fences.UnsafeFences;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.util.ArraySupport;
@@ -152,13 +151,8 @@ public class StampedVariableAccessor extends VariableAccessor {
      */
     private static boolean updateTableUnsafe(RubyBasicObject self, int currentStamp, Object[] currentTable, int index, Object value) {
         // shared access to varTable field.
-        if(UnsafeFences.SUPPORTS_FENCES) {
-            currentTable[index] = value;
-            UnsafeFences.fullFence();
-        } else {
-            // TODO: maybe optimize by read and checking current value before setting
-            UnsafeHolder.U.putObjectVolatile(currentTable, UnsafeHolder.ARRAY_OBJECT_BASE_OFFSET + UnsafeHolder.ARRAY_OBJECT_INDEX_SCALE * index, value);
-        }
+        currentTable[index] = value;
+        UnsafeHolder.U.fullFence();
 
         // validate stamp. redo on concurrent modification
         return self.varTableStamp == currentStamp;
