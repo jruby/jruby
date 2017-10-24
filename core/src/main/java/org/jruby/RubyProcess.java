@@ -1274,78 +1274,78 @@ public class RubyProcess {
         boolean processGroupKill = signal < 0;
 
         if (processGroupKill) {
-		    if (Platform.IS_WINDOWS) {
+            if (Platform.IS_WINDOWS) {
                 throw  runtime.newErrnoEINVALError("group signals not implemented in windows");
             }
-		    signal = -signal;
+            signal = -signal;
         }
 
-		if (Platform.IS_WINDOWS) {
-		    for (int i = 1; i < args.length; i++) {
-				int pid = RubyNumeric.num2int(args[i]);
-				if (signal == 0) {
-					jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
-					if(ptr != null && ptr.address() != -1) {
-					   try {
-                           IntByReference status = new IntByReference(0);
-					       if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
-					          throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
-					       } else {
-					           if(status.intValue() != STILL_ACTIVE) {
-							       throw runtime.newErrnoEPERMError("Process exists but is not alive anymore " + pid);
-                               }
-					       }
-					   } finally {
-					     kernel32().CloseHandle(ptr);
-					   }
-
-					} else {
-					    if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
-					        throw runtime.newErrnoESRCHError();
-					    } else {
-					        throw runtime.newErrnoEPERMError("Process does not exist " + pid);
-					    }
-					}
-			    } else if (signal == 9) { //SIGKILL
-				    jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);
+        if (Platform.IS_WINDOWS) {
+            for (int i = 1; i < args.length; i++) {
+                int pid = RubyNumeric.num2int(args[i]);
+                if (signal == 0) {
+                    jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
                     if(ptr != null && ptr.address() != -1) {
-					    try {
-                            IntByReference status = new IntByReference(0);
-					        if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
-					            throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
-					        } else {
-					            if (status.intValue() == STILL_ACTIVE) {
-						            if (kernel32().TerminateProcess(ptr, 0) == 0) {
-						               throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
-						             }
-                                     // success
-						        }
-					        }
-						} finally {
-					       kernel32().CloseHandle(ptr);
-					    }
-					} else {
-					    if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
-					        throw runtime.newErrnoESRCHError();
-					    } else {
-					        throw runtime.newErrnoEPERMError("Process does not exist " + pid);
-					    }
-					}
-				} else {
-		            throw runtime.newNotImplementedError("this signal not yet implemented in windows");
-		        }
-            }
-		} else {
-			POSIX posix = runtime.getPosix();
-			for (int i = 1; i < args.length; i++) {
-				int pid = RubyNumeric.num2int(args[i]);
+                       try {
+                           IntByReference status = new IntByReference(0);
+                           if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
+                              throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
+                           } else {
+                               if(status.intValue() != STILL_ACTIVE) {
+                                   throw runtime.newErrnoEPERMError("Process exists but is not alive anymore " + pid);
+                               }
+                           }
+                       } finally {
+                         kernel32().CloseHandle(ptr);
+                       }
 
-				// FIXME: It may be possible to killpg on systems which support it.  POSIX library
-				// needs to tell whether a particular method works or not
-				if (pid == 0) pid = runtime.getPosix().getpid();
-				checkErrno(runtime, posix.kill(processGroupKill ? -pid : pid, signal));
-			}
-		}
+                    } else {
+                        if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
+                            throw runtime.newErrnoESRCHError();
+                        } else {
+                            throw runtime.newErrnoEPERMError("Process does not exist " + pid);
+                        }
+                    }
+                } else if (signal == 9) { //SIGKILL
+                    jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);
+                    if(ptr != null && ptr.address() != -1) {
+                        try {
+                            IntByReference status = new IntByReference(0);
+                            if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
+                                throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
+                            } else {
+                                if (status.intValue() == STILL_ACTIVE) {
+                                    if (kernel32().TerminateProcess(ptr, 0) == 0) {
+                                       throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
+                                     }
+                                     // success
+                                }
+                            }
+                        } finally {
+                           kernel32().CloseHandle(ptr);
+                        }
+                    } else {
+                        if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
+                            throw runtime.newErrnoESRCHError();
+                        } else {
+                            throw runtime.newErrnoEPERMError("Process does not exist " + pid);
+                        }
+                    }
+                } else {
+                    throw runtime.newNotImplementedError("this signal not yet implemented in windows");
+                }
+            }
+        } else {
+            POSIX posix = runtime.getPosix();
+            for (int i = 1; i < args.length; i++) {
+                int pid = RubyNumeric.num2int(args[i]);
+
+                // FIXME: It may be possible to killpg on systems which support it.  POSIX library
+                // needs to tell whether a particular method works or not
+                if (pid == 0) pid = runtime.getPosix().getpid();
+                checkErrno(runtime, posix.kill(processGroupKill ? -pid : pid, signal));
+            }
+        }
 
         return runtime.newFixnum(args.length - 1);
 
