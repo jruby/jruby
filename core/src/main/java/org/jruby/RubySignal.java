@@ -97,11 +97,21 @@ public class RubySignal {
     @JRubyMethod(meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        RubyHash names = RubyHash.newHash(runtime);
-        for (Map.Entry<String, Integer> sig : RubySignal.list().entrySet()) {
-            names.op_aset(context, runtime.newString(sig.getKey()), runtime.newFixnum(sig.getValue()));
+        RubyHash names;
+
+        synchronized (recv) {
+            names = (RubyHash) recv.getInternalVariables().getInternalVariable("signal_list");
+            if (names == null) {
+                names = RubyHash.newHash(runtime);
+                for (Map.Entry<String, Integer> sig : RubySignal.list().entrySet()) {
+                    names.op_aset(context, runtime.freezeAndDedupString(runtime.newString(sig.getKey())), runtime.newFixnum(sig.getValue()));
+                }
+                names.op_aset(context, runtime.freezeAndDedupString(runtime.newString("EXIT")), runtime.newFixnum(0));
+            } else {
+                names.dup(context);
+            }
         }
-        names.op_aset(context, runtime.newString("EXIT"), runtime.newFixnum(0));
+        
         return names;
     }
 
