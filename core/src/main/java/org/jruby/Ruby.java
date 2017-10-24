@@ -67,6 +67,7 @@ import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
+import org.jruby.util.io.EncodingUtils;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -2798,7 +2799,7 @@ public final class Ruby implements Constantizable {
             enc = UTF8Encoding.INSTANCE;
         }
 
-        Charset charset = enc.getCharset();
+        Charset charset = EncodingUtils.charsetForEncoding(enc);
 
         return charset;
     }

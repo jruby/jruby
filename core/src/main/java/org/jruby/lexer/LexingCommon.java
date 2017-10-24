@@ -19,6 +19,7 @@ import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Code and constants common to both ripper and main parser.
@@ -174,7 +175,7 @@ public abstract class LexingCommon {
     public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
-            Charset charset = getEncoding().getCharset();
+            Charset charset = EncodingUtils.charsetForEncoding(getEncoding());
             if (charset != null) {
                 if (charset == RubyEncoding.UTF8) {
                     return RubyEncoding.decodeUTF8(bytes, start, length);

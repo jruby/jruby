@@ -538,7 +538,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         // Ruby internal
         Encoding internal = runtime.getDefaultInternalEncoding();
         Charset rubyInt = null;
-        if ( internal != null ) rubyInt = internal.getCharset();
+        if ( internal != null ) rubyInt = EncodingUtils.charsetForEncoding(internal);
 
         if ( rubyInt == null ) {
             Encoding javaExtEncoding = runtime.getEncodingService().getJavaDefault();
@@ -5610,7 +5610,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public static ByteList encodeBytelist(CharSequence value, Encoding encoding) {
 
-        Charset charset = encoding.getCharset();
+        Charset charset = EncodingUtils.charsetForEncoding(encoding);
 
         // if null charset, let our transcoder handle it
         if (charset == null) {

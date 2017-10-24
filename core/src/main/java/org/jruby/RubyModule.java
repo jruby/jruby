@@ -2492,7 +2492,6 @@ public class RubyModule extends RubyObject {
     protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
         for (Map.Entry entry : getMethods().entrySet()) {
             String methodName = (String) entry.getKey();
-
             if (! seen.contains(methodName)) {
                 seen.add(methodName);
 
