@@ -285,7 +285,7 @@ DO NOT MODIFIY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>2.4.3</version>
+          <version>3.1.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -338,6 +338,17 @@ DO NOT MODIFIY - GENERATED CODE
         <plugin>
           <artifactId>maven-scm-publish-plugin</artifactId>
           <version>1.0-beta-2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <dependencies>
+            <dependency>
+              <groupId>biz.aQute.bnd</groupId>
+              <artifactId>biz.aQute.bndlib</artifactId>
+              <version>3.5.0</version>
+            </dependency>
+          </dependencies>
         </plugin>
       </plugins>
     </pluginManagement>

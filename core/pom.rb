@@ -261,7 +261,6 @@ project 'JRuby Core' do
 
 
   plugin :shade do
-    version( '3.1.0' )
     execute_goals( 'shade',
                    :id => 'create lib/jruby.jar',
                    :phase => 'package',

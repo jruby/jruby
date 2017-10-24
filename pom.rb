@@ -128,7 +128,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
 
     plugin :compiler, '3.3'
-    plugin :shade, '2.4.3'
+    plugin :shade, '3.1.0'
     plugin :surefire, '2.15'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
@@ -148,6 +148,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
     plugin :'scm-publish', '1.0-beta-2'
+    plugin 'org.apache.felix:maven-bundle-plugin' do
+      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '3.5.0')
+    end
   end
 
   plugin( :site,
