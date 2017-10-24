@@ -57,7 +57,7 @@ project 'JRuby Core' do
   jar 'org.jruby.jcodings:jcodings:1.0.26'
   jar 'org.jruby:dirgra:0.3'
 
-  jar 'com.headius:invokebinder:1.9'
+  jar 'com.headius:invokebinder:1.10'
   jar 'com.headius:options:1.4'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
@@ -262,6 +262,7 @@ project 'JRuby Core' do
 
 
   plugin :shade do
+    version( '3.1.0' )
     execute_goals( 'shade',
                    :id => 'create lib/jruby.jar',
                    :phase => 'package',

@@ -133,4 +133,29 @@ class YAML::Store < PStore
       return file
     end
   end
+
+  # FIXME: These two constants and the method open_and_lock_file should not
+  # be in this file (taken from pstore).  See #4779.
+  RDWR_ACCESS = {mode: IO::RDWR | IO::CREAT | IO::BINARY, encoding: Encoding::UTF_8}.freeze
+  RD_ACCESS = {mode: IO::RDONLY | IO::BINARY, encoding: Encoding::UTF_8}.freeze
+  def open_and_lock_file(filename, read_only)
+    if read_only
+      begin
+        file = File.new(filename, RD_ACCESS)
+        begin
+          file.flock(File::LOCK_SH)
+          return file
+        rescue
+          file.close
+          raise
+        end
+      rescue Errno::ENOENT
+        return nil
+      end
+    else
+      file = File.new(filename, RDWR_ACCESS)
+      file.flock(File::LOCK_EX)
+      return file
+    end
+  end
 end
