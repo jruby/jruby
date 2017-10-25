@@ -107,6 +107,7 @@ public class RubySignal {
                     names.op_aset(context, runtime.freezeAndDedupString(runtime.newString(sig.getKey())), runtime.newFixnum(sig.getValue()));
                 }
                 names.op_aset(context, runtime.freezeAndDedupString(runtime.newString("EXIT")), runtime.newFixnum(0));
+                recv.getInternalVariables().setInternalVariable("signal_list", names);
             } else {
                 names.dup(context);
             }
