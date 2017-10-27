@@ -46,12 +46,10 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
-import static org.jruby.RubyNumeric.num2int;
 import org.jruby.RubyObject;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -62,7 +60,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import static org.jruby.runtime.builtin.IRubyObject.NULL_ARRAY;
 import org.jruby.util.Numeric;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
@@ -663,7 +660,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private RubyBigDecimal setResult(int scale) {
         int prec = RubyFixnum.fix2int(getRuntime().getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit"));
-        int prec2 = Math.max(scale, prec);
+        int prec2 = (scale == 0) ? prec : scale;
         if (prec2 > 0 && this.value.scale() > (prec2-getExponent())) {
             this.value = this.value.setScale(prec2-getExponent(), BigDecimal.ROUND_HALF_UP);
         }
@@ -971,7 +968,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(ThreadContext context, IRubyObject b) {
-        return subInternal(context, getVpValue19(context, b, true), b);
+        return subInternal(context, getVpValue19(context, b, true), b, RubyInteger.int2fix(getRuntime(),0));
     }
 
     @Deprecated
@@ -981,8 +978,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "sub", required = 2)
     public IRubyObject sub2(ThreadContext context, IRubyObject b, IRubyObject n) {
-        // FIXME: Missing handling of n
-        return subInternal(context, getVpValue19(context, b, false), b);
+        return subInternal(context, getVpValue19(context, b, false), b, n);
     }
 
     @Deprecated
@@ -990,12 +986,11 @@ public class RubyBigDecimal extends RubyNumeric {
         return sub2(context, b, n);
     }
 
-    private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b) {
+    private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject n) {
         if (val == null) return callCoerced(context, sites(context).op_minus, b);
-
+        int prec = getPositiveInt(context, n);
         RubyBigDecimal res = handleMinusSpecialValues(context, val);
-
-        return res != null ? res : new RubyBigDecimal(context.runtime, value.subtract(val.value)).setResult();
+        return res != null ? res : new RubyBigDecimal(context.runtime, value.subtract(val.value)).setResult(prec);
     }
 
     private RubyBigDecimal handleMinusSpecialValues(ThreadContext context, RubyBigDecimal val) {
@@ -1040,7 +1035,9 @@ public class RubyBigDecimal extends RubyNumeric {
         int pow = len / 4;
         int precision = (pow + 1) * 4 * 2;
 
-        return divWithScale(context, val, precision);
+        IRubyObject result = divWithScale(context, val, precision);
+        if (result.getClass() == RubyBigDecimal.class) return ((RubyBigDecimal) result).setResult();
+        return result;
     }
 
     @Deprecated
@@ -1085,7 +1082,10 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isNaN() || val.isNaN()) {
             throw context.runtime.newFloatDomainError("Computation results to 'NaN'");
         }
-        return divWithScale(context, val, RubyNumeric.fix2int(digits));
+        int prec = RubyNumeric.fix2int(digits);
+        IRubyObject result = divWithScale(context, val, prec);
+        if (result.getClass()==RubyBigDecimal.class) return ((RubyBigDecimal) result).setResult(prec);
+        return result;
     }
 
     private IRubyObject divWithScale(ThreadContext context, RubyBigDecimal val, int scale) {
