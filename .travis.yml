@@ -80,6 +80,27 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
+    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+      jdk: oraclejdk9
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk9
+    - env: PHASE='-Pcomplete'
+      jdk: oraclejdk9
+  allow_failures:
+    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+      jdk: oraclejdk9
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk9
+    - env: PHASE='-Pcomplete'
+      jdk: oraclejdk9
 
 install:
   - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
@@ -101,3 +122,8 @@ notifications:
 
 services:
   - redis-server
+
+addons:
+  apt:
+    packages:
+      - oracle-java9-installer
