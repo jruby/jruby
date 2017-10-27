@@ -32,22 +32,24 @@ public class ConstantLookupSite extends MutableCallSite {
     private static final Logger LOG = LoggerFactory.getLogger(ConstantLookupSite.class);
     private final String name;
     private final boolean publicOnly;
+    private final boolean callConstMissing;
 
     private volatile RubySymbol symbolicName;
 
     private final SiteTracker tracker = new SiteTracker();
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(ConstantLookupSite.class), "constLookup", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class));
+    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(ConstantLookupSite.class), "constLookup", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class, int.class));
 
-    public ConstantLookupSite(MethodType type, String name, boolean publicOnly) {
+    public ConstantLookupSite(MethodType type, String name, boolean publicOnly, boolean callConstMissing) {
         super(type);
 
         this.name = name;
         this.publicOnly = publicOnly;
+        this.callConstMissing = callConstMissing;
     }
 
-    public static CallSite constLookup(MethodHandles.Lookup lookup, String searchType, MethodType type, String constName, int publicOnly) {
-        ConstantLookupSite site = new ConstantLookupSite(type, constName, publicOnly == 0 ? false : true);
+    public static CallSite constLookup(MethodHandles.Lookup lookup, String searchType, MethodType type, String constName, int publicOnly, int callConstMissing) {
+        ConstantLookupSite site = new ConstantLookupSite(type, constName, publicOnly == 0 ? false : true, callConstMissing == 0 ? false : true);
 
         MethodHandle handle = Binder
                 .from(lookup, type)
@@ -81,7 +83,11 @@ public class ConstantLookupSite extends MutableCallSite {
 
         // Call const_missing or cache
         if (constant == null) {
-            return module.callMethod(context, "const_missing", getSymbolicName(context));
+            if (callConstMissing) {
+                return module.callMethod(context, "const_missing", getSymbolicName(context));
+            } else {
+                return UndefinedValue.UNDEFINED;
+            }
         }
 
         SwitchPoint switchPoint = (SwitchPoint) runtime.getConstantInvalidator(name).getData();
@@ -116,7 +122,11 @@ public class ConstantLookupSite extends MutableCallSite {
 
         // Call const_missing or cache
         if (constant == null) {
-            return module.callMethod(context, "const_missing", getSymbolicName(context));
+            if (callConstMissing) {
+                return module.callMethod(context, "const_missing", getSymbolicName(context));
+            } else {
+                return UndefinedValue.UNDEFINED;
+            }
         }
 
         // bind constant until invalidated

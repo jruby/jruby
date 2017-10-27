@@ -2940,7 +2940,7 @@ states[226] = new ParserState() {
 states[227] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     ISourcePosition pos = lexer.getPosition();
-                    yyVal = support.newOpConstAsgn(pos, new Colon3Node(pos, ((String)yyVals[-3+yyTop])), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.newOpConstAsgn(pos, new Colon3Node(pos, ((String)yyVals[-2+yyTop])), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };

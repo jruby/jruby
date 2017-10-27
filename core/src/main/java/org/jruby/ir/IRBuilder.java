@@ -3268,30 +3268,48 @@ public class IRBuilder {
         return result;
     }
 
-    // FIXME: All three paths feel a bit inefficient.  They all interact with the constant first to know
-    // if it exists or whether it should raise if it doesn't...then it will access it against for the put
-    // logic.  I could avoid that work but then there would be quite a bit more logic in Java.   This is a
-    // pretty esoteric corner of Ruby so I am not inclined to put anything more than a comment that it can be
-    // improved.
+    private Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
+        Variable leftModule = createTemporaryVariable();
+        String name;
+
+        if (lhs instanceof Colon2Node) {
+            Colon2Node colon2Node = (Colon2Node) lhs;
+            name = colon2Node.getName();
+            Operand leftValue = build(colon2Node.getLeftNode());
+            copy(leftModule, leftValue);
+        } else { // colon3
+            copy(leftModule, new ObjectClass());
+            name = ((Colon3Node) lhs).getName();
+        }
+
+        addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
+
+        return leftModule;
+    }
+
     public Operand buildOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
         String op = node.getOperator();
 
         if ("||".equals(op)) {
             Variable result = createTemporaryVariable();
-            Label isDefined = getNewLabel();
             Label done = getNewLabel();
-            Variable defined = createTemporaryVariable();
-            addInstr(new CopyInstr(defined, buildGetDefinition(node.getFirstNode())));
-            addInstr(BNEInstr.create(isDefined, defined, manager.getNil()));
-            addInstr(new CopyInstr(result, putConstantAssignment(node, build(node.getSecondNode()))));
-            addInstr(new JumpInstr(done));
-            addInstr(new LabelInstr(isDefined));
-            addInstr(new CopyInstr(result, build(node.getFirstNode())));
+            Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, false);
+            addInstr(BNEInstr.create(done, result, UndefinedValue.UNDEFINED));
+            Operand rhsValue = build(node.getSecondNode());
+            copy(result, rhsValue);
+            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
             addInstr(new LabelInstr(done));
             return result;
         } else if ("&&".equals(op)) {
-            build(node.getFirstNode()); // Get once to make sure it is there or will throw if not
-            return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, build(node.getSecondNode()))));
+            Variable result = createTemporaryVariable();
+            Label done = getNewLabel();
+            Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, true);
+            addInstr(new BFalseInstr(done, result));
+            Operand rhsValue = build(node.getSecondNode());
+            copy(result, rhsValue);
+            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
+            addInstr(new LabelInstr(done));
+            return result;
         }
 
         Variable result = createTemporaryVariable();

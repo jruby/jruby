@@ -1070,7 +1070,7 @@ arg             : lhs '=' arg {
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg {
                     ISourcePosition pos = lexer.getPosition();
-                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, $1), $3, $4);
+                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, $2), $3, $4);
                 }
                 | backref tOP_ASGN arg {
                     support.backrefAssignError($1);
