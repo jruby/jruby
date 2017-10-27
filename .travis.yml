@@ -85,6 +85,8 @@ matrix:
       jdk: oraclejdk9
     - env: PHASE='-Pmain'
       jdk: oraclejdk9
+    - env: PHASE='-Pcomplete'
+      jdk: oraclejdk9
   allow_failures:
     - env: PHASE='-Prake -Dtask=test:jruby:jit'
       jdk: oraclejdk9
@@ -93,6 +95,8 @@ matrix:
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
       jdk: oraclejdk9
     - env: PHASE='-Pmain'
+      jdk: oraclejdk9
+    - env: PHASE='-Pcomplete'
       jdk: oraclejdk9
 
 install: tool/travis-install.sh
