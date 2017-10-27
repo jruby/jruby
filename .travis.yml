@@ -77,15 +77,23 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
+    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+      jdk: oraclejdk9
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk9
   allow_failures:
-    #- env: PHASE='-Pj2ee'
-    #  jdk: oraclejdk7
-    # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
-    #- env: PHASE='-Pmain'
-    #  sudo: required
-    #  dist: trusty
-    #  group: edge
-    #  jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+      jdk: oraclejdk9
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk9
 
 install: tool/travis-install.sh
 script: tool/travis-script.sh
@@ -106,3 +114,8 @@ notifications:
 
 services:
   - redis-server
+
+addons:
+  apt:
+    packages:
+      - oracle-java9-installer
