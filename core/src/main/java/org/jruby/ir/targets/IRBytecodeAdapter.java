@@ -510,7 +510,7 @@ public abstract class IRBytecodeAdapter {
      * @param name name of the constant
      * @param noPrivateConsts whether to ignore private constants
      */
-    public abstract void searchModuleForConst(String name, boolean noPrivateConsts);
+    public abstract void searchModuleForConst(String name, boolean noPrivateConsts, boolean callConstMissing);
 
     /**
      * Lookup a constant from a given class or module.
