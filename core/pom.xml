@@ -682,6 +682,10 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
                 </configuration>
               </execution>
@@ -715,6 +719,10 @@ DO NOT MODIFIY - GENERATED CODE
                     <relocation>
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
                 </configuration>
@@ -750,6 +758,10 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
                 </configuration>
               </execution>
@@ -783,6 +795,10 @@ DO NOT MODIFIY - GENERATED CODE
                     <relocation>
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
                 </configuration>
@@ -818,6 +834,10 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
                 </configuration>
               </execution>
@@ -851,6 +871,10 @@ DO NOT MODIFIY - GENERATED CODE
                     <relocation>
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
                 </configuration>
@@ -886,6 +910,10 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
                 </configuration>
               </execution>
@@ -920,6 +948,10 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
                 </configuration>
               </execution>
@@ -953,6 +985,10 @@ DO NOT MODIFIY - GENERATED CODE
                     <relocation>
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
                 </configuration>
