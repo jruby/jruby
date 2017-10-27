@@ -2904,7 +2904,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                             if (noException) return runtime.newSymbol("wait_readable");
                             throw runtime.newErrnoEAGAINReadableError("read would block");
                         }
-                        throw runtime.newEOFError(fptr.getPath());
+                        return nonblockEOF(runtime, noException);
                     }
                     break;
                 }
