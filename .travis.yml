@@ -12,9 +12,8 @@ before_install:
   - unset _JAVA_OPTIONS
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=120M"; else export MAVEN_OPTS="-XX:CompressedClassSpaceSize=96M -XX:MaxMetaspaceSize=120M"; fi
-  - export MAVEN_OPTS="-Xmn52M -Xmx504M $MAVEN_OPTS"
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export JAVA_OPTS="$JAVA_OPTS -XX:MaxPermSize=96M"; else export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=72M -XX:MaxMetaspaceSize=96M"; fi
+  - export MAVEN_OPTS="-Xmn52M -Xmx504M -XX:CompressedClassSpaceSize=96M -XX:MaxMetaspaceSize=120M"
+  - export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=72M -XX:MaxMetaspaceSize=96M"
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
