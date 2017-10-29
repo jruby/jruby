@@ -98,10 +98,6 @@ matrix:
       jdk: oraclejdk9
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
       jdk: oraclejdk9
-    - env: PHASE='-Pmain'
-      jdk: oraclejdk9
-    - env: PHASE='-Pcomplete'
-      jdk: oraclejdk9
 
 install:
   - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
