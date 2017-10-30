@@ -66,7 +66,6 @@ import org.jruby.util.StringSupport;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-@JRubyClass(name="BigDecimal", parent="Numeric")
 public class RubyBigDecimal extends RubyNumeric {
 
     private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
