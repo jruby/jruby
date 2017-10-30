@@ -714,11 +714,10 @@ public class RipperLexer extends LexingCommon {
         
         ruby_sourceline = delayed_line;
         tokp = lex_pbeg + delayed_col;
-        
-        //System.out.println("TOKP: " + tokp + ", LEX_P: " + lex_p);        
-        IRubyObject value = parser.getRuntime().newString(delayed.dup());
+
         String event = tokenToEventId(token);
-        //System.out.println("EVENT: " + event + ", VALUE: " + value);
+        IRubyObject value = delayed == null ? parser.context.nil : parser.getRuntime().newString(delayed.dup());
+        
         yaccValue = parser.dispatch(event, value);
         delayed = null;
         ruby_sourceline = saved_line;
