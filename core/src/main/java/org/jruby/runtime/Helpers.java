@@ -268,23 +268,37 @@ public class Helpers {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
-            switch (errorMessage) {
-                case "Bad file descriptor" : return Errno.EBADF;
-                case "File not open" : return null;
-                case "An established connection was aborted by the software in your host machine" : return Errno.ECONNABORTED;
-                case "Broken pipe" : return Errno.EPIPE;
-
-                case "Connection reset by peer" : return Errno.ECONNRESET;
-                case "An existing connection was forcibly closed by the remote host" : return Errno.ECONNRESET;
-
-                case "No space left on device" : return Errno.ENOSPC;
-                case "Too many open files" : return Errno.EMFILE;
-                case "Message too large" : // Alpine Linux
-                case "Message too long" : return Errno.EMSGSIZE;
+            switch ( errorMessage ) {
+                case "Bad file descriptor":
+                    return Errno.EBADF;
+                case "File not open":
+                    return null;
+                case "An established connection was aborted by the software in your host machine":
+                case "connection was aborted": // Windows
+                    return Errno.ECONNABORTED;
+                case "Broken pipe":
+                    return Errno.EPIPE;
+                case "Connection reset by peer":
+                case "An existing connection was forcibly closed by the remote host":
+                    return Errno.ECONNRESET;
+                case "Too many levels of symbolic links":
+                    return Errno.ELOOP;
+                case "Too many open files":
+                    return Errno.EMFILE;
+                case "Too many open files in system":
+                    return Errno.ENFILE;
+                case "Network is unreachable":
+                    return Errno.ENETUNREACH;
+                case "Address already in use":
+                    return Errno.EADDRINUSE;
+                case "No space left on device":
+                    return Errno.ENOSPC;
+                case "Message too large": // Alpine Linux
+                case "Message too long":
+                    return Errno.EMSGSIZE;
                 case "Is a directory":
                     return Errno.EISDIR;
             }
-            if (Platform.IS_WINDOWS && errorMessage.contains("connection was aborted")) return Errno.ECONNRESET;
         }
         return null;
     }
