@@ -1200,11 +1200,7 @@ public class ShellLauncher {
             } else {
                 verifyExecutable();
                 execArgs = args;
-                try {
-                    execArgs[0] = executableFile.getCanonicalPath();
-                } catch (IOException ioe) {
-                    // can't get the canonical path, will use as-is
-                }
+                execArgs[0] = executableFile.getAbsolutePath();
             }
         }
 

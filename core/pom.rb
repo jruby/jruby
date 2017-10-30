@@ -265,8 +265,9 @@ project 'JRuby Core' do
     execute_goals( 'shade',
                    :id => 'create lib/jruby.jar',
                    :phase => 'package',
-                   'relocations' => [ { 'pattern' => 'org.objectweb',
-                                        'shadedPattern' => 'org.jruby.org.objectweb' } ],
+                   relocations: [
+                       {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
+                   ],
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          'mainClass' => 'org.jruby.Main' } ],
@@ -289,8 +290,10 @@ project 'JRuby Core' do
                                          'me.qmx.jitescript:jitescript',
                                          'org.ow2.asm:*' ]
                        },
-                       'relocations' => [ { 'pattern' =>  'org.objectweb',
-                                            'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
+                       relocations: [
+                           {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
+                           {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
+                       ] )
       end
     end
   end
