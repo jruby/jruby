@@ -1407,6 +1407,12 @@ public class OpenFile implements Finalizable {
                 return false;
             }
 
+            if (posix.errno != null && posix.errno != Errno.EAGAIN
+                    && posix.errno != Errno.EWOULDBLOCK && posix.errno != Errno.EINTR) {
+                // Encountered a permanent error. Don't read again.
+                return false;
+            }
+
             if (fd.chSelect != null) {
                 unlock();
                 try {

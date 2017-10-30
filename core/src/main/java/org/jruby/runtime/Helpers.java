@@ -212,6 +212,8 @@ public class Helpers {
                 case "Message too large": // Alpine Linux
                 case "Message too long":
                     return Errno.EMSGSIZE;
+                case "Is a directory":
+                    return Errno.EISDIR;
             }
         }
         return null;
