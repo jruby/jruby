@@ -1040,7 +1040,7 @@ public class RubyBigDecimal extends RubyNumeric {
         int precision = (pow + 1) * 4 * 2;
 
         IRubyObject result = divWithScale(context, val, precision);
-        if (result.getClass() == RubyBigDecimal.class) return ((RubyBigDecimal) result).setResult();
+        if (result instanceof RubyBigDecimal) return ((RubyBigDecimal) result).setResult();
         return result;
     }
 
@@ -1088,7 +1088,7 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         int prec = RubyNumeric.fix2int(digits);
         IRubyObject result = divWithScale(context, val, prec);
-        if (result.getClass()==RubyBigDecimal.class) return ((RubyBigDecimal) result).setResult(prec);
+        if (result instanceof RubyBigDecimal) return ((RubyBigDecimal) result).setResult(prec);
         return result;
     }
 
