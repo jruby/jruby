@@ -1212,6 +1212,7 @@ public class RipperLexer extends LexingCommon {
                 c = nextc();
                 if (c == '\n') {
                     spaceSeen = true;
+                    dispatchScanEvent(Tokens.tSP);
                     continue;
                 }
                 pushback(c);
