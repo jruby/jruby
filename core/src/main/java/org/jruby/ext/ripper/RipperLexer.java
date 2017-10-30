@@ -41,6 +41,8 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.ext.ripper.RipperParser.tSP;
+
 /**
  *
  * @author enebo
@@ -897,7 +899,7 @@ public class RipperLexer extends LexingCommon {
             case RipperParser.tEMBDOC_BEG: return "on_embdoc_beg";
             case RipperParser.tEMBDOC: return "on_embdoc";
             case RipperParser.tEMBDOC_END: return "on_embdoc_end";
-            case RipperParser.tSP: return "on_sp";
+            case tSP: return "on_sp";
             case RipperParser.tHEREDOC_BEG: return "on_heredoc_beg";
             case RipperParser.tHEREDOC_END: return "on_heredoc_end";
             case RipperParser.k__END__: return "on___end__";
@@ -986,7 +988,7 @@ public class RipperLexer extends LexingCommon {
                     }
                 }
                 pushback(c);
-                dispatchScanEvent(RipperParser.tSP);
+                dispatchScanEvent(tSP);
                 continue;
             }
             case '#': { /* it's a comment */
@@ -1029,7 +1031,7 @@ public class RipperLexer extends LexingCommon {
                             if (peek('.') == (c == '&')) {
                                 pushback(c);
 
-                                dispatchScanEvent(RipperParser.tSP);
+                                dispatchScanEvent(tSP);
                                 continue loop;
                             }
                         }
@@ -1164,7 +1166,7 @@ public class RipperLexer extends LexingCommon {
                 c = nextc();
                 if (c == '\n') {
                     spaceSeen = true;
-                    dispatchScanEvent(Tokens.tSP);
+                    dispatchScanEvent(tSP);
                     continue;
                 }
                 pushback(c);
