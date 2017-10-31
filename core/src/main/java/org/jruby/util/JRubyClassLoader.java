@@ -38,6 +38,7 @@ import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.jruby.util.log.Logger;
@@ -64,7 +65,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static volatile File tempDir;
 
-    private List<String> cachedJarPaths = new ArrayList<String>();
+    private List<String> cachedJarPaths = Collections.synchronizedList(new ArrayList<String>());
 
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
@@ -166,10 +167,6 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         return "";
     }
 
-    public List<String> getCachedJarPaths(){
-        return cachedJarPaths;
-    }
-
     /**
      * @deprecated use {@link #close()} instead
      */
@@ -193,6 +190,23 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             getJDBCDriverUnloader().run();
         }
         catch (Exception ex) { LOG.debug(ex); }
+
+        terminateJarIndexCacheEntries();
+    }
+
+    protected void terminateJarIndexCacheEntries() {
+        for (String jarPath : cachedJarPaths){
+            try {
+                // Remove reference from jar cache
+                JarResource.removeJarResource(jarPath);
+
+                // Delete temp jar on disk
+                File jarFile = new File(jarPath);
+                jarFile.delete();
+            } catch (Exception e) {
+                // keep trying to clean up other temp jars
+            }
+        }
     }
 
     @Deprecated
