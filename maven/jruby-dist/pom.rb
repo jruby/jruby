@@ -62,6 +62,12 @@ project 'JRuby Dist' do
                      :attach => false,
                      :descriptors => [ 'src/main/assembly/bin200.xml' ] )
     end
+
+    plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
+      execute_goals(
+          :artifacts,
+          algorithms: ['MD5', 'SHA-1', 'SHA-256', 'SHA-512' ] )
+    end
   end
 
   plugin( :invoker )
@@ -101,9 +107,6 @@ project 'JRuby Dist' do
                                         :type => 'zip',
                                         :classifier => 'src' } ] )
 
-      end
-      plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
-        execute_goals( :artifacts, :algorithms => ['SHA256' ] )
       end
     end
   end

@@ -30,6 +30,14 @@ project 'JRuby Main Maven Artifact' do
     end
   end
 
+  phase :package do
+    plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
+      execute_goals(
+          :artifacts,
+          algorithms: ['MD5', 'SHA-1', 'SHA-256', 'SHA-512' ] )
+    end
+  end
+
   profile :apps do
     activation do
       property :name => 'invoker.test'
