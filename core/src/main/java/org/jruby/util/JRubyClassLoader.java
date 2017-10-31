@@ -37,6 +37,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -62,6 +64,8 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static volatile File tempDir;
 
+    private List<String> cachedJarPaths = new ArrayList<String>();
+
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
     }
@@ -86,6 +90,8 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                 out.close();
                 in.close();
                 url = f.toURI().toURL();
+
+                cachedJarPaths.add(URLUtil.getPath(url));
             }
             catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
@@ -158,6 +164,10 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             LOG.warn("could not access 'java.io.tmpdir' will use working directory", ex);
         }
         return "";
+    }
+
+    public List<String> getCachedJarPaths(){
+        return cachedJarPaths;
     }
 
     /**
