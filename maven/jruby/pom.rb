@@ -30,13 +30,7 @@ project 'JRuby Main Maven Artifact' do
     end
   end
 
-  phase :package do
-    plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
-      execute_goals(
-          :artifacts,
-          algorithms: ['MD5', 'SHA-1', 'SHA-256', 'SHA-512' ] )
-    end
-  end
+  plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
 
   profile :apps do
     activation do
