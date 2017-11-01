@@ -21,7 +21,7 @@ default_gems = [
     ['ipaddr', '1.2.0'],
     ['jar-dependencies', '${jar-dependencies.version}'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.10.1'],
+    ['jruby-openssl', '0.10.2'],
     ['json', '${json.version}'],
     ['psych', '3.1.0'],
     ['rake-ant', '1.0.4'],
@@ -68,8 +68,8 @@ project 'JRuby Lib Setup' do
   # for testing out jruby-ossl before final release :
   #repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots',
   #            :id => 'gem-snaphots' )
-  #repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
-  #            :id => 'gem-staging' )
+  repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
+              :id => 'gem-staging' )
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
