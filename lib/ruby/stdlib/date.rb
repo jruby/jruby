@@ -1883,13 +1883,13 @@ class Time
     Date.new!(Date.__send__(:jd_to_ajd, jd, 0, 0), 0, Date::ITALY)
   end
 
-  def to_datetime(sg = Date::ITALY, klass = DateTime)
+  def to_datetime
+    jd = DateTime.__send__(:civil_to_jd, year, mon, mday, DateTime::ITALY)
+    fr = DateTime.__send__(:time_to_day_fraction, hour, min, [sec, 59].min) +
+      Rational(subsec, 86400)
     of = Rational(utc_offset, 86400)
-    s = [sec, 59].min
-    ms, sub_millis = nsec.divmod(1_000_000) # expects ns precision for Time
-    sub_millis = Rational(sub_millis, 1_000_000) if sub_millis != 0
-    dt = Date::JODA::DateTime.new(1000 * to_i + ms, Date.send(:chronology, sg, of))
-    klass.new!(dt, of, sg, sub_millis)
+    DateTime.new!(DateTime.__send__(:jd_to_ajd, jd, fr, of),
+		  of, DateTime::ITALY)
   end
 
 end
