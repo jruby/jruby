@@ -10,8 +10,10 @@ before_install:
   - unset _JAVA_OPTIONS
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=180M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=180M -XX:CompressedClassSpaceSize=180M"; fi
-  - export MAVEN_OPTS="-Xmx500M $MAVEN_OPTS"
+  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=160M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=144M -XX:CompressedClassSpaceSize=96M"; fi
+  - export MAVEN_OPTS="-Xms64M -Xmx512M $MAVEN_OPTS"
+  - export JAVA_OPTS="$JAVA_OPTS"
+
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
@@ -23,14 +25,13 @@ before_script:
 
 jdk:
   - openjdk7
-#  - oraclejdk8
 
 os:
   - linux
 
 env:
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn36M -Xmx512M"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms48M -Xmx640M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
     - MALLOC_ARENA_MAX=2
   matrix:
     - PHASE='-Ptest'
@@ -68,6 +69,8 @@ matrix:
       jdk: openjdk7
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk8
+    - env: PHASE='-Prake -Dtask=test:mri'
+      jdk: oraclejdk8
     # These next two started crashing on JDK7 in March 2015, possibly due to JVM issues on Travis's Docker-based env
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
       jdk: oraclejdk8
@@ -93,10 +96,6 @@ matrix:
     - env: PHASE='-Prake -Dtask=test:mri:jit'
       jdk: oraclejdk9
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-      jdk: oraclejdk9
-    - env: PHASE='-Pmain'
-      jdk: oraclejdk9
-    - env: PHASE='-Pcomplete'
       jdk: oraclejdk9
 
 install: tool/travis-install.sh
