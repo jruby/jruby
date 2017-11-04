@@ -128,11 +128,12 @@ describe :io_each, shared: true do
       describe "returned Enumerator" do
         describe "size" do
           it "should return nil" do
-            @io.send(@method).size.should == nil
+            @io.send(@method, nil, 1024).size.should == nil
           end
         end
       end
     end
+
     describe "when a block is given" do
       it "accepts an empty block" do
         @io.send(@method, nil, 1024) {}.should equal(@io)
@@ -145,6 +146,7 @@ describe :io_each, shared: true do
           ScratchPad.recorded.should == ["qui a linha cinco.\nHere is line six.\n"]
         end
       end
+
       describe "when passed an empty String as a separator" do
         it "yields each paragraph" do
           @io.send(@method, "", 1024) { |s| ScratchPad << s }
