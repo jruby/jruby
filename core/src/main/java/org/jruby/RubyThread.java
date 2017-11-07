@@ -276,6 +276,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private void toKill() {
         pendingInterruptClear();
+        status.set(Status.ABORTING);
         throwThreadKill();
     }
 
