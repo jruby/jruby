@@ -1,2 +1,0 @@
-fails:Thread#abort_on_exception= when enabled and the thread dies due to an exception causes the main thread to raise the exception raised in the thread
-fails:Thread.abort_on_exception= when enabled and a non-main thread dies due to an exception causes the main thread to raise the exception raised in the thread

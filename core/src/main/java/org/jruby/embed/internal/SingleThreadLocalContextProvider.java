@@ -29,9 +29,10 @@
  */
 package org.jruby.embed.internal;
 
-import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.embed.LocalVariableBehavior;
+
+import java.util.Map;
 
 /**
  *

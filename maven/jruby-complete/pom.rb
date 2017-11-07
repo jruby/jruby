@@ -82,13 +82,7 @@ project 'JRuby Complete' do
                    :failOnError => false )
   end
 
-  phase :package do
-    plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
-      execute_goals(
-          :artifacts,
-          algorithms: ['MD5', 'SHA-1', 'SHA-256', 'SHA-512' ] )
-    end
-  end
+  plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
 
   ['sonatype-oss-release', 'snapshots'].each do |name|
     profile name do
