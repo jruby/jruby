@@ -1,1 +1,0 @@
-fails:Thread#key? raises exceptions on the wrong type of keys
