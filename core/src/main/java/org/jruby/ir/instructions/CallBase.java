@@ -426,11 +426,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
 
         if (hasLiteralClosure()) {
-            try {
-                return callSite.call(context, self, object, values, preparedBlock);
-            } finally {
-                preparedBlock.escape();
-            }
+            return callSite.callIter(context, self, object, values, preparedBlock);
         }
 
         return callSite.call(context, self, object, values, preparedBlock);

@@ -57,6 +57,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
@@ -325,11 +326,15 @@ public class InterpreterEngine {
                 break;
             }
             case CALL_1OB: {
+                // NOTE: This logic shouod always match OneOperandArgBlockCallInstr
                 OneOperandArgBlockCallInstr call = (OneOperandArgBlockCallInstr)instr;
                 IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, currScope, temp);
                 IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currScope, currDynScope, temp);
                 Block preparedBlock = call.prepareBlock(context, self, currScope, currDynScope, temp);
-                result = call.getCallSite().callIter(context, self, r, o, preparedBlock);
+                CallSite callSite = call.getCallSite();
+                result = call.hasLiteralClosure() ?
+                        callSite.callIter(context, self, r, o, preparedBlock) :
+                        callSite.call(context, self, r, o, preparedBlock);
                 setResult(temp, currDynScope, call.getResult(), result);
                 break;
             }
