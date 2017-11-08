@@ -1,10 +1,10 @@
 
-DIST_FILES_GLOB = "jruby-dist-*.{zip,gz,md5,sha1,sha256,sha512}"
+DIST_FILES_GLOB = "jruby-dist-*.{zip,gz}"
 DIST_FILES_DIR = File.join('maven', 'jruby-dist', 'target')
 JRUBY_COMPLETE_DIR = File.join('maven', 'jruby-complete', 'target')
-JRUBY_COMPLETE_GLOB = 'jruby-complete-*.{jar,md5,sha1,sha256,sha512}'
+JRUBY_COMPLETE_GLOB = 'jruby-complete-*.jar'
 JRUBY_JARS_DIR = File.join('maven', 'jruby-jars', 'pkg')
-JRUBY_JARS_GLOB = 'jruby-jars-*.{gem,md5,sha1,sha256,sha512}'
+JRUBY_JARS_GLOB = 'jruby-jars-*.gem'
 JRUBY_EXE_GLOB = '*.exe'
 
 desc "post-process mvn build to generate properly named and fingerprinted files"
@@ -22,8 +22,10 @@ task :post_process_artifacts => :windows_installer do
   end
 
   cp Dir[File.join(JRUBY_COMPLETE_DIR, JRUBY_COMPLETE_GLOB)], RELEASE_DIR
+  Dir[File.join(RELEASE_DIR, JRUBY_COMPLETE_GLOB)].each {|file| checksums file }
 
   cp Dir[File.join(JRUBY_JARS_DIR, JRUBY_JARS_GLOB)], RELEASE_DIR
+  Dir[File.join(RELEASE_DIR, JRUBY_JARS_GLOB)].each {|file| checksums file }
 
   Dir[File.join(RELEASE_DIR, JRUBY_EXE_GLOB)].each {|file| checksums file }
 end
