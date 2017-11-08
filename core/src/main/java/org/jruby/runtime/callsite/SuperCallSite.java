@@ -55,7 +55,7 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, args, context, self, name);
     }
 
-    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
@@ -67,13 +67,9 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, args, context, self, name);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
-        return callBlock(context, caller, self, args, block);
-    }
-
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         try {
-            return callBlock(context, caller, self, args, block);
+            return call(context, caller, self, args, block);
         } finally {
             block.escape();
         }
@@ -121,7 +117,7 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, name);
     }
 
-    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
@@ -133,13 +129,9 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, context, self, name);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
-        return callBlock(context, caller, self, block);
-    }
-
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         try {
-            return callBlock(context, caller, self, block);
+            return call(context, caller, self, block);
         } finally {
             block.escape();
         }
@@ -157,7 +149,7 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, name, arg1);
     }
 
-    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
@@ -169,13 +161,9 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, context, self, name, arg1);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
-        return callBlock(context, caller, self, arg1, block);
-    }
-
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
         try {
-            return callBlock(context, caller, self, arg1, block);
+            return call(context, caller, self, arg1, block);
         } finally {
             block.escape();
         }
@@ -193,7 +181,7 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, name, arg1, arg2);
     }
 
-    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
@@ -205,13 +193,9 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, context, self, name, arg1, arg2);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return callBlock(context, caller, self, arg1, arg2, block);
-    }
-
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
         try {
-            return callBlock(context, caller, self, arg1, arg2, block);
+            return call(context, caller, self, arg1, arg2, block);
         } finally {
             block.escape();
         }
@@ -229,7 +213,7 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, context, self, name, arg1, arg2, arg3);
     }
 
-    private IRubyObject callBlock(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
@@ -241,13 +225,9 @@ public class SuperCallSite extends CallSite {
         return cacheAndCall(caller, selfType, block, context, self, name, arg1, arg2, arg3);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return callBlock(context, caller, self, arg1, arg2, arg3, block);
-    }
-
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
-            return callBlock(context, caller, self, arg1, arg2, arg3, block);
+            return call(context, caller, self, arg1, arg2, arg3, block);
         } finally {
             block.escape();
         }
