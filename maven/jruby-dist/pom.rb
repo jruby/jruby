@@ -1,7 +1,7 @@
 require 'rubygems/package'
 require 'fileutils'
 project 'JRuby Dist' do
-  
+
   version = ENV['JRUBY_VERSION'] ||
     File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
@@ -64,9 +64,36 @@ project 'JRuby Dist' do
     end
   end
 
+  plugin( :invoker )
+
   plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
 
-  plugin( :invoker )
+  profile 'sonatype-oss-release' do
+
+    plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+      execute_goals( 'attach-artifact',
+                     id: 'attach-checksums',
+                     phase: :package,
+                     artifacts: [ { file: '${project.build.directory}/jruby-dist-${project.version}-bin.tar.gz.sha256',
+                                    classifier: :bin,
+                                    type: 'tar.gz.sha256'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-bin.tar.gz.sha512',
+                                    classifier: :bin,
+                                    type: 'tar.gz.sha512'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-bin.zip.sha256',
+                                    classifier: :bin,
+                                    type: 'zip.sha256'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-bin.zip.sha512',
+                                    classifier: :bin,
+                                    type: 'zip.sha512'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha256',
+                                    classifier: :src,
+                                    type: 'zip.sha256'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha512',
+                                    classifier: :src,
+                                    type: 'zip.sha512'} ] )
+    end
+  end
 
   # since the source packages are done from the git repository we need
   # to be inside a git controlled directory. for example the source packages
@@ -79,7 +106,7 @@ project 'JRuby Dist' do
       file( :exists => '../../.git' )
     end
 
-    phase 'package' do
+    phase 'prepare-package' do
       execute :pack_sources do |ctx|
         require 'fileutils'
 

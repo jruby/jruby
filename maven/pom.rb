@@ -1,5 +1,5 @@
 project 'JRuby Artifacts' do
-  
+
   version = ENV['JRUBY_VERSION'] ||
     File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
@@ -28,7 +28,7 @@ project 'JRuby Artifacts' do
       execute_goals(
           :artifacts,
           phase: :package,
-          algorithms: ['MD5', 'SHA-1', 'SHA-256', 'SHA-512' ] )
+          algorithms: ['SHA-256', 'SHA-512' ] )
     end
   end
 
