@@ -4095,7 +4095,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newString("w")}, Block.NULL_BLOCK);
                 close2 = true;
             } else if (sites.respond_to_write.respondsTo(context, arg2, arg2, true)) {
-                io2 = newIO(runtime, new IOChannel.IOWritableByteChannel(arg1));
+                io2 = newIO(runtime, new IOChannel.IOWritableByteChannel(arg2));
                 io2.setAutoclose(false);
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
@@ -4224,7 +4224,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     private static long transfer(ThreadContext context, ReadableByteChannel from, WritableByteChannel to, long length, long position) throws IOException {
         int chunkSize = 8 * 1024;
-        ByteBuffer buffer = ByteBuffer.allocateDirect(chunkSize);
+        ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
         long transferred = 0;
 
         if (position != -1) {

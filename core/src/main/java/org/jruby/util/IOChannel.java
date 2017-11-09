@@ -94,7 +94,14 @@ public abstract class IOChannel implements Channel {
     }
 
     protected int write(CallSite write, ByteBuffer src) throws IOException {
-        ByteList buffer = new ByteList(src.array(), src.position(), src.remaining(), false);
+        ByteList buffer;
+
+        if (src.hasArray()) {
+            buffer = new ByteList(src.array(), src.position(), src.remaining(), false);
+        } else {
+            buffer = new ByteList(src.remaining());
+            buffer.append(src, src.remaining());
+        }
         IRubyObject written = write.call(runtime.getCurrentContext(), io, io, RubyString.newStringLight(runtime, buffer));
         return (int)written.convertToInteger().getLongValue();
     }
