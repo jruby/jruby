@@ -68,6 +68,13 @@ public abstract class JavaLang {
         final RubyModule byteArray = Java.getProxyClass(runtime, new byte[0].getClass());
         byteArray.addMethod("ubyte_get", new UByteGet(byteArray));
         byteArray.addMethod("ubyte_set", new UByteSet(byteArray));
+
+        final RubyModule String = Java.getProxyClass(runtime, java.lang.String.class);
+        String.defineAlias("to_str", "to_s");
+
+        final RubyModule Number = Java.getProxyClass(runtime, java.lang.Number.class);
+        Number.defineAlias("to_int", "longValue");
+        Number.defineAlias("to_f", "doubleValue");
     }
 
     @JRubyModule(name = "Java::JavaLang::Iterable", include = "Enumerable")
