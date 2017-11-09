@@ -94,7 +94,7 @@ public abstract class ChannelHelper {
     public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
         while (filteredStream instanceof FilterOutputStream) {
             try {
-                Field out = FilterInputStream.class.getDeclaredField("out");
+                Field out = FilterOutputStream.class.getDeclaredField("out");
                 OutputStream tmpStream =
                         Modulator.trySetAccessible(out) ? (OutputStream) out.get(filteredStream) : null;
 
