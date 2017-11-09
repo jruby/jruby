@@ -32,45 +32,58 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+
+import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.callsite.RespondToCallSite;
 
 /**
- * This class wraps a IRubyObject in an OutputStream. Depending on which messages
- * the IRubyObject answers to, it will have different functionality.
- * 
- * The point is that the IRubyObject could exhibit duck typing, in the style of IO versus StringIO, for example.
+ * Wrap an IO object in a Channel.
  *
- * At the moment, the only functionality supported is writing, and the only requirement on the io-object is
- * that it responds to write() and close() like IO.
- * 
- * @author <a href="mailto:Ola.Bini@ki.se">Ola Bini</a>
+ * @see IOReadableByteChannel
+ * @see IOWritableByteChannel
+ * @see IOReadableWritableByteChannel
  */
 public abstract class IOChannel implements Channel {
     private final IRubyObject io;
     private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private final RespondToCallSite respondToClosed = new RespondToCallSite("closed?");
+    private final CallSite isClosedAdapter = MethodIndex.getFunctionalCallSite("closed?");
+    private final Ruby runtime;
 
-    /**
-     * Creates a new OutputStream with the object provided.
-     *
-     * @param io the ruby object
-     */
     protected IOChannel(final IRubyObject io) {
         this.io = io;
+        this.runtime = io.getRuntime();
     }
     
     public void close() throws IOException {
-        if (io.respondsTo("close")) closeAdapter.call(io.getRuntime().getCurrentContext(), io, io);
+        ThreadContext context = runtime.getCurrentContext();
+
+        // no call site use here since this will likely only be called once
+        if (io.respondsTo("close")) {
+            closeAdapter.call(context, io, io);
+        }
+
+        // can't close, assume it doesn't need to be
     }
 
     public boolean isOpen() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        ThreadContext context = runtime.getCurrentContext();
+
+        if (respondToClosed.respondsTo(context, io, io)) {
+            return !isClosedAdapter.call(context, io, io).isTrue();
+        }
+
+        // can't determine, assume it's open
+        return true;
     }
 
     protected int read(CallSite read, ByteBuffer dst) throws IOException {
-        IRubyObject readValue = read.call(io.getRuntime().getCurrentContext(), io, io, io.getRuntime().newFixnum(dst.remaining()));
+        IRubyObject readValue = read.call(runtime.getCurrentContext(), io, io, runtime.newFixnum(dst.remaining()));
         int returnValue = -1;
         if (!readValue.isNil()) {
             ByteList str = ((RubyString)readValue).getByteList();
@@ -82,11 +95,12 @@ public abstract class IOChannel implements Channel {
 
     protected int write(CallSite write, ByteBuffer src) throws IOException {
         ByteList buffer = new ByteList(src.array(), src.position(), src.remaining(), false);
-        IRubyObject written = write.call(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), buffer));
+        IRubyObject written = write.call(runtime.getCurrentContext(), io, io, RubyString.newStringLight(runtime, buffer));
         return (int)written.convertToInteger().getLongValue();
     }
 
     protected CallSite initReadSite() {
+        // no call site use here since this will only be called once
         if(io.respondsTo("read")) {
             return MethodIndex.getFunctionalCallSite("read");
         } else {
@@ -95,6 +109,7 @@ public abstract class IOChannel implements Channel {
     }
 
     protected CallSite initWriteSite() {
+        // no call site use here since this will only be called once
         if(io.respondsTo("write")) {
             return MethodIndex.getFunctionalCallSite("write");
         } else if (io.respondsTo("<<")) {
@@ -103,7 +118,10 @@ public abstract class IOChannel implements Channel {
             throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `write' method");
         }
     }
-    
+
+    /**
+     * A {@link ReadableByteChannel} wrapper around an IO-like Ruby object.
+     */
     public static class IOReadableByteChannel extends IOChannel implements ReadableByteChannel {
         private final CallSite read;
 
@@ -117,6 +135,10 @@ public abstract class IOChannel implements Channel {
         }
     }
 
+
+    /**
+     * A {@link WritableByteChannel} wrapper around an IO-like Ruby object.
+     */
     public static class IOWritableByteChannel extends IOChannel implements WritableByteChannel {
         private final CallSite write;
         public IOWritableByteChannel(final IRubyObject io) {
@@ -129,6 +151,10 @@ public abstract class IOChannel implements Channel {
         }
     }
 
+
+    /**
+     * A {@link ReadableByteChannel} and {@link WritableByteChannel} wrapper around an IO-like Ruby object.
+     */
     public static class IOReadableWritableByteChannel extends IOChannel implements ReadableByteChannel, WritableByteChannel {
         private final CallSite write;
         private final CallSite read;
