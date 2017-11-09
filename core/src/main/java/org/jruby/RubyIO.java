@@ -44,6 +44,7 @@ import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IOSites;
 import org.jruby.runtime.callsite.RespondToCallSite;
+import org.jruby.util.IOChannel;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
@@ -4133,11 +4134,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path}, Block.NULL_BLOCK);
                 close1 = true;
             } else if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
-                if (length == null) {
-                    read = sites.read.call(context, arg1, arg1, context.nil).convertToString();
-                } else {
-                    read = sites.read.call(context, arg1, arg1, length).convertToString();
-                }
+                io1 = newIO(runtime, new IOChannel.IOReadableByteChannel(arg1));
+                io1.setAutoclose(false);
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
             }
@@ -4152,14 +4150,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newString("w")}, Block.NULL_BLOCK);
                 close2 = true;
             } else if (sites.respond_to_write.respondsTo(context, arg2, arg2, true)) {
-                if (read == null) {
-                    if (length == null) {
-                        read = io1.read(context, runtime.getNil()).convertToString();
-                    } else {
-                        read = io1.read(context, length).convertToString();
-                    }
-                }
-                return sites.write.call(context, arg2, arg2, read);
+                io2 = newIO(runtime, new IOChannel.IOWritableByteChannel(arg2));
+                io2.setAutoclose(false);
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
             }
@@ -4287,7 +4279,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     private static long transfer(ThreadContext context, ReadableByteChannel from, WritableByteChannel to, long length, long position) throws IOException {
         int chunkSize = 8 * 1024;
-        ByteBuffer buffer = ByteBuffer.allocateDirect(chunkSize);
+        ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
         long transferred = 0;
 
         if (position != -1) {
