@@ -223,16 +223,6 @@ do
             CP="$CP$CP_DELIMITER$2"
             CLASSPATH=""
             shift
-        elif [ "${val:0:3}" = "-G:" ]; then # Graal options
-            opt=${val:3}
-            case $opt in
-              +*)
-                opt="${opt:1}=true" ;;
-              -*)
-                opt="${opt:1}=false" ;;
-            esac
-            echo "$1 is deprecated - use -J-Dgraal.$opt instead" >&2
-            java_args=("${java_args[@]}" "-Dgraal.$opt")
         else
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
