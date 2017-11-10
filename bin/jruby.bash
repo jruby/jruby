@@ -180,6 +180,10 @@ fi
 # ----- Execute The Requested Command -----------------------------------------
 JAVA_ENCODING=""
 
+if [ -e "/dev/urandom" ]; then
+  JAVA_SECURITY_EGD="/dev/urandom"
+fi
+
 declare -a java_args
 declare -a ruby_args
 mode=""
@@ -234,6 +238,8 @@ do
                 VERIFY_JRUBY="yes"
             elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
                 JAVA_ENCODING=$val
+            elif [ "${val:0:20}" = "-Djava.security.egd=" ]; then
+                JAVA_SECURITY_EGD=$val
             fi
             java_args=("${java_args[@]}" "${1:2}")
         fi
@@ -313,6 +319,12 @@ done
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
 if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
   java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
+fi
+
+# Force OpenJDK-based JVMs to use /dev/urandom for random number generation
+# See https://github.com/jruby/jruby/issues/4685 among others.
+if [[ -n "$JAVA_SECURITY_EGD" ]]; then
+  java_args=("${java_args[@]}" "-Djava.security.egd=$JAVA_SECURITY_EGD")
 fi
 
 # Append the rest of the arguments
