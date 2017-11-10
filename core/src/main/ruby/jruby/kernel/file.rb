@@ -122,38 +122,6 @@ if org.jruby.platform.Platform::IS_WINDOWS
           0 # Comply with spec
         end
 
-        # Returns whether or not +file+ is a symlink.
-        #
-        def self.symlink?(file)
-          file = string_check(file)
-
-          return false if file =~ /^(classpath:|classloader:|uri:classloader|jar:)/ || !File.exist?(file)
-
-          file.slice!(5..-1) if file =~ /^file:/
-          wfile = file.wincode
-          attrib = GetFileAttributesW(wfile)
-
-          if attrib == INVALID_FILE_ATTRIBUTES
-            raise SystemCallError.new('GetFileAttributes', FFI.errno)
-          end
-
-          if attrib & FILE_ATTRIBUTE_REPARSE_POINT > 0
-            begin
-              find_data = WIN32_FIND_DATA.new
-              handle = FindFirstFileW(wfile, find_data)
-
-              if handle == INVALID_HANDLE_VALUE
-                raise SystemCallError.new('FindFirstFile', FFI.errno)
-              end
-
-              return true if find_data[:dwReserved0] == IO_REPARSE_TAG_SYMLINK
-            ensure
-              CloseHandle(handle)
-            end
-          end
-          false
-        end
-
         private
 
         # Simulate Ruby's string checking
