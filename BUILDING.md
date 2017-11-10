@@ -149,7 +149,7 @@ jruby spec/mspec/bin/mspec ci spec/ruby/<path to spec>
 If `ci` is omitted or replaced with `run` you will see any specs known to fail. The `ci` command
 avoids running those specs.
 
-#### Run JRuby with with remote debugging
+#### Run JRuby with remote debugging
 
 If you are familiar with Java debuggers, you can attach one to a JRuby process using the JDWP agent.
 The exact flag may vary with debugger and platform:
