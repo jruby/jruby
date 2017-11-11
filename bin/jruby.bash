@@ -181,7 +181,9 @@ fi
 JAVA_ENCODING=""
 
 if [ -e "/dev/urandom" ]; then
-  JAVA_SECURITY_EGD="/dev/urandom"
+  # OpenJDK tries really hard to prevent you from using urandom.
+  # See https://bugs.openjdk.java.net/browse/JDK-6202721
+  JAVA_SECURITY_EGD="/dev/./urandom"
 fi
 
 declare -a java_args
