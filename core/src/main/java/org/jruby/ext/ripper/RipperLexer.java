@@ -923,9 +923,9 @@ public class RipperLexer extends LexingCommon {
     }
 
     /**
-     *  Returns the next token. Also sets yyVal is needed.
+     *  Returns the next token. Also sets yyVal as needed.
      *
-     *@return    Description of the Returned Value
+     * @return    the next token
      */
     private int yylex() throws IOException {
         int c;
