@@ -180,9 +180,14 @@ public class RubyInstanceConfig {
     public void processArgumentsWithRubyopts() {
         // environment defaults to System.getenv normally
         Object rubyoptObj = environment.get("RUBYOPT");
-        String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
 
-        if (rubyopt == null || rubyopt.length() == 0) return;
+        if (rubyoptObj == null) return;
+
+        // Our argument processor bails if an arg starts with space, so we trim the RUBYOPT line
+        // See #4849
+        String rubyopt = rubyoptObj.toString().trim();
+
+        if (rubyopt.length() == 0) return;
 
         String[] rubyoptArgs = rubyopt.split("\\s+");
         if (rubyoptArgs.length != 0) {
