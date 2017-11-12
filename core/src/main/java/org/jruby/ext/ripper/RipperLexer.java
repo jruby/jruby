@@ -710,7 +710,7 @@ public class RipperLexer extends LexingCommon {
         return lex_p > tokp;
     }
     
-    public void dispatchDelayedToken(int token) { //mri: rupper_dispatch_delayed_token
+    public void dispatchDelayedToken(int token) { //mri: ripper_dispatch_delayed_token
         int saved_line = ruby_sourceline;
         int saved_tokp = tokp;
         
