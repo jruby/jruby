@@ -41,6 +41,7 @@ import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.POSIX;
 import org.jcodings.transcode.EConvFlags;
+import org.jruby.api.API;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IOSites;
 import org.jruby.runtime.callsite.RespondToCallSite;
@@ -2167,16 +2168,79 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return rbIoClose(runtime);
     }
 
-    @JRubyMethod(name = "close_on_exec=", notImplemented = true)
+    public static final int FD_CLOEXEC = 1;
+
+    @JRubyMethod(name = "close_on_exec=")
     public IRubyObject close_on_exec_set(ThreadContext context, IRubyObject arg) {
-        // TODO: rb_io_set_close_on_exec
-        throw context.runtime.newNotImplementedError("close_on_exec=");
+        Ruby runtime = context.runtime;
+        POSIX posix = runtime.getPosix();
+        OpenFile fptr = getOpenFileChecked();
+        RubyIO write_io;
+
+        if (fptr.fd().chNative == null || !posix.isNative()) {
+            runtime.getWarnings().warning("close_on_exec is not implemented for this stream type: " + fptr.fd().ch.getClass().getSimpleName());
+            return context.nil;
+        }
+
+        int flag = arg.isTrue() ? FD_CLOEXEC : 0;
+        int fd, ret;
+
+        write_io = GetWriteIO();
+        if (this != write_io) {
+            fptr = write_io.getOpenFileChecked();
+            if (fptr != null && 0 <= (fd = fptr.fd().chNative.getFD())) {
+                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) return API.rb_sys_fail_path(runtime, fptr.getPath());
+                if ((ret & FD_CLOEXEC) != flag) {
+                    ret = (ret & ~FD_CLOEXEC) | flag;
+                    ret = posix.fcntlInt(fd, Fcntl.F_SETFD, ret);
+                    if (ret == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+                }
+            }
+
+        }
+
+        fptr = getOpenFileChecked();
+        if (fptr != null && 0 <= (fd = fptr.fd().chNative.getFD())) {
+            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+            if ((ret & FD_CLOEXEC) != flag) {
+                ret = (ret & ~FD_CLOEXEC) | flag;
+                ret = posix.fcntlInt(fd, Fcntl.F_SETFD, ret);
+                if (ret == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+            }
+        }
+
+        return context.nil;
     }
 
-    @JRubyMethod(name = "close_on_exec?", notImplemented = true)
+    @JRubyMethod(name = {"close_on_exec?", "close_on_exec"})
     public IRubyObject close_on_exec_p(ThreadContext context) {
-        // TODO: rb_io_close_on_exec_p
-        throw context.runtime.newNotImplementedError("close_on_exec=");
+        Ruby runtime = context.runtime;
+        POSIX posix = runtime.getPosix();
+        OpenFile fptr = getOpenFileChecked();
+
+        if (fptr == null || fptr.fd().chNative == null
+                || !posix.isNative()) {
+            return context.fals;
+        }
+
+        RubyIO write_io;
+        int fd, ret;
+
+        write_io = GetWriteIO();
+        if (this != write_io) {
+            fptr = write_io.getOpenFileChecked();
+            if (fptr != null && 0 <= (fd = fptr.fd().chNative.getFD())) {
+                if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+                if ((ret & FD_CLOEXEC) == 0) return context.fals;
+            }
+        }
+
+        fptr = getOpenFileChecked();
+        if (fptr != null && 0 <= (fd = fptr.fd().chNative.getFD())) {
+            if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
+            if ((ret & FD_CLOEXEC) == 0) return context.fals;
+        }
+        return context.tru;
     }
 
     /** Flushes the IO output stream.
@@ -2366,15 +2430,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "fcntl")
     public IRubyObject fcntl(ThreadContext context, IRubyObject cmd) {
-        // TODO: This version differs from ioctl by checking whether fcntl exists
-        // and raising notimplemented if it doesn't; perhaps no difference for us?
         return ctl(context.runtime, cmd, null);
     }
 
     @JRubyMethod(name = "fcntl")
     public IRubyObject fcntl(ThreadContext context, IRubyObject cmd, IRubyObject arg) {
-        // TODO: This version differs from ioctl by checking whether fcntl exists
-        // and raising notimplemented if it doesn't; perhaps no difference for us?
         return ctl(context.runtime, cmd, arg);
     }
 
@@ -2392,7 +2452,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return ctl(context.runtime, cmd, arg);
     }
 
-    public IRubyObject ctl(Ruby runtime, IRubyObject cmd, IRubyObject arg) {
+    private IRubyObject ctl(Ruby runtime, IRubyObject cmd, IRubyObject arg) {
         long realCmd = cmd.convertToInteger().getLongValue();
         long nArg = 0;
 
@@ -2415,23 +2475,32 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         OpenFile fptr = getOpenFileChecked();
 
-        // Fixme: Only F_SETFL and F_GETFL is current supported
-        // FIXME: Only NONBLOCK flag is supported
+        // This currently only supports setting two flags:
+        // FD_CLOEXEC on platforms where it is supported, and
+        // O_NONBLOCK when the stream can be set to non-blocking.
+
         // FIXME: F_SETFL and F_SETFD are treated as the same thing here.  For the case of dup(fd) we
         //   should actually have F_SETFL only affect one (it is unclear how well we do, but this TODO
         //   is here to at least document that we might need to do more work here.  Mostly SETFL is
         //   for mode changes which should persist across fork() boundaries.  Since JVM has no fork
         //   this is not a problem for us.
         if (realCmd == FcntlLibrary.FD_CLOEXEC) {
-            // Do nothing.  FD_CLOEXEC has no meaning in JVM since we cannot really exec.
-            // And why the hell does webrick pass this in as a first argument!!!!!
-        } else if (realCmd == Fcntl.F_SETFL.intValue() || realCmd == Fcntl.F_SETFD.intValue()) {
-            if ((nArg & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC) {
-                // Do nothing.  FD_CLOEXEC has no meaning in JVM since we cannot really exec.
+            close_on_exec_set(runtime.getCurrentContext(), runtime.getTrue());
+        } else if (realCmd == Fcntl.F_SETFD.intValue()) {
+            if (arg != null && (nArg & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC) {
+                close_on_exec_set(runtime.getCurrentContext(), arg);
             } else {
+                throw runtime.newNotImplementedError("F_SETFD only supports FD_CLOEXEC");
+            }
+        } else if (realCmd == Fcntl.F_GETFD.intValue()) {
+            return runtime.newFixnum(close_on_exec_p(runtime.getCurrentContext()).isTrue() ? FD_CLOEXEC : 0);
+        } else if (realCmd == Fcntl.F_SETFL.intValue()) {
+            if ((nArg & OpenFlags.O_NONBLOCK.intValue()) != 0) {
                 boolean block = (nArg & ModeFlags.NONBLOCK) != ModeFlags.NONBLOCK;
 
                 fptr.setBlocking(runtime, block);
+            } else {
+                throw runtime.newNotImplementedError("F_SETFL only supports O_NONBLOCK");
             }
         } else if (realCmd == Fcntl.F_GETFL.intValue()) {
             return fptr.isBlocking() ? RubyFixnum.zero(runtime) : RubyFixnum.newFixnum(runtime, ModeFlags.NONBLOCK);
