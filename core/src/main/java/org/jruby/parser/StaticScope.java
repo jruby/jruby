@@ -160,7 +160,7 @@ public class StaticScope implements Serializable {
         this.variableNames = names;
         this.variableNamesLength = names.length;
         this.type = type;
-        this.irScope = null;
+        this.irScope = enclosingScope == null ? null : enclosingScope.irScope;
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
         this.firstKeywordIndex = firstKeywordIndex;
