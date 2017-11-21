@@ -62,21 +62,14 @@ public class StringTerm extends StrTerm {
         return new ByteList(ByteList.NULL_ARRAY, lexer.getEncoding());
     }
 
-    private int endFound(RipperLexer lexer, LexerSource src, ByteList buffer) throws IOException {
+    private int endFound(RipperLexer lexer) throws IOException {
             if ((flags & STR_FUNC_QWORDS) != 0) {
                 flags = -1;
-                buffer.append(end);
                 return ' ';
             }
 
-            if ((flags & STR_FUNC_REGEXP) != 0) {
-                String options = parseRegexpFlags(lexer, src);
-                buffer.append(options.getBytes());
+            if ((flags & STR_FUNC_REGEXP) != 0) return parseRegexpFlags(lexer);
 
-                return Tokens.tREGEXP_END;
-            }
-
-            buffer.append(end);
             return Tokens.tSTRING_END;
     }
 
@@ -104,7 +97,7 @@ public class StringTerm extends StrTerm {
         }
 
         if (c == end && nest == 0) {
-            return endFound(lexer, src, buffer);
+            return endFound(lexer);
         }
         
         if (spaceSeen) {
@@ -144,9 +137,7 @@ public class StringTerm extends StrTerm {
         return Tokens.tSTRING_CONTENT;
     }
 
-    private String parseRegexpFlags(RipperLexer lexer, LexerSource src) throws IOException {
-        StringBuilder buf = new StringBuilder(end);
-
+    private int parseRegexpFlags(RipperLexer lexer) throws IOException {
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);
 
@@ -155,7 +146,6 @@ public class StringTerm extends StrTerm {
             switch (c) {
                 case 'i': case 'x': case 'm': case 'o': case 'n':
                 case 'e': case 's': case 'u':
-                    buf.append((char) c);
                 break;
             default:
                 unknownFlags.append((char) c);
@@ -166,7 +156,8 @@ public class StringTerm extends StrTerm {
         if (unknownFlags.length() != 0) {
             lexer.compile_error("unknown regexp option" + (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags.toString());
         }
-        return buf.toString();
+
+        return Tokens.tREGEXP_END;
     }
 
     private void mixedEscape(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
