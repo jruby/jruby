@@ -180,10 +180,12 @@ fi
 # ----- Execute The Requested Command -----------------------------------------
 JAVA_ENCODING=""
 
-if [ -e "/dev/urandom" ]; then
+if [ -r "/dev/urandom" ]; then
   # OpenJDK tries really hard to prevent you from using urandom.
   # See https://bugs.openjdk.java.net/browse/JDK-6202721
-  JAVA_SECURITY_EGD="/dev/./urandom"
+  # Non-file URL causes fallback to slow threaded SeedGenerator.
+  # See https://bz.apache.org/bugzilla/show_bug.cgi?id=56139
+  JAVA_SECURITY_EGD="file:/dev/urandom"
 fi
 
 declare -a java_args
