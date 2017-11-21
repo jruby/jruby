@@ -961,13 +961,16 @@ public class Java implements Library {
             // cannot link Java class com.sample.FooBar needs Java 8 (java.lang.UnsupportedClassVersionError: com/sample/FooBar : Unsupported major.minor version 52.0)
             throw runtime.newNameError("cannot link Java class " + className + ' ' + msg, className, ex, false);
         }
+        catch (NoClassDefFoundError | ClassNotFoundException ncdfe) {
+            // let caller try other names
+            return null;
+        }
         catch (LinkageError ex) {
             throw runtime.newNameError("cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex, false);
         }
         catch (SecurityException ex) {
             throw runtime.newSecurityError(ex.getLocalizedMessage());
         }
-        catch (ClassNotFoundException ex) { return null; }
 
         if ( initJavaClass ) {
             return getProxyClass(runtime, JavaClass.get(runtime, clazz));
