@@ -1177,7 +1177,7 @@ public class RubyEnumerable {
 
     @Deprecated @SuppressWarnings("deprecation")
     public static IRubyObject each_with_index19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return each_with_index19(context, self, args, block);
+        return each_with_index(context, self, args, block);
     }
 
     @JRubyMethod(required = 1)
