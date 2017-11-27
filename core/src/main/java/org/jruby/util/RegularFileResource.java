@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.attribute.BasicFileAttributes;
 
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.RubyFile;
@@ -93,10 +96,21 @@ class RegularFileResource extends AbstractFileResource {
 
     @Override
     public boolean isSymLink() {
-        FileStat stat = posix.allocateStat();
+        try {
+            // Note: We can't use file.exists() to check whether the symlink exists or not, because that method
+            // returns false for existing but broken symlink. So, we try without the existence check, but in the
+            // try-catch block.
+            // MRI behavior: symlink? on broken symlink should return true.
+            BasicFileAttributes attrs = Files.readAttributes(file.toPath(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
 
-        return posix.lstat(file.getAbsolutePath(), stat) < 0 ?
-                false : stat.isSymlink();
+            return attrs != null && attrs.isSymbolicLink();
+        } catch (SecurityException se) {
+            return false;
+        } catch (IOException ie) {
+            return false;
+        } catch (UnsupportedOperationException uoe) {
+            return false;
+        }
     }
 
     @Override
