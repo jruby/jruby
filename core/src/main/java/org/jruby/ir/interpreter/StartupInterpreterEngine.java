@@ -154,10 +154,10 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         int firstOccurrence = stack.indexOf(element);
 
         if (firstOccurrence != -1) {
-            int size = stack.size();
+            int elementsToPrune = stack.size() - (firstOccurrence + 1);
 
-            for (int i = firstOccurrence + 1; i < size; i++) {
-                stack.remove(firstOccurrence + 1);
+            for (int i = 0; i < elementsToPrune; i++) {
+                stack.pop();
             }
         } else {
             stack.push(element);
