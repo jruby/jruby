@@ -78,9 +78,6 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         switch (operation) {
                             case JUMP:
                                 JumpInstr jump = ((JumpInstr)instr);
-                                if (jump.exitsExcRegion()) {
-                                    rescuePCs.pop();
-                                }
                                 ipc = jump.getJumpTarget().getTargetPC();
                                 break;
                             default:
@@ -96,10 +93,26 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 // which will now use the updated value of currDynScope.
                                 currDynScope = interpreterContext.newDynamicScope(context);
                                 context.pushScope(currDynScope);
-                            case EXC_REGION_START:
-                                if (rescuePCs == null) rescuePCs = new Stack<>();
-                                rescuePCs.push(((ExceptionRegionStartMarkerInstr) instr).getFirstRescueBlockLabel().getTargetPC());
-                                break;
+                            case EXC_REGION_START: {
+                                int newPC = ((ExceptionRegionStartMarkerInstr) instr).getFirstRescueBlockLabel().getTargetPC();
+
+                                if (rescuePCs == null) {
+                                    rescuePCs = new Stack<>();
+                                    rescuePCs.push(newPC);
+                                } else {
+                                    // We use EXC_REGION_{START,END} as actual instructions instead of markers
+                                    // in this particular interpreter.  Unfortunately, these can never be guaranteed to
+                                    // execute in matched pairs since other instrs (like from a jump representing a Ruby
+                                    // next) may happen before hitting the END instr.  Because of this we will look to
+                                    // see if the stack is dirty and prune back to a proper clean point.  Otherwise it is
+                                    // clean and we push a new entry.  This mechanism works because these exc. regions
+                                    // represent lexical boundaries and you cannot see the same boundary nested in itself.
+                                    // If we try to push something already there then the space-time continuum is blown
+                                    // and we have to clean the universe up.
+                                    pushOrPrune(newPC, rescuePCs);
+                                }
+                            }
+                            break;
                             case EXC_REGION_END:
                                 rescuePCs.pop();
                                 break;
@@ -135,6 +148,20 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
         // Control should never get here!
         throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
+    }
+
+    private void pushOrPrune(int element, Stack<Integer> stack) {
+        int firstOccurrence = stack.indexOf(element);
+
+        if (firstOccurrence != -1) {
+            int size = stack.size();
+
+            for (int i = firstOccurrence + 1; i < size; i++) {
+                stack.remove(firstOccurrence + 1);
+            }
+        } else {
+            stack.push(element);
+        }
     }
 
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
