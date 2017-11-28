@@ -13,7 +13,7 @@ jnr-posix (https://github.com/jnr/jnr-posix),
 jruby-openssl (https://github.com/jruby/jruby-openssl),
 jruby-readline (https://github.com/jruby/jruby-readline),
 psych (https://github.com/ruby/psych),
-yydebug (http://svn.codehaus.org/jruby/trunk/jay/yydebug)
+yydebug (https://github.com/jruby/jay-yydebug/)
 are released under the same copyright/license.
 
 Some additional libraries distributed with JRuby are not covered by
