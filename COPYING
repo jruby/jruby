@@ -50,7 +50,7 @@ below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
 
    Copyright (c) 2000-2011 ymnk, JCraft,Inc. All rights reserved.
 
- The "rake" library (http://rake.rubyforge.org/) is distributed under
+ The "rake" library (https://github.com/ruby/rake) is distributed under
  the MIT license, and has the following copyright:
    
    Copyright (c) 2003, 2004 Jim Weirich
