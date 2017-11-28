@@ -113,11 +113,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                             }
                             break;
                             case EXC_REGION_END:
-                                try {
-                                    rescuePCs.pop();
-                                } catch (EmptyStackException e) {
-                                    System.out.println("WHHOOOPS: " + interpreterContext.toStringInstrs() + ", IP: " + ipc);
-                                }
+                                rescuePCs.pop();
                                 break;
                             default:
                                 processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
