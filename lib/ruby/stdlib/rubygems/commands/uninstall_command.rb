@@ -30,7 +30,7 @@ class Gem::Commands::UninstallCommand < Gem::Command
       options[:ignore] = value
     end
 
-    add_option('-D', '--[no-]check-development',
+    add_option('-D', '--[no-]-check-development',
                'Check development dependencies while uninstalling',
                '(default: false)') do |value, options|
       options[:check_dev] = value
@@ -143,9 +143,7 @@ that is a dependency of an existing gem.  You can use the
     deplist = Gem::DependencyList.new
 
     get_all_gem_names.uniq.each do |name|
-      gem_specs = Gem::Specification.find_all_by_name(name)
-      say("Gem '#{name}' is not installed") if gem_specs.empty?
-      gem_specs.each do |spec|
+      Gem::Specification.find_all_by_name(name).each do |spec|
         deplist.add spec
       end
     end
@@ -164,3 +162,4 @@ that is a dependency of an existing gem.  You can use the
   end
 
 end
+
