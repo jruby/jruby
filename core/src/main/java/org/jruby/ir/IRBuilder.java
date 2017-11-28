@@ -221,6 +221,19 @@ public class IRBuilder {
         }
 
         public void cloneIntoHostScope(IRBuilder builder) {
+            // $! should be restored before the ensure block is run
+            if (savedGlobalException != null) {
+                // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
+                if (!needsBacktrace) builder.addInstr(builder.manager.needsBacktrace(true));
+                builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+            }
+
+            // Sometimes we process a rescue and it hits something like non-local flow like a 'next' and
+            // there are no actual instrs pushed yet (but ebi has reserved a frame for it -- e.g. the rescue/ensure
+            // the next is in).  Since it is doing nothing we have nothing to clone.  By skipping this we prevent
+            // setting exception regions and simplify CFG construction.
+            if (instrs.size() == 0) return;
+
             SimpleCloneInfo ii = new SimpleCloneInfo(builder.scope, true);
 
             // Clone required labels.
@@ -229,13 +242,6 @@ public class IRBuilder {
             ii.renameLabel(start);
             for (Instr i: instrs) {
                 if (i instanceof LabelInstr) ii.renameLabel(((LabelInstr)i).getLabel());
-            }
-
-            // $! should be restored before the ensure block is run
-            if (savedGlobalException != null) {
-                // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
-                if (!needsBacktrace) builder.addInstr(builder.manager.needsBacktrace(true));
-                builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
             }
 
             // Clone instructions now
