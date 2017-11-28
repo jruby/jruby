@@ -172,7 +172,6 @@ import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
-import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1243,7 +1242,7 @@ public final class Ruby implements Constantizable {
             loadBundler();
         }
 
-        setNetworkStack();
+        deprecatedNetworkStackProperty();
 
         // Done booting JRuby runtime
         bootingRuntime = false;
@@ -4620,22 +4619,6 @@ public final class Ruby implements Constantizable {
         return runtimeNumber;
     }
 
-    private void setNetworkStack() {
-        try {
-            if (config.getIPv4Preferred()) {
-                System.setProperty("java.net.preferIPv4Stack", "true");
-            } else {
-                System.setProperty("java.net.preferIPv4Stack", "false");
-            }
-        } catch (AccessControlException ace) {
-            if (isVerbose()) {
-                LOG.warn("warning: unable to set network stack system property due "
-                        + "to security restrictions, please set it manually as JVM "
-                        + "parameter (-Djava.net.preferIPv4Stack=true|false)");
-            }
-        }
-    }
-
     /**
      * @see org.jruby.compiler.Constantizable
      */
@@ -5151,4 +5134,18 @@ public final class Ruby implements Constantizable {
     public final JavaSites sites = new JavaSites();
 
     private volatile MRIRecursionGuard mriRecursionGuard;
+
+    @Deprecated
+    private void setNetworkStack() {
+        deprecatedNetworkStackProperty();
+    }
+
+    @SuppressWarnings("deprecated")
+    private void deprecatedNetworkStackProperty() {
+        if (Options.PREFER_IPV4.load()) {
+            LOG.warn("Warning: not setting network stack system property because socket subsystem may already be booted."
+                    + "If you need this option please set it manually as a JVM property.\n"
+                    + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
+        }
+    }
 }

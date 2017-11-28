@@ -1445,15 +1445,6 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * get whether IPv4 is preferred
-     *
-     * @see Options#PREFER_IPV4
-     */
-    public boolean getIPv4Preferred() {
-        return preferIPv4;
-    }
-
-    /**
      * get whether uppercase package names will be honored
      */
     public boolean getAllowUppercasePackageNames() {
@@ -1592,7 +1583,6 @@ public class RubyInstanceConfig {
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
-    private boolean preferIPv4 = Options.PREFER_IPV4.load();
     private boolean frozenStringLiteral = false;
     private boolean debuggingFrozenStringLiteral = false;
     private String jrubyHome;
@@ -2039,4 +2029,9 @@ public class RubyInstanceConfig {
     }
 
     @Deprecated public static final String JIT_CODE_CACHE = "";
+
+    @Deprecated
+    public boolean getIPv4Preferred() {
+        return Options.PREFER_IPV4.load();
+    }
 }
