@@ -1,5 +1,6 @@
 package org.jruby.ir.interpreter;
 
+import java.util.EmptyStackException;
 import java.util.Stack;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
@@ -41,7 +42,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         DynamicScope currDynScope = context.getCurrentScope();
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        Stack<Integer> rescuePCs = null;
+        Stack<ExceptionRegionStartMarkerInstr> rescuePCs = null;
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -94,11 +95,9 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 currDynScope = interpreterContext.newDynamicScope(context);
                                 context.pushScope(currDynScope);
                             case EXC_REGION_START: {
-                                int newPC = ((ExceptionRegionStartMarkerInstr) instr).getFirstRescueBlockLabel().getTargetPC();
-
                                 if (rescuePCs == null) {
                                     rescuePCs = new Stack<>();
-                                    rescuePCs.push(newPC);
+                                    rescuePCs.push((ExceptionRegionStartMarkerInstr) instr);
                                 } else {
                                     // We use EXC_REGION_{START,END} as actual instructions instead of markers
                                     // in this particular interpreter.  Unfortunately, these can never be guaranteed to
@@ -109,12 +108,16 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                     // represent lexical boundaries and you cannot see the same boundary nested in itself.
                                     // If we try to push something already there then the space-time continuum is blown
                                     // and we have to clean the universe up.
-                                    pushOrPrune(newPC, rescuePCs);
+                                    pushOrPrune((ExceptionRegionStartMarkerInstr) instr, rescuePCs);
                                 }
                             }
                             break;
                             case EXC_REGION_END:
-                                rescuePCs.pop();
+                                try {
+                                    rescuePCs.pop();
+                                } catch (EmptyStackException e) {
+                                    System.out.println("WHHOOOPS: " + interpreterContext.toStringInstrs() + ", IP: " + ipc);
+                                }
                                 break;
                             default:
                                 processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
@@ -130,7 +133,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                 if (rescuePCs == null || rescuePCs.empty()) {
                     ipc = -1;
                 } else {
-                    ipc = rescuePCs.pop();
+                    ipc = rescuePCs.pop().getFirstRescueBlockLabel().getTargetPC();
                 }
 
                 if (debug) {
@@ -150,7 +153,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
     }
 
-    private void pushOrPrune(int element, Stack<Integer> stack) {
+    private void pushOrPrune(ExceptionRegionStartMarkerInstr element, Stack<ExceptionRegionStartMarkerInstr> stack) {
         int firstOccurrence = stack.indexOf(element);
 
         if (firstOccurrence != -1) {
