@@ -1544,9 +1544,17 @@ public class RubyTime extends RubyObject {
             boolean fractionalUSecGiven = args[6] instanceof RubyFloat || args[6] instanceof RubyRational;
 
             if (fractionalUSecGiven) {
-                double micros = RubyNumeric.num2dbl(args[6]);
-                time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
-                nanos = (long) Math.rint((micros * 1000) % 1000000);
+                if (args[6] instanceof RubyRational) {
+                    RubyRational usecRat = (RubyRational) args[6];
+                    RubyRational nsecRat = (RubyRational) usecRat.op_mul(context, runtime.newFixnum(1000));
+                    double tmpNanos = nsecRat.getDoubleValue(context);
+                    time.dt = dt.withMillis((long) (dt.getMillis() + (tmpNanos / 1000000)));
+                    nanos = (long) tmpNanos % 1000000;
+                } else {
+                    double micros = RubyNumeric.num2dbl(args[6]);
+                    time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
+                    nanos = (long) Math.rint((micros * 1000) % 1000000);
+                }
             } else {
                 int usec = i_args4 % 1000;
                 int msec = i_args4 / 1000;

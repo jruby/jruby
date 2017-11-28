@@ -281,26 +281,7 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "symlink?", required = 1, module = true)
     public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
-
-        Path p = new File(filename.toString()).toPath();
-
-        try {
-            // Note: We can't use file.exists() to check whether the symlink
-            // exists or not, because that method returns false for existing
-            // but broken symlink. So, we try without the existence check,
-            // but in the try-catch block.
-            // MRI behavior: symlink? on broken symlink should return true.
-            BasicFileAttributes attrs = Files.readAttributes(p, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-
-            return runtime.newBoolean(attrs != null && attrs.isSymbolicLink());
-        } catch (SecurityException se) {
-            return runtime.getFalse();
-        } catch (IOException ie) {
-            return runtime.getFalse();
-        } catch (UnsupportedOperationException uoe) {
-            return runtime.getFalse();
-        }
+        return recv.getRuntime().newBoolean(fileResource(filename).isSymLink());
     }
 
     // We do both writable and writable_real through the same method because
