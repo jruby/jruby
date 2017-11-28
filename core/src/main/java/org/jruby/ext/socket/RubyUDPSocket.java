@@ -129,6 +129,11 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw runtime.newErrnoECONNREFUSEDError();
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+        } catch (UnsupportedOperationException uoe) {
+            if (uoe.getMessage().contains("IPv6 not available")) {
+                throw runtime.newErrnoEAFNOSUPPORTError("socket(2) - udp");
+            }
+            throw sockerr(runtime, "UnsupportedOperationException: " + uoe.getLocalizedMessage(), uoe);
         } catch (IOException e) {
             throw sockerr(runtime, "initialize: name or service not known", e);
         }
