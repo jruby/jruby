@@ -524,7 +524,11 @@ public class CFG {
             if (!mergedBBs.contains(b) && outDegree(b) == 1) {
                 for (Edge<BasicBlock> e : getOutgoingEdges(b)) {
                     BasicBlock outB = e.getDestination().getData();
-                    if (e.getType() != EdgeType.EXCEPTION && inDegree(outB) == 1 && mergeBBs(b, outB)) {
+
+                    // 1:1 BBs can just be one since there is only one place to go.  An empty entering any BB can merge
+                    // since the empty one does nothing (Note: mergeBBs uses empty as destination impl-wise but outcome
+                    // is the same).
+                    if (e.getType() != EdgeType.EXCEPTION && (inDegree(outB) == 1 || b.isEmpty()) && mergeBBs(b, outB)) {
                         mergedBBs.add(outB);
                     }
                 }
