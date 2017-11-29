@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import com.headius.modulator.Modulator;
 import jnr.enxio.channels.NativeDeviceChannel;
+import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.enxio.channels.NativeSocketChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
@@ -99,12 +100,8 @@ public class FilenoUtil {
     }
 
     public static int filenoFrom(Channel channel) {
-        if (channel instanceof NativeDeviceChannel) {
-            return ((NativeDeviceChannel)channel).getFD();
-        }
-
-        if (channel instanceof NativeSocketChannel) {
-            return ((NativeSocketChannel)channel).getFD();
+        if (channel instanceof NativeSelectableChannel) {
+            return ((NativeSelectableChannel)channel).getFD();
         }
 
         return getFilenoUsingReflection(channel);
