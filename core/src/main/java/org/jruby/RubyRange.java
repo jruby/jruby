@@ -57,6 +57,11 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.runtime.Helpers.hashEnd;
+import static org.jruby.runtime.Helpers.hashStart;
+import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Helpers.murmurCombine;
+import static org.jruby.runtime.Helpers.safeHash;
 import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.runtime.builtin.IRubyObject;
@@ -68,7 +73,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
-import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyNumeric.intervalStepSize;
 
@@ -290,15 +294,21 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        long hash = isExclusive ? 1 : 0;
-        long h = hash;
+        Ruby runtime = context.runtime;
 
-        long v = invokedynamic(context, begin, MethodNames.HASH).convertToInteger().getLongValue();
-        hash ^= v << 1;
-        v = invokedynamic(context, end, MethodNames.HASH).convertToInteger().getLongValue();
-        hash ^= v << 9;
-        hash ^= h << 24;
-        return context.runtime.newFixnum(hash);
+        int exclusiveBit = isExclusive ? 1 : 0;
+        long hash = exclusiveBit;
+        IRubyObject v;
+
+        hash = hashStart(runtime, hash);
+        v = safeHash(context, begin);
+        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        v = safeHash(context, end);
+        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        hash = murmurCombine(hash, exclusiveBit << 24);
+        hash = hashEnd(hash);
+
+        return runtime.newFixnum(hash);
     }
 
     private IRubyObject inspectValue(final ThreadContext context, IRubyObject value) {
