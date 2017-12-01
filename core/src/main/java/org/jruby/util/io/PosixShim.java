@@ -405,6 +405,17 @@ public class PosixShim {
         return ret;
     }
 
+    public int fcntlSetFD(int fd, int flags) {
+        int ret = posix.fcntlInt(fd, Fcntl.F_SETFD, flags);
+        if (ret == -1) errno = Errno.valueOf(posix.errno());
+        return ret;
+    }
+
+    public int fcntlGetFD(int fd) {
+        int ret = posix.fcntl(fd, Fcntl.F_GETFD);
+        return ret;
+    }
+
     public Channel open(String cwd, String path, ModeFlags flags, int perm) {
         if ((path.equals("/dev/null") || path.equalsIgnoreCase("nul")) && Platform.IS_WINDOWS) {
             path = "NUL:";
