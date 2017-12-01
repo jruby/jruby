@@ -1191,7 +1191,7 @@ public class PopenExecutor {
                             runtime.newErrnoFromInt(open_data.errno.intValue(), vpath.toString());
                         }
                         // We're in the fully-native process logic, so this should be a native stream
-                        fd2 = ((NativeSelectableChannel) ret).getFD();
+                        fd2 = ((ChannelFD) ret).realFileno;
 //                        rb_update_max_fd(fd2);
                         param.store(3, runtime.newFixnum(fd2));
                         context.pollThreadEvents();
