@@ -1168,9 +1168,9 @@ public class PopenExecutor {
                 IRubyObject vpath = param.eltOk(0);
                 int flags = RubyNumeric.num2int(param.eltOk(1));
                 int perm = RubyNumeric.num2int(param.eltOk(2));
-                RubyArray fd2v = (RubyArray) param.eltOk(3);
+                IRubyObject fd2v = param.entry(3);
                 int fd2;
-                if (fd2v == null) {
+                if (fd2v.isNil()) {
                     RubyIO.Sysopen open_data = new RubyIO.Sysopen();
                     vpath = RubyFile.get_path(context, vpath);
                     // TODO
@@ -1193,7 +1193,7 @@ public class PopenExecutor {
                         // We're in the fully-native process logic, so this should be a native stream
                         fd2 = ((NativeSelectableChannel) ret).getFD();
 //                        rb_update_max_fd(fd2);
-                        param.eltSetOk(3, runtime.newFixnum(fd2));
+                        param.store(3, runtime.newFixnum(fd2));
                         context.pollThreadEvents();
                         break;
                     }
@@ -1262,11 +1262,11 @@ public class PopenExecutor {
                 RubyArray param = elt.eltOk(1);
                 IRubyObject fd2v;
                 int fd2;
-                fd2v = param.eltOk(3);
-                if (fd2v != null) {
+                fd2v = param.entry(3);
+                if (!fd2v.isNil()) {
                     fd2 = RubyNumeric.fix2int(fd2v);
                     parentRedirectClose(runtime, fd2);
-                    param.eltSetOk(3, runtime.getNil());
+                    param.store(3, runtime.getNil());
                 }
             }
         }
