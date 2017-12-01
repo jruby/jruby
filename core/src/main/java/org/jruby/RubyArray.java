@@ -740,7 +740,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (this == orig) return this;
 
         origArr.unpack();
-        
+
         origArr.isShared = true;
         isShared = true;
         values = origArr.values;
@@ -4423,7 +4423,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 result = v;
             }
         }
-        
+
         return result == UNDEF ? context.nil : result;
     }
 
