@@ -647,10 +647,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 //            }
                 fptr.setFD(sysopen(runtime, fptr.getPath(), oflags_p[0], 0666));
 
-                // This logic fixes the original stdio file descriptor by clearing any CLOEXEC that might have
-                // come across with the newly opened file. Since we do not yet support CLOEXEC, we skip this.
-                //            fptr.fd = fileno(fptr.stdio_file);
-                //            rb_fd_fix_cloexec(fptr.fd);
+//                fptr.fd = fileno(fptr.stdio_file);
+                OpenFile.fdFixCloexec(fptr.posix, fptr.fd().realFileno);
 
                 // This logic configures buffering (none, line, full) and buffer size to match the original stdio
                 // stream associated with this IO. I don't believe we can do this.
@@ -1232,11 +1230,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return runtime.newFixnum(fd.bestFileno());
     }
 
-    private static class Sysopen {
-        String fname;
-        int oflags;
-        int perm;
-        Errno errno;
+    public static class Sysopen {
+        public String fname;
+        public int oflags;
+        public int perm;
+        public Errno errno;
     }
 
     // rb_sysopen
@@ -1275,8 +1273,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_cloexec_open
-    private static ChannelFD cloexecOpen(Ruby runtime, Sysopen data)
-    {
+    public static ChannelFD cloexecOpen(Ruby runtime, Sysopen data) {
         Channel ret = null;
 //        #ifdef O_CLOEXEC
 //            /* O_CLOEXEC is available since Linux 2.6.23.  Linux 2.6.18 silently ignore it. */
@@ -1290,9 +1287,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             data.errno = shim.errno;
             return null;
         }
-        // TODO, if we need it?
-//        rb_maygvl_fd_fix_cloexec(ret);
-        return new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil());
+        ChannelFD fd = new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil());
+        OpenFile.fdFixCloexec(shim, fd.realFileno);
+
+        return fd;
     }
 
     // MRI: rb_io_autoclose_p
@@ -2194,19 +2192,21 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         POSIX posix = runtime.getPosix();
         OpenFile fptr = getOpenFileChecked();
         RubyIO write_io;
+        int fd = -1;
 
-        if (fptr.fd().chNative == null || !posix.isNative()) {
+        if (fptr == null || (fd = fptr.fd().realFileno) == -1
+                || !posix.isNative()) {
             runtime.getWarnings().warning("close_on_exec is not implemented for this stream type: " + fptr.fd().ch.getClass().getSimpleName());
             return context.nil;
         }
 
         int flag = arg.isTrue() ? FD_CLOEXEC : 0;
-        int fd, ret;
+        int ret;
 
         write_io = GetWriteIO();
         if (this != write_io) {
             fptr = write_io.getOpenFileChecked();
-            if (fptr != null && 0 <= (fd = fptr.fd().chNative.getFD())) {
+            if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
                 if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) return API.rb_sys_fail_path(runtime, fptr.getPath());
                 if ((ret & FD_CLOEXEC) != flag) {
                     ret = (ret & ~FD_CLOEXEC) | flag;
@@ -2218,7 +2218,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         fptr = getOpenFileChecked();
-        if (fptr != null && 0 <= (fd = fptr.fd().chNative.getFD())) {
+        if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
             if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
             if ((ret & FD_CLOEXEC) != flag) {
                 ret = (ret & ~FD_CLOEXEC) | flag;
@@ -2235,26 +2235,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         Ruby runtime = context.runtime;
         POSIX posix = runtime.getPosix();
         OpenFile fptr = getOpenFileChecked();
+        int fd = -1;
 
-        if (fptr == null || fptr.fd().chNative == null
+        if (fptr == null || (fd = fptr.fd().realFileno) == -1
                 || !posix.isNative()) {
             return context.fals;
         }
 
         RubyIO write_io;
-        int fd, ret;
+        int ret;
 
         write_io = GetWriteIO();
         if (this != write_io) {
             fptr = write_io.getOpenFileChecked();
-            if (fptr != null && 0 <= (fd = fptr.fd().chNative.getFD())) {
+            if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
                 if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
                 if ((ret & FD_CLOEXEC) == 0) return context.fals;
             }
         }
 
         fptr = getOpenFileChecked();
-        if (fptr != null && 0 <= (fd = fptr.fd().chNative.getFD())) {
+        if (fptr != null && 0 <= (fd = fptr.fd().realFileno)) {
             if ((ret = posix.fcntl(fd, Fcntl.F_GETFD)) == -1) API.rb_sys_fail_path(runtime, fptr.getPath());
             if ((ret & FD_CLOEXEC) == 0) return context.fals;
         }
