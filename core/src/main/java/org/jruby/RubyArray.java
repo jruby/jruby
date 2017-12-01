@@ -98,7 +98,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
  *
  */
 @JRubyClass(name="Array")
-public class RubyArray extends RubyObject implements List, RandomAccess {
+public class RubyArray<T extends IRubyObject> extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
 
     private static final boolean USE_PACKED_ARRAYS = Options.PACKED_ARRAYS.load();
@@ -843,19 +843,19 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return eltOk(offset);
     }
 
-    public IRubyObject eltOk(long offset) {
+    public T eltOk(long offset) {
         try {
-            return eltInternal((int)offset);
+            return (T) eltInternal((int)offset);
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(getRuntime(), ex);
         }
     }
 
-    public IRubyObject eltSetOk(long offset, IRubyObject value) {
+    public T eltSetOk(long offset, T value) {
         return eltSetOk((int) offset, value);
     }
 
-    public IRubyObject eltSetOk(int offset, IRubyObject value) {
+    public T eltSetOk(int offset, T value) {
         try {
             return eltInternalSet(offset, value);
         } catch (ArrayIndexOutOfBoundsException ex) {
@@ -874,12 +874,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return (offset < 0 ) ? elt(offset + realLength) : elt(offset);
     }
 
-    public IRubyObject eltInternal(int offset) {
-        return values[begin + offset];
+    public T eltInternal(int offset) {
+        return (T) values[begin + offset];
     }
 
-    public IRubyObject eltInternalSet(int offset, IRubyObject item) {
-        return values[begin + offset] = item;
+    public T eltInternalSet(int offset, T item) {
+        values[begin + offset] = item;
+        return item;
     }
 
     /**
@@ -2413,7 +2414,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (realLength > 1) {
                 int len = realLength;
                 for (int i = 0; i < len >> 1; i++) {
-                    IRubyObject tmp = eltInternal(i);
+                    T tmp = eltInternal(i);
                     eltInternalSet(i, eltInternal(len - i - 1));
                     eltInternalSet(len - i - 1, tmp);
                 }
@@ -4043,7 +4044,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         try {
             while (i > 0) {
                 int r = (int) RubyRandom.randomLongLimited(context, randgen, i - 1);
-                IRubyObject tmp = eltOk(--i);
+                T tmp = eltOk(--i);
                 eltSetOk(i, eltOk(r));
                 eltSetOk(r, tmp);
             }
