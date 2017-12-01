@@ -381,7 +381,9 @@ describe "Constant resolution within methods" do
       module ConstantSpecs
         OpAssignTrue = true
       end
-      ConstantSpecs::OpAssignTrue &&= 1
+      suppress_warning do
+        ConstantSpecs::OpAssignTrue &&= 1
+      end
       ConstantSpecs::OpAssignTrue.should == 1
       ConstantSpecs.send :remove_const, :OpAssignTrue
     end

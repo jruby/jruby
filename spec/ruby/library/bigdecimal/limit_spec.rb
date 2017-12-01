@@ -40,6 +40,6 @@ describe "BigDecimal.limit" do
       BigDecimal('0.888').sub(BigDecimal('0'), 2).should == BigDecimal('0.89')
       BigDecimal('0.888').mult(BigDecimal('3'), 2).should == BigDecimal('2.7')
       BigDecimal('0.888').div(BigDecimal('3'), 2).should == BigDecimal('0.30')
-      end
+    end
   end
 end
