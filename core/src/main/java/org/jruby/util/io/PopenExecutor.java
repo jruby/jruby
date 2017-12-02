@@ -954,14 +954,14 @@ public class PopenExecutor {
                 newary = runtime.newArray();
                 sargp.fd_dup2 = newary;
             }
-            ((RubyArray)newary).push(runtime.newArray(runtime.newFixnum(fd), runtime.newFixnum(save_fd)));
+            newary.push(runtime.newArray(runtime.newFixnum(fd), runtime.newFixnum(save_fd)));
 
             newary = sargp.fd_close;
             if (newary == null) {
                 newary = runtime.newArray();
                 sargp.fd_close = newary;
             }
-            ((RubyArray)newary).push(runtime.newArray(runtime.newFixnum(save_fd), runtime.getNil()));
+            newary.push(runtime.newArray(runtime.newFixnum(save_fd), runtime.getNil()));
         }
 
         return 0;
