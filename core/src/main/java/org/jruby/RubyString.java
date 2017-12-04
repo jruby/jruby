@@ -2746,7 +2746,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
             tuFlags |= val.flags;
 
-            int len = beg - offset;
+            int len = begz - offset;
             if (len != 0) dest.cat(spBytes, cp, len, str_enc);
             dest.cat19(val);
             offset = endz;
