@@ -188,6 +188,6 @@ public class FullInterpreterContext extends InterpreterContext {
             if (ipc <= rescueIPCs[i]) return rescueIPCs[i + 1];
         }
 
-        throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc + getInstructions());
+        throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc);
     }
 }

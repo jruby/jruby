@@ -2349,7 +2349,7 @@ public class RipperLexer extends LexingCommon {
         int length = precise_mbclen();
 
         if (length <= 0) {
-            compile_error("invalid multibyte char (" + getEncoding().getName() + ")");
+            compile_error("invalid multibyte char (" + getEncoding() + ")");
             return false;
         }
 
