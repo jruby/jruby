@@ -561,7 +561,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         dst.ensure(Math.min(len, bufferedInputBytesRemaining()));
 
-        if (hasUngotChars() && hasUngotChars()) {
+        if (hasUngotChars()) {
             for(int i = 0; i < ungotChars.length(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
                 ++bytesCopied;

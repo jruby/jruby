@@ -34,7 +34,10 @@ public class SymbolProc extends ImmutableLiteral {
 
     @Override
     public int hashCode() {
-        return 47 * 7 + (int) (this.name.hashCode() ^ (this.encoding.hashCode() >>> 32));
+        int result = super.hashCode();
+        result = 31 * result + name.hashCode();
+        result = 31 * result + encoding.hashCode();
+        return result;
     }
 
     @Override
