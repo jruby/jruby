@@ -322,7 +322,7 @@ module Racc
     # RECEIVER#METHOD_ID is a method to get next token.
     # It must 'yield' the token, which format is [TOKEN-SYMBOL, VALUE].
     def yyparse(recv, mid)
-      __send__(Racc_YY_Parse_Method, recv, mid, _racc_setup(), true)
+      __send__(Racc_YY_Parse_Method, recv, mid, _racc_setup(), false)
     end
 
     def _racc_yyparse_rb(recv, mid, arg, c_debug)
