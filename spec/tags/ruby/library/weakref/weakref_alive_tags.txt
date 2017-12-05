@@ -1,0 +1,1 @@
+fails(depends on GC behavior, fails intermittently):WeakRef#weakref_alive? returns true if the object is reachable
