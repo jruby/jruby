@@ -10,7 +10,7 @@ public interface BeanManager {
 
     void register(ParserStatsMBean parserStats);
 
-    void register(MethodCacheMBean methodCache);
+    void register(CachesMBean methodCache);
 
     void register(Runtime runtime);
 
