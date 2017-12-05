@@ -1753,72 +1753,86 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (channel instanceof SelectableChannel && (fptr == null || !fptr.fd().isNativeFile)) {
             SelectableChannel selectable = (SelectableChannel)channel;
 
-            synchronized (selectable.blockingLock()) {
-                boolean oldBlocking = selectable.isBlocking();
+            // ensure we have fptr locked, but release it to avoid deadlock
+            boolean locked = false;
+            if (fptr != null) {
+                locked = fptr.lock();
+                fptr.unlock();
+            }
+            try {
+                synchronized (selectable.blockingLock()) {
+                    boolean oldBlocking = selectable.isBlocking();
 
-                SelectionKey key;
-                try {
-                    selectable.configureBlocking(false);
-
-                    if (fptr != null) fptr.addBlockingThread(this);
-                    currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
-
-                    key = selectable.register(currentSelector, ops);
-
-                    beforeBlockingCall();
-                    int result;
-                    if (timeout < 0) {
-                        result = currentSelector.select();
-                    } else if (timeout == 0) {
-                        result = currentSelector.selectNow();
-                    } else {
-                        result = currentSelector.select(timeout);
-                    }
-
-                    // check for thread events, in case we've been woken up to die
-                    pollThreadEvents();
-
-                    if (result == 1) {
-                        Set<SelectionKey> keySet = currentSelector.selectedKeys();
-
-                        if (keySet.iterator().next() == key) {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                } catch (IOException ioe) {
-                    throw getRuntime().newIOErrorFromException(ioe);
-                } finally {
-                    // Note: I don't like ignoring these exceptions, but it's
-                    // unclear how likely they are to happen or what damage we
-                    // might do by ignoring them. Note that the pieces are separate
-                    // so that we can ensure one failing does not affect the others
-                    // running.
-
-                    // shut down and null out the selector
+                    SelectionKey key;
                     try {
-                        if (currentSelector != null) {
-                            getRuntime().getSelectorPool().put(currentSelector);
+                        selectable.configureBlocking(false);
+
+                        if (fptr != null) fptr.addBlockingThread(this);
+                        currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
+
+                        key = selectable.register(currentSelector, ops);
+
+                        beforeBlockingCall();
+                        int result;
+
+                        if (timeout < 0) {
+                            result = currentSelector.select();
+                        } else if (timeout == 0) {
+                            result = currentSelector.selectNow();
+                        } else {
+                            result = currentSelector.select(timeout);
                         }
-                    } catch (Exception e) {
-                        // ignore
+
+                        // check for thread events, in case we've been woken up to die
+                        pollThreadEvents();
+
+                        if (result == 1) {
+                            Set<SelectionKey> keySet = currentSelector.selectedKeys();
+
+                            if (keySet.iterator().next() == key) {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    } catch (IOException ioe) {
+                        throw getRuntime().newIOErrorFromException(ioe);
                     } finally {
-                        currentSelector = null;
+                        // Note: I don't like ignoring these exceptions, but it's
+                        // unclear how likely they are to happen or what damage we
+                        // might do by ignoring them. Note that the pieces are separate
+                        // so that we can ensure one failing does not affect the others
+                        // running.
+
+                        // shut down and null out the selector
+                        try {
+                            if (currentSelector != null) {
+                                getRuntime().getSelectorPool().put(currentSelector);
+                            }
+                        } catch (Exception e) {
+                            // ignore
+                        } finally {
+                            currentSelector = null;
+                        }
+
+                        // remove this thread as a blocker against the given IO
+                        if (fptr != null) fptr.removeBlockingThread(this);
+
+                        // go back to previous blocking state on the selectable
+                        try {
+                            selectable.configureBlocking(oldBlocking);
+                        } catch (Exception e) {
+                            // ignore
+                        }
+
+                        // clear thread state from blocking call
+                        afterBlockingCall();
                     }
-
-                    // remove this thread as a blocker against the given IO
-                    if (fptr != null) fptr.removeBlockingThread(this);
-
-                    // go back to previous blocking state on the selectable
-                    try {
-                        selectable.configureBlocking(oldBlocking);
-                    } catch (Exception e) {
-                        // ignore
-                    }
-
-                    // clear thread state from blocking call
-                    afterBlockingCall();
+                }
+            } finally {
+                if (fptr != null) {
+                    fptr.lock();
+                    if (locked) fptr.unlock();
                 }
             }
         } else {
