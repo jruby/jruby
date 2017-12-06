@@ -2012,14 +2012,12 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
 
 f_opt           : f_arg_asgn '=' arg_value {
                     p.setCurrentArg(null);
-                    p.arg_var(p.formal_argument($1));
                     $$ = p.new_assoc(p.assignable($1), $3);
 
                 }
 
 f_block_opt     : f_arg_asgn '=' primary_value {
                     p.setCurrentArg(null);
-                    p.arg_var(p.formal_argument($1));
                     $$ = p.new_assoc(p.assignable($1), $3);
                 }
 

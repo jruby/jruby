@@ -4608,7 +4608,6 @@ states[590] = new RipperParserState() {
 states[591] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.setCurrentArg(null);
-                    p.arg_var(p.formal_argument(((IRubyObject)yyVals[-2+yyTop])));
                     yyVal = p.new_assoc(p.assignable(((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
 
     return yyVal;
@@ -4617,7 +4616,6 @@ states[591] = new RipperParserState() {
 states[592] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.setCurrentArg(null);
-                    p.arg_var(p.formal_argument(((IRubyObject)yyVals[-2+yyTop])));
                     yyVal = p.new_assoc(p.assignable(((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
@@ -4799,6 +4797,6 @@ states[647] = new RipperParserState() {
   }
 };
 }
-					// line 2155 "RipperParser.y"
+					// line 2153 "RipperParser.y"
 }
-					// line 9486 "-"
+					// line 9484 "-"
