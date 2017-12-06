@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -99,6 +100,17 @@ public class JRubyUtilLibrary implements Library {
         } catch (IOException ignore) {
         }
         return runtime.newEmptyArray();
+    }
+
+    @JRubyMethod(name = "cache_stats", module = true)
+    public static IRubyObject cache_stats(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+
+        RubyHash stat = RubyHash.newHash(runtime);
+        stat.op_aset(context, runtime.newSymbol("method_invalidation_count"), runtime.newFixnum(runtime.getCaches().getMethodInvalidationCount()));
+        stat.op_aset(context, runtime.newSymbol("constant_invalidation_count"), runtime.newFixnum(runtime.getCaches().getConstantInvalidationCount()));
+
+        return stat;
     }
 
     public static class StringUtils {
