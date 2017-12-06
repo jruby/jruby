@@ -2600,13 +2600,13 @@ states[139] = new ParserState() {
 };
 states[140] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new LiteralNode(lexer.getPosition(), ((ByteList)yyVals[0+yyTop]));
+                   yyVal = new LiteralNode(lexer.getPosition(), ((ByteList)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[141] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new LiteralNode(lexer.getPosition(), ((ByteList)yyVals[0+yyTop]));
+                   yyVal = new LiteralNode(lexer.getPosition(), ((ByteList)yyVals[0+yyTop]));
     return yyVal;
   }
 };

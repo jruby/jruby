@@ -338,7 +338,7 @@ public class RipperLexer extends LexingCommon {
         String value = createTokenString();
 
         if (!isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parser.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END|EXPR_LABEL);
+            setState(EXPR_END);
         }
 
         identValue = value.intern();
@@ -1194,10 +1194,9 @@ public class RipperLexer extends LexingCommon {
     }
 
     private int identifierToken(int last_state, int result, String value) {
-
-        if (result == RipperParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT) &&
+        if (result == RipperParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
                 parser.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END);
+            setState(EXPR_END|EXPR_LABEL);
         }
 
         identValue = value.intern();
@@ -1575,8 +1574,8 @@ public class RipperLexer extends LexingCommon {
         
         int result = 0;
 
-        String tempVal;
         last_state = lex_state;
+        String tempVal;
         if (lastBangOrPredicate) {
             result = RipperParser.tFID;
             tempVal = createTokenString();
@@ -1598,6 +1597,7 @@ public class RipperLexer extends LexingCommon {
                 }
             }
             tempVal = createTokenString();
+
             if (result == 0 && Character.isUpperCase(tempVal.charAt(0))) {
                 result = RipperParser.tCONSTANT;
             } else {

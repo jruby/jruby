@@ -45,6 +45,8 @@ import org.jruby.util.ByteList;
  *
  */
 public class RipperParserBase {
+    private IRubyObject currentArg;
+
     public RipperParserBase(ThreadContext context, IRubyObject ripper, LexerSource source) {
         this.context = context;
         this.ripper = ripper;
@@ -420,6 +422,14 @@ public class RipperParserBase {
     
     public Encoding encoding() {
         return lexer.getEncoding();
+    }
+
+    public IRubyObject getCurrentArg() {
+        return currentArg;
+    }
+
+    public void setCurrentArg(IRubyObject arg) {
+        this.currentArg = arg;
     }
     
     public boolean getYYDebug() {
