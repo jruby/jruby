@@ -1501,6 +1501,7 @@ opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
                     $$ = p.dispatch("on_rescue", $2, $3, $5, $6);
                 }
                 | {
+                    $$ = null;
                 }
 
 exc_list        : arg_value {
