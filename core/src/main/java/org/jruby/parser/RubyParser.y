@@ -850,11 +850,11 @@ fname          : tIDENTIFIER | tCONSTANT | tFID
 
 // LiteralNode:fsym
 fsym           : fname {
-                    $$ = new LiteralNode(lexer.getPosition(), $1);
-                }
-                | symbol {
-                    $$ = new LiteralNode(lexer.getPosition(), $1);
-                }
+                   $$ = new LiteralNode(lexer.getPosition(), $1);
+               }
+               | symbol {
+                   $$ = new LiteralNode(lexer.getPosition(), $1);
+               }
 
 // Node:fitem
 fitem           : fsym {
@@ -1212,7 +1212,7 @@ paren_args      : tLPAREN2 opt_call_args rparen {
 
 opt_paren_args  : none | paren_args
 
-opt_call_args   : none 
+opt_call_args   : none
                 | call_args
                 | args ',' {
                     $$ = $1;
@@ -1853,7 +1853,7 @@ opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
                     Node body = support.makeNullNil(node);
                     $$ = new RescueBodyNode($1, $2, body, $6);
                 }
-                | { 
+                | {
                     $$ = null; 
                 }
 
@@ -2017,7 +2017,7 @@ xstring_contents: /* none */ {
                     $$ = support.literal_concat(support.getPosition($1), $1, $<Node>2);
                 }
 
-regexp_contents :  /* none */ {
+regexp_contents: /* none */ {
                     $$ = null;
                 }
                 | regexp_contents string_content {
@@ -2103,7 +2103,7 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      }
                 }
 
- numeric        : simple_numeric {
+numeric         : simple_numeric {
                     $$ = $1;  
                 }
                 | tUMINUS_NUM simple_numeric %prec tLOWEST {
@@ -2139,13 +2139,13 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                 | tCVAR {
                     $$ = new ClassVarNode(lexer.tokline, $1);
                 } /*mri:user_variable*/
-                | /*mri:keyword_variable*/ kNIL { 
+                | /*mri:keyword_variable*/ kNIL {
                     $$ = new NilNode(lexer.tokline);
                 }
                 | kSELF {
                     $$ = new SelfNode(lexer.tokline);
                 }
-                | kTRUE { 
+                | kTRUE {
                     $$ = new TrueNode(lexer.tokline);
                 }
                 | kFALSE {

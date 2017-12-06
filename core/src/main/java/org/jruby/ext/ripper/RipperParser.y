@@ -176,6 +176,7 @@ public class RipperParser extends RipperParserBase {
 %token <IRubyObject> tDSTAR
 %token <IRubyObject> tSTRING_DEND
 %type <IRubyObject> kwrest_mark, f_kwrest, f_label
+%type <IRubyObject> f_arg_asgn
 %type <IRubyObject> fcall
 %type <IRubyObject> call_op call_op2
 %token <IRubyObject> tLABEL_END, tSTRING_DEND
@@ -257,7 +258,7 @@ compstmt        : stmts opt_terms {
                     $$ = $1;
                 }
 
- stmts          : none {
+stmts           : none {
                     $$ = p.dispatch("on_stmts_add", p.dispatch("on_stmts_new"), p.dispatch("on_void_stmt"));
                 }
                 | stmt_or_begin {
@@ -367,7 +368,7 @@ stmt            : kALIAS fitem {
                 }
                 | expr
 
-command_asgn    : lhs '=' command_call {                    
+command_asgn    : lhs '=' command_call {
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
                 | lhs '=' command_asgn {
@@ -452,10 +453,10 @@ command        : fcall command_args %prec tLOWEST {
                 | kRETURN call_args {
                     $$ = p.dispatch("on_return", $2);
                 }
-		| kBREAK call_args {
+                | kBREAK call_args {
                     $$ = p.dispatch("on_break", $2);
                 }
-		| kNEXT call_args {
+                | kNEXT call_args {
                     $$ = p.dispatch("on_next", $2);
                 }
 
@@ -711,7 +712,7 @@ fname          : tIDENTIFIER | tCONSTANT | tFID
                }
 
 // LiteralNode:fsym
- fsym          : fname {
+fsym           : fname {
                    $$ = $1;
                }
                | symbol {
@@ -967,7 +968,7 @@ call_args       : command {
                 }
 
 command_args    : /* none */ {
-                    $$ = Long.valueOf(p.getCmdArgumentState().begin());
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
                 } call_args {
                     p.getCmdArgumentState().reset($<Long>1.longValue());
                     $$ = $2;
@@ -1174,11 +1175,14 @@ primary         : literal
                 | kDEF fname {
                     p.setInDef(true);
                     p.pushLocalScope();
+                    $$ = p.getCurrentArg();
+                    p.setCurrentArg(null);
                 } f_arglist bodystmt kEND {
                     $$ = p.dispatch("on_def", $2, $4, $5);
 
                     p.popCurrentScope();
                     p.setInDef(false);
+                    p.setCurrentArg($<IRubyObject>3);
                 }
                 | kDEF singleton dot_or_colon {
                     p.setState(EXPR_FNAME);
@@ -1186,11 +1190,14 @@ primary         : literal
                     p.setInSingle(p.getInSingle() + 1);
                     p.pushLocalScope();
                     p.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
+                    $$ = p.getCurrentArg();
+                    p.setCurrentArg(null);                    
                 } f_arglist bodystmt kEND {
                     $$ = p.dispatch("on_defs", $2, $3, $5, $7, $8);
 
                     p.popCurrentScope();
                     p.setInSingle(p.getInSingle() - 1);
+                    p.setCurrentArg($<IRubyObject>6);
                 }
                 | kBREAK {
                     $$ = p.dispatch("on_break", p.dispatch("on_args_new"));
@@ -1354,6 +1361,7 @@ opt_block_param : none
                 }
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
+                    p.setCurrentArg(null);  
                     $$ = p.dispatch("on_block_var", 
                                     p.new_args(null, null, null, null, null), 
                                     $2);
@@ -1364,13 +1372,16 @@ block_param_def : tPIPE opt_bv_decl tPIPE {
                                     null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
+                    p.setCurrentArg(null);
                     $$ = p.dispatch("on_block_var", $2, $3);
                 }
 
 // shadowed block variables....
-opt_bv_decl     : none
-                | ';' bv_decls {
-                    $$ = $2;
+opt_bv_decl     : opt_nl {
+                    $$ = null;
+                }
+                | opt_nl ';' bv_decls opt_nl {
+                    $$ = $3;
                 }
 
 // ENEBO: This is confusing...
@@ -1406,7 +1417,7 @@ lambda          : /* none */  {
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
                     $$ = p.dispatch("on_paren", $2);
                 }
-                | f_args opt_bv_decl {
+                | f_args {
                     $$ = $1;
                 }
 
@@ -1433,7 +1444,7 @@ block_call      : command do_block {
                 | block_call call_op2 operation2 opt_paren_args brace_block {
                     $$ = p.method_add_block(p.dispatch("on_command_call", $1, $2, $3, $4), $5);
                 }
-                | block_call call_op2 operation2 opt_paren_args do_block {
+                | block_call call_op2 operation2 command_args do_block {
                     $$ = p.method_add_block(p.dispatch("on_command_call", $1, $2, $3, $4), $5);
                 }
 
@@ -1489,7 +1500,8 @@ cases           : opt_else | case_body
 opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
                     $$ = p.dispatch("on_rescue", $2, $3, $5, $6);
                 }
-                | none
+                | {
+                }
 
 exc_list        : arg_value {
                     $$ = p.new_array($1);
@@ -1809,6 +1821,7 @@ backref         : tNTH_REF
 
 superclass      : tLT {
                    p.setState(EXPR_BEG);
+                   p.setCommandStart(true);
                 } expr_value term {
                     $$ = $3;
                 }
@@ -1820,10 +1833,18 @@ superclass      : tLT {
 // ENEBO: Look at command_start stuff I am ripping out
 f_arglist       : tLPAREN2 f_args rparen {
                     p.setState(EXPR_BEG);
+                    p.setCommandStart(true);
                     $$ = p.dispatch("on_paren", $2);
                 }
-                | f_args term {
-                    $$ = $1;
+                | {
+  // $$ = lexer.inKwarg;
+                   //                   p.inKwarg = true;
+                   p.setState(p.getState() | EXPR_LABEL);
+                } f_args term {
+  // p.inKwarg = $<Boolean>1;
+                    $$ = $2;
+                    p.setState(EXPR_BEG);
+                    p.setCommandStart(true);
                 }
  
 args_tail       : f_kwarg ',' f_kwrest opt_f_block_arg {
@@ -1916,8 +1937,14 @@ f_norm_arg      : f_bad_arg
                     $$ = p.formal_argument($1);
                 }
 
-f_arg_item      : f_norm_arg {
+f_arg_asgn      : f_norm_arg {
+                    p.setCurrentArg($1);
                     $$ = p.arg_var($1);
+                }
+
+f_arg_item      : f_arg_asgn {
+                    p.setCurrentArg(null);
+                    $$ = $1;
                 }
                 | tLPAREN f_margs rparen {
                     $$ = p.dispatch("on_mlhs_paren", $2);
@@ -1933,13 +1960,16 @@ f_arg           : f_arg_item {
 
 f_label 	: tLABEL {
                     p.arg_var(p.formal_argument($1));
+                    p.setCurrentArg($1);
                     $$ = $1;
                 }
  
 f_kw            : f_label arg_value {
+                    p.setCurrentArg(null);
                     $$ = p.keyword_arg($1, $2);
                 }
                 | f_label {
+                    p.setCurrentArg(null);
                     $$ = p.keyword_arg($1, p.getContext().getRuntime().getFalse());
                 }
 
@@ -1979,13 +2009,15 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = p.internalId();
                 }
 
-f_opt           : tIDENTIFIER '=' arg_value {
+f_opt           : f_arg_asgn '=' arg_value {
+                    p.setCurrentArg(null);
                     p.arg_var(p.formal_argument($1));
                     $$ = p.new_assoc(p.assignable($1), $3);
 
                 }
 
-f_block_opt     : tIDENTIFIER '=' primary_value {
+f_block_opt     : f_arg_asgn '=' primary_value {
+                    p.setCurrentArg(null);
                     p.arg_var(p.formal_argument($1));
                     $$ = p.new_assoc(p.assignable($1), $3);
                 }
