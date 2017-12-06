@@ -3784,6 +3784,7 @@ states[446] = new RipperParserState() {
 };
 states[447] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
+                    yyVal = null;
     return yyVal;
   }
 };
@@ -4803,6 +4804,6 @@ states[647] = new RipperParserState() {
   }
 };
 }
-					// line 2158 "RipperParser.y"
+					// line 2159 "RipperParser.y"
 }
-					// line 9490 "-"
+					// line 9491 "-"
