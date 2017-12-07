@@ -745,20 +745,28 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
             // mark for death
             die = true;
+            if (dissociateNexterThread(true)) doneObject = null;
+        }
 
-            Thread myThread = thread;
-            if (myThread != null) {
-                if (DEBUG) System.out.println("clearing for shutdown");
+        private synchronized boolean dissociateNexterThread(boolean interrupt) {
+            Thread nexterThread = thread;
 
-                // we interrupt twice, to break out of iteration and
-                // (potentially) break out of final exchange
-                myThread.interrupt();
-                myThread.interrupt();
+            if (nexterThread != null) {
+                if (DEBUG) System.out.println("dissociating nexter thread, interrupt: " + interrupt);
+
+                if (interrupt) {
+                    // we interrupt twice, to break out of iteration and
+                    // (potentially) break out of final exchange
+                    nexterThread.interrupt();
+                    nexterThread.interrupt();
+                }
 
                 // release references
                 thread = null;
-                doneObject = null;
+                return true;
             }
+
+            return false;
         }
 
         @Override
@@ -910,9 +918,8 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                     if (!die) out.put(finalObject);
                 }
                 catch (InterruptedException ie) { /* ignore */ }
-            }
-            finally {
-                thread = null; // disassociate this Nexter with the thread running it
+            } finally {
+                dissociateNexterThread(false); // disassociate this Nexter with the thread running it
             }
         }
     }
