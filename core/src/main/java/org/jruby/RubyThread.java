@@ -68,6 +68,7 @@ import org.jruby.internal.runtime.ThreadLike;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -1548,12 +1549,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
     }
 
+    @JRubyMethod(name = "backtrace")
     public IRubyObject backtrace(ThreadContext context) {
-        return backtrace20(context, NULL_ARRAY);
+        return backtraceInternal(context, null, null);
     }
 
-    @JRubyMethod(name = "backtrace", optional = 2)
-    public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "backtrace")
+    public IRubyObject backtrace(ThreadContext context, IRubyObject level) {
+        return backtraceInternal(context, level, null);
+    }
+
+    @JRubyMethod(name = "backtrace")
+    public IRubyObject backtrace(ThreadContext context, IRubyObject level, IRubyObject length) {
+        return backtraceInternal(context, level, length);
+    }
+
+    private IRubyObject backtraceInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         ThreadContext myContext = getContext();
 
         // context can be nil if we have not started or GC has claimed our context
@@ -1568,14 +1579,28 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!nativeThread.isAlive()) return context.nil;
 
         Ruby runtime = context.runtime;
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return myContext.createCallerBacktrace(level, length, getNativeThread().getStackTrace());
+        return myContext.createCallerBacktrace(levelInt, lengthInt, getNativeThread().getStackTrace());
     }
 
-    @JRubyMethod(optional = 2)
-    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject backtrace_locations(ThreadContext context) {
+        return backtraceLocationsInternal(context, null, null);
+    }
+
+    @JRubyMethod
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level) {
+        return backtraceLocationsInternal(context, level, null);
+    }
+
+    @JRubyMethod
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level, IRubyObject length) {
+        return backtraceLocationsInternal(context, level, length);
+    }
+
+    private IRubyObject backtraceLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         ThreadContext myContext = getContext();
 
         if (myContext == null) return context.nil;
@@ -1589,10 +1614,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!nativeThread.isAlive()) return context.nil;
 
         Ruby runtime = context.runtime;
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return myContext.createCallerLocations(level, length, getNativeThread().getStackTrace());
+        return myContext.createCallerLocations(levelInt, lengthInt, getNativeThread().getStackTrace());
     }
 
     public StackTraceElement[] javaBacktrace() {
@@ -2069,6 +2094,41 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return block.yieldSpecific(context);
         } finally {
             ts.setCritical(critical);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
+        return backtrace(context);
+    }
+
+    @Deprecated
+    public IRubyObject backtrace(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return backtrace(context);
+            case 1:
+                return backtrace(context, args[0]);
+            case 2:
+                return backtrace(context, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return backtrace_locations(context);
+            case 1:
+                return backtrace_locations(context, args[0]);
+            case 2:
+                return backtrace_locations(context, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
         }
     }
 }
