@@ -710,7 +710,7 @@ public final class ThreadContext {
         RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
 
         int traceLength = safeLength(level, length, fullTrace);
-        if (traceLength < 0) return nil;
+        if (traceLength < 0) return runtime.newEmptyArray();
 
         final RubyClass stringClass = runtime.getString();
         final IRubyObject[] traceArray = new IRubyObject[traceLength];
@@ -738,7 +738,7 @@ public final class ThreadContext {
         RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
 
         int traceLength = safeLength(level, length, fullTrace);
-        if (traceLength < 0) return nil;
+        if (traceLength < 0) return runtime.newEmptyArray();
 
         RubyArray backTrace = RubyThread.Location.newLocationArray(runtime, fullTrace, level, traceLength);
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);

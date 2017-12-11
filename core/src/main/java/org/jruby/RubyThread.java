@@ -1566,17 +1566,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private IRubyObject backtraceInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         ThreadContext myContext = getContext();
-
-        // context can be nil if we have not started or GC has claimed our context
-        if (myContext == null) return context.nil;
-
         Thread nativeThread = getNativeThread();
 
+        // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
-        if (nativeThread == null) return context.nil;
-
         // nativeThread may have finished
-        if (!nativeThread.isAlive()) return context.nil;
+        // MRI started returning [] instead of nil some time after 1.9 (#4891)
+        if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.runtime.newEmptyArray();
 
         Ruby runtime = context.runtime;
         Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
@@ -1602,16 +1598,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private IRubyObject backtraceLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         ThreadContext myContext = getContext();
-
-        if (myContext == null) return context.nil;
-
         Thread nativeThread = getNativeThread();
 
+        // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
-        if (nativeThread == null) return context.nil;
-
         // nativeThread may have finished
-        if (!nativeThread.isAlive()) return context.nil;
+        // MRI started returning [] instead of nil some time after 1.9 (#4891)
+        if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.runtime.newEmptyArray();
 
         Ruby runtime = context.runtime;
         Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
