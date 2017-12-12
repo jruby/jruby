@@ -37,4 +37,12 @@ class TestJRubyRipper < Test::Unit::TestCase
   def test_block_local_var_ref
     assert_equal [:on_var_ref, [:@ident, "a", [1, 5]]], extract("p{|a|a}", :on_var_ref)
   end
+
+  def test_var_ref
+    assert_equal [:on_var_ref, [:@ident, "a", [1, 9]]], extract("p{|(a,b)|a}", :on_var_ref)
+    assert_equal [:on_var_ref, [:@ident, "a", [1, 7]]], extract("p{|a=1|a}", :on_var_ref)
+    assert_equal [:on_var_ref, [:@ident, "a", [1, 9]]], extract("p{|a=1+1|a}", :on_var_ref)
+    assert_equal [:on_var_ref, [:@ident, "a", [1, 6]]], extract("p{a=1;a}", :on_var_ref)
+    assert_equal [:on_var_ref, [:@ident, "a", [1, 6]]], extract("p{|&a|a}", :on_var_ref)
+  end
 end
