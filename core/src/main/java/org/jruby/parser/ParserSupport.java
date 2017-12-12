@@ -138,7 +138,7 @@ public class ParserSupport {
         switch (node.getNodeType()) {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
-            String name = ((INameNode) node).getName();
+            ByteList name = ((INameNode) node).getByteName();
             if (name.equals(lexer.getCurrentArg())) {
                 warn(ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
             }
@@ -154,7 +154,7 @@ public class ParserSupport {
             return new GlobalVarNode(node.getPosition(), ((INameNode) node).getByteName());
         }
 
-        getterIdentifierError(node.getPosition(), ((INameNode) node).getName());
+        getterIdentifierError(node.getPosition(), ((INameNode) node).getByteName());
         return null;
     }
 
@@ -199,7 +199,7 @@ public class ParserSupport {
         return currentScope.assignKeyword(lexer.getPosition(), name, makeNullNil(value));
     }
     
-    protected void getterIdentifierError(ISourcePosition position, String identifier) {
+    protected void getterIdentifierError(ISourcePosition position, ByteList identifier) {
         lexer.compile_error(PID.BAD_IDENTIFIER, "identifier " + identifier + " is not valid to get");
     }
 
@@ -554,14 +554,40 @@ public class ParserSupport {
             
             switch (node.getNodeType()) {
             case CALLNODE: {
-                String name = ((CallNode) node).getName();
-                
-                if (name == "+" || name == "-" || name == "*" || name == "/" || name == "%" || 
-                    name == "**" || name == "+@" || name == "-@" || name == "|" || name == "^" || 
-                    name == "&" || name == "<=>" || name == ">" || name == ">=" || name == "<" || 
-                    name == "<=" || name == "==" || name == "!=") {
-                    handleUselessWarn(node, name);
+                ByteList name = ((CallNode) node).getByteName();
+                int length = name.realSize();
+
+                if (length > 3) {
+                    return;
+                } else if (length == 3) {
+                    if (name.charAt(0) == '<' || name.charAt(1) == '=' || name.charAt(2) == '>') {
+                        handleUselessWarn(node, name.toString());
+                    }
+                    return;
                 }
+
+                boolean isUseless = false;
+                switch (name.charAt(0)) {
+                    case '+': case '-':
+                        if (length == 1 || name.charAt(1) == '@') isUseless = true;
+                        break;
+                    case '*':
+                        if (length == 1 || name.charAt(1) == '*') isUseless = true;
+                        break;
+                    case '/': case '%': case '|': case '^': case '&':
+                        if (length == 1) isUseless = true;
+                        break;
+                    case '<': case '>': case '=':
+                        if (length == 1 || name.charAt(1) == '=') isUseless = true;
+                        break;
+
+                    case '!':
+                        if (length > 1 && name.charAt(1) == '=') isUseless = true;
+                        break;
+                }
+
+                if (isUseless) handleUselessWarn(node, name.toString());
+
                 return;
             }
             case BACKREFNODE: case DVARNODE: case GLOBALVARNODE:
@@ -1340,9 +1366,8 @@ public class ParserSupport {
     }
 
     public Node new_bv(ByteList identifier) {
-        if (!is_local_id(identifier)) {
-            getterIdentifierError(lexer.getPosition(), identifier.toString());
-        }
+        if (!is_local_id(identifier)) getterIdentifierError(lexer.getPosition(), identifier);
+
         shadowing_lvar(identifier);
         
         return arg_var(identifier);
@@ -1350,12 +1375,7 @@ public class ParserSupport {
 
     @Deprecated
     public Node new_bv(String identifier) {
-        if (!is_local_id(identifier)) {
-            getterIdentifierError(lexer.getPosition(), identifier);
-        }
-        shadowing_lvar(identifier);
-
-        return arg_var(identifier);
+        return new_bv(StringSupport.stringAsByteList(identifier));
     }
 
     public ArgumentNode arg_var(ByteList name) {
