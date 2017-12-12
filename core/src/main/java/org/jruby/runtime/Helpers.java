@@ -1,9 +1,9 @@
 package org.jruby.runtime;
 
 import java.io.IOException;
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
-import java.lang.reflect.Member;
+
+import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -184,7 +184,8 @@ public class Helpers {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
-            switch ( errorMessage ) {
+
+            switch (errorMessage) {
                 case "Bad file descriptor":
                     return Errno.EBADF;
                 case "File not open":
@@ -215,6 +216,8 @@ public class Helpers {
                 case "Is a directory":
                     return Errno.EISDIR;
             }
+        } else if (t instanceof PortUnreachableException) {
+            return Errno.ECONNREFUSED;
         }
         return null;
     }

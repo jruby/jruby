@@ -61,9 +61,11 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.runtime.opto.ConstantInvalidator;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
@@ -174,6 +176,7 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
+import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
@@ -266,6 +269,7 @@ public final class Ruby implements Constantizable {
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
+        this.caches             = new Caches();
 
         Random myRandom;
         try {
@@ -292,7 +296,7 @@ public final class Ruby implements Constantizable {
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES.ordinal() * MethodNames.values().length - 1);
 
-        checkpointInvalidator = OptoFactory.newConstantInvalidator();
+        checkpointInvalidator = OptoFactory.newConstantInvalidator(this);
 
         if (config.isObjectSpaceEnabled()) {
             objectSpacer = ENABLED_OBJECTSPACE;
@@ -311,6 +315,7 @@ public final class Ruby implements Constantizable {
         this.beanManager.register(configBean);
         this.beanManager.register(parserStats);
         this.beanManager.register(runtimeBean);
+        this.beanManager.register(caches);
     }
 
     void reinitialize(boolean reinitCore) {
@@ -888,6 +893,15 @@ public final class Ruby implements Constantizable {
 
     public JITCompiler getJITCompiler() {
         return jitCompiler;
+    }
+
+    /**
+     * Get the Caches management object.
+     *
+     * @return the current runtime's Caches management object
+     */
+    public Caches getCaches() {
+        return caches;
     }
 
     /**
@@ -4365,7 +4379,7 @@ public final class Ruby implements Constantizable {
     }
 
     private Invalidator addConstantInvalidator(String constantName) {
-        Invalidator invalidator = OptoFactory.newConstantInvalidator();
+        final Invalidator invalidator = OptoFactory.newConstantInvalidator(this);
         constantNameInvalidators.putIfAbsent(constantName, invalidator);
 
         // fetch the invalidator back from the ConcurrentHashMap to ensure that
@@ -4958,6 +4972,9 @@ public final class Ruby implements Constantizable {
     // Compilation
     private final JITCompiler jitCompiler;
 
+    // Cache invalidation
+    private final Caches caches;
+
     // Note: this field and the following static initializer
     // must be located be in this order!
     private volatile static boolean securityRestricted = false;
@@ -5190,4 +5207,5 @@ public final class Ruby implements Constantizable {
                     + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
         }
     }
+
 }

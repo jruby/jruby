@@ -1537,6 +1537,8 @@ public class RubyModule extends RubyObject {
     public void invalidateCacheDescendants() {
         LOG.debug("{} invalidating descendants", baseName);
 
+        getRuntime().getCaches().incrementMethodInvalidations();
+
         if (includingHierarchies.isEmpty()) {
             // it's only us; just invalidate directly
             methodInvalidator.invalidate();

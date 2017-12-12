@@ -27,7 +27,7 @@ end
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.21' ),
-   ImportedGem.new( 'jruby-readline', '1.1.1' ),
+   ImportedGem.new( 'jruby-readline', '1.2.0' ),
    ImportedGem.new( 'rake', '${rake.version}' ),
    ImportedGem.new( 'rdoc', '${rdoc.version}' ),
    ImportedGem.new( 'minitest', '${minitest.version}' ),

@@ -53,6 +53,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -1055,40 +1056,63 @@ public class RubyKernel {
         }
     };
 
-    public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return caller20(context, recv, args, block);
+    @JRubyMethod(name = "caller", module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller(ThreadContext context, IRubyObject recv) {
+        return callerInternal(context, recv, null, null);
     }
 
-    public static IRubyObject caller19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return caller20(context, recv, args, block);
+    @JRubyMethod(name = "caller", module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject level) {
+        return callerInternal(context, recv, level, null);
     }
 
-    @JRubyMethod(name = "caller", optional = 2, module = true, visibility = PRIVATE, omit = true)
-    public static IRubyObject caller20(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "caller", module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
+        return callerInternal(context, recv, level, length);
+    }
+
+    private static IRubyObject callerInternal(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
         Ruby runtime = context.runtime;
-        Integer[] ll = levelAndLengthFromArgs(runtime, args, 1);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = levelAndLengthFromArgs(runtime, level, length, 1);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return context.createCallerBacktrace(level, length, Thread.currentThread().getStackTrace());
+        return context.createCallerBacktrace(levelInt, lengthInt, Thread.currentThread().getStackTrace());
     }
 
-    @JRubyMethod(optional = 2, module = true, visibility = PRIVATE, omit = true)
-    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv) {
+        return callerLocationsInternal(context, null, null);
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject level) {
+        return callerLocationsInternal(context, level, null);
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
+        return callerLocationsInternal(context, level, length);
+    }
+
+    private static IRubyObject callerLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         Ruby runtime = context.runtime;
-        Integer[] ll = levelAndLengthFromArgs(runtime, args, 1);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = levelAndLengthFromArgs(runtime, level, length, 1);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return context.createCallerLocations(level, length, Thread.currentThread().getStackTrace());
+        return context.createCallerLocations(levelInt, lengthInt, Thread.currentThread().getStackTrace());
     }
 
-    static Integer[] levelAndLengthFromArgs(Ruby runtime, IRubyObject[] args, int defaultLevel) {
+    /**
+     * Retrieve the level and length from given args, if non-null.
+     */
+    static Integer[] levelAndLengthFromArgs(Ruby runtime, IRubyObject _level, IRubyObject _length, int defaultLevel) {
         int level;
         Integer length = null;
-        if (args.length > 1) {
-            level = RubyNumeric.fix2int(args[0]);
-            length = RubyNumeric.fix2int(args[1]);
-        } else if (args.length > 0 && args[0] instanceof RubyRange) {
-            RubyRange range = (RubyRange) args[0];
+        if (_length != null) {
+            level = RubyNumeric.fix2int(_level);
+            length = RubyNumeric.fix2int(_length);
+        } else if (_level != null && _level instanceof RubyRange) {
+            RubyRange range = (RubyRange) _level;
             ThreadContext context = runtime.getCurrentContext();
             level = RubyNumeric.fix2int(range.first(context));
             length = RubyNumeric.fix2int(range.last(context)) - level;
@@ -1096,8 +1120,8 @@ public class RubyKernel {
                 length++;
             }
             length = length < 0 ? 0 : length;
-        } else if (args.length > 0) {
-            level = RubyNumeric.fix2int(args[0]);
+        } else if (_level != null) {
+            level = RubyNumeric.fix2int(_level);
         } else {
             level = defaultLevel;
         }
@@ -2168,4 +2192,43 @@ public class RubyKernel {
         return methodMissing(context, recv, name, lastVis, lastCallType, args);
     }
 
+    @Deprecated
+    public static IRubyObject caller20(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return caller(context, recv, args, block);
+    }
+
+    @Deprecated
+    public static IRubyObject caller19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return caller(context, recv, args, block);
+    }
+
+    @Deprecated
+    private static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0:
+                return caller(context, recv);
+            case 1:
+                return caller(context, recv, args[0]);
+            case 2:
+                return caller(context, recv, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return caller_locations(context, recv);
+            case 1:
+                return caller_locations(context, recv, args[0]);
+            case 2:
+                return caller_locations(context, recv, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
+        }
+    }
 }
