@@ -33,4 +33,8 @@ class TestJRubyRipper < Test::Unit::TestCase
     assert_equal nil, extract("p{||}", :on_block_var).last
     assert_equal false, extract("p{|a|}", :on_block_var).last
   end
+
+  def test_block_local_var_ref
+    assert_equal [:on_var_ref, [:@ident, "a", [1, 5]]], extract("p{|a|a}", :on_var_ref)
+  end
 end

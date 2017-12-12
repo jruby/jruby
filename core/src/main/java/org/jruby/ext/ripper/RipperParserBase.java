@@ -193,7 +193,7 @@ public class RipperParserBase {
         
         if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return true;
 
-        return getCurrentScope().getLocalScope().isDefined(ident) >= 0;
+        return getCurrentScope().isDefined(ident) >= 0;
     }
     
     public boolean is_local_id(String identifier) {
