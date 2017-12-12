@@ -172,6 +172,7 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
+import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
@@ -4080,6 +4081,8 @@ public final class Ruby implements Constantizable {
                     }
             }
             return newRaiseException(getIOError(), errorMessage);
+        } else if (ex instanceof PortUnreachableException) {
+            throw newErrnoECONNREFUSEDError();
         }
         return newRaiseException(getIOError(), "IO Error");
     }
