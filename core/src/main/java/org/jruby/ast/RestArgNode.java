@@ -31,18 +31,24 @@ package org.jruby.ast;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /*
  * The rest argument for a method (def foo(a, *b, c)).
  */
 public class RestArgNode extends ArgumentNode implements INameNode {
+    @Deprecated
     public RestArgNode(ISourcePosition position, String name, int index) {
+        super(position, name, index);
+    }
+
+    public RestArgNode(ISourcePosition position, ByteList name, int index) {
         super(position, name, index);
     }
 
     // 1.9 only - lvar assign logic returns an Argument node
     public RestArgNode(ArgumentNode argNode) {
-        this(argNode.getPosition(), argNode.getName(), argNode.getIndex());
+        super(argNode.getPosition(), argNode.getByteName(), argNode.getIndex());
     }
 
     @Override

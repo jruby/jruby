@@ -147,7 +147,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult, ISourc
 
         if (moreState != null) builder.append("[").append(moreState).append("]");
 
-        if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
+        if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getByteName());
 
         builder.append(" ").append(getPosition().getLine());
 

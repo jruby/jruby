@@ -29,12 +29,18 @@
 package org.jruby.ast;
 
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /**
  * a bare '*' or nothing.  Name is "" if it is '*' and null if it is nothing.
  */
 public class UnnamedRestArgNode extends RestArgNode {
+    @Deprecated
     public UnnamedRestArgNode(ISourcePosition position, String name, int index) {
+        super(position, name, index);
+    }
+
+    public UnnamedRestArgNode(ISourcePosition position, ByteList name, int index) {
         super(position, name, index);
     }
 
@@ -44,6 +50,6 @@ public class UnnamedRestArgNode extends RestArgNode {
 
     @Override
     public String getName() {
-        return isStar() ? super.getName() : null;
+        return isStar() ? super.getByteName().toString() : null;
     }
 }
