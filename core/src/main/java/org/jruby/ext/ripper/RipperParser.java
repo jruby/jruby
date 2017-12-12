@@ -3564,7 +3564,7 @@ states[410] = new RipperParserState() {
 };
 states[411] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = null;
+                    yyVal = p.getContext().getRuntime().getFalse();
     return yyVal;
   }
 };
