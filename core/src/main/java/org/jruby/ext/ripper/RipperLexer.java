@@ -2392,18 +2392,7 @@ public class RipperLexer extends LexingCommon {
     // This is different than MRI in that we return a boolean since we only care whether it was added
     // or not.  The MRI version returns the byte supplied which is never used as a value.
     public boolean tokenAddMBC(int first_byte, ByteList buffer) {
-        int length = precise_mbclen();
-
-        if (length <= 0) {
-            compile_error("invalid multibyte char (" + getEncoding().getName() + ")");
-            return false;
-        }
-
-        tokAdd(first_byte, buffer);                  // add first byte since we have it.
-        lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
-        if (length > 1) tokCopy(length - 1, buffer); // copy next n bytes over.
-
-        return true;
+        return tokadd_mbchar(first_byte, buffer);
     }
 
     // MRI: parser_tokadd_utf8 sans regexp literal parsing
