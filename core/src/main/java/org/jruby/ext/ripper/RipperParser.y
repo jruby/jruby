@@ -1382,7 +1382,7 @@ block_param_def : tPIPE opt_bv_decl tPIPE {
 
 // shadowed block variables....
 opt_bv_decl     : opt_nl {
-                    $$ = null;
+                    $$ = p.getContext().getRuntime().getFalse();
                 }
                 | opt_nl ';' bv_decls opt_nl {
                     $$ = $3;
