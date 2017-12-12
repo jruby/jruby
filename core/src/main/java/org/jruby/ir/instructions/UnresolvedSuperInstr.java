@@ -16,9 +16,11 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class UnresolvedSuperInstr extends CallInstr {
-    public static final String UNKNOWN_SUPER_TARGET  = "-unknown-super-target-";
+    public static final ByteList UNKNOWN_SUPER_TARGET =
+            new ByteList(new byte[] {'-', 'u', 'n', 'k', 'n', 'o', 'w', 'n', '-', 's', 'u', 'p', 'e', 'r', '-', 't', 'a', 'r', 'g', 'e', 't', '-'});
 
     // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
     public UnresolvedSuperInstr(Operation op, Variable result, Operand receiver, Operand[] args, Operand closure,

@@ -99,6 +99,10 @@ public class OpElementAsgnNode extends Node {
         return StringSupport.byteListAsString(operatorName);
     }
 
+    public ByteList getOperatorByteName() {
+        return operatorName;
+    }
+
     /**
      * Gets the receiverNode.
      * @return Returns a Node

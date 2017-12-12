@@ -43,6 +43,10 @@ public class OpAsgnConstDeclNode extends Node implements BinaryOperatorNode {
         return StringSupport.byteListAsString(operator);
     }
 
+    public ByteList getByteOperator() {
+        return operator;
+    }
+
     @Override
     public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitOpAsgnConstDeclNode(this);

@@ -17,9 +17,9 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
+import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /*
@@ -28,7 +28,7 @@ import java.util.List;
 public class CallInstr extends CallBase implements ResultInstr {
     protected transient Variable result;
 
-    public static CallInstr createWithKwargs(IRScope scope, CallType callType, Variable result, String name,
+    public static CallInstr createWithKwargs(IRScope scope, CallType callType, Variable result, ByteList name,
                                              Operand receiver, Operand[] args, Operand closure,
                                              List<KeyValuePair<Operand, Operand>> kwargs) {
         // FIXME: This is obviously total nonsense but this will be on an optimized path and we will not be constructing
@@ -40,11 +40,11 @@ public class CallInstr extends CallBase implements ResultInstr {
         return create(scope, callType, result, name, receiver, newArgs, closure);
     }
 
-    public static CallInstr create(IRScope scope, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+    public static CallInstr create(IRScope scope, Variable result, ByteList name, Operand receiver, Operand[] args, Operand closure) {
         return create(scope, CallType.NORMAL, result, name, receiver, args, closure);
     }
 
-    public static CallInstr create(IRScope scope, CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+    public static CallInstr create(IRScope scope, CallType callType, Variable result, ByteList name, Operand receiver, Operand[] args, Operand closure) {
         boolean isPotentiallyRefined = scope.maybeUsingRefinements();
 
         if (!containsArgSplat(args)) {
@@ -67,12 +67,12 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
 
-    public CallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure,
+    public CallInstr(CallType callType, Variable result, ByteList name, Operand receiver, Operand[] args, Operand closure,
                      boolean potentiallyRefined) {
         this(Operation.CALL, callType, result, name, receiver, args, closure, potentiallyRefined);
     }
 
-    protected CallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver, Operand[] args,
+    protected CallInstr(Operation op, CallType callType, Variable result, ByteList name, Operand receiver, Operand[] args,
                         Operand closure, boolean potentiallyRefined) {
         super(op, callType, name, receiver, args, closure, potentiallyRefined);
 
@@ -93,7 +93,7 @@ public class CallInstr extends CallBase implements ResultInstr {
         int callTypeOrdinal = d.decodeInt();
         CallType callType = CallType.fromOrdinal(callTypeOrdinal);
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - calltype:  " + callType);
-        String methAddr = d.decodeString();
+        ByteList methAddr = d.decodeByteList();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - methaddr:  " + methAddr);
         Operand receiver = d.decodeOperand();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - receiver:  " + receiver);
@@ -126,12 +126,12 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     public Instr discardResult() {
-        return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), getClosureArg(), isPotentiallyRefined());
+        return NoResultCallInstr.create(getCallType(), getByteName(), getReceiver(), getCallArgs(), getClosureArg(), isPotentiallyRefined());
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
+        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getByteName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }

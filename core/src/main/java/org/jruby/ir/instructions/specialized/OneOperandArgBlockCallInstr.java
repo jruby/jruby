@@ -12,16 +12,17 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class OneOperandArgBlockCallInstr extends CallInstr {
-    public OneOperandArgBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args,
+    public OneOperandArgBlockCallInstr(CallType callType, Variable result, ByteList name, Operand receiver, Operand[] args,
                                        Operand closure, boolean isPotentiallyRefined) {
         super(Operation.CALL_1OB, callType, result, name, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneOperandArgBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
+        return new OneOperandArgBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getByteName(), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 

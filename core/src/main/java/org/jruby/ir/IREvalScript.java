@@ -12,15 +12,18 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Helpers;
+import org.jruby.util.ByteList;
 
 public class IREvalScript extends IRClosure {
     private List<IRClosure> beginBlocks;
     private EvalType evalType;
     private String fileName;
 
+    private static final ByteList EVAL_ = new ByteList(new byte[] {'E', 'V', 'A', 'L', '_'});
+
     public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
             int lineNumber, StaticScope staticScope, EvalType evalType) {
-        super(manager, lexicalParent, lineNumber, staticScope, "EVAL_");
+        super(manager, lexicalParent, lineNumber, staticScope, EVAL_);
 
         this.evalType = evalType;
         this.fileName = fileName;

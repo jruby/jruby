@@ -12,6 +12,8 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.util.ArraySupport;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.util.Map;
 
@@ -22,7 +24,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     public transient final long callSiteId;
     private final CallType callType;
-    protected String name;
+    protected ByteList name;
     protected final transient CallSite callSite;
     protected final transient int argsCount;
     protected final transient boolean hasClosure;
@@ -36,7 +38,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean procNew;
     private boolean potentiallyRefined;
 
-    protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure,
+    protected CallBase(Operation op, CallType callType, ByteList name, Operand receiver, Operand[] args, Operand closure,
                        boolean potentiallyRefined) {
         super(op, arrayifyOperands(receiver, args, closure));
 
@@ -45,7 +47,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(callType, name, potentiallyRefined);
+        this.callSite = getCallSiteFor(callType, StringSupport.byteListAsString(name), potentiallyRefined);
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
@@ -61,7 +63,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         super.encode(e);
 
         e.encode(getCallType().ordinal());
-        e.encode(getName());
+        e.encode(getByteName());
         e.encode(getReceiver());
         e.encode(calculateArity());
 
@@ -80,6 +82,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     }
 
     public String getName() {
+        return StringSupport.byteListAsString(name);
+    }
+
+    public ByteList getByteName() {
         return name;
     }
 

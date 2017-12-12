@@ -20,6 +20,7 @@ import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
 import org.jruby.runtime.Signature;
+import org.jruby.util.ByteList;
 import org.objectweb.asm.Handle;
 
 // Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accumulate instructions
@@ -49,22 +50,22 @@ public class IRClosure extends IRScope {
     private Handle handle;
 
     // Used by other constructions and by IREvalScript as well
-    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, String prefix) {
+    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, ByteList prefix) {
         super(manager, lexicalParent, null, lineNumber, staticScope);
 
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");
         this.closureId = lexicalParent.getNextClosureId();
-        setName(prefix + closureId);
+        setByteName(prefix.dup().append(closureId));
         this.body = null;
     }
 
     /** Used by cloning code */
     /* Inlining generates a new name and id and basic cloning will reuse the originals name */
-    protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, String fullName) {
+    protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName) {
         super(c, lexicalParent);
         this.closureId = closureId;
-        super.setName(fullName);
+        super.setByteName(fullName);
         this.startLabel = getNewLabel(getName() + "_START");
         this.endLabel = getNewLabel(getName() + "_END");
         if (getManager().isDryRun()) {
@@ -77,27 +78,29 @@ public class IRClosure extends IRScope {
         this.signature = c.signature;
     }
 
+    private static final ByteList CLOSURE = new ByteList(new byte[] {'_', 'C', 'L', 'O', 'S', 'U', 'R', 'E', '_'});
+
     // Used by persistence.  Knowledge of coverage not needed here since it is already instrumented into the instrs
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_", false);
+        this(manager, lexicalParent, lineNumber, staticScope, signature, CLOSURE, false);
     }
 
     // Used by iter + lambda by IRBuilder
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, boolean needsCoverage) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_", false, needsCoverage);
+        this(manager, lexicalParent, lineNumber, staticScope, signature, CLOSURE, false, needsCoverage);
     }
 
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix) {
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, ByteList prefix) {
         this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, false);
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix, boolean isBeginEndBlock) {
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, ByteList prefix, boolean isBeginEndBlock) {
         this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, isBeginEndBlock, false);
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope,
-                     Signature signature, String prefix, boolean isBeginEndBlock, boolean needsCoverage) {
+                     Signature signature, ByteList prefix, boolean isBeginEndBlock, boolean needsCoverage) {
         this(manager, lexicalParent, lineNumber, staticScope, prefix);
         this.signature = signature;
         lexicalParent.addClosure(this);
@@ -206,6 +209,7 @@ public class IRClosure extends IRScope {
         return !getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
     }
 
+    // FIXME: this is needs to be ByteList
     public IRMethod convertToMethod(String name) {
         // We want variable scoping to be the same as a method and not see outside itself.
         if (source == null ||
@@ -219,7 +223,8 @@ public class IRClosure extends IRScope {
         DefNode def = source;
         source = null;
 
-        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLineNumber(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
+        // FIXME: This should be bytelist from param vs being made (see above).
+        return new IRMethod(getManager(), getLexicalParent(), def, new ByteList(name.getBytes()), true,  getLineNumber(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
     }
 
     public void setSource(IterNode iter) {
@@ -336,15 +341,20 @@ public class IRClosure extends IRScope {
         return clone;
     }
 
+    private static final ByteList CLOSURE_CLONE =
+            new ByteList(new byte[] {'_', 'C', 'L', 'O', 'S', 'U', 'R', 'E', '_', 'C', 'L', 'O', 'N', 'E', '_'});
+
     public IRClosure cloneForInlining(CloneInfo ii) {
         IRClosure clonedClosure;
         IRScope lexicalParent = ii.getScope();
 
         if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo)ii).isEnsureBlockCloneMode()) {
-            clonedClosure = new IRClosure(this, lexicalParent, closureId, getName());
+            clonedClosure = new IRClosure(this, lexicalParent, closureId, getByteName());
         } else {
             int id = lexicalParent.getNextClosureId();
-            String fullName = lexicalParent.getName() + "_CLOSURE_CLONE_" + id;
+            ByteList fullName = lexicalParent.getByteName().dup();
+            fullName.append(CLOSURE_CLONE);
+            fullName.append(new Integer(id).toString().getBytes());
             clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
         }
 
@@ -356,9 +366,12 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public void setName(String name) {
-        // We can distinguish closures only with parent scope name
-        super.setName(getLexicalParent().getName() + name);
+    public void setByteName(ByteList name) {
+        ByteList newName = getLexicalParent().getByteName().dup();
+
+        newName.append(name);
+
+        super.setByteName(newName);
     }
 
     public Signature getSignature() {

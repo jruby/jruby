@@ -9,12 +9,15 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
+import org.jruby.util.ByteList;
 
 import static org.jruby.ir.IRFlags.USES_BACKREF_OR_LASTLINE;
 
 public class MatchInstr extends CallInstr implements FixedArityInstr {
+    private static final ByteList MATCH = new ByteList(new byte[] {'=', '~'});
+
     public MatchInstr(Variable result, Operand receiver, Operand arg) {
-        super(Operation.MATCH, CallType.NORMAL, result, "=~", receiver, new Operand[]{arg}, null, false);
+        super(Operation.MATCH, CallType.NORMAL, result, MATCH, receiver, new Operand[]{arg}, null, false);
 
         assert result != null : "Match2Instr result is null";
     }

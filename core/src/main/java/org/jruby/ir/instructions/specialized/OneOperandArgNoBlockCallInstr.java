@@ -11,21 +11,22 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class OneOperandArgNoBlockCallInstr extends CallInstr {
-    public OneOperandArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver,
+    public OneOperandArgNoBlockCallInstr(CallType callType, Variable result, ByteList name, Operand receiver,
                                          Operand[] args, boolean isPotentiallyRefined) {
         this(Operation.CALL_1O, callType, result, name, receiver, args, isPotentiallyRefined);
     }
 
-    public OneOperandArgNoBlockCallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver,
+    public OneOperandArgNoBlockCallInstr(Operation op, CallType callType, Variable result, ByteList name, Operand receiver,
                                          Operand[] args, boolean isPotentiallyRefined) {
         super(op, callType, result, name, receiver, args, null, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneOperandArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
+        return new OneOperandArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getByteName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined());
     }
 

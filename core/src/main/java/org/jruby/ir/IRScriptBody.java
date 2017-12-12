@@ -6,6 +6,8 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,9 +16,9 @@ import java.util.concurrent.Callable;
 public class IRScriptBody extends IRScope {
     private List<IRClosure> beginBlocks;
     private DynamicScope toplevelScope;
-    private String fileName;
+    private ByteList fileName;
 
-    public IRScriptBody(IRManager manager, String sourceName, StaticScope staticScope) {
+    public IRScriptBody(IRManager manager, ByteList sourceName, StaticScope staticScope) {
         super(manager, null, sourceName, 0, staticScope);
         this.toplevelScope = null;
         this.fileName = sourceName;
@@ -85,13 +87,14 @@ public class IRScriptBody extends IRScope {
         return true;
     }
 
+    // FIXME: This should be ByteList
     @Override
     public void setFileName(String fileName) {
-        this.fileName = fileName;
+        this.fileName = new ByteList(fileName.getBytes());
     }
 
     @Override
     public String getFileName() {
-        return fileName;
+        return StringSupport.byteListAsString(fileName);
     }
 }

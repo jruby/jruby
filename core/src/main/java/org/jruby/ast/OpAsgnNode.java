@@ -88,6 +88,10 @@ public class OpAsgnNode extends Node {
         return StringSupport.byteListAsString(operatorName);
     }
 
+    public ByteList getOperatorByteName() {
+        return operatorName;
+    }
+
     /**
      * Gets the receiverNode.
      * @return Returns a Node
@@ -111,9 +115,17 @@ public class OpAsgnNode extends Node {
     public String getVariableName() {
         return StringSupport.byteListAsString(variableName);
     }
+
+    public ByteList getVariableByteName() {
+        return variableName;
+    }
     
     public String getVariableNameAsgn() {
         return StringSupport.byteListAsString(variableNameAsgn);
+    }
+
+    public ByteList getVariableByteNameAsgn() {
+        return variableNameAsgn;
     }
     
     public List<Node> childNodes() {

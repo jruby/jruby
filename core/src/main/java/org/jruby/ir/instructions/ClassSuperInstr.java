@@ -12,9 +12,10 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class ClassSuperInstr extends CallInstr {
-    public ClassSuperInstr(Variable result, Operand definingModule, String name, Operand[] args, Operand closure,
+    public ClassSuperInstr(Variable result, Operand definingModule, ByteList name, Operand[] args, Operand closure,
                            boolean isPotentiallyRefined) {
         super(Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
     }
@@ -33,7 +34,7 @@ public class ClassSuperInstr extends CallInstr {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super");
         int callTypeOrdinal = d.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, calltype(ord):  "+ callTypeOrdinal);
-        String methAddr = d.decodeString();
+        ByteList methAddr = d.decodeByteList();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, methaddr:  "+ methAddr);
         Operand receiver = d.decodeOperand();
         int argsCount = d.decodeInt();

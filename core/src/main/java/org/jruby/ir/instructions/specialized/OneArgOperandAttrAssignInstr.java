@@ -7,15 +7,16 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
-    public OneArgOperandAttrAssignInstr(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
+    public OneArgOperandAttrAssignInstr(Operand obj, ByteList attr, Operand[] args, boolean isPotentiallyRefined) {
         super(obj, attr, args, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneArgOperandAttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii), isPotentiallyRefined());
+        return new OneArgOperandAttrAssignInstr(getReceiver().cloneForInlining(ii), getByteName(), cloneCallArgs(ii), isPotentiallyRefined());
     }
 
     @Override

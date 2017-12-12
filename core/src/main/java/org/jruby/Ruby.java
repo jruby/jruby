@@ -1198,7 +1198,7 @@ public final class Ruby implements Constantizable {
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
         // relationship handled either more directly or through a descriptice method
         // FIXME: We need a failing test case for this since removing it did not regress tests
-        IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
+        IRScope top = new IRScriptBody(irManager, new ByteList("".getBytes()), context.getCurrentScope().getStaticScope());
         top.allocateInterpreterContext(new ArrayList<Instr>());
 
         // Initialize the "dummy" class used as a marker

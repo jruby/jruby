@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
@@ -18,6 +17,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Instruction representing Ruby code of the form: "a['str']"
@@ -27,13 +27,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     private final FrozenString key;
+    public static final ByteList AREF = new ByteList(new byte[] {'[', ']'});
+    public static final ByteList ASET = new ByteList(new byte[] {'[', ']', '='});
 
     public static ArrayDerefInstr create(Variable result, Operand obj, FrozenString arg0) {
         return new ArrayDerefInstr(result, obj, arg0);
     }
 
     public ArrayDerefInstr(Variable result, Operand obj, FrozenString arg0) {
-        super(Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result, "[]", obj, new Operand[] {arg0}, false);
+        super(Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result, AREF, obj, new Operand[] {arg0}, false);
 
         key = arg0;
     }
@@ -59,7 +61,7 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
-        RubyString keyStr = (RubyString) key.retrieve(context, self, currScope, dynamicScope, temp);
+        RubyString keyStr = key.retrieve(context, self, currScope, dynamicScope, temp);
 
         return IRRuntimeHelpers.callOptimizedAref(context, self, object, keyStr, getCallSite());
     }

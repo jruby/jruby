@@ -22,9 +22,11 @@ import org.jruby.util.ByteList;
 public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     private final ByteList missingConst;
 
+    private static final ByteList CONST_MISSING = new ByteList(new byte[] {'c', 'o', 'n', 's', 't', '_', 'm', 'i', 's', 's', 'i', 'n', 'g'});
+
     public ConstMissingInstr(Variable result, Operand currentModule, ByteList missingConst, boolean isPotentiallyRefined) {
         // FIXME: Missing encoding knowledge of the constant name.
-        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, "const_missing", currentModule,
+        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, CONST_MISSING, currentModule,
                 new Operand[]{new Symbol(missingConst)}, null, isPotentiallyRefined);
 
         this.missingConst = missingConst;

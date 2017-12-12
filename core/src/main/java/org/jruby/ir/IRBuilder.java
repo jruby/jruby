@@ -893,7 +893,7 @@ public class IRBuilder {
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
-        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
+        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getByteName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
         addInstr(new CopyInstr(result, lastArg));
 
         if (attrAssignNode.isLazy()) {
@@ -911,7 +911,7 @@ public class IRBuilder {
         Operand obj = build(attrAssignNode.getReceiverNode());
         Operand[] args = setupCallArgs(attrAssignNode.getArgsNode());
         args = addArg(args, value);
-        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args, scope.maybeUsingRefinements()));
+        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getByteName(), args, scope.maybeUsingRefinements()));
         return value;
     }
 
@@ -1087,11 +1087,11 @@ public class IRBuilder {
             Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
             List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
             block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, callNode.getName(), receiver, args, block, kwargs);
+            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, callNode.getByteName(), receiver, args, block, kwargs);
         } else {
             Operand[] args = setupCallArgs(callNode.getArgsNode());
             block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.create(scope, result, callNode.getName(), receiver, args, block);
+            callInstr = CallInstr.create(scope, result, callNode.getByteName(), receiver, args, block);
         }
 
         determineIfWeNeedLineNumber(callNode);
@@ -1369,7 +1369,7 @@ public class IRBuilder {
         Node superNode = classNode.getSuperNode();
         Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? null : build(superNode);
-        String className = cpath.getName();
+        ByteList className = cpath.getByteName();
         Operand container = getContainerFromCPath(cpath);
         IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope());
         Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
@@ -1384,7 +1384,8 @@ public class IRBuilder {
     // Foo is the class in whose context this is being defined.
     public Operand buildSClass(SClassNode sclassNode) {
         Operand receiver = build(sclassNode.getReceiverNode());
-        IRModuleBody body = new IRMetaClassBody(manager, scope, manager.getMetaClassName(), sclassNode.getLine(), sclassNode.getScope());
+        // FIXME: metaclass name should be a bytelist
+        IRModuleBody body = new IRMetaClassBody(manager, scope, new ByteList(manager.getMetaClassName().getBytes()), sclassNode.getLine(), sclassNode.getScope());
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(createTemporaryVariable(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
@@ -2025,7 +2026,7 @@ public class IRBuilder {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
             addInstr(manager.newLineNumber(scope.getLineNumber()));
-            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
+            addInstr(new TraceInstr(RubyEvent.CALL, getByteName(), getFileName(), scope.getLineNumber()));
         }
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -2046,7 +2047,7 @@ public class IRBuilder {
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new LineNumberInstr(defNode.getEndLine()));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getByteName(), getFileName(), defNode.getEndLine()));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));
@@ -2075,7 +2076,7 @@ public class IRBuilder {
     static final ArgumentDescriptor[] NO_ARG_DESCS = new ArgumentDescriptor[0];
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getLine(), defNode.getScope(), needsCodeCoverage());
+        return new IRMethod(manager, scope, defNode, defNode.getByteName(), isInstanceMethod, defNode.getLine(), defNode.getScope(), needsCodeCoverage());
 
         //return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
     }
@@ -2686,7 +2687,7 @@ public class IRBuilder {
             Operand[] args = buildCallArgsExcept(fcallNode.getArgsNode(), keywordArgs);
             List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
             block = setupCallClosure(fcallNode.getIterNode());
-            callInstr = CallInstr.createWithKwargs(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block, kwargs);
+            callInstr = CallInstr.createWithKwargs(scope, CallType.FUNCTIONAL, result, fcallNode.getByteName(), buildSelf(), args, block, kwargs);
         } else {
             Operand[] args         = setupCallArgs(callArgsNode);
             block        = setupCallClosure(fcallNode.getIterNode());
@@ -2704,7 +2705,7 @@ public class IRBuilder {
                 }
             }
 
-            callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
+            callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getByteName(), buildSelf(), args, block);
         }
 
         determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
@@ -2744,6 +2745,8 @@ public class IRBuilder {
         return new Fixnum(node.getValue());
     }
 
+    private final static ByteList NEW = new ByteList(new byte[] {'e', 'n', 'd'});
+
     public Operand buildFlip(FlipNode flipNode) {
         /* ----------------------------------------------------------------------
          * Consider a simple 2-state (s1, s2) FSM with the following transitions:
@@ -2782,7 +2785,7 @@ public class IRBuilder {
         if (nearestNonClosureBuilder == null) {
             Variable excType = createTemporaryVariable();
             addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError"));
-            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), "new", excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
+            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), NEW, excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
             addInstr(new ThrowExceptionInstr(exc));
             return buildNil();
         }
@@ -2848,11 +2851,13 @@ public class IRBuilder {
         return new Float(node.getValue());
     }
 
+    private static final ByteList EACH = new ByteList(new byte[] {'e', 'a', 'c', 'h'});
+
     public Operand buildFor(ForNode forNode) {
         Variable result = createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode());
         Operand  forBlock = buildForIter(forNode);
-        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, "each", receiver, NO_ARGS, forBlock, scope.maybeUsingRefinements());
+        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, EACH, receiver, NO_ARGS, forBlock, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
         return result;
@@ -3158,7 +3163,7 @@ public class IRBuilder {
 
     public Operand buildModule(ModuleNode moduleNode) {
         Colon3Node cpath = moduleNode.getCPath();
-        String moduleName = cpath.getName();
+        ByteList moduleName = cpath.getByteName();
         Operand container = getContainerFromCPath(cpath);
         IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope());
         Variable moduleVar = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
@@ -3221,7 +3226,7 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, v1));
         }
 
-        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
+        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableByteName(), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -3232,7 +3237,7 @@ public class IRBuilder {
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode());
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {v2}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableByteNameAsgn(), v1, new Operand[] {v2}, null));
             // It is readerValue = v2.
             // readerValue = writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
@@ -3246,10 +3251,10 @@ public class IRBuilder {
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode());
             Variable setValue = createTemporaryVariable();
-            addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorName(), readerValue, new Operand[]{v2}, null));
+            addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorByteName(), readerValue, new Operand[]{v2}, null));
 
             // set attr
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableByteNameAsgn(), v1, new Operand[] {setValue}, null));
             // Returning writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
             if (!opAsgnNode.isLazy()) return setValue;
@@ -3312,7 +3317,7 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
-        addInstr(CallInstr.create(scope, result, node.getOperator(), lhs, new Operand[] { rhs }, null));
+        addInstr(CallInstr.create(scope, result, node.getByteOperator(), lhs, new Operand[] { rhs }, null));
         return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, result)));
     }
 
@@ -3388,12 +3393,12 @@ public class IRBuilder {
         Label endLabel = getNewLabel();
         Variable elt = createTemporaryVariable();
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
-        addInstr(CallInstr.create(scope, callType, elt, "[]", array, argList, null));
+        addInstr(CallInstr.create(scope, callType, elt, ArrayDerefInstr.AREF, array, argList, null));
         addInstr(createBranch(elt, truthy, endLabel));
         Operand value = build(opElementAsgnNode.getValueNode());
 
         argList = addArg(argList, value);
-        addInstr(CallInstr.create(scope, callType, elt, "[]=", array, argList, null));
+        addInstr(CallInstr.create(scope, callType, elt, ArrayDerefInstr.ASET, array, argList, null));
         addInstr(new CopyInstr(elt, value));
 
         addInstr(new LabelInstr(endLabel));
@@ -3407,15 +3412,15 @@ public class IRBuilder {
         Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
         Variable elt = createTemporaryVariable();
-        addInstr(CallInstr.create(scope, callType, elt, "[]", array, argList, null)); // elt = a[args]
+        addInstr(CallInstr.create(scope, callType, elt, ArrayDerefInstr.AREF, array, argList, null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode());                                       // Load 'value'
-        String  operation = opElementAsgnNode.getOperatorName();
+        ByteList operation = opElementAsgnNode.getOperatorByteName();
         addInstr(CallInstr.create(scope, callType, elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = createTemporaryVariable();
         argList = addArg(argList, elt);
-        addInstr(CallInstr.create(scope, callType, tmp, "[]=", array, argList, null));   // a[args] = elt
+        addInstr(CallInstr.create(scope, callType, tmp, ArrayDerefInstr.ASET, array, argList, null));   // a[args] = elt
         return elt;
     }
 
@@ -3463,11 +3468,13 @@ public class IRBuilder {
         return scope.allocateInterpreterContext(instructions);
     }
 
+    private static final ByteList _END_ = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_'});
+
     public Operand buildPostExe(PostExeNode postExeNode) {
         IRScope topLevel = scope.getTopLevelScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
 
-        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), "_END_", true);
+        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), _END_, true);
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
 
@@ -3482,7 +3489,7 @@ public class IRBuilder {
     public Operand buildPreExe(PreExeNode preExeNode) {
         IRScope topLevel = scope.getTopLevelScope();
         IRClosure beginClosure = new IRFor(manager, scope, preExeNode.getLine(), topLevel.getStaticScope(),
-                Signature.from(preExeNode), "_BEGIN_");
+                Signature.from(preExeNode), IRFor._BEGIN_);
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, beginClosure).buildPrePostExeInner(preExeNode.getBodyNode());
 
@@ -3747,7 +3754,7 @@ public class IRBuilder {
             retVal = processEnsureRescueBlocks(retVal);
 
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine()));
+                addInstr(new TraceInstr(RubyEvent.RETURN, getByteName(), getFileName(), returnNode.getLine()));
             }
 
             addInstr(new ReturnInstr(retVal));
@@ -3773,7 +3780,8 @@ public class IRBuilder {
     }
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
-        IRScriptBody script = new IRScriptBody(manager, rootNode.getFile(), rootNode.getStaticScope());
+        // FIXME: This filename should switch to ByteList
+        IRScriptBody script = new IRScriptBody(manager, new ByteList(rootNode.getFile().getBytes()), rootNode.getStaticScope());
 
         return topIRBuilder(manager, script).buildRootInner(rootNode);
     }
@@ -3823,9 +3831,9 @@ public class IRBuilder {
         Variable ret = createTemporaryVariable();
         if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody) {
             if (((IRMethod) scope).isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new InstanceSuperInstr(ret, scope.getCurrentModuleVariable(), getByteName(), args, block, scope.maybeUsingRefinements());
             } else {
-                superInstr = new ClassSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new ClassSuperInstr(ret, scope.getCurrentModuleVariable(), getByteName(), args, block, scope.maybeUsingRefinements());
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
@@ -3939,7 +3947,7 @@ public class IRBuilder {
     public Operand buildVCall(Variable result, VCallNode node) {
         if (result == null) result = createTemporaryVariable();
 
-        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getName(), buildSelf(), NO_ARGS, null));
+        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getByteName(), buildSelf(), NO_ARGS, null));
     }
 
     public Operand buildWhile(final WhileNode whileNode) {
@@ -4100,10 +4108,10 @@ public class IRBuilder {
         return scope.allocateInterpreterContext(instructions);
     }
 
-    private String methodNameFor() {
+    private ByteList methodNameFor() {
         IRScope method = scope.getNearestMethod();
 
-        return method == null ? null : method.getName();
+        return method == null ? null : method.getByteName();
     }
 
     private TemporaryVariable createTemporaryVariable() {
@@ -4118,8 +4126,8 @@ public class IRBuilder {
         return scope.getNewLocalVariable(name, scopeDepth);
     }
 
-    public String getName() {
-        return scope.getName();
+    public ByteList getByteName() {
+        return scope.getByteName();
     }
 
     private Label getNewLabel() {

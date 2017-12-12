@@ -12,11 +12,12 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class OneFloatArgNoBlockCallInstr extends CallInstr {
     private final double flote;
 
-    public OneFloatArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args,
+    public OneFloatArgNoBlockCallInstr(CallType callType, Variable result, ByteList name, Operand receiver, Operand[] args,
                                        boolean potentiallyRefined) {
         super(Operation.CALL_1D, callType, result, name, receiver, args, null, potentiallyRefined);
 
@@ -27,7 +28,7 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneFloatArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
+        return new OneFloatArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getByteName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined());
     }
 

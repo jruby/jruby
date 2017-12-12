@@ -12,11 +12,12 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class OneFixnumArgNoBlockCallInstr extends CallInstr {
     private final long fixNum;
 
-    public OneFixnumArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, boolean potentiallyRefined) {
+    public OneFixnumArgNoBlockCallInstr(CallType callType, Variable result, ByteList name, Operand receiver, Operand[] args, boolean potentiallyRefined) {
         super(Operation.CALL_1F, callType, result, name, receiver, args, null, potentiallyRefined);
 
         assert args.length == 1;
@@ -26,7 +27,7 @@ public class OneFixnumArgNoBlockCallInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneFixnumArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
+        return new OneFixnumArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getByteName(), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), isPotentiallyRefined());
     }
 

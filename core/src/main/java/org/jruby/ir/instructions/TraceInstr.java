@@ -9,6 +9,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 // FIXME: When presistence is revisited this should strip these out of code streams on save and add them in if
 // tracing is on for load.
@@ -17,11 +19,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class TraceInstr extends NoOperandInstr {
     private final RubyEvent event;
-    private final String name;
+    private final ByteList name;
     private final String filename;
     private final int linenumber;
 
-    public TraceInstr(RubyEvent event, String name, String filename, int linenumber) {
+    public TraceInstr(RubyEvent event, ByteList name, String filename, int linenumber) {
         super(Operation.TRACE);
 
         this.event = event;
@@ -40,7 +42,7 @@ public class TraceInstr extends NoOperandInstr {
     }
 
     public String getName() {
-        return name;
+        return StringSupport.byteListAsString(name);
     }
 
     public String getFilename() {
@@ -66,7 +68,7 @@ public class TraceInstr extends NoOperandInstr {
     }
 
     public static TraceInstr decode(IRReaderDecoder d) {
-        return new TraceInstr(d.decodeRubyEvent(), d.decodeString(), d.decodeString(), d.decodeInt());
+        return new TraceInstr(d.decodeRubyEvent(), d.decodeByteList(), d.decodeString(), d.decodeInt());
     }
 
     @Override

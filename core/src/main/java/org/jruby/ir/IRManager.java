@@ -22,6 +22,7 @@ import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
 import org.jruby.ir.util.IGVInstrListener;
+import org.jruby.util.ByteList;
 
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
@@ -36,8 +37,10 @@ public class IRManager {
     private final CompilerPass optimizeDynScopesPass = new OptimizeDynScopesPass();
     private final CompilerPass optimizeDelegationPass = new OptimizeDelegationPass();
 
+    private final static ByteList OBJECT = new ByteList(new byte[] {'O', 'b', 'j', 'e', 'c', 't'});
+
     private int dummyMetaClassCount = 0;
-    private final IRModuleBody object = new IRClassBody(this, null, "Object", 0, null);
+    private final IRModuleBody object = new IRClassBody(this, null, OBJECT, 0, null);
     private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
