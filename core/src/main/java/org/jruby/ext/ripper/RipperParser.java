@@ -2855,6 +2855,7 @@ states[284] = new RipperParserState() {
 states[285] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().begin();
     return yyVal;
   }
 };
@@ -4793,6 +4794,6 @@ states[649] = new RipperParserState() {
   }
 };
 }
-					// line 2141 "RipperParser.y"
+					// line 2142 "RipperParser.y"
 }
-					// line 9614 "-"
+					// line 9615 "-"

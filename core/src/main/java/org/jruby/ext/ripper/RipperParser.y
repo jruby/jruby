@@ -973,6 +973,7 @@ call_args       : command {
 
 command_args    : /* none */ {
                     $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().begin();
                 } call_args {
                     p.getCmdArgumentState().reset($<Long>1.longValue());
                     $$ = $2;

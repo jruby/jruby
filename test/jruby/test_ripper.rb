@@ -45,4 +45,8 @@ class TestJRubyRipper < Test::Unit::TestCase
     assert_equal [:on_var_ref, [:@ident, "a", [1, 6]]], extract("p{a=1;a}", :on_var_ref)
     assert_equal [:on_var_ref, [:@ident, "a", [1, 6]]], extract("p{|&a|a}", :on_var_ref)
   end
+
+  def test_command_args
+    assert_equal :command, extract("p m do; end", :on_method_add_block).dig(1, 0)
+  end
 end
