@@ -40,7 +40,6 @@ import org.jruby.util.ByteList;
 public class OptArgNode extends Node implements INameNode {
     private Node value;
 
-    // value must be LocalAsgnNode or DAsgnNode which is an INameNode
     public OptArgNode(ISourcePosition position, Node value) {
         super(position, value != null && value.containsVariableAssignment());
         this.value = value;
@@ -51,7 +50,7 @@ public class OptArgNode extends Node implements INameNode {
     }
 
     public Node getValue() {
-        return (Node) value;
+        return value;
     }
 
     @Override
@@ -61,14 +60,15 @@ public class OptArgNode extends Node implements INameNode {
 
     @Override
     public List<Node> childNodes() {
-        return Node.createList(getValue());
+        return Node.createList(value);
     }
 
     public String getName() {
-        return getByteName().toString();
+        // FIXME: When is this not a INameNode?
+        return value instanceof INameNode ? ((INameNode) value).getName() : null;
     }
 
     public ByteList getByteName() {
-        return ((INameNode) value).getByteName();
+        return value instanceof INameNode ? ((INameNode) value).getByteName() : null;
     }
 }

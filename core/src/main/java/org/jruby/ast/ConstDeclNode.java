@@ -77,7 +77,7 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
      * @return name
      */
     public String getName() {
-    	return StringSupport.byteListAsString(getByteName());
+    	return name == null ? constNode.getName() : StringSupport.byteListAsString(name);
     }
 
     public ByteList getByteName() {
