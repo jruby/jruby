@@ -242,6 +242,7 @@ public class RipperParserBase {
     
     public void pushLocalScope() {
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
+        getCmdArgumentState().reset();
     }
 
     public int getHeredocIndent() {
