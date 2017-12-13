@@ -132,6 +132,7 @@ public class RipperParser extends RipperParserBase {
    // ENEBO: missing call_args2, open_args
 %type <IRubyObject> call_args opt_ensure paren_args superclass
 %type <IRubyObject> command_args var_ref opt_paren_args block_call block_command
+%type <IRubyObject> command_rhs arg_rhs
 %type <IRubyObject> f_opt
 %type <RubyArray> undef_list 
 %type <IRubyObject> string_dvar backref
@@ -328,42 +329,6 @@ stmt            : keyword_alias fitem {
                 | mlhs '=' command_call {
                     $$ = p.dispatch("on_massign", $1, $3);
                 }
-                | var_lhs tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", $1, $2, $3);
-                }
-                | primary_value '[' opt_call_args rbracket tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_aref_field", $1, $3),
-                                    $5, $6);
-                }
-                | primary_value call_op tIDENTIFIER tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field", $1, $2, $3), 
-                                    $4, $5);
-                }
-                | primary_value call_op tCONSTANT tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field",$1, $2, $3),
-                                    $4, $5);
-                }
-                | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_const_path_field", $1, $3), 
-                                    $4,
-                                    $5);
-                }
-                | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field", $1, p.intern("::"), $3), 
-                                    $4, $5);
-                }
-                | backref tOP_ASGN command_call {
-                    $$ = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_assign", 
-                                    p.dispatch("on_var_field", $1), 
-                                    $3));
-                    p.error();
-               }
                 | lhs '=' mrhs {
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
@@ -372,12 +337,53 @@ stmt            : keyword_alias fitem {
                 }
                 | expr
 
-command_asgn    : lhs '=' command_call {
+command_asgn    : lhs '=' command_rhs {
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
-                | lhs '=' command_asgn {
-                    $$ = p.dispatch("on_assign", $1, $3);
+                | var_lhs tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", $1, $2, $3);
                 }
+                | primary_value '[' opt_call_args rbracket tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_aref_field", $1, $3),
+                                    $5, $6);
+                }
+                | primary_value call_op tIDENTIFIER tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_field", $1, $2, $3), 
+                                    $4, $5);
+                }
+                | primary_value call_op tCONSTANT tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_field",$1, $2, $3),
+                                    $4, $5);
+                }
+                | primary_value tCOLON2 tCONSTANT tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_const_path_field", $1, $3), 
+                                    $4,
+                                    $5);
+                }
+                | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_field", $1, p.intern("::"), $3), 
+                                    $4, $5);
+                }
+                | backref tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_assign_error", 
+                                    p.dispatch("on_assign", 
+                                    p.dispatch("on_var_field", $1), 
+                                    $3));
+                    p.error();
+                }
+
+command_rhs     : command_call %prec tOP_ASGN {
+                    $$ = $1;
+                }
+                | command_call modifier_rescue stmt {
+                    $$ = p.dispatch("on_rescue_mod", $1, $3);
+                }
+                | command_asgn
 
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
@@ -465,19 +471,19 @@ command        : fcall command_args %prec tLOWEST {
                 }
 
 
-// MultipleAssig19Node:mlhs - [!null]
+// MultipleAssigNode:mlhs - [!null]
 mlhs            : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
                     $$ = p.dispatch("on_mlhs_paren", $2);
                 }
 
-// MultipleAssign19Node:mlhs_entry - mlhs w or w/o parens [!null]
+// MultipleAssignNode:mlhs_entry - mlhs w or w/o parens [!null]
 mlhs_inner      : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
                     $$ = p.dispatch("on_mlhs_paren", $2);
                 }
 
-// MultipleAssign19Node:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
+// MultipleAssignNode:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
 mlhs_basic      : mlhs_head {
                     $$ = $1;
                 }
@@ -749,51 +755,45 @@ reswords        : keyword__LINE__ | keyword__FILE__ | keyword__ENCODING__ | keyw
                 | keyword_if | keyword_unless | keyword_while | keyword_until
                 | modifier_if | modifier_unless | modifier_while | modifier_until | modifier_rescue
 
-arg             : lhs '=' arg {
+arg             : lhs '=' arg_rhs {
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
-                | lhs '=' arg modifier_rescue arg {
-                    $$ = p.dispatch("on_assign", $1, p.dispatch("on_rescue_mod", $3, $5));
-                }
-                | var_lhs tOP_ASGN arg {
+                | var_lhs tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_opassign", $1, $2, $3);
-                }
-                | var_lhs tOP_ASGN arg modifier_rescue arg {
-                    $$ = p.dispatch("on_opassign", $1, $2, p.dispatch("on_rescue_mod", $3, $5));
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_aref_field", $1, $3),
                                     $5, $6);
                 }
-                | primary_value call_op tIDENTIFIER tOP_ASGN arg {
+                | primary_value call_op tIDENTIFIER tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", $1, $2, $3),
                                     $4, $5);
                 }
-                | primary_value call_op tCONSTANT tOP_ASGN arg {
+                | primary_value call_op tCONSTANT tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", $1, $2, $3),
                                     $4, $5);
                 }
-                | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg {
+                | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", $1, p.intern("::"), $3),
                                     $4, $5);
                 }
-                | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
+                | primary_value tCOLON2 tCONSTANT tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_assign_error", 
                                     p.dispatch("on_opassign", 
                                                p.dispatch("on_const_path_field", $1, $3),
                                                $4, $5));
                 }
-                | tCOLON3 tCONSTANT tOP_ASGN arg {
+                | tCOLON3 tCONSTANT tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_assign_error", 
                                     p.dispatch("on_opassign", 
                                                p.dispatch("on_top_const_field", $2),
                                                $3, $4));
                 }
-                | backref tOP_ASGN arg {
+                | backref tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_assign_error", 
                                     p.dispatch("on_opassign",
                                                p.dispatch("on_var_field", $1),
@@ -919,6 +919,13 @@ aref_args       : none
                     $$ = p.dispatch("on_args_add", 
                                     p.dispatch("on_args_new"),
                                     p.dispatch("on_bare_assoc_hash", $1));
+                }
+
+arg_rhs         : arg %prec tOP_ASGN {
+                    $$ = $1;
+                }
+                | arg modifier_rescue arg {
+                    $$ = p.dispatch("on_rescue_mod", $1, $3);
                 }
 
 paren_args      : tLPAREN2 opt_call_args rparen {
@@ -1047,7 +1054,7 @@ primary         : literal
                 | tLPAREN_ARG {
                     $$ = p.getCmdArgumentState().getStack();
                     p.getCmdArgumentState().reset();
-                } expr {
+                } stmt {
                     p.setState(EXPR_ENDARG); 
                 } rparen {
                     p.getCmdArgumentState().reset($<Long>2.longValue());
