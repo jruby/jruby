@@ -201,10 +201,9 @@ public class HeredocTerm extends StrTerm {
             str = tok;
         }
         
-        lexer.dispatchHeredocEnd();
-        lexer.heredoc_restore(this);
-        lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
+        lexer.pushback(c);
         lexer.setValue(lexer.createStr(str, 0));
+        lexer.flush_string_content(lexer.getEncoding());
         return RubyParser.tSTRING_CONTENT;
     }
 }

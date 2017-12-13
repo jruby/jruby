@@ -188,8 +188,7 @@ public class HeredocTerm extends StrTerm {
             str = tok;
         }
 
-        lexer.heredoc_restore(this);
-        lexer.setStrTerm(new StringTerm(-1, '\0', '\0', lexer.getRubySourceline()));
+        lexer.pushback(c);
         lexer.setValue(lexer.createStr(str, 0));
         return RubyParser.tSTRING_CONTENT;
     }

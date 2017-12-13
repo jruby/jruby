@@ -49,4 +49,9 @@ class TestJRubyRipper < Test::Unit::TestCase
   def test_command_args
     assert_equal :command, extract("p m do; end", :on_method_add_block).dig(1, 0)
   end
+
+  def test_heredoc
+    assert_equal [:on_string_content, [:@tstring_content, "x\n", [2, 0]]], extract("<<EOS\nx\nEOS\n", :on_string_content)
+    assert_equal [:on_string_content, [:string_embexpr, [[:vcall, [:@ident, "o", [2, 2]]]]], [:@tstring_content, "x\n", [2, 4]]], extract("<<EOS\n\#{o}x\nEOS\n", :on_string_content)
+  end
 end
