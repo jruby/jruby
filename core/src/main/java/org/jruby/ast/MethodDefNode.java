@@ -88,6 +88,7 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
      * Gets the name.
      * @return Returns a String
      */
+    @Deprecated
     public String getName() {
         return StringSupport.byteListAsString(name);
     }

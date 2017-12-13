@@ -147,6 +147,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return symbol;
     }
 
+    /**
+     * Return a raw (ISO-8859_1) string for use with our method tables etc.
+     */
+    public String getRawString() {
+        return StringSupport.bytelistAsBinaryString(symbolBytes);
+    }
+
     @Override
     public final String toString() {
         return symbol;
@@ -217,6 +224,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static RubySymbol newSymbol(Ruby runtime, ByteList bytes) {
         return runtime.getSymbolTable().getSymbol(bytes, false);
+    }
+
+    public static RubySymbol newHardSymbol(Ruby runtime, ByteList bytes) {
+        return runtime.getSymbolTable().getSymbol(bytes, true);
     }
 
     public static RubySymbol newHardSymbol(Ruby runtime, String name) {

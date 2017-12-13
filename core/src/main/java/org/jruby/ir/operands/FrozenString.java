@@ -43,6 +43,10 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
         this.line = line;
     }
 
+    public FrozenString(ByteList bytelist) {
+        this(internedStringFromByteList(bytelist), bytelist);
+    }
+
     /**
      * IRBuild.buildGetDefinition returns a frozen string and this is for all intern'd Java strings.
      */

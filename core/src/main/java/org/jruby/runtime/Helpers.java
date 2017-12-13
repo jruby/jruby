@@ -1578,27 +1578,25 @@ public class Helpers {
         return args;
     }
 
+    @Deprecated
     public static RubySymbol addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
-        containingClass.addMethod(name, method);
-
-        RubySymbol sym = runtime.fastNewSymbol(name);
-
-        if (!containingClass.isRefinement()) {
-            callNormalMethodHook(containingClass, context, sym);
-        }
-
-        if (visibility == Visibility.MODULE_FUNCTION) {
-            addModuleMethod(containingClass, name, method, context, sym);
-        }
-
-        return sym;
+        return addInstanceMethod(containingClass, runtime.fastNewSymbol(name), method, visibility, context, runtime);
     }
 
-    private static void addModuleMethod(RubyModule containingClass, String name, DynamicMethod method, ThreadContext context, RubySymbol sym) {
+    public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
+        containingClass.addMethod(symbol.getRawString(), method);
+
+        if (!containingClass.isRefinement()) callNormalMethodHook(containingClass, context, symbol);
+        if (visibility == Visibility.MODULE_FUNCTION) addModuleMethod(containingClass, method, context, symbol);
+
+        return symbol;
+    }
+
+    private static void addModuleMethod(RubyModule containingClass, DynamicMethod method, ThreadContext context, RubySymbol sym) {
         DynamicMethod singletonMethod = method.dup();
         singletonMethod.setImplementationClass(containingClass.getSingletonClass());
         singletonMethod.setVisibility(Visibility.PUBLIC);
-        containingClass.getSingletonClass().addMethod(name, singletonMethod);
+        containingClass.getSingletonClass().addMethod(sym.getRawString(), singletonMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }
 
@@ -1670,7 +1668,10 @@ public class Helpers {
         return scope;
     }
 
-    public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz, String name, Visibility visibility) throws RaiseException {
+    public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz,
+                                                                             RubySymbol symbol, Visibility visibility) throws RaiseException {
+        String name = symbol.asJavaString(); // We just assume simple ascii string since that is all we are examining.
+
         if (clazz == runtime.getDummy()) {
             throw runtime.newTypeError("no class/module to add method");
         }

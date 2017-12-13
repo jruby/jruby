@@ -1,7 +1,6 @@
 package org.jruby.ir.operands;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
@@ -9,27 +8,18 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.EncodingUtils;
 
 public class Symbol extends ImmutableLiteral {
-    public static final Symbol KW_REST_ARG_DUMMY = new Symbol("", ASCIIEncoding.INSTANCE);
+    public static final Symbol KW_REST_ARG_DUMMY = new Symbol(new ByteList());
 
     private final ByteList bytes;
-
-    public Symbol(String name, Encoding encoding) {
-        super();
-
-        this.bytes = new ByteList(name.getBytes(EncodingUtils.charsetForEncoding(encoding)), encoding);
-    }
 
     public Symbol(ByteList bytes) {
         this.bytes = bytes;
     }
 
     public boolean equals(Object other) {
-        if (!(other instanceof Symbol)) return false;
-
-        return bytes.equals(((Symbol) other).bytes);
+        return other instanceof Symbol && bytes.equals(((Symbol) other).bytes);
     }
 
     @Override
@@ -65,12 +55,12 @@ public class Symbol extends ImmutableLiteral {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getString());
-        e.encode(getEncoding());
+
+        e.encode(getBytes());
     }
 
     public static Symbol decode(IRReaderDecoder d) {
-        return new Symbol(d.decodeString(), d.decodeEncoding());
+        return new Symbol(d.decodeByteList());
     }
 
     @Override

@@ -2083,16 +2083,14 @@ public class IRBuilder {
     public Operand buildDefn(MethodDefNode node) { // Instance method
         IRMethod method = defineNewMethod(node, true);
         addInstr(new DefineInstanceMethodInstr(method));
-        // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
+        return new Symbol(method.getByteName());
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
         Operand container =  build(node.getReceiverNode());
         IRMethod method = defineNewMethod(node, false);
         addInstr(new DefineClassMethodInstr(container, method));
-        // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
+        return new Symbol(method.getByteName());
     }
 
     protected LocalVariable getArgVariable(ByteList name, int depth) {
@@ -3052,7 +3050,7 @@ public class IRBuilder {
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {
-        return new StringLiteral(literalNode.getName());
+        return new StringLiteral(literalNode.getByteName());
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {

@@ -2540,4 +2540,8 @@ public final class StringSupport {
 
         return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
     }
+
+    public static String bytelistAsBinaryString(ByteList bytelist) {
+        return new String(bytelist.unsafeBytes(), bytelist.begin(), bytelist.realSize(), ASCIIEncoding.INSTANCE.getCharset());
+    }
 }

@@ -110,6 +110,7 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
@@ -2839,9 +2840,11 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "alias_method", required = 2, visibility = PRIVATE)
     public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
-        String newName = newId.asJavaString();
-        defineAlias(newName, oldId.asJavaString());
         RubySymbol newSym = TypeConverter.checkID(newId);
+        RubySymbol oldSym = TypeConverter.checkID(oldId); //  MRI uses rb_to_id but we return existing symbol
+
+        defineAlias(newSym.getRawString(), oldSym.getRawString());
+
         if (isSingleton()) {
             ((MetaClass)this).getAttached().callMethod(context, "singleton_method_added", newSym);
         } else {

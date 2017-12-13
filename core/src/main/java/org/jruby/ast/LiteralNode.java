@@ -33,6 +33,10 @@ public class LiteralNode extends Node implements InvisibleNode {
         return StringSupport.byteListAsString(name);
     }
 
+    public ByteList getByteName() {
+        return name;
+    }
+
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor

@@ -42,6 +42,10 @@ public class StringLiteral extends Operand implements Stringable {
         this.frozenString = new FrozenString(s);
     }
 
+    public StringLiteral(ByteList bytes) {
+        this.frozenString = new FrozenString(bytes);
+    }
+
     private StringLiteral(FrozenString frozenString) {
         this.frozenString = frozenString;
     }
