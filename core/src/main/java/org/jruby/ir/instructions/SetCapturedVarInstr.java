@@ -13,11 +13,12 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class SetCapturedVarInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private final String varName;
+    private final ByteList varName;
 
-    public SetCapturedVarInstr(Variable result, Operand match2Result, String varName) {
+    public SetCapturedVarInstr(Variable result, Operand match2Result, ByteList varName) {
         super(Operation.SET_CAPTURED_VAR, result, match2Result);
 
         assert result != null: "SetCapturedVarInstr result is null";
@@ -30,6 +31,10 @@ public class SetCapturedVarInstr extends OneOperandResultBaseInstr implements Fi
     }
 
     public String getVarName() {
+        return varName.toString();
+    }
+
+    public ByteList getVarByteName() {
         return varName;
     }
 
@@ -51,14 +56,15 @@ public class SetCapturedVarInstr extends OneOperandResultBaseInstr implements Fi
     }
 
     public static SetCapturedVarInstr decode(IRReaderDecoder d) {
-        return new SetCapturedVarInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+        return new SetCapturedVarInstr(d.decodeVariable(), d.decodeOperand(), d.decodeByteList());
     }
 
     @Interp
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject matchRes = (IRubyObject) getMatch2Result().retrieve(context, self, currScope, currDynScope, temp);
-        return IRRuntimeHelpers.setCapturedVar(context, matchRes, varName);
+        // FIXME: Add ByteList helper
+        return IRRuntimeHelpers.setCapturedVar(context, matchRes, varName.toString());
     }
 
     @Override

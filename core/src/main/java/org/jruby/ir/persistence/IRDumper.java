@@ -56,6 +56,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.runtime.Signature;
+import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
@@ -101,12 +102,12 @@ public class IRDumper extends IRVisitor {
             println(ic.getStaticScope().getSignature());
         }
 
-        Map<String, LocalVariable> localVariables = ic.getScope().getLocalVariables();
+        Map<ByteList, LocalVariable> localVariables = ic.getScope().getLocalVariables();
 
         if (localVariables != null && !localVariables.isEmpty()) {
             println("declared variables");
 
-            for (Map.Entry<String, LocalVariable> entry : localVariables.entrySet()) {
+            for (Map.Entry<ByteList, LocalVariable> entry : localVariables.entrySet()) {
                 println(ansiStr(VARIABLE_COLOR, "  " + entry.getValue().toString()));
             }
         }

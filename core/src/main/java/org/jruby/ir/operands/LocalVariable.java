@@ -8,14 +8,15 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class LocalVariable extends Variable implements DepthCloneable {
-    protected final String name;
+    protected final ByteList name;
     protected final int scopeDepth;
     protected final int offset;
     protected final int hcode;
 
-    public LocalVariable(String name, int scopeDepth, int location) {
+    public LocalVariable(ByteList name, int scopeDepth, int location) {
         super();
         this.name = name;
         this.scopeDepth = scopeDepth;
@@ -46,12 +47,16 @@ public class LocalVariable extends Variable implements DepthCloneable {
 
     @Override
     public String getName() {
+        return getByteName().toString();
+    }
+
+    public ByteList getByteName() {
         return name;
     }
 
     @Override
     public String toString() {
-        return isSelf() ? name : name + "(" + scopeDepth + ":" + offset + ")";
+        return isSelf() ? name.toString() : name + "(" + scopeDepth + ":" + offset + ")";
     }
 
     @Override
@@ -100,7 +105,7 @@ public class LocalVariable extends Variable implements DepthCloneable {
     }
 
     public static LocalVariable decode(IRReaderDecoder d) {
-        return d.getCurrentScope().getLocalVariable(d.decodeString(), d.decodeInt());
+        return d.getCurrentScope().getLocalVariable(d.decodeByteList(), d.decodeInt());
     }
 
     @Override

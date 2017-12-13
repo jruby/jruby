@@ -115,7 +115,7 @@ public abstract class IRScope implements ParseResult {
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
 
-    Map<String, LocalVariable> localVars;
+    Map<ByteList, LocalVariable> localVars;
 
     EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
 
@@ -236,8 +236,14 @@ public abstract class IRScope implements ParseResult {
         if (nestedClosures != null) nestedClosures.remove(closure);
     }
 
+    private static final ByteList FLIP = new ByteList(new byte[] {'%', 'f', 'l', 'i', 'p', '_'});
+
     public LocalVariable getNewFlipStateVariable() {
-        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"), 0);
+        ByteList flip = FLIP.dup();
+
+        flip.append(allocateNextPrefixedName("%flip"));
+
+        return getLocalVariable(flip , 0);
     }
 
     public Label getNewLabel(String prefix) {
@@ -812,7 +818,7 @@ public abstract class IRScope implements ParseResult {
      * Get the local variables for this scope.
      * This should only be used by persistence layer.
      */
-    public Map<String, LocalVariable> getLocalVariables() {
+    public Map<ByteList, LocalVariable> getLocalVariables() {
         return localVars;
     }
 
@@ -827,7 +833,7 @@ public abstract class IRScope implements ParseResult {
      * Set the local variables for this scope. This should only be used by persistence layer.
      */
     // FIXME: Consider making constructor for persistence to pass in all of this stuff
-    public void setLocalVariables(Map<String, LocalVariable> variables) {
+    public void setLocalVariables(Map<ByteList, LocalVariable> variables) {
         this.localVars = variables;
     }
 
@@ -835,11 +841,11 @@ public abstract class IRScope implements ParseResult {
         nextVarIndex = indices;
     }
 
-    public LocalVariable lookupExistingLVar(String name) {
+    public LocalVariable lookupExistingLVar(ByteList name) {
         return localVars.get(name);
     }
 
-    protected LocalVariable findExistingLocalVariable(String name, int depth) {
+    protected LocalVariable findExistingLocalVariable(ByteList name, int depth) {
         return localVars.get(name);
     }
 
@@ -848,7 +854,7 @@ public abstract class IRScope implements ParseResult {
      * only check current depth.  Blocks/Closures override this because they
      * have special nesting rules.
      */
-    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getLocalVariable(ByteList name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
             lvar = getNewLocalVariable(name, scopeDepth);
@@ -859,7 +865,7 @@ public abstract class IRScope implements ParseResult {
         return lvar;
     }
 
-    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getNewLocalVariable(ByteList name, int scopeDepth) {
         assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
         LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
         localVars.put(name, lvar);
@@ -951,10 +957,14 @@ public abstract class IRScope implements ParseResult {
     }
 
     // Generate a new variable for inlined code
-    public Variable getNewInlineVariable(String inlinePrefix, Variable v) {
+    public Variable getNewInlineVariable(ByteList inlinePrefix, Variable v) {
         if (v instanceof LocalVariable) {
             LocalVariable lv = (LocalVariable)v;
-            return getLocalVariable(inlinePrefix + lv.getName(), lv.getScopeDepth());
+            ByteList newName = inlinePrefix.dup();
+
+            newName.append(lv.getName().getBytes());
+
+            return getLocalVariable(newName, lv.getScopeDepth());
         } else {
             return createTemporaryVariable();
         }

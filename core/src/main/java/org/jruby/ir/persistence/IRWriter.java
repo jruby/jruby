@@ -8,6 +8,7 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.ByteList;
 
 import java.io.IOException;
 import java.util.Map;
@@ -100,9 +101,9 @@ public class IRWriter {
 
     // FIXME: I hacked around our lvar types for now but this hsould be done in a less ad-hoc fashion.
     private static void persistLocalVariables(IRScope scope, IRWriterEncoder file) {
-        Map<String, LocalVariable> localVariables = scope.getLocalVariables();
+        Map<ByteList, LocalVariable> localVariables = scope.getLocalVariables();
         file.encode(localVariables.size());
-        for (String name: localVariables.keySet()) {
+        for (ByteList name: localVariables.keySet()) {
             file.encode(name);
             file.encode(localVariables.get(name).getOffset()); // No need to write depth..it is zero.
         }

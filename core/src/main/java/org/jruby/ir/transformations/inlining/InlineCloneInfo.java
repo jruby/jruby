@@ -19,7 +19,7 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
-import org.jruby.runtime.Arity;
+import org.jruby.util.ByteList;
 
 /**
  * Context object when performing an inline.
@@ -29,7 +29,7 @@ public class InlineCloneInfo extends CloneInfo {
 
     private CFG hostCFG;
 
-    private String inlineVarPrefix;
+    private ByteList inlineVarPrefix;
 
     private Variable callReceiver;
     private CallBase call;
@@ -67,7 +67,7 @@ public class InlineCloneInfo extends CloneInfo {
         this.argsArray = this.canMapArgsStatically ?  null : getHostScope().createTemporaryVariable();
         this.scopeBeingInlined = scopeBeingInlined;
         synchronized(globalInlineCount) {
-            this.inlineVarPrefix = "%in" + globalInlineCount + "_";
+            this.inlineVarPrefix = new ByteList(("%in" + globalInlineCount + "_").getBytes());
             globalInlineCount++;
         }
     }
@@ -155,7 +155,7 @@ public class InlineCloneInfo extends CloneInfo {
             if (v instanceof LocalVariable) {
                 LocalVariable lv = (LocalVariable) v;
                 int depth = lv.getScopeDepth();
-                return getHostScope().getLocalVariable(lv.getName(), depth > 1 ? depth - 1 : 0);
+                return getHostScope().getLocalVariable(lv.getByteName(), depth > 1 ? depth - 1 : 0);
             }
 
             return getHostScope().createTemporaryVariable();

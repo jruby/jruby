@@ -59,13 +59,13 @@ public class IRMethod extends IRScope {
     }
 
     @Override
-    protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
+    protected LocalVariable findExistingLocalVariable(ByteList name, int scopeDepth) {
         assert scopeDepth == 0: "Local variable depth in IRMethod should always be zero (" + name + " had depth of " + scopeDepth + ")";
         return localVars.get(name);
     }
 
     @Override
-    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getLocalVariable(ByteList name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
         return lvar;

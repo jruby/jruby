@@ -232,7 +232,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
+    protected LocalVariable findExistingLocalVariable(ByteList name, int scopeDepth) {
         LocalVariable lvar = lookupExistingLVar(name);
         if (lvar != null) return lvar;
 
@@ -247,7 +247,7 @@ public class IRClosure extends IRScope {
         return lvar;
     }
 
-    public LocalVariable getNewLocalVariable(String name, int depth) {
+    public LocalVariable getNewLocalVariable(ByteList name, int depth) {
         if (depth == 0 && !(this instanceof IRFor)) {
             LocalVariable lvar = new ClosureLocalVariable(name, 0, getStaticScope().addVariableThisScope(name));
             localVars.put(name, lvar);
@@ -274,7 +274,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public LocalVariable getLocalVariable(String name, int depth) {
+    public LocalVariable getLocalVariable(ByteList name, int depth) {
         // AST doesn't seem to be implementing shadowing properly and sometimes
         // has the wrong depths which screws up variable access. So, we implement
         // shadowing here by searching for an existing local var from depth 0 and upwards.

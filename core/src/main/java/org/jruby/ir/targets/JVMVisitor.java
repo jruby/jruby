@@ -1790,7 +1790,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadArgs();
         jvmAdapter().pushInt(instr.required);
-        jvmAdapter().ldc(instr.argName);
+        jvmAdapter().ldc(instr.getArgName());
         jvmAdapter().ldc(jvm.methodData().scope.receivesKeywordArgs());
         jvmMethod().invokeIRHelper("receiveKeywordArg", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class, String.class, boolean.class));
         jvmStoreLocal(instr.getResult());

@@ -75,6 +75,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -979,7 +980,22 @@ public class IRRuntimeHelpers {
         return result;
     }
 
+    @Deprecated
     public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String argName, boolean acceptsKeywordArgument) {
+        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
+
+        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
+
+        RubySymbol keywordName = context.runtime.newSymbol(argName);
+
+        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
+
+        // SSS FIXME: Can we use an internal delete here?
+        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
+        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
+    }
+
+    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, ByteList argName, boolean acceptsKeywordArgument) {
         RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
 
         if (keywordArguments == null) return UndefinedValue.UNDEFINED;

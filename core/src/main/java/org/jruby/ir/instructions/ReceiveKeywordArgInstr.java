@@ -11,12 +11,13 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArityInstr {
-    public final String argName;
+    public final ByteList argName;
     public final int required;
 
-    public ReceiveKeywordArgInstr(Variable result, String argName, int required) {
+    public ReceiveKeywordArgInstr(Variable result, ByteList argName, int required) {
         super(Operation.RECV_KW_ARG, result, -1);
         this.argName = argName;
         this.required = required;
@@ -33,6 +34,11 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
         return true;
     }
 
+    // FIXME: This should not exist and we should use bytelist but JIT has not been changed yet.
+    public String getArgName() {
+        return argName.toString();
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), argName, required);
@@ -46,7 +52,7 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     }
 
     public static ReceiveKeywordArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeString(), d.decodeInt());
+        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeByteList(), d.decodeInt());
     }
 
     @Override

@@ -114,11 +114,11 @@ public class IRReader implements IRPersistenceValues {
         return new KeyValuePair<>(scope, instructionsOffset);
     }
 
-    private static Map<String, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
+    private static Map<ByteList, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
         int size = decoder.decodeInt();
-        Map<String, LocalVariable> localVariables = new HashMap(size);
+        Map<ByteList, LocalVariable> localVariables = new HashMap(size);
         for (int i = 0; i < size; i++) {
-            String name = decoder.decodeString();
+            ByteList name = decoder.decodeByteList();
             int offset = decoder.decodeInt();
 
             localVariables.put(name, scope instanceof IRClosure ?

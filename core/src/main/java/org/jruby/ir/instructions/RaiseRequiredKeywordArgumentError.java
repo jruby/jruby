@@ -10,18 +10,23 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 // FIXME: Consider making argument error a single more generic instruction and combining with RaiseArgumentError
 public class RaiseRequiredKeywordArgumentError extends NoOperandInstr implements FixedArityInstr {
-    private String name;
+    private ByteList name;
 
-    public RaiseRequiredKeywordArgumentError(String name) {
+    public RaiseRequiredKeywordArgumentError(ByteList name) {
         super(Operation.RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR);
 
         this.name = name;
     }
 
     public String getName() {
+        return name.toString();
+    }
+
+    public ByteList getByteName() {
         return name;
     }
 
@@ -37,12 +42,13 @@ public class RaiseRequiredKeywordArgumentError extends NoOperandInstr implements
     }
 
     public static RaiseRequiredKeywordArgumentError decode(IRReaderDecoder d) {
-        return new RaiseRequiredKeywordArgumentError(d.decodeString());
+        return new RaiseRequiredKeywordArgumentError(d.decodeByteList());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        throw IRRuntimeHelpers.newRequiredKeywordArgumentError(context, name);
+        // FIXME: Make bytelist version
+        throw IRRuntimeHelpers.newRequiredKeywordArgumentError(context, name.toString());
     }
 
     @Override
