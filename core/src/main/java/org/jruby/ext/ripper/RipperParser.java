@@ -1950,12 +1950,15 @@ states[58] = new RipperParserState() {
 states[59] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.pushBlockScope();
+                    yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
     return yyVal;
   }
 };
 states[60] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_brace_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
+                    p.getCmdArgumentState().reset(((Long)yyVals[-3+yyTop]).longValue());
                     p.popCurrentScope();
     return yyVal;
   }
@@ -3754,12 +3757,15 @@ states[440] = new RipperParserState() {
 states[441] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.pushBlockScope();
+                    yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
     return yyVal;
   }
 };
 states[442] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_brace_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
+                    p.getCmdArgumentState().reset(((Long)yyVals[-3+yyTop]).longValue());
                     p.popCurrentScope();
     return yyVal;
   }
@@ -3767,12 +3773,15 @@ states[442] = new RipperParserState() {
 states[443] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.pushBlockScope();
+                    yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
     return yyVal;
   }
 };
 states[444] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_do_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
+                    p.getCmdArgumentState().reset(((Long)yyVals[-3+yyTop]).longValue());
                     p.popCurrentScope();
     return yyVal;
   }
@@ -4794,6 +4803,6 @@ states[649] = new RipperParserState() {
   }
 };
 }
-					// line 2142 "RipperParser.y"
+					// line 2151 "RipperParser.y"
 }
-					// line 9615 "-"
+					// line 9624 "-"

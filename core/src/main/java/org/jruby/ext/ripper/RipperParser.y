@@ -421,8 +421,11 @@ block_command   : block_call
 // :brace_block - [!null]
 cmd_brace_block : tLBRACE_ARG {
                     p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt tRCURLY {
                     $$ = p.dispatch("on_brace_block", $3, $4);
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.popCurrentScope();
                 }
 
@@ -1484,14 +1487,20 @@ method_call     : fcall paren_args {
 
 brace_block     : tLCURLY {
                     p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt tRCURLY {
                     $$ = p.dispatch("on_brace_block", $3, $4);
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.popCurrentScope();
                 }
                 | keyword_do {
                     p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt keyword_end {
                     $$ = p.dispatch("on_do_block", $3, $4);
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.popCurrentScope();
                 }
 
