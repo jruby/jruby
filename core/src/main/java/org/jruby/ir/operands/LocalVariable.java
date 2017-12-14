@@ -99,7 +99,7 @@ public class LocalVariable extends Variable implements DepthCloneable {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getName());
+        e.encode(getByteName());
         e.encode(getScopeDepth());
         // We do not encode location because we rebuild lvars from IRScope when being rebuilt
     }
