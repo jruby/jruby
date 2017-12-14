@@ -151,12 +151,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * Return a raw (ISO-8859_1) string for use with our method tables etc.
      */
     public String getRawString() {
-        return StringSupport.bytelistAsBinaryString(symbolBytes);
+        return symbol;
     }
 
     @Override
     public final String toString() {
-        return symbol;
+        // FIXME: This is not efficient but in theory this is just for display purposes
+        // which generally are for errors?
+        return StringSupport.byteListAsString(symbolBytes);
     }
 
     final ByteList getBytes() {
