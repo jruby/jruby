@@ -42,7 +42,7 @@ public class TraceInstr extends NoOperandInstr {
     }
 
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name == null ? null : StringSupport.byteListAsString(name);
     }
 
     public String getFilename() {
