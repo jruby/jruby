@@ -98,8 +98,7 @@ public class RipperLexer extends LexingCommon {
     public boolean ignoreNextScanEvent = false;
 
     protected void ambiguousOperator(String op, String syn) {
-        warn("`" + op + "' after local variable or literal is interpreted as binary operator");
-        warn("even though it seems like " + syn);
+        parser.dispatch("on_operator_ambiguous", getRuntime().newSymbol(op), getRuntime().newString(syn));
     }
 
     private int getFloatToken(String number, int suffix) {
