@@ -1,7 +1,12 @@
 package org.jruby.anno;
 
-import java.util.Collection;
+import javax.lang.model.element.ExecutableElement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Utility methods for generating bindings at build time. Used by AnnotationBinder.
@@ -69,6 +74,30 @@ public class AnnotationHelper {
             return scope ? "FrameFullScopeFull" : "FrameFullScopeNone";
         }
         return scope ? "FrameNoneScopeFull" : "FrameNoneScopeNone";
+    }
+
+    public static void groupFrameFields(Map<Set<FrameField>, List<String>> readGroups, Map<Set<FrameField>, List<String>> writeGroups, JRubyMethod anno, String simpleName) {
+        if (anno.reads().length > 0) {
+            Set<FrameField> reads = new HashSet<>(Arrays.asList(anno.reads()));
+            List<String> nameList = readGroups.get(reads);
+            if (nameList == null) readGroups.put(reads, nameList = new ArrayList<>());
+            if (anno.name().length == 0) {
+                nameList.add(simpleName);
+            } else {
+                nameList.addAll(Arrays.asList(anno.name()));
+            }
+        }
+
+        if (anno.writes().length > 0) {
+            Set<FrameField> writes = new HashSet<>(Arrays.asList(anno.writes()));
+            List<String> nameList = writeGroups.get(writes);
+            if (nameList == null) writeGroups.put(writes, nameList = new ArrayList<>());
+            if (anno.name().length == 0) {
+                nameList.add(simpleName);
+            } else {
+                nameList.addAll(Arrays.asList(anno.name()));
+            }
+        }
     }
 }
 

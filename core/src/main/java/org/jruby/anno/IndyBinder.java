@@ -56,7 +56,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -181,8 +180,8 @@ public class IndyBinder extends AbstractProcessor {
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<>();
 
-            Map<String, JRubyMethod> frameAwareMethods = null; // lazy init - there's usually none
-            Map<String, JRubyMethod> scopeAwareMethods = null; // lazy init - there's usually none
+            Map<Set<FrameField>, List<String>> readGroups = null; // lazy init - there's usually none
+            Map<Set<FrameField>, List<String>> writeGroups = null; // lazy init - there's usually none
 
             int methodCount = 0;
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
@@ -221,26 +220,7 @@ public class IndyBinder extends AbstractProcessor {
                 methodDescs.add(method);
 
                 // check for caller frame field reads or writes
-                boolean frame = false;
-                boolean scope = false;
-
-                for (FrameField field : anno.reads()) {
-                    frame |= field.needsFrame();
-                    scope |= field.needsScope();
-                }
-                for (FrameField field : anno.writes()) {
-                    frame |= field.needsFrame();
-                    scope |= field.needsScope();
-                }
-                
-                if (frame) {
-                    if (frameAwareMethods == null) frameAwareMethods = new HashMap<>(4, 1);
-                    AnnotationHelper.addMethodNamesToMap(frameAwareMethods, anno, method.getSimpleName().toString(), names, anno.alias());
-                }
-                if (scope) {
-                    if (scopeAwareMethods == null) scopeAwareMethods = new HashMap<>(4, 1);
-                    AnnotationHelper.addMethodNamesToMap(scopeAwareMethods, anno, method.getSimpleName().toString(), names, anno.alias());
-                }
+                AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getSimpleName().toString());
             }
 
             if (methodCount == 0) {
@@ -270,29 +250,45 @@ public class IndyBinder extends AbstractProcessor {
 
             mv.start();
 
-            if (frameAwareMethods != null && ! frameAwareMethods.isEmpty()) {
-                mv.ldc(frameAwareMethods.size());
-                mv.anewarray("java/lang/String");
-                int index = 0;
-                for (CharSequence name : frameAwareMethods.keySet()) {
-                    mv.dup();
-                    mv.ldc(index++);
-                    mv.ldc(name);
-                    mv.aastore();
+            if (!readGroups.isEmpty()) {
+                for (Map.Entry<Set<FrameField>, List<String>> reads : readGroups.entrySet()) {
+                    Set<FrameField> key = reads.getKey();
+                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
+
+                    mv.pushInt(FrameField.pack(frameFields));
+
+                    mv.ldc(reads.getValue());
+                    mv.anewarray("java/lang/String");
+                    int index = 0;
+                    for (CharSequence name : reads.getValue()) {
+                        mv.dup();
+                        mv.ldc(index++);
+                        mv.ldc(name);
+                        mv.aastore();
+                    }
+
+                    mv.invokestatic("org/jruby/runtime/MethodIndex", "addMethodReadFields", "(I[Ljava/lang/String;)V");
                 }
-                mv.invokestatic("org/jruby/runtime/MethodIndex", "addFrameAwareMethods", "([Ljava/lang/String;)V");
             }
-            if (scopeAwareMethods != null && ! scopeAwareMethods.isEmpty()) {
-                mv.ldc(frameAwareMethods.size());
-                mv.anewarray("java/lang/String");
-                int index = 0;
-                for (CharSequence name : scopeAwareMethods.keySet()) {
-                    mv.dup();
-                    mv.ldc(index++);
-                    mv.ldc(name);
-                    mv.aastore();
+            if (!writeGroups.isEmpty()) {
+                for (Map.Entry<Set<FrameField>, List<String>> writes : readGroups.entrySet()) {
+                    Set<FrameField> key = writes.getKey();
+                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
+
+                    mv.pushInt(FrameField.pack(frameFields));
+
+                    mv.ldc(writes.getValue());
+                    mv.anewarray("java/lang/String");
+                    int index = 0;
+                    for (CharSequence name : writes.getValue()) {
+                        mv.dup();
+                        mv.ldc(index++);
+                        mv.ldc(name);
+                        mv.aastore();
+                    }
+
+                    mv.invokestatic("org/jruby/runtime/MethodIndex", "addMethodWriteFields", "(I[Ljava/lang/String;)V");
                 }
-                mv.invokestatic("org/jruby/runtime/MethodIndex", "addScopeAwareMethods", "([Ljava/lang/String;)V");
             }
 
             mv.voidreturn();

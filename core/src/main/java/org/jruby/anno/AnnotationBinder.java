@@ -157,8 +157,8 @@ public class AnnotationBinder extends AbstractProcessor {
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<>();
 
-            Map<String, JRubyMethod> frameAwareMethods = new HashMap<>();
-            Map<String, JRubyMethod> scopeAwareMethods = new HashMap<>();
+            Map<Set<FrameField>, List<String>> readGroups = new HashMap<>();
+            Map<Set<FrameField>, List<String>> writeGroups = new HashMap<>();
 
             int methodCount = 0;
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
@@ -197,20 +197,7 @@ public class AnnotationBinder extends AbstractProcessor {
                 methodDescs.add(method);
 
                 // check for frame field reads or writes
-                boolean frame = false;
-                boolean scope = false;
-
-                for (FrameField field : anno.reads()) {
-                    frame |= field.needsFrame();
-                    scope |= field.needsScope();
-                }
-                for (FrameField field : anno.writes()) {
-                    frame |= field.needsFrame();
-                    scope |= field.needsScope();
-                }
-                
-                if (frame) AnnotationHelper.addMethodNamesToMap(frameAwareMethods, anno, method.getSimpleName().toString());
-                if (scope) AnnotationHelper.addMethodNamesToMap(scopeAwareMethods, anno, method.getSimpleName().toString());
+                AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getSimpleName().toString());
             }
 
             if (methodCount == 0) {
@@ -236,12 +223,25 @@ public class AnnotationBinder extends AbstractProcessor {
 
             // write out a static initializer for frame names, so it only fires once
             out.println("    static {");
-            if (!frameAwareMethods.isEmpty()) {
-                out.println("        MethodIndex.addFrameAwareMethods(" + join(frameAwareMethods.keySet()) + ");");
+
+            if (!readGroups.isEmpty()) {
+                for (Map.Entry<Set<FrameField>, List<String>> reads : readGroups.entrySet()) {
+                    Set<FrameField> key = reads.getKey();
+                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
+
+                    out.println("        MethodIndex.addMethodReadFields(" + FrameField.pack(frameFields) + ", " + join(reads.getValue()) + ");");
+                }
             }
-            if (!scopeAwareMethods.isEmpty()) {
-                out.println("        MethodIndex.addScopeAwareMethods(" + join(scopeAwareMethods.keySet()) + ");");
+
+            if (!writeGroups.isEmpty()) {
+                for (Map.Entry<Set<FrameField>, List<String>> writes : writeGroups.entrySet()) {
+                    Set<FrameField> key = writes.getKey();
+                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
+
+                    out.println("        MethodIndex.addMethodWriteFields(" + FrameField.pack(frameFields) + ", " + join(writes.getValue()) + ");");
+                }
             }
+
             out.println("    }");
 
             out.println("}");
