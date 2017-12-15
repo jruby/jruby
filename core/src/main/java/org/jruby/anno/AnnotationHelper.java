@@ -1,7 +1,7 @@
 package org.jruby.anno;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * Utility methods for generating bindings at build time. Used by AnnotationBinder.
@@ -15,19 +15,19 @@ public class AnnotationHelper {
 
     private AnnotationHelper() { /* no instances */ }
 
-	public static void addMethodNamesToSet(Set<String> set, JRubyMethod jrubyMethod, String simpleName) {
-	    addMethodNamesToSet(set, simpleName, jrubyMethod.name(), jrubyMethod.alias());
+	public static void addMethodNamesToMap(Map<String, JRubyMethod> map, JRubyMethod jrubyMethod, String simpleName) {
+	    addMethodNamesToMap(map, jrubyMethod, simpleName, jrubyMethod.name(), jrubyMethod.alias());
 	}
 
-    public static void addMethodNamesToSet(final Collection<String> set, final String simpleName,
-        final String[] names, final String[] aliases) {
-        if ( names.length == 0 ) set.add(simpleName);
+    public static void addMethodNamesToMap(final Map<String, JRubyMethod> map, JRubyMethod anno, final String simpleName,
+                                           final String[] names, final String[] aliases) {
+        if ( names.length == 0 ) map.put(simpleName, anno);
         else {
-            for ( String name : names ) set.add(name);
+            for ( String name : names ) map.put(name, anno);
         }
 
         if ( aliases.length > 0 ) {
-            for ( String alias : aliases ) set.add(alias);
+            for ( String alias : aliases ) map.put(alias, anno);
         }
     }
 

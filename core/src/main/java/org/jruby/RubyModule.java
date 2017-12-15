@@ -4456,14 +4456,14 @@ public class RubyModule extends RubyObject {
         CallConfiguration needs = CallConfiguration.valueOf(AnnotationHelper.getCallerCallConfigNameByAnno(jrubyMethod));
 
         if (needs.framing() == Framing.Full) {
-            Collection<String> frameAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
-            AnnotationHelper.addMethodNamesToSet(frameAwareMethods, simpleName, names, aliases);
-            MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
+            Map<String, JRubyMethod> frameAwareMethods = new HashMap<>(4); // added to a Set - thus no need for another Set
+            AnnotationHelper.addMethodNamesToMap(frameAwareMethods, null, simpleName, names, aliases);
+            MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods.keySet());
         }
         if (needs.scoping() == Scoping.Full) {
-            Collection<String> scopeAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
-            AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, simpleName, names, aliases);
-            MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
+            Map<String, JRubyMethod> scopeAwareMethods = new HashMap<>(4); // added to a Set - thus no need for another Set
+            AnnotationHelper.addMethodNamesToMap(scopeAwareMethods, null, simpleName, names, aliases);
+            MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods.keySet());
         }
 
         RubyModule singletonClass;

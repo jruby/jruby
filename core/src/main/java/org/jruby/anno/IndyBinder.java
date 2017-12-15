@@ -60,7 +60,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import static org.jruby.util.CodegenUtils.*;
 import static org.objectweb.asm.Opcodes.*;
@@ -182,8 +181,8 @@ public class IndyBinder extends AbstractProcessor {
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<>();
 
-            Set<String> frameAwareMethods = null; // lazy init - there's usually none
-            Set<String> scopeAwareMethods = null; // lazy init - there's usually none
+            Map<String, JRubyMethod> frameAwareMethods = null; // lazy init - there's usually none
+            Map<String, JRubyMethod> scopeAwareMethods = null; // lazy init - there's usually none
 
             int methodCount = 0;
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
@@ -224,6 +223,7 @@ public class IndyBinder extends AbstractProcessor {
                 // check for caller frame field reads or writes
                 boolean frame = false;
                 boolean scope = false;
+
                 for (FrameField field : anno.reads()) {
                     frame |= field.needsFrame();
                     scope |= field.needsScope();
@@ -234,12 +234,12 @@ public class IndyBinder extends AbstractProcessor {
                 }
                 
                 if (frame) {
-                    if (frameAwareMethods == null) frameAwareMethods = new HashSet<>(4, 1);
-                    AnnotationHelper.addMethodNamesToSet(frameAwareMethods, method.getSimpleName().toString(), names, anno.alias());
+                    if (frameAwareMethods == null) frameAwareMethods = new HashMap<>(4, 1);
+                    AnnotationHelper.addMethodNamesToMap(frameAwareMethods, anno, method.getSimpleName().toString(), names, anno.alias());
                 }
                 if (scope) {
-                    if (scopeAwareMethods == null) scopeAwareMethods = new HashSet<>(4, 1);
-                    AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, method.getSimpleName().toString(), names, anno.alias());
+                    if (scopeAwareMethods == null) scopeAwareMethods = new HashMap<>(4, 1);
+                    AnnotationHelper.addMethodNamesToMap(scopeAwareMethods, anno, method.getSimpleName().toString(), names, anno.alias());
                 }
             }
 
@@ -274,7 +274,7 @@ public class IndyBinder extends AbstractProcessor {
                 mv.ldc(frameAwareMethods.size());
                 mv.anewarray("java/lang/String");
                 int index = 0;
-                for (CharSequence name : frameAwareMethods) {
+                for (CharSequence name : frameAwareMethods.keySet()) {
                     mv.dup();
                     mv.ldc(index++);
                     mv.ldc(name);
@@ -286,7 +286,7 @@ public class IndyBinder extends AbstractProcessor {
                 mv.ldc(frameAwareMethods.size());
                 mv.anewarray("java/lang/String");
                 int index = 0;
-                for (CharSequence name : scopeAwareMethods) {
+                for (CharSequence name : scopeAwareMethods.keySet()) {
                     mv.dup();
                     mv.ldc(index++);
                     mv.ldc(name);

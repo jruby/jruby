@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,7 +43,6 @@ import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
@@ -159,8 +157,8 @@ public class AnnotationBinder extends AbstractProcessor {
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<>();
 
-            Set<String> frameAwareMethods = new HashSet<>(4, 1);
-            Set<String> scopeAwareMethods = new HashSet<>(4, 1);
+            Map<String, JRubyMethod> frameAwareMethods = new HashMap<>();
+            Map<String, JRubyMethod> scopeAwareMethods = new HashMap<>();
 
             int methodCount = 0;
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
@@ -211,8 +209,8 @@ public class AnnotationBinder extends AbstractProcessor {
                     scope |= field.needsScope();
                 }
                 
-                if (frame) AnnotationHelper.addMethodNamesToSet(frameAwareMethods, anno, method.getSimpleName().toString());
-                if (scope) AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, anno, method.getSimpleName().toString());
+                if (frame) AnnotationHelper.addMethodNamesToMap(frameAwareMethods, anno, method.getSimpleName().toString());
+                if (scope) AnnotationHelper.addMethodNamesToMap(scopeAwareMethods, anno, method.getSimpleName().toString());
             }
 
             if (methodCount == 0) {
@@ -239,10 +237,10 @@ public class AnnotationBinder extends AbstractProcessor {
             // write out a static initializer for frame names, so it only fires once
             out.println("    static {");
             if (!frameAwareMethods.isEmpty()) {
-                out.println("        MethodIndex.addFrameAwareMethods(" + join(frameAwareMethods) + ");");
+                out.println("        MethodIndex.addFrameAwareMethods(" + join(frameAwareMethods.keySet()) + ");");
             }
             if (!scopeAwareMethods.isEmpty()) {
-                out.println("        MethodIndex.addScopeAwareMethods(" + join(scopeAwareMethods) + ");");
+                out.println("        MethodIndex.addScopeAwareMethods(" + join(scopeAwareMethods.keySet()) + ");");
             }
             out.println("    }");
 
