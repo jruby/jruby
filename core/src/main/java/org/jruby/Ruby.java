@@ -3004,11 +3004,22 @@ public final class Ruby implements Constantizable {
 
     public void addBoundMethod(String className, String methodName, String rubyName) {
         Map<String, String> javaToRuby = boundMethods.get(className);
-        if (javaToRuby == null) {
-            javaToRuby = new HashMap<String, String>();
-            boundMethods.put(className, javaToRuby);
-        }
+        if (javaToRuby == null) boundMethods.put(className, javaToRuby = new HashMap<>());
         javaToRuby.put(methodName, rubyName);
+    }
+
+    public void addBoundMethodsPacked(String className, String packedTuples) {
+        String[] names = Helpers.SEMICOLON_PATTERN.split(packedTuples);
+        for (int i = 0; i < names.length; i += 2) {
+            addBoundMethod(className, names[i], names[i+1]);
+        }
+    }
+
+    public void addSimpleBoundMethodsPacked(String className, String packedNames) {
+        String[] names = Helpers.SEMICOLON_PATTERN.split(packedNames);
+        for (String name : names) {
+            addBoundMethod(className, name, name);
+        }
     }
 
     public Map<String, Map<String, String>> getBoundMethods() {

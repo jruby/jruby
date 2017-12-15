@@ -223,24 +223,24 @@ public class MethodIndex {
         return new SuperCallSite();
     }
 
-    public static void addMethodReadFields(int readBits, String... methods) {
+    public static void addMethodReadFieldsPacked(int readBits, String methodsPacked) {
         Set<FrameField> reads = FrameField.unpack(readBits);
 
-        if (DEBUG) LOG.debug("Adding method field reads: {} for {}", reads, Arrays.toString(methods));
+        if (DEBUG) LOG.debug("Adding method field reads: {} for {}", reads, methodsPacked);
 
-        for (String name : methods) {
+        for (String name : Helpers.SEMICOLON_PATTERN.split(methodsPacked)) {
             if (FrameField.needsFrame(readBits)) FRAME_AWARE_METHODS.add(name);
             if (FrameField.needsScope(readBits)) SCOPE_AWARE_METHODS.add(name);
             METHOD_FRAME_READS.put(name, reads);
         }
     }
 
-    public static void addMethodWriteFields(int writeBits, String... methods) {
+    public static void addMethodWriteFieldsPacked(int writeBits, String methodsPacked) {
         Set<FrameField> writes = FrameField.unpack(writeBits);
 
-        if (DEBUG) LOG.debug("Adding scope-aware method names: {} for {}", writes, Arrays.toString(methods));
+        if (DEBUG) LOG.debug("Adding scope-aware method names: {} for {}", writes, methodsPacked);
 
-        for (String name : methods) {
+        for (String name : Helpers.SEMICOLON_PATTERN.split(methodsPacked)) {
             if (FrameField.needsFrame(writeBits)) FRAME_AWARE_METHODS.add(name);
             if (FrameField.needsScope(writeBits)) SCOPE_AWARE_METHODS.add(name);
             METHOD_FRAME_WRITES.put(name, writes);

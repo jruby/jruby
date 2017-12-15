@@ -56,6 +56,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -231,16 +232,51 @@ public class IndyBinder extends AbstractProcessor {
             classNames.add(getActualQualifiedName(cd));
 
             processMethodDeclarations(staticAnnotatedMethods);
+
+            List<ExecutableElement> simpleNames = new ArrayList<>();
+            Map<CharSequence, List<ExecutableElement>> complexNames = new HashMap<>();
+
             for (Map.Entry<CharSequence, List<ExecutableElement>> entry : staticAnnotatedMethods.entrySet()) {
                 ExecutableElement decl = entry.getValue().get(0);
-                if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl);
+                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
+
+                if (anno.omit()) continue;
+
+                CharSequence rubyName = entry.getKey();
+
+                if (decl.getSimpleName().equals(rubyName) && anno.name().length <= 1) {
+                    simpleNames.add(decl);
+                    continue;
+                }
+
+                List<ExecutableElement> complex = complexNames.get(rubyName);
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                complex.add(decl);
             }
 
             processMethodDeclarations(annotatedMethods);
+
             for (Map.Entry<CharSequence, List<ExecutableElement>> entry : annotatedMethods.entrySet()) {
                 ExecutableElement decl = entry.getValue().get(0);
-                if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl);
+                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
+
+                if (anno.omit()) continue;
+
+                CharSequence rubyName = entry.getKey();
+
+                if (decl.getSimpleName().equals(rubyName) && anno.name().length <= 1) {
+                    simpleNames.add(decl);
+                    continue;
+                }
+
+                List<ExecutableElement> complex = complexNames.get(rubyName);
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                complex.add(decl);
             }
+
+            addCoreMethodMapping(cd, complexNames);
+
+            addSimpleMethodMappings(cd, simpleNames);
 
             mv.voidreturn();
             mv.end();
@@ -257,17 +293,14 @@ public class IndyBinder extends AbstractProcessor {
 
                     mv.pushInt(FrameField.pack(frameFields));
 
-                    mv.ldc(reads.getValue());
-                    mv.anewarray("java/lang/String");
-                    int index = 0;
+                    StringBuilder builder = new StringBuilder();
                     for (CharSequence name : reads.getValue()) {
-                        mv.dup();
-                        mv.ldc(index++);
-                        mv.ldc(name);
-                        mv.aastore();
+                        if (builder.length() > 0) builder.append(";");
+                        builder.append(name);
                     }
 
-                    mv.invokestatic("org/jruby/runtime/MethodIndex", "addMethodReadFields", "(I[Ljava/lang/String;)V");
+                    mv.ldc(builder.toString());
+                    mv.invokestatic("org/jruby/runtime/MethodIndex", "addMethodReadFields", "(ILjava/lang/String;)V");
                 }
             }
             if (!writeGroups.isEmpty()) {
@@ -277,15 +310,13 @@ public class IndyBinder extends AbstractProcessor {
 
                     mv.pushInt(FrameField.pack(frameFields));
 
-                    mv.ldc(writes.getValue());
-                    mv.anewarray("java/lang/String");
-                    int index = 0;
+                    StringBuilder builder = new StringBuilder();
                     for (CharSequence name : writes.getValue()) {
-                        mv.dup();
-                        mv.ldc(index++);
-                        mv.ldc(name);
-                        mv.aastore();
+                        if (builder.length() > 0) builder.append(";");
+                        builder.append(name);
                     }
+
+                    mv.ldc(builder.toString());
 
                     mv.invokestatic("org/jruby/runtime/MethodIndex", "addMethodWriteFields", "(I[Ljava/lang/String;)V");
                 }
@@ -447,12 +478,43 @@ public class IndyBinder extends AbstractProcessor {
         mv.invokestatic("org/jruby/internal/runtime/methods/InvokeDynamicMethodFactory", "adaptHandle", Method.getMethod("java.util.concurrent.Callable adaptHandle(java.lang.invoke.MethodHandle, org.jruby.Ruby, int, int, int, boolean, java.lang.String, java.lang.Class, boolean, boolean, boolean, boolean, org.jruby.RubyModule)").getDescriptor());
     }
 
-    private void addCoreMethodMapping(CharSequence rubyName, ExecutableElement decl) {
+    private void addCoreMethodMapping(TypeElement cls, Map<CharSequence, List<ExecutableElement>> complexNames) {
+        StringBuilder encoded = new StringBuilder();
+
+        for (Map.Entry<CharSequence, List<ExecutableElement>> entry : complexNames.entrySet()) {
+
+            for (Iterator<ExecutableElement> iterator = entry.getValue().iterator(); iterator.hasNext(); ) {
+                if (encoded.length() > 0) encoded.append(";");
+
+                ExecutableElement elt = iterator.next();
+                encoded
+                        .append(elt.getSimpleName())
+                        .append(";")
+                        .append(entry.getKey());
+            }
+        }
+
+        if (encoded.length() == 0) return;
+
         mv.aload(RUNTIME);
-        mv.ldc(((TypeElement) decl.getEnclosingElement()).getQualifiedName().toString());
-        mv.ldc(decl.getSimpleName().toString());
-        mv.ldc(rubyName.toString());
-        mv.invokevirtual("org/jruby/Ruby", "addBoundMethod", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+        mv.ldc(cls.getQualifiedName().toString());
+        mv.ldc(encoded.toString());
+        mv.invokevirtual("org/jruby/Ruby", "addBoundMethodsPacked", "(Ljava/lang/String;Ljava/lang/String;)V");
+    }
+
+    private void addSimpleMethodMappings(TypeElement cls, List<ExecutableElement> simpleNames) {
+        StringBuilder encoded = new StringBuilder();
+        for (ExecutableElement elt : simpleNames) {
+            if (encoded.length() > 0) encoded.append(";");
+            encoded.append(elt.getSimpleName());
+        }
+
+        if (encoded.length() == 0) return;
+
+        mv.aload(RUNTIME);
+        mv.ldc(cls.getSimpleName().toString());
+        mv.ldc(encoded);
+        mv.invokevirtual("org/jruby/Ruby", "addSimpleBoundMethodsPacked", "(Ljava/lang/String;Ljava/lang/String;)V");
     }
 
     private static CharSequence getActualQualifiedName(TypeElement td) {

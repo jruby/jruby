@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -207,17 +208,50 @@ public class AnnotationBinder extends AbstractProcessor {
 
             classNames.add(getActualQualifiedName(cd));
 
+            List<ExecutableElement> simpleNames = new ArrayList<>();
+            Map<CharSequence, List<ExecutableElement>> complexNames = new HashMap<>();
+
             processMethodDeclarations(staticAnnotatedMethods);
             for (Map.Entry<CharSequence, List<ExecutableElement>> entry : staticAnnotatedMethods.entrySet()) {
                 ExecutableElement decl = entry.getValue().get(0);
-                if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
+
+                if (anno.omit()) continue;
+
+                CharSequence rubyName = entry.getKey();
+
+                if (decl.getSimpleName().equals(rubyName)) {
+                    simpleNames.add(decl);
+                    continue;
+                }
+
+                List<ExecutableElement> complex = complexNames.get(rubyName);
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                complex.add(decl);
             }
 
             processMethodDeclarations(annotatedMethods);
             for (Map.Entry<CharSequence, List<ExecutableElement>> entry : annotatedMethods.entrySet()) {
                 ExecutableElement decl = entry.getValue().get(0);
-                if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
+
+                if (anno.omit()) continue;
+
+                CharSequence rubyName = entry.getKey();
+
+                if (decl.getSimpleName().equals(rubyName) && decl.getAnnotation(JRubyMethod.class).name().length <= 1) {
+                    simpleNames.add(decl);
+                    continue;
+                }
+
+                List<ExecutableElement> complex = complexNames.get(rubyName);
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                complex.add(decl);
             }
+
+            addCoreMethodMapping(cd, complexNames);
+
+            addSimpleMethodMappings(cd, simpleNames);
 
             out.println("    }");
 
@@ -229,7 +263,7 @@ public class AnnotationBinder extends AbstractProcessor {
                     Set<FrameField> key = reads.getKey();
                     FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
 
-                    out.println("        MethodIndex.addMethodReadFields(" + FrameField.pack(frameFields) + ", " + join(reads.getValue()) + ");");
+                    out.println("        MethodIndex.addMethodReadFieldsPacked(" + FrameField.pack(frameFields) + ", \"" + join(reads.getValue()) + "\");");
                 }
             }
 
@@ -238,7 +272,7 @@ public class AnnotationBinder extends AbstractProcessor {
                     Set<FrameField> key = writes.getKey();
                     FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
 
-                    out.println("        MethodIndex.addMethodWriteFields(" + FrameField.pack(frameFields) + ", " + join(writes.getValue()) + ");");
+                    out.println("        MethodIndex.addMethodWriteFieldsPacked(" + FrameField.pack(frameFields) + ", \"" + join(writes.getValue()) + "\");");
                 }
             }
 
@@ -261,11 +295,9 @@ public class AnnotationBinder extends AbstractProcessor {
 
     private static StringBuilder join(final Iterable<String> names) {
         final StringBuilder str = new StringBuilder();
-        boolean first = true;
         for (String name : names) {
-            if (!first) str.append(',');
-            first = false;
-            str.append('"').append(name).append('"');
+            if (str.length() > 0) str.append(';');
+            str.append(name);
         }
         return str;
     }
@@ -376,14 +408,46 @@ public class AnnotationBinder extends AbstractProcessor {
         }
     }
 
-    private void addCoreMethodMapping(CharSequence rubyName, ExecutableElement decl, PrintStream out) {
+    private void addCoreMethodMapping(TypeElement cls, Map<CharSequence, List<ExecutableElement>> complexNames) {
+        StringBuilder encoded = new StringBuilder();
+
+        for (Map.Entry<CharSequence, List<ExecutableElement>> entry : complexNames.entrySet()) {
+
+            for (Iterator<ExecutableElement> iterator = entry.getValue().iterator(); iterator.hasNext(); ) {
+                if (encoded.length() > 0) encoded.append(";");
+
+                ExecutableElement elt = iterator.next();
+                encoded
+                        .append(elt.getSimpleName())
+                        .append(";")
+                        .append(entry.getKey());
+            }
+        }
+
+        if (encoded.length() == 0) return;
+
         out.println(new StringBuilder(50)
-                .append("        runtime.addBoundMethod(")
-                .append('"').append(((TypeElement)decl.getEnclosingElement()).getQualifiedName()).append('"')
+                .append("        runtime.addBoundMethodsPacked(")
+                .append('"').append(cls.getQualifiedName()).append('"')
                 .append(',')
-                .append('"').append(decl.getSimpleName()).append('"')
+                .append('"').append(encoded).append('"')
+                .append(");").toString());
+    }
+
+    private void addSimpleMethodMappings(TypeElement cls, List<ExecutableElement> simpleNames) {
+        StringBuilder encoded = new StringBuilder();
+        for (ExecutableElement elt : simpleNames) {
+            if (encoded.length() > 0) encoded.append(";");
+            encoded.append(elt.getSimpleName());
+        }
+
+        if (encoded.length() == 0) return;
+
+        out.println(new StringBuilder(50)
+                .append("        runtime.addSimpleBoundMethodsPacked(")
+                .append('"').append(cls.getQualifiedName()).append('"')
                 .append(',')
-                .append('"').append(rubyName).append('"')
+                .append('"').append(encoded).append('"')
                 .append(");").toString());
     }
 

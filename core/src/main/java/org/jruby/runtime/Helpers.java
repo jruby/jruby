@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import com.headius.modulator.Modulator;
 import jnr.constants.platform.Errno;
@@ -70,6 +71,8 @@ import org.jruby.util.io.EncodingUtils;
  *
  */
 public class Helpers {
+
+    public static final Pattern SEMICOLON_PATTERN = Pattern.compile(";");
 
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
