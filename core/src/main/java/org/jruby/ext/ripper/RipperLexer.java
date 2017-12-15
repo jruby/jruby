@@ -101,6 +101,11 @@ public class RipperLexer extends LexingCommon {
         parser.dispatch("on_operator_ambiguous", getRuntime().newSymbol(op), getRuntime().newString(syn));
     }
 
+    protected void onMagicComment(String name, ByteList value) {
+        super.onMagicComment(name, value);
+        parser.dispatch("on_magic_comment", getRuntime().newString(name), getRuntime().newString(value));
+    }
+
     private int getFloatToken(String number, int suffix) {
         if ((suffix & SUFFIX_R) != 0) {
             BigDecimal bd = new BigDecimal(number);

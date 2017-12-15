@@ -996,17 +996,19 @@ public abstract class LexingCommon {
             String name = magicLine.subSequence(beg, end).toString().replace('-', '_');
             ByteList value = magicLine.makeShared(vbeg, vend - vbeg);
 
-            if ("coding".equals(name) || "encoding".equals(name)) {
-                magicCommentEncoding(value);
-            } else if ("frozen_string_literal".equals(name)) {
-                setCompileOptionFlag(name, value);
-            } else if ("warn_indent".equals(name)) {
-                setTokenInfo(name, value);
-            } else {
-                return false;
-            }
+            onMagicComment(name, value);
         }
 
         return true;
+    }
+
+    protected void onMagicComment(String name, ByteList value) {
+        if ("coding".equals(name) || "encoding".equals(name)) {
+            magicCommentEncoding(value);
+        } else if ("frozen_string_literal".equals(name)) {
+            setCompileOptionFlag(name, value);
+        } else if ("warn_indent".equals(name)) {
+            setTokenInfo(name, value);
+        }
     }
 }
