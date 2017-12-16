@@ -132,6 +132,7 @@ public class RipperParser extends RipperParserBase {
    // ENEBO: missing call_args2, open_args
 %type <IRubyObject> call_args opt_ensure paren_args superclass
 %type <IRubyObject> command_args var_ref opt_paren_args block_call block_command
+%type <IRubyObject> command_rhs arg_rhs
 %type <IRubyObject> f_opt
 %type <RubyArray> undef_list 
 %type <IRubyObject> string_dvar backref
@@ -328,42 +329,6 @@ stmt            : keyword_alias fitem {
                 | mlhs '=' command_call {
                     $$ = p.dispatch("on_massign", $1, $3);
                 }
-                | var_lhs tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", $1, $2, $3);
-                }
-                | primary_value '[' opt_call_args rbracket tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_aref_field", $1, $3),
-                                    $5, $6);
-                }
-                | primary_value call_op tIDENTIFIER tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field", $1, $2, $3), 
-                                    $4, $5);
-                }
-                | primary_value call_op tCONSTANT tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field",$1, $2, $3),
-                                    $4, $5);
-                }
-                | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_const_path_field", $1, $3), 
-                                    $4,
-                                    $5);
-                }
-                | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
-                    $$ = p.dispatch("on_opassign", 
-                                    p.dispatch("on_field", $1, p.intern("::"), $3), 
-                                    $4, $5);
-                }
-                | backref tOP_ASGN command_call {
-                    $$ = p.dispatch("on_assign_error", 
-                                    p.dispatch("on_assign", 
-                                    p.dispatch("on_var_field", $1), 
-                                    $3));
-                    p.error();
-               }
                 | lhs '=' mrhs {
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
@@ -372,12 +337,53 @@ stmt            : keyword_alias fitem {
                 }
                 | expr
 
-command_asgn    : lhs '=' command_call {
+command_asgn    : lhs '=' command_rhs {
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
-                | lhs '=' command_asgn {
-                    $$ = p.dispatch("on_assign", $1, $3);
+                | var_lhs tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", $1, $2, $3);
                 }
+                | primary_value '[' opt_call_args rbracket tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_aref_field", $1, $3),
+                                    $5, $6);
+                }
+                | primary_value call_op tIDENTIFIER tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_field", $1, $2, $3), 
+                                    $4, $5);
+                }
+                | primary_value call_op tCONSTANT tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_field",$1, $2, $3),
+                                    $4, $5);
+                }
+                | primary_value tCOLON2 tCONSTANT tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_const_path_field", $1, $3), 
+                                    $4,
+                                    $5);
+                }
+                | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_opassign", 
+                                    p.dispatch("on_field", $1, p.intern("::"), $3), 
+                                    $4, $5);
+                }
+                | backref tOP_ASGN command_rhs {
+                    $$ = p.dispatch("on_assign_error", 
+                                    p.dispatch("on_assign", 
+                                    p.dispatch("on_var_field", $1), 
+                                    $3));
+                    p.error();
+                }
+
+command_rhs     : command_call %prec tOP_ASGN {
+                    $$ = $1;
+                }
+                | command_call modifier_rescue stmt {
+                    $$ = p.dispatch("on_rescue_mod", $1, $3);
+                }
+                | command_asgn
 
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
@@ -415,8 +421,11 @@ block_command   : block_call
 // :brace_block - [!null]
 cmd_brace_block : tLBRACE_ARG {
                     p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt tRCURLY {
                     $$ = p.dispatch("on_brace_block", $3, $4);
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.popCurrentScope();
                 }
 
@@ -465,19 +474,19 @@ command        : fcall command_args %prec tLOWEST {
                 }
 
 
-// MultipleAssig19Node:mlhs - [!null]
+// MultipleAssigNode:mlhs - [!null]
 mlhs            : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
                     $$ = p.dispatch("on_mlhs_paren", $2);
                 }
 
-// MultipleAssign19Node:mlhs_entry - mlhs w or w/o parens [!null]
+// MultipleAssignNode:mlhs_entry - mlhs w or w/o parens [!null]
 mlhs_inner      : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
                     $$ = p.dispatch("on_mlhs_paren", $2);
                 }
 
-// MultipleAssign19Node:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
+// MultipleAssignNode:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
 mlhs_basic      : mlhs_head {
                     $$ = $1;
                 }
@@ -539,7 +548,7 @@ mlhs_post       : mlhs_item {
                 }
 
 mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
-                    $$ = $1;
+                    $$ = p.assignableIdentifier($1);
                 }
                 | tIVAR {
                     $$ = $1;
@@ -548,38 +557,31 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = $1;
                 }
                 | tCONSTANT {
-                    $$ = p.assignable($1);
+                    $$ = p.assignableConstant($1);
                 }
                 | tCVAR {
                     $$ = $1;
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
-                    p.compile_error("Can't assign to nil");
-                    $$ = null;
+                    p.yyerror("Can't assign to nil");
                 }
                 | keyword_self {
-                    p.compile_error("Can't change the value of self");
-                    $$ = null;
+                    p.yyerror("Can't change the value of self");
                 }
                 | keyword_true {
-                    p.compile_error("Can't assign to true");
-                    $$ = null;
+                    p.yyerror("Can't assign to true");
                 }
                 | keyword_false {
-                    p.compile_error("Can't assign to false");
-                    $$ = null;
+                    p.yyerror("Can't assign to false");
                 }
                 | keyword__FILE__ {
-                    p.compile_error("Can't assign to __FILE__");
-                    $$ = null;
+                    p.yyerror("Can't assign to __FILE__");
                 }
                 | keyword__LINE__ {
-                    p.compile_error("Can't assign to __LINE__");
-                    $$ = null;
+                    p.yyerror("Can't assign to __LINE__");
                 }
                 | keyword__ENCODING__ {
-                    p.compile_error("Can't assign to __ENCODING__");
-                    $$ = null;
+                    p.yyerror("Can't assign to __ENCODING__");
                 } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     $$ = p.dispatch("on_aref_field", $1, $3);
@@ -616,40 +618,40 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 }
 
 lhs             : /*mri:user_variable*/ tIDENTIFIER {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", p.assignableIdentifier($1));
                 }
                 | tIVAR {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", $1);
                 }
                 | tGVAR {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", $1);
                 }
                 | tCONSTANT {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", p.assignableConstant($1));
                 }
                 | tCVAR {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to nil");
                 }
                 | keyword_self {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't change the value of self");
                 }
                 | keyword_true {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to true");
                 }
                 | keyword_false {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to false");
                 }
                 | keyword__FILE__ {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to __FILE__");
                 }
                 | keyword__LINE__ {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to __LINE__");
                 }
                 | keyword__ENCODING__ {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to __ENCODING__");
                 } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     $$ = p.dispatch("on_aref_field", $1, $3);
@@ -756,51 +758,45 @@ reswords        : keyword__LINE__ | keyword__FILE__ | keyword__ENCODING__ | keyw
                 | keyword_if | keyword_unless | keyword_while | keyword_until
                 | modifier_if | modifier_unless | modifier_while | modifier_until | modifier_rescue
 
-arg             : lhs '=' arg {
+arg             : lhs '=' arg_rhs {
                     $$ = p.dispatch("on_assign", $1, $3);
                 }
-                | lhs '=' arg modifier_rescue arg {
-                    $$ = p.dispatch("on_assign", $1, p.dispatch("on_rescue_mod", $3, $5));
-                }
-                | var_lhs tOP_ASGN arg {
+                | var_lhs tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_opassign", $1, $2, $3);
-                }
-                | var_lhs tOP_ASGN arg modifier_rescue arg {
-                    $$ = p.dispatch("on_opassign", $1, $2, p.dispatch("on_rescue_mod", $3, $5));
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
                     $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_aref_field", $1, $3),
                                     $5, $6);
                 }
-                | primary_value call_op tIDENTIFIER tOP_ASGN arg {
+                | primary_value call_op tIDENTIFIER tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", $1, $2, $3),
                                     $4, $5);
                 }
-                | primary_value call_op tCONSTANT tOP_ASGN arg {
+                | primary_value call_op tCONSTANT tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", $1, $2, $3),
                                     $4, $5);
                 }
-                | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg {
+                | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_opassign", 
                                     p.dispatch("on_field", $1, p.intern("::"), $3),
                                     $4, $5);
                 }
-                | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
+                | primary_value tCOLON2 tCONSTANT tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_assign_error", 
                                     p.dispatch("on_opassign", 
                                                p.dispatch("on_const_path_field", $1, $3),
                                                $4, $5));
                 }
-                | tCOLON3 tCONSTANT tOP_ASGN arg {
+                | tCOLON3 tCONSTANT tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_assign_error", 
                                     p.dispatch("on_opassign", 
                                                p.dispatch("on_top_const_field", $2),
                                                $3, $4));
                 }
-                | backref tOP_ASGN arg {
+                | backref tOP_ASGN arg_rhs {
                     $$ = p.dispatch("on_assign_error", 
                                     p.dispatch("on_opassign",
                                                p.dispatch("on_var_field", $1),
@@ -928,6 +924,13 @@ aref_args       : none
                                     p.dispatch("on_bare_assoc_hash", $1));
                 }
 
+arg_rhs         : arg %prec tOP_ASGN {
+                    $$ = $1;
+                }
+                | arg modifier_rescue arg {
+                    $$ = p.dispatch("on_rescue_mod", $1, $3);
+                }
+
 paren_args      : tLPAREN2 opt_call_args rparen {
                     $$ = p.dispatch("on_arg_paren", $2);
                 }
@@ -973,6 +976,7 @@ call_args       : command {
 
 command_args    : /* none */ {
                     $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().begin();
                 } call_args {
                     p.getCmdArgumentState().reset($<Long>1.longValue());
                     $$ = $2;
@@ -1054,7 +1058,7 @@ primary         : literal
                 | tLPAREN_ARG {
                     $$ = p.getCmdArgumentState().getStack();
                     p.getCmdArgumentState().reset();
-                } expr {
+                } stmt {
                     p.setState(EXPR_ENDARG); 
                 } rparen {
                     p.getCmdArgumentState().reset($<Long>2.longValue());
@@ -1248,7 +1252,7 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                    $$ = p.dispatch("on_mlhs_paren", p.assignable($1));
+                    $$ = p.dispatch("on_mlhs_paren", $1);
                 }
                 | tLPAREN f_margs rparen {
                     $$ = p.dispatch("on_mlhs_paren", $2);
@@ -1266,10 +1270,10 @@ f_margs         : f_marg_list {
                     $$ = $1;
                 }
                 | f_marg_list ',' tSTAR f_norm_arg {
-                    $$ = p.dispatch("on_mlhs_add_star", $1, p.assignable($4));
+                    $$ = p.dispatch("on_mlhs_add_star", $1, $4);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", $1, p.assignable($4));
+                    $$ = p.dispatch("on_mlhs_add_star", $1, $4);
                 }
                 | f_marg_list ',' tSTAR {
                     $$ = p.dispatch("on_mlhs_add_star", $1, null);
@@ -1278,10 +1282,10 @@ f_margs         : f_marg_list {
                     $$ = p.dispatch("on_mlhs_add_star", $1, $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), p.assignable($2));
+                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), $2);
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", p.assignable($2), $4);
+                    $$ = p.dispatch("on_mlhs_add_star", $2, $4);
                 }
                 | tSTAR {
                     $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null);
@@ -1382,7 +1386,7 @@ block_param_def : tPIPE opt_bv_decl tPIPE {
 
 // shadowed block variables....
 opt_bv_decl     : opt_nl {
-                    $$ = null;
+                    $$ = p.getContext().getRuntime().getFalse();
                 }
                 | opt_nl ';' bv_decls opt_nl {
                     $$ = $3;
@@ -1483,14 +1487,20 @@ method_call     : fcall paren_args {
 
 brace_block     : tLCURLY {
                     p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt tRCURLY {
                     $$ = p.dispatch("on_brace_block", $3, $4);
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.popCurrentScope();
                 }
                 | keyword_do {
                     p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
                 } opt_block_param compstmt keyword_end {
                     $$ = p.dispatch("on_do_block", $3, $4);
+                    p.getCmdArgumentState().reset($<Long>2.longValue());
                     p.popCurrentScope();
                 }
 
@@ -1725,39 +1735,23 @@ simple_numeric  : tINTEGER {
  
 // [!null]
 var_ref         : /*mri:user_variable*/ tIDENTIFIER {
-                    if (p.is_id_var($1)) {
+                    if (p.is_id_var()) {
                         $$ = p.dispatch("on_var_ref", $1);
                     } else {
                         $$ = p.dispatch("on_vcall", $1);
                     }
                 }
                 | tIVAR {
-                    if (p.is_id_var($1)) {
-                        $$ = p.dispatch("on_var_ref", $1);
-                    } else {
-                        $$ = p.dispatch("on_vcall", $1);
-                    }
+                    $$ = p.dispatch("on_var_ref", $1);
                 }
                 | tGVAR {
-                    if (p.is_id_var($1)) {
-                        $$ = p.dispatch("on_var_ref", $1);
-                    } else {
-                        $$ = p.dispatch("on_vcall", $1);
-                    }
+                    $$ = p.dispatch("on_var_ref", $1);
                 }
                 | tCONSTANT {
-                    if (p.is_id_var($1)) {
-                        $$ = p.dispatch("on_var_ref", p.assignable($1));
-                    } else {
-                        $$ = p.dispatch("on_vcall", p.assignable($1));
-                    }
+                    $$ = p.dispatch("on_var_ref", $1);
                 }
                 | tCVAR {
-                    if (p.is_id_var($1)) {
-                        $$ = p.dispatch("on_var_ref", $1);
-                    } else {
-                        $$ = p.dispatch("on_vcall", $1);
-                    }
+                    $$ = p.dispatch("on_var_ref", $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     $$ = p.dispatch("on_var_ref", $1);
@@ -1783,40 +1777,40 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
 
 // [!null]
 var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", p.assignableIdentifier($1));
                 }
                 | tIVAR {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", $1);
                 }
                 | tGVAR {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", $1);
                 }
                 | tCONSTANT {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", p.assignableConstant($1));
                 }
                 | tCVAR {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    $$ = p.dispatch("on_var_field", $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to nil");
                 }
                 | keyword_self {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't change the value of self");
                 }
                 | keyword_true {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to true");
                 }
                 | keyword_false {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to false");
                 }
                 | keyword__FILE__ {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to __FILE__");
                 }
                 | keyword__LINE__ {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to __LINE__");
                 }
                 | keyword__ENCODING__ {
-                    $$ = p.dispatch("on_var_field", p.assignable($1));
+                    p.yyerror("Can't assign to __ENCODING__");
                 } /*mri:keyword_variable*/
  
 
@@ -1939,12 +1933,12 @@ f_bad_arg       : tCONSTANT {
 // Token:f_norm_arg [!null]
 f_norm_arg      : f_bad_arg
                 | tIDENTIFIER {
-                    $$ = p.formal_argument($1);
+                    $$ = p.arg_var(p.formal_argument($1));
                 }
 
 f_arg_asgn      : f_norm_arg {
                     p.setCurrentArg($1);
-                    $$ = p.arg_var($1);
+                    $$ = $1;
                 }
 
 f_arg_item      : f_arg_asgn {
@@ -2016,13 +2010,13 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
 
 f_opt           : f_arg_asgn '=' arg_value {
                     p.setCurrentArg(null);
-                    $$ = p.new_assoc(p.assignable($1), $3);
+                    $$ = p.new_assoc($1, $3);
 
                 }
 
 f_block_opt     : f_arg_asgn '=' primary_value {
                     p.setCurrentArg(null);
-                    $$ = p.new_assoc(p.assignable($1), $3);
+                    $$ = p.new_assoc($1, $3);
                 }
 
 f_block_optarg  : f_block_opt {
