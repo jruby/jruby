@@ -18,6 +18,8 @@ import org.jruby.javasupport.ext.JavaLang;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
@@ -1139,9 +1141,12 @@ public abstract class LexingCommon {
 
     public void checkRegexpFragment(Ruby runtime, ByteList value, RegexpOptions options) {
         setRegexpEncoding(runtime, value, options);
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject $ex = context.getErrorInfo();
         try {
             RubyRegexp.preprocessCheck(runtime, value);
         } catch (RaiseException re) {
+            context.setErrorInfo($ex);
             compile_error(re.getMessage());
         }
     }
@@ -1152,10 +1157,13 @@ public abstract class LexingCommon {
         if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
             return;
 
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject $ex = context.getErrorInfo();
         try {
             // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
             RubyRegexp.newRegexpParser(runtime, value, (RegexpOptions)options.clone());
         } catch (RaiseException re) {
+            context.setErrorInfo($ex);
             compile_error(re.getMessage());
         }
     }
