@@ -1174,7 +1174,7 @@ public abstract class LexingCommon {
 
             value.setEncoding(optionsEncoding);
         } else if (options.isEncodingNone()) {
-            if (value.getEncoding() == ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+            if (value.getEncoding() != ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 mismatchedRegexpEncodingError(optionsEncoding, value.getEncoding());
             }
             value.setEncoding(ASCII8BIT_ENCODING);
