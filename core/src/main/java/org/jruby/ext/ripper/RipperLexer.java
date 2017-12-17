@@ -37,6 +37,7 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
@@ -403,6 +404,17 @@ public class RipperLexer extends LexingCommon {
             warning("`%s' is ignored after any tokens", name);
             return;
         }
+    }
+
+    @Override
+    protected RegexpOptions parseRegexpFlags() throws IOException {
+        StringBuilder unknownFlags = new StringBuilder(10);
+        RegexpOptions options = parseRegexpFlags(unknownFlags);
+        if (unknownFlags.length() != 0) {
+            compile_error("unknown regexp option" +
+                    (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags);
+        }
+        return options;
     }
 
     @Override

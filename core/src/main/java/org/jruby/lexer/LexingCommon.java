@@ -18,6 +18,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.util.ByteList;
+import org.jruby.util.KCode;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -1086,5 +1088,51 @@ public abstract class LexingCommon {
             return true;
         }
         return false;
+    }
+
+    protected abstract RegexpOptions parseRegexpFlags() throws IOException;
+
+    protected RegexpOptions parseRegexpFlags(StringBuilder unknownFlags) throws IOException {
+        RegexpOptions options = new RegexpOptions();
+        int c;
+
+        newtok(true);
+        for (c = nextc(); c != EOF && Character.isLetter(c); c = nextc()) {
+            switch (c) {
+            case 'i':
+                options.setIgnorecase(true);
+                break;
+            case 'x':
+                options.setExtended(true);
+                break;
+            case 'm':
+                options.setMultiline(true);
+                break;
+            case 'o':
+                options.setOnce(true);
+                break;
+            case 'n':
+                options.setExplicitKCode(KCode.NONE);
+                break;
+            case 'e':
+                options.setExplicitKCode(KCode.EUC);
+                break;
+            case 's':
+                options.setExplicitKCode(KCode.SJIS);
+                break;
+            case 'u':
+                options.setExplicitKCode(KCode.UTF8);
+                break;
+            case 'j':
+                options.setJava(true);
+                break;
+            default:
+                unknownFlags.append((char) c);
+                break;
+            }
+        }
+        pushback(c);
+
+        return options;
     }
 }

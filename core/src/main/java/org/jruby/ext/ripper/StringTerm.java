@@ -69,7 +69,10 @@ public class StringTerm extends StrTerm {
                 return ' ';
             }
 
-            if ((flags & STR_FUNC_REGEXP) != 0) return parseRegexpFlags(lexer);
+            if ((flags & STR_FUNC_REGEXP) != 0) {
+                lexer.parseRegexpFlags();
+                return RubyParser.tREGEXP_END;
+            }
 
             return RubyParser.tSTRING_END;
     }
@@ -131,29 +134,6 @@ public class StringTerm extends StrTerm {
         lexer.setValue(lexer.createStr(buffer, flags));
         lexer.flush_string_content(enc[0]);
         return RubyParser.tSTRING_CONTENT;
-    }
-
-    private int parseRegexpFlags(RipperLexer lexer) throws IOException {
-        int c;
-        StringBuilder unknownFlags = new StringBuilder(10);
-
-        for (c = lexer.nextc(); c != EOF
-                && Character.isLetter(c); c = lexer.nextc()) {
-            switch (c) {
-                case 'i': case 'x': case 'm': case 'o': case 'n':
-                case 'e': case 's': case 'u':
-                break;
-            default:
-                unknownFlags.append((char) c);
-                break;
-            }
-        }
-        lexer.pushback(c);
-        if (unknownFlags.length() != 0) {
-            lexer.compile_error("unknown regexp option" + (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags.toString());
-        }
-
-        return RubyParser.tREGEXP_END;
     }
 
     private void mixedEscape(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
