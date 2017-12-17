@@ -418,6 +418,12 @@ public class RipperLexer extends LexingCommon {
     }
 
     @Override
+    protected void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding) {
+        compile_error("regexp encoding option '" + optionsEncodingChar(optionEncoding) +
+                "' differs from source encoding '" + encoding + "'");
+    }
+
+    @Override
     protected void setTokenInfo(String name, ByteList value) {
 
     }

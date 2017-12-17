@@ -450,6 +450,12 @@ public class RubyLexer extends LexingCommon {
         return options;
     }
 
+    @Override
+    protected void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding) {
+        compile_error(PID.REGEXP_ENCODING_MISMATCH, "regexp encoding option '" + optionsEncodingChar(optionEncoding) +
+                "' differs from source encoding '" + encoding + "'");
+    }
+
     private final ByteList TRUE = new ByteList(new byte[] {'t', 'r', 'u', 'e'});
     private final ByteList FALSE = new ByteList(new byte[] {'f', 'a', 'l', 's', 'e'});
     protected int asTruth(String name, ByteList value) {

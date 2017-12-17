@@ -13,6 +13,7 @@ import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.ext.JavaLang;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
@@ -1134,5 +1135,69 @@ public abstract class LexingCommon {
         pushback(c);
 
         return options;
+    }
+
+    public void checkRegexpFragment(Ruby runtime, ByteList value, RegexpOptions options) {
+        setRegexpEncoding(runtime, value, options);
+        try {
+            RubyRegexp.preprocessCheck(runtime, value);
+        } catch (RaiseException re) {
+            compile_error(re.getMessage());
+        }
+    }
+
+    public void checkRegexpSyntax(Ruby runtime, ByteList value, RegexpOptions options) {
+        final String stringValue = value.toString();
+        // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
+        if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
+            return;
+
+        try {
+            // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
+            RubyRegexp.newRegexpParser(runtime, value, (RegexpOptions)options.clone());
+        } catch (RaiseException re) {
+            compile_error(re.getMessage());
+        }
+    }
+
+    protected abstract void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding);
+
+    // MRI: reg_fragment_setenc_gen
+    public void setRegexpEncoding(Ruby runtime, ByteList value, RegexpOptions options) {
+        Encoding optionsEncoding = options.setup(runtime);
+
+        // Change encoding to one specified by regexp options as long as the string is compatible.
+        if (optionsEncoding != null) {
+            if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
+                mismatchedRegexpEncodingError(optionsEncoding, value.getEncoding());
+            }
+
+            value.setEncoding(optionsEncoding);
+        } else if (options.isEncodingNone()) {
+            if (value.getEncoding() == ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+                mismatchedRegexpEncodingError(optionsEncoding, value.getEncoding());
+            }
+            value.setEncoding(ASCII8BIT_ENCODING);
+        } else if (getEncoding() == USASCII_ENCODING) {
+            if (!is7BitASCII(value)) {
+                value.setEncoding(USASCII_ENCODING); // This will raise later
+            } else {
+                value.setEncoding(ASCII8BIT_ENCODING);
+            }
+        }
+    }
+
+    private boolean is7BitASCII(ByteList value) {
+      return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    }
+
+    // TODO: Put somewhere more consolidated (similiar
+    protected char optionsEncodingChar(Encoding optionEncoding) {
+        if (optionEncoding == USASCII_ENCODING) return 'n';
+        if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
+        if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
+        if (optionEncoding == UTF8_ENCODING) return 'u';
+
+        return ' ';
     }
 }
