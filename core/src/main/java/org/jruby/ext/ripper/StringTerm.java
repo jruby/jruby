@@ -28,10 +28,14 @@
 package org.jruby.ext.ripper;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.lexer.LexerSource;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 import static org.jruby.lexer.LexingCommon.*;
 
@@ -48,11 +52,16 @@ public class StringTerm extends StrTerm {
     // How many strings are nested in the current string term
     private int nest;
 
+    private Collection<ByteList> regexpFragments;
+
     public StringTerm(int flags, int begin, int end) {
         this.flags = flags;
         this.begin = (char) begin;
         this.end   = (char) end;
         this.nest  = 0;
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            this.regexpFragments = new ArrayList<>();
+        }
     }
 
     public int getFlags() {
@@ -70,11 +79,27 @@ public class StringTerm extends StrTerm {
             }
 
             if ((flags & STR_FUNC_REGEXP) != 0) {
-                lexer.parseRegexpFlags();
+                validateRegexp(lexer);
                 return RubyParser.tREGEXP_END;
             }
 
             return RubyParser.tSTRING_END;
+    }
+
+    private void validateRegexp(RipperLexer lexer) throws IOException {
+        Ruby runtime = lexer.getRuntime();
+        RegexpOptions options = lexer.parseRegexpFlags();
+        ByteList last = null;
+        for (ByteList fragment : regexpFragments) {
+            last = fragment;
+            if (fragment != null) {
+                lexer.checkRegexpFragment(runtime, fragment, options);
+            }
+        }
+        if (last != null && regexpFragments.size() == 1) {
+            lexer.checkRegexpSyntax(runtime, last, options);
+        }
+        regexpFragments.clear();
     }
 
     @Override
@@ -111,6 +136,9 @@ public class StringTerm extends StrTerm {
             int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
 
             if (token != 0) {
+                if ((flags & STR_FUNC_REGEXP) != 0) {
+                    regexpFragments.add(null);
+                }
                 return token;
             } else {
                 buffer.append(c);
@@ -132,6 +160,9 @@ public class StringTerm extends StrTerm {
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            regexpFragments.add(buffer);
+        }
         lexer.flush_string_content(enc[0]);
         return RubyParser.tSTRING_CONTENT;
     }
