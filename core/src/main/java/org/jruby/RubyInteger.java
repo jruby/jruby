@@ -122,6 +122,19 @@ public abstract class RubyInteger extends RubyNumeric {
         return context.runtime.newBoolean(signum() > 0);
     }
 
+    /*  =============
+     *  Class Methods
+     *  =============
+     */
+
+    /** rb_int_s_isqrt
+     *
+     */
+    @JRubyMethod(meta = true)
+    public static IRubyObject sqrt(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return RubyMath.sqrt(context, self, arg.convertToInteger()).convertToInteger();
+    }
+
     /*  ================
      *  Instance Methods
      *  ================
