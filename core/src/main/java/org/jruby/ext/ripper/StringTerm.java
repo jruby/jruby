@@ -78,8 +78,6 @@ public class StringTerm extends StrTerm {
         boolean spaceSeen = false;
         int c;
 
-        // FIXME: How much more obtuse can this be?
-        // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
             lexer.ignoreNextScanEvent = true;
             return Tokens.tSTRING_END;

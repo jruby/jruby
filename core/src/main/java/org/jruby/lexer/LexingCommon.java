@@ -547,6 +547,7 @@ public abstract class LexingCommon {
 
         if (length <= 0) {
             compile_error("invalid multibyte char (" + getEncoding() + ")");
+            return false;
         } else if (length > 1) {
             tokenCR = StringSupport.CR_VALID;
         }
@@ -560,7 +561,10 @@ public abstract class LexingCommon {
     public boolean tokadd_mbchar(int first_byte, ByteList buffer) {
         int length = precise_mbclen();
 
-        if (length <= 0) compile_error("invalid multibyte char (" + getEncoding() + ")");
+        if (length <= 0) {
+            compile_error("invalid multibyte char (" + getEncoding() + ")");
+            return false;
+        }
 
         tokAdd(first_byte, buffer);                  // add first byte since we have it.
         lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
@@ -903,17 +907,19 @@ public abstract class LexingCommon {
             String name = magicLine.subSequence(beg, end).toString().replace('-', '_');
             ByteList value = magicLine.makeShared(vbeg, vend - vbeg);
 
-            if ("coding".equals(name) || "encoding".equals(name)) {
-                magicCommentEncoding(value);
-            } else if ("frozen_string_literal".equals(name)) {
-                setCompileOptionFlag(name, value);
-            } else if ("warn_indent".equals(name)) {
-                setTokenInfo(name, value);
-            } else {
-                return false;
-            }
+            onMagicComment(name, value);
         }
 
         return true;
+    }
+
+    protected void onMagicComment(String name, ByteList value) {
+        if ("coding".equals(name) || "encoding".equals(name)) {
+            magicCommentEncoding(value);
+        } else if ("frozen_string_literal".equals(name)) {
+            setCompileOptionFlag(name, value);
+        } else if ("warn_indent".equals(name)) {
+            setTokenInfo(name, value);
+        }
     }
 }

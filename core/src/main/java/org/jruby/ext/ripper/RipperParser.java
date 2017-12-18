@@ -1931,12 +1931,15 @@ states[56] = new RipperParserState() {
 states[57] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.pushBlockScope();
+                    yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
     return yyVal;
   }
 };
 states[58] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_brace_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
+                    p.getCmdArgumentState().reset(((Long)yyVals[-3+yyTop]).longValue());
                     p.popCurrentScope();
     return yyVal;
   }
@@ -2125,7 +2128,7 @@ states[90] = new RipperParserState() {
 };
 states[91] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
+                    yyVal = p.assignableIdentifier(((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2143,7 +2146,7 @@ states[93] = new RipperParserState() {
 };
 states[94] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.assignable(((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = p.assignableConstant(((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -2155,50 +2158,43 @@ states[95] = new RipperParserState() {
 };
 states[96] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.compile_error("Can't assign to nil");
-                    yyVal = null;
+                    p.yyerror("Can't assign to nil");
     return yyVal;
   }
 };
 states[97] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.compile_error("Can't change the value of self");
-                    yyVal = null;
+                    p.yyerror("Can't change the value of self");
     return yyVal;
   }
 };
 states[98] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.compile_error("Can't assign to true");
-                    yyVal = null;
+                    p.yyerror("Can't assign to true");
     return yyVal;
   }
 };
 states[99] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.compile_error("Can't assign to false");
-                    yyVal = null;
+                    p.yyerror("Can't assign to false");
     return yyVal;
   }
 };
 states[100] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.compile_error("Can't assign to __FILE__");
-                    yyVal = null;
+                    p.yyerror("Can't assign to __FILE__");
     return yyVal;
   }
 };
 states[101] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.compile_error("Can't assign to __LINE__");
-                    yyVal = null;
+                    p.yyerror("Can't assign to __LINE__");
     return yyVal;
   }
 };
 states[102] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.compile_error("Can't assign to __ENCODING__");
-                    yyVal = null;
+                    p.yyerror("Can't assign to __ENCODING__");
     return yyVal;
   }
 };
@@ -2258,73 +2254,73 @@ states[109] = new RipperParserState() {
 };
 states[110] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", p.assignableIdentifier(((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[111] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[112] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[113] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", p.assignableConstant(((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[114] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[115] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to nil");
     return yyVal;
   }
 };
 states[116] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't change the value of self");
     return yyVal;
   }
 };
 states[117] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to true");
     return yyVal;
   }
 };
 states[118] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to false");
     return yyVal;
   }
 };
 states[119] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to __FILE__");
     return yyVal;
   }
 };
 states[120] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to __LINE__");
     return yyVal;
   }
 };
 states[121] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to __ENCODING__");
     return yyVal;
   }
 };
@@ -2843,6 +2839,7 @@ states[282] = new RipperParserState() {
 states[283] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().begin();
     return yyVal;
   }
 };
@@ -3329,7 +3326,7 @@ states[371] = new RipperParserState() {
 };
 states[372] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_mlhs_paren", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_mlhs_paren", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3359,13 +3356,13 @@ states[376] = new RipperParserState() {
 };
 states[377] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-3+yyTop]), p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-3+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[378] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-5+yyTop]), p.assignable(((IRubyObject)yyVals[-2+yyTop])));
+                    yyVal = p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-5+yyTop]), ((IRubyObject)yyVals[-2+yyTop]));
     return yyVal;
   }
 };
@@ -3383,13 +3380,13 @@ states[380] = new RipperParserState() {
 };
 states[381] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[382] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_mlhs_add_star", p.assignable(((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = p.dispatch("on_mlhs_add_star", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3564,7 +3561,7 @@ states[410] = new RipperParserState() {
 };
 states[411] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = null;
+                    yyVal = p.getContext().getRuntime().getFalse();
     return yyVal;
   }
 };
@@ -3741,12 +3738,15 @@ states[438] = new RipperParserState() {
 states[439] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.pushBlockScope();
+                    yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
     return yyVal;
   }
 };
 states[440] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_brace_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
+                    p.getCmdArgumentState().reset(((Long)yyVals[-3+yyTop]).longValue());
                     p.popCurrentScope();
     return yyVal;
   }
@@ -3754,12 +3754,15 @@ states[440] = new RipperParserState() {
 states[441] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.pushBlockScope();
+                    yyVal = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
     return yyVal;
   }
 };
 states[442] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_do_block", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[-1+yyTop]));
+                    p.getCmdArgumentState().reset(((Long)yyVals[-3+yyTop]).longValue());
                     p.popCurrentScope();
     return yyVal;
   }
@@ -4124,7 +4127,7 @@ states[513] = new RipperParserState() {
 };
 states[514] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (p.is_id_var(((IRubyObject)yyVals[0+yyTop]))) {
+                    if (p.is_id_var()) {
                         yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
                     } else {
                         yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop]));
@@ -4134,41 +4137,25 @@ states[514] = new RipperParserState() {
 };
 states[515] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (p.is_id_var(((IRubyObject)yyVals[0+yyTop]))) {
-                        yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-                    } else {
-                        yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop]));
-                    }
+                    yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[516] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (p.is_id_var(((IRubyObject)yyVals[0+yyTop]))) {
-                        yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-                    } else {
-                        yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop]));
-                    }
+                    yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[517] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (p.is_id_var(((IRubyObject)yyVals[0+yyTop]))) {
-                        yyVal = p.dispatch("on_var_ref", p.assignable(((IRubyObject)yyVals[0+yyTop])));
-                    } else {
-                        yyVal = p.dispatch("on_vcall", p.assignable(((IRubyObject)yyVals[0+yyTop])));
-                    }
+                    yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[518] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (p.is_id_var(((IRubyObject)yyVals[0+yyTop]))) {
-                        yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
-                    } else {
-                        yyVal = p.dispatch("on_vcall", ((IRubyObject)yyVals[0+yyTop]));
-                    }
+                    yyVal = p.dispatch("on_var_ref", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4216,73 +4203,73 @@ states[525] = new RipperParserState() {
 };
 states[526] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", p.assignableIdentifier(((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[527] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[528] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[529] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", p.assignableConstant(((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[530] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    yyVal = p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[531] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to nil");
     return yyVal;
   }
 };
 states[532] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't change the value of self");
     return yyVal;
   }
 };
 states[533] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to true");
     return yyVal;
   }
 };
 states[534] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to false");
     return yyVal;
   }
 };
 states[535] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to __FILE__");
     return yyVal;
   }
 };
 states[536] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to __LINE__");
     return yyVal;
   }
 };
 states[537] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_var_field", p.assignable(((IRubyObject)yyVals[0+yyTop])));
+                    p.yyerror("Can't assign to __ENCODING__");
     return yyVal;
   }
 };
@@ -4486,14 +4473,14 @@ states[570] = new RipperParserState() {
 };
 states[572] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.formal_argument(((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = p.arg_var(p.formal_argument(((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[573] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.setCurrentArg(((IRubyObject)yyVals[0+yyTop]));
-                    yyVal = p.arg_var(((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
     return yyVal;
   }
 };
@@ -4608,7 +4595,7 @@ states[590] = new RipperParserState() {
 states[591] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.setCurrentArg(null);
-                    yyVal = p.new_assoc(p.assignable(((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = p.new_assoc(((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
     return yyVal;
   }
@@ -4616,7 +4603,7 @@ states[591] = new RipperParserState() {
 states[592] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.setCurrentArg(null);
-                    yyVal = p.new_assoc(p.assignable(((IRubyObject)yyVals[-2+yyTop])), ((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = p.new_assoc(((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4797,6 +4784,6 @@ states[647] = new RipperParserState() {
   }
 };
 }
-					// line 2153 "RipperParser.y"
+					// line 2140 "RipperParser.y"
 }
-					// line 9484 "-"
+					// line 9471 "-"
