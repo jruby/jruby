@@ -54,4 +54,8 @@ class TestJRubyRipper < Test::Unit::TestCase
     assert_equal [:on_string_content, [:@tstring_content, "x\n", [2, 0]]], extract("<<EOS\nx\nEOS\n", :on_string_content)
     assert_equal [:on_string_content, [:string_embexpr, [[:vcall, [:@ident, "o", [2, 2]]]]], [:@tstring_content, "x\n", [2, 4]]], extract("<<EOS\n\#{o}x\nEOS\n", :on_string_content)
   end
+
+  def test_dyn_const_lhs
+    assert_equal nil, Ripper.sexp("def m;C=s;end")
+  end
 end

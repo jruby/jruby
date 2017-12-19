@@ -111,10 +111,10 @@ public class RipperParserBase {
 
     public IRubyObject assignableConstant(IRubyObject value) {
         if (isInDef() || isInSingle()) {
-            return dispatch("on_assign_error", value);
-        } else {
-            return value;
+            value = dispatch("on_assign_error", value);
+            error();
         }
+        return value;
     }
 
     public IRubyObject assignableIdentifier(IRubyObject value) {
