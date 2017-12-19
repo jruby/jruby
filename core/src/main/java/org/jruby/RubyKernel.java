@@ -1192,6 +1192,16 @@ public class RubyKernel {
         return context.nil;
     }
 
+    @JRubyMethod(module = true)
+    public static IRubyObject yield_self(ThreadContext context, IRubyObject recv, Block block) {
+        if (block.isGiven()) {
+            return block.yield(context, recv);
+        } else {
+            SizeFn enumSizeFn = RubyArray.newArray(context.runtime, context.nil).enumLengthFn();
+            return RubyEnumerator.enumeratorizeWithSize(context, recv, "yield_self", enumSizeFn);
+        }
+    }
+
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject set_trace_func(ThreadContext context, IRubyObject recv, IRubyObject trace_func, Block block) {
         if (trace_func.isNil()) {
