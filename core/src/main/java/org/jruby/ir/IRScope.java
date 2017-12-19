@@ -1195,6 +1195,30 @@ public abstract class IRScope implements ParseResult {
         return requireFrame;
     }
 
+    public boolean needsOnlyBackref() {
+        boolean backrefSeen = false;
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case CAN_CAPTURE_CALLERS_BINDING:
+                case REQUIRES_LASTLINE:
+                case REQUIRES_VISIBILITY:
+                case REQUIRES_BLOCK:
+                case REQUIRES_SELF:
+                case REQUIRES_METHODNAME:
+                case REQUIRES_CLASS:
+                case USES_EVAL:
+                case USES_ZSUPER:
+                    return false;
+                case REQUIRES_BACKREF:
+                    backrefSeen = true;
+                    break;
+            }
+        }
+
+        return backrefSeen;
+    }
+
     public boolean reuseParentScope() {
         return getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
     }

@@ -90,6 +90,7 @@ public abstract class IRVisitor {
     public void PopBindingInstr(PopBindingInstr popbindinginstr) { error(popbindinginstr); }
     public void PopBlockFrameInstr(PopBlockFrameInstr instr) { error(instr); }
     public void PopMethodFrameInstr(PopMethodFrameInstr instr) { error(instr); }
+    public void PopBackrefFrameInstr(PopBackrefFrameInstr instr) { error(instr); }
     public void PrepareBlockArgsInstr(PrepareBlockArgsInstr instr) { error(instr); }
     public void PrepareFixedBlockArgsInstr(PrepareFixedBlockArgsInstr instr) { error(instr); }
     public void PrepareSingleBlockArgInstr(PrepareSingleBlockArgInstr instr) { error(instr); }
@@ -103,6 +104,7 @@ public abstract class IRVisitor {
     public void PushBlockFrameInstr(PushBlockFrameInstr instr) { error(instr); }
     public void PushMethodBindingInstr(PushMethodBindingInstr instr) { error(instr); }
     public void PushMethodFrameInstr(PushMethodFrameInstr instr) { error(instr); }
+    public void PushBackrefFrameInstr(PushBackrefFrameInstr instr) { error(instr); }
     public void RaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseargumenterrorinstr) { error(raiseargumenterrorinstr); }
     public void RaiseRequiredKeywordArgumentErrorInstr(RaiseRequiredKeywordArgumentError instr) { error(instr); }
     public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) { error(reifyclosureinstr); }

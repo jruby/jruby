@@ -1618,6 +1618,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void PopBackrefFrameInstr(PopBackrefFrameInstr popframeinstr) {
+        jvmMethod().loadContext();
+        jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void postBackrefMethod()"));
+    }
+
+    @Override
     public void PrepareBlockArgsInstr(PrepareBlockArgsInstr instr) {
         jvmMethod().loadContext();
         jvmMethod().loadSelfBlock();
@@ -1719,6 +1725,12 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmAdapter().getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
         jvmAdapter().invokevirtual(p(ThreadContext.class), "setCurrentVisibility", sig(void.class, Visibility.class));
+    }
+
+    @Override
+    public void PushBackrefFrameInstr(PushBackrefFrameInstr pushframeinstr) {
+        jvmMethod().loadContext();
+        jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void preBackrefMethod()"));
     }
 
     @Override
