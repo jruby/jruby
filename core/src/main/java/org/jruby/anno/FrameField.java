@@ -40,7 +40,6 @@ public enum FrameField {
     SELF,
     METHODNAME,
     LINE,
-    JUMPTARGET,
     CLASS,
     FILENAME,
     SCOPE;
@@ -53,7 +52,6 @@ public enum FrameField {
             case BLOCK:
             case SELF:
             case METHODNAME:
-            case JUMPTARGET:
             case CLASS:
                 return true;
             default:
@@ -69,7 +67,6 @@ public enum FrameField {
                         BLOCK.bit |
                         SELF.bit |
                         METHODNAME.bit |
-                        JUMPTARGET.bit |
                         CLASS.bit)) != 0;
     }
 
