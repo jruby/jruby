@@ -38,7 +38,7 @@ public class RaiseRequiredKeywordArgumentError extends NoOperandInstr implements
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getName());
+        e.encode(getByteName());
     }
 
     public static RaiseRequiredKeywordArgumentError decode(IRReaderDecoder d) {

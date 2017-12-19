@@ -58,7 +58,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Instr(" + getOperation() + "): " + this);
         e.encode(getOperation());
         e.encode(getReceiver());
-        e.encode(getName());
+        e.encode(getByteName());
         e.encode(getCallArgs());
     }
 
