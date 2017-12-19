@@ -29,7 +29,7 @@ package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.lexer.LexerSource;
@@ -52,7 +52,8 @@ public class StringTerm extends StrTerm {
     // How many strings are nested in the current string term
     private int nest;
 
-    private Collection<ByteList> regexpFragments;
+    private List<ByteList> regexpFragments;
+    private boolean regexpDynamic;
 
     public StringTerm(int flags, int begin, int end) {
         this.flags = flags;
@@ -89,17 +90,14 @@ public class StringTerm extends StrTerm {
     private void validateRegexp(RipperLexer lexer) throws IOException {
         Ruby runtime = lexer.getRuntime();
         RegexpOptions options = lexer.parseRegexpFlags();
-        ByteList last = null;
         for (ByteList fragment : regexpFragments) {
-            last = fragment;
-            if (fragment != null) {
-                lexer.checkRegexpFragment(runtime, fragment, options);
-            }
+            lexer.checkRegexpFragment(runtime, fragment, options);
         }
-        if (last != null && regexpFragments.size() == 1) {
-            lexer.checkRegexpSyntax(runtime, last, options);
+        if (!regexpDynamic && regexpFragments.size() == 1) {
+            lexer.checkRegexpSyntax(runtime, regexpFragments.get(0), options);
         }
         regexpFragments.clear();
+        regexpDynamic = false;
     }
 
     @Override
@@ -137,7 +135,7 @@ public class StringTerm extends StrTerm {
 
             if (token != 0) {
                 if ((flags & STR_FUNC_REGEXP) != 0) {
-                    regexpFragments.add(null);
+                    regexpDynamic = true;
                 }
                 return token;
             } else {
