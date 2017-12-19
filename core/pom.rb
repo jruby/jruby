@@ -270,7 +270,10 @@ project 'JRuby Core' do
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          'mainClass' => 'org.jruby.Main' } ],
-                   'createSourcesJar' => '${create.sources.jar}' )
+                   'createSourcesJar' => '${create.sources.jar}',
+                   filters:
+                       {filter: {artifact: 'com.headius:invokebinder', excludes: {exclude: '**/module-info.class'}}}
+    )
   end
 
   [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
@@ -292,7 +295,10 @@ project 'JRuby Core' do
                        relocations: [
                            {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                            {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
-                       ] )
+                       ],
+                       filters:
+                           {filter: {artifact: 'com.headius:invokebinder', excludes: {exclude: '**/module-info.class'}}}
+        )
       end
     end
   end

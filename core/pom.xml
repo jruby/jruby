@@ -623,6 +623,14 @@ DO NOT MODIFIY - GENERATED CODE
                 </transformer>
               </transformers>
               <createSourcesJar>${create.sources.jar}</createSourcesJar>
+              <filters>
+                <filter>
+                  <artifact>com.headius:invokebinder</artifact>
+                  <excludes>
+                    <exclude>**/module-info.class</exclude>
+                  </excludes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>
@@ -687,6 +695,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -725,6 +741,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -763,6 +787,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -801,6 +833,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -839,6 +879,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -877,6 +925,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -915,6 +971,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -953,6 +1017,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -991,6 +1063,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
