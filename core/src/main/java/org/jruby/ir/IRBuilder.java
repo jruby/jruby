@@ -86,7 +86,11 @@ public class IRBuilder {
     static final Operand[] NO_ARGS = new Operand[]{};
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
-    public static final String USING_METHOD = "using";
+    public static final ByteList USING_METHOD = new ByteList(new byte[] {'u', 's', 'i', 'n', 'g'});
+    public static final ByteList DEFINE_METHOD_METHOD = new ByteList(new byte[] {'d', 'e', 'f', 'i', 'n', 'e', '_', 'm', 'e', 't', 'h', 'o', 'd'});
+    public static final ByteList FREEZE_METHOD = new ByteList(new byte[] {'f', 'r', 'e', 'e', 'z', 'e'});
+    public static final ByteList AREF_METHOD = new ByteList(new byte[] {'[', ']'});
+    public static final ByteList NEW_METHOD = new ByteList(new byte[] {'n', 'e', 'w'});
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
@@ -1044,7 +1048,7 @@ public class IRBuilder {
         Node receiverNode = callNode.getReceiverNode();
 
         // Frozen string optimization: check for "string".freeze
-        if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
+        if (receiverNode instanceof StrNode && FREEZE_METHOD.equals(callNode.getByteName())) {
             StrNode asString = (StrNode) receiverNode;
             return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFileName(), asString.getPosition().getLine());
         }
@@ -1056,9 +1060,8 @@ public class IRBuilder {
 
         // obj["string"] optimization for Hash
         ArrayNode argsAry;
-        if (
-                !callNode.isLazy() &&
-                callNode.getName().equals("[]") &&
+        if (!callNode.isLazy() &&
+                AREF_METHOD.equals(callNode.getByteName()) &&
                 callNode.getArgsNode() instanceof ArrayNode &&
                 (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
                 argsAry.get(0) instanceof StrNode &&
@@ -1082,19 +1085,20 @@ public class IRBuilder {
 
         CallInstr callInstr;
         Operand block;
+        ByteList name = callNode.getByteName();
         if (keywordArgs != null) {
             Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
             List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
             block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, callNode.getByteName(), receiver, args, block, kwargs);
+            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, name, receiver, args, block, kwargs);
         } else {
             Operand[] args = setupCallArgs(callNode.getArgsNode());
             block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.create(scope, result, callNode.getByteName(), receiver, args, block);
+            callInstr = CallInstr.create(scope, result, name, receiver, args, block);
         }
 
         determineIfWeNeedLineNumber(callNode);
-        determineIfProcNew(receiverNode, callNode.getName(), callInstr);
+        determineIfProcNew(receiverNode, name, callInstr);
         receiveBreakException(block, callInstr);
 
         if (callNode.isLazy()) {
@@ -1115,9 +1119,9 @@ public class IRBuilder {
         return kwargs;
     }
 
-    private void determineIfProcNew(Node receiverNode, String name, CallInstr callInstr) {
+    private void determineIfProcNew(Node receiverNode, ByteList name, CallInstr callInstr) {
         // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (name.equals("new") && receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().equals("Proc")) {
+        if (NEW_METHOD.equals(name) && receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().equals("Proc")) {
             callInstr.setProcNew(true);
         }
     }
@@ -1711,7 +1715,7 @@ public class IRBuilder {
                             IS_DEFINED_METHOD,
                             new Operand[] {
                                     buildSelf(),
-                                    new FrozenString(((VCallNode) node).getName()),
+                                    new FrozenString(((VCallNode) node).getByteName()),
                                     manager.getFalse(),
                                     new FrozenString(DefinedMessage.METHOD.getText())
                             }
@@ -1829,7 +1833,7 @@ public class IRBuilder {
                             IS_DEFINED_METHOD,
                             new Operand[]{
                                     buildSelf(),
-                                    new FrozenString(((FCallNode) node).getName()),
+                                    new FrozenString(((FCallNode) node).getByteName()),
                                     manager.getFalse(),
                                     new FrozenString(DefinedMessage.METHOD.getText())
                             }
@@ -1855,7 +1859,7 @@ public class IRBuilder {
                                     IS_DEFINED_CALL,
                                     new Operand[]{
                                             build(callNode.getReceiverNode()),
-                                            new StringLiteral(callNode.getName()),
+                                            new StringLiteral(callNode.getByteName()),
                                             new FrozenString(DefinedMessage.METHOD.getText())
                                     }
                             )
@@ -1903,7 +1907,7 @@ public class IRBuilder {
                                     IS_DEFINED_METHOD,
                                     new Operand[] {
                                             receiver,
-                                            new StringLiteral(attrAssign.getName()),
+                                            new StringLiteral(attrAssign.getByteName()),
                                             manager.getTrue(),
                                             new FrozenString(DefinedMessage.METHOD.getText())
                                     }
@@ -2688,11 +2692,11 @@ public class IRBuilder {
         } else {
             Operand[] args         = setupCallArgs(callArgsNode);
             block        = setupCallClosure(fcallNode.getIterNode());
-            determineIfMaybeUsingMethod(fcallNode.getName(), args);
+            determineIfMaybeUsingMethod(fcallNode.getByteName(), args);
 
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
-            if (fcallNode.getName().equals("define_method") && block instanceof WrappedIRClosure) {
+            if (DEFINE_METHOD_METHOD.equals(fcallNode.getByteName()) && block instanceof WrappedIRClosure) {
                 IRClosure closure = ((WrappedIRClosure) block).getClosure();
 
                 // To convert to a method we need its variable scoping to appear like a normal method.
@@ -2727,7 +2731,7 @@ public class IRBuilder {
     }
 
     // FIXME: This needs to be called on super/zsuper too
-    private void determineIfMaybeUsingMethod(String methodName, Operand[] args) {
+    private void determineIfMaybeUsingMethod(ByteList methodName, Operand[] args) {
         IRScope outerScope = scope.getNearestTopLocalVariableScope();
 
         // 'using single_mod_arg' possible nearly everywhere but method scopes.
