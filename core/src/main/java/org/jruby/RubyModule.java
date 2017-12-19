@@ -76,6 +76,7 @@ import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
@@ -1644,29 +1645,38 @@ public class RubyModule extends RubyObject {
     private DynamicMethod searchForAliasMethod(Ruby runtime, String name) {
         DynamicMethod method = deepMethodSearch(name, runtime);
 
-//        if (method instanceof JavaMethod) {
-//            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
-//            // We warn because we treat certain method names as "special" for purposes of
-//            // optimization. Hopefully this will be enough to convince people not to alias
-//            // them.
-//            CallConfiguration callerReq = ((JavaMethod)method).getCallerRequirement();
-//
-//            if (callerReq.framing() != Framing.None ||
-//                    callerReq.scoping() != Scoping.None) {String baseName = getBaseName();
-//                char refChar = '#';
-//                String simpleName = getSimpleName();
-//
-//                if (baseName == null && this instanceof MetaClass) {
-//                    IRubyObject attached = ((MetaClass)this).getAttached();
-//                    if (attached instanceof RubyModule) {
-//                        simpleName = ((RubyModule)attached).getSimpleName();
-//                        refChar = '.';
-//                    }
-//                }
-//
-//                runtime.getWarnings().warn(simpleName + refChar + name + " accesses caller's state and should not be aliased");
-//            }
-//        }
+        if (method instanceof NativeCallMethod) {
+            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
+            // We warn because we treat certain method names as "special" for purposes of
+            // optimization. Hopefully this will be enough to convince people not to alias
+            // them.
+
+            DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
+
+            // native-backed but not a direct call, ok
+            if (nativeCall == null) return method;
+
+            Method javaMethod = nativeCall.getMethod();
+            JRubyMethod anno = javaMethod.getAnnotation(JRubyMethod.class);
+
+            if (anno == null) return method;
+
+            if (anno.reads().length > 0 || anno.writes().length > 0) {
+                String baseName = getBaseName();
+                char refChar = '#';
+                String simpleName = getSimpleName();
+
+                if (baseName == null && this instanceof MetaClass) {
+                    IRubyObject attached = ((MetaClass)this).getAttached();
+                    if (attached instanceof RubyModule) {
+                        simpleName = ((RubyModule)attached).getSimpleName();
+                        refChar = '.';
+                    }
+                }
+
+                runtime.getWarnings().warning(simpleName + refChar + name + " accesses caller method's state and should not be aliased");
+            }
+        }
 
         return method;
     }
