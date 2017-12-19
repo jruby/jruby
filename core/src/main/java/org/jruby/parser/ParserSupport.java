@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.*;
@@ -1451,11 +1452,6 @@ public class ParserSupport {
         return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
-    // MRI: reg_fragment_check
-    public void regexpFragmentCheck(RegexpNode end, ByteList value) {
-        lexer.checkRegexpFragment(configuration.getRuntime(), value, end.getOptions());
-    }
-
     private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
         RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
@@ -1496,11 +1492,8 @@ public class ParserSupport {
         throw getConfiguration().getRuntime().newSyntaxError(errorMessage + message);
     }
 
-    protected void checkRegexpSyntax(ByteList value, RegexpOptions options) {
-        lexer.checkRegexpSyntax(configuration.getRuntime(), value, options);
-    }
-
     public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
+        Ruby runtime = configuration.getRuntime();
         RegexpOptions options = end.getOptions();
         Encoding encoding = lexer.getEncoding();
 
@@ -1510,12 +1503,12 @@ public class ParserSupport {
                 newValue.setEncoding(encoding);
             }
 
-            regexpFragmentCheck(end, newValue);
+            lexer.checkRegexpFragment(runtime, newValue, options);
             return new RegexpNode(position, newValue, options.withoutOnce());
         } else if (contents instanceof StrNode) {
             ByteList meat = (ByteList) ((StrNode) contents).getValue().clone();
-            regexpFragmentCheck(end, meat);
-            checkRegexpSyntax(meat, options.withoutOnce());
+            lexer.checkRegexpFragment(runtime, meat, options);
+            lexer.checkRegexpSyntax(runtime, meat, options.withoutOnce());
             return new RegexpNode(contents.getPosition(), meat, options.withoutOnce());
         } else if (contents instanceof DStrNode) {
             DStrNode dStrNode = (DStrNode) contents;
@@ -1524,7 +1517,7 @@ public class ParserSupport {
                 Node fragment = dStrNode.get(i);
                 if (fragment instanceof StrNode) {
                     ByteList frag = ((StrNode) fragment).getValue();
-                    regexpFragmentCheck(end, frag);
+                    lexer.checkRegexpFragment(runtime, frag, options);
 //                    if (!lexer.isOneEight()) encoding = frag.getEncoding();
                 }
             }
@@ -1537,7 +1530,7 @@ public class ParserSupport {
 
         // EvStrNode: #{val}: no fragment check, but at least set encoding
         ByteList master = createMaster(options);
-        regexpFragmentCheck(end, master);
+        lexer.checkRegexpFragment(runtime, master, options);
         encoding = master.getEncoding();
         DRegexpNode node = new DRegexpNode(position, options, encoding);
         node.add(new StrNode(contents.getPosition(), master));
