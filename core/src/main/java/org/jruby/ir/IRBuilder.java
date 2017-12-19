@@ -2719,10 +2719,8 @@ public class IRBuilder {
                 return build(node);
             case BLOCKPASSNODE:
                 Node bodyNode = ((BlockPassNode)node).getBodyNode();
-                if (bodyNode instanceof SymbolNode) {
-                    return new SymbolProc(((SymbolNode)bodyNode).getName(), ((SymbolNode)bodyNode).getEncoding());
-                }
-                return build(bodyNode);
+                return bodyNode instanceof SymbolNode ?
+                        new SymbolProc(((SymbolNode)bodyNode).getByteName()) : build(bodyNode);
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
         }

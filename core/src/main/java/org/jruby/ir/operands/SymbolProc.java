@@ -6,6 +6,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.ByteList;
 
 /**
  * A literal representing proc'ified symbols, as in &:foo.
@@ -13,13 +14,12 @@ import org.jruby.runtime.ThreadContext;
  * Used to cache a unique and constant proc at the use site to reduce allocation and improve caching.
  */
 public class SymbolProc extends ImmutableLiteral {
-    private final String name;
-    private final Encoding encoding;
+    private final ByteList name;
 
-    public SymbolProc(String name, Encoding encoding) {
+    public SymbolProc(ByteList name) {
         super();
+
         this.name = name;
-        this.encoding = encoding;
     }
 
     @Override
@@ -29,20 +29,17 @@ public class SymbolProc extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return IRRuntimeHelpers.newSymbolProc(context, name, encoding);
+        return IRRuntimeHelpers.newSymbolProc(context, name);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + name.hashCode();
-        result = 31 * result + encoding.hashCode();
-        return result;
+        return 31 * super.hashCode() + name.hashCode();
     }
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof SymbolProc && name.equals(((SymbolProc) other).name) && encoding.equals(((SymbolProc) other).encoding);
+        return other instanceof SymbolProc && name.equals(((SymbolProc) other).name);
     }
 
     @Override
@@ -51,22 +48,21 @@ public class SymbolProc extends ImmutableLiteral {
     }
 
     public String getName() {
-        return name;
+        return name.toString();
     }
 
-    public Encoding getEncoding() {
-        return encoding;
+    public ByteList getByteName() {
+        return name;
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(name);
-        e.encode(encoding);
     }
 
     public static SymbolProc decode(IRReaderDecoder d) {
-        return new SymbolProc(d.decodeString(), d.decodeEncoding());
+        return new SymbolProc(d.decodeByteList());
     }
 
     @Override

@@ -2544,7 +2544,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void SymbolProc(SymbolProc symbolproc) {
-        jvmMethod().pushSymbolProc(symbolproc.getName(), symbolproc.getEncoding());
+        jvmMethod().pushSymbolProc(symbolproc.getByteName());
     }
 
     @Override

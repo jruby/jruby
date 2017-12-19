@@ -335,10 +335,9 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: none
      *
-     * @param name the symbol's string identifier
-     * @param encoding the symbol's encoding
+     * @param bytes the ByteList for the symbol.
      */
-    public abstract void pushSymbolProc(String name, Encoding encoding);
+    public abstract void pushSymbolProc(ByteList bytes);
 
         /**
          * Push the JRuby runtime on the stack.
