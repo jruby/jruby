@@ -1966,6 +1966,16 @@ public class IRRuntimeHelpers {
         return RubyArray.newArray(context.runtime, obj0, obj1);
     }
 
+    @JIT
+    public static void callTrace(ThreadContext context, RubyEvent event, String name, String filename, int line) {
+        if (context.runtime.hasEventHooks()) {
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = line == -1 ? context.getLine()+1 : line;
+
+            context.trace(event, name, context.getFrameKlazz(), filename, linenumber);
+        }
+    }
+
     private static IRRuntimeHelpersSites sites(ThreadContext context) {
         return context.sites.IRRuntimeHelpers;
     }

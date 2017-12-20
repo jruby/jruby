@@ -3,6 +3,7 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
