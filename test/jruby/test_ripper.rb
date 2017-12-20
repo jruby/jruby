@@ -58,4 +58,11 @@ class TestJRubyRipper < Test::Unit::TestCase
   def test_dyn_const_lhs
     assert_equal nil, Ripper.sexp("def m;C=s;end")
   end
+
+  def test_literal_whitespace
+    assert_equal [:on_string_content, [:@tstring_content, "\n", [1, 2]]], extract("%{\n}", :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, " ", [1, 2]]], extract("%[ ]", :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, "\t", [1, 2]]], extract("%(\t)", :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, "\r", [1, 2]]], extract("%|\r|", :on_string_content)
+  end
 end

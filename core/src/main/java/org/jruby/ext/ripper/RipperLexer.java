@@ -491,14 +491,6 @@ public class RipperLexer extends LexingCommon {
             begin = '\0';
         }
 
-        // consume spaces here to record them as part of token
-        int w = nextc();
-        while (Character.isWhitespace(w)) {
-            value = value + (char) w;
-            w = nextc();
-        }
-        pushback(w);
-        
         switch (c) {
         case 'Q':
             lex_strterm = new StringTerm(str_dquote, begin ,end);
