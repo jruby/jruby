@@ -3367,8 +3367,6 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "const_missing", required = 1)
     public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
         Ruby runtime = context.runtime;
-        String shortName = rubyName.asJavaString();
-        String longName;
 
         if (this != runtime.getObject()) {
             throw runtime.newNameError("uninitialized constant %2$s::%1$s", this, rubyName);
@@ -3378,28 +3376,39 @@ public class RubyModule extends RubyObject {
 
     }
 
+    @JRubyMethod(name = "constants")
     public RubyArray constants(ThreadContext context) {
-        return constants19(context);
+        return constantsCommon(context, true, true);
     }
 
     @JRubyMethod(name = "constants")
+    public RubyArray constants(ThreadContext context, IRubyObject allConstants) {
+        return constantsCommon(context, false, allConstants.isTrue());
+    }
+
+    @Deprecated
     public RubyArray constants19(ThreadContext context) {
-        return constantsCommon19(context, true, true);
+        return constants(context);
     }
 
-    @JRubyMethod(name = "constants")
+    @Deprecated
     public RubyArray constants19(ThreadContext context, IRubyObject allConstants) {
-        return constantsCommon19(context, false, allConstants.isTrue());
+        return constants(context, allConstants);
     }
 
+    @Deprecated // no longer used
     public RubyArray constantsCommon19(ThreadContext context, boolean replaceModule, boolean allConstants) {
+        return constantsCommon(context, replaceModule, allConstants);
+    }
+
+    private RubyArray constantsCommon(ThreadContext context, boolean replaceModule, boolean allConstants) {
         Ruby runtime = context.runtime;
-        RubyArray array = runtime.newArray();
 
         Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants, false);
+        RubyArray array = runtime.newArray(constantNames.size());
 
         for (String name : constantNames) {
-            array.add(runtime.newSymbol(name));
+            array.append(runtime.newSymbol(name));
         }
         return array;
     }
@@ -3419,7 +3428,7 @@ public class RubyModule extends RubyObject {
             if ((replaceModule && runtime.getModule() == this) || objectClass == this) {
                 constantNames = objectClass.getConstantNames(includePrivate);
             } else {
-                Set<String> names = new HashSet<String>();
+                Set<String> names = new HashSet<>();
                 for (RubyModule module = this; module != null && module != objectClass; module = module.getSuperClass()) {
                     names.addAll(module.getConstantNames(includePrivate));
                 }
