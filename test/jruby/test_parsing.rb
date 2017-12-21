@@ -40,5 +40,6 @@ class TestParsing < Test::Unit::TestCase
     assert_equal '#$', eval('%{#$}')
     assert_equal '#${', eval('"#${"')
     assert_equal ' #${', eval('" #${"')
+    assert_equal " \#${\n", eval("<<E\n \#$\{\nE\n")
   end
 end
