@@ -65,4 +65,12 @@ class TestJRubyRipper < Test::Unit::TestCase
     assert_equal [:on_string_content, [:@tstring_content, "\t", [1, 2]]], extract("%(\t)", :on_string_content)
     assert_equal [:on_string_content, [:@tstring_content, "\r", [1, 2]]], extract("%|\r|", :on_string_content)
   end
+
+  def test_invalid_gvar
+    assert_equal [:on_string_content, [:@tstring_content, '#', [1, 1]]], extract('"#"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '#$', [1, 2]]], extract('%{#$}', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '#${', [1, 1]]], extract('"#${"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, ' ', [1, 1]], [:@tstring_content, '#${', [1, 2]]], extract('" #${"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '#${ ', [1, 1]]], extract('"#${ "', :on_string_content)
+  end
 end

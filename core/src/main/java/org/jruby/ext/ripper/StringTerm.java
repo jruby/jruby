@@ -105,16 +105,13 @@ public class StringTerm extends StrTerm {
         }        
 
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
-            c = lexer.nextc();
-            switch (c) {
-            case '$':
-            case '@':
-                lexer.pushback(c);
-                return RubyParser.tSTRING_DVAR;
-            case '{':
-                return RubyParser.tSTRING_DBEG;
+            int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
+
+            if (token != 0) {
+                return token;
+            } else {
+                buffer.append(c);
             }
-            buffer.append((byte) '#');
         }
         lexer.pushback(c);
         
