@@ -37,9 +37,13 @@ class TestParsing < Test::Unit::TestCase
   end
 
   def test_parse_invalid_gvar
+    assert_equal '# comment', eval('"# comment"')
     assert_equal '#$', eval('%{#$}')
+    assert_equal '##$', eval('%{##$}')
     assert_equal '#${', eval('"#${"')
     assert_equal ' #${', eval('" #${"')
+    assert_equal ' # ##${', eval('" # ##${"')
     assert_equal " \#${\n", eval("<<E\n \#$\{\nE\n")
+    assert_equal " # #\#${\n", eval("<<E\n \# \#\#$\{\nE\n")
   end
 end

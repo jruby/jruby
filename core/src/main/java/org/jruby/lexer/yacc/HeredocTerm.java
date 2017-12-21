@@ -154,6 +154,7 @@ public class HeredocTerm extends StrTerm {
                     return token;
                 } else {
                     tok.append(c);
+                    c = lexer.nextc();
                 }
             }
 

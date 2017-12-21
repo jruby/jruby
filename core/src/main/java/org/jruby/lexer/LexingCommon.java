@@ -353,8 +353,9 @@ public abstract class LexingCommon {
                 return 0;
         }
 
+        pushback(c);
+
         if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
-            pushback(c);
             setValue("#" + significant);
             return tSTRING_DVAR;
         }

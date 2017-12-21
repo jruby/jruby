@@ -67,11 +67,15 @@ class TestJRubyRipper < Test::Unit::TestCase
   end
 
   def test_invalid_gvar
+    assert_equal [:on_string_content, [:@tstring_content, '# comment', [1, 1]]], extract('"# comment"', :on_string_content)
     assert_equal [:on_string_content, [:@tstring_content, '#', [1, 1]]], extract('"#"', :on_string_content)
-    assert_equal [:on_string_content, [:@tstring_content, '#$', [1, 2]]], extract('%{#$}', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '##', [1, 1]]], extract('"##"', :on_string_content)
     assert_equal [:on_string_content, [:@tstring_content, '#${', [1, 1]]], extract('"#${"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '#', [1, 1]], [:@tstring_content, '#${', [1, 2]]], extract('"##${"', :on_string_content)
     assert_equal [:on_string_content, [:@tstring_content, ' ', [1, 1]], [:@tstring_content, '#${', [1, 2]]], extract('" #${"', :on_string_content)
     assert_equal [:on_string_content, [:@tstring_content, '#${ ', [1, 1]]], extract('"#${ "', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '# #', [1, 1]], [:@tstring_content, '#${', [1, 4]]], extract('"# ##${"', :on_string_content)
     assert_equal [:on_string_content, [:@tstring_content, "\#$}\n", [2, 0]]], extract("<<E\n\#$}\nE\n", :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '# #', [2, 0]], [:@tstring_content, "\#${\n", [2, 3]]], extract("<<E\n\# \#\#${\nE\n", :on_string_content)
   end
 end
