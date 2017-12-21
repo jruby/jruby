@@ -35,4 +35,10 @@ class TestParsing < Test::Unit::TestCase
   
   def foo(*args)
   end
+
+  def test_parse_invalid_gvar
+    assert_equal '#$', eval('%{#$}')
+    assert_equal '#${', eval('"#${"')
+    assert_equal ' #${', eval('" #${"')
+  end
 end

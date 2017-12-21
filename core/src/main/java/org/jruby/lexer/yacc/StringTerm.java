@@ -119,7 +119,11 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
             int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
 
-            if (token != 0) return token;
+            if (token != 0) {
+                return token;
+            } else {
+                buffer.append(c);
+            }
         }
         lexer.pushback(c);
 
