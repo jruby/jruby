@@ -275,7 +275,7 @@ public class RubyStringScanner extends RubyObject {
                 throw runtime.newInterruptedRegexpError("Regexp Interrupted");
             }
         } else {
-            ret = RubyRegexp.matcherSearch(runtime, matcher, value.getBegin() + pos, value.getBegin() + value.getRealSize(), Option.NONE);
+            ret = RubyRegexp.matcherSearch(context, matcher, value.getBegin() + pos, value.getBegin() + value.getRealSize(), Option.NONE);
         }
 
         regs = matcher.getRegion();
@@ -287,7 +287,7 @@ public class RubyStringScanner extends RubyObject {
             end = regs.end[0];
         }
 
-        if (ret < 0) return runtime.getNil();
+        if (ret < 0) return context.nil;
         setMatched();
 
         lastPos = pos;
