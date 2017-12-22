@@ -2036,7 +2036,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             // interrupt waiting threads
             fptr.interruptBlockingThreads(context);
-            fptr.waitForBlockingThreads(context);
+            try {
+                fptr.unlock();
+                fptr.waitForBlockingThreads(context);
+            } finally {
+                fptr.lock();
+            }
             fptr.cleanup(runtime, false);
 
             if (fptr.getProcess() != null) {
