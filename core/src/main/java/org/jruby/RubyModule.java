@@ -1662,19 +1662,25 @@ public class RubyModule extends RubyObject {
             if (anno == null) return method;
 
             if (anno.reads().length > 0 || anno.writes().length > 0) {
-                String baseName = getBaseName();
-                char refChar = '#';
-                String simpleName = getSimpleName();
 
-                if (baseName == null && this instanceof MetaClass) {
-                    IRubyObject attached = ((MetaClass)this).getAttached();
-                    if (attached instanceof RubyModule) {
-                        simpleName = ((RubyModule)attached).getSimpleName();
-                        refChar = '.';
+                MethodIndex.addMethodReadFields(name, anno.reads());
+                MethodIndex.addMethodWriteFields(name, anno.writes());
+
+                if (runtime.isVerbose()) {
+                    String baseName = getBaseName();
+                    char refChar = '#';
+                    String simpleName = getSimpleName();
+
+                    if (baseName == null && this instanceof MetaClass) {
+                        IRubyObject attached = ((MetaClass) this).getAttached();
+                        if (attached instanceof RubyModule) {
+                            simpleName = ((RubyModule) attached).getSimpleName();
+                            refChar = '.';
+                        }
                     }
-                }
 
-                runtime.getWarnings().warning(simpleName + refChar + name + " accesses caller method's state and should not be aliased");
+                    runtime.getWarnings().warning(simpleName + refChar + name + " accesses caller method's state and should not be aliased");
+                }
             }
         }
 

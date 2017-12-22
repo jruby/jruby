@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -224,14 +225,21 @@ public class MethodIndex {
     }
 
     public static void addMethodReadFieldsPacked(int readBits, String methodsPacked) {
-        Set<FrameField> reads = FrameField.unpack(readBits);
+        Set<FrameField> reads = Collections.synchronizedSet(FrameField.unpack(readBits));
 
         if (DEBUG) LOG.debug("Adding method field reads: {} for {}", reads, methodsPacked);
 
-        for (String name : Helpers.SEMICOLON_PATTERN.split(methodsPacked)) {
-            if (FrameField.needsFrame(readBits)) FRAME_AWARE_METHODS.add(name);
-            if (FrameField.needsScope(readBits)) SCOPE_AWARE_METHODS.add(name);
-            METHOD_FRAME_READS.put(name, reads);
+        String[] names = Helpers.SEMICOLON_PATTERN.split(methodsPacked);
+
+        if (FrameField.needsFrame(readBits)) FRAME_AWARE_METHODS.addAll(Arrays.asList(names));
+        if (FrameField.needsScope(readBits)) SCOPE_AWARE_METHODS.addAll(Arrays.asList(names));
+
+        for (String name : names) {
+            Set<FrameField> current = METHOD_FRAME_READS.putIfAbsent(name, reads);
+
+            if (current != null) {
+                current.addAll(reads);
+            }
         }
     }
 
@@ -240,11 +248,26 @@ public class MethodIndex {
 
         if (DEBUG) LOG.debug("Adding scope-aware method names: {} for {}", writes, methodsPacked);
 
-        for (String name : Helpers.SEMICOLON_PATTERN.split(methodsPacked)) {
-            if (FrameField.needsFrame(writeBits)) FRAME_AWARE_METHODS.add(name);
-            if (FrameField.needsScope(writeBits)) SCOPE_AWARE_METHODS.add(name);
-            METHOD_FRAME_WRITES.put(name, writes);
+        String[] names = Helpers.SEMICOLON_PATTERN.split(methodsPacked);
+
+        if (FrameField.needsFrame(writeBits)) FRAME_AWARE_METHODS.addAll(Arrays.asList(names));
+        if (FrameField.needsScope(writeBits)) SCOPE_AWARE_METHODS.addAll(Arrays.asList(names));
+
+        for (String name : names) {
+            Set<FrameField> current = METHOD_FRAME_WRITES.putIfAbsent(name, writes);
+
+            if (current != null) {
+                current.addAll(writes);
+            }
         }
+    }
+
+    public static void addMethodReadFields(String name, FrameField[] reads) {
+        addMethodReadFieldsPacked(FrameField.pack(reads), name);
+    }
+
+    public static void addMethodWriteFields(String name, FrameField[] write) {
+        addMethodWriteFieldsPacked(FrameField.pack(write), name);
     }
 
     @Deprecated
