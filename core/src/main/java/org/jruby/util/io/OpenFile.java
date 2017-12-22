@@ -1586,7 +1586,7 @@ public class OpenFile implements Finalizable {
                     if (e != -1) {
                         pending = (int) (e - p + 1);
                         if (chomp) {
-                            chomplen = ((pending > 1 &&  pBytes[e - 1] == '\r')?1:0) + 1;
+                            chomplen = ((pending > 1 && pBytes[e - 1] == '\r')?1:0) + 1;
                         }
                     }
                     if (str == null) {
