@@ -189,6 +189,15 @@ public class TracePoint extends RubyObject {
         
         return name == null ? context.nil : context.runtime.newSymbol(name);
     }
+
+    @JRubyMethod
+    public IRubyObject callee_id(ThreadContext context) {
+        checkInside(context);
+
+        // TODO: actually get called name, requires modifying trace handling in bindings
+
+        return name == null ? context.nil : context.runtime.newSymbol(name);
+    }
     
     @JRubyMethod
     public IRubyObject path(ThreadContext context) {
