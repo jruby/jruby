@@ -68,6 +68,7 @@ public class Getline {
                 sepArg = arg0;
                 limArg = arg1;
                 optArg = arg2;
+                break;
         }
 
         opt = ArgsUtil.getOptionsArg(context.runtime, optArg);
