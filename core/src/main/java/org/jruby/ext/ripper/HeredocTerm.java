@@ -193,7 +193,14 @@ public class HeredocTerm extends StrTerm {
                     return RubyParser.tSTRING_CONTENT;
                 }
                 tok.append(lexer.nextc());
-                
+
+                if (lexer.getHeredocIndent() > 0) {
+                    lexer.lex_goto_eol();
+                    lexer.setValue(lexer.createStr(tok, 0));
+                    lexer.flush_string_content(enc[0]);
+                    return RubyParser.tSTRING_CONTENT;
+                }
+
                 if ((c = lexer.nextc()) == EOF) return error(lexer, len, str, eos);
             } while (!lexer.whole_match_p(eos, indent));
             str = tok;
