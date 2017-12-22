@@ -3813,7 +3813,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IRubyObject io = openKeyArgs(context, recv, args, opt);
         if (io.isNil()) return io;
 
-        IRubyObject[] methodArguments = processReadlinesMethodArguments(context, args);
+        IRubyObject[] methodArguments = Arrays.copyOfRange(args, 1, args.length);
+
+        // replace with coerced, so we don't coerce again later
+        if (!opt.isNil()) methodArguments[methodArguments.length - 1] = opt;
 
         return readlinesCommon(context, (RubyIO) io, methodArguments);
     }

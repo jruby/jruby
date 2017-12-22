@@ -79,7 +79,7 @@ public class Getline {
                 limArg = arg1;
             }
         } else {
-            IRubyObject chompKwarg = ArgsUtil.extractKeywordArg(context, "chomp", optArg);
+            IRubyObject chompKwarg = ArgsUtil.extractKeywordArg(context, "chomp", opt);
             if (chompKwarg != null) {
                 chomp = chompKwarg.isTrue();
             }
