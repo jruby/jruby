@@ -187,7 +187,7 @@ public class TracePoint extends RubyObject {
     public IRubyObject method_id(ThreadContext context) {
         checkInside(context);
         
-        return name == null ? context.nil : context.runtime.newString(name);
+        return name == null ? context.nil : context.runtime.newSymbol(name);
     }
     
     @JRubyMethod
