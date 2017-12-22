@@ -46,6 +46,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -450,8 +451,9 @@ public class RubyArgsFile extends RubyObject {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
+        CallSite each_codepoint = sites(context).each_codepoint;
         while (data.next_argv(context)) {
-            sites(context).each_codepoint.call(context, recv, data.currentFile, block);
+            each_codepoint.call(context, recv, data.currentFile, block);
         }
 
         return context.nil;
