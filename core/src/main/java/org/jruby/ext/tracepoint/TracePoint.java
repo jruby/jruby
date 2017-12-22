@@ -81,7 +81,7 @@ public class TracePoint extends RubyObject {
         if (events.size() > 0) {
             _eventSet = EnumSet.copyOf(events);
         } else {
-            _eventSet = EnumSet.allOf(RubyEvent.class);
+            _eventSet = EnumSet.of(RubyEvent.LINE);
         }
         
         final EnumSet<RubyEvent> eventSet = _eventSet;
