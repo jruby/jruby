@@ -463,6 +463,28 @@ public final class ThreadContext {
         }
     }
 
+    private void pushBackrefFrame() {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrameForBackref();
+        if (index + 1 == stack.length) {
+            expandFrameStack();
+        }
+    }
+
+    private void popBackrefFrame() {
+        Frame[] stack = frameStack;
+        int index = frameIndex--;
+        Frame frame = stack[index];
+
+        // if the frame was captured, we must replace it but not clear
+        if (frame.isCaptured()) {
+            stack[index] = new Frame();
+        } else {
+            frame.clearFrameForBackref();
+        }
+    }
+
     private void pushEvalFrame(IRubyObject self) {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
@@ -908,8 +930,16 @@ public final class ThreadContext {
         pushCallFrame(clazz, name, self, Block.NULL_BLOCK);
     }
 
+    public void preBackrefMethod() {
+        pushBackrefFrame();
+    }
+
     public void postMethodFrameOnly() {
         popFrame();
+    }
+
+    public void postBackrefMethod() {
+        popBackrefFrame();
     }
 
     public void preMethodScopeOnly(StaticScope staticScope) {

@@ -65,7 +65,6 @@ import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
-import org.jruby.runtime.opto.ConstantInvalidator;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
@@ -176,13 +175,10 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
-import java.net.PortUnreachableException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -3004,11 +3000,22 @@ public final class Ruby implements Constantizable {
 
     public void addBoundMethod(String className, String methodName, String rubyName) {
         Map<String, String> javaToRuby = boundMethods.get(className);
-        if (javaToRuby == null) {
-            javaToRuby = new HashMap<String, String>();
-            boundMethods.put(className, javaToRuby);
-        }
+        if (javaToRuby == null) boundMethods.put(className, javaToRuby = new HashMap<>());
         javaToRuby.put(methodName, rubyName);
+    }
+
+    public void addBoundMethodsPacked(String className, String packedTuples) {
+        String[] names = Helpers.SEMICOLON_PATTERN.split(packedTuples);
+        for (int i = 0; i < names.length; i += 2) {
+            addBoundMethod(className, names[i], names[i+1]);
+        }
+    }
+
+    public void addSimpleBoundMethodsPacked(String className, String packedNames) {
+        String[] names = Helpers.SEMICOLON_PATTERN.split(packedNames);
+        for (String name : names) {
+            addBoundMethod(className, name, name);
+        }
     }
 
     public Map<String, Map<String, String>> getBoundMethods() {

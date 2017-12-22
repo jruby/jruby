@@ -408,6 +408,7 @@ public abstract class DynamicMethod {
         private final Class[] nativeSignature;
         private final boolean statik;
         private final boolean java;
+        private Method reflected;
 
         public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
             this(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
@@ -460,8 +461,10 @@ public abstract class DynamicMethod {
          * @return the reflected method corresponding to this NativeCall
          */
         public Method getMethod() {
+            Method reflected = this.reflected;
+            if (reflected != null) return reflected;
             try {
-                return nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
+                return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

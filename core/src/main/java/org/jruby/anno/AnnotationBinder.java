@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,7 +44,6 @@ import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
@@ -159,8 +158,8 @@ public class AnnotationBinder extends AbstractProcessor {
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<>();
 
-            Set<String> frameAwareMethods = new HashSet<>(4, 1);
-            Set<String> scopeAwareMethods = new HashSet<>(4, 1);
+            Map<Set<FrameField>, List<String>> readGroups = new HashMap<>();
+            Map<Set<FrameField>, List<String>> writeGroups = new HashMap<>();
 
             int methodCount = 0;
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
@@ -199,20 +198,7 @@ public class AnnotationBinder extends AbstractProcessor {
                 methodDescs.add(method);
 
                 // check for frame field reads or writes
-                boolean frame = false;
-                boolean scope = false;
-
-                for (FrameField field : anno.reads()) {
-                    frame |= field.needsFrame();
-                    scope |= field.needsScope();
-                }
-                for (FrameField field : anno.writes()) {
-                    frame |= field.needsFrame();
-                    scope |= field.needsScope();
-                }
-                
-                if (frame) AnnotationHelper.addMethodNamesToSet(frameAwareMethods, anno, method.getSimpleName().toString());
-                if (scope) AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, anno, method.getSimpleName().toString());
+                AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getSimpleName().toString());
             }
 
             if (methodCount == 0) {
@@ -222,28 +208,74 @@ public class AnnotationBinder extends AbstractProcessor {
 
             classNames.add(getActualQualifiedName(cd));
 
+            List<ExecutableElement> simpleNames = new ArrayList<>();
+            Map<CharSequence, List<ExecutableElement>> complexNames = new HashMap<>();
+
             processMethodDeclarations(staticAnnotatedMethods);
             for (Map.Entry<CharSequence, List<ExecutableElement>> entry : staticAnnotatedMethods.entrySet()) {
                 ExecutableElement decl = entry.getValue().get(0);
-                if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
+
+                if (anno.omit()) continue;
+
+                CharSequence rubyName = entry.getKey();
+
+                if (decl.getSimpleName().equals(rubyName)) {
+                    simpleNames.add(decl);
+                    continue;
+                }
+
+                List<ExecutableElement> complex = complexNames.get(rubyName);
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                complex.add(decl);
             }
 
             processMethodDeclarations(annotatedMethods);
             for (Map.Entry<CharSequence, List<ExecutableElement>> entry : annotatedMethods.entrySet()) {
                 ExecutableElement decl = entry.getValue().get(0);
-                if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
+
+                if (anno.omit()) continue;
+
+                CharSequence rubyName = entry.getKey();
+
+                if (decl.getSimpleName().equals(rubyName) && decl.getAnnotation(JRubyMethod.class).name().length <= 1) {
+                    simpleNames.add(decl);
+                    continue;
+                }
+
+                List<ExecutableElement> complex = complexNames.get(rubyName);
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                complex.add(decl);
             }
+
+            addCoreMethodMapping(cd, complexNames);
+
+            addSimpleMethodMappings(cd, simpleNames);
 
             out.println("    }");
 
             // write out a static initializer for frame names, so it only fires once
             out.println("    static {");
-            if (!frameAwareMethods.isEmpty()) {
-                out.println("        MethodIndex.addFrameAwareMethods(" + join(frameAwareMethods) + ");");
+
+            if (!readGroups.isEmpty()) {
+                for (Map.Entry<Set<FrameField>, List<String>> reads : readGroups.entrySet()) {
+                    Set<FrameField> key = reads.getKey();
+                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
+
+                    out.println("        MethodIndex.addMethodReadFieldsPacked(" + FrameField.pack(frameFields) + ", \"" + join(reads.getValue()) + "\");");
+                }
             }
-            if (!scopeAwareMethods.isEmpty()) {
-                out.println("        MethodIndex.addScopeAwareMethods(" + join(scopeAwareMethods) + ");");
+
+            if (!writeGroups.isEmpty()) {
+                for (Map.Entry<Set<FrameField>, List<String>> writes : writeGroups.entrySet()) {
+                    Set<FrameField> key = writes.getKey();
+                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
+
+                    out.println("        MethodIndex.addMethodWriteFieldsPacked(" + FrameField.pack(frameFields) + ", \"" + join(writes.getValue()) + "\");");
+                }
             }
+
             out.println("    }");
 
             out.println("}");
@@ -263,11 +295,9 @@ public class AnnotationBinder extends AbstractProcessor {
 
     private static StringBuilder join(final Iterable<String> names) {
         final StringBuilder str = new StringBuilder();
-        boolean first = true;
         for (String name : names) {
-            if (!first) str.append(',');
-            first = false;
-            str.append('"').append(name).append('"');
+            if (str.length() > 0) str.append(';');
+            str.append(name);
         }
         return str;
     }
@@ -378,14 +408,46 @@ public class AnnotationBinder extends AbstractProcessor {
         }
     }
 
-    private void addCoreMethodMapping(CharSequence rubyName, ExecutableElement decl, PrintStream out) {
+    private void addCoreMethodMapping(TypeElement cls, Map<CharSequence, List<ExecutableElement>> complexNames) {
+        StringBuilder encoded = new StringBuilder();
+
+        for (Map.Entry<CharSequence, List<ExecutableElement>> entry : complexNames.entrySet()) {
+
+            for (Iterator<ExecutableElement> iterator = entry.getValue().iterator(); iterator.hasNext(); ) {
+                if (encoded.length() > 0) encoded.append(";");
+
+                ExecutableElement elt = iterator.next();
+                encoded
+                        .append(elt.getSimpleName())
+                        .append(";")
+                        .append(entry.getKey());
+            }
+        }
+
+        if (encoded.length() == 0) return;
+
         out.println(new StringBuilder(50)
-                .append("        runtime.addBoundMethod(")
-                .append('"').append(((TypeElement)decl.getEnclosingElement()).getQualifiedName()).append('"')
+                .append("        runtime.addBoundMethodsPacked(")
+                .append('"').append(cls.getQualifiedName()).append('"')
                 .append(',')
-                .append('"').append(decl.getSimpleName()).append('"')
+                .append('"').append(encoded).append('"')
+                .append(");").toString());
+    }
+
+    private void addSimpleMethodMappings(TypeElement cls, List<ExecutableElement> simpleNames) {
+        StringBuilder encoded = new StringBuilder();
+        for (ExecutableElement elt : simpleNames) {
+            if (encoded.length() > 0) encoded.append(";");
+            encoded.append(elt.getSimpleName());
+        }
+
+        if (encoded.length() == 0) return;
+
+        out.println(new StringBuilder(50)
+                .append("        runtime.addSimpleBoundMethodsPacked(")
+                .append('"').append(cls.getQualifiedName()).append('"')
                 .append(',')
-                .append('"').append(rubyName).append('"')
+                .append('"').append(encoded).append('"')
                 .append(");").toString());
     }
 

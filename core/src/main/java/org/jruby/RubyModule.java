@@ -76,6 +76,7 @@ import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
@@ -120,7 +121,6 @@ import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.BLOCK;
 import static org.jruby.anno.FrameField.CLASS;
 import static org.jruby.anno.FrameField.FILENAME;
-import static org.jruby.anno.FrameField.JUMPTARGET;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.anno.FrameField.LINE;
 import static org.jruby.anno.FrameField.METHODNAME;
@@ -1645,29 +1645,44 @@ public class RubyModule extends RubyObject {
     private DynamicMethod searchForAliasMethod(Ruby runtime, String name) {
         DynamicMethod method = deepMethodSearch(name, runtime);
 
-//        if (method instanceof JavaMethod) {
-//            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
-//            // We warn because we treat certain method names as "special" for purposes of
-//            // optimization. Hopefully this will be enough to convince people not to alias
-//            // them.
-//            CallConfiguration callerReq = ((JavaMethod)method).getCallerRequirement();
-//
-//            if (callerReq.framing() != Framing.None ||
-//                    callerReq.scoping() != Scoping.None) {String baseName = getBaseName();
-//                char refChar = '#';
-//                String simpleName = getSimpleName();
-//
-//                if (baseName == null && this instanceof MetaClass) {
-//                    IRubyObject attached = ((MetaClass)this).getAttached();
-//                    if (attached instanceof RubyModule) {
-//                        simpleName = ((RubyModule)attached).getSimpleName();
-//                        refChar = '.';
-//                    }
-//                }
-//
-//                runtime.getWarnings().warn(simpleName + refChar + name + " accesses caller's state and should not be aliased");
-//            }
-//        }
+        if (method instanceof NativeCallMethod) {
+            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
+            // We warn because we treat certain method names as "special" for purposes of
+            // optimization. Hopefully this will be enough to convince people not to alias
+            // them.
+
+            DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
+
+            // native-backed but not a direct call, ok
+            if (nativeCall == null) return method;
+
+            Method javaMethod = nativeCall.getMethod();
+            JRubyMethod anno = javaMethod.getAnnotation(JRubyMethod.class);
+
+            if (anno == null) return method;
+
+            if (anno.reads().length > 0 || anno.writes().length > 0) {
+
+                MethodIndex.addMethodReadFields(name, anno.reads());
+                MethodIndex.addMethodWriteFields(name, anno.writes());
+
+                if (runtime.isVerbose()) {
+                    String baseName = getBaseName();
+                    char refChar = '#';
+                    String simpleName = getSimpleName();
+
+                    if (baseName == null && this instanceof MetaClass) {
+                        IRubyObject attached = ((MetaClass) this).getAttached();
+                        if (attached instanceof RubyModule) {
+                            simpleName = ((RubyModule) attached).getSimpleName();
+                            refChar = '.';
+                        }
+                    }
+
+                    runtime.getWarnings().warning(simpleName + refChar + name + " accesses caller method's state and should not be aliased");
+                }
+            }
+        }
 
         return method;
     }
@@ -2861,26 +2876,26 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = {"module_eval", "class_eval"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, Block block) {
         return specificEval(context, this, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, this, arg0, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, this, arg0, arg1, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, this, arg0, arg1, arg2, block, EvalType.MODULE_EVAL);
     }
@@ -2890,8 +2905,8 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = {"module_exec", "class_exec"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_exec(ThreadContext context, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, IRubyObject.NULL_ARRAY, block, EvalType.MODULE_EVAL);
@@ -2901,8 +2916,8 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = {"module_exec", "class_exec"}, rest = true,
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, args, block, EvalType.MODULE_EVAL);
@@ -4465,14 +4480,14 @@ public class RubyModule extends RubyObject {
         CallConfiguration needs = CallConfiguration.valueOf(AnnotationHelper.getCallerCallConfigNameByAnno(jrubyMethod));
 
         if (needs.framing() == Framing.Full) {
-            Collection<String> frameAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
-            AnnotationHelper.addMethodNamesToSet(frameAwareMethods, simpleName, names, aliases);
-            MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
+            Map<String, JRubyMethod> frameAwareMethods = new HashMap<>(4); // added to a Set - thus no need for another Set
+            AnnotationHelper.addMethodNamesToMap(frameAwareMethods, null, simpleName, names, aliases);
+            MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods.keySet());
         }
         if (needs.scoping() == Scoping.Full) {
-            Collection<String> scopeAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
-            AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, simpleName, names, aliases);
-            MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
+            Map<String, JRubyMethod> scopeAwareMethods = new HashMap<>(4); // added to a Set - thus no need for another Set
+            AnnotationHelper.addMethodNamesToMap(scopeAwareMethods, null, simpleName, names, aliases);
+            MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods.keySet());
         }
 
         RubyModule singletonClass;

@@ -32,22 +32,6 @@ public class AttrAssignInstr extends NoResultCallInstr {
     }
 
     @Override
-    public boolean computeScopeFlags(IRScope scope) {
-        // SSS FIXME: For now, forcibly require a frame for scopes having attr-assign instructions. However, we
-        // can avoid this by passing in the frame self explicitly to Helpers.invoke(..) rather than try to get
-        // it off context.getFrameSelf()
-        boolean modifiesScope = super.computeScopeFlags(scope);
-
-        if (targetRequiresCallersFrame()) {
-            // This can be narrowed further by filtering out cases with literals other than String and Regexp
-            scope.getFlags().add(REQUIRES_FRAME);
-            modifiesScope = true;
-        }
-
-        return modifiesScope;
-    }
-
-    @Override
     public Instr clone(CloneInfo ii) {
         return new AttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii), isPotentiallyRefined());
     }

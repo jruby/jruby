@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.anno.FrameField;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -13,12 +15,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.util.ArraySupport;
 
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.jruby.ir.IRFlags.*;
 
 public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
+    private static final EnumSet<FrameField> ALL = EnumSet.allOf(FrameField.class);
 
     public transient final long callSiteId;
     private final CallType callType;
@@ -35,6 +41,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean[] splatMap;
     private transient boolean procNew;
     private boolean potentiallyRefined;
+    private transient Set<FrameField> frameReads;
+    private transient Set<FrameField> frameWrites;
 
     protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure,
                        boolean potentiallyRefined) {
@@ -54,6 +62,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         dontInline = false;
         procNew = false;
         this.potentiallyRefined = potentiallyRefined;
+
+        captureFrameReadsAndWrites();
     }
 
     @Override
@@ -184,28 +194,48 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     public boolean computeScopeFlags(IRScope scope) {
         boolean modifiedScope = false;
 
+        EnumSet<IRFlags> flags = scope.getFlags();
         if (targetRequiresCallersBinding()) {
             modifiedScope = true;
-            scope.getFlags().add(BINDING_HAS_ESCAPED);
+            flags.add(BINDING_HAS_ESCAPED);
         }
 
-        if (targetRequiresCallersFrame()) {
+        for (FrameField read : frameReads) {
             modifiedScope = true;
-            scope.getFlags().add(REQUIRES_FRAME);
+
+            switch (read) {
+                case LASTLINE: flags.add(IRFlags.REQUIRES_LASTLINE); break;
+                case BACKREF: flags.add(IRFlags.REQUIRES_BACKREF); break;
+                case VISIBILITY: flags.add(IRFlags.REQUIRES_VISIBILITY); break;
+                case BLOCK: flags.add(IRFlags.REQUIRES_BLOCK); break;
+                case SELF: flags.add(IRFlags.REQUIRES_SELF); break;
+                case METHODNAME: flags.add(IRFlags.REQUIRES_METHODNAME); break;
+                case LINE: flags.add(IRFlags.REQUIRES_LINE); break;
+                case CLASS: flags.add(IRFlags.REQUIRES_CLASS); break;
+                case FILENAME: flags.add(IRFlags.REQUIRES_FILENAME); break;
+                case SCOPE: flags.add(IRFlags.REQUIRES_SCOPE); break;
+            }
         }
+
+        if (canBeEval()) flags.add(IRFlags.USES_EVAL);
+
+        // literal closures can be used to capture surrounding binding
+        if (hasLiteralClosure()) flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
+
+        if (procNew) flags.add(IRFlags.REQUIRES_BLOCK);
 
         if (canBeEval()) {
             modifiedScope = true;
-            scope.getFlags().add(USES_EVAL);
+            flags.add(USES_EVAL);
 
             // If eval contains a return then a nonlocal may pass through (e.g. def foo; eval "return 1"; end).
-            scope.getFlags().add(CAN_RECEIVE_NONLOCAL_RETURNS);
+            flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
 
             // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
             // it could be using the closure as a binding -- which means it could be using pretty much any
             // variable from the caller's binding!
-            if (scope.getFlags().contains(RECEIVES_CLOSURE_ARG) && argsCount > 1) {
-                scope.getFlags().add(CAN_CAPTURE_CALLERS_BINDING);
+            if (flags.contains(RECEIVES_CLOSURE_ARG) && argsCount > 1) {
+                flags.add(CAN_CAPTURE_CALLERS_BINDING);
             }
         }
 
@@ -215,16 +245,16 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         // FIXME: We need to decouple static-scope and dyn-scope.
         String mname = getName();
         if (mname.equals("local_variables")) {
-            scope.getFlags().add(REQUIRES_DYNSCOPE);
-        } else if (potentiallySend(mname) && argsCount >= 1) {
+            flags.add(REQUIRES_DYNSCOPE);
+        } else if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
             if (meth instanceof StringLiteral && "local_variables".equals(((StringLiteral)meth).getString())) {
-                scope.getFlags().add(REQUIRES_DYNSCOPE);
+                flags.add(REQUIRES_DYNSCOPE);
             }
         }
 
         // Refined scopes require dynamic scope in order to get the static scope
-        if (potentiallyRefined) scope.getFlags().add(REQUIRES_DYNSCOPE);
+        if (potentiallyRefined) flags.add(REQUIRES_DYNSCOPE);
 
         return modifiedScope;
     }
@@ -267,7 +297,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         }
 
         // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
-        if (potentiallySend(mname) && argsCount >= 1) {
+        if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
             if (!(meth instanceof StringLiteral)) return true; // We don't know
 
@@ -290,7 +320,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         String mname = getName();
         if (MethodIndex.SCOPE_AWARE_METHODS.contains(mname)) {
             return true;
-        } else if (potentiallySend(mname) && argsCount >= 1) {
+        } else if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
             if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
 
@@ -341,22 +371,58 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         if (procNew) return true;
 
         String mname = getName();
-        if (MethodIndex.FRAME_AWARE_METHODS.contains(mname)) {
+        if (frameReads.size() > 0 || frameWrites.size() > 0) {
             // Known frame-aware methods.
             return true;
 
-        } else if (potentiallySend(mname) && argsCount >= 1) {
+        } else if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
-            if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
+            String name;
+            if (meth instanceof Stringable) {
+                name = ((Stringable) meth).getString();
+            } else {
+                return true; // We don't know -- could be anything
+            }
 
-            return MethodIndex.FRAME_AWARE_METHODS.contains(((StringLiteral) meth).getString());
+            frameReads = MethodIndex.METHOD_FRAME_READS.getOrDefault(name, Collections.EMPTY_SET);
+            frameWrites = MethodIndex.METHOD_FRAME_WRITES.getOrDefault(name, Collections.EMPTY_SET);
+
+            if (frameReads.size() > 0 || frameWrites.size() > 0) {
+                return true;
+            }
         }
 
         return false;
     }
 
-    private static boolean potentiallySend(String name) {
-        return name.equals("send") || name.equals("__send__");
+    private static boolean potentiallySend(String name, int argsCount) {
+        return (name.equals("send") || name.equals("__send__") || name.equals("public_send")) && argsCount >= 1;
+    }
+
+    /**
+     * Determine based on the method name what frame fields it is likely to need.
+     *
+     * @param name the name of the method that will be called
+     */
+    private void captureFrameReadsAndWrites() {
+        // grab a reference to frame fields this method name is known to be associated with
+        if (potentiallySend(getName(), argsCount)) {
+            // Might be a #send, use the frame reads and writes of what it might call
+            Operand meth = getArg1();
+            String aliasName;
+            if (meth instanceof Stringable) {
+                aliasName = ((Stringable) meth).getString();
+                frameReads = MethodIndex.METHOD_FRAME_READS.getOrDefault(aliasName, Collections.EMPTY_SET);
+                frameWrites = MethodIndex.METHOD_FRAME_WRITES.getOrDefault(aliasName, Collections.EMPTY_SET);
+            } else {
+                // We don't know -- could be anything
+                frameReads = ALL;
+                frameWrites = ALL;
+            }
+        } else {
+            frameReads = MethodIndex.METHOD_FRAME_READS.getOrDefault(name, Collections.EMPTY_SET);
+            frameWrites = MethodIndex.METHOD_FRAME_WRITES.getOrDefault(name, Collections.EMPTY_SET);
+        }
     }
 
     private void computeFlags() {
