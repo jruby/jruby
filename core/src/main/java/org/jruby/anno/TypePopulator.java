@@ -95,18 +95,18 @@ public abstract class TypePopulator {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
                 target.defineAnnotatedMethod(name, methods, methodFactory);
-                addBoundMethodsUnlessOmited(runtime, name, methods);
+                addBoundMethodsUnlessOmitted(runtime, name, methods);
             }
 
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
                 target.defineAnnotatedMethod(name, methods, methodFactory);
-                addBoundMethodsUnlessOmited(runtime, name, methods);
+                addBoundMethodsUnlessOmitted(runtime, name, methods);
             }
         }
 
-        private static void addBoundMethodsUnlessOmited(final Ruby runtime, final String name, final List<JavaMethodDescriptor> methods) {
+        private static void addBoundMethodsUnlessOmitted(final Ruby runtime, final String name, final List<JavaMethodDescriptor> methods) {
             final int size = methods.size();
             if ( size == 1 ) {
                 final JavaMethodDescriptor desc = methods.get(0);
