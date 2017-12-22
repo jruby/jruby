@@ -45,11 +45,11 @@ public class ClassNode extends Node implements IScopingNode {
     private final StaticScope scope;
     private final Node bodyNode;
     private final Node superNode;
+    private final int endLine;
     
-    public ClassNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode, Node superNode) {
+    public ClassNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode, Node superNode, int endLine) {
         super(position, cpath.containsVariableAssignment() || bodyNode.containsVariableAssignment() || superNode != null && superNode.containsVariableAssignment());
-        
-        assert cpath != null : "cpath is not null";
+
         assert scope != null : "scope is not null";
         assert bodyNode != null : "bodyNode is not null";
         
@@ -57,6 +57,7 @@ public class ClassNode extends Node implements IScopingNode {
         this.scope = scope;
         this.bodyNode = bodyNode;
         this.superNode = superNode;
+        this.endLine = endLine;
     }
 
     public NodeType getNodeType() {
@@ -78,6 +79,13 @@ public class ClassNode extends Node implements IScopingNode {
      */
     public Node getBodyNode() {
         return bodyNode;
+    }
+
+    /**
+     * Gets line where the 'end' was for this module.
+     */
+    public int getEndLine() {
+        return endLine;
     }
     
     /**

@@ -72,10 +72,7 @@ public class TraceInstr extends NoOperandInstr {
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         if (context.runtime.hasEventHooks()) {
-            // FIXME: Try and statically generate END linenumber instead of hacking it.
-            int linenumber = getLinenumber() == -1 ? context.getLine()+1 : getLinenumber();
-
-            context.trace(getEvent(), getName(), context.getFrameKlazz(), getFilename(), linenumber);
+            context.trace(getEvent(), getName(), context.getFrameKlazz(), getFilename(), getLinenumber());
         }
 
         return null;
