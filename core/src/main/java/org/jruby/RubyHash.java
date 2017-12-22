@@ -1432,7 +1432,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "transform_values")
     public IRubyObject transform_values(final ThreadContext context, final Block block) {
-        return ((RubyHash)dup()).transform_values_bang(context, block);
+        return (new RubyHash(context.runtime, context.runtime.getHash(), this)).transform_values_bang(context, block);
     }
 
     @JRubyMethod(name = "transform_values!")
