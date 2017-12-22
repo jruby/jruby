@@ -133,7 +133,7 @@ public class TracePoint extends RubyObject {
     public IRubyObject binding(ThreadContext context) {
         checkInside(context);
         
-        return context.nil;
+        return binding == null ? context.nil : binding;
     }
     
     @JRubyMethod
