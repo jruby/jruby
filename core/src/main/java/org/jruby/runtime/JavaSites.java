@@ -41,6 +41,7 @@ public class JavaSites {
     public final ZlibSites Zlib = new ZlibSites();
     public final TimeoutSites Timeout = new TimeoutSites();
     public final ArgfSites Argf = new ArgfSites();
+    public final TracePointSites TracePoint = new TracePointSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -412,6 +413,10 @@ public class JavaSites {
 
     public static class ArgfSites {
         public final CallSite each_codepoint = new FunctionalCachingCallSite("each_codepoint");
+    }
+
+    public static class TracePointSites {
+        public final CheckedSites to_sym = new CheckedSites("to_sym");
     }
 
     public static class CheckedSites {
