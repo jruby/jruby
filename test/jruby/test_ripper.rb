@@ -53,5 +53,30 @@ class TestJRubyRipper < Test::Unit::TestCase
   def test_heredoc
     assert_equal [:on_string_content, [:@tstring_content, "x\n", [2, 0]]], extract("<<EOS\nx\nEOS\n", :on_string_content)
     assert_equal [:on_string_content, [:string_embexpr, [[:vcall, [:@ident, "o", [2, 2]]]]], [:@tstring_content, "x\n", [2, 4]]], extract("<<EOS\n\#{o}x\nEOS\n", :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, "A ", [2, 2]], [:string_embexpr, [[:vcall, [:@ident, "a", [2, 6]]]]], [:@tstring_content, "\n", [2, 8]], [:@tstring_content, "", [3, 2]], [:string_embexpr, [[:vcall, [:@ident, "b", [3, 4]]]]], [:@tstring_content, "\n", [3, 6]]], extract("<<~EOS\n  A \#{a}\n  \#{b}\nEOS\n", :on_string_content)
+  end
+
+  def test_dyn_const_lhs
+    assert_equal nil, Ripper.sexp("def m;C=s;end")
+  end
+
+  def test_literal_whitespace
+    assert_equal [:on_string_content, [:@tstring_content, "\n", [1, 2]]], extract("%{\n}", :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, " ", [1, 2]]], extract("%[ ]", :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, "\t", [1, 2]]], extract("%(\t)", :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, "\r", [1, 2]]], extract("%|\r|", :on_string_content)
+  end
+
+  def test_invalid_gvar
+    assert_equal [:on_string_content, [:@tstring_content, '# comment', [1, 1]]], extract('"# comment"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '#', [1, 1]]], extract('"#"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '##', [1, 1]]], extract('"##"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '#${', [1, 1]]], extract('"#${"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '#', [1, 1]], [:@tstring_content, '#${', [1, 2]]], extract('"##${"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, ' ', [1, 1]], [:@tstring_content, '#${', [1, 2]]], extract('" #${"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '#${ ', [1, 1]]], extract('"#${ "', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '# #', [1, 1]], [:@tstring_content, '#${', [1, 4]]], extract('"# ##${"', :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, "\#$}\n", [2, 0]]], extract("<<E\n\#$}\nE\n", :on_string_content)
+    assert_equal [:on_string_content, [:@tstring_content, '# #', [2, 0]], [:@tstring_content, "\#${\n", [2, 3]]], extract("<<E\n\# \#\#${\nE\n", :on_string_content)
   end
 end

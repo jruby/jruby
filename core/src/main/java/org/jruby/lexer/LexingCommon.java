@@ -291,6 +291,78 @@ public abstract class LexingCommon {
         return Encoding.isMbcAscii((byte) c);
     }
 
+    // Return of 0 means failed to find anything.  Non-zero means return that from lexer.
+    public int peekVariableName(int tSTRING_DVAR, int tSTRING_DBEG) throws IOException {
+        int c = nextc(); // byte right after #
+        int significant = -1;
+        switch (c) {
+            case '$': {  // we unread back to before the $ so next lex can read $foo
+                int c2 = nextc();
+
+                if (c2 == '-') {
+                    int c3 = nextc();
+
+                    if (c3 == EOF) {
+                        pushback(c3); pushback(c2);
+                        return 0;
+                    }
+
+                    significant = c3;                              // $-0 potentially
+                    pushback(c3); pushback(c2);
+                    break;
+                } else if (isGlobalCharPunct(c2)) {          // $_ potentially
+                    setValue("#" + (char) c2);
+
+                    pushback(c2); pushback(c);
+                    return tSTRING_DVAR;
+                }
+
+                significant = c2;                                  // $FOO potentially
+                pushback(c2);
+                break;
+            }
+            case '@': {  // we unread back to before the @ so next lex can read @foo
+                int c2 = nextc();
+
+                if (c2 == '@') {
+                    int c3 = nextc();
+
+                    if (c3 == EOF) {
+                        pushback(c3); pushback(c2);
+                        return 0;
+                    }
+
+                    significant = c3;                                // #@@foo potentially
+                    pushback(c3); pushback(c2);
+                    break;
+                }
+
+                significant = c2;                                    // #@foo potentially
+                pushback(c2);
+                break;
+            }
+            case '{':
+                //setBraceNest(getBraceNest() + 1);
+                setValue("#" + (char) c);
+                commandStart = true;
+                return tSTRING_DBEG;
+            default:
+                // We did not find significant char after # so push it back to
+                // be processed as an ordinary string.
+                pushback(c);
+                return 0;
+        }
+
+        pushback(c);
+
+        if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
+            setValue("#" + significant);
+            return tSTRING_DVAR;
+        }
+
+        return 0;
+    }
+
     // FIXME: I added number gvars here and they did not.
     public boolean isGlobalCharPunct(int c) {
         switch (c) {
