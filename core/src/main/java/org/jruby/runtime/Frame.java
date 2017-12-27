@@ -93,6 +93,8 @@ public final class Frame {
     /** A dummy frame **/
     public static final Frame DUMMY = new Frame();
 
+    private boolean isModuleFunction = false;
+
     /**
      * Empty constructor, since Frame objects are pre-allocated and updated
      * when needed.
@@ -112,6 +114,7 @@ public final class Frame {
         this.klazz = frame.klazz;
         this.block = frame.block;
         this.visibility = frame.visibility;
+        this.isModuleFunction = frame.isModuleFunction;
     }
 
     /**
@@ -164,6 +167,7 @@ public final class Frame {
         this.klazz = klazz;
         this.block = block;
         this.visibility = Visibility.PUBLIC;
+        this.isModuleFunction = false;
     }
 
     /**
@@ -280,7 +284,7 @@ public final class Frame {
      * @return The visibility
      */
     public Visibility getVisibility() {
-        return visibility;
+        return isModuleFunction() ? visibility.PRIVATE : visibility;
     }
 
     /**
@@ -330,6 +334,14 @@ public final class Frame {
 
     public boolean isCaptured() {
         return captured;
+    }
+
+    public boolean isModuleFunction() {
+        return isModuleFunction;
+    }
+
+    public void setModuleFunction(boolean bool) {
+        this.isModuleFunction = bool;
     }
 
     /* (non-Javadoc)

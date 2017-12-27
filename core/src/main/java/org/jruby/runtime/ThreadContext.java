@@ -694,11 +694,20 @@ public final class ThreadContext {
         b.line = position.getLine();
     }
 
+    public boolean isModuleFunction() {
+        return getCurrentFrame().isModuleFunction();
+    }
+
+    public void startModuleFunction() {
+        getCurrentFrame().setModuleFunction(true);
+    }
+
     public Visibility getCurrentVisibility() {
         return getCurrentFrame().getVisibility();
     }
 
-      public void setCurrentVisibility(Visibility visibility) {
+    public void setCurrentVisibility(Visibility visibility) {
+        getCurrentFrame().setModuleFunction(false);
         getCurrentFrame().setVisibility(visibility);
     }
 

@@ -1593,7 +1593,7 @@ public class Helpers {
             callNormalMethodHook(containingClass, context, sym);
         }
 
-        if (visibility == Visibility.MODULE_FUNCTION) {
+        if (context.isModuleFunction()) {
             addModuleMethod(containingClass, name, method, context, sym);
         }
 
@@ -1676,7 +1676,7 @@ public class Helpers {
         return scope;
     }
 
-    public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz, String name, Visibility visibility) throws RaiseException {
+    public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz, String name, Visibility visibility, ThreadContext context) throws RaiseException {
         if (clazz == runtime.getDummy()) {
             throw runtime.newTypeError("no class/module to add method");
         }
@@ -1689,7 +1689,7 @@ public class Helpers {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem");
         }
 
-        if ("initialize".equals(name) || "initialize_copy".equals(name) || name.equals("initialize_dup") || name.equals("initialize_clone") || name.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
+        if ("initialize".equals(name) || "initialize_copy".equals(name) || name.equals("initialize_dup") || name.equals("initialize_clone") || name.equals("respond_to_missing?") || context.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
         }
 

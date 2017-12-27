@@ -127,7 +127,6 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
-import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -1790,9 +1789,8 @@ public class RubyModule extends RubyObject {
 
         final Ruby runtime = context.runtime;
 
-        if (visibility == MODULE_FUNCTION) {
+        if (context.isModuleFunction()) {
             runtime.getWarnings().warn(ID.ACCESSOR_MODULE_FUNCTION, "attribute accessor as module_function");
-            visibility = PRIVATE;
         }
 
         if (!(IdUtil.isLocal(internedIdentifier) || IdUtil.isConstant(internedIdentifier))) {
@@ -2786,7 +2784,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            context.setCurrentVisibility(MODULE_FUNCTION);
+            context.startModuleFunction();
         } else {
             setMethodVisibility(args, PRIVATE);
 
