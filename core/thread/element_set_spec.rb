@@ -6,15 +6,14 @@ describe "Thread#[]=" do
     Thread.current[:value] = nil
   end
 
-  it "raises a RuntimeError if the thread is frozen" do
-    running = false
-    t = Thread.new do
-      t.freeze
+  it "raises a #{frozen_error_class} if the thread is frozen" do
+    Thread.new do
+      th = Thread.current
+      th.freeze
       -> {
-        t[:foo] = "bar"
-      }.should raise_error(RuntimeError, /frozen/)
-    end
-    t.join
+        th[:foo] = "bar"
+      }.should raise_error(frozen_error_class, /frozen/)
+    end.join
   end
 
   it "raises exceptions on the wrong type of keys" do
