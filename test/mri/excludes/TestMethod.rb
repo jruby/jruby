@@ -1,7 +1,6 @@
 exclude :test_alias_owner, "needs investigation"
 exclude :test_body, "fails due RubyVM constant"
 exclude :test_callee, "needs investigation"
-exclude :test_clone, "needs investigation"
 exclude :test_define_method_visibility, "needs investigation"
 exclude :test_define_method_with_symbol, "scope changes in define_method methods?"
 exclude :test_eq, "weird logic for != when patching an object retuned from o.method, likely irrelevant"

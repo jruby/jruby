@@ -193,7 +193,9 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = "clone")
     @Override
     public RubyMethod rbClone() {
-        return newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        newMethod.setMetaClass(getMetaClass());
+        return newMethod;
     }
 
     /** Create a Proc object.
