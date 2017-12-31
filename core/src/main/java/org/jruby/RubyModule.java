@@ -2781,6 +2781,10 @@ public class RubyModule extends RubyObject {
     public RubyModule module_function(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
+        if (!isModule()) {
+            throw context.runtime.newTypeError("module_function must be called for modules");
+        }
+
         if (args.length == 0) {
             context.setCurrentVisibility(MODULE_FUNCTION);
         } else {
