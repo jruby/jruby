@@ -4814,7 +4814,7 @@ public class RubyModule extends RubyObject {
     /** The class this refinement refines */
     volatile RubyClass refinedClass = null;
 
-    /** The moduel where this refinement was defined */
+    /** The module where this refinement was defined */
     private volatile RubyModule definedAt = null;
 
     private static final AtomicReferenceFieldUpdater<RubyModule, Map> CLASSVARS_UPDATER;
