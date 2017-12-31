@@ -93,31 +93,31 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private final static String COMPILED_CALL_SIG_ZERO_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-zero call-without-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ZERO = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-one call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ONE_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-one call-without-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_ONE = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-two call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_TWO_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-two call-without-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_TWO = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-three call-with-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_THREE_BLOCK = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    /** The outward arity-zero call-with-block signature for compiled Ruby method handles. */
+    /** The outward arity-three call-without-block signature for compiled Ruby method handles. */
     private final static String COMPILED_CALL_SIG_THREE = sig(IRubyObject.class,
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
