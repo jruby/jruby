@@ -1129,7 +1129,7 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
 
         testFrozen("module");
-        if (name.equals("__id__") || name.equals("__send__") || name.equals("object_id") || name.equals("initialize")) {
+        if (name.equals("__send__") || name.equals("object_id") || name.equals("initialize")) {
             runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining `"+ name +"' may cause serious problems");
         }
 
