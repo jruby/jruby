@@ -7,7 +7,6 @@ exclude :test_include_module_with_constants_does_not_invalidate_method_cache, "n
 exclude :test_initialize_copy_empty, "needs investigation"
 exclude :test_inspect_segfault, "a minor inspect difference?"
 exclude :test_invalid_attr, "needs investigation"
-exclude :test_method_added, "needs investigation"
 exclude :test_method_redefinition, "needs investigation"
 exclude :test_private_constant_reopen, "needs investigation"
 exclude :test_private_constant_with_no_args, "needs investigation"
