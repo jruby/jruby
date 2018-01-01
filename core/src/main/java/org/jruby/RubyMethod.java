@@ -162,6 +162,10 @@ public class RubyMethod extends AbstractRubyMethod {
         if (method instanceof ProcMethod) {
             return ((ProcMethod) method).isSame(((RubyMethod) other).getMethod());
         }
+        if (getMetaClass() != ((RubyBasicObject) other).getMetaClass()) {
+            return false;
+        }
+
         RubyMethod otherMethod = (RubyMethod)other;
         return receiver == otherMethod.receiver && originModule == otherMethod.originModule &&
             ( isSerialMatch(otherMethod.method) || isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) );
