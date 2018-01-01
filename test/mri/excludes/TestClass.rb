@@ -1,6 +1,5 @@
 exclude :test_cannot_reinitialize_class_with_initialize_copy, "broken subprocess logic in setup"
 exclude :test_check_inheritable, "needs investigation"
-exclude :test_extend_object, "needs investigation"
 exclude :test_invalid_jump_from_class_definition, "needs investigation"
 exclude :test_method_redefinition, "needs investigation"
 exclude :test_module_function, "needs investigation"
