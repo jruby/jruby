@@ -1,7 +1,6 @@
 exclude :test_alias_owner, "needs investigation"
 exclude :test_body, "fails due RubyVM constant"
 exclude :test_callee, "needs investigation"
-exclude :test_clone, "needs investigation"
 exclude :test_define_method_visibility, "needs investigation"
 exclude :test_define_method_with_symbol, "scope changes in define_method methods?"
 exclude :test_gced_bmethod, "often 'Timeout::Error: execution of assert_normal_exit expired' on CI"
