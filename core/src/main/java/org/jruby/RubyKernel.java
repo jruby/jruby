@@ -1892,22 +1892,34 @@ public class RubyKernel {
         return sites(context).initialize_copy.call(context, self, self, original);
     }
 
+    @Deprecated
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname) {
         return ((RubyBasicObject) self).respond_to_p(mname);
     }
 
-    @JRubyMethod(name = "respond_to?")
+    @Deprecated
     public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname) {
         return ((RubyBasicObject) self).respond_to_p19(mname);
     }
 
+    @Deprecated
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
         return ((RubyBasicObject) self).respond_to_p(mname, includePrivate);
     }
 
-    @JRubyMethod(name = "respond_to?")
+    @Deprecated
     public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
         return ((RubyBasicObject) self).respond_to_p19(mname, includePrivate);
+    }
+
+    @JRubyMethod(name = "respond_to?")
+    public static IRubyObject respond_to_p(ThreadContext context, IRubyObject self, IRubyObject name) {
+        return ((RubyBasicObject) self).respond_to_p(context, name, false);
+    }
+
+    @JRubyMethod(name = "respond_to?")
+    public static IRubyObject respond_to_p(ThreadContext context, IRubyObject self, IRubyObject name, IRubyObject includePrivate) {
+        return ((RubyBasicObject) self).respond_to_p(context, name, includePrivate.isTrue());
     }
 
     @JRubyMethod
