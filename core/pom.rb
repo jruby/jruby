@@ -167,8 +167,8 @@ project 'JRuby Core' do
           'compilerArgs' => { 'arg' => '-J-Xmx1G' },
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
-          'source' => [ '${base.java.version}', '1.7' ],
-          'target' => [ '${base.javac.version}', '1.7' ],
+          'source' => [ '${base.java.version}', '1.8' ],
+          'target' => [ '${base.javac.version}', '1.8' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'anno',
