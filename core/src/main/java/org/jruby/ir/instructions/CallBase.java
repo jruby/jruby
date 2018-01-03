@@ -192,7 +192,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
-        boolean modifiedScope = false;
+        boolean modifiedScope = super.computeScopeFlags(scope);
 
         EnumSet<IRFlags> flags = scope.getFlags();
         if (targetRequiresCallersBinding()) {
@@ -200,29 +200,19 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             flags.add(BINDING_HAS_ESCAPED);
         }
 
-        for (FrameField read : frameReads) {
-            modifiedScope = true;
-
-            switch (read) {
-                case LASTLINE: flags.add(IRFlags.REQUIRES_LASTLINE); break;
-                case BACKREF: flags.add(IRFlags.REQUIRES_BACKREF); break;
-                case VISIBILITY: flags.add(IRFlags.REQUIRES_VISIBILITY); break;
-                case BLOCK: flags.add(IRFlags.REQUIRES_BLOCK); break;
-                case SELF: flags.add(IRFlags.REQUIRES_SELF); break;
-                case METHODNAME: flags.add(IRFlags.REQUIRES_METHODNAME); break;
-                case LINE: flags.add(IRFlags.REQUIRES_LINE); break;
-                case CLASS: flags.add(IRFlags.REQUIRES_CLASS); break;
-                case FILENAME: flags.add(IRFlags.REQUIRES_FILENAME); break;
-                case SCOPE: flags.add(IRFlags.REQUIRES_SCOPE); break;
-            }
-        }
-
-        if (canBeEval()) flags.add(IRFlags.USES_EVAL);
+        modifiedScope |= setIRFlagsFromFrameFields(flags, frameReads);
+        modifiedScope |= setIRFlagsFromFrameFields(flags, frameWrites);
 
         // literal closures can be used to capture surrounding binding
-        if (hasLiteralClosure()) flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
+        if (hasLiteralClosure()) {
+            modifiedScope = true;
+            flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
+        }
 
-        if (procNew) flags.add(IRFlags.REQUIRES_BLOCK);
+        if (procNew) {
+            modifiedScope = true;
+            flags.add(IRFlags.REQUIRES_BLOCK);
+        }
 
         if (canBeEval()) {
             modifiedScope = true;
@@ -245,16 +235,44 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         // FIXME: We need to decouple static-scope and dyn-scope.
         String mname = getName();
         if (mname.equals("local_variables")) {
+            modifiedScope = true;
             flags.add(REQUIRES_DYNSCOPE);
         } else if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
             if (meth instanceof StringLiteral && "local_variables".equals(((StringLiteral)meth).getString())) {
+                modifiedScope = true;
                 flags.add(REQUIRES_DYNSCOPE);
             }
         }
 
         // Refined scopes require dynamic scope in order to get the static scope
-        if (potentiallyRefined) flags.add(REQUIRES_DYNSCOPE);
+        if (potentiallyRefined) {
+            modifiedScope = true;
+            flags.add(REQUIRES_DYNSCOPE);
+        }
+
+        return modifiedScope;
+    }
+
+    private boolean setIRFlagsFromFrameFields(EnumSet<IRFlags> flags, Set<FrameField> frameFields) {
+        boolean modifiedScope = false;
+
+        for (FrameField read : frameFields) {
+            modifiedScope = true;
+
+            switch (read) {
+                case LASTLINE: flags.add(IRFlags.REQUIRES_LASTLINE); break;
+                case BACKREF: flags.add(IRFlags.REQUIRES_BACKREF); break;
+                case VISIBILITY: flags.add(IRFlags.REQUIRES_VISIBILITY); break;
+                case BLOCK: flags.add(IRFlags.REQUIRES_BLOCK); break;
+                case SELF: flags.add(IRFlags.REQUIRES_SELF); break;
+                case METHODNAME: flags.add(IRFlags.REQUIRES_METHODNAME); break;
+                case LINE: flags.add(IRFlags.REQUIRES_LINE); break;
+                case CLASS: flags.add(IRFlags.REQUIRES_CLASS); break;
+                case FILENAME: flags.add(IRFlags.REQUIRES_FILENAME); break;
+                case SCOPE: flags.add(IRFlags.REQUIRES_SCOPE); break;
+            }
+        }
 
         return modifiedScope;
     }
