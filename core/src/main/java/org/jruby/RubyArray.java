@@ -1263,14 +1263,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return push(items);
     }
 
-    @JRubyMethod(name = "push", required = 1)
+    @JRubyMethod(name = "push", alias = "append", required = 1)
     public RubyArray push(IRubyObject item) {
         append(item);
 
         return this;
     }
 
-    @JRubyMethod(name = "push", rest = true)
+    @JRubyMethod(name = "push", alias = "append", rest = true)
     public RubyArray push(IRubyObject[] items) {
         if (items.length == 0) modifyCheck();
         for (int i = 0; i < items.length; i++) {
@@ -1341,7 +1341,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return result;
     }
 
-    @JRubyMethod(name = "unshift")
+    @JRubyMethod(name = "unshift", alias = "prepend")
     public IRubyObject unshift() {
         modifyCheck();
         return this;
@@ -1355,7 +1355,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     /** rb_ary_unshift
      *
      */
-    @JRubyMethod(name = "unshift")
+    @JRubyMethod(name = "unshift", alias = "prepend")
     public IRubyObject unshift(IRubyObject item) {
         unpack();
         modifyCheck();
@@ -1390,7 +1390,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return unshift(item);
     }
 
-    @JRubyMethod(name = "unshift", rest = true)
+    @JRubyMethod(name = "unshift", alias = "prepend",  rest = true)
     public IRubyObject unshift(IRubyObject[] items) {
         unpack();
         modifyCheck();
