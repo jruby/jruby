@@ -79,7 +79,7 @@ public final class Frame {
     private Block block = Block.NULL_BLOCK;
 
     /** The current visibility for anything defined under this frame */
-    private Visibility visibility = Visibility.PUBLIC;
+    private FrameVisibility visibility = FrameVisibility.PUBLIC;
 
     /** backref **/
     private IRubyObject backRef;
@@ -92,8 +92,6 @@ public final class Frame {
 
     /** A dummy frame **/
     public static final Frame DUMMY = new Frame();
-
-    private boolean isModuleFunction = false;
 
     /**
      * Empty constructor, since Frame objects are pre-allocated and updated
@@ -114,7 +112,6 @@ public final class Frame {
         this.klazz = frame.klazz;
         this.block = frame.block;
         this.visibility = frame.visibility;
-        this.isModuleFunction = frame.isModuleFunction;
     }
 
     /**
@@ -166,8 +163,7 @@ public final class Frame {
         this.name = name;
         this.klazz = klazz;
         this.block = block;
-        this.visibility = Visibility.PUBLIC;
-        this.isModuleFunction = false;
+        this.visibility = FrameVisibility.PUBLIC;
     }
 
     /**
@@ -178,7 +174,7 @@ public final class Frame {
     public void updateFrameForEval(IRubyObject self) {
         this.self = self;
         this.name = null;
-        this.visibility = Visibility.PRIVATE;
+        this.visibility = FrameVisibility.PRIVATE;
     }
 
     public void updateFrameForBackref() {
@@ -284,7 +280,17 @@ public final class Frame {
      * @return The visibility
      */
     public Visibility getVisibility() {
-        return isModuleFunction() ? visibility.PRIVATE : visibility;
+        switch (visibility) {
+            case PUBLIC:
+                return Visibility.PUBLIC;
+            case PROTECTED:
+                return Visibility.PROTECTED;
+            case PRIVATE:
+            case MODULE_FUNCTION:
+                return Visibility.PRIVATE;
+            default:
+                return null; // not reached
+        }
     }
 
     /**
@@ -292,8 +298,24 @@ public final class Frame {
      *
      * @param visibility The new visibility
      */
-    public void setVisibility(Visibility visibility) {
+    public void setVisibility(FrameVisibility visibility) {
         this.visibility = visibility;
+    }
+
+    public void setVisibility(Visibility visibility) {
+        switch (visibility) {
+            case PUBLIC:
+                this.visibility = FrameVisibility.PUBLIC;
+                break;
+            case PROTECTED:
+                this.visibility = FrameVisibility.PROTECTED;
+                break;
+            case PRIVATE:
+                this.visibility = FrameVisibility.PRIVATE;
+                break;
+            default:
+                break; // not reached
+        }
     }
 
     /**
@@ -337,11 +359,7 @@ public final class Frame {
     }
 
     public boolean isModuleFunction() {
-        return isModuleFunction;
-    }
-
-    public void setModuleFunction(boolean bool) {
-        this.isModuleFunction = bool;
+        return visibility == FrameVisibility.MODULE_FUNCTION;
     }
 
     /* (non-Javadoc)
