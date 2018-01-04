@@ -234,14 +234,19 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         // to output the local variables => we cannot strip dynscope in those cases.
         // FIXME: We need to decouple static-scope and dyn-scope.
         String mname = getName();
-        if (mname.equals("local_variables")) {
-            modifiedScope = true;
-            flags.add(REQUIRES_DYNSCOPE);
-        } else if (potentiallySend(mname, argsCount)) {
+        if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
-            if (meth instanceof StringLiteral && "local_variables".equals(((StringLiteral)meth).getString())) {
-                modifiedScope = true;
-                flags.add(REQUIRES_DYNSCOPE);
+            if (meth instanceof StringLiteral) {
+                String sendName = ((StringLiteral) meth).getString();
+                if (MethodIndex.SCOPE_AWARE_METHODS.contains(sendName)) {
+                    modifiedScope = true;
+                    flags.add(REQUIRES_DYNSCOPE);
+                }
+
+                if (MethodIndex.FRAME_AWARE_METHODS.contains(sendName)) {
+                    modifiedScope = true;
+                    flags.addAll(IRFlags.REQUIRE_ALL_FRAME_EXCEPT_SCOPE);
+                }
             }
         }
 
