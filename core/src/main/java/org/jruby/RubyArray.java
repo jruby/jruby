@@ -1264,14 +1264,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return push(items);
     }
 
-    @JRubyMethod(name = "push", required = 1)
+    @JRubyMethod(name = "push", alias = "append", required = 1)
     public RubyArray push(IRubyObject item) {
         append(item);
 
         return this;
     }
 
-    @JRubyMethod(name = "push", rest = true)
+    @JRubyMethod(name = "push", alias = "append", rest = true)
     public RubyArray push(IRubyObject[] items) {
         if (items.length == 0) modifyCheck();
         for (int i = 0; i < items.length; i++) {
@@ -1342,7 +1342,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
-    @JRubyMethod(name = "unshift")
+    @JRubyMethod(name = "unshift", alias = "prepend")
     public IRubyObject unshift() {
         modifyCheck();
         return this;
@@ -1356,7 +1356,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_unshift
      *
      */
-    @JRubyMethod(name = "unshift")
+    @JRubyMethod(name = "unshift", alias = "prepend")
     public IRubyObject unshift(IRubyObject item) {
         unpack();
         modifyCheck();
@@ -1391,7 +1391,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return unshift(item);
     }
 
-    @JRubyMethod(name = "unshift", rest = true)
+    @JRubyMethod(name = "unshift", alias = "prepend",  rest = true)
     public IRubyObject unshift(IRubyObject[] items) {
         unpack();
         modifyCheck();
