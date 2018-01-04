@@ -62,6 +62,7 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import org.jruby.util.TypeConverter;
 
 /**
  * .The Ruby built-in class Dir.
@@ -206,17 +207,37 @@ public class RubyDir extends RubyObject {
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.
      */
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 2, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
-        int flags = args.length == 2 ? RubyNumeric.num2int(args[1]) : 0;
+        int flags = 0;
+        String dir, base = "";
+
+        if(args.length == 3) {
+            RubyHash hash = (RubyHash) args[2];
+            base = (String) hash.get(context.runtime.newSymbol("base"));
+            flags = RubyNumeric.num2int(args[1]);
+        } else if(args.length == 2) {
+            IRubyObject tmp = TypeConverter.checkHashType(runtime, args[1]);
+            if(tmp.isNil()){
+              flags = RubyNumeric.num2int(args[1]);
+            } else {
+              RubyHash hash = (RubyHash) args[1];
+              base = (String) hash.get(context.runtime.newSymbol("base"));
+            }
+        }
 
         List<ByteList> dirs;
         IRubyObject tmp = args[0].checkArrayType();
-        if (tmp.isNil()) {
-            dirs = Dir.push_glob(runtime, runtime.getCurrentDirectory(), globArgumentAsByteList(context, args[0]), flags);
+
+        if (!base.isEmpty() && !(new File(base).exists())){
+            dirs = new ArrayList<ByteList>();
+        } else if (tmp.isNil()) {
+            dir = base.isEmpty() ? runtime.getCurrentDirectory() : base;
+            dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), flags);
         } else {
-            dirs = dirGlobs(context, getCWD(runtime), ((RubyArray) tmp).toJavaArray(), flags);
+            dir = base.isEmpty() ? getCWD(runtime) : base;
+            dirs = dirGlobs(context, dir, ((RubyArray) tmp).toJavaArray(), flags);
         }
 
         if (block.isGiven()) {
