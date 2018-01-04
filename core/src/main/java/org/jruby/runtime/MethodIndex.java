@@ -63,6 +63,9 @@ import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Stream.concat;
+
 /**
  *
  * @author headius
@@ -225,41 +228,42 @@ public class MethodIndex {
     }
 
     public static void addMethodReadFieldsPacked(int readBits, String methodsPacked) {
-        Set<FrameField> reads = Collections.synchronizedSet(FrameField.unpack(readBits));
-
-        if (DEBUG) LOG.debug("Adding method field reads: {} for {}", reads, methodsPacked);
-
-        String[] names = Helpers.SEMICOLON_PATTERN.split(methodsPacked);
-
-        if (FrameField.needsFrame(readBits)) FRAME_AWARE_METHODS.addAll(Arrays.asList(names));
-        if (FrameField.needsScope(readBits)) SCOPE_AWARE_METHODS.addAll(Arrays.asList(names));
-
-        for (String name : names) {
-            Set<FrameField> current = METHOD_FRAME_READS.putIfAbsent(name, reads);
-
-            if (current != null) {
-                current.addAll(reads);
-            }
-        }
+        processFrameFields(readBits, methodsPacked, "read", METHOD_FRAME_READS);
     }
 
     public static void addMethodWriteFieldsPacked(int writeBits, String methodsPacked) {
+        processFrameFields(writeBits, methodsPacked, "write", METHOD_FRAME_WRITES);
+    }
+
+    private static void processFrameFields(int writeBits, String methodsPacked, String usage, Map<String, Set<FrameField>> methodFrameWrites) {
         Set<FrameField> writes = FrameField.unpack(writeBits);
 
-        if (DEBUG) LOG.debug("Adding scope-aware method names: {} for {}", writes, methodsPacked);
+        boolean needsFrame = FrameField.needsFrame(writeBits);
+        boolean needsScope = FrameField.needsScope(writeBits);
 
-        String[] names = Helpers.SEMICOLON_PATTERN.split(methodsPacked);
+        if (DEBUG) LOG.debug("Adding method fields for {}: {} for {}", usage, writes, methodsPacked);
 
-        if (FrameField.needsFrame(writeBits)) FRAME_AWARE_METHODS.addAll(Arrays.asList(names));
-        if (FrameField.needsScope(writeBits)) SCOPE_AWARE_METHODS.addAll(Arrays.asList(names));
+        if (writes.size() > 0) {
+            String[] names = Helpers.SEMICOLON_PATTERN.split(methodsPacked);
+            List<String> namesList = Arrays.asList(names);
 
-        for (String name : names) {
-            Set<FrameField> current = METHOD_FRAME_WRITES.putIfAbsent(name, writes);
+            addAwareness(needsFrame, needsScope, namesList);
 
-            if (current != null) {
-                current.addAll(writes);
-            }
+            addFieldAccesses(methodFrameWrites, names, writes);
         }
+    }
+
+    private static void addFieldAccesses(Map<String, Set<FrameField>> methodFrameWrites, String[] names, Set<FrameField> writes) {
+        for (String name : names) {
+            methodFrameWrites.compute(
+                    name,
+                    (key, cur) -> cur == null ? writes : concat(cur.stream(), writes.stream()).collect(toSet()));
+        }
+    }
+
+    private static void addAwareness(boolean needsFrame, boolean needsScope, List<String> namesList) {
+        if (needsFrame) FRAME_AWARE_METHODS.addAll(namesList);
+        if (needsScope) SCOPE_AWARE_METHODS.addAll(namesList);
     }
 
     public static void addMethodReadFields(String name, FrameField[] reads) {
