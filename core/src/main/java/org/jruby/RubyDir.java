@@ -355,6 +355,17 @@ public class RubyDir extends RubyObject {
     }
 
     /**
+     * Returns an array containing all of the filenames except for "." and ".."
+     * in the given directory.
+     */
+    @JRubyMethod(name = "children", meta = true)
+    public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        RubyArray entries = entries19(context, recv, arg);
+        entries.removeIf(f -> f.equals(".") || f.equals(".."));
+        return entries;
+    }
+
+    /**
      * Deletes the directory specified by <code>path</code>.  The directory must
      * be empty.
      */
