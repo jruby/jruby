@@ -7,7 +7,6 @@ exclude :test_inspect, "fails since an alias-ed method does not distinguish owne
 exclude :test_hash, "won't pass since Array#map is not a Array#collect alias as in MRI"
 exclude :test_orphan_callee, "needs investigation"
 exclude :test_prepended_public_zsuper, "2.4 fix/change to prepend + method + super_method (#4687)"
-exclude :test_singleton_method, "needs investigation"
 exclude :test_splat_long_array, "passes locally but fails on travis OOME"
 exclude :test_super_method_removed, "finds super method when super method has been undef (#2155)"
 exclude :test_to_proc_binding, "NullPointerException in parser"
