@@ -4,3 +4,6 @@ fails:Module#refine for methods accesses indirectly is honored by Kernel#send
 fails:Module#refine for methods accesses indirectly is honored by BasicObject#__send__
 fails:Module#refine for methods accesses indirectly is honored by Symbol#to_proc
 fails:Module#refine module inclusion activates all refinements from all ancestors
+fails:Module#refine for methods accessed indirectly is honored by Kernel#send
+fails:Module#refine for methods accessed indirectly is honored by BasicObject#__send__
+fails:Module#refine for methods accessed indirectly is honored by Symbol#to_proc
