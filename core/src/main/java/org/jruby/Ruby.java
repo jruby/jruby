@@ -1610,7 +1610,9 @@ public final class Ruby implements Constantizable {
             fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
         }
         concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
-        keyError = defineClassIfAllowed("KeyError", indexError);
+        if (profile.allowClass("KeyError")) {
+            keyError = RubyKeyError.createKeyErrorClass(this, indexError);
+        }
 
         mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
 
@@ -3747,8 +3749,9 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getSystemCallError(), message);
     }
 
-    public RaiseException newKeyError(String message) {
-        return newRaiseException(getKeyError(), message);
+    public RaiseException newKeyError(String message, IRubyObject recv, IRubyObject key) {
+        RubyException err = new RubyKeyError(this, getKeyError(), message, recv, key);
+        return new RaiseException(err);
     }
 
     public RaiseException newErrnoEINTRError() {

@@ -151,8 +151,8 @@ public class Sprintf {
             throw runtime.newArgumentError(message);
         }
 
-        void raiseKeyError(String message) {
-            throw runtime.newKeyError(message);
+        void raiseKeyError(String message, IRubyObject recv, IRubyObject key) {
+            throw runtime.newKeyError(message, recv, key);
         }
 
         void warn(ID id, String message) {
@@ -179,12 +179,13 @@ public class Sprintf {
             if (object == null) {
                 object = rubyHash.getIfNone();
                 if (object == RubyBasicObject.UNDEF) {
-                    raiseKeyError("key" + startDelim + RubyString.newString(runtime, name) + endDelim + " not found");
+                    RubyString nameStr = RubyString.newString(runtime, name);
+                    raiseKeyError("key" + startDelim + nameStr + endDelim + " not found", rubyHash, nameStr);
                 } else if (rubyHash.hasDefaultProc()) {
                     object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                 }
 
-                if (object.isNil()) throw runtime.newKeyError("key" + startDelim + nameSym + endDelim + " not found");
+                if (object.isNil()) throw runtime.newKeyError("key" + startDelim + nameSym + endDelim + " not found", rubyHash, nameSym);
             }
 
             return object;
@@ -265,13 +266,14 @@ public class Sprintf {
                 if (object == null) {
                     object = rubyHash.getIfNone();
                     if (object == RubyBasicObject.UNDEF) {
-                        raiseKeyError("key<" + name + "> not found");
+                        RubyString nameStr = RubyString.newString(runtime, name);
+                        raiseKeyError("key<" + name + "> not found", rubyHash, nameStr);
                     } else if (rubyHash.hasDefaultProc()) {
                         object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                     }
 
                     if (object.isNil()) {
-                        throw runtime.newKeyError("key " + nameSym + " not found");
+                        throw runtime.newKeyError("key " + nameSym + " not found", rubyHash, nameSym);
                     }
                 }
 
