@@ -1596,7 +1596,7 @@ public final class Ruby implements Constantizable {
         syntaxError = defineClassIfAllowed("SyntaxError", scriptError);
         loadError = defineClassIfAllowed("LoadError", scriptError);
         notImplementedError = defineClassIfAllowed("NotImplementedError", scriptError);
-        securityError = defineClassIfAllowed("SecurityError", standardError);
+        securityError = defineClassIfAllowed("SecurityError", exceptionClass);
         noMemoryError = defineClassIfAllowed("NoMemoryError", exceptionClass);
         regexpError = defineClassIfAllowed("RegexpError", standardError);
         interruptedRegexpError = defineClassIfAllowed("InterruptedRegexpError", regexpError); // Proposal to RubyCommons for interrupting Regexps
