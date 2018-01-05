@@ -1114,7 +1114,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             }
 
-            return runtime.newString(realPath);
+            return RubyString.newString(runtime, realPath, runtime.getEncodingService().getFileSystemEncoding());
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }

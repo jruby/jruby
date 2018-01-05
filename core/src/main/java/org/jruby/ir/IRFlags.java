@@ -81,4 +81,18 @@ public enum IRFlags {
                     REQUIRES_CLASS,
                     REQUIRES_FILENAME,
                     REQUIRES_SCOPE);
+
+
+    public static final EnumSet<IRFlags> REQUIRE_ALL_FRAME_EXCEPT_SCOPE =
+            EnumSet.of(
+                    REQUIRES_LASTLINE,
+                    REQUIRES_BACKREF,
+                    REQUIRES_VISIBILITY,
+                    REQUIRES_BLOCK,
+                    REQUIRES_SELF,
+                    REQUIRES_METHODNAME,
+                    REQUIRES_LINE,
+                    REQUIRES_CLASS,
+                    REQUIRES_FILENAME,
+                    REQUIRES_SCOPE);
 }

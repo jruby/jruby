@@ -40,6 +40,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -164,22 +166,11 @@ public class AnnotationBinder extends AbstractProcessor {
             int methodCount = 0;
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
-                if (anno == null) {
-                    continue;
-                }
+                if (anno == null) continue;
+
                 methodCount++;
 
-                // warn if the method raises any exceptions (JRUBY-4494)
-                if (method.getThrownTypes().size() != 0) {
-                    System.err.print("Method " + cd.toString() + "." + method.toString() + " should not throw exceptions: ");
-                    boolean comma = false;
-                    for (TypeMirror thrownType : method.getThrownTypes()) {
-                        if (comma) System.err.print(", ");
-                        System.err.print(thrownType);
-                        comma = true;
-                    }
-                    System.err.print("\n");
-                }
+                checkForThrows(cd, method);
 
                 CharSequence name = anno.name().length == 0 ? method.getSimpleName() : anno.name()[0];
 
@@ -258,23 +249,10 @@ public class AnnotationBinder extends AbstractProcessor {
             // write out a static initializer for frame names, so it only fires once
             out.println("    static {");
 
-            if (!readGroups.isEmpty()) {
-                for (Map.Entry<Set<FrameField>, List<String>> reads : readGroups.entrySet()) {
-                    Set<FrameField> key = reads.getKey();
-                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
-
-                    out.println("        MethodIndex.addMethodReadFieldsPacked(" + FrameField.pack(frameFields) + ", \"" + join(reads.getValue()) + "\");");
-                }
-            }
-
-            if (!writeGroups.isEmpty()) {
-                for (Map.Entry<Set<FrameField>, List<String>> writes : writeGroups.entrySet()) {
-                    Set<FrameField> key = writes.getKey();
-                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
-
-                    out.println("        MethodIndex.addMethodWriteFieldsPacked(" + FrameField.pack(frameFields) + ", \"" + join(writes.getValue()) + "\");");
-                }
-            }
+            populateMethodIndex(readGroups,
+                    (bits, names) -> emitIndexCode(bits, names, "        MethodIndex.addMethodReadFieldsPacked(%d, \"%s\");"));
+            populateMethodIndex(writeGroups,
+                    (bits, names) -> emitIndexCode(bits, names, "        MethodIndex.addMethodWriteFieldsPacked(%d, \"%s\");"));
 
             out.println("    }");
 
@@ -290,6 +268,24 @@ public class AnnotationBinder extends AbstractProcessor {
         catch (IOException ex) {
             ex.printStackTrace(System.err);
             System.exit(1);
+        }
+    }
+
+    public void emitIndexCode(int bits, String names, String format) {
+        out.println(String.format(format, bits, names));
+    }
+
+    public static void populateMethodIndex(Map<Set<FrameField>, List<String>> accessGroups, BiConsumer<Integer, String> action) {
+        if (!accessGroups.isEmpty()) {
+            for (Map.Entry<Set<FrameField>, List<String>> accessEntry : accessGroups.entrySet()) {
+                Set<FrameField> reads = accessEntry.getKey();
+                List<String> names = accessEntry.getValue();
+
+                int bits = FrameField.pack(reads.stream().toArray(n -> new FrameField[n]));
+                String namesJoined = names.stream().collect(Collectors.joining(";"));
+
+                action.accept(bits, namesJoined);
+            }
         }
     }
 
@@ -543,6 +539,20 @@ public class AnnotationBinder extends AbstractProcessor {
             for (String alias : aliases) {
                 out.println("        " + classVar + ".defineAlias(\"" + alias + "\", \"" + baseName + "\");");
             }
+        }
+    }
+
+    public static void checkForThrows(TypeElement cd, ExecutableElement method) {
+        // warn if the method raises any exceptions (JRUBY-4494)
+        if (method.getThrownTypes().size() != 0) {
+            System.err.print("Method " + cd.toString() + "." + method.toString() + " should not throw exceptions: ");
+            boolean comma = false;
+            for (TypeMirror thrownType : method.getThrownTypes()) {
+                if (comma) System.err.print(", ");
+                System.err.print(thrownType);
+                comma = true;
+            }
+            System.err.print("\n");
         }
     }
 }

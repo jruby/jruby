@@ -59,6 +59,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jcodings.Encoding;
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
@@ -71,14 +72,11 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CacheableMethod;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
-import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
@@ -973,7 +971,9 @@ public class RubyModule extends RubyObject {
     public static final class MethodClumper {
         private HashMap<String, List<JavaMethodDescriptor>> annotatedMethods;
         private HashMap<String, List<JavaMethodDescriptor>> staticAnnotatedMethods;
-        // final HashMap<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<>();
+
+        public Map<Set<FrameField>, List<String>> readGroups = Collections.EMPTY_MAP;
+        public Map<Set<FrameField>, List<String>> writeGroups = Collections.EMPTY_MAP;
 
         public void clump(final Class cls) {
             Method[] declaredMethods = Initializer.DECLARED_METHODS.get(cls);
@@ -989,7 +989,6 @@ public class RubyModule extends RubyObject {
 
                 String name = anno.name().length == 0 ? method.getName() : anno.name()[0];
 
-                List<JavaMethodDescriptor> methodDescs;
                 Map<String, List<JavaMethodDescriptor>> methodsHash;
                 if (desc.isStatic) {
                     if ( (methodsHash = staticAnnotatedMethods) == null ) {
@@ -1001,43 +1000,18 @@ public class RubyModule extends RubyObject {
                     }
                 }
 
-                // add to specific
-                methodDescs = methodsHash.get(name);
+                List<JavaMethodDescriptor> methodDescs = methodsHash.get(name);
                 if (methodDescs == null) {
-                    // optimize for most methods mapping to one method for a given name :
-                    methodsHash.put(name, Collections.singletonList(desc));
-                }
-                else {
-                    CompatVersion oldCompat = methodDescs.get(0).anno.compat();
-                    CompatVersion newCompat = desc.anno.compat();
-
-                    int comparison = newCompat.compareTo(oldCompat);
-                    if (comparison == 1) {
-                        // new method's compat is higher than old method's, so we throw old one away
-                        methodsHash.put(name, methodDescs = new ArrayList<>(2));
-                    } else if (comparison == 0) {
-                        // same compat version, proceed to adding additional method
-                    } else {
-                        // lower compat, skip this method
-                        continue;
-                    }
-
-                    if (methodDescs.getClass() != ArrayList.class) { // due singletonList
-                        ArrayList<JavaMethodDescriptor> newDescs = new ArrayList<>(4);
-                        newDescs.addAll(methodDescs);
-                        methodsHash.put(name, methodDescs = newDescs);
-                    }
-
-                    methodDescs.add(desc);
+                    methodsHash.put(name, methodDescs = new ArrayList(4));
                 }
 
-                // add to general
-                //methodDescs = allAnnotatedMethods.get(name);
-                //if (methodDescs == null) {
-                //    methodDescs = new ArrayList<JavaMethodDescriptor>();
-                //    allAnnotatedMethods.put(name, methodDescs);
-                //}
-                //methodDescs.add(desc);
+                methodDescs.add(desc);
+
+                // check for frame field reads or writes
+                if (anno.reads().length > 0 && readGroups == Collections.EMPTY_MAP) readGroups = new HashMap<>();
+                if (anno.writes().length > 0 && writeGroups == Collections.EMPTY_MAP) writeGroups = new HashMap<>();
+
+                AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getName().toString());
             }
         }
 
@@ -4480,19 +4454,6 @@ public class RubyModule extends RubyObject {
         JRubyMethod jrubyMethod = desc.anno;
         final String[] names = jrubyMethod.name();
         final String[] aliases = jrubyMethod.alias();
-        // check for frame field reads or writes
-        CallConfiguration needs = CallConfiguration.valueOf(AnnotationHelper.getCallerCallConfigNameByAnno(jrubyMethod));
-
-        if (needs.framing() == Framing.Full) {
-            Map<String, JRubyMethod> frameAwareMethods = new HashMap<>(4); // added to a Set - thus no need for another Set
-            AnnotationHelper.addMethodNamesToMap(frameAwareMethods, null, simpleName, names, aliases);
-            MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods.keySet());
-        }
-        if (needs.scoping() == Scoping.Full) {
-            Map<String, JRubyMethod> scopeAwareMethods = new HashMap<>(4); // added to a Set - thus no need for another Set
-            AnnotationHelper.addMethodNamesToMap(scopeAwareMethods, null, simpleName, names, aliases);
-            MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods.keySet());
-        }
 
         RubyModule singletonClass;
 

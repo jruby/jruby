@@ -229,19 +229,28 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             }
         }
 
-        // Kernel.local_variables inspects variables.
-        // and JRuby implementation uses dyn-scope to access the static-scope
-        // to output the local variables => we cannot strip dynscope in those cases.
-        // FIXME: We need to decouple static-scope and dyn-scope.
         String mname = getName();
-        if (mname.equals("local_variables")) {
-            modifiedScope = true;
-            flags.add(REQUIRES_DYNSCOPE);
-        } else if (potentiallySend(mname, argsCount)) {
+
+        if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
-            if (meth instanceof StringLiteral && "local_variables".equals(((StringLiteral)meth).getString())) {
+            if (meth instanceof StringLiteral) {
+                // This logic is intended to reduce the framing impact of send if we can
+                // statically determine the sent name and we know it does not need to be
+                // either framed or scoped. Previously it only did this logic for
+                // send(:local_variables).
+                String sendName = ((StringLiteral) meth).getString();
+                if (MethodIndex.SCOPE_AWARE_METHODS.contains(sendName)) {
+                    modifiedScope = true;
+                    flags.add(REQUIRES_DYNSCOPE);
+                }
+
+                if (MethodIndex.FRAME_AWARE_METHODS.contains(sendName)) {
+                    modifiedScope = true;
+                    flags.addAll(IRFlags.REQUIRE_ALL_FRAME_EXCEPT_SCOPE);
+                }
+            } else {
                 modifiedScope = true;
-                flags.add(REQUIRES_DYNSCOPE);
+                flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
             }
         }
 
@@ -257,10 +266,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private boolean setIRFlagsFromFrameFields(EnumSet<IRFlags> flags, Set<FrameField> frameFields) {
         boolean modifiedScope = false;
 
-        for (FrameField read : frameFields) {
+        for (FrameField field : frameFields) {
             modifiedScope = true;
 
-            switch (read) {
+            switch (field) {
                 case LASTLINE: flags.add(IRFlags.REQUIRES_LASTLINE); break;
                 case BACKREF: flags.add(IRFlags.REQUIRES_BACKREF); break;
                 case VISIBILITY: flags.add(IRFlags.REQUIRES_VISIBILITY); break;

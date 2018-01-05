@@ -68,8 +68,6 @@ import org.jruby.util.ByteList;
 
 import com.jcraft.jzlib.JZlib;
 
-import static org.jruby.CompatVersion.*;
-
 @JRubyModule(name="Zlib")
 public class RubyZlib {
     // version
