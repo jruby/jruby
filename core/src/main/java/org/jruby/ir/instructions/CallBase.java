@@ -229,14 +229,15 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             }
         }
 
-        // Kernel.local_variables inspects variables.
-        // and JRuby implementation uses dyn-scope to access the static-scope
-        // to output the local variables => we cannot strip dynscope in those cases.
-        // FIXME: We need to decouple static-scope and dyn-scope.
         String mname = getName();
+
         if (potentiallySend(mname, argsCount)) {
             Operand meth = getArg1();
             if (meth instanceof StringLiteral) {
+                // This logic is intended to reduce the framing impact of send if we can
+                // statically determine the sent name and we know it does not need to be
+                // either framed or scoped. Previously it only did this logic for
+                // send(:local_variables).
                 String sendName = ((StringLiteral) meth).getString();
                 if (MethodIndex.SCOPE_AWARE_METHODS.contains(sendName)) {
                     modifiedScope = true;
