@@ -184,17 +184,24 @@ class TestDir < Test::Unit::TestCase
     end
   end
 
-  def assert_entries(entries)
+  def assert_entries(entries, children_only = false)
     entries.sort!
-    assert_equal(%w(. ..) + ("a".."z").to_a, entries)
+    expected = ("a".."z").to_a
+    expected = %w(. ..) + expected unless children_only
+    assert_equal(expected, entries)
   end
 
   def test_entries
     assert_entries(Dir.open(@root) {|dir| dir.entries})
+    assert_entries(Dir.entries(@root).to_a)
   end
 
   def test_foreach
     assert_entries(Dir.foreach(@root).to_a)
+  end
+
+  def test_children
+    assert_entries(Dir.children(@root), true)
   end
 
   def test_dir_enc
