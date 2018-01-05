@@ -54,6 +54,12 @@ public class PrependedModule extends IncludedModule {
     }
 
     @Override
+    public void addMethod(String name, DynamicMethod method) {
+        super.addMethod(name, method);
+        method.setDefinedClass(origin);
+    }
+
+    @Override
     public boolean isPrepended() {
         return true;
     }
