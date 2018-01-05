@@ -248,6 +248,9 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                     modifiedScope = true;
                     flags.addAll(IRFlags.REQUIRE_ALL_FRAME_EXCEPT_SCOPE);
                 }
+            } else {
+                modifiedScope = true;
+                flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
             }
         }
 
