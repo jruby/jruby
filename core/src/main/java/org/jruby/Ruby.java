@@ -1439,6 +1439,16 @@ public final class Ruby implements Constantizable {
             setDefaultExternalEncoding(availableEncoding);
         }
 
+        // Filesystem should always have a value
+        if (Platform.IS_WINDOWS) {
+            encoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
+            Encoding filesystemEncoding = encodingService.loadEncoding(ByteList.create(encoding));
+            if (filesystemEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
+            setDefaultFilesystemEncoding(filesystemEncoding);
+        } else {
+            setDefaultFilesystemEncoding(getDefaultExternalEncoding());
+        }
+
         encoding = config.getInternalEncoding();
         if (encoding != null && !encoding.equals("")) {
             Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
@@ -2797,6 +2807,14 @@ public final class Ruby implements Constantizable {
 
     public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
         this.defaultExternalEncoding = defaultExternalEncoding;
+    }
+
+    public Encoding getDefaultFilesystemEncoding() {
+        return defaultFilesystemEncoding;
+    }
+
+    public void setDefaultFilesystemEncoding(Encoding defaultFilesystemEncoding) {
+        this.defaultFilesystemEncoding = defaultFilesystemEncoding;
     }
 
     /**
@@ -5006,7 +5024,7 @@ public final class Ruby implements Constantizable {
 
     private LoadService loadService;
 
-    private Encoding defaultInternalEncoding, defaultExternalEncoding;
+    private Encoding defaultInternalEncoding, defaultExternalEncoding, defaultFilesystemEncoding;
     private EncodingService encodingService;
 
     private GlobalVariables globalVariables = new GlobalVariables(this);

@@ -442,17 +442,7 @@ public final class EncodingService {
             case LOCALE: return service.getLocaleEncoding();
             case EXTERNAL: return runtime.getDefaultExternalEncoding();
             case INTERNAL: return runtime.getDefaultInternalEncoding();
-            case FILESYSTEM:
-                if (Platform.IS_WINDOWS) {
-                    String fileEncoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
-                    try {
-                        return service.getEncodingFromString(fileEncoding);
-                    } catch (RaiseException re) {
-                        runtime.getWarnings().warning("could not load encoding for file.encoding of " + fileEncoding + ", using default external");
-                        if (runtime.isDebug()) re.printStackTrace();
-                    }
-                }
-                return runtime.getDefaultExternalEncoding();
+            case FILESYSTEM: return runtime.getDefaultFilesystemEncoding();
             default:
                 throw new RuntimeException("invalid SpecialEncoding: " + this);
             }
