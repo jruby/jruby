@@ -30,12 +30,14 @@ package org.jruby.anno;
 
 import java.util.List;
 import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Visibility;
 
 public abstract class TypePopulator {
@@ -88,6 +90,11 @@ public abstract class TypePopulator {
             assert clazz == this.clazz : "populator for " + this.clazz + " used for " + clazz;
 
             // fallback on non-pregenerated logic
+
+            // populate method index; this is done statically in generated code
+            AnnotationBinder.populateMethodIndex(clumper.readGroups, MethodIndex::addMethodReadFieldsPacked);
+            AnnotationBinder.populateMethodIndex(clumper.writeGroups, MethodIndex::addMethodWriteFieldsPacked);
+
             final Ruby runtime = target.getRuntime();
             final MethodFactory methodFactory = MethodFactory.createFactory(runtime.getJRubyClassLoader());
 

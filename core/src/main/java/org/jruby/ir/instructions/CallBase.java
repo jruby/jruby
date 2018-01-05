@@ -262,10 +262,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private boolean setIRFlagsFromFrameFields(EnumSet<IRFlags> flags, Set<FrameField> frameFields) {
         boolean modifiedScope = false;
 
-        for (FrameField read : frameFields) {
+        for (FrameField field : frameFields) {
             modifiedScope = true;
 
-            switch (read) {
+            switch (field) {
                 case LASTLINE: flags.add(IRFlags.REQUIRES_LASTLINE); break;
                 case BACKREF: flags.add(IRFlags.REQUIRES_BACKREF); break;
                 case VISIBILITY: flags.add(IRFlags.REQUIRES_VISIBILITY); break;

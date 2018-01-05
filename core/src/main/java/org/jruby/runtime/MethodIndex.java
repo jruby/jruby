@@ -235,21 +235,21 @@ public class MethodIndex {
         processFrameFields(writeBits, methodsPacked, "write", METHOD_FRAME_WRITES);
     }
 
-    private static void processFrameFields(int writeBits, String methodsPacked, String usage, Map<String, Set<FrameField>> methodFrameWrites) {
-        Set<FrameField> writes = FrameField.unpack(writeBits);
+    private static void processFrameFields(int bits, String methodNames, String usage, Map<String, Set<FrameField>> methodFrameAccesses) {
+        Set<FrameField> writes = FrameField.unpack(bits);
 
-        boolean needsFrame = FrameField.needsFrame(writeBits);
-        boolean needsScope = FrameField.needsScope(writeBits);
+        boolean needsFrame = FrameField.needsFrame(bits);
+        boolean needsScope = FrameField.needsScope(bits);
 
-        if (DEBUG) LOG.debug("Adding method fields for {}: {} for {}", usage, writes, methodsPacked);
+        if (DEBUG) LOG.debug("Adding method fields for {}: {} for {}", usage, writes, methodNames);
 
         if (writes.size() > 0) {
-            String[] names = Helpers.SEMICOLON_PATTERN.split(methodsPacked);
+            String[] names = Helpers.SEMICOLON_PATTERN.split(methodNames);
             List<String> namesList = Arrays.asList(names);
 
             addAwareness(needsFrame, needsScope, namesList);
 
-            addFieldAccesses(methodFrameWrites, names, writes);
+            addFieldAccesses(methodFrameAccesses, names, writes);
         }
     }
 

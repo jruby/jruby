@@ -47,7 +47,6 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -181,8 +180,8 @@ public class IndyBinder extends AbstractProcessor {
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<>();
 
-            Map<Set<FrameField>, List<String>> readGroups = null; // lazy init - there's usually none
-            Map<Set<FrameField>, List<String>> writeGroups = null; // lazy init - there's usually none
+            Map<Set<FrameField>, List<String>> readGroups = new HashMap<>();
+            Map<Set<FrameField>, List<String>> writeGroups = new HashMap<>();
 
             int methodCount = 0;
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
@@ -191,17 +190,7 @@ public class IndyBinder extends AbstractProcessor {
 
                 methodCount++;
 
-                // warn if the method raises any exceptions (JRUBY-4494)
-                if (method.getThrownTypes().size() != 0) {
-                    System.err.print("Method " + cd.toString() + "." + method.toString() + " should not throw exceptions: ");
-                    boolean comma = false;
-                    for (TypeMirror thrownType : method.getThrownTypes()) {
-                        if (comma) System.err.print(", ");
-                        System.err.print(thrownType);
-                        comma = true;
-                    }
-                    System.err.print("\n");
-                }
+                AnnotationBinder.checkForThrows(cd, method);
 
                 final String[] names = anno.name();
                 CharSequence name = names.length == 0 ? method.getSimpleName() : names[0];
@@ -220,7 +209,6 @@ public class IndyBinder extends AbstractProcessor {
 
                 methodDescs.add(method);
 
-                // check for caller frame field reads or writes
                 AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getSimpleName().toString());
             }
 
@@ -286,41 +274,8 @@ public class IndyBinder extends AbstractProcessor {
 
             mv.start();
 
-            if (!readGroups.isEmpty()) {
-                for (Map.Entry<Set<FrameField>, List<String>> reads : readGroups.entrySet()) {
-                    Set<FrameField> key = reads.getKey();
-                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
-
-                    mv.pushInt(FrameField.pack(frameFields));
-
-                    StringBuilder builder = new StringBuilder();
-                    for (CharSequence name : reads.getValue()) {
-                        if (builder.length() > 0) builder.append(";");
-                        builder.append(name);
-                    }
-
-                    mv.ldc(builder.toString());
-                    mv.invokestatic("org/jruby/runtime/MethodIndex", "addMethodReadFields", "(ILjava/lang/String;)V");
-                }
-            }
-            if (!writeGroups.isEmpty()) {
-                for (Map.Entry<Set<FrameField>, List<String>> writes : readGroups.entrySet()) {
-                    Set<FrameField> key = writes.getKey();
-                    FrameField[] frameFields = key.toArray(new FrameField[key.size()]);
-
-                    mv.pushInt(FrameField.pack(frameFields));
-
-                    StringBuilder builder = new StringBuilder();
-                    for (CharSequence name : writes.getValue()) {
-                        if (builder.length() > 0) builder.append(";");
-                        builder.append(name);
-                    }
-
-                    mv.ldc(builder.toString());
-
-                    mv.invokestatic("org/jruby/runtime/MethodIndex", "addMethodWriteFields", "(I[Ljava/lang/String;)V");
-                }
-            }
+            AnnotationBinder.populateMethodIndex(readGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodReadFieldsPacked"));
+            AnnotationBinder.populateMethodIndex(writeGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodWriteFieldsPacked"));
 
             mv.voidreturn();
             mv.end();
@@ -336,6 +291,12 @@ public class IndyBinder extends AbstractProcessor {
             ex.printStackTrace(System.err);
             System.exit(1);
         }
+    }
+
+    public void emitIndexCode(Integer bits, String names, String methodName) {
+        mv.pushInt(bits);
+        mv.ldc(names);
+        mv.invokestatic("org/jruby/runtime/MethodIndex", methodName, "(ILjava/lang/String;)V");
     }
 
     public void processMethodDeclarations(Map<CharSequence, List<ExecutableElement>> declarations) {
