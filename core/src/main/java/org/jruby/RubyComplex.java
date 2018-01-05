@@ -995,7 +995,7 @@ public class RubyComplex extends RubyNumeric {
         }
 
         if (magnitude instanceof RubyFloat) {
-            return context.runtime.newBoolean(!((RubyFloat) magnitude).infinite_p().isTrue());
+            return context.runtime.newBoolean(((RubyFloat) magnitude).finite_p().isTrue());
         }
 
         return sites(context).finite.call(context, magnitude, magnitude);
