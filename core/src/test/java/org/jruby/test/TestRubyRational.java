@@ -26,16 +26,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
-import java.util.ArrayList;
-
 import junit.framework.TestCase;
-import org.jruby.CompatVersion;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFloat;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyRational;
-import org.jruby.RubySymbol;
 
 public class TestRubyRational extends TestCase {
     private Ruby runtime;

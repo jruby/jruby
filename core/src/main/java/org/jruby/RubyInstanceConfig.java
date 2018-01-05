@@ -608,15 +608,6 @@ public class RubyInstanceConfig {
         return input;
     }
 
-    @Deprecated
-    public CompatVersion getCompatVersion() {
-        return CompatVersion.RUBY2_1;
-    }
-
-    @Deprecated
-    public void setCompatVersion(CompatVersion compatVersion) {
-    }
-
     public void setOutput(PrintStream newOutput) {
         output = newOutput;
     }
@@ -2033,5 +2024,14 @@ public class RubyInstanceConfig {
     @Deprecated
     public boolean getIPv4Preferred() {
         return Options.PREFER_IPV4.load();
+    }
+
+    @Deprecated
+    public CompatVersion getCompatVersion() {
+        return CompatVersion.RUBY2_1;
+    }
+
+    @Deprecated
+    public void setCompatVersion(CompatVersion compatVersion) {
     }
 }
