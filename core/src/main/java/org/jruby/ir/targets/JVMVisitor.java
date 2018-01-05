@@ -1692,12 +1692,31 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PushMethodBindingInstr(PushMethodBindingInstr pushbindinginstr) {
-        jvmMethod().loadContext();
-        jvmMethod().loadStaticScope();
-        jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
-        jvmAdapter().dup();
-        jvmStoreLocal(DYNAMIC_SCOPE);
-        jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void pushScope(org.jruby.runtime.DynamicScope)"));
+        IRScope scope = jvm.methodData().scope;
+        if (scope.isScriptScope() &&
+                scope.getTopLevelScope() != null) {
+            // script scope, so we don't push a new scope; instead we push the top-level scope it provides
+            jvmMethod().loadContext();
+
+            jvmMethod().loadStaticScope();
+            jvmAdapter().invokevirtual(p(StaticScope.class), "getScope", sig(IRScope.class));
+            jvmAdapter().invokevirtual(p(IRScope.class), "getTopLevelScope", sig(DynamicScope.class));
+
+            jvmAdapter().dup();
+            jvmStoreLocal(DYNAMIC_SCOPE);
+
+            jvmAdapter().dup_x1();
+            jvmAdapter().invokevirtual(p(DynamicScope.class), "growIfNeeded", sig(void.class));
+
+            jvmAdapter().invokevirtual(p(ThreadContext.class), "preScopedBody", sig(void.class, DynamicScope.class));
+        } else {
+            jvmMethod().loadContext();
+            jvmMethod().loadStaticScope();
+            jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
+            jvmAdapter().dup();
+            jvmStoreLocal(DYNAMIC_SCOPE);
+            jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void pushScope(org.jruby.runtime.DynamicScope)"));
+        }
     }
 
     @Override
