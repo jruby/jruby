@@ -176,7 +176,9 @@ public class RubyHash extends RubyObject implements Map {
                         continue;
                     }
                     switch(((RubyArray)v).getLength()) {
-                    case 2:
+                    default:
+                        throw runtime.newArgumentError("invalid number of elements (" + ((RubyArray)v).getLength() + " for 1..2)");
+                        case 2:
                         val = ((RubyArray)v).entry(1);
                     case 1:
                         key = ((RubyArray)v).entry(0);
