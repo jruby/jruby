@@ -1688,11 +1688,29 @@ public class RubyHash extends RubyObject implements Map {
         return block.isGiven() ? delete_ifInternal(context, block) : enumeratorizeWithSize(context, this, "delete_if", enumSizeFn());
     }
 
+    private static final class RejectVisitor extends VisitorWithState<Block> {
+        final RubyHash result;
+        RejectVisitor(RubyHash result) {
+            this.result = result;
+        }
+
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
+            if (!block.yieldArray(context, RubyArray.newArray(context.runtime, key, value), null).isTrue()) {
+                result.fastASet(key, value);
+            }
+        }
+    }
+
     /** rb_hash_reject
      *
      */
     public RubyHash rejectInternal(ThreadContext context, Block block) {
-        return ((RubyHash)dup()).delete_ifInternal(context, block);
+        final RubyHash result = newHash(context.runtime);
+
+        iteratorVisitAll(context, new RejectVisitor(result), block);
+
+        return result;
     }
 
     @JRubyMethod
