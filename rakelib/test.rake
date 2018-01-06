@@ -90,7 +90,7 @@ namespace :test do
     # We disable compressed oops because it can push native heap allocations beyond rlimit,
     # as in https://gist.github.com/headius/88d7f5449049794e286aab364de9830d.
     # See https://bugs.openjdk.java.net/browse/JDK-8187709.
-    java_opts = "#{ENV['JAVA_OPTS']} -XX:-UseCompressedOops"
+    java_opts = "#{ENV['JAVA_OPTS']} -XX:-UseCompressedOops".gsub(/-XX:CompressedClassSpaceSize=\d+\w+\s*/, "")
 
     task :int do
       ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -X-C"
