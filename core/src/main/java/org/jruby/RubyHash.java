@@ -165,10 +165,14 @@ public class RubyHash extends RubyObject implements Map {
                 hash = (RubyHash)klass.allocate();
                 RubyArray arr = (RubyArray)tmp;
                 for(int i = 0, j = arr.getLength(); i<j; i++) {
-                    IRubyObject v = TypeConverter.convertToTypeWithCheck(arr.entry(i), runtime.getArray(), "to_ary");
+                    IRubyObject e = arr.entry(i);
+                    IRubyObject v = TypeConverter.convertToTypeWithCheck(e, runtime.getArray(), "to_ary");
                     IRubyObject key;
                     IRubyObject val = runtime.getNil();
                     if(v.isNil()) {
+                        runtime.getWarnings().warn("wrong element type " + e.getMetaClass() + " at " + i + " (expected array)");
+                        runtime.getWarnings().warn("ignoring wrong elements is deprecated, remove them explicitly");
+                        runtime.getWarnings().warn("this causes ArgumentError in the next release");
                         continue;
                     }
                     switch(((RubyArray)v).getLength()) {
