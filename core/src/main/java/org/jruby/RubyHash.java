@@ -1644,6 +1644,23 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
+
+    /** rb_hash_slice
+     *
+     */
+    @JRubyMethod(name = "slice", rest = true)
+    public RubyHash slice(final ThreadContext context, final IRubyObject[] args) {
+        RubyHash result = newHash(context.runtime);
+
+        for (int i = 0; i < args.length; i++) {
+            IRubyObject key = args[i];
+            IRubyObject value = this.internalGet(key);
+            if (value != null) result.op_aset(key, value);
+        }
+
+        return result;
+    }
+
     private static class SelectVisitor extends VisitorWithState<Block> {
         final RubyHash result;
         SelectVisitor(RubyHash result) {
