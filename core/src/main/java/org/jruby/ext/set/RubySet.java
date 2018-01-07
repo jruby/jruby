@@ -1080,7 +1080,7 @@ public class RubySet extends RubyObject implements Set {
 
     // Returns a string containing a human-readable representation of the set.
     // e.g. "#<Set: {element1, element2, ...}>"
-    @JRubyMethod(name = "inspect")
+    @JRubyMethod(name = "inspect", alias = "to_s")
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
 
