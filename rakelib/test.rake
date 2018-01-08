@@ -90,7 +90,9 @@ namespace :test do
     # We disable compressed oops because it can push native heap allocations beyond rlimit,
     # as in https://gist.github.com/headius/88d7f5449049794e286aab364de9830d.
     # See https://bugs.openjdk.java.net/browse/JDK-8187709.
-    java_opts = "#{ENV['JAVA_OPTS']} -XX:-UseCompressedOops"
+    # Signals are disabled to help trap-related tests succeed more reliably.
+    # See test/mri/ruby/test_signal.rb in test_ignored_interrupt which uses TRAP.
+    java_opts = "#{ENV['JAVA_OPTS']} -XX:-UseCompressedOops -Xrs"
 
     task :int do
       ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -X-C"
