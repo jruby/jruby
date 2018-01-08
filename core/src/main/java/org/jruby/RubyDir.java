@@ -216,8 +216,13 @@ public class RubyDir extends RubyObject {
 
         if(args.length == 3) {
             flags = RubyNumeric.num2int(args[1]);
-            IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[2], "base");
-            base = rets[0].convertToString().toString();
+            IRubyObject tmp = TypeConverter.checkHashType(runtime, args[2]);
+            if (tmp.isNil()){
+                throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for 1..2)");
+            } else {
+                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[2], "base");
+                base = rets[0].convertToString().toString();
+            }
         } else if(args.length == 2) {
             IRubyObject tmp = TypeConverter.checkHashType(runtime, args[1]);
             if(tmp.isNil()){
