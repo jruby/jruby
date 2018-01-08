@@ -914,13 +914,13 @@ public abstract class LexingCommon {
     }
 
     protected boolean onMagicComment(String name, ByteList value) {
-        if ("coding".equals(name) || "encoding".equals(name)) {
+        if ("coding".equalsIgnoreCase(name) || "encoding".equalsIgnoreCase(name)) {
             magicCommentEncoding(value);
             return true;
-        } else if ("frozen_string_literal".equals(name)) {
+        } else if ("frozen_string_literal".equalsIgnoreCase(name)) {
             setCompileOptionFlag(name, value);
             return true;
-        } else if ("warn_indent".equals(name)) {
+        } else if ("warn_indent".equalsIgnoreCase(name)) {
             setTokenInfo(name, value);
             return true;
         }
