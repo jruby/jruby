@@ -1692,46 +1692,24 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void PushMethodBindingInstr(PushMethodBindingInstr pushbindinginstr) {
         IRScope scope = jvm.methodData().scope;
-        org.objectweb.asm.Label done = new org.objectweb.asm.Label();
 
         if (scope.isScriptScope() &&
                 scope.getRootLexicalScope() != null) {
-
-            org.objectweb.asm.Label noTopLevel = new org.objectweb.asm.Label();
-
             // script scope, so we don't push a new scope; instead we push the top-level scope it provides
             jvmMethod().loadContext();
-
             jvmMethod().loadStaticScope();
-            jvmAdapter().invokevirtual(p(StaticScope.class), "getIRScope", sig(IRScope.class));
-            jvmAdapter().checkcast(p(IRScriptBody.class));
-            jvmAdapter().invokevirtual(p(IRScriptBody.class), "getScriptDynamicScope", sig(DynamicScope.class));
-
-            jvmAdapter().dup();
-            jvmAdapter().ifnull(noTopLevel);
-
-            jvmAdapter().dup();
+            jvmMethod().invokeIRHelper("prepareScriptScope", sig(DynamicScope.class, ThreadContext.class, StaticScope.class));
             jvmStoreLocal(DYNAMIC_SCOPE);
 
+            return;
+        } else {
+            jvmMethod().loadContext();
+            jvmMethod().loadStaticScope();
+            jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
             jvmAdapter().dup();
-            jvmAdapter().invokevirtual(p(DynamicScope.class), "growIfNeeded", sig(void.class));
-
-            jvmAdapter().invokevirtual(p(ThreadContext.class), "preScopedBody", sig(void.class, DynamicScope.class));
-
-            jvmAdapter().go_to(done);
-
-            jvmAdapter().label(noTopLevel);
-            jvmAdapter().pop2(); // context, dynscope
+            jvmStoreLocal(DYNAMIC_SCOPE);
+            jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void pushScope(org.jruby.runtime.DynamicScope)"));
         }
-
-        jvmMethod().loadContext();
-        jvmMethod().loadStaticScope();
-        jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
-        jvmAdapter().dup();
-        jvmStoreLocal(DYNAMIC_SCOPE);
-        jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void pushScope(org.jruby.runtime.DynamicScope)"));
-
-        jvmAdapter().label(done);
     }
 
     @Override

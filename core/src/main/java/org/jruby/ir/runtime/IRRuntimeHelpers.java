@@ -19,6 +19,7 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
+import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
 import org.jruby.ir.Tuple;
@@ -566,6 +567,25 @@ public class IRRuntimeHelpers {
             keywordArgs.visitAll(context, visitor, scope);
             visitor.raiseIfError(context);
         }
+    }
+
+    @JIT
+    public static DynamicScope prepareScriptScope(ThreadContext context, StaticScope scope) {
+        IRScope irScope = scope.getIRScope();
+
+        if (irScope.isScriptScope()) {
+            DynamicScope tlbScope = ((IRScriptBody) irScope).getScriptDynamicScope();
+            if (tlbScope != null) {
+                context.preScopedBody(tlbScope);
+                tlbScope.growIfNeeded();
+                return tlbScope;
+            }
+        }
+
+        DynamicScope dynScope = DynamicScope.newDynamicScope(scope);
+        context.pushScope(dynScope);
+
+        return dynScope;
     }
 
     private static class InvalidKeyException extends RuntimeException {}

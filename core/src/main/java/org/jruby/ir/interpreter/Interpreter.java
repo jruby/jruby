@@ -84,13 +84,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
 
         scope.setModule(currModule);
-        DynamicScope tlbScope = irScope.getScriptDynamicScope();
-        if (tlbScope == null) {
-            context.preMethodScopeOnly(scope);
-        } else {
-            context.preScopedBody(tlbScope);
-            tlbScope.growIfNeeded();
-        }
+
+        IRRuntimeHelpers.prepareScriptScope(context, scope);
+
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
