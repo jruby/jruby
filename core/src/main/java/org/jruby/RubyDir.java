@@ -63,6 +63,7 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.ast.util.ArgsUtil;
 
 /**
  * .The Ruby built-in class Dir.
@@ -214,16 +215,16 @@ public class RubyDir extends RubyObject {
         String dir, base = "";
 
         if(args.length == 3) {
-            RubyHash hash = (RubyHash) args[2];
-            base = (String) hash.get(context.runtime.newSymbol("base"));
             flags = RubyNumeric.num2int(args[1]);
+            IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[2], "base");
+            base = rets[0].convertToString().toString();
         } else if(args.length == 2) {
             IRubyObject tmp = TypeConverter.checkHashType(runtime, args[1]);
             if(tmp.isNil()){
               flags = RubyNumeric.num2int(args[1]);
             } else {
-              RubyHash hash = (RubyHash) args[1];
-              base = (String) hash.get(context.runtime.newSymbol("base"));
+              IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[1], "base");
+              base = rets[0].convertToString().toString();
             }
         }
 
