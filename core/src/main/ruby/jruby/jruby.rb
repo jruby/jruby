@@ -79,7 +79,7 @@ module JRuby
       end
 
       scope = org.jruby.ir.IRBuilder.build_root(manager, node).scope
-      scope.root_lexical_scope = node.scope
+      scope.script_dynamic_scope = node.scope
 
       scope
     end
