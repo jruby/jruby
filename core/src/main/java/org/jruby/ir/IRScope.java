@@ -344,11 +344,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setFileName(String filename) {
-        getTopLevelScope().setFileName(filename);
+        getRootLexicalScope().setFileName(filename);
     }
 
     public String getFileName() {
-        return getTopLevelScope().getFileName();
+        return getRootLexicalScope().getFileName();
     }
 
     public int getLineNumber() {
@@ -358,7 +358,7 @@ public abstract class IRScope implements ParseResult {
     /**
      * Returns the top level scope
      */
-    public IRScope getTopLevelScope() {
+    public IRScope getRootLexicalScope() {
         IRScope current = this;
 
         for (; current != null && !current.isScriptScope(); current = current.getLexicalParent()) {}

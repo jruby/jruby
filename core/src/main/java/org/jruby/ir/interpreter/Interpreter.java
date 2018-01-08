@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
@@ -85,7 +84,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
 
         scope.setModule(currModule);
-        DynamicScope tlbScope = irScope.getToplevelScope();
+        DynamicScope tlbScope = irScope.getScriptDynamicScope();
         if (tlbScope == null) {
             context.preMethodScopeOnly(scope);
         } else {

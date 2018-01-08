@@ -3473,7 +3473,7 @@ public class IRBuilder {
     }
 
     public Operand buildPostExe(PostExeNode postExeNode) {
-        IRScope topLevel = scope.getTopLevelScope();
+        IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
 
         IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), "_END_", true);
@@ -3489,7 +3489,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        IRScope topLevel = scope.getTopLevelScope();
+        IRScope topLevel = scope.getRootLexicalScope();
         IRClosure beginClosure = new IRFor(manager, scope, preExeNode.getLine(), topLevel.getStaticScope(),
                 Signature.from(preExeNode), "_BEGIN_");
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
