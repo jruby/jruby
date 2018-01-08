@@ -875,6 +875,12 @@ public class RubySet extends RubyObject implements Set {
         return context.runtime.getFalse();
     }
 
+    @JRubyMethod(name = "reset")
+    public IRubyObject reset(ThreadContext context) {
+        this.hash.rehash();
+        return this;
+    }
+
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         if ( other instanceof RubySet ) {
