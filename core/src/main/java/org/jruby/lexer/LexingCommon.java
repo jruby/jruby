@@ -907,19 +907,23 @@ public abstract class LexingCommon {
             String name = magicLine.subSequence(beg, end).toString().replace('-', '_');
             ByteList value = magicLine.makeShared(vbeg, vend - vbeg);
 
-            onMagicComment(name, value);
+            if (!onMagicComment(name, value)) return false;
         }
 
         return true;
     }
 
-    protected void onMagicComment(String name, ByteList value) {
+    protected boolean onMagicComment(String name, ByteList value) {
         if ("coding".equals(name) || "encoding".equals(name)) {
             magicCommentEncoding(value);
+            return true;
         } else if ("frozen_string_literal".equals(name)) {
             setCompileOptionFlag(name, value);
+            return true;
         } else if ("warn_indent".equals(name)) {
             setTokenInfo(name, value);
+            return true;
         }
+        return false;
     }
 }
