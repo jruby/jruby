@@ -1,7 +1,6 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.compiler.NotCompilableException;
@@ -1694,18 +1693,19 @@ public class JVMVisitor extends IRVisitor {
     public void PushMethodBindingInstr(PushMethodBindingInstr pushbindinginstr) {
         IRScope scope = jvm.methodData().scope;
         if (scope.isScriptScope() &&
-                scope.getTopLevelScope() != null) {
+                scope.getRootLexicalScope() != null) {
             // script scope, so we don't push a new scope; instead we push the top-level scope it provides
             jvmMethod().loadContext();
 
             jvmMethod().loadStaticScope();
-            jvmAdapter().invokevirtual(p(StaticScope.class), "getScope", sig(IRScope.class));
-            jvmAdapter().invokevirtual(p(IRScope.class), "getTopLevelScope", sig(DynamicScope.class));
+            jvmAdapter().invokevirtual(p(StaticScope.class), "getIRScope", sig(IRScope.class));
+            jvmAdapter().checkcast(p(IRScriptBody.class));
+            jvmAdapter().invokevirtual(p(IRScriptBody.class), "getScriptDynamicScope", sig(DynamicScope.class));
 
             jvmAdapter().dup();
             jvmStoreLocal(DYNAMIC_SCOPE);
 
-            jvmAdapter().dup_x1();
+            jvmAdapter().dup();
             jvmAdapter().invokevirtual(p(DynamicScope.class), "growIfNeeded", sig(void.class));
 
             jvmAdapter().invokevirtual(p(ThreadContext.class), "preScopedBody", sig(void.class, DynamicScope.class));
