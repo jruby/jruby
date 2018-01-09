@@ -86,33 +86,23 @@ namespace :test do
 
   namespace :mri do
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
-
-    # We disable compressed oops because it can push native heap allocations beyond rlimit,
-    # as in https://gist.github.com/headius/88d7f5449049794e286aab364de9830d.
-    # See https://bugs.openjdk.java.net/browse/JDK-8187709.
-    java_opts = "#{ENV['JAVA_OPTS']} -XX:-UseCompressedOops"
-
     task :int do
       ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -X-C"
-      ENV['JAVA_OPTS'] = java_opts
       ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
     end
 
     task :fullint do
       ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -X-C -Xjit.threshold=0 -Xjit.background=false"
-      ENV['JAVA_OPTS'] = java_opts
       ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
     end
 
     task :jit do
       ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -Xjit.threshold=0 -Xjit.background=false #{get_meta_size.call()}"
-      ENV['JAVA_OPTS'] = java_opts
       ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
     end
 
     task :aot do
       ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xbacktrace.style=mri -Xdebug.fullTrace -X+C -Xjit.background=false #{get_meta_size.call()}"
-      ENV['JAVA_OPTS'] = java_opts
       ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
     end
 
