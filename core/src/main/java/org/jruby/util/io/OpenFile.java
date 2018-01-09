@@ -838,6 +838,10 @@ public class OpenFile implements Finalizable {
     }
 
     public void finalize(ThreadContext context, boolean noraise) {
+        finalizeFlush(context, noraise);
+    }
+
+    public void finalizeFlush(ThreadContext context, boolean noraise) {
         IRubyObject err = runtime.getNil();
         ChannelFD fd = this.fd();
         Closeable stdio_file = this.stdio_file;

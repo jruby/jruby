@@ -2049,6 +2049,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (fptr == null) return runtime.getNil();
             if (fptr.fd() == null) return runtime.getNil();
 
+            fptr.finalizeFlush(context, false);
+
             // interrupt waiting threads
             fptr.interruptBlockingThreads(context);
             try {
@@ -2057,6 +2059,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             } finally {
                 fptr.lock();
             }
+
             fptr.cleanup(runtime, false);
 
             if (fptr.getProcess() != null) {
