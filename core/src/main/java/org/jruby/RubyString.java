@@ -2129,7 +2129,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int end = p + byteList.getRealSize();
         RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
         Encoding resultEnc = runtime.getDefaultInternalEncoding();
-        boolean isUnicode = StringSupport.isUnicode(enc);
+        boolean isUnicode = enc.isUnicode();
         boolean asciiCompat = enc.isAsciiCompatible();
 
 

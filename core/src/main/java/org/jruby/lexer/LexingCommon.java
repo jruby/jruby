@@ -1068,19 +1068,23 @@ public abstract class LexingCommon {
             String name = magicLine.subSequence(beg, end).toString().replace('-', '_');
             ByteList value = magicLine.makeShared(vbeg, vend - vbeg);
 
-            onMagicComment(name, value);
+            if (!onMagicComment(name, value)) return false;
         }
 
         return true;
     }
 
-    protected void onMagicComment(String name, ByteList value) {
-        if ("coding".equals(name) || "encoding".equals(name)) {
+    protected boolean onMagicComment(String name, ByteList value) {
+        if ("coding".equalsIgnoreCase(name) || "encoding".equalsIgnoreCase(name)) {
             magicCommentEncoding(value);
-        } else if ("frozen_string_literal".equals(name)) {
+            return true;
+        } else if ("frozen_string_literal".equalsIgnoreCase(name)) {
             setCompileOptionFlag(name, value);
-        } else if ("warn_indent".equals(name)) {
+            return true;
+        } else if ("warn_indent".equalsIgnoreCase(name)) {
             setTokenInfo(name, value);
+            return true;
         }
+        return false;
     }
 }

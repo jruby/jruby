@@ -1,4 +1,4 @@
-exclude :test_alias_owner, "needs investigation"
+exclude :test___dir__, "needs investigation"
 exclude :test_body, "fails due RubyVM constant"
 exclude :test_callee, "needs investigation"
 exclude :test_define_method_visibility, "needs investigation"

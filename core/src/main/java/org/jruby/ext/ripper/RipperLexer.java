@@ -101,9 +101,12 @@ public class RipperLexer extends LexingCommon {
         parser.dispatch("on_operator_ambiguous", getRuntime().newSymbol(op), getRuntime().newString(syn));
     }
 
-    protected void onMagicComment(String name, ByteList value) {
-        super.onMagicComment(name, value);
+    protected boolean onMagicComment(String name, ByteList value) {
+        boolean found = super.onMagicComment(name, value);
+
         parser.dispatch("on_magic_comment", getRuntime().newString(name), getRuntime().newString(value));
+
+        return found;
     }
 
     private int getFloatToken(String number, int suffix) {

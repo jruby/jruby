@@ -224,7 +224,7 @@ public class RegexpSupport {
         if (!needEscape) {
             to.append(bytes, start, len);
         } else {
-            boolean isUnicode = StringSupport.isUnicode(enc);
+            boolean isUnicode = enc.isUnicode();
             p = start;
             while (p < end) {
                 final int c;

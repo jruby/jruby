@@ -133,6 +133,7 @@ public abstract class IRVisitor {
     public void ThrowExceptionInstr(ThrowExceptionInstr throwexceptioninstr) { error(throwexceptioninstr); }
     public void ToggleBacktraceInstr(ToggleBacktraceInstr instr) { error(instr); }
     public void ToAryInstr(ToAryInstr toaryinstr) { error(toaryinstr); }
+    public void TraceInstr(TraceInstr toaryinstr) { error(toaryinstr); }
     public void UndefMethodInstr(UndefMethodInstr undefmethodinstr) { error(undefmethodinstr); }
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) { error(unresolvedsuperinstr); }
     public void UpdateBlockExecutionStateInstr (UpdateBlockExecutionStateInstr instr) { error(instr); }

@@ -1,7 +1,6 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.compiler.NotCompilableException;
@@ -1695,12 +1694,25 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PushMethodBindingInstr(PushMethodBindingInstr pushbindinginstr) {
-        jvmMethod().loadContext();
-        jvmMethod().loadStaticScope();
-        jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
-        jvmAdapter().dup();
-        jvmStoreLocal(DYNAMIC_SCOPE);
-        jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void pushScope(org.jruby.runtime.DynamicScope)"));
+        IRScope scope = jvm.methodData().scope;
+
+        if (scope.isScriptScope() &&
+                scope.getRootLexicalScope() != null) {
+            // script scope, so we don't push a new scope; instead we push the top-level scope it provides
+            jvmMethod().loadContext();
+            jvmMethod().loadStaticScope();
+            jvmMethod().invokeIRHelper("prepareScriptScope", sig(DynamicScope.class, ThreadContext.class, StaticScope.class));
+            jvmStoreLocal(DYNAMIC_SCOPE);
+
+            return;
+        } else {
+            jvmMethod().loadContext();
+            jvmMethod().loadStaticScope();
+            jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
+            jvmAdapter().dup();
+            jvmStoreLocal(DYNAMIC_SCOPE);
+            jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void pushScope(org.jruby.runtime.DynamicScope)"));
+        }
     }
 
     @Override
@@ -2175,6 +2187,21 @@ public class JVMVisitor extends IRVisitor {
         visit(toaryinstr.getArray());
         jvmMethod().invokeIRHelper("irToAry", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
         jvmStoreLocal(toaryinstr.getResult());
+    }
+
+    @Override
+    public void TraceInstr(TraceInstr traceInstr) {
+        jvmMethod().loadContext();
+        jvmAdapter().getstatic(p(RubyEvent.class), traceInstr.getEvent().name(), ci(RubyEvent.class));
+        String name = traceInstr.getName();
+        if (name == null) {
+            jvmAdapter().aconst_null();
+        } else {
+            jvmAdapter().ldc(name);
+        }
+        jvmAdapter().ldc(traceInstr.getFilename());
+        jvmAdapter().ldc(traceInstr.getLinenumber());
+        jvmMethod().invokeIRHelper("callTrace", sig(void.class, ThreadContext.class, RubyEvent.class, String.class, String.class, int.class));
     }
 
     @Override
