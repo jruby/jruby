@@ -2053,6 +2053,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if (fptr.fd() == null) return context.nil;
             final Ruby runtime = context.runtime;
 
+            fptr.finalizeFlush(context, false);
+
             // interrupt waiting threads
             fptr.interruptBlockingThreads(context);
             try {
@@ -2061,6 +2063,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             } finally {
                 fptr.lock();
             }
+
             fptr.cleanup(runtime, false);
 
             if (fptr.getProcess() != null) {
