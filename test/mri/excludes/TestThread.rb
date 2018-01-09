@@ -4,6 +4,7 @@ exclude :test_abort_on_exception, "very sensitive to thread timing and paralleli
 exclude :test_handle_interrupt, "handle_interrupt is not working properly"
 exclude :test_handle_interrupt_and_p, "handle_interrupt is not working properly"
 exclude :test_handle_interrupt_blocking, "handle_interrupt is not working properly"
+exclude :test_list, "JVM finalizer threads get adopted, randomly skewing the result (#4960)"
 exclude :test_main_thread_status_at_exit, "we do not set main thread to aborting when it terminates; differing opinions on thread lifecycle at main shutdown"
 exclude :test_main_thread_variable_in_enumerator, "differing notions of current thread within a fiber"
 exclude :test_mutex_interrupt, "hangs"
