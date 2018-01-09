@@ -466,7 +466,7 @@ public class RubySet extends RubyObject implements Set {
     /**
      * Returns true if the set contains the given object.
      */
-    @JRubyMethod(name = "include?", alias = { "member?" })
+    @JRubyMethod(name = "include?", alias = { "member?", "===" })
     public RubyBoolean include_p(final ThreadContext context, IRubyObject obj) {
         return context.runtime.newBoolean( containsImpl(obj) );
     }
