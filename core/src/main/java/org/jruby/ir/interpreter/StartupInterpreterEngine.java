@@ -42,7 +42,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         DynamicScope currDynScope = context.getCurrentScope();
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        Stack<ExceptionRegionStartMarkerInstr> rescuePCs = null;
+        int[] rescuePCs = interpreterContext.getRescueIPCs();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -55,14 +55,12 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} " + instr + "; <#RPCs=" + (rescuePCs == null ? 0 : rescuePCs.size()) + ">");
+                Interpreter.LOG.info("I: " + ipc + ", R: "  + rescuePCs[ipc] + " - " + instr + ">");
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);
                 Interpreter.interpInstrsCount++;
             }
-
-            ipc++;
 
             try {
                 switch (operation.opClass) {
@@ -82,10 +80,11 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 ipc = jump.getJumpTarget().getTargetPC();
                                 break;
                             default:
-                                ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
+                                ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc + 1);
                                 break;
+
                         }
-                        break;
+                        continue;
                     case BOOK_KEEPING_OP:
                         switch (operation) {
                             case PUSH_METHOD_BINDING:
@@ -94,26 +93,8 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 // which will now use the updated value of currDynScope.
                                 currDynScope = interpreterContext.newDynamicScope(context);
                                 context.pushScope(currDynScope);
-                            case EXC_REGION_START: {
-                                if (rescuePCs == null) {
-                                    rescuePCs = new Stack<>();
-                                    rescuePCs.push((ExceptionRegionStartMarkerInstr) instr);
-                                } else {
-                                    // We use EXC_REGION_{START,END} as actual instructions instead of markers
-                                    // in this particular interpreter.  Unfortunately, these can never be guaranteed to
-                                    // execute in matched pairs since other instrs (like from a jump representing a Ruby
-                                    // next) may happen before hitting the END instr.  Because of this we will look to
-                                    // see if the stack is dirty and prune back to a proper clean point.  Otherwise it is
-                                    // clean and we push a new entry.  This mechanism works because these exc. regions
-                                    // represent lexical boundaries and you cannot see the same boundary nested in itself.
-                                    // If we try to push something already there then the space-time continuum is blown
-                                    // and we have to clean the universe up.
-                                    pushOrPrune((ExceptionRegionStartMarkerInstr) instr, rescuePCs);
-                                }
-                            }
-                            break;
+                            case EXC_REGION_START:
                             case EXC_REGION_END:
-                                rescuePCs.pop();
                                 break;
                             default:
                                 processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
@@ -123,14 +104,12 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self);
                         break;
                 }
+
+                ipc++;
             } catch (Throwable t) {
                 if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                if (rescuePCs == null || rescuePCs.empty()) {
-                    ipc = -1;
-                } else {
-                    ipc = rescuePCs.pop().getFirstRescueBlockLabel().getTargetPC();
-                }
+                ipc = rescuePCs == null ? -1 : rescuePCs[ipc];
 
                 if (debug) {
                     Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
@@ -147,20 +126,6 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
         // Control should never get here!
         throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
-    }
-
-    private void pushOrPrune(ExceptionRegionStartMarkerInstr element, Stack<ExceptionRegionStartMarkerInstr> stack) {
-        int firstOccurrence = stack.indexOf(element);
-
-        if (firstOccurrence != -1) {
-            int elementsToPrune = stack.size() - (firstOccurrence + 1);
-
-            for (int i = 0; i < elementsToPrune; i++) {
-                stack.pop();
-            }
-        } else {
-            stack.push(element);
-        }
     }
 
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
