@@ -920,7 +920,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public boolean isAlive(){
-        return threadImpl.isAlive() && status.get() != Status.ABORTING;
+        return threadImpl.isAlive();
     }
 
     @JRubyMethod(name = "[]", required = 1)
