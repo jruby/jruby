@@ -204,6 +204,10 @@ class TestDir < Test::Unit::TestCase
     assert_entries(Dir.children(@root), true)
   end
 
+  def test_each_child
+    assert_entries(Dir.each_child(@root).to_a, true)
+  end
+
   def test_dir_enc
     dir = Dir.open(@root, encoding: "UTF-8")
     begin

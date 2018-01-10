@@ -398,6 +398,37 @@ public class RubyDir extends RubyObject {
     }
 
     /**
+     * Executes the block once for each entry in the directory except
+     * for "." and "..", passing the filename of each entry as parameter
+     * to the block.
+     */
+    @JRubyMethod(name = "each_child", meta = true)
+    public static IRubyObject each_child(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
+        RubyString pathString = RubyFile.get_path(context, arg);
+
+        return eachChildCommon(context, recv, context.runtime, pathString, null, block);
+    }
+
+    /**
+     * Executes the block once for each entry in the directory except
+     * for "." and "..", passing the filename of each entry as parameter
+     * to the block.
+     */
+    @JRubyMethod(name = "each_child", meta = true)
+    public static IRubyObject each_child(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject enc, Block block) {
+        RubyString pathString = RubyFile.get_path(context, arg);
+        RubyEncoding encoding;
+
+        if (enc instanceof RubyEncoding) {
+            encoding = (RubyEncoding) enc;
+        } else {
+            throw context.runtime.newTypeError(enc, context.runtime.getEncoding());
+        }
+
+        return eachChildCommon(context, recv, context.runtime, pathString, encoding, block);
+    }
+
+    /**
      * Executes the block once for each file in the directory specified by
      * <code>path</code>.
      */
@@ -424,6 +455,22 @@ public class RubyDir extends RubyObject {
         }
 
         return foreachCommon(context, recv, context.runtime, pathString, encoding, block);
+    }
+
+    private static IRubyObject eachChildCommon(ThreadContext context, IRubyObject recv, Ruby runtime, RubyString _path, RubyEncoding encoding, Block block) {
+        if (block.isGiven()) {
+            RubyClass dirClass = runtime.getDir();
+            RubyDir dir = (RubyDir) dirClass.newInstance(context, new IRubyObject[]{_path}, block);
+
+            dir.each_child(context, block);
+            return runtime.getNil();
+        }
+
+        if (encoding == null) {
+            return enumeratorize(runtime, recv, "each_child", _path);
+        } else {
+            return enumeratorize(runtime, recv, "each_child", new IRubyObject[]{_path, encoding});
+        }
     }
 
     private static IRubyObject foreachCommon(ThreadContext context, IRubyObject recv, Ruby runtime, RubyString _path, RubyEncoding encoding, Block block) {
@@ -562,10 +609,35 @@ public class RubyDir extends RubyObject {
     }
 
     /**
+     * Executes the block once for each child in the directory
+     * (i.e. all the directory entries except for "." and "..").
+     */
+    public IRubyObject each_child(ThreadContext context, Encoding enc, Block block) {
+        checkDir();
+
+        String[] contents = snapshot;
+        for (pos = 0; pos < contents.length; pos++) {
+            if (!(contents[pos].equals(".") || contents[pos].equals(".."))) {
+                block.yield(context, RubyString.newString(context.runtime, contents[pos], enc));
+            }
+        }
+
+        return this;
+    }
+
+    /**
      * Executes the block once for each entry in the directory.
      */
     public IRubyObject each(ThreadContext context, Block block) {
         return each(context, context.runtime.getDefaultInternalEncoding(), block);
+    }
+
+    /**
+     * Executes the block once for each child in the directory
+     * (i.e. all the directory entries except for "." and "..").
+     */
+    public IRubyObject each_child(ThreadContext context, Block block) {
+        return each_child(context, context.runtime.getDefaultInternalEncoding(), block);
     }
 
     @JRubyMethod(name = "each")
