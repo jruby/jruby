@@ -508,7 +508,7 @@ public final class ThreadContext {
         Frame frame = stack[index];
 
         // if the frame was captured, we must replace it but not clear
-        if (frame.isCaptured()) {
+        if (frame.captured) {
             stack[index] = new Frame();
         } else {
             frame.clear();
