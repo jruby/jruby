@@ -933,8 +933,17 @@ public class RubyHash extends RubyObject implements Map {
                 RubyHashEntry next = entry.next;
                 entry.hash = hashValue(entry.key); // update the hash value
                 int i = bucketIndex(entry.hash, newTable.length);
-                entry.next = newTable[i];
-                newTable[i] = entry;
+
+                if (newTable[i] != null && internalKeyExist(newTable[i], entry.hash, entry.key)) {
+                    RubyHashEntry tmpNext = entry.nextAdded;
+                    RubyHashEntry tmpPrev = entry.prevAdded;
+                    tmpPrev.nextAdded = tmpNext;
+                    tmpPrev.prevAdded = tmpPrev;
+                    size--;
+                } else {
+                    entry.next = newTable[i];
+                    newTable[i] = entry;
+                }
                 entry = next;
             }
         }
