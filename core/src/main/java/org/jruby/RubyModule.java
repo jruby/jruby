@@ -2892,7 +2892,7 @@ public class RubyModule extends RubyObject {
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_exec(ThreadContext context, Block block) {
         if (block.isGiven()) {
-            return yieldUnder(context, this, IRubyObject.NULL_ARRAY, block, EvalType.MODULE_EVAL);
+            return yieldUnder(context, this, IRubyObject.NULL_ARRAY, block.cloneBlockAndFrame(), EvalType.MODULE_EVAL);
         } else {
             throw context.runtime.newLocalJumpErrorNoBlock();
         }
@@ -2903,7 +2903,7 @@ public class RubyModule extends RubyObject {
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
-            return yieldUnder(context, this, args, block, EvalType.MODULE_EVAL);
+            return yieldUnder(context, this, args, block.cloneBlockAndFrame(), EvalType.MODULE_EVAL);
         } else {
             throw context.runtime.newLocalJumpErrorNoBlock();
         }
