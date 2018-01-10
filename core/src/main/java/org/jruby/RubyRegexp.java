@@ -1604,7 +1604,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     // rb_reg_regsub
-    static RubyString regsub19(ThreadContext context, RubyString str, RubyString src, Matcher matcher, Regex pattern) {
+    static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Matcher matcher, Regex pattern) {
         Ruby runtime = context.runtime;
 
         RubyString val = null;
