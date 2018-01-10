@@ -5330,13 +5330,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return null;
     }
 
+    @JRubyMethod(name = {"to_sym", "intern"})
     public RubySymbol intern() {
-        return intern19();
+        return to_sym();
     }
 
-    @JRubyMethod(name = {"to_sym", "intern"})
+    @Deprecated
     public RubySymbol intern19() {
-        return to_sym();
+        return intern();
     }
 
     @JRubyMethod
