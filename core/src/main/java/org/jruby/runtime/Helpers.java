@@ -1329,6 +1329,7 @@ public class Helpers {
         return RubyString.newStringShared(context.runtime, value);
     }
 
+    @SuppressWarnings("deprecation")
     public static StaticScope preLoad(ThreadContext context, String[] varNames) {
         StaticScope staticScope = context.runtime.getStaticScopeFactory().newLocalScope(null, varNames);
         preLoadCommon(context, staticScope, false);
@@ -1612,6 +1613,7 @@ public class Helpers {
         receiver.callMethod(context, "singleton_method_added", name);
     }
 
+    @SuppressWarnings("deprecation")
     static String encodeScope(StaticScope scope) {
         StringBuilder namesBuilder = new StringBuilder(scope.getType().name()); // 0
 
@@ -1629,6 +1631,7 @@ public class Helpers {
         return namesBuilder.toString();
     }
 
+    @SuppressWarnings("deprecation")
     static StaticScope decodeScope(ThreadContext context, StaticScope parent, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
         String scopeTypeName = decodedScope[0][0];
