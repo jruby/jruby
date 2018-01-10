@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -36,6 +36,10 @@ import static org.jruby.RubyFile.fileResource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 
 import jnr.posix.FileStat;
 import org.jruby.anno.JRubyMethod;
@@ -277,24 +281,7 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "symlink?", required = 1, module = true)
     public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = recv.getRuntime();
-        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
-        
-        try {
-            // Note: We can't use file.exists() to check whether the symlink
-            // exists or not, because that method returns false for existing
-            // but broken symlink. So, we try without the existence check,
-            // but in the try-catch block.
-            // MRI behavior: symlink? on broken symlink should return true.
-            FileStat stat = fileResource(filename).lstat();
-
-            return runtime.newBoolean(stat != null && stat.isSymlink());
-        } catch (SecurityException re) {
-            return runtime.getFalse();
-        } catch (RaiseException re) {
-            runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-            return runtime.getFalse();
-        }
+        return recv.getRuntime().newBoolean(fileResource(filename).isSymLink());
     }
 
     // We do both writable and writable_real through the same method because
@@ -308,7 +295,7 @@ public class RubyFileTest {
         return zero_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
 
-    @JRubyMethod(name = "zero?", required = 1, module = true)
+    @JRubyMethod(name = {"empty?", "zero?"}, required = 1, module = true)
     public static RubyBoolean zero_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
 
@@ -451,7 +438,7 @@ public class RubyFileTest {
             return RubyFileTest.writable_p(recv, filename);
         }
 
-        @JRubyMethod(name = "zero?", required = 1)
+        @JRubyMethod(name = {"empty?", "zero?"}, required = 1)
         public static RubyBoolean zero_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
             return RubyFileTest.zero_p(context, recv, filename);
         }

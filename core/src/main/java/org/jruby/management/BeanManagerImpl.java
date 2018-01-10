@@ -46,8 +46,8 @@ public class BeanManagerImpl implements BeanManager {
         if (managementEnabled) register(base + "service=ParserStats", parserStats);
     }
 
-    public void register(MethodCacheMBean methodCache) {
-        if (managementEnabled) register(base + "service=MethodCache", methodCache);
+    public void register(CachesMBean caches) {
+        if (managementEnabled) register(base + "service=Caches", caches);
     }
 
     public void register(Runtime runtime) {
@@ -84,7 +84,9 @@ public class BeanManagerImpl implements BeanManager {
 
     public boolean tryRestartAgent() {
         try {
-            sun.management.Agent.startAgent();
+            Class agent = Class.forName("sun.management.Agent");
+            Method start = agent.getMethod("startAgent");
+            start.invoke(null);
             return true;
         } catch (Exception e) {
             return false;

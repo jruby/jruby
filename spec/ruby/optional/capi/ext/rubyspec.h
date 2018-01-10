@@ -299,6 +299,7 @@
 #define HAVE_RB_HASH_CLEAR                 1
 #define HAVE_RB_HASH_DELETE                1
 #define HAVE_RB_HASH_DELETE_IF             1
+#define HAVE_RB_HASH_FETCH                 1
 #define HAVE_RB_HASH_FOREACH               1
 #define HAVE_RB_HASH_LOOKUP                1
 #define HAVE_RB_HASH_LOOKUP2               1
@@ -372,6 +373,7 @@
 #define HAVE_RB_GC_REGISTER_ADDRESS        1
 #define HAVE_RB_GC_ENABLE                  1
 #define HAVE_RB_GC_DISABLE                 1
+#define HAVE_RB_GC                         1
 
 /* Marshal */
 #define HAVE_RB_MARSHAL_DUMP               1
@@ -399,6 +401,7 @@
 #define HAVE_RB_DEFINE_PRIVATE_METHOD      1
 #define HAVE_RB_DEFINE_PROTECTED_METHOD    1
 #define HAVE_RB_DEFINE_SINGLETON_METHOD    1
+#define HAVE_RB_MOD_ANCESTORS              1
 #define HAVE_RB_UNDEF                      1
 #define HAVE_RB_UNDEF_METHOD               1
 
@@ -406,6 +409,7 @@
 #define HAVE_NUM2CHR                       1
 #define HAVE_RB_CMPINT                     1
 #define HAVE_RB_INT2INUM                   1
+#define HAVE_RB_UINT2INUM                  1
 #define HAVE_RB_INTEGER                    1
 #define HAVE_RB_LL2INUM                    1
 #define HAVE_RB_NUM2DBL                    1
@@ -419,6 +423,7 @@
 #define HAVE_RB_NUM_COERCE_BIN             1
 #define HAVE_RB_NUM_COERCE_CMP             1
 #define HAVE_RB_NUM_COERCE_RELOP           1
+#define HAVE_RB_ABSINT_SINGLEBIT_P         1
 #define HAVE_RB_NUM_ZERODIV                1
 
 /* Fixnum */
@@ -428,6 +433,8 @@
 #endif
 
 /* Object */
+#define HAVE_FL_ABLE                       1
+#define HAVE_FL_TEST                       1
 #define HAVE_OBJ_TAINT                     1
 #define HAVE_OBJ_TAINTED                   1
 #define HAVE_OBJ_INFECT                    1
@@ -476,10 +483,13 @@
 
 /* Proc */
 #define HAVE_RB_PROC_NEW                   1
+#define HAVE_RB_PROC_ARITY                 1
+#define HAVE_RB_PROC_CALL                  1
 
 /* Range */
 #define HAVE_RB_RANGE_NEW                  1
 #define HAVE_RB_RANGE_VALUES               1
+#define HAVE_RB_RANGE_BEG_LEN              1
 
 /* Rational */
 #define HAVE_RB_RATIONAL                   1
@@ -498,6 +508,9 @@
 #define HAVE_RB_REG_NTH_MATCH              1
 #define HAVE_RB_REG_OPTIONS                1
 #define HAVE_RB_REG_REGCOMP                1
+
+/* st */
+#define HAVE_RB_ST                         1
 
 /* String */
 #define HAVE_RB_CSTR2INUM                  1
@@ -522,6 +535,8 @@
 #define HAVE_RB_STR_NEW3                   1
 #define HAVE_RB_STR_NEW4                   1
 #define HAVE_RB_STR_NEW5                   1
+#define HAVE_RB_TAINTED_STR_NEW            1
+#define HAVE_RB_TAINTED_STR_NEW2           1
 #define HAVE_RB_STR_PLUS                   1
 #define HAVE_RB_STR_TIMES                  1
 #define HAVE_RB_STR_RESIZE                 1
@@ -546,6 +561,7 @@
 #define HAVE_RB_STR_SUBSEQ                 1
 #define HAVE_RB_VSPRINTF                   1
 #define HAVE_RB_STRING                     1
+#define HAVE_SAFE_STRING_VALUE             1
 
 /* Struct */
 #define HAVE_RB_STRUCT_AREF                1

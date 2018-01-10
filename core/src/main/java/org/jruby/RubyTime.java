@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -263,8 +263,7 @@ public class RubyTime extends RubyObject {
         boolean typeError = false;
 
         switch (v.getMetaClass().getClassIndex()) {
-            case FIXNUM:
-            case BIGNUM:
+            case INTEGER:
                 return v;
 
             case RATIONAL:
@@ -296,8 +295,7 @@ public class RubyTime extends RubyObject {
         }
 
         switch (v.getMetaClass().getClassIndex()) {
-            case FIXNUM:
-            case BIGNUM:
+            case INTEGER:
                 return v;
 
             case RATIONAL:
@@ -1546,9 +1544,17 @@ public class RubyTime extends RubyObject {
             boolean fractionalUSecGiven = args[6] instanceof RubyFloat || args[6] instanceof RubyRational;
 
             if (fractionalUSecGiven) {
-                double micros = RubyNumeric.num2dbl(args[6]);
-                time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
-                nanos = (long) Math.rint((micros * 1000) % 1000000);
+                if (args[6] instanceof RubyRational) {
+                    RubyRational usecRat = (RubyRational) args[6];
+                    RubyRational nsecRat = (RubyRational) usecRat.op_mul(context, runtime.newFixnum(1000));
+                    double tmpNanos = nsecRat.getDoubleValue(context);
+                    time.dt = dt.withMillis((long) (dt.getMillis() + (tmpNanos / 1000000)));
+                    nanos = (long) tmpNanos % 1000000;
+                } else {
+                    double micros = RubyNumeric.num2dbl(args[6]);
+                    time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
+                    nanos = (long) Math.rint((micros * 1000) % 1000000);
+                }
             } else {
                 int usec = i_args4 % 1000;
                 int msec = i_args4 / 1000;

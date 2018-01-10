@@ -372,7 +372,7 @@ public class IRDumper extends IRVisitor {
     }
 
     private void print(Object obj) {
-        if (obj.getClass().isArray()) {
+        if (obj != null && obj.getClass().isArray()) {
             if (obj.getClass().getComponentType().isPrimitive()) {
                 switch (obj.getClass().getName().charAt(0)) {
                     case 'B': stream.print(Arrays.toString((boolean[]) obj)); break;

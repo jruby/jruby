@@ -63,4 +63,6 @@ end
 
 plugin :invoker, :properties => { 'ruby.version' => ruby_version, 'gem.home' => '${project.build.directory}/rubygems', 'gem.path' => '${project.build.directory}/rubygems' }
 
+plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
+
 # vim: syntax=Ruby

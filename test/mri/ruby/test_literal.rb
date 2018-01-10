@@ -14,20 +14,20 @@ class TestRubyLiteral < Test::Unit::TestCase
     assert_equal ':sym', :sym.inspect
     assert_instance_of Symbol, :sym
     assert_equal '1234', 1234.inspect
-    assert_instance_of Fixnum, 1234
+    assert_instance_of Integer, 1234
     assert_equal '1234', 1_2_3_4.inspect
-    assert_instance_of Fixnum, 1_2_3_4
+    assert_instance_of Integer, 1_2_3_4
     assert_equal '18', 0x12.inspect
-    assert_instance_of Fixnum, 0x12
+    assert_instance_of Integer, 0x12
     assert_raise(SyntaxError) { eval("0x") }
     assert_equal '15', 0o17.inspect
-    assert_instance_of Fixnum, 0o17
+    assert_instance_of Integer, 0o17
     assert_raise(SyntaxError) { eval("0o") }
     assert_equal '5', 0b101.inspect
-    assert_instance_of Fixnum, 0b101
+    assert_instance_of Integer, 0b101
     assert_raise(SyntaxError) { eval("0b") }
     assert_equal '123456789012345678901234567890', 123456789012345678901234567890.inspect
-    assert_instance_of Bignum, 123456789012345678901234567890
+    assert_instance_of Integer, 123456789012345678901234567890
     assert_instance_of Float, 1.3
     assert_equal '2', eval("0x00+2").inspect
   end
@@ -90,6 +90,9 @@ class TestRubyLiteral < Test::Unit::TestCase
     assert_equal "\u201c", eval(%[?\\\u{201c}]), bug6069
     assert_equal "\u201c".encode("euc-jp"), eval(%[?\\\u{201c}].encode("euc-jp")), bug6069
     assert_equal "\u201c".encode("iso-8859-13"), eval(%[?\\\u{201c}].encode("iso-8859-13")), bug6069
+
+    assert_equal "ab", eval("?a 'b'")
+    assert_equal "a\nb", eval("<<A 'b'\na\nA")
   end
 
   def test_dstring
@@ -427,7 +430,7 @@ class TestRubyLiteral < Test::Unit::TestCase
   end
 
   def test__LINE__
-    assert_instance_of Fixnum, __LINE__
+    assert_instance_of Integer, __LINE__
     assert_equal __LINE__, __LINE__
   end
 
@@ -493,6 +496,7 @@ class TestRubyLiteral < Test::Unit::TestCase
         }
       }
     }
+    assert_equal(100.0, 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100e100)
   end
 
   def test_symbol_list

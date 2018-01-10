@@ -578,7 +578,7 @@ class OptionParser
         l = left[-1].length + s.length
         l += arg.length if left.size == 1 && arg
         l < max or sopts.empty? or left << ''
-        left[-1] << if left[-1].empty? then ' ' * 4 else ', ' end << s
+        left[-1] << (left[-1].empty? ? ' ' * 4 : ', ') << s
       end
 
       if arg
@@ -1386,7 +1386,8 @@ XXX
         default_style = Switch::NoArgument
         default_pattern, conv = search(:atype, FalseClass) unless default_pattern
         ldesc << "--no-#{q}"
-        long << 'no-' + (q = q.downcase)
+        (q = q.downcase).tr!('_', '-')
+        long << "no-#{q}"
         nolong << q
       when /^--\[no-\]([^\[\]=\s]*)(.+)?/
         q, a = $1, $2
@@ -1396,10 +1397,11 @@ XXX
           default_pattern, conv = search(:atype, o) unless default_pattern
         end
         ldesc << "--[no-]#{q}"
-        long << (o = q.downcase)
+        (o = q.downcase).tr!('_', '-')
+        long << o
         not_pattern, not_conv = search(:atype, FalseClass) unless not_style
         not_style = Switch::NoArgument
-        nolong << 'no-' + o
+        nolong << "no-#{o}"
       when /^--([^\[\]=\s]*)(.+)?/
         q, a = $1, $2
         if a
@@ -1408,7 +1410,8 @@ XXX
           default_pattern, conv = search(:atype, o) unless default_pattern
         end
         ldesc << "--#{q}"
-        long << (o = q.downcase)
+        (o = q.downcase).tr!('_', '-')
+        long << o
       when /^-(\[\^?\]?(?:[^\\\]]|\\.)*\])(.+)?/
         q, a = $1, $2
         o = notwice(Object, klass, 'type')
@@ -1515,17 +1518,18 @@ XXX
   #
   # Returns the rest of +argv+ left unparsed.
   #
-  def order(*argv, &block)
+  def order(*argv, into: nil, &nonopt)
     argv = argv[0].dup if argv.size == 1 and Array === argv[0]
-    order!(argv, &block)
+    order!(argv, into: into, &nonopt)
   end
 
   #
   # Same as #order, but removes switches destructively.
   # Non-option arguments remain in +argv+.
   #
-  def order!(argv = default_argv, &nonopt)
-    parse_in_order(argv, &nonopt)
+  def order!(argv = default_argv, into: nil, &nonopt)
+    setter = ->(name, val) {into[name.to_sym] = val} if into
+    parse_in_order(argv, setter, &nonopt)
   end
 
   def parse_in_order(argv = default_argv, setter = nil, &nonopt)  # :nodoc:
@@ -1537,6 +1541,7 @@ XXX
         # long option
         when /\A--([^=]*)(?:=(.*))?/m
           opt, rest = $1, $2
+          opt.tr!('_', '-')
           begin
             sw, = complete(:long, opt, true)
           rescue ParseError
@@ -1552,7 +1557,8 @@ XXX
 
         # short option
         when /\A-(.)((=).*|.+)?/m
-          opt, has_arg, eq, val, rest = $1, $3, $3, $2, $2
+          eq, rest, opt = $3, $2, $1
+          has_arg, val = eq, rest
           begin
             sw, = search(:short, opt)
             unless sw
@@ -1606,18 +1612,18 @@ XXX
   # Parses command line arguments +argv+ in permutation mode and returns
   # list of non-option arguments.
   #
-  def permute(*argv)
+  def permute(*argv, into: nil)
     argv = argv[0].dup if argv.size == 1 and Array === argv[0]
-    permute!(argv)
+    permute!(argv, into: into)
   end
 
   #
   # Same as #permute, but removes switches destructively.
   # Non-option arguments remain in +argv+.
   #
-  def permute!(argv = default_argv)
+  def permute!(argv = default_argv, into: nil)
     nonopts = []
-    order!(argv, &nonopts.method(:<<))
+    order!(argv, into: into, &nonopts.method(:<<))
     argv[0, 0] = nonopts
     argv
   end
@@ -1626,27 +1632,27 @@ XXX
   # Parses command line arguments +argv+ in order when environment variable
   # POSIXLY_CORRECT is set, and in permutation mode otherwise.
   #
-  def parse(*argv)
+  def parse(*argv, into: nil)
     argv = argv[0].dup if argv.size == 1 and Array === argv[0]
-    parse!(argv)
+    parse!(argv, into: into)
   end
 
   #
   # Same as #parse, but removes switches destructively.
   # Non-option arguments remain in +argv+.
   #
-  def parse!(argv = default_argv)
+  def parse!(argv = default_argv, into: nil)
     if ENV.include?('POSIXLY_CORRECT')
-      order!(argv)
+      order!(argv, into: into)
     else
-      permute!(argv)
+      permute!(argv, into: into)
     end
   end
 
   #
   # Wrapper method for getopts.rb.
   #
-  #   params = ARGV.getopts("ab:", "foo", "bar:", "zot:Z;zot option)
+  #   params = ARGV.getopts("ab:", "foo", "bar:", "zot:Z;zot option")
   #   # params[:a] = true   # -a
   #   # params[:b] = "1"    # -b1
   #   # params[:foo] = "1"  # --foo
@@ -1909,7 +1915,7 @@ XXX
   #
   # List of strings separated by ",".
   #
-  accept(Array) do |s,|
+  accept(Array) do |s, |
     if s
       s = s.split(',').collect {|ss| ss unless ss.empty?}
     end
@@ -2145,4 +2151,5 @@ end
 # ARGV is arguable by OptionParser
 ARGV.extend(OptionParser::Arguable)
 
-OptParse = OptionParser
+# An alias for OptionParser.
+OptParse = OptionParser  # :nodoc:

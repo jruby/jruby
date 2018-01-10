@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -408,6 +408,7 @@ public abstract class DynamicMethod {
         private final Class[] nativeSignature;
         private final boolean statik;
         private final boolean java;
+        private Method reflected;
 
         public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
             this(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
@@ -460,8 +461,10 @@ public abstract class DynamicMethod {
          * @return the reflected method corresponding to this NativeCall
          */
         public Method getMethod() {
+            Method reflected = this.reflected;
+            if (reflected != null) return reflected;
             try {
-                return nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
+                return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

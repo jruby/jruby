@@ -6,8 +6,11 @@ exclude :test_div, "needs investigation"
 exclude :test_exception_underflow, "needs investigation"
 
 exclude :test_global_new_with_float, "needs investigation"
+exclude :test_global_new_with_invalid_string, "error change in 2.4?"
 exclude :test_limit, "needs investigation"
 exclude :test_marshal, "needs investigation"
+exclude :test_mult, "error change in 2.4?"
+exclude :test_new, "stricter parsing in 2.4"
 
 exclude :test_power_of_negative_infinity, "needs investigation"
 exclude :test_power_of_positive_infinity, "needs investigation"

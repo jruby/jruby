@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -164,14 +164,9 @@ public class RubyDir extends RubyObject {
         final int size = dirs.size();
         if ( size == 0 ) return RubyArray.newEmptyArray(runtime);
 
-        Encoding enc = runtime.getDefaultExternalEncoding();
-        if (enc == null) {
-            enc = UTF8;
-        }
-
         IRubyObject[] dirStrings = new IRubyObject[ size ];
         for ( int i = 0; i < size; i++ ) {
-            dirStrings[i] = RubyString.newString(runtime, dirs.get(i), enc);
+            dirStrings[i] = RubyString.newStringNoCopy(runtime, dirs.get(i));
         }
         return RubyArray.newArrayMayCopy(runtime, dirStrings);
     }
@@ -226,11 +221,7 @@ public class RubyDir extends RubyObject {
 
         if (block.isGiven()) {
             for (int i = 0; i < dirs.size(); i++) {
-                Encoding enc = runtime.getDefaultExternalEncoding();
-                if (enc == null) {
-                    enc = UTF8;
-                }
-                block.yield(context, RubyString.newString(runtime, dirs.get(i), enc));
+                block.yield(context, RubyString.newString(runtime, dirs.get(i)));
             }
 
             return runtime.getNil();
@@ -622,6 +613,15 @@ public class RubyDir extends RubyObject {
 
         pos = 0;
         return this;
+    }
+
+    @JRubyMethod(name = "empty?", meta = true)
+    public static IRubyObject empty_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
+        RubyFileStat fileStat = runtime.newFileStat(path.asJavaString(), false);
+        boolean isDirectory = fileStat.directory_p().isTrue();
+        return runtime.newBoolean(isDirectory && entries19(context, recv, arg).getLength() <= 2);
     }
 
     @JRubyMethod(name = "exist?", meta = true)

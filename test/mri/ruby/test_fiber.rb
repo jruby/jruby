@@ -284,7 +284,7 @@ class TestFiber < Test::Unit::TestCase
     env['RUBY_FIBER_VM_STACK_SIZE'] = vm_stack_size.to_s if vm_stack_size
     env['RUBY_FIBER_MACHINE_STACK_SIZE'] = machine_stack_size.to_s if machine_stack_size
     out, _ = Dir.mktmpdir("test_fiber") {|tmpdir|
-      EnvUtil.invoke_ruby([env, '-e', script], '', true, true, chdir: tmpdir)
+      EnvUtil.invoke_ruby([env, '-e', script], '', true, true, chdir: tmpdir, timeout: 30)
     }
     use_length ? out.length : out
   end
@@ -343,6 +343,14 @@ class TestFiber < Test::Unit::TestCase
     end.resume
     assert_equal("inner", s2)
     assert_equal(s1, $_, bug7678)
+  end
+
+  def test_new_symbol_proc
+    bug = '[ruby-core:80147] [Bug #13313]'
+    assert_ruby_status([], "#{<<-"begin;"}\n#{<<-'end;'}", bug)
+    begin;
+      exit("1" == Fiber.new(&:to_s).resume(1))
+    end;
   end
 end
 

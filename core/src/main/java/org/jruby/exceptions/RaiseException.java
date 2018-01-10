@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -52,7 +52,6 @@ import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RaiseException extends JumpException {
-    public static final boolean DEBUG = false;
     private static final long serialVersionUID = -7612079169559973951L;
 
     private RubyException exception;
@@ -84,9 +83,6 @@ public class RaiseException extends JumpException {
      */
     public RaiseException(RubyException exception, IRubyObject backtrace) {
         super(exception.getMessageAsJavaString());
-        if (DEBUG) {
-            Thread.dumpStack();
-        }
         setException(exception, false);
         preRaise(exception.getRuntime().getCurrentContext(), backtrace);
     }
@@ -98,9 +94,6 @@ public class RaiseException extends JumpException {
         }
         providedMessage = '(' + excptnClass.getName() + ") " + msg;
         this.nativeException = nativeException;
-        if (DEBUG) {
-            Thread.dumpStack();
-        }
         final ThreadContext context = runtime.getCurrentContext();
         setException((RubyException) Helpers.invoke(
                 context,
@@ -118,9 +111,6 @@ public class RaiseException extends JumpException {
         }
         providedMessage = '(' + excptnClass.getName() + ") " + msg;
         this.nativeException = nativeException;
-        if (DEBUG) {
-            Thread.dumpStack();
-        }
         final ThreadContext context = runtime.getCurrentContext();
         setException((RubyException) Helpers.invoke(
                 context,
@@ -133,9 +123,6 @@ public class RaiseException extends JumpException {
 
     public RaiseException(RubyException exception, boolean nativeException) {
         super(exception.getMessageAsJavaString());
-        if (DEBUG) {
-            Thread.dumpStack();
-        }
         this.nativeException = nativeException;
         setException(exception, nativeException);
         preRaise(exception.getRuntime().getCurrentContext());

@@ -64,6 +64,7 @@ class TestRubyOptions < Test::Unit::TestCase
     assert_in_out_err(%w(-W1 -e) + ['p $-W'], "", %w(1), [])
     assert_in_out_err(%w(-Wx -e) + ['p $-W'], "", %w(1), [])
     assert_in_out_err(%w(-W -e) + ['p $-W'], "", %w(2), [])
+    assert_in_out_err(%w(-w -W0 -e) + ['p $-W'], "", %w(0), [])
   ensure
     ENV['RUBYOPT'] = save_rubyopt
   end
@@ -129,6 +130,8 @@ class TestRubyOptions < Test::Unit::TestCase
     assert_in_out_err(%w(--disable foobarbazqux -e) + [""], "", [],
                       /unknown argument for --disable: `foobarbazqux'/)
     assert_in_out_err(%w(--disable), "", [], /missing argument for --disable/)
+    assert_in_out_err(%w(--disable-gems -e) + ['p defined? Gem'], "", ["nil"], [])
+    assert_in_out_err(%w(--disable-did_you_mean -e) + ['p defined? DidYouMean'], "", ["nil"], [])
   end
 
   def test_kanji
@@ -269,6 +272,10 @@ class TestRubyOptions < Test::Unit::TestCase
       assert_equal([], e)
     end
 
+    ENV['RUBYOPT'] = '-w'
+    assert_in_out_err(%w(), "p $VERBOSE", ["true"])
+    assert_in_out_err(%w(-W1), "p $VERBOSE", ["false"])
+    assert_in_out_err(%w(-W0), "p $VERBOSE", ["nil"])
   ensure
     if rubyopt_orig
       ENV['RUBYOPT'] = rubyopt_orig
@@ -318,10 +325,10 @@ class TestRubyOptions < Test::Unit::TestCase
     assert_in_out_err([], "#! /test_r_u_b_y_test_r_u_b_y_options_foobarbazqux -foo -bar\r\np 1\r\n",
                       [], /: no Ruby script found in input/)
 
-    assert_in_out_err([{'RUBYOPT' => nil}], "#!ruby -KU -Eutf-8\r\np \"\u3042\"\r\n") do |r, e|
-      assert_equal("\"\u3042\"", r.join.force_encoding(Encoding::UTF_8))
-      assert_equal([], e)
-    end
+    warning = /mswin|mingw/ =~ RUBY_PLATFORM ? [] : /shebang line ends with \\r/
+    assert_in_out_err([{'RUBYOPT' => nil}], "#!ruby -KU -Eutf-8\r\np \"\u3042\"\r\n",
+                      ["\"\u3042\""], warning,
+                      encoding: Encoding::UTF_8)
 
     bug4118 = '[ruby-dev:42680]'
     assert_in_out_err(%w[], "#!/bin/sh\n""#!shebang\n""#!ruby\n""puts __LINE__\n",
@@ -383,39 +390,60 @@ class TestRubyOptions < Test::Unit::TestCase
   end
 
   def test_indentation_check
-    Tempfile.create(["test_ruby_test_rubyoption", ".rb"]) {|t|
-      t.puts "begin"
-      t.puts " end"
-      t.flush
-      err = ["#{t.path}:2: warning: mismatched indentations at 'end' with 'begin' at 1"]
-      assert_in_out_err(["-w", t.path], "", [], err)
-      assert_in_out_err(["-wr", t.path, "-e", ""], "", [], err)
+    all_assertions do |a|
+      Tempfile.create(["test_ruby_test_rubyoption", ".rb"]) do |t|
+        [
+          "begin", "if false", "for _ in []", "while false",
+          "def foo", "class X", "module M",
+          ["-> do", "end"], ["-> {", "}"],
+        ].each do
+          |b, e = 'end'|
+          src = ["#{b}\n", " #{e}\n"]
+          k = b[/\A\S+/]
 
-      t.rewind
-      t.puts "# -*- warn-indent: false -*-"
-      t.puts "begin"
-      t.puts " end"
-      t.flush
-      assert_in_out_err(["-w", t.path], "", [], [], '[ruby-core:25442]')
+          a.for("no directives with #{b}") do
+            err = ["#{t.path}:2: warning: mismatched indentations at '#{e}' with '#{k}' at 1"]
+            t.rewind
+            t.truncate(0)
+            t.puts src
+            t.flush
+            assert_in_out_err(["-w", t.path], "", [], err)
+            assert_in_out_err(["-wr", t.path, "-e", ""], "", [], err)
+          end
 
-      err = ["#{t.path}:4: warning: mismatched indentations at 'end' with 'begin' at 3"]
-      t.rewind
-      t.puts "# -*- warn-indent: false -*-"
-      t.puts "# -*- warn-indent: true -*-"
-      t.puts "begin"
-      t.puts " end"
-      t.flush
-      assert_in_out_err(["-w", t.path], "", [], err, '[ruby-core:25442]')
+          a.for("false directive with #{b}") do
+            t.rewind
+            t.truncate(0)
+            t.puts "# -*- warn-indent: false -*-"
+            t.puts src
+            t.flush
+            assert_in_out_err(["-w", t.path], "", [], [], '[ruby-core:25442]')
+          end
 
-      err = ["#{t.path}:4: warning: mismatched indentations at 'end' with 'begin' at 2"]
-      t.rewind
-      t.puts "# -*- warn-indent: true -*-"
-      t.puts "begin"
-      t.puts "# -*- warn-indent: false -*-"
-      t.puts " end"
-      t.flush
-      assert_in_out_err(["-w", t.path], "", [], [], '[ruby-core:25442]')
-    }
+          a.for("false and true directives with #{b}") do
+            err = ["#{t.path}:4: warning: mismatched indentations at '#{e}' with '#{k}' at 3"]
+            t.rewind
+            t.truncate(0)
+            t.puts "# -*- warn-indent: false -*-"
+            t.puts "# -*- warn-indent: true -*-"
+            t.puts src
+            t.flush
+            assert_in_out_err(["-w", t.path], "", [], err, '[ruby-core:25442]')
+          end
+
+          a.for("false directives after #{b}") do
+            t.rewind
+            t.truncate(0)
+            t.puts "# -*- warn-indent: true -*-"
+            t.puts src[0]
+            t.puts "# -*- warn-indent: false -*-"
+            t.puts src[1]
+            t.flush
+            assert_in_out_err(["-w", t.path], "", [], [], '[ruby-core:25442]')
+          end
+        end
+      end
+    end
   end
 
   def test_notfound
@@ -559,6 +587,11 @@ class TestRubyOptions < Test::Unit::TestCase
         (?:.*\n)?
         For\sdetails:\shttp:\/\/.*\.ruby-lang\.org/.*\n
         \n
+        (?:
+          \[IMPORTANT\]\n
+          (?:.+\n)+
+          \n
+        )?
       )x,
     ]
     ExpectedStderrList << additional if additional
@@ -740,6 +773,34 @@ class TestRubyOptions < Test::Unit::TestCase
         assert_in_out_err(["-e", "puts ARGV", "*.txt"], "", ougai)
       end
     end
+
+    def assert_e_script_encoding(str, args = [])
+      cmds = [
+        EnvUtil::LANG_ENVS.inject({}) {|h, k| h[k] = ENV[k]; h},
+        *args,
+        '-e', "s = '#{str}'",
+        '-e', 'puts s.encoding.name',
+        '-e', 'puts s.dump',
+      ]
+      assert_in_out_err(cmds, "", [str.encoding.name, str.dump], [],
+                        "#{str.encoding}:#{str.dump} #{args.inspect}")
+    end
+
+    # tested codepages: 437 850 852 855 932 65001
+    # Since the codepage is shared all processes per conhost.exe, do
+    # not chcp, or parallel test may break.
+    def test_locale_codepage
+      locale = Encoding.find("locale")
+      list = %W"\u{c7} \u{452} \u{3066 3059 3068}"
+      list.each do |s|
+        assert_e_script_encoding(s, %w[-U])
+      end
+      list.each do |s|
+        s = s.encode(locale) rescue next
+        assert_e_script_encoding(s)
+        assert_e_script_encoding(s, %W[-E#{locale.name}])
+      end
+    end
   when /cygwin/
     def test_command_line_non_ascii
       assert_separately([{"LC_ALL"=>"ja_JP.SJIS"}, "-", "\u{3042}".encode("SJIS")], <<-"end;")
@@ -765,21 +826,19 @@ class TestRubyOptions < Test::Unit::TestCase
     assert_in_out_err(['-p', '-e', 'sub(/t.*/){"TEST"}'], %[test], %w[TEST], [], bug7157)
   end
 
-  def assert_norun_with_rflag(opt)
+  def assert_norun_with_rflag(*opt)
     bug10435 = "[ruby-dev:48712] [Bug #10435]: should not run with #{opt} option"
     stderr = []
     Tempfile.create(%w"bug10435- .rb") do |script|
       dir, base = File.split(script.path)
       script.puts "abort ':run'"
       script.close
-      opts = ['-C', dir, '-r', "./#{base}", opt]
-      assert_in_out_err([*opts, '-ep']) do |_, e|
-        stderr.concat(e)
-      end
+      opts = ['-C', dir, '-r', "./#{base}", *opt]
+      _, e = assert_in_out_err([*opts, '-ep'], "", //)
+      stderr.concat(e) if e
       stderr << "---"
-      assert_in_out_err([*opts, base]) do |_, e|
-        stderr.concat(e)
-      end
+      _, e = assert_in_out_err([*opts, base], "", //)
+      stderr.concat(e) if e
     end
     assert_not_include(stderr, ":run", bug10435)
   end
@@ -796,6 +855,7 @@ class TestRubyOptions < Test::Unit::TestCase
 
   def test_dump_parsetree_with_rflag
     assert_norun_with_rflag('--dump=parsetree')
+    assert_norun_with_rflag('--dump=parsetree', '-e', '#frozen-string-literal: true')
   end
 
   def test_dump_insns_with_rflag
@@ -831,14 +891,14 @@ class TestRubyOptions < Test::Unit::TestCase
       ["--disable-frozen-string-literal", false],
       [nil, false],
     ]
-    debug = [
+    debugs = [
       ["--debug-frozen-string-literal", true],
       ["--debug=frozen-string-literal", true],
       ["--debug", true],
       [nil, false],
     ]
     opts = ["--disable=gems"]
-    frozen.product(debug) do |(opt1, freeze), (opt2, debug)|
+    frozen.product(debugs) do |(opt1, freeze), (opt2, debug)|
       opt = opts + [opt1, opt2].compact
       err = !freeze ? [] : debug ? with_debug_pat : wo_debug_pat
       assert_in_out_err(opt, '"foo" << "bar"', [], err)

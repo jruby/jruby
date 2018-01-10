@@ -184,6 +184,12 @@ require 'monitor'
 #
 #      # :debug < :info < :warn < :error < :fatal < :unknown
 #
+# 4. Constructor
+#
+#      Logger.new(logdev, level: Logger::INFO)
+#      Logger.new(logdev, level: :info)
+#      Logger.new(logdev, level: 'INFO')
+#
 # == Format
 #
 # Log messages are rendered in the output stream in a certain format by
@@ -200,12 +206,22 @@ require 'monitor'
 #   logger.datetime_format = '%Y-%m-%d %H:%M:%S'
 #         # e.g. "2004-01-03 00:54:26"
 #
+# or via the constructor.
+#
+#   Logger.new(logdev, datetime_format: '%Y-%m-%d %H:%M:%S')
+#
 # Or, you may change the overall format via the #formatter= method.
 #
 #   logger.formatter = proc do |severity, datetime, progname, msg|
 #     "#{datetime}: #{msg}\n"
 #   end
 #   # e.g. "2005-09-22 08:51:08 +0900: hello world"
+#
+# or via the constructor.
+#
+#   Logger.new(logdev, formatter: proc {|severity, datetime, progname, msg|
+#     "#{datetime}: #{msg}\n"
+#   })
 #
 class Logger
   VERSION = "1.2.7"
@@ -251,8 +267,7 @@ class Logger
     if severity.is_a?(Integer)
       @level = severity
     else
-      _severity = severity.to_s.downcase
-      case _severity
+      case severity.to_s.downcase
       when 'debug'.freeze
         @level = DEBUG
       when 'info'.freeze
@@ -325,8 +340,12 @@ class Logger
 
   #
   # :call-seq:
-  #   Logger.new(logdev, shift_age = 7, shift_size = 1048576)
+  #   Logger.new(logdev, shift_age = 0, shift_size = 1048576)
   #   Logger.new(logdev, shift_age = 'weekly')
+  #   Logger.new(logdev, level: :info)
+  #   Logger.new(logdev, progname: 'progname')
+  #   Logger.new(logdev, formatter: formatter)
+  #   Logger.new(logdev, datetime_format: '%Y-%m-%d %H:%M:%S')
   #
   # === Args
   #
@@ -335,23 +354,39 @@ class Logger
   #   +STDOUT+, +STDERR+, or an open file).
   # +shift_age+::
   #   Number of old log files to keep, *or* frequency of rotation (+daily+,
-  #   +weekly+ or +monthly+).
+  #   +weekly+ or +monthly+). Default value is 0.
   # +shift_size+::
-  #   Maximum logfile size (only applies when +shift_age+ is a number).
+  #   Maximum logfile size in bytes (only applies when +shift_age+ is a number).
+  #   Defaults to +1048576+ (1MB).
+  # +level+::
+  #   Logging severity threshold. Default values is Logger::DEBUG.
+  # +progname+::
+  #   Program name to include in log messages. Default value is nil.
+  # +formatter+::
+  #   Logging formatter. Default values is an instance of Logger::Formatter.
+  # +datetime_format+::
+  #   Date and time format. Default value is '%Y-%m-%d %H:%M:%S'.
+  # +shift_period_suffix+::
+  #   The log file suffix format for +daily+, +weekly+ or +monthly+ rotation.
+  #   Default is '%Y%m%d'.
   #
   # === Description
   #
   # Create an instance.
   #
-  def initialize(logdev, shift_age = 0, shift_size = 1048576)
-    @progname = nil
-    @level = DEBUG
+  def initialize(logdev, shift_age = 0, shift_size = 1048576, level: DEBUG,
+                 progname: nil, formatter: nil, datetime_format: nil,
+                 shift_period_suffix: '%Y%m%d')
+    self.level = level
+    self.progname = progname
     @default_formatter = Formatter.new
-    @formatter = nil
+    self.datetime_format = datetime_format
+    self.formatter = formatter
     @logdev = nil
     if logdev
       @logdev = LogDevice.new(logdev, :shift_age => shift_age,
-        :shift_size => shift_size)
+        :shift_size => shift_size,
+        :shift_period_suffix => shift_period_suffix)
     end
   end
 
@@ -364,7 +399,8 @@ class Logger
   #
   # +logdev+::
   #   The log device.  This is a filename (String) or IO object (typically
-  #   +STDOUT+, +STDERR+, or an open file).
+  #   +STDOUT+, +STDERR+, or an open file).  reopen the same filename if
+  #   it is +nil+, do nothing for IO.  Default is +nil+.
   #
   # === Description
   #
@@ -629,14 +665,19 @@ private
     attr_reader :filename
     include MonitorMixin
 
-    def initialize(log = nil, opt = {})
-      @dev = @filename = @shift_age = @shift_size = nil
+    def initialize(log = nil, shift_age: nil, shift_size: nil, shift_period_suffix: nil)
+      @dev = @filename = @shift_age = @shift_size = @shift_period_suffix = nil
       mon_initialize
       set_dev(log)
       if @filename
-        @shift_age = opt[:shift_age] || 7
-        @shift_size = opt[:shift_size] || 1048576
-        @next_rotate_time = next_rotate_time(Time.now, @shift_age) unless @shift_age.is_a?(Integer)
+        @shift_age = shift_age || 7
+        @shift_size = shift_size || 1048576
+        @shift_period_suffix = shift_period_suffix || '%Y%m%d'
+
+        unless @shift_age.is_a?(Integer)
+          base_time = @dev.respond_to?(:stat) ? @dev.stat.mtime : Time.now
+          @next_rotate_time = next_rotate_time(base_time, @shift_age)
+        end
       end
     end
 
@@ -791,15 +832,15 @@ private
     end
 
     def shift_log_period(period_end)
-      postfix = period_end.strftime("%Y%m%d") # YYYYMMDD
-      age_file = "#{@filename}.#{postfix}"
+      suffix = period_end.strftime(@shift_period_suffix)
+      age_file = "#{@filename}.#{suffix}"
       if FileTest.exist?(age_file)
         # try to avoid filename crash caused by Timestamp change.
         idx = 0
         # .99 can be overridden; avoid too much file search with 'loop do'
         while idx < 100
           idx += 1
-          age_file = "#{@filename}.#{postfix}.#{idx}"
+          age_file = "#{@filename}.#{suffix}.#{idx}"
           break unless FileTest.exist?(age_file)
         end
       end

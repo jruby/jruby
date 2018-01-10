@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -162,6 +162,10 @@ public class RubyMethod extends AbstractRubyMethod {
         if (method instanceof ProcMethod) {
             return ((ProcMethod) method).isSame(((RubyMethod) other).getMethod());
         }
+        if (getMetaClass() != ((RubyBasicObject) other).getMetaClass()) {
+            return false;
+        }
+
         RubyMethod otherMethod = (RubyMethod)other;
         return receiver == otherMethod.receiver && originModule == otherMethod.originModule &&
             ( isSerialMatch(otherMethod.method) || isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) );
@@ -193,7 +197,9 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = "clone")
     @Override
     public RubyMethod rbClone() {
-        return newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        newMethod.setMetaClass(getMetaClass());
+        return newMethod;
     }
 
     /** Create a Proc object.

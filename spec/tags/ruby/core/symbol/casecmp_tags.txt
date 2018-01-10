@@ -1,0 +1,4 @@
+fails:Symbol#casecmp with Symbol doesn't do case mapping for non-ascii characters
+fails:Symbol#casecmp? doesn't do case mapping for non-ascii and non-unicode characters
+fails:Symbol#casecmp? does case mapping for unicode characters
+fails:Symbol#casecmp? returns nil when comparing characters with different encodings

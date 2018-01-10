@@ -32,6 +32,10 @@ public abstract class ResourceException extends IOException {
         public FileIsDirectory(String path) { super("EISDIR", path); }
     }
 
+    public static class FileIsNotDirectory extends ErrnoException {
+        public FileIsNotDirectory(String path) { super ("ENOTDIR", path); }
+    }
+
     public static class FileExists extends ErrnoException {
         public FileExists(String path) { super("EEXIST", path); }
     }

@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -36,19 +36,26 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Global scope node (::FooBar).  This is used to gain access to the global scope (that of the 
  * Object class) when referring to a constant or method.
  */
 public class Colon3Node extends Node implements INameNode {
-    protected String name;
+    protected ByteList name;
 
-    public Colon3Node(ISourcePosition position, String name) {
+    public Colon3Node(ISourcePosition position, ByteList name) {
         this(position, name, false);
     }
 
-    protected Colon3Node(ISourcePosition position, String name, boolean containsAssignment) {
+    @Deprecated
+    public Colon3Node(ISourcePosition position, String name) {
+        this(position, StringSupport.stringAsByteList(name), false);
+    }
+
+    protected Colon3Node(ISourcePosition position, ByteList name, boolean containsAssignment) {
         super(position, containsAssignment);
         this.name = name;
     }
@@ -70,6 +77,10 @@ public class Colon3Node extends Node implements INameNode {
      * @return Returns a String
      */
     public String getName() {
+        return StringSupport.byteListAsString(name);
+    }
+
+    public ByteList getByteName() {
         return name;
     }
     
@@ -78,6 +89,6 @@ public class Colon3Node extends Node implements INameNode {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = StringSupport.stringAsByteList(name);
     }
 }

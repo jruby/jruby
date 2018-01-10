@@ -3,6 +3,7 @@ package org.jruby.ir.operands;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -47,7 +48,7 @@ public class Filename extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return context.runtime.newString(currScope.getIRScope().getFileName());
+        return IRRuntimeHelpers.getFileNameStringFromScope(context, currScope);
     }
 
     @Override

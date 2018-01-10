@@ -2103,14 +2103,27 @@ EOT
     }
     assert_equal(Encoding::US_ASCII, enc)
 
+    enc = nil
+    assert_warn(/BOM/) {
+      open(__FILE__, "r", encoding: "bom|us-ascii") {|f| enc = f.external_encoding}
+    }
+    assert_equal(Encoding::US_ASCII, enc)
+
+    enc = nil
     assert_warn(/BOM/) {
       open(IO::NULL, "w:bom|us-ascii") {|f| enc = f.external_encoding}
     }
     assert_equal(Encoding::US_ASCII, enc)
 
+    enc = nil
+    assert_warn(/BOM/) {
+      open(IO::NULL, "w", encoding: "bom|us-ascii") {|f| enc = f.external_encoding}
+    }
+    assert_equal(Encoding::US_ASCII, enc)
+
     tlhInganHol = "\u{f8e4 f8d9 f8d7 f8dc f8d0 f8db} \u{f8d6 f8dd f8d9}"
-    EnvUtil.with_default_external(Encoding::UTF_8) {
-      assert_warn(/#{tlhInganHol}/) {
+    assert_warn(/#{tlhInganHol}/) {
+      EnvUtil.with_default_internal(nil) {
         open(IO::NULL, "w:bom|#{tlhInganHol}") {|f| enc = f.external_encoding}
       }
     }
@@ -2224,7 +2237,7 @@ EOT
            w.binmode
            w.puts(0x010a.chr(Encoding::UTF_32BE))
            w.puts(0x010a.chr(Encoding::UTF_16BE))
-           w.puts(0x0a010000.chr(Encoding::UTF_32LE))
+           w.puts(0x0a01.chr(Encoding::UTF_32LE))
            w.puts(0x0a01.chr(Encoding::UTF_16LE))
            w.close
          end,
@@ -2232,7 +2245,7 @@ EOT
            r.binmode
            assert_equal("\x00\x00\x01\x0a\n", r.read(5), bug)
            assert_equal("\x01\x0a\n", r.read(3), bug)
-           assert_equal("\x00\x00\x01\x0a\n", r.read(5), bug)
+           assert_equal("\x01\x0a\x00\x00\n", r.read(5), bug)
            assert_equal("\x01\x0a\n", r.read(3), bug)
            assert_equal("", r.read, bug)
            r.close

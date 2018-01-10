@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -36,20 +36,27 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Declaration (and assignment) of a Constant.
  */
 public class ConstDeclNode extends AssignableNode implements INameNode {
-    private final String name;
+    private final ByteList name;
     private final INameNode constNode;
 
     // TODO: Split this into two sub-classes so that name and constNode can be specified separately.
-    public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
+    public ConstDeclNode(ISourcePosition position, ByteList name, INameNode constNode, Node valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;        
         this.constNode = constNode;
+    }
+
+    @Deprecated
+    public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
+        this(position, StringSupport.stringAsByteList(name), constNode, valueNode);
     }
 
     public NodeType getNodeType() {
@@ -70,9 +77,13 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
      * @return name
      */
     public String getName() {
-    	return (name == null ? constNode.getName() : name);
+    	return name == null ? constNode.getName() : StringSupport.byteListAsString(name);
     }
-    
+
+    public ByteList getByteName() {
+        return name == null ? constNode.getByteName() : name;
+    }
+
     /**
      * Get the full path, including the name of the new constant (in Foo::BAR it is Foo::BAR) or null.
      * Your probably want to extract the left part with

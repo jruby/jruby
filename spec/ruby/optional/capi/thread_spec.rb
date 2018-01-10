@@ -21,7 +21,7 @@ describe "C-API Thread function" do
   end
 
   describe "rb_thread_wait_for" do
-    it "sleeps the current thread for the give ammount of time" do
+    it "sleeps the current thread for the give amount of time" do
       start = Time.now
       @t.rb_thread_wait_for(0, 100_000)
       (Time.now - start).should be_close(0.1, 0.2)
@@ -78,8 +78,11 @@ describe "C-API Thread function" do
     end
 
     it "handles throwing an exception in the thread" do
-      proc = lambda { |x| raise "my error" }
-      thr = @t.rb_thread_create(proc, nil)
+      prc = lambda { |x|
+        Thread.current.report_on_exception = false
+        raise "my error"
+      }
+      thr = @t.rb_thread_create(prc, nil)
       thr.should be_kind_of(Thread)
 
       lambda {
@@ -106,6 +109,10 @@ describe "C-API Thread function" do
 
       # Wait until it's blocking...
       Thread.pass while thr.status and thr.status != "sleep"
+
+      # The thread status is set to sleep by rb_thread_call_without_gvl(),
+      # but the thread might not be in the blocking read(2) yet, so wait a bit.
+      sleep 0.1
 
       # Wake it up, causing the unblock function to be run.
       thr.wakeup

@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -27,7 +27,6 @@
 package org.jruby.test;
 
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
@@ -99,25 +98,5 @@ public class TestMethodFactories extends TestRubyBase {
         RubyMethod rubyMethod = (RubyMethod)mod.method(runtime.newSymbol("a_module_method"));
 
         assertEquals(mod.getSingletonClass(), rubyMethod.owner(runtime.getCurrentContext()));
-    }
-
-    public static class VersionedMethods {
-        @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_8)
-        public static IRubyObject method18(IRubyObject self) {
-            return self;
-        }
-        @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_9)
-        public static IRubyObject method19(IRubyObject self) {
-            return self;
-        }
-    }
-
-    // #1194: ClassFormatError with Nokogiri 1.6.0
-    public void testVersionedMethods() {
-        RubyModule mod = runtime.defineModule("GH1194");
-
-        mod.defineAnnotatedMethods(VersionedMethods.class);
-
-        assertNotNull(mod.searchMethod("method"));
     }
 }

@@ -29,7 +29,7 @@ class TestCoverage < Test::Unit::TestCase
       Dir.chdir(tmp) {
         File.open("test.rb", "w") do |f|
           f.puts <<-EOS
-            def coverage_test_method
+            def TestCoverage.coverage_test_snapshot
               :ok
             end
           EOS
@@ -38,7 +38,7 @@ class TestCoverage < Test::Unit::TestCase
         Coverage.start
         require tmp + '/test.rb'
         cov = Coverage.peek_result[tmp + '/test.rb']
-        coverage_test_method
+        TestCoverage.coverage_test_snapshot
         cov2 = Coverage.peek_result[tmp + '/test.rb']
         assert_equal cov[1] + 1, cov2[1]
         assert_equal cov2, Coverage.result[tmp + '/test.rb']
@@ -55,7 +55,7 @@ class TestCoverage < Test::Unit::TestCase
       Dir.chdir(tmp) {
         File.open("test.rb", "w") do |f|
           f.puts <<-EOS
-            def coverage_test_method
+            def TestCoverage.coverage_test_restarting
               :ok
             end
           EOS
@@ -63,28 +63,27 @@ class TestCoverage < Test::Unit::TestCase
 
         File.open("test2.rb", "w") do |f|
           f.puts <<-EOS
-            def coverage_test_method2
-              :ok
-              :ok
-            end
+            itself
           EOS
         end
 
         Coverage.start
         require tmp + '/test.rb'
-        assert_equal 3, Coverage.result[tmp + '/test.rb'].size
+        cov = { "#{tmp}/test.rb" => [1, 0, nil] }
+        assert_equal cov, Coverage.result
 
         # Restart coverage but '/test.rb' is required before restart,
         # so coverage is not recorded.
         Coverage.start
-        coverage_test_method
-        assert_equal 0, Coverage.result[tmp + '/test.rb'].size
+        TestCoverage.coverage_test_restarting
+        assert_equal({}, Coverage.result)
 
         # Restart coverage and '/test2.rb' is required after restart,
         # so coverage is recorded.
         Coverage.start
         require tmp + '/test2.rb'
-        assert_equal 4, Coverage.result[tmp + '/test2.rb'].size
+        cov = { "#{tmp}/test2.rb" => [1] }
+        assert_equal cov, Coverage.result
       }
     }
   ensure
@@ -111,4 +110,13 @@ class TestCoverage < Test::Unit::TestCase
   ensure
     $".replace loaded_features
   end
-end
+
+  def test_nonpositive_linenumber
+    bug12517 = '[ruby-core:76141] [Bug #12517]'
+    Coverage.start
+    assert_nothing_raised(ArgumentError, bug12517) do
+      RubyVM::InstructionSequence.compile(":ok", nil, "<compiled>", 0)
+    end
+    assert_include Coverage.result, "<compiled>"
+  end
+end unless ENV['COVERAGE']

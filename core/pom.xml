@@ -12,12 +12,12 @@ DO NOT MODIFIY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.1.11.0-SNAPSHOT</version>
+    <version>9.2.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
   <properties>
-    <version.ruby>2.3.3</version.ruby>
+    <version.ruby>2.4.1</version.ruby>
     <prawn.dir>${test.dir}/prawn</prawn.dir>
     <spec.tags.dir>${spec.dir}/tags</spec.tags.dir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
@@ -27,7 +27,7 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
-    <version.ruby.minor>3</version.ruby.minor>
+    <version.ruby.minor>1</version.ruby.minor>
     <tzdata.version>2013d</tzdata.version>
     <install4j.executable>/Applications/install4j 4/bin/install4jc</install4j.executable>
     <jay.bin>jay</jay.bin>
@@ -39,7 +39,7 @@ DO NOT MODIFIY - GENERATED CODE
     <rubyspec.1.8.dir>${rubyspec.dir}/1.8</rubyspec.1.8.dir>
     <jruby.launch.memory>1024M</jruby.launch.memory>
     <jruby.compile.memory>2G</jruby.compile.memory>
-    <version.ruby.major>2.3</version.ruby.major>
+    <version.ruby.major>2.4</version.ruby.major>
     <release.dir>release</release.dir>
     <create.sources.jar>false</create.sources.jar>
     <lib.dir>lib</lib.dir>
@@ -47,7 +47,7 @@ DO NOT MODIFIY - GENERATED CODE
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
-    <version.ruby.revision>56859</version.ruby.revision>
+    <version.ruby.revision>58053</version.ruby.revision>
     <jruby.test.memory>3G</jruby.test.memory>
     <mspec.dir>${spec.dir}/mspec</mspec.dir>
     <build.date>${maven.build.timestamp}</build.date>
@@ -135,7 +135,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.41</version>
+      <version>3.0.43</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -157,7 +157,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.1.6</version>
+      <version>2.1.7</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -173,7 +173,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.11</version>
+      <version>2.1.13</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
@@ -183,7 +183,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.18</version>
+      <version>1.0.26</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -193,17 +193,12 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
-      <version>1.8-SNAPSHOT</version>
+      <version>1.11</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>options</artifactId>
       <version>1.4</version>
-    </dependency>
-    <dependency>
-      <groupId>com.headius</groupId>
-      <artifactId>unsafe-fences</artifactId>
-      <version>1.0</version>
     </dependency>
     <dependency>
       <groupId>bsf</groupId>
@@ -272,6 +267,11 @@ DO NOT MODIFIY - GENERATED CODE
           <groupId>org.ow2.asm</groupId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.headius</groupId>
+      <artifactId>modulator</artifactId>
+      <version>1.0</version>
     </dependency>
   </dependencies>
   <build>
@@ -479,6 +479,7 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
+              <debug>true</debug>
               <annotationProcessors>
                 <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
               </annotationProcessors>
@@ -498,6 +499,7 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
+              <debug>true</debug>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
@@ -534,9 +536,9 @@ DO NOT MODIFIY - GENERATED CODE
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
           <source>${base.java.version}</source>
-          <source>1.7</source>
+          <source>1.8</source>
           <target>${base.javac.version}</target>
-          <target>1.7</target>
+          <target>1.8</target>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>
@@ -618,6 +620,14 @@ DO NOT MODIFIY - GENERATED CODE
                 </transformer>
               </transformers>
               <createSourcesJar>${create.sources.jar}</createSourcesJar>
+              <filters>
+                <filter>
+                  <artifact>com.headius:invokebinder</artifact>
+                  <excludes>
+                    <exclude>**/module-info.class</exclude>
+                  </excludes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>
@@ -677,7 +687,19 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -711,7 +733,19 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -745,7 +779,19 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -779,7 +825,19 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -813,7 +871,19 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -847,7 +917,19 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -881,7 +963,19 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -915,7 +1009,19 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>
@@ -949,7 +1055,19 @@ DO NOT MODIFIY - GENERATED CODE
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>me.qmx.jitescript</pattern>
+                      <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
                   </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>com.headius:invokebinder</artifact>
+                      <excludes>
+                        <exclude>**/module-info.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                 </configuration>
               </execution>
             </executions>

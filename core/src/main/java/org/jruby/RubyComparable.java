@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -36,14 +36,11 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.ComparableSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.RespondToCallSite;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /** Implementation of the Comparable module.
  *
@@ -86,7 +83,6 @@ public class RubyComparable {
 
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
-        ComparableSites sites = sites(context);
         if (op_gt.call(context, val, val, zero).isTrue()) return 1;
         if (op_lt.call(context, val, val, zero).isTrue()) return -1;
 
@@ -96,6 +92,16 @@ public class RubyComparable {
     public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
         ComparableSites sites = sites(context);
         return cmpint(context, sites.op_gt, sites.op_lt, val, a, b);
+    }
+
+    public static int cmpAndCmpint(ThreadContext context, IRubyObject a, IRubyObject b) {
+        IRubyObject cmpResult = sites(context).op_cmp.call(context, a, a, b);
+        return cmpint(context, cmpResult, a, b);
+    }
+
+    public static int cmpAndCmpint(ThreadContext context, CallSite op_cmp, CallSite op_gt, CallSite op_lt, IRubyObject a, IRubyObject b) {
+        IRubyObject cmpResult = op_cmp.call(context, a, a, b);
+        return cmpint(context, op_gt, op_lt, cmpResult, a, b);
     }
 
     /** rb_cmperr
@@ -231,6 +237,27 @@ public class RubyComparable {
     @JRubyMethod(name = "between?", required = 2)
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {
         return context.runtime.newBoolean(op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
+    }
+
+    @JRubyMethod(name = "clamp")
+    public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject min, IRubyObject max) {
+        int c;
+
+        ComparableSites sites = sites(context);
+        CallSite op_gt = sites.op_gt;
+        CallSite op_lt = sites.op_lt;
+        CallSite op_cmp = sites.op_cmp;
+
+        if (cmpAndCmpint(context, op_cmp, op_gt, op_lt, min, max) > 0) {
+            throw context.runtime.newArgumentError("min argument must be smaller than max argument");
+        }
+
+        c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, min);
+        if (c == 0) return recv;
+        if (c < 0) return min;
+        c = cmpAndCmpint(context, op_cmp, op_gt, op_lt, recv, max);
+        if (c > 0) return max;
+        return recv;
     }
 
     private static ComparableSites sites(ThreadContext context) {

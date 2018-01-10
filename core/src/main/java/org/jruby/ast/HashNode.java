@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -41,10 +41,11 @@ import org.jruby.util.KeyValuePair;
 
 /**
  * A Literal Hash that can represent either a {a=&amp;b, c=&amp;d} type expression or the list 
- * of default values in a method call.
+ * of default values or kwarg in a method call.
  */
 public class HashNode extends Node implements ILiteralNode {
     private final List<KeyValuePair<Node,Node>> pairs;
+    private boolean hasOnlySymbolKeys = true;
 
     public HashNode(ISourcePosition position) {
         super(position, false);
@@ -55,7 +56,14 @@ public class HashNode extends Node implements ILiteralNode {
     public HashNode(ISourcePosition position, KeyValuePair<Node,Node> pair) {
         this(position);
 
-        pairs.add(pair);
+        add(pair);
+    }
+
+    /**
+     * @return true if all elements of this hash uses symbol keys (might end up representing a kwarg).
+     */
+    public boolean hasOnlySymbolKeys() {
+        return hasOnlySymbolKeys;
     }
 
     public NodeType getNodeType() {
@@ -67,6 +75,9 @@ public class HashNode extends Node implements ILiteralNode {
                 pair.getValue() != null && pair.getValue().containsVariableAssignment()) {
             containsVariableAssignment = true;
         }
+
+        if (!(pair.getKey() instanceof SymbolNode) || pair.getKey() == null) hasOnlySymbolKeys = false;
+
         pairs.add(pair);
 
         return this;

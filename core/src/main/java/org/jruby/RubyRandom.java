@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -37,6 +37,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Random;
 import org.jruby.util.TypeConverter;
+
+import static org.jruby.util.TypeConverter.toFloat;
 
 /**
  * Implementation of the Random class.
@@ -487,8 +489,8 @@ public class RubyRandom extends RubyObject {
                 double mid = 0.5;
                 double r;
                 if (Double.isInfinite(max)) {
-                    double min = floatValue(context, range.begin) / 2.0;
-                    max = floatValue(context, range.end) / 2.0;
+                    double min = floatValue(context, toFloat(context.runtime, range.begin)) / 2.0;
+                    max = floatValue(context, toFloat(context.runtime, range.end)) / 2.0;
                     scale = 2;
                     mid = max + min;
                     max -= min;
@@ -533,15 +535,8 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: float_value
-    private static double floatValue(ThreadContext context, IRubyObject v) {
-        final double x;
-        if (v instanceof RubyFloat) {
-            x = ((RubyFloat) v).getDoubleValue();
-        } else if (v instanceof RubyNumeric) {
-            x = ((RubyNumeric) v).convertToFloat().getDoubleValue();
-        } else {
-            throw context.runtime.newTypeError(v, context.runtime.getFloat());
-        }
+    private static double floatValue(ThreadContext context, RubyFloat v) {
+        final double x = v.getDoubleValue();
         checkFloatValue(context, x);
         return x;
     }

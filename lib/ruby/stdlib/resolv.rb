@@ -26,7 +26,7 @@ end
 #
 #   Resolv::DNS.open do |dns|
 #     ress = dns.getresources "www.ruby-lang.org", Resolv::DNS::Resource::IN::A
-#     p ress.map { |r| r.address }
+#     p ress.map(&:address)
 #     ress = dns.getresources "ruby-lang.org", Resolv::DNS::Resource::IN::MX
 #     p ress.map { |r| [r.exchange.to_s, r.preference] }
 #   end
@@ -185,7 +185,7 @@ class Resolv
 
     def initialize(filename = DefaultFileName)
       @filename = filename
-      @mutex = Mutex.new
+      @mutex = Thread::Mutex.new
       @initialized = nil
     end
 
@@ -269,9 +269,7 @@ class Resolv
 
     def each_name(address, &proc)
       lazy_initialize
-      if @addr2name.include?(address)
-        @addr2name[address].each(&proc)
-      end
+      @addr2name[address]&.each(&proc)
     end
   end
 
@@ -339,7 +337,7 @@ class Resolv
     #                   :ndots => 1)
 
     def initialize(config_info=nil)
-      @mutex = Mutex.new
+      @mutex = Thread::Mutex.new
       @config = Config.new(config_info)
       @initialized = nil
     end
@@ -630,7 +628,7 @@ class Resolv
     end
 
     RequestID = {} # :nodoc:
-    RequestIDMutex = Mutex.new # :nodoc:
+    RequestIDMutex = Thread::Mutex.new # :nodoc:
 
     def self.allocate_request_id(host, port) # :nodoc:
       id = nil
@@ -727,9 +725,7 @@ class Resolv
       def close
         socks = @socks
         @socks = nil
-        if socks
-          socks.each {|sock| sock.close }
-        end
+        socks&.each(&:close)
       end
 
       class Sender # :nodoc:
@@ -915,7 +911,7 @@ class Resolv
 
     class Config # :nodoc:
       def initialize(config_info=nil)
-        @mutex = Mutex.new
+        @mutex = Thread::Mutex.new
         @config_info = config_info
         @initialized = nil
         @timeouts = nil
@@ -942,9 +938,7 @@ class Resolv
           f.each {|line|
             line.sub!(/[#;].*/, '')
             keyword, *args = line.split(/\s+/)
-            args.each { |arg|
-              arg.untaint
-            }
+            args.each(&:untaint)
             next unless keyword
             case keyword
             when 'nameserver'
@@ -2704,10 +2698,12 @@ class Resolv
           return arg
         when String
           coordinates = ''
-          if Regex =~ arg &&  $1<180
-            hemi = ($4[/([NE])/,1]) || ($4[/([SW])/,1]) ? 1 : -1
-            coordinates = [(($1.to_i*(36e5))+($2.to_i*(6e4))+($3.to_f*(1e3)))*hemi+(2**31)].pack("N")
-            (orientation ||= '') << $4[[/NS/],1] ? 'lat' : 'lon'
+          if Regex =~ arg && $1.to_f < 180
+            m = $~
+            hemi = (m[4][/[NE]/]) || (m[4][/[SW]/]) ? 1 : -1
+            coordinates = [ ((m[1].to_i*(36e5)) + (m[2].to_i*(6e4)) +
+                             (m[3].to_f*(1e3))) * hemi+(2**31) ].pack("N")
+            orientation = m[4][/[NS]/] ? 'lat' : 'lon'
           else
             raise ArgumentError.new("not a properly formed Coord string: " + arg)
           end

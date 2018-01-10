@@ -5,8 +5,6 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_bad_to_s_format_strings
     bd = BigDecimal.new("1")
-    assert_equal("0.1E1", bd.to_s)
-    assert_equal("+0.1E1", bd.to_s("+-2"))
     assert_equal("0.23", BigDecimal.new("0.23").to_s("F"))
   end
 
@@ -25,12 +23,6 @@ class TestBigDecimal < Test::Unit::TestCase
     # JRUBY-153 issues
     assert_nothing_raised {BigDecimal("4")}
     assert_nothing_raised {BigDecimal("3.14159")}
-  end
-
-  def test_alphabetic_args_return_zero
-    assert_equal( BigDecimal("0.0"), BigDecimal("XXX"),
-                  'Big Decimal objects instanitiated with a value that starts
-                  with a letter should have a value of 0.0' )
   end
 
   class X
@@ -183,7 +175,6 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_round_nan
     nan = BigDecimal.new('NaN')
-    assert nan.round.nan? # nothing raised
     assert nan.round(0).nan?
     assert nan.round(2).nan?
   end
@@ -213,13 +204,13 @@ class TestBigDecimal < Test::Unit::TestCase
     #assert_equal BigDecimal('0.125892541E2'), res
     # NOTE: we're not handling precision the same as MRI with pow
     assert_equal '0.125892541', res.to_s[0..10]
-    assert_equal 'E2', res.to_s[-2..-1]
+    assert_equal 'e2', res.to_s[-2..-1]
 
     res = 2 ** BigDecimal(1.2, 2)
     #assert_equal BigDecimal('0.229739671E1'), res
     # NOTE: we're not handling precision the same as MRI with pow
     assert_equal '0.22973967', res.to_s[0..9]
-    assert_equal 'E1', res.to_s[-2..-1]
+    assert_equal 'e1', res.to_s[-2..-1]
 
     res = BigDecimal(1.2, 2) ** 2.0
     assert_equal BigDecimal('0.144E1'), res
@@ -265,7 +256,7 @@ class TestBigDecimal < Test::Unit::TestCase
     # note: this is to check compatibility with MRI, which currently sets only the last mode
     # it checks for
     BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY | BigDecimal::EXCEPTION_NaN, true)
-    assert_equal BigDecimal::EXCEPTION_NaN, BigDecimal.mode(1)
+    assert_equal BigDecimal::EXCEPTION_INFINITY | BigDecimal::EXCEPTION_NaN, BigDecimal.mode(1)
 
     # rounding mode defaults to BigDecimal::ROUND_HALF_UP
     assert_equal BigDecimal::ROUND_HALF_UP, BigDecimal.mode(BigDecimal::ROUND_MODE)
@@ -320,9 +311,6 @@ class TestBigDecimal < Test::Unit::TestCase
     #end
 
     assert_raises(TypeError) { BigDecimal(:"+Infinity") }
-
-    assert_equal BigDecimal('0'), BigDecimal("infinity")
-    assert_equal BigDecimal('0'), BigDecimal("+Infinit")
   end
 
   #JRUBY-5190
@@ -354,33 +342,6 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal BigDecimal('5'), b
     b = BigDecimal.new("100+42")
     assert_equal 100, b.to_i
-  end
-  
-  class BigDeci < BigDecimal
-
-    # MRI does not invoke initialize on 1.8./1.9
-    def initialize(arg); raise super(arg.to_s) end
-
-    def abs; -super end
-    def infinite?; false end
-
-  end
-
-  def test_subclass
-    a = BigDeci.new 1.to_s
-    assert_equal(-1, a.abs)
-    assert_equal false, a.infinite?
-
-    a = BigDeci.new '-100'
-    assert_equal(-5, a.div(20))
-    assert_equal(-100, a.abs)
-
-    assert a.inspect.index('#<BigDecimal:')
-    assert_equal '-0.1E3', a.to_s
-
-    assert_equal BigDeci, a.class
-    assert a.is_a?(BigDeci)
-    assert a.kind_of?(BigDeci)
   end
 
 end

@@ -252,11 +252,9 @@ class TestMethod < Test::Unit::TestCase
     m = o.method(:bar).unbind
     assert_raise(TypeError) { m.bind(Object.new) }
 
-    EnvUtil.with_default_external(Encoding::UTF_8) do
-      cx = EnvUtil.labeled_class("X\u{1f431}")
-      assert_raise_with_message(TypeError, /X\u{1f431}/) {
-        o.method(cx)
-      }
+    cx = EnvUtil.labeled_class("X\u{1f431}")
+    assert_raise_with_message(TypeError, /X\u{1f431}/) do
+      o.method(cx)
     end
   end
 
@@ -286,11 +284,9 @@ class TestMethod < Test::Unit::TestCase
     assert_raise(TypeError) do
       Class.new.class_eval { define_method(:bar, o.method(:bar)) }
     end
-    EnvUtil.with_default_external(Encoding::UTF_8) do
-      cx = EnvUtil.labeled_class("X\u{1f431}")
-      assert_raise_with_message(TypeError, /X\u{1F431}/) {
-        Class.new {define_method(cx) {}}
-      }
+    cx = EnvUtil.labeled_class("X\u{1f431}")
+    assert_raise_with_message(TypeError, /X\u{1F431}/) do
+      Class.new {define_method(cx) {}}
     end
   end
 
@@ -322,7 +318,7 @@ class TestMethod < Test::Unit::TestCase
     def o.define(n)
       define_singleton_method(n)
     end
-    assert_raise(ArgumentError) {o.define(:bar) {:bar}}
+    assert_raise(ArgumentError, bug11283) {o.define(:bar) {:bar}}
   end
 
   def test_define_method_invalid_arg
@@ -804,7 +800,7 @@ class TestMethod < Test::Unit::TestCase
 
   def test_curry_from_proc
     c = Class.new {
-      define_method(:three_args) {|a,b,c| a + b + c}
+      define_method(:three_args) {|x,y,z| x + y + z}
     }
     assert_curry_three_args(c.new.method(:three_args))
   end
@@ -889,6 +885,22 @@ class TestMethod < Test::Unit::TestCase
     assert_nil(m, Feature9781)
   end
 
+  def test_prepended_public_zsuper
+    mod = EnvUtil.labeled_module("Mod") {private def foo; :ok end}
+    mods = [mod]
+    obj = Object.new.extend(mod)
+    class << obj
+      public :foo
+    end
+    2.times do |i|
+      mods.unshift(mod = EnvUtil.labeled_module("Mod#{i}") {def foo; end})
+      obj.singleton_class.prepend(mod)
+    end
+    m = obj.method(:foo)
+    assert_equal(mods, mods.map {m.owner.tap {m = m.super_method}})
+    assert_nil(m)
+  end
+
   def rest_parameter(*rest)
     rest
   end
@@ -901,7 +913,7 @@ class TestMethod < Test::Unit::TestCase
   class C
     D = "Const_D"
     def foo
-      a = b = c = 12345
+      a = b = c = a = b = c = 12345
     end
   end
 
@@ -909,16 +921,16 @@ class TestMethod < Test::Unit::TestCase
     bug11012 = '[ruby-core:68673] [Bug #11012]'
 
     b = C.new.method(:foo).to_proc.binding
-    assert_equal([], b.local_variables)
-    assert_equal("Const_D", b.eval("D")) # Check CREF
+    assert_equal([], b.local_variables, bug11012)
+    assert_equal("Const_D", b.eval("D"), bug11012) # Check CREF
 
-    assert_raise(NameError){ b.local_variable_get(:foo) }
-    assert_equal(123, b.local_variable_set(:foo, 123))
-    assert_equal(123, b.local_variable_get(:foo))
-    assert_equal(456, b.local_variable_set(:bar, 456))
-    assert_equal(123, b.local_variable_get(:foo))
-    assert_equal(456, b.local_variable_get(:bar))
-    assert_equal([:bar, :foo], b.local_variables.sort)
+    assert_raise(NameError, bug11012){ b.local_variable_get(:foo) }
+    assert_equal(123, b.local_variable_set(:foo, 123), bug11012)
+    assert_equal(123, b.local_variable_get(:foo), bug11012)
+    assert_equal(456, b.local_variable_set(:bar, 456), bug11012)
+    assert_equal(123, b.local_variable_get(:foo), bug11012)
+    assert_equal(456, b.local_variable_get(:bar), bug11012)
+    assert_equal([:bar, :foo], b.local_variables.sort, bug11012)
   end
 
   class MethodInMethodClass

@@ -1,9 +1,9 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -38,7 +38,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -47,21 +46,29 @@ import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.util.BasicObjectStubGenerator;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
-import static org.jruby.util.CodegenUtils.*;
-
 import org.jruby.util.Loader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
-import static org.objectweb.asm.Opcodes.*;
+
+import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.getBoxType;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.params;
+import static org.jruby.util.CodegenUtils.prettyParams;
+import static org.jruby.util.CodegenUtils.sig;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
+import static org.objectweb.asm.Opcodes.V1_6;
 
 /**
  * On fly .class generator (used for Ruby interface impls).
@@ -136,9 +143,12 @@ public abstract class RealClassGenerator {
         Map<String, List<Method>> simpleToAll = buildSimpleToAllMap(interfaces, superTypeNames, rubyClass);
 
         Class newClass = defineRealImplClass(ruby, name, superClass, superTypeNames, simpleToAll);
-        if (!newClass.isAssignableFrom(interfaces[0])) {
-            new RuntimeException(newClass.getInterfaces()[0].getClassLoader() + " " + interfaces[0].getClassLoader());
+
+        // Confirm all interfaces got implemented
+        for (Class ifc : interfaces) {
+            assert ifc.isAssignableFrom(newClass);
         }
+
         return newClass;
     }
 
@@ -731,8 +741,8 @@ public abstract class RealClassGenerator {
                 mv.dup();
                 mv.pushInt(i);
                 // convert to IRubyObject
-                mv.aload(rubyIndex);
                 if (paramTypes[i].isPrimitive()) {
+                    mv.aload(rubyIndex);
                     if (paramType == byte.class || paramType == short.class || paramType == char.class || paramType == int.class) {
                         mv.iload(argIndex++);
                         mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, int.class));
@@ -751,9 +761,12 @@ public abstract class RealClassGenerator {
                         mv.iload(argIndex++);
                         mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, boolean.class));
                     }
-                } else {
+                } else if (!IRubyObject.class.isAssignableFrom(paramType)) {
+                    mv.aload(rubyIndex);
                     mv.aload(argIndex++);
                     mv.invokestatic(p(JavaUtil.class), "convertJavaToUsableRubyObject", sig(IRubyObject.class, Ruby.class, Object.class));
+                } else {
+                    mv.aload(argIndex++);
                 }
                 mv.aastore();
             }
@@ -807,18 +820,17 @@ public abstract class RealClassGenerator {
                     }
                 }
             } else {
-                mv.ldc(Type.getType(returnType));
-                mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
-                mv.checkcast(p(returnType));
+                if (!IRubyObject.class.isAssignableFrom(returnType)) {
+                    mv.ldc(Type.getType(returnType));
+                    mv.invokeinterface(
+                        p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
+                    mv.checkcast(p(returnType));
+                }
                 mv.areturn();
             }
         } else {
             mv.voidreturn();
         }
-    }
-
-    public static boolean isCacheOk(CacheEntry entry, IRubyObject self) {
-        return CacheEntry.typeOk(entry, self.getMetaClass()) && entry.method != UndefinedMethod.INSTANCE;
     }
 
     public static int calcBaseIndex(final Class[] params, int baseIndex) {

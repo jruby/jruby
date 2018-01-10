@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -906,6 +906,114 @@ public class RubyEnumerable {
         }
     }
 
+    @JRubyMethod
+    public static IRubyObject sum(ThreadContext context, IRubyObject self, final Block block) {
+        final Ruby runtime = context.runtime;
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+        return sumCommon(context, self, zero, block);
+    }
+
+    @JRubyMethod
+    public static IRubyObject sum(ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
+        return sumCommon(context, self, init, block);
+    }
+
+    /* TODO: optimise for special types (e.g. Range, Hash, ...) */
+    public static IRubyObject sumCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
+        final Ruby runtime = context.runtime;
+        final IRubyObject result[] = new IRubyObject[] { init };
+        final double memo[] = new double[] { 0.0 };
+
+        if (block.isGiven()) {
+            callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = packEnumValues(ctx, largs);
+                    IRubyObject val = block.yieldArray(ctx, larg, null);
+                    result[0] = sumAdd(ctx, result[0], val, memo);
+
+                    return ctx.nil;
+                }
+            });
+        } else {
+            callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = packEnumValues(ctx, largs);
+                    result[0] = sumAdd(ctx, result[0], larg, memo);
+
+                    return ctx.nil;
+                }
+            });
+        }
+
+        if (result[0] instanceof RubyFloat) {
+            return ((RubyFloat) result[0]).op_plus(context, memo[0]);
+        }
+        return result[0];
+    }
+
+    /* FIXME: optimise for special types (e.g. Integer)? */
+    /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
+    public static IRubyObject sumAdd(final ThreadContext ctx, IRubyObject lhs, IRubyObject rhs, final double c[]) {
+        boolean floats = false;
+        double f = 0.0;
+        /*
+         * Kahan-Babuska balancing compensated summation algorithm
+         * See http://link.springer.com/article/10.1007/s00607-005-0139-x
+         */
+        double x = 0.0, t;
+        if (lhs instanceof RubyFloat) {
+            if (rhs instanceof RubyFloat) {
+                f = ((RubyFloat) lhs).getValue();
+                x = ((RubyFloat) rhs).getValue();
+                floats = true;
+            } else if (rhs instanceof RubyFixnum) {
+                f = ((RubyFloat) lhs).getValue();
+                x = ((RubyFixnum) rhs).getDoubleValue();
+                floats = true;
+            } else if (rhs instanceof RubyBignum) {
+                f = ((RubyFloat) lhs).getValue();
+                x = ((RubyBignum) rhs).getDoubleValue();
+                floats = true;
+            } else if (rhs instanceof RubyRational) {
+                f = ((RubyFloat) lhs).getValue();
+                x = ((RubyRational) rhs).getDoubleValue(ctx);
+                floats = true;
+            }
+        } else if (rhs instanceof RubyFloat) {
+            if (lhs instanceof RubyFixnum) {
+                c[0] = 0.0;
+                f = ((RubyFixnum) lhs).getDoubleValue();
+                x = ((RubyFloat) rhs).getValue();
+                floats = true;
+            } else if (lhs instanceof RubyBignum) {
+                c[0] = 0.0;
+                f = ((RubyBignum) lhs).getDoubleValue();
+                x = ((RubyFloat) rhs).getValue();
+                floats = true;
+            } else if (lhs instanceof RubyRational) {
+                c[0] = 0.0;
+                f = ((RubyRational) lhs).getDoubleValue();
+                x = ((RubyFloat) rhs).getValue();
+                floats = true;
+            }
+        }
+
+        if (!floats) {
+            return lhs.callMethod(ctx, "+", rhs);
+        }
+
+        // Kahan's compensated summation algorithm
+        t = f + x;
+        if (Math.abs(f) >= Math.abs(x)) {
+            c[0] += ((f - t) + x);
+        } else {
+            c[0] += ((x - t) + f);
+        }
+        f = t;
+
+        return new RubyFloat(ctx.runtime, f);
+    }
+
     public static IRubyObject injectCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
         final Ruby runtime = context.runtime;
         final IRubyObject result[] = new IRubyObject[] { init };
@@ -998,7 +1106,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            return this.block.yieldSpecific(context, packEnumValues(context, iargs), context.runtime.newFixnum(index++));
+            return this.block.call(context, packEnumValues(context, iargs), context.runtime.newFixnum(index++));
         }
     }
 
@@ -1067,7 +1175,7 @@ public class RubyEnumerable {
 
     @Deprecated @SuppressWarnings("deprecation")
     public static IRubyObject each_with_index19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return each_with_index19(context, self, args, block);
+        return each_with_index(context, self, args, block);
     }
 
     @JRubyMethod(required = 1)
@@ -1912,8 +2020,10 @@ public class RubyEnumerable {
 
     @JRubyMethod
     public static IRubyObject chunk(ThreadContext context, IRubyObject self, final Block block) {
+        final Ruby runtime = context.runtime;
+
         if(!block.isGiven()) {
-            throw context.runtime.newArgumentError("no block given");
+            return enumeratorizeWithSize(context, self, "chunk", enumSizeFn(context, self));
         }
 
         IRubyObject enumerator = context.runtime.getEnumerator().allocate();

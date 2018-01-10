@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -1092,20 +1092,25 @@ public class RubyClass extends RubyModule {
         setSuperClass(superClass);
     }
 
-    public Collection<RubyClass> subclasses(boolean includeDescendants) {
-        Set<RubyClass> mySubclasses = subclasses;
-        if (mySubclasses != null) {
-            Collection<RubyClass> mine = new ArrayList<RubyClass>(mySubclasses);
+    // introduced solely to provide some level of compatibility with previous
+    // Class#subclasses implementation ... `ruby_class.to_java.subclasses`
+    public final Collection<RubyClass> subclasses() {
+        return subclasses(false);
+    }
+
+    public synchronized Collection<RubyClass> subclasses(boolean includeDescendants) {
+        Set<RubyClass> subclasses = this.subclasses;
+        if (subclasses != null) {
+            Collection<RubyClass> mine = new ArrayList<>(subclasses);
             if (includeDescendants) {
-                for (RubyClass i: mySubclasses) {
-                    mine.addAll(i.subclasses(includeDescendants));
+                for (RubyClass klass: subclasses) {
+                    mine.addAll(klass.subclasses(includeDescendants));
                 }
             }
 
             return mine;
-        } else {
-            return Collections.EMPTY_LIST;
         }
+        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -1119,9 +1124,9 @@ public class RubyClass extends RubyModule {
      */
     public synchronized void addSubclass(RubyClass subclass) {
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> oldSubclasses = subclasses;
-            if (oldSubclasses == null) subclasses = oldSubclasses = new WeakHashSet<RubyClass>(4);
-            oldSubclasses.add(subclass);
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses == null) this.subclasses = subclasses = new WeakHashSet<>(4);
+            subclasses.add(subclass);
         }
     }
 
@@ -1132,10 +1137,10 @@ public class RubyClass extends RubyModule {
      */
     public synchronized void removeSubclass(RubyClass subclass) {
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> oldSubclasses = subclasses;
-            if (oldSubclasses == null) return;
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses == null) return;
 
-            oldSubclasses.remove(subclass);
+            subclasses.remove(subclass);
         }
     }
 
@@ -1147,11 +1152,11 @@ public class RubyClass extends RubyModule {
      */
     public synchronized void replaceSubclass(RubyClass subclass, RubyClass newSubclass) {
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> oldSubclasses = subclasses;
-            if (oldSubclasses == null) return;
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses == null) return;
 
-            oldSubclasses.remove(subclass);
-            oldSubclasses.add(newSubclass);
+            subclasses.remove(subclass);
+            subclasses.add(newSubclass);
         }
     }
 
@@ -1160,9 +1165,9 @@ public class RubyClass extends RubyModule {
         // make this class and all subclasses sync
         synchronized (runtime.getHierarchyLock()) {
             super.becomeSynchronized();
-            Set<RubyClass> mySubclasses = subclasses;
-            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.becomeSynchronized();
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses != null) {
+                for (RubyClass subclass : subclasses) subclass.becomeSynchronized();
             }
         }
     }
@@ -1184,9 +1189,9 @@ public class RubyClass extends RubyModule {
         super.invalidateCacheDescendants();
 
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> mySubclasses = subclasses;
-            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.invalidateCacheDescendants();
+            Set<RubyClass> subclasses = this.subclasses;
+            if (subclasses != null) {
+                for (RubyClass subclass : subclasses) subclass.invalidateCacheDescendants();
             }
         }
     }
@@ -1198,14 +1203,15 @@ public class RubyClass extends RubyModule {
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) cachedMethods.clear();
 
+        Set<RubyClass> subclasses = this.subclasses;
         // no subclasses, don't bother with lock and iteration
         if (subclasses == null || subclasses.isEmpty()) return;
 
         // cascade into subclasses
         synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> mySubclasses = subclasses;
-            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.addInvalidatorsAndFlush(invalidators);
+            subclasses = this.subclasses;
+            if (subclasses != null) {
+                for (RubyClass subclass : subclasses) subclass.addInvalidatorsAndFlush(invalidators);
             }
         }
     }
@@ -1220,7 +1226,7 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod(name = "inherited", required = 1, visibility = PRIVATE)
     public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
-        return runtime.getNil();
+        return context.nil;
     }
 
     /** rb_class_inherited (reversed semantics!)
@@ -1244,7 +1250,7 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
 
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
+            if (metaClass == runtime.getBasicObject().getMetaClass()) return context.nil;
             throw runtime.newTypeError("uninitialized class");
         }
 
@@ -1252,7 +1258,7 @@ public class RubyClass extends RubyModule {
             superClazz = superClazz.superClass;
         }
 
-        return superClazz != null ? superClazz : runtime.getNil();
+        return superClazz != null ? superClazz : context.nil;
     }
 
     private void checkNotInitialized() {

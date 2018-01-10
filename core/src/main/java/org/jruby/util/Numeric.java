@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -39,6 +39,8 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.math.BigInteger;
+
 public class Numeric {
     public static final boolean CANON = true;
 
@@ -59,6 +61,12 @@ public class Numeric {
             long c = ((RubyFixnum) x).getLongValue() - ((RubyFixnum) y).getLongValue();
             if (c > 0) return RubyFixnum.one(context.runtime); // x > y
             if (c < 0) return RubyFixnum.minus_one(context.runtime); // x < y
+            return RubyFixnum.zero(context.runtime);
+        }
+        if (x instanceof RubyInteger && y instanceof RubyInteger) { // RubyBignum || RubyFixnum
+            BigInteger c = ((RubyInteger) x).getBigIntegerValue().subtract( ((RubyInteger) y).getBigIntegerValue() );
+            if (c.signum() > 0) return RubyFixnum.one(context.runtime); // x > y
+            if (c.signum() < 0) return RubyFixnum.minus_one(context.runtime); // x < y
             return RubyFixnum.zero(context.runtime);
         }
         return sites(context).op_cmp.call(context, x, x, y);
@@ -372,6 +380,11 @@ public class Numeric {
         return (((RubyFixnum) sites(context).op_mod.call(context, i, i, two)).getLongValue() != 0);
     }
 
+    /**
+     * MRI: int_odd_p
+     */
+
+
     /** i_gcd
      * 
      */
@@ -493,8 +506,8 @@ public class Numeric {
         do {
             while (y % 2 == 0) {
                 if (!fitSqrtLong(x)) {
-                    IRubyObject v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, x))).op_pow(context, RubyFixnum.newFixnum(runtime, y));
-                    if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul(context, v);
+                    IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, RubyFixnum.newFixnum(runtime, y));
+                    if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
                     return v;
                 }
                 x *= x;
@@ -502,8 +515,8 @@ public class Numeric {
             }
             
             if (multiplyOverflows(x, z)) {
-                IRubyObject v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, x))).op_pow(context, RubyFixnum.newFixnum(runtime, y));
-                if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul(context, v);
+                IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, RubyFixnum.newFixnum(runtime, y));
+                if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
                 return v;
             }
             z = x * z;

@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -403,6 +403,16 @@ public class RubyPathname extends RubyObject {
             }
             context.runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             return context.runtime.getFile().callMethod(context, "unlink", getPath());
+        }
+    }
+
+    @JRubyMethod(name = "empty?")
+    public IRubyObject empty_p(ThreadContext context) {
+        RubyModule fileTest = context.runtime.getFileTest();
+        if (fileTest.callMethod(context, "directory?", getPath()).isTrue()) {
+            return context.runtime.getDir().callMethod(context, "empty?", getPath());
+        } else {
+            return fileTest.callMethod(context, "empty?", getPath());
         }
     }
 

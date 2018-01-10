@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -33,17 +33,19 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Node that represents an assignment of either an array element or attribute.
  */
 public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     protected final Node receiverNode;
-    private String name;
+    private ByteList name;
     private Node argsNode;
     private final boolean isLazy;
 
-    public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, boolean isLazy) {
+    public AttrAssignNode(ISourcePosition position, Node receiverNode, ByteList name, Node argsNode, boolean isLazy) {
         super(position, receiverNode != null && receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
@@ -56,6 +58,11 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         this.name = name;
         this.argsNode = argsNode;
         this.isLazy = isLazy;
+    }
+
+    @Deprecated
+    public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, boolean isLazy) {
+        this(position, receiverNode, StringSupport.stringAsByteList(name), argsNode, isLazy);
     }
 
     public NodeType getNodeType() {
@@ -76,9 +83,13 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
      * @return name
      */
     public String getName() {
+        return StringSupport.byteListAsString(name);
+    }
+
+    public ByteList getByteName() {
         return name;
     }
-    
+
     /**
      * Gets the receiverNode.
      * receiverNode is the object on which the method is being called

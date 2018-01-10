@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -239,8 +239,13 @@ public class Platform {
                 // remove additional version identifiers, e.g. -ea
                 versionString = versionString.split("-|\\+")[0];
                 String[] v = versionString.split("\\.");
-                // starting from JDK 9, there is no leading "1." in java.version
-                version = Integer.valueOf(v.length > 1 ? v[1] : v[0]);
+                if (v[0].equals("1")) {
+                    // Pre Java 9, 1.x style
+                    version = Integer.valueOf(v[1]);
+                } else {
+                    // Java 9+, x.y.z style
+                    version = Integer.valueOf(v[0]);
+                }
             }
         } catch (Exception ex) {
             version = 0;

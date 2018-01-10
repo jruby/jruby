@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -34,8 +34,11 @@ import java.util.List;
 
 import jnr.posix.POSIX;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyString;
 import org.jruby.platform.Platform;
 import static org.jruby.util.ByteList.NULL_ARRAY;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -316,20 +319,22 @@ public class Dir {
         final byte[] bytes;
         final int begin;
         final int end;
+        final Encoding enc;
 
         private int index;
 
         private final int flags;
 
         GlobPattern(ByteList bytes, int flags) {
-            this(bytes.getUnsafeBytes(), bytes.getBegin(),  bytes.getBegin() + bytes.getRealSize(), flags);
+            this(bytes.getUnsafeBytes(), bytes.getBegin(),  bytes.getBegin() + bytes.getRealSize(), bytes.getEncoding(), flags);
         }
 
-        GlobPattern(byte[] bytes, int index, int end, int flags) {
+        GlobPattern(byte[] bytes, int index, int end, Encoding enc, int flags) {
             this.bytes = bytes;
             this.index = index;
             this.begin = index;
             this.end = end;
+            this.enc = enc;
             this.flags = flags;
         }
 
@@ -389,8 +394,8 @@ public class Dir {
 
     }
 
-    public interface GlobFunc<T> {
-        int call(byte[] ptr, int p, int len, T ary);
+    private interface GlobFunc<T> {
+        int call(byte[] ptr, int p, int len, Encoding enc, T ary);
     }
 
     private static class GlobArgs {
@@ -404,16 +409,16 @@ public class Dir {
         }
     }
 
-    final static GlobFunc<List<ByteList>> push_pattern = new GlobFunc<List<ByteList>>() {
-        public int call(byte[] ptr, int p, int len, List<ByteList> ary) {
-            ary.add(new ByteList(ptr, p, len));
+    private final static GlobFunc<List<ByteList>> push_pattern = new GlobFunc<List<ByteList>>() {
+        public int call(byte[] ptr, int p, int len, Encoding enc, List<ByteList> ary) {
+            ary.add(new ByteList(ptr, p, len, enc, true));
             return 0;
         }
     };
     private final static GlobFunc<GlobArgs> glob_caller = new GlobFunc<GlobArgs>() {
-        public int call(byte[] ptr, int p, int len, GlobArgs args) {
+        public int call(byte[] ptr, int p, int len, Encoding enc, GlobArgs args) {
             args.c = p;
-            return args.func.call(ptr, args.c, len, args.arg);
+            return args.func.call(ptr, args.c, len, enc, args.arg);
         }
     };
 
@@ -430,6 +435,7 @@ public class Dir {
                 lbrace > 0 && pattern.bytes[lbrace-1] == '\\' ||
                 rbrace > 0 && pattern.bytes[rbrace-1] == '\\') {
             ByteList unescaped = new ByteList(pattern.bytes.length - 1);
+            unescaped.setEncoding(pattern.enc);
             for (int i = pattern.begin; i < pattern.end; i++) {
                 byte b = pattern.bytes[i];
                 if (b == '\\' && i < pattern.bytes.length - 1) {
@@ -447,6 +453,7 @@ public class Dir {
         // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern
         // Example: foo{a{c},b}bar -> fooa{c}bar, foobbar
         final ByteList bytes = new ByteList(20);
+        bytes.setEncoding(pattern.enc);
         int middleRegionIndex;
         int i = lbrace;
         while (pattern.bytes[i] != '}') {
@@ -656,8 +663,8 @@ public class Dir {
         return c == '.' && name.charAt(2) == '/';
     }
 
-    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
-        final String fileName = newStringFromUTF8(bytes, begin, end - begin);
+    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, Encoding enc, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        final String fileName = new String(bytes, begin, end - begin, enc.getCharset());
 
         // FIXME: Ultimately JRubyFile.createResource should do this but all 1.7.x is only selectively honoring raw
         // paths and using system drive make it absolute.  MRI does this on many methods we don't.
@@ -668,7 +675,7 @@ public class Dir {
         }
         FileResource file = JRubyFile.createResource(runtime, cwd, fileName);
         if (file.exists()) {
-            return func.call(bytes, begin, end - begin, arg);
+            return func.call(bytes, begin, end - begin, enc, arg);
         }
 
         return 0;
@@ -677,11 +684,12 @@ public class Dir {
     private static int glob_helper(Ruby runtime, String cwd, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         final int begin = path.getBegin();
         final int end = begin + path.getRealSize();
-        return glob_helper(runtime, cwd, path.getUnsafeBytes(), begin, end, sub, flags, func, arg);
+        final Encoding enc = path.getEncoding();
+        return glob_helper(runtime, cwd, path.getUnsafeBytes(), begin, end, enc, sub, flags, func, arg);
     }
 
     private static int glob_helper(Ruby runtime, String cwd,
-        byte[] path, int begin, int end, int sub,
+        byte[] path, int begin, int end, Encoding enc, int sub,
         final int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         int status = 0;
 
@@ -703,9 +711,9 @@ public class Dir {
 
             if (end > begin) {
                 if ( isAbsolutePath(path, begin, end) ) {
-                    status = addToResultIfExists(runtime, null, path, begin, end, flags, func, arg);
+                    status = addToResultIfExists(runtime, null, path, begin, end, enc, flags, func, arg);
                 } else {
-                    status = addToResultIfExists(runtime, cwd, path, begin, end, flags, func, arg);
+                    status = addToResultIfExists(runtime, cwd, path, begin, end, enc, flags, func, arg);
                 }
             }
 
@@ -714,7 +722,9 @@ public class Dir {
 
         final ArrayList<DirGlobber> links = new ArrayList<DirGlobber>();
 
-        ByteList buf = new ByteList(20); FileResource resource;
+        ByteList buf = new ByteList(20);
+        buf.setEncoding(enc);
+        FileResource resource;
 
         mainLoop: while(ptr != -1 && status == 0) {
             if ( path[ptr] == '/' ) ptr++;
@@ -727,7 +737,7 @@ public class Dir {
                     byte[] magic = extract_elem(path, ptr, end);
                     boolean recursive = false;
 
-                    resource = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(dir, 0, dir.length));
+                    resource = JRubyFile.createResource(runtime, cwd, new String(dir, 0, dir.length, enc.getCharset()));
                     if ( resource.isDirectory() ) {
                         if ( SLASH_INDEX != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
                             final int lengthOfBase = base.length;
@@ -770,7 +780,7 @@ public class Dir {
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            resource = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(buf));
+                            resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
                             if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
@@ -787,12 +797,13 @@ public class Dir {
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
                             if ( SLASH_INDEX == -1 ) {
-                                status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), arg);
+                                status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), enc, arg);
                                 if ( status != 0 ) break;
                                 continue;
                             }
                             links.add(new DirGlobber(buf));
                             buf = new ByteList(20);
+                            buf.setEncoding(enc);
                         }
                     }
                 } while(false);
@@ -801,7 +812,7 @@ public class Dir {
                     for ( DirGlobber globber : links ) {
                         final ByteList link = globber.link;
                         if ( status == 0 ) {
-                            resource = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(link));
+                            resource = JRubyFile.createResource(runtime, cwd, RubyString.byteListToString(link));
                             if ( resource.isDirectory() ) {
                                 final int len = link.getRealSize();
                                 buf.length(0);
@@ -822,16 +833,6 @@ public class Dir {
 
     private static byte[] getBytesInUTF8(final String str) {
         return RubyEncoding.encodeUTF8(str);
-    }
-
-    private static String newStringFromUTF8(final ByteList bytes) {
-        final int offset = bytes.getBegin();
-        final int length = bytes.getRealSize();
-        return RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), offset, length);
-    }
-
-    private static String newStringFromUTF8(final byte[] bytes, int offset, int len) {
-        return RubyEncoding.decodeUTF8(bytes, offset, len);
     }
 
 }

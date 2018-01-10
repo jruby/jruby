@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -96,6 +96,7 @@ public final class ArgsUtil {
     }
 
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject arg) {
+        if (arg == null) return runtime.getNil();
         return TypeConverter.checkHashType(runtime, arg);
     }
 
@@ -106,7 +107,7 @@ public final class ArgsUtil {
      * @param validKeys A list of valid kwargs keys.
      * @return an array of objects corresponding to the given keys.
      */
-    public static IRubyObject[] extractKeywordArgs(ThreadContext context, RubyHash options, String[] validKeys) {
+    public static IRubyObject[] extractKeywordArgs(ThreadContext context, RubyHash options, String... validKeys) {
         IRubyObject[] ret = new IRubyObject[validKeys.length];
         int index = 0;
         HashSet<RubySymbol> validKeySet = new HashSet<RubySymbol>();
@@ -133,7 +134,7 @@ public final class ArgsUtil {
         return ret;
     }
 
-    public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String[] validKeys) {
+    public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String... validKeys) {
         IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, args);
         if(options instanceof RubyHash) {
             return extractKeywordArgs(context, (RubyHash)options, validKeys);

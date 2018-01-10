@@ -35,9 +35,9 @@ class TestSetTraceFunc < Test::Unit::TestCase
                  events.shift)
     assert_equal(["line", 4, __method__, self.class],
                  events.shift)
-    assert_equal(["c-call", 4, :+, Fixnum],
+    assert_equal(["c-call", 4, :+, Integer],
                  events.shift)
-    assert_equal(["c-return", 4, :+, Fixnum],
+    assert_equal(["c-return", 4, :+, Integer],
                  events.shift)
     assert_equal(["line", 5, __method__, self.class],
                  events.shift)
@@ -73,9 +73,9 @@ class TestSetTraceFunc < Test::Unit::TestCase
                  events.shift)
     assert_equal(["line", 5, :add, self.class],
                  events.shift)
-    assert_equal(["c-call", 5, :+, Fixnum],
+    assert_equal(["c-call", 5, :+, Integer],
                  events.shift)
-    assert_equal(["c-return", 5, :+, Fixnum],
+    assert_equal(["c-return", 5, :+, Integer],
                  events.shift)
     assert_equal(["return", 6, :add, self.class],
                  events.shift)
@@ -353,8 +353,8 @@ class TestSetTraceFunc < Test::Unit::TestCase
      ["c-return", 8, :new, Class],
      ["call", 4, :foo, ThreadTraceInnerClass],
      ["line", 5, :foo, ThreadTraceInnerClass],
-     ["c-call", 5, :+, Fixnum],
-     ["c-return", 5, :+, Fixnum],
+     ["c-call", 5, :+, Integer],
+     ["c-return", 5, :+, Integer],
      ["return", 6, :foo, ThreadTraceInnerClass],
      ["line", 9, __method__, self.class],
      ["c-call", 9, :set_trace_func, Thread]].each do |e|
@@ -768,10 +768,10 @@ class TestSetTraceFunc < Test::Unit::TestCase
     # pp events
     # expected_events =
     [[:b_call, :test_tracepoint_block, TestSetTraceFunc, TestSetTraceFunc, nil],
-     [:c_call, :times, Integer, Fixnum, nil],
+     [:c_call, :times, Integer, Integer, nil],
      [:b_call, :test_tracepoint_block, TestSetTraceFunc, TestSetTraceFunc, nil],
      [:b_return, :test_tracepoint_block, TestSetTraceFunc, TestSetTraceFunc, 3],
-     [:c_return, :times, Integer, Fixnum, 1],
+     [:c_return, :times, Integer, Integer, 1],
      [:call, :method_for_test_tracepoint_block, TestSetTraceFunc, TestSetTraceFunc, nil],
      [:b_call, :test_tracepoint_block, TestSetTraceFunc, TestSetTraceFunc, nil],
      [:b_return, :test_tracepoint_block, TestSetTraceFunc, TestSetTraceFunc, 4],
@@ -1153,8 +1153,8 @@ class TestSetTraceFunc < Test::Unit::TestCase
     }
     assert_equal([
       [:call, :size],
-      [:c_call, :original_size],
-      [:c_return, :original_size],
+      [:c_call, :size],
+      [:c_return, :size],
       [:return, :size]
     ], events, "should use alias method name for tracing c methods")
   end
@@ -1287,7 +1287,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
       }.enable{
         p 1
       }
-    }, %w[:p :inspect 1], [], '[Bug #9940]')
+    }, %w[:p :to_s 1], [], '[Bug #9940]')
   end
 
   def method_prefix event
@@ -1359,7 +1359,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
     assert_consistent_call_return '[Bug #9959]' do
       begin
         method_test_argument_error_on_bmethod(wrong_key: 2)
-      rescue => e
+      rescue
         # ignore
       end
     end
@@ -1369,7 +1369,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
     assert_consistent_call_return '[Bug #9961]' do
       begin
         -Numeric.new
-      rescue => e
+      rescue
         # ignore
       end
     end
@@ -1399,6 +1399,25 @@ class TestSetTraceFunc < Test::Unit::TestCase
     assert_equal [__LINE__ - 3, __LINE__ - 2], lines, 'Bug #10449'
   end
 
+  def test_elsif_line_event
+    bug10763 = '[ruby-core:67720] [Bug #10763]'
+    lines = []
+    line = nil
+
+    TracePoint.new(:line){|tp|
+      next unless target_thread?
+      lines << tp.lineno if line
+    }.enable{
+      line = __LINE__
+      if !line
+        1
+      elsif line
+        2
+      end
+    }
+    assert_equal [line+1, line+3, line+4], lines, bug10763
+  end
+
   class Bug10724
     def initialize
       loop{return}
@@ -1413,7 +1432,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
       return if Thread.current != target_th
       evs << tp.event
     }.enable{
-      a = Bug10724.new
+      Bug10724.new
     }
 
     assert_equal([:call, :return], evs)
@@ -1468,5 +1487,116 @@ class TestSetTraceFunc < Test::Unit::TestCase
     evs.each{|ev|
       assert_equal ev, :fiber_switch
     }
+  end
+
+  def test_tracepoint_callee_id
+    events = []
+    capture_events = Proc.new{|tp|
+      events << [tp.event, tp.method_id, tp.callee_id]
+    }
+
+    o = Class.new{
+      def m
+        raise
+      end
+      alias alias_m m
+    }.new
+    TracePoint.new(:raise, :call, :return, &capture_events).enable{
+      o.alias_m rescue nil
+    }
+    assert_equal [[:call, :m, :alias_m], [:raise, :m, :alias_m], [:return, :m, :alias_m]], events
+    events.clear
+
+    o = Class.new{
+      alias alias_raise raise
+      def m
+        alias_raise
+      end
+    }.new
+    TracePoint.new(:c_return, &capture_events).enable{
+      o.m rescue nil
+    }
+    assert_equal [:c_return, :raise, :alias_raise], events[0]
+    events.clear
+
+    o = Class.new(String){
+      include Enumerable
+      alias each each_char
+    }.new('foo')
+    TracePoint.new(:c_return, &capture_events).enable{
+      o.find{true}
+    }
+    assert_equal [:c_return, :each_char, :each], events[0]
+    events.clear
+
+    o = Class.new{
+      define_method(:m){}
+      alias alias_m m
+    }.new
+    TracePoint.new(:call, :return, &capture_events).enable{
+      o.alias_m
+    }
+    assert_equal [[:call, :m, :alias_m], [:return, :m, :alias_m]], events
+    events.clear
+
+    o = Class.new{
+      def m
+        tap{return}
+      end
+      alias alias_m m
+    }.new
+    TracePoint.new(:return, &capture_events).enable{
+      o.alias_m
+    }
+    assert_equal [[:return, :m, :alias_m]], events
+    events.clear
+
+    o = Class.new{
+      define_method(:m){raise}
+      alias alias_m m
+    }.new
+    TracePoint.new(:b_return, :return, &capture_events).enable{
+      o.alias_m rescue nil
+    }
+    assert_equal [[:b_return, :m, :alias_m], [:return, :m, :alias_m]], events[0..1]
+    events.clear
+
+    o = Class.new{
+      define_method(:m){tap{return}}
+      alias alias_m m
+    }.new
+    TracePoint.new(:b_return, &capture_events).enable{
+      o.alias_m
+    }
+    assert_equal [[:b_return, :m, :alias_m], [:b_return, :m, :alias_m]], events[0..1]
+    events.clear
+
+    o = Class.new{
+      alias alias_tap tap
+      define_method(:m){alias_tap{return}}
+    }.new
+    TracePoint.new(:c_return, &capture_events).enable{
+      o.m
+    }
+    assert_equal [[:c_return, :tap, :alias_tap]], events
+    events.clear
+
+    c = Class.new{
+      alias initialize itself
+    }
+    TracePoint.new(:c_call, &capture_events).enable{
+      c.new
+    }
+    assert_equal [:c_call, :itself, :initialize], events[1]
+    events.clear
+
+    o = Class.new{
+      alias alias_itself itself
+    }.new
+    TracePoint.new(:c_call, :c_return, &capture_events).enable{
+      o.alias_itself
+    }
+    assert_equal [[:c_call, :itself, :alias_itself], [:c_return, :itself, :alias_itself]], events
+    events.clear
   end
 end

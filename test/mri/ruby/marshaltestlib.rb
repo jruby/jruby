@@ -143,13 +143,6 @@ module MarshalTestLib
     assert_raise(TypeError) { marshaltest(h) }
   end
 
-  def test_hash_default_proc_that_was_set_to_nil
-    h = Hash.new {}
-    h[4] = 5
-    h.default_proc = nil
-    marshal_equal(h)
-  end
-
   def test_hash_ivar
     o1 = Hash.new
     o1.instance_eval { @iv = 1 }

@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -33,6 +33,8 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Simple Node for named entities.  Things like the name of a method will make a node
@@ -40,18 +42,25 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * variable we will also keep a list of it's location.
  */
 public class ArgumentNode extends Node implements INameNode {
-    private String identifier;
+    private ByteList identifier;
     private int location;
 
+    @Deprecated
     public ArgumentNode(ISourcePosition position, String identifier) {
         super(position, false);
 
-        this.identifier = identifier;
+        this.identifier = StringSupport.stringAsByteList(identifier);
     }
 
+    @Deprecated
     public ArgumentNode(ISourcePosition position, String identifier, int location) {
-        this(position, identifier);
+        this(position, StringSupport.stringAsByteList(identifier), location);
+    }
 
+    public ArgumentNode(ISourcePosition position, ByteList identifier, int location) {
+        super(position, false);
+
+        this.identifier = identifier;
         this.location = location; // All variables should be depth 0 in this case
     }
 
@@ -82,13 +91,18 @@ public class ArgumentNode extends Node implements INameNode {
     public int getIndex() {
         return location & 0xffff;
     }
-    
+
     public String getName() {
+        return StringSupport.byteListAsString(identifier);
+    }
+
+    public ByteList getByteName() {
         return identifier;
     }
-    
+
+    @Deprecated
     public void setName(String name) {
-        this.identifier = name;
+        this.identifier = StringSupport.stringAsByteList(name);
     }
 
     public List<Node> childNodes() {

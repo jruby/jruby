@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -60,7 +60,7 @@ public class RubyGenerator extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
-        IRubyObject proc;
+        final IRubyObject proc;
 
         if (args.length == 0) {
             proc = RubyProc.newProc(runtime, block, Block.Type.PROC);
@@ -76,7 +76,9 @@ public class RubyGenerator extends RubyObject {
             }
         }
 
-        return init(runtime, proc);
+        // generator_init
+        this.proc = proc;
+        return this;
     }
 
     // generator_init_copy
@@ -96,15 +98,7 @@ public class RubyGenerator extends RubyObject {
     // generator_each
     @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        return ((RubyProc) proc).call19(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args), Block.NULL_BLOCK);
-    }
-
-
-    // generator_init
-    private IRubyObject init(Ruby runtime, IRubyObject proc) {
-        this.proc = proc;
-
-        return this;
+        return ((RubyProc) proc).call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args), Block.NULL_BLOCK);
     }
 
     private IRubyObject proc;

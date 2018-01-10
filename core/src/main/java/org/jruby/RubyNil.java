@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -118,7 +118,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     public Object constant() {
         return constant;
     }
-    
+
     // Methods of the Nil Class (nil_*):
     
     /** nil_to_i
@@ -162,9 +162,10 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_inspect
      *
      */
+    @Override
     @JRubyMethod
-    public static RubyString inspect(ThreadContext context, IRubyObject recv) {
-        return inspect(context.runtime);
+    public IRubyObject inspect() {
+        return RubyNil.inspect(getRuntime());
     }
 
     static final byte[] nilBytes = new byte[] { 'n','i','l' }; // RubyString.newUSASCIIString(runtime, "nil")

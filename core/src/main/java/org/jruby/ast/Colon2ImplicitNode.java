@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -29,6 +29,7 @@
 package org.jruby.ast;
 
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /**
  * Represents a bare class declaration (e.g. class Foo/module Foo).  This is slightly misnamed
@@ -36,6 +37,11 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * In JRuby 2, we will rename this.
  */
 public class Colon2ImplicitNode extends Colon2Node {
+    public Colon2ImplicitNode(ISourcePosition position, ByteList name) {
+        super(position, null, name);
+    }
+
+    @Deprecated
     public Colon2ImplicitNode(ISourcePosition position, String name) {
         super(position, null, name);
     }

@@ -1,15 +1,13 @@
 require 'rbconfig'
-require 'jruby/util'
+require 'jruby'
 
 module Gem
 
   class << self
-    alias_method :original_ruby, :ruby
+    alias_method :__ruby__, :ruby
     def ruby
-      ruby_path = original_ruby
-      if jarred_path?(ruby_path)
-        ruby_path = "#{org.jruby.util.ClasspathLauncher.jrubyCommand(JRuby.runtime)}"
-      end
+      ruby_path = __ruby__
+      ruby_path = JRuby::classpath_launcher if jarred_path?(ruby_path)
       ruby_path
     end
 
@@ -98,7 +96,7 @@ class Gem::Specification
       JRuby.runtime.instance_config.extra_gem_paths.each do |path|
         stuff << File.join(path, 'specifications')
       end
-      stuff += JRuby::Util.classloader_resources('specifications')
+      stuff += JRuby.classloader_resources('specifications')
       # some classloader return directory info. use only the "protocols"
       # which jruby understands
       stuff.select { |s| File.directory?( s ) }
@@ -119,7 +117,9 @@ end
 # indicates the native launcher is installed and will override
 # env-shebang and possibly other options.
 begin
-  require 'rubygems/defaults/jruby_native'
+  if File.exist?(File.join(File.dirname(__FILE__), "jruby_native.rb"))
+    require 'rubygems/defaults/jruby_native'
+  end
 rescue LoadError
 end
 

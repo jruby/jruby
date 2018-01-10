@@ -363,7 +363,7 @@ class TestTranscode < Test::Unit::TestCase
     check_both_ways("\u00BF", "\xBF", 'windows-1255') # ¿
     check_both_ways("\u05B0", "\xC0", 'windows-1255') # ְ
     check_both_ways("\u05B9", "\xC9", 'windows-1255') # ֹ
-    assert_raise(Encoding::UndefinedConversionError) { "\xCA".encode("utf-8", 'windows-1255') }
+    check_both_ways("\u05BA", "\xCA", 'windows-1255') # ֺ
     check_both_ways("\u05BB", "\xCB", 'windows-1255') # ֻ
     check_both_ways("\u05BF", "\xCF", 'windows-1255') # ֿ
     check_both_ways("\u05C0", "\xD0", 'windows-1255') # ׀
@@ -484,7 +484,7 @@ class TestTranscode < Test::Unit::TestCase
     check_both_ways("\u2580", "\xDF", 'IBM775') # ▀
     check_both_ways("\u00D3", "\xE0", 'IBM775') # Ó
     check_both_ways("\u2019", "\xEF", 'IBM775') # ’
-    check_both_ways("\u00AD", "\xF0", 'IBM775') # osft hyphen
+    check_both_ways("\u00AD", "\xF0", 'IBM775') # soft hyphen
     check_both_ways("\u00A0", "\xFF", 'IBM775') # non-breaking space
   end
 
@@ -503,7 +503,7 @@ class TestTranscode < Test::Unit::TestCase
     check_both_ways("\u2580", "\xDF", 'IBM852') # ▀
     check_both_ways("\u00D3", "\xE0", 'IBM852') # Ó
     check_both_ways("\u00B4", "\xEF", 'IBM852') # ´
-    check_both_ways("\u00AD", "\xF0", 'IBM852') # osft hyphen
+    check_both_ways("\u00AD", "\xF0", 'IBM852') # soft hyphen
     check_both_ways("\u00A0", "\xFF", 'IBM852') # non-breaking space
   end
 
@@ -522,7 +522,7 @@ class TestTranscode < Test::Unit::TestCase
     check_both_ways("\u2580", "\xDF", 'IBM855') # ▀
     check_both_ways("\u042F", "\xE0", 'IBM855') # Я
     check_both_ways("\u2116", "\xEF", 'IBM855') # №
-    check_both_ways("\u00AD", "\xF0", 'IBM855') # osft hyphen
+    check_both_ways("\u00AD", "\xF0", 'IBM855') # soft hyphen
     check_both_ways("\u00A0", "\xFF", 'IBM855') # non-breaking space
   end
 
@@ -1213,6 +1213,9 @@ class TestTranscode < Test::Unit::TestCase
   def test_invalid_replace_string
     assert_equal("a<x>A", "a\x80A".encode("us-ascii", "euc-jp", :invalid=>:replace, :replace=>"<x>"))
     assert_equal("a<x>A", "a\x80A".encode("us-ascii", "euc-jis-2004", :invalid=>:replace, :replace=>"<x>"))
+    s = "abcd\u{c1}"
+    r = s.b.encode("UTF-8", "UTF-8", invalid: :replace, replace: "\u{fffd}")
+    assert_equal(s, r)
   end
 
   def test_undef_replace

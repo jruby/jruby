@@ -280,7 +280,7 @@ class ERB
   # ERB#src:
   #
   #   compiler = ERB::Compiler.new('<>')
-  #   compiler.pre_cmd    = ["_erbout=''"]
+  #   compiler.pre_cmd    = ["_erbout=String.new"]
   #   compiler.put_cmd    = "_erbout.concat"
   #   compiler.insert_cmd = "_erbout.concat"
   #   compiler.post_cmd   = ["_erbout"]
@@ -291,7 +291,7 @@ class ERB
   # <i>Generates</i>:
   #
   #   #coding:UTF-8
-  #   _erbout=''; _erbout.concat "Got "; _erbout.concat(( obj ).to_s); _erbout.concat "!\n"; _erbout
+  #   _erbout=String.new; _erbout.concat "Got "; _erbout.concat(( obj ).to_s); _erbout.concat "!\n"; _erbout
   #
   # By default the output is sent to the print method.  For example:
   #
@@ -355,8 +355,11 @@ class ERB
 
     class Scanner # :nodoc:
       @scanner_map = {}
-      def self.regist_scanner(klass, trim_mode, percent)
-        @scanner_map[[trim_mode, percent]] = klass
+      class << self
+        def register_scanner(klass, trim_mode, percent)
+          @scanner_map[[trim_mode, percent]] = klass
+        end
+        alias :regist_scanner :register_scanner
       end
 
       def self.default_scanner=(klass)
@@ -371,8 +374,11 @@ class ERB
       def initialize(src, trim_mode, percent)
         @src = src
         @stag = nil
+        @stags = %w(<%% <%= <%# <%).freeze
+        @etags = %w(%%> %>).freeze
       end
       attr_accessor :stag
+      attr_reader :stags, :etags
 
       def scan; end
     end
@@ -383,16 +389,19 @@ class ERB
         @trim_mode = trim_mode
         @percent = percent
         if @trim_mode == '>'
+          @scan_reg  = /(.*?)(%>\n|#{(stags + etags).join('|')}|\n|\z)/m
           @scan_line = self.method(:trim_line1)
         elsif @trim_mode == '<>'
+          @scan_reg  = /(.*?)(%>\n|#{(stags + etags).join('|')}|\n|\z)/m
           @scan_line = self.method(:trim_line2)
         elsif @trim_mode == '-'
+          @scan_reg  = /(.*?)(^[ \t]*<%\-|<%\-|-%>\n|-%>|#{(stags + etags).join('|')}|\z)/m
           @scan_line = self.method(:explicit_trim_line)
         else
+          @scan_reg  = /(.*?)(#{(stags + etags).join('|')}|\n|\z)/m
           @scan_line = self.method(:scan_line)
         end
       end
-      attr_accessor :stag
 
       def scan(&block)
         @stag = nil
@@ -420,7 +429,7 @@ class ERB
       end
 
       def scan_line(line)
-        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>|\n|\z)/m) do |tokens|
+        line.scan(@scan_reg) do |tokens|
           tokens.each do |token|
             next if token.empty?
             yield(token)
@@ -429,7 +438,7 @@ class ERB
       end
 
       def trim_line1(line)
-        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>\n|%>|\n|\z)/m) do |tokens|
+        line.scan(@scan_reg) do |tokens|
           tokens.each do |token|
             next if token.empty?
             if token == "%>\n"
@@ -444,7 +453,7 @@ class ERB
 
       def trim_line2(line)
         head = nil
-        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>\n|%>|\n|\z)/m) do |tokens|
+        line.scan(@scan_reg) do |tokens|
           tokens.each do |token|
             next if token.empty?
             head = token unless head
@@ -465,7 +474,7 @@ class ERB
       end
 
       def explicit_trim_line(line)
-        line.scan(/(.*?)(^[ \t]*<%\-|<%\-|<%%|%%>|<%=|<%#|<%|-%>\n|-%>|%>|\z)/m) do |tokens|
+        line.scan(@scan_reg) do |tokens|
           tokens.each do |token|
             next if token.empty?
             if @stag.nil? && /[ \t]*<%-/ =~ token
@@ -492,7 +501,7 @@ class ERB
 
     class SimpleScanner < Scanner # :nodoc:
       def scan
-        @src.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>|\n|\z)/m) do |tokens|
+        @src.scan(/(.*?)(#{(stags + etags).join('|')}|\n|\z)/m) do |tokens|
           tokens.each do |token|
             next if token.empty?
             yield(token)
@@ -507,8 +516,8 @@ class ERB
       require 'strscan'
       class SimpleScanner2 < Scanner # :nodoc:
         def scan
-          stag_reg = /(.*?)(<%[%=#]?|\z)/m
-          etag_reg = /(.*?)(%%?>|\z)/m
+          stag_reg = /(.*?)(#{stags.join('|')}|\z)/m
+          etag_reg = /(.*?)(#{etags.join('|')}|\z)/m
           scanner = StringScanner.new(@src)
           while ! scanner.eos?
             scanner.scan(@stag ? etag_reg : stag_reg)
@@ -521,8 +530,8 @@ class ERB
 
       class ExplicitScanner < Scanner # :nodoc:
         def scan
-          stag_reg = /(.*?)(^[ \t]*<%-|<%%|<%=|<%#|<%-|<%|\z)/m
-          etag_reg = /(.*?)(%%>|-%>|%>|\z)/m
+          stag_reg = /(.*?)(^[ \t]*<%-|<%-|#{stags.join('|')}|\z)/m
+          etag_reg = /(.*?)(-%>|#{etags.join('|')}|\z)/m
           scanner = StringScanner.new(@src)
           while ! scanner.eos?
             scanner.scan(@stag ? etag_reg : stag_reg)
@@ -546,10 +555,12 @@ class ERB
     end
 
     class Buffer # :nodoc:
-      def initialize(compiler, enc=nil)
+      def initialize(compiler, enc=nil, frozen=nil)
         @compiler = compiler
         @line = []
-        @script = enc ? "#coding:#{enc}\n" : ""
+        @script = ''
+        @script << "#coding:#{enc}\n" if enc
+        @script << "#frozen-string-literal:#{frozen}\n" unless frozen.nil?
         @compiler.pre_cmd.each do |x|
           push(x)
         end
@@ -599,65 +610,77 @@ class ERB
       enc = s.encoding
       raise ArgumentError, "#{enc} is not ASCII compatible" if enc.dummy?
       s = s.b # see String#b
-      enc = detect_magic_comment(s) || enc
-      out = Buffer.new(self, enc)
+      magic_comment = detect_magic_comment(s, enc)
+      out = Buffer.new(self, *magic_comment)
 
-      content = ''
+      self.content = ''
       scanner = make_scanner(s)
       scanner.scan do |token|
         next if token.nil?
         next if token == ''
         if scanner.stag.nil?
-          case token
-          when PercentLine
-            add_put_cmd(out, content) if content.size > 0
-            content = ''
-            out.push(token.to_s)
-            out.cr
-          when :cr
-            out.cr
-          when '<%', '<%=', '<%#'
-            scanner.stag = token
-            add_put_cmd(out, content) if content.size > 0
-            content = ''
-          when "\n"
-            content << "\n"
-            add_put_cmd(out, content)
-            content = ''
-          when '<%%'
-            content << '<%'
-          else
-            content << token
-          end
+          compile_stag(token, out, scanner)
         else
-          case token
-          when '%>'
-            case scanner.stag
-            when '<%'
-              if content[-1] == ?\n
-                content.chop!
-                out.push(content)
-                out.cr
-              else
-                out.push(content)
-              end
-            when '<%='
-              add_insert_cmd(out, content)
-            when '<%#'
-              # out.push("# #{content_dump(content)}")
-            end
-            scanner.stag = nil
-            content = ''
-          when '%%>'
-            content << '%>'
-          else
-            content << token
-          end
+          compile_etag(token, out, scanner)
         end
       end
       add_put_cmd(out, content) if content.size > 0
       out.close
-      return out.script, enc
+      return out.script, *magic_comment
+    end
+
+    def compile_stag(stag, out, scanner)
+      case stag
+      when PercentLine
+        add_put_cmd(out, content) if content.size > 0
+        self.content = ''
+        out.push(stag.to_s)
+        out.cr
+      when :cr
+        out.cr
+      when '<%', '<%=', '<%#'
+        scanner.stag = stag
+        add_put_cmd(out, content) if content.size > 0
+        self.content = ''
+      when "\n"
+        content << "\n"
+        add_put_cmd(out, content)
+        self.content = ''
+      when '<%%'
+        content << '<%'
+      else
+        content << stag
+      end
+    end
+
+    def compile_etag(etag, out, scanner)
+      case etag
+      when '%>'
+        compile_content(scanner.stag, out)
+        scanner.stag = nil
+        self.content = ''
+      when '%%>'
+        content << '%>'
+      else
+        content << etag
+      end
+    end
+
+    def compile_content(stag, out)
+      case stag
+      when '<%'
+        if content[-1] == ?\n
+          content.chop!
+          out.push(content)
+          out.cr
+        else
+          out.push(content)
+        end
+      when '<%='
+        add_insert_cmd(out, content)
+      when '<%#'
+        # out.push("# #{content_dump(content)}")
+      end
     end
 
     def prepare_trim_mode(mode) # :nodoc:
@@ -712,15 +735,24 @@ class ERB
     attr_accessor :post_cmd
 
     private
-    def detect_magic_comment(s)
-      if /\A<%#(.*)%>/ =~ s or (@percent and /\A%#(.*)/ =~ s)
-        comment = $1
+
+    # A buffered text in #compile
+    attr_accessor :content
+
+    def detect_magic_comment(s, enc = nil)
+      re = @percent ? /\G(?:<%#(.*)%>|%#(.*)\n)/ : /\G<%#(.*)%>/
+      frozen = nil
+      s.scan(re) do
+        comment = $+
         comment = $1 if comment[/-\*-\s*(.*?)\s*-*-$/]
-        if %r"coding\s*[=:]\s*([[:alnum:]\-_]+)" =~ comment
-          enc = $1.sub(/-(?:mac|dos|unix)/i, '')
-          Encoding.find(enc)
+        case comment
+        when %r"coding\s*[=:]\s*([[:alnum:]\-_]+)"
+          enc = Encoding.find($1.sub(/-(?:mac|dos|unix)/i, ''))
+        when %r"frozen[-_]string[-_]literal\s*:\s*([[:alnum:]]+)"
+          frozen = $1
         end
       end
+      return enc, frozen
     end
   end
 end
@@ -798,7 +830,7 @@ class ERB
     @safe_level = safe_level
     compiler = make_compiler(trim_mode)
     set_eoutvar(compiler, eoutvar)
-    @src, @encoding = *compiler.compile(str)
+    @src, @encoding, @frozen_string = *compiler.compile(str)
     @filename = nil
     @lineno = 0
   end
@@ -837,7 +869,7 @@ class ERB
   def set_eoutvar(compiler, eoutvar = '_erbout')
     compiler.put_cmd = "#{eoutvar}.concat"
     compiler.insert_cmd = "#{eoutvar}.concat"
-    compiler.pre_cmd = ["#{eoutvar} = ''"]
+    compiler.pre_cmd = ["#{eoutvar} = String.new"]
     compiler.post_cmd = ["#{eoutvar}.force_encoding(__ENCODING__)"]
   end
 
@@ -882,10 +914,9 @@ class ERB
   #   erb.def_method(MyClass, 'render(arg1, arg2)', filename)
   #   print MyClass.new.render('foo', 123)
   def def_method(mod, methodname, fname='(ERB)')
-    src = self.src
-    magic_comment = "#coding:#{@encoding}\n"
+    src = self.src.sub(/^(?!#|$)/) {"def #{methodname}\n"} << "\nend\n"
     mod.module_eval do
-      eval(magic_comment + "def #{methodname}\n" + src + "\nend\n", binding, fname, -2)
+      eval(src, binding, fname, -1)
     end
   end
 

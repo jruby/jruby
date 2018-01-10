@@ -1,6 +1,9 @@
 package org.jruby.runtime;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
+
+import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -9,7 +12,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
+import com.headius.modulator.Modulator;
 import jnr.constants.platform.Errno;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
@@ -66,6 +71,8 @@ import org.jruby.util.io.EncodingUtils;
  *
  */
 public class Helpers {
+
+    public static final Pattern SEMICOLON_PATTERN = Pattern.compile(";");
 
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
@@ -180,23 +187,57 @@ public class Helpers {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
+
             switch (errorMessage) {
-                case "Bad file descriptor" : return Errno.EBADF;
-                case "File not open" : return null;
-                case "An established connection was aborted by the software in your host machine" : return Errno.ECONNABORTED;
-                case "Broken pipe" : return Errno.EPIPE;
-
-                case "Connection reset by peer" : return Errno.ECONNRESET;
-                case "An existing connection was forcibly closed by the remote host" : return Errno.ECONNRESET;
-
-                case "No space left on device" : return Errno.ENOSPC;
-                case "Too many open files" : return Errno.EMFILE;
-                case "Message too large" : // Alpine Linux
-                case "Message too long" : return Errno.EMSGSIZE;
+                case "Bad file descriptor":
+                    return Errno.EBADF;
+                case "File not open":
+                    return null;
+                case "An established connection was aborted by the software in your host machine":
+                case "connection was aborted": // Windows
+                    return Errno.ECONNABORTED;
+                case "Broken pipe":
+                    return Errno.EPIPE;
+                case "Connection reset by peer":
+                case "An existing connection was forcibly closed by the remote host":
+                    return Errno.ECONNRESET;
+                case "Too many levels of symbolic links":
+                    return Errno.ELOOP;
+                case "Too many open files":
+                    return Errno.EMFILE;
+                case "Too many open files in system":
+                    return Errno.ENFILE;
+                case "Network is unreachable":
+                    return Errno.ENETUNREACH;
+                case "Address already in use":
+                    return Errno.EADDRINUSE;
+                case "No space left on device":
+                    return Errno.ENOSPC;
+                case "Message too large": // Alpine Linux
+                case "Message too long":
+                    return Errno.EMSGSIZE;
+                case "Is a directory":
+                    return Errno.EISDIR;
             }
-            if (Platform.IS_WINDOWS && errorMessage.contains("connection was aborted")) return Errno.ECONNRESET;
+        } else if (t instanceof PortUnreachableException) {
+            return Errno.ECONNREFUSED;
         }
         return null;
+    }
+
+    /**
+     * Java does not give us enough information for specific error conditions
+     * so we are reduced to divining them through string matches...
+     *
+     * TODO: Should ECONNABORTED get thrown earlier in the descriptor itself or is it ok to handle this late?
+     * TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
+     */
+    public static RaiseException newIOErrorFromException(Ruby runtime, IOException ex) {
+        Errno errno = errnoFromException(ex);
+
+        if (errno == null) throw runtime.newIOError(ex.getLocalizedMessage());
+
+        throw runtime.newErrnoFromErrno(errno, ex.getLocalizedMessage());
     }
 
     public static RubyModule getNthScopeModule(StaticScope scope, int depth) {
@@ -380,6 +421,11 @@ public class Helpers {
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return self.getMetaClass().finvokeChecked(context, self, name, args);
+    }
+
+    // MRI: rb_check_funcall
+    public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject arg0) {
+        return self.getMetaClass().finvokeChecked(context, self, sites, arg0);
     }
 
     // MRI: rb_check_funcall
@@ -1395,13 +1441,27 @@ public class Helpers {
     }
 
     public static IRubyObject aryToAry(IRubyObject value) {
+        return aryToAry(value.getRuntime().getCurrentContext(), value);
+    }
+
+    public static IRubyObject aryToAry(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
         if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(value, value.getRuntime().getArray(), "to_ary", false);
+            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
         }
 
-        return value.getRuntime().newArray(value);
+        return context.runtime.newArray(value);
+    }
+
+    public static IRubyObject aryOrToAry(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyArray) return value;
+
+        if (value.respondsTo("to_ary")) {
+            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
+        }
+
+        return context.nil;
     }
 
     @Deprecated // not used
@@ -1528,12 +1588,13 @@ public class Helpers {
         containingClass.addMethod(name, method);
 
         RubySymbol sym = runtime.fastNewSymbol(name);
-        if (visibility == Visibility.MODULE_FUNCTION) {
-            addModuleMethod(containingClass, name, method, context, sym);
-        }
 
         if (!containingClass.isRefinement()) {
             callNormalMethodHook(containingClass, context, sym);
+        }
+
+        if (visibility == Visibility.MODULE_FUNCTION) {
+            addModuleMethod(containingClass, name, method, context, sym);
         }
 
         return sym;
@@ -1966,13 +2027,13 @@ public class Helpers {
         }
     }
 
+    @Deprecated
     public static RubyArray argsPush(ThreadContext context, RubyArray first, IRubyObject second) {
         return ((RubyArray)first.dup()).append(second);
     }
 
-    @Deprecated
-    public static RubyArray argsPush(RubyArray first, IRubyObject second) {
-        return argsPush(first.getRuntime().getCurrentContext(), first, second);
+    public static RubyArray argsPush(IRubyObject first, IRubyObject second) {
+        return ((RubyArray)first.dup()).append(second);
     }
 
     public static RubyArray argsCat(ThreadContext context, IRubyObject first, IRubyObject second) {
@@ -2192,37 +2253,33 @@ public class Helpers {
     // . Array given to rest should pass itself
     // . Array with rest + other args should extract array
     // . Array with multiple values and NO rest should extract args if there are more than one argument
-    // Note: In 1.9 alreadyArray is only relevant from our internal Java code in core libs.
-    // We never use it from interpreter or JIT.
-    @Deprecated // not used
-    public static IRubyObject[] restructureBlockArgs19(IRubyObject value, Signature signature, Block.Type type, boolean needsSplat, boolean alreadyArray) {
-        return restructureBlockArgs(value, signature, type, needsSplat);
-    }
 
-    static IRubyObject[] restructureBlockArgs(IRubyObject value, Signature signature, Block.Type type, boolean needsSplat) {
+    static IRubyObject[] restructureBlockArgs(ThreadContext context,
+        IRubyObject value, Signature signature, Block.Type type, boolean needsSplat) {
+
         if (!type.checkArity && signature == Signature.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
-        if (value != null && needsSplat && !(value instanceof RubyArray)) value = Helpers.aryToAry(value);
-
         if (value == null) return IRubyObject.NULL_ARRAY;
-        if (needsSplat && value instanceof RubyArray) return ((RubyArray) value).toJavaArrayMaybeUnsafe();
+
+        if (needsSplat) {
+            IRubyObject ary = Helpers.aryToAry(context, value);
+            if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArrayMaybeUnsafe();
+        }
+
         return new IRubyObject[] { value };
-    }
-
-    public static boolean BEQ(ThreadContext context, IRubyObject value1, IRubyObject value2) {
-        return value1.op_equal(context, value2).isTrue();
-    }
-
-    public static boolean BNE(ThreadContext context, IRubyObject value1, IRubyObject value2) {
-        boolean eql = value2 == context.nil || value2 == UndefinedValue.UNDEFINED ?
-                value1 == value2 : value1.op_equal(context, value2).isTrue();
-
-        return !eql;
     }
 
     public static RubyString appendByteList(RubyString target, ByteList source) {
         target.getByteList().append(source);
         return target;
+    }
+
+    @JIT
+    public static boolean BNE(ThreadContext context, IRubyObject value1, IRubyObject value2) {
+        boolean eql = value2 == context.nil || value2 == UndefinedValue.UNDEFINED ?
+                value1 == value2 : value1.op_equal(context, value2).isTrue();
+
+        return !eql;
     }
 
     @Deprecated
@@ -2295,7 +2352,7 @@ public class Helpers {
         if (encoding == USASCIIEncoding.INSTANCE || encoding == ASCIIEncoding.INSTANCE) {
             return value.toString(); // raw
         } else if (encoding instanceof UnicodeEncoding) {
-            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), value.getEncoding().getCharset());
+            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), EncodingUtils.charsetForEncoding(value.getEncoding()));
         } else {
             return value.toString(); // raw
         }
@@ -2339,7 +2396,7 @@ public class Helpers {
      * @return the decoded string
      */
     public static String byteListToString(final ByteList bytes) {
-        final Charset charset = bytes.getEncoding().getCharset();
+        final Charset charset = EncodingUtils.charsetForEncoding(bytes.getEncoding());
         if ( charset != null ) {
             return new String(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize(), charset);
         }
@@ -2529,4 +2586,5 @@ public class Helpers {
         return !(checkVisibility &&
                 (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
     }
+
 }

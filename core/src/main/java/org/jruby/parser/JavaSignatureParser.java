@@ -978,7 +978,7 @@ case 97:
 case 98:
 					// line 423 "core/src/main/java/org/jruby/parser/JavaSignatureParser.y"
   {
-     /* We know this is always preceded by 'type' production.*/
+     /* We know this is always preceeded by 'type' production.*/
      yyVals[-3+yyTop] = new ArrayTypeNode(((TypeNode)yyVals[-3+yyTop])); 
      yyVal = ((String)yyVals[-2+yyTop]);
  }

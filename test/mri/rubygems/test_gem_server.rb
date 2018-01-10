@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems/server'
 require 'stringio'
@@ -390,6 +390,22 @@ class TestGemServer < Gem::TestCase
                   ['a', Gem::Version.new(2), Gem::Platform::RUBY],
                   ['a', v('3.a'), Gem::Platform::RUBY]],
                  Marshal.load(Gem.gunzip(@res.body))
+  end
+
+  def test_uri_encode
+    url_safe = @server.uri_encode 'http://rubyonrails.org/">malicious_content</a>'
+    assert_equal url_safe, 'http://rubyonrails.org/%22%3Emalicious_content%3C/a%3E'
+  end
+
+  # Regression test for issue #1793: incorrect URL encoding.
+  # Checking that no URLs have had '://' incorrectly encoded
+  def test_regression_1793
+    data = StringIO.new "GET / HTTP/1.0\r\n\r\n"
+    @req.parse data
+
+    @server.root @req, @res
+
+    refute_match %r|%3A%2F%2F|, @res.body
   end
 
   def util_listen

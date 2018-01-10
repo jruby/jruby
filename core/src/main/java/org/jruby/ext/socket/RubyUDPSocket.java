@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -129,6 +129,11 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw runtime.newErrnoECONNREFUSEDError();
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+        } catch (UnsupportedOperationException uoe) {
+            if (uoe.getMessage().contains("IPv6 not available")) {
+                throw runtime.newErrnoEAFNOSUPPORTError("socket(2) - udp");
+            }
+            throw sockerr(runtime, "UnsupportedOperationException: " + uoe.getLocalizedMessage(), uoe);
         } catch (IOException e) {
             throw sockerr(runtime, "initialize: name or service not known", e);
         }

@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -33,6 +33,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.ast.AssignableNode;
@@ -53,6 +54,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -81,7 +84,7 @@ public class StaticScope implements Serializable {
     private StaticScope previousCRefScope = null;
 
     // Our name holder (offsets are assigned as variables are added)
-    private String[] variableNames;
+    private ByteList[] variableNames;
 
     private int variableNamesLength;
 
@@ -98,7 +101,7 @@ public class StaticScope implements Serializable {
 
     protected IRScopeType scopeType;
 
-    private static final String[] NO_NAMES = new String[0];
+    private static final ByteList[] NO_NAMES = new ByteList[0];
 
     private Type type;
     private boolean isBlockOrEval;
@@ -114,7 +117,7 @@ public class StaticScope implements Serializable {
 
     private RubyModule overlayModule;
 
-    private MethodHandle constructor;
+    private volatile MethodHandle constructor;
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -152,21 +155,20 @@ public class StaticScope implements Serializable {
      * @param enclosingScope the lexically containing scope.
      * @param names          The list of interned String variable names.
      */
-    protected StaticScope(Type type, StaticScope enclosingScope, String[] names, int firstKeywordIndex) {
+    protected StaticScope(Type type, StaticScope enclosingScope, ByteList[] names, int firstKeywordIndex) {
         assert names != null : "names is not null";
-        assert namesAreInterned(names);
 
         this.enclosingScope = enclosingScope;
         this.variableNames = names;
         this.variableNamesLength = names.length;
         this.type = type;
-        this.irScope = null;
+        this.irScope = enclosingScope == null ? null : enclosingScope.irScope;
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
         this.firstKeywordIndex = firstKeywordIndex;
     }
 
-    protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
+    protected StaticScope(Type type, StaticScope enclosingScope, ByteList[] names) {
         this(type, enclosingScope, names, -1);
     }
 
@@ -187,8 +189,12 @@ public class StaticScope implements Serializable {
         }
     }
 
-    private MethodHandle acquireConstructor() {
-        MethodHandle constructor;
+    private synchronized MethodHandle acquireConstructor() {
+        // check again
+        MethodHandle constructor = this.constructor;
+
+        if (constructor != null) return constructor;
+
         int numberOfVariables = getNumberOfVariables();
 
         if (numberOfVariables > MAX_SPECIALIZED_SIZE) {
@@ -196,7 +202,9 @@ public class StaticScope implements Serializable {
         } else {
             constructor = DynamicScopeGenerator.generate(numberOfVariables);
         }
+
         this.constructor = constructor;
+
         return constructor;
     }
 
@@ -218,28 +226,13 @@ public class StaticScope implements Serializable {
     }
 
     /**
-     * Check that all strings in the given array are the interned versions.
-     *
-     * @param names The array of strings
-     * @return true if they are all interned, false otherwise
-     */
-    private static boolean namesAreInterned(String[] names) {
-        for (String name : names) {
-            // Note that this object equality check is intentional, to ensure
-            // the string and its interned version are the same object.
-            if (name != name.intern()) return false;
-        }
-        return true;
-    }
-
-    /**
      * Add a new variable to this (current) scope unless it is already defined in the
      * current scope.
      *
      * @param name of new variable
      * @return index of variable
      */
-    public int addVariableThisScope(String name) {
+    public int addVariableThisScope(ByteList name) {
         int slot = exists(name);
 
         if (slot >= 0) return slot;
@@ -254,12 +247,26 @@ public class StaticScope implements Serializable {
         return variableNames.length - 1;
     }
 
+    @Deprecated
+    public int addVariableThisScope(String stringName) {
+        return addVariableThisScope(new ByteList(stringName.getBytes(), USASCIIEncoding.INSTANCE));
+    }
+
     /**
      * Add a new named capture variable to this (current) scope.
      *
      * @param name name of variable.
      * @return index of variable
      */
+    public int addNamedCaptureVariable(ByteList name) {
+        int index = addVariableThisScope(name);
+
+        growNamedCaptures(index);
+
+        return index;
+    }
+
+    @Deprecated
     public int addNamedCaptureVariable(String name) {
         int index = addVariableThisScope(name);
 
@@ -275,7 +282,7 @@ public class StaticScope implements Serializable {
      * @param name of new variable
      * @return index+depth merged location of scope
      */
-    public int addVariable(String name) {
+    public int addVariable(ByteList name) {
         int slot = isDefined(name);
 
         if (slot >= 0) return slot;
@@ -290,7 +297,21 @@ public class StaticScope implements Serializable {
         return variableNames.length - 1;
     }
 
+    @Deprecated
+    public int addVariable(String name) {
+        return addVariable(new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE));
+    }
+
+    @Deprecated
     public String[] getVariables() {
+        String[] newVars = new String[variableNames.length];
+        for (int i = 0; i < variableNames.length; i++) {
+            newVars[i] = StringSupport.byteListAsString(variableNames[i]);
+        }
+        return newVars;
+    }
+
+    public ByteList[] getByteVariables() {
         return variableNames;
     }
 
@@ -300,12 +321,11 @@ public class StaticScope implements Serializable {
 
     public void setVariables(String[] names) {
         assert names != null : "names is not null";
-        assert namesAreInterned(names);
 
         // Clear constructor since we are changing names
         constructor = null;
 
-        variableNames = new String[names.length];
+        variableNames = new ByteList[names.length];
         variableNamesLength = names.length;
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
@@ -332,7 +352,7 @@ public class StaticScope implements Serializable {
     public IRubyObject getConstant(String internedName) {
         IRubyObject result = getConstantInner(internedName);
 
-        // If we could not find the constant from cref, then try getting from inheritance hierarchy
+        // If we could not find the constant from cref..then try getting from inheritence hierarchy
         return result == null ? cref.getConstantNoConstMissing(internedName) : result;
     }
 
@@ -371,13 +391,18 @@ public class StaticScope implements Serializable {
      * @param name of the variable to find
      * @return index of variable or -1 if it does not exist
      */
-    public int exists(String name) {
+    public int exists(ByteList name) {
         return findVariableName(name);
     }
 
-    private int findVariableName(String name) {
+    @Deprecated
+    public int exists(String name) {
+        return findVariableName(new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE));
+    }
+
+    private int findVariableName(ByteList name) {
         for (int i = 0; i < variableNames.length; i++) {
-            if (name == variableNames[i]) return i;
+            if (name.equal(variableNames[i])) return i;
         }
         return -1;
     }
@@ -389,6 +414,11 @@ public class StaticScope implements Serializable {
      * @return a location where the left-most 16 bits of number of scopes down it is and the
      * right-most 16 bits represents its index in that scope
      */
+    public int isDefined(ByteList name) {
+        return isDefined(name, 0);
+    }
+
+    @Deprecated
     public int isDefined(String name) {
         return isDefined(name, 0);
     }
@@ -401,6 +431,11 @@ public class StaticScope implements Serializable {
      * @param value
      * @return
      */
+    public AssignableNode assign(ISourcePosition position, ByteList name, Node value) {
+        return assign(position, name, value, this, 0);
+    }
+
+    @Deprecated
     public AssignableNode assign(ISourcePosition position, String name, Node value) {
         return assign(position, name, value, this, 0);
     }
@@ -414,13 +449,18 @@ public class StaticScope implements Serializable {
      * @param value
      * @return
      */
-    public AssignableNode assignKeyword(ISourcePosition position, String name, Node value) {
+    public AssignableNode assignKeyword(ISourcePosition position, ByteList name, Node value) {
         AssignableNode assignment = assign(position, name, value, this, 0);
 
         // register first keyword index encountered
         if (firstKeywordIndex == -1) firstKeywordIndex = ((IScopedNode) assignment).getIndex();
 
         return assignment;
+    }
+
+    @Deprecated
+    public AssignableNode assignKeyword(ISourcePosition position, String name, Node value) {
+        return assignKeyword(position, StringSupport.stringAsByteList(name), value);
     }
 
     public boolean keywordExists(String name) {
@@ -451,7 +491,7 @@ public class StaticScope implements Serializable {
         return names;
     }
 
-    public int isDefined(String name, int depth) {
+    public int isDefined(ByteList name, int depth) {
         if (isBlockOrEval) {
             int slot = exists(name);
             if (slot >= 0) return (depth << 16) | slot;
@@ -462,13 +502,22 @@ public class StaticScope implements Serializable {
         }
     }
 
-    public AssignableNode addAssign(ISourcePosition position, String name, Node value) {
+    public int isDefined(String name, int depth) {
+        return isDefined(new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE), depth);
+    }
+
+    public AssignableNode addAssign(ISourcePosition position, ByteList name, Node value) {
         int slot = addVariable(name);
         // No bit math to store level since we know level is zero for this case
         return new DAsgnNode(position, name, slot, value);
     }
 
-    public AssignableNode assign(ISourcePosition position, String name, Node value,
+    @Deprecated
+    public AssignableNode addAssign(ISourcePosition position, String name, Node value) {
+        return addAssign(position, new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE), value);
+    }
+
+    public AssignableNode assign(ISourcePosition position, ByteList name, Node value,
                                  StaticScope topScope, int depth) {
         int slot = exists(name);
 
@@ -490,7 +539,13 @@ public class StaticScope implements Serializable {
                 : topScope.addAssign(position, name, value);
     }
 
-    public Node declare(ISourcePosition position, String name, int depth) {
+    @Deprecated
+    public AssignableNode assign(ISourcePosition position, String name, Node value,
+                                 StaticScope topScope, int depth) {
+        return assign(position, new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE), value, topScope, depth);
+    }
+
+    public Node declare(ISourcePosition position, ByteList name, int depth) {
         int slot = exists(name);
 
         if (slot >= 0) {
@@ -507,10 +562,14 @@ public class StaticScope implements Serializable {
      * @param name     of the variable to be created is named
      * @return a DVarNode or LocalVarNode
      */
-    public Node declare(ISourcePosition position, String name) {
+    public Node declare(ISourcePosition position, ByteList name) {
         return declare(position, name, 0);
     }
 
+    @Deprecated
+    public Node declare(ISourcePosition position, String name) {
+        return declare(position, new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE));
+    }
     /**
      * Gets the Local Scope relative to the current Scope.  For LocalScopes this will be itself.
      * Blocks will contain the LocalScope it contains.
@@ -613,9 +672,8 @@ public class StaticScope implements Serializable {
         return commandArgumentStack;
     }
 
-    private void growVariableNames(String name) {
-        assert name == name.intern();
-        String[] newVariableNames = new String[variableNames.length + 1];
+    private void growVariableNames(ByteList name) {
+        ByteList[] newVariableNames = new ByteList[variableNames.length + 1];
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
         variableNames = newVariableNames;
         variableNamesLength = newVariableNames.length;

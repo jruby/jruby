@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
@@ -41,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -129,7 +131,9 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
         return value ? runtime.getTrue() : runtime.getFalse();
     }
-    
+
+    static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);
+
     public static class False extends RubyBoolean {
         False(Ruby runtime) {
             super(runtime,
@@ -154,11 +158,13 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static IRubyObject false_to_s(IRubyObject f) {
-            return RubyString.newUSASCIIString(f.getRuntime(), "false");
+        public static RubyString false_to_s(IRubyObject f) {
+            return RubyString.newStringShared(f.getRuntime(), FALSE_BYTES);
         }
     }
-    
+
+    static final ByteList TRUE_BYTES = new ByteList(new byte[] { 't','r','u','e' }, USASCIIEncoding.INSTANCE);
+
     public static class True extends RubyBoolean {
         True(Ruby runtime) {
             super(runtime,
@@ -183,8 +189,8 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static IRubyObject true_to_s(IRubyObject t) {
-            return RubyString.newUSASCIIString(t.getRuntime(), "true");
+        public static RubyString true_to_s(IRubyObject t) {
+            return RubyString.newStringShared(t.getRuntime(), TRUE_BYTES);
         }
     }
     

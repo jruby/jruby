@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -47,14 +47,13 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 
-/** Object is the parent class of all classes in Ruby. Its methods are
+/**
+ * Object is the parent class of all classes in Ruby. Its methods are
  * therefore available to all objects unless explicitly overridden.
  */
 public interface IRubyObject {
-    /**
-     *
-     */
-    public static final IRubyObject[] NULL_ARRAY = new IRubyObject[0];
+
+    IRubyObject[] NULL_ARRAY = new IRubyObject[0];
 
     @Deprecated
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
@@ -73,14 +72,14 @@ public interface IRubyObject {
     public IRubyObject checkCallMethod(ThreadContext context, JavaSites.CheckedSites sites);
     
     /**
-     * RubyMethod isNil.
-     * @return boolean
+     * Check whether this object is nil.
+     * @return true for <code>nil</code> only
      */
     boolean isNil();
     
     /**
-     *
-     * @return
+     * Check whether this object is truthy.
+     * @return false for <code>nil</code> and <code>false</code>, true otherwise
      */
     boolean isTrue();
     
@@ -92,14 +91,14 @@ public interface IRubyObject {
     
     /**
      * RubyMethod setTaint.
-     * @param b
+     * @param taint the taint flag
      */
-    void setTaint(boolean b);
+    void setTaint(boolean taint);
     
     /**
-     * Infect this object using the taint of another object
+     * Infect this object using the taint of another object.
      * @param obj
-     * @return
+     * @return infected (self)
      */
     IRubyObject infectBy(IRubyObject obj);
     
@@ -140,14 +139,14 @@ public interface IRubyObject {
     boolean isSpecialConst();
 
     /**
-     * RubyMethod getRubyClass.
-     * @return
+     * Retrieve <code></>self.class<</code>.
+     * @return the Ruby (meta) class
      */
     RubyClass getMetaClass();
     
     /**
-     * RubyMethod getSingletonClass.
-     * @return RubyClass
+     * Retrieve <code></>self.singleton_class<</code>.
+     * @return the Ruby singleton class
      */
     RubyClass getSingletonClass();
     
@@ -180,7 +179,7 @@ public interface IRubyObject {
     
     /**
      * RubyMethod getRuntime.
-     * @return
+     * @return the Ruby runtime this belongs to
      */
     Ruby getRuntime();
     
@@ -201,41 +200,50 @@ public interface IRubyObject {
      * @return
      */
     RubyString asString();
-    
+
     /**
-     * Methods which perform to_xxx if the object has such a method
-     * @return
+     * Converts this Ruby object to an Array.
+     * @return an array value
      */
     RubyArray convertToArray();
+
     /**
-     *
-     * @return
+     * Converts this Ruby object to a Hash.
+     * @return a hash value
      */
-    RubyHash convertToHash();    
+    RubyHash convertToHash();
+
     /**
-    *
-    * @return
-    */    
+     * Converts this Ruby object to a Float (using to_f).
+     * @return a float value
+     */
     RubyFloat convertToFloat();
+
     /**
-     *
-     * @return
+     * Converts this Ruby object to an Integer.
+     * Uses the default conversion method (to_int).
+     * @return an integer value
      */
     RubyInteger convertToInteger();
+
     /**
-     *
-     * @return
+     * @param convertMethod
+     * @param convertMethodIndex
+     * @see #convertToInteger(String)
      */
     @Deprecated
     RubyInteger convertToInteger(int convertMethodIndex, String convertMethod);
+
     /**
-     *
-     * @return
+     * Converts this Ruby object to an Integer.
+     * @param convertMethod method to use e.g. to_i
+     * @return an integer value
      */
     RubyInteger convertToInteger(String convertMethod);
+
     /**
-     *
-     * @return
+     * Converts this Ruby object to a String.
+     * @return a string value
      */
     RubyString convertToString();
     
@@ -247,32 +255,31 @@ public interface IRubyObject {
     
     /**
      *
-     * @return
+     * @return nil if type check failed
      */
     IRubyObject checkStringType();
 
     /**
-     *
-     * @return
+     * @deprecated Use {@link #checkStringType()} instead.
      */
     IRubyObject checkStringType19();
     
     /**
      *
-     * @return
+     * @return nil if type check failed
      */
     IRubyObject checkArrayType();
 
     /**
      * Convert the object to the specified Java class, if possible.
      *
-     * @param cls The target type to which the object should be converted.
+     * @param type The target type to which the object should be converted.
      */
-    Object toJava(Class cls);
+    Object toJava(Class type);
 
     /**
      * RubyMethod dup.
-     * @return
+     * @return a dup-ed object
      */
     IRubyObject dup();
     
@@ -283,8 +290,8 @@ public interface IRubyObject {
     IRubyObject inspect();
     
     /**
-     * RubyMethod rbClone.
-     * @return IRubyObject
+     * RubyMethod clone.
+     * @return a cloned object
      */
     IRubyObject rbClone();
 
@@ -318,11 +325,11 @@ public interface IRubyObject {
      * @return the object wrapped.
      */
     Object dataGetStruct();
+    @Deprecated // not used at all
     Object dataGetStructChecked();
     
     /**
-     *
-     * @return
+     * @return the object id
      */
     IRubyObject id();
     

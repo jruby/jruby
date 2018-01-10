@@ -1,7 +1,7 @@
 package org.jruby.runtime;
 
+import java.io.ByteArrayOutputStream;
 import org.jruby.RubyModule;
-import org.jruby.EvalType;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
@@ -13,8 +13,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-
-import java.io.ByteArrayOutputStream;
 
 public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
@@ -141,24 +139,18 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
             return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
-            // IMPORTANT: Do not clear eval-type in case this is reused in bindings!
-            // Ex: eval("...", foo.instance_eval { binding })
-            // The dyn-scope used for binding needs to have its eval-type set to INSTANCE_EVAL
-            binding.getFrame().setVisibility(oldVis);
-            if (ic.popDynScope()) {
-                context.postYield(binding, prevFrame);
-            } else {
-                context.postYieldNoScope(prevFrame);
-            }
+            postYield(context, ic, binding, oldVis, prevFrame);
         }
     }
 
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
-    protected void promoteToFullBuild(ThreadContext context) {
+    private void promoteToFullBuild(ThreadContext context) {
         if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't Promote to full build during runtime boot
 
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) context.runtime.getJITCompiler().buildThresholdReached(context, this);
+        if (callCount++ >= Options.JIT_THRESHOLD.load()) {
+            context.runtime.getJITCompiler().buildThresholdReached(context, this);
+        }
     }
 
     public RubyModule getImplementationClass() {

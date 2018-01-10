@@ -45,6 +45,47 @@ class TestString < Test::Unit::TestCase
     src.force_encoding("euc-jp")
     assert_equal(src, S(src, encoding: "utf-8"))
     assert_equal(Encoding::UTF_8, S(src, encoding: "utf-8").encoding)
+
+    assert_equal("", S(capacity: 1000))
+    assert_equal(Encoding::ASCII_8BIT, S(capacity: 1000).encoding)
+
+    assert_equal("", S(capacity: 1000, encoding: "euc-jp"))
+    assert_equal(Encoding::EUC_JP, S(capacity: 1000, encoding: "euc-jp").encoding)
+
+    assert_equal("", S("", capacity: 1000))
+    assert_equal(__ENCODING__, S("", capacity: 1000).encoding)
+
+    assert_equal("", S("", capacity: 1000, encoding: "euc-jp"))
+    assert_equal(Encoding::EUC_JP, S("", capacity: 1000, encoding: "euc-jp").encoding)
+  end
+
+  def test_initialize
+    str = S("").freeze
+    assert_equal("", str.__send__(:initialize))
+    assert_raise(RuntimeError){ str.__send__(:initialize, 'abc') }
+    assert_raise(RuntimeError){ str.__send__(:initialize, capacity: 1000) }
+    assert_raise(RuntimeError){ str.__send__(:initialize, 'abc', capacity: 1000) }
+    assert_raise(RuntimeError){ str.__send__(:initialize, encoding: 'euc-jp') }
+    assert_raise(RuntimeError){ str.__send__(:initialize, 'abc', encoding: 'euc-jp') }
+    assert_raise(RuntimeError){ str.__send__(:initialize, 'abc', capacity: 1000, encoding: 'euc-jp') }
+  end
+
+  def test_initialize_nonstring
+    assert_raise(TypeError) {
+      S(1)
+    }
+    assert_raise(TypeError) {
+      S(1, capacity: 1000)
+    }
+  end
+
+  def test_initialize_memory_leak
+    assert_no_memory_leak([], <<-PREP, <<-CODE, rss: true)
+code = proc {('x'*100000).__send__(:initialize, '')}
+1_000.times(&code)
+PREP
+100_000.times(&code)
+CODE
   end
 
   def test_AREF # '[]'
@@ -161,6 +202,8 @@ class TestString < Test::Unit::TestCase
     assert_equal("fobar", s)
 
     assert_raise(ArgumentError) { "foo"[1, 2, 3] = "" }
+
+    #assert_raise(IndexError) {"foo"[RbConfig::Limits["LONG_MIN"]] = "l"}
   end
 
   def test_CMP # '<=>'
@@ -340,6 +383,8 @@ class TestString < Test::Unit::TestCase
     $/ = save
 
     assert_equal(S("a").hash, S("a\u0101").chomp(S("\u0101")).hash, '[ruby-core:22414]')
+  ensure
+    $/ = save
   end
 
   def test_chomp!
@@ -396,6 +441,8 @@ class TestString < Test::Unit::TestCase
     assert_equal("foo\r", s)
 
     assert_equal(S("a").hash, S("a\u0101").chomp!(S("\u0101")).hash, '[ruby-core:22414]')
+  ensure
+    $/ = save
   end
 
   def test_chop
@@ -454,6 +501,8 @@ class TestString < Test::Unit::TestCase
   def test_concat
     assert_equal(S("world!"), S("world").concat(33))
     assert_equal(S("world!"), S("world").concat(S('!')))
+    b = S("sn")
+    assert_equal(S("snsnsn"), b.concat(b, b))
 
     bug7090 = '[ruby-core:47751]'
     result = S("").force_encoding(Encoding::UTF_16LE)
@@ -461,6 +510,7 @@ class TestString < Test::Unit::TestCase
     expected = S("\u0300".encode(Encoding::UTF_16LE))
     assert_equal(expected, result, bug7090)
     assert_raise(TypeError) { 'foo' << :foo }
+    assert_raise(RuntimeError) { 'foo'.freeze.concat('bar') }
   end
 
   def test_count
@@ -573,6 +623,18 @@ class TestString < Test::Unit::TestCase
   def test_dump
     a= S("Test") << 1 << 2 << 3 << 9 << 13 << 10
     assert_equal(S('"Test\\x01\\x02\\x03\\t\\r\\n"'), a.dump)
+    b= S("\u{7F}")
+    assert_equal(S('"\\x7F"'), b.dump)
+    b= S("\u{AB}")
+    assert_equal(S('"\\u00AB"'), b.dump)
+    b= S("\u{ABC}")
+    assert_equal(S('"\\u0ABC"'), b.dump)
+    b= S("\uABCD")
+    assert_equal(S('"\\uABCD"'), b.dump)
+    b= S("\u{ABCDE}")
+    assert_equal(S('"\\u{ABCDE}"'), b.dump)
+    b= S("\u{10ABCD}")
+    assert_equal(S('"\\u{10ABCD}"'), b.dump)
   end
 
   def test_dup
@@ -609,6 +671,7 @@ class TestString < Test::Unit::TestCase
     S("hello!world").lines.each {|x| res << x}
     assert_equal(S("hello!"), res[0])
     assert_equal(S("world"),  res[1])
+  ensure
     $/ = save
   end
 
@@ -751,6 +814,49 @@ class TestString < Test::Unit::TestCase
     assert_nothing_raised(bug7646) do
       "\n\u0100".each_line("\n") {}
     end
+  ensure
+    $/ = save
+  end
+
+  def test_each_line_chomp
+    res = []
+    S("hello\nworld").each_line("\n", chomp: true) {|x| res << x}
+    assert_equal(S("hello"), res[0])
+    assert_equal(S("world"), res[1])
+
+    res = []
+    S("hello\n\n\nworld").each_line(S(''), chomp: true) {|x| res << x}
+    assert_equal(S("hello\n\n"), res[0])
+    assert_equal(S("world"),     res[1])
+
+    res = []
+    S("hello!world").each_line(S('!'), chomp: true) {|x| res << x}
+    assert_equal(S("hello"), res[0])
+    assert_equal(S("world"), res[1])
+
+    res = []
+    S("a").each_line(S('ab'), chomp: true).each {|x| res << x}
+    assert_equal(1, res.size)
+    assert_equal(S("a"), res[0])
+
+    s = nil
+    "foo\nbar".each_line(nil, chomp: true) {|s2| s = s2 }
+    assert_equal("foo\nbar", s)
+
+    assert_equal "hello", S("hello\nworld").each_line(chomp: true).next
+    assert_equal "hello\nworld", S("hello\nworld").each_line(nil, chomp: true).next
+
+    res = []
+    S("").each_line(chomp: true) {|x| res << x}
+    assert_equal([], res)
+
+    res = []
+    S("\n").each_line(chomp: true) {|x| res << x}
+    assert_equal([S("")], res)
+
+    res = []
+    S("\r\n").each_line(chomp: true) {|x| res << x}
+    assert_equal([S("")], res)
   end
 
   def test_lines
@@ -887,18 +993,6 @@ class TestString < Test::Unit::TestCase
     assert_not_equal(S("sub-setter").hash, S("discover").hash, bug9172)
   end
 
-  def test_hash_random
-    str = 'abc'
-    a = [str.hash.to_s]
-    3.times {
-      assert_in_out_err(["-e", "print #{str.dump}.hash"], "") do |r, e|
-        a += r
-        assert_equal([], e)
-      end
-    }
-    assert_not_equal([str.hash.to_s], a.uniq)
-  end
-
   def test_hex
     assert_equal(255,  S("0xff").hex)
     assert_equal(-255, S("-0xff").hex)
@@ -956,6 +1050,14 @@ class TestString < Test::Unit::TestCase
     assert_nil($~)
   end
 
+  def test_insert
+    assert_equal("Xabcd", S("abcd").insert(0, 'X'))
+    assert_equal("abcXd", S("abcd").insert(3, 'X'))
+    assert_equal("abcdX", S("abcd").insert(4, 'X'))
+    assert_equal("abXcd", S("abcd").insert(-3, 'X'))
+    assert_equal("abcdX", S("abcd").insert(-1, 'X'))
+  end
+
   def test_intern
     assert_equal(:koala, S("koala").intern)
     assert_not_equal(:koala, S("Koala").intern)
@@ -987,6 +1089,9 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("AAAAA000"), S("ZZZZ999").next)
 
     assert_equal(S("*+"), S("**").next)
+
+    assert_equal(S("!"), S(" ").next)
+    assert_equal(S(""), S("").next)
   end
 
   def test_next!
@@ -1023,6 +1128,10 @@ class TestString < Test::Unit::TestCase
     a = S("**")
     assert_equal(S("*+"), a.next!)
     assert_equal(S("*+"), a)
+
+    a = S(" ")
+    assert_equal(S("!"), a.next!)
+    assert_equal(S("!"), a)
   end
 
   def test_oct
@@ -1110,6 +1219,9 @@ class TestString < Test::Unit::TestCase
 
     assert_nil("foo".rindex(//, -100))
     assert_nil($~)
+
+    assert_equal(3, "foo".rindex(//))
+    assert_equal([3, 3], $~.offset(0))
   end
 
   def test_rjust
@@ -1297,7 +1409,7 @@ class TestString < Test::Unit::TestCase
   end
 
   def test_split
-    assert_nil($;)
+    fs, $; = $;, nil
     assert_equal([S("a"), S("b"), S("c")], S(" a   b\t c ").split)
     assert_equal([S("a"), S("b"), S("c")], S(" a   b\t c ").split(S(" ")))
 
@@ -1321,6 +1433,14 @@ class TestString < Test::Unit::TestCase
     assert_equal([], "".split(//, 1))
 
     assert_equal("[2, 3]", [1,2,3].slice!(1,10000).inspect, "moved from btest/knownbug")
+  ensure
+    $; = fs
+  end
+
+  def test_fs
+    assert_raise_with_message(TypeError, /\$;/) {
+      $; = []
+    }
   end
 
   def test_split_encoding
@@ -1483,6 +1603,10 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("Abc"), S("abc").sub("a") {m = $~; "A"})
     assert_equal(S("a"), m[0])
     assert_equal(/a/, m.regexp)
+    bug = '[ruby-core:78686] [Bug #13042] other than regexp has no name references'
+    assert_raise_with_message(IndexError, /oops/, bug) {
+      'hello'.gsub('hello', '\k<oops>')
+    }
   end
 
   def test_sub!
@@ -1533,6 +1657,9 @@ class TestString < Test::Unit::TestCase
     assert_equal("2000aaa", "1999zzz".succ)
     assert_equal("AAAA0000", "ZZZ9999".succ)
     assert_equal("**+", "***".succ)
+
+    assert_equal("!", " ".succ)
+    assert_equal("", "".succ)
   end
 
   def test_succ!
@@ -1573,6 +1700,14 @@ class TestString < Test::Unit::TestCase
     a = S("No.9")
     assert_equal(S("No.10"), a.succ!)
     assert_equal(S("No.10"), a)
+
+    a = S(" ")
+    assert_equal(S("!"), a.succ!)
+    assert_equal(S("!"), a)
+
+    a = S("")
+    assert_equal(S(""), a.succ!)
+    assert_equal(S(""), a)
 
     assert_equal("aaaaaaaaaaaa", "zzzzzzzzzzz".succ!)
     assert_equal("aaaaaaaaaaaaaaaaaaaaaaaa", "zzzzzzzzzzzzzzzzzzzzzzz".succ!)
@@ -1997,6 +2132,50 @@ class TestString < Test::Unit::TestCase
     assert_raise(ArgumentError) { "foo".match }
   end
 
+  def test_match_p_regexp
+    /backref/ =~ 'backref'
+    # must match here, but not in a separate method, e.g., assert_send,
+    # to check if $~ is affected or not.
+    assert_equal(true, "".match?(//))
+    assert_equal(true, :abc.match?(/.../))
+    assert_equal(true, 'abc'.match?(/b/))
+    assert_equal(true, 'abc'.match?(/b/, 1))
+    assert_equal(true, 'abc'.match?(/../, 1))
+    assert_equal(true, 'abc'.match?(/../, -2))
+    assert_equal(false, 'abc'.match?(/../, -4))
+    assert_equal(false, 'abc'.match?(/../, 4))
+    assert_equal(true, "\u3042xx".match?(/../, 1))
+    assert_equal(false, "\u3042x".match?(/../, 1))
+    assert_equal(true, ''.match?(/\z/))
+    assert_equal(true, 'abc'.match?(/\z/))
+    assert_equal(true, 'Ruby'.match?(/R.../))
+    assert_equal(false, 'Ruby'.match?(/R.../, 1))
+    assert_equal(false, 'Ruby'.match?(/P.../))
+    assert_equal('backref', $&)
+  end
+
+  def test_match_p_string
+    /backref/ =~ 'backref'
+    # must match here, but not in a separate method, e.g., assert_send,
+    # to check if $~ is affected or not.
+    assert_equal(true, "".match?(''))
+    assert_equal(true, :abc.match?('...'))
+    assert_equal(true, 'abc'.match?('b'))
+    assert_equal(true, 'abc'.match?('b', 1))
+    assert_equal(true, 'abc'.match?('..', 1))
+    assert_equal(true, 'abc'.match?('..', -2))
+    assert_equal(false, 'abc'.match?('..', -4))
+    assert_equal(false, 'abc'.match?('..', 4))
+    assert_equal(true, "\u3042xx".match?('..', 1))
+    assert_equal(false, "\u3042x".match?('..', 1))
+    assert_equal(true, ''.match?('\z'))
+    assert_equal(true, 'abc'.match?('\z'))
+    assert_equal(true, 'Ruby'.match?('R...'))
+    assert_equal(false, 'Ruby'.match?('R...', 1))
+    assert_equal(false, 'Ruby'.match?('P...'))
+    assert_equal('backref', $&)
+  end
+
   def test_clear
     s = "foo" * 100
     s.clear
@@ -2120,6 +2299,13 @@ class TestString < Test::Unit::TestCase
     assert_equal(1, "\u3042B".casecmp("\u3042a"))
   end
 
+  def test_casecmp?
+    assert_equal(true, 'FoO'.casecmp?('fOO'))
+    assert_equal(false, 'FoO'.casecmp?('BaR'))
+    assert_equal(false, 'baR'.casecmp?('FoO'))
+    assert_equal(true, 'äöü'.casecmp?('ÄÖÜ'))
+  end
+
   def test_upcase2
     assert_equal("\u3042AB", "\u3042aB".upcase)
   end
@@ -2129,8 +2315,52 @@ class TestString < Test::Unit::TestCase
   end
 
   def test_rstrip
+    assert_equal("  hello", "  hello  ".rstrip)
     assert_equal("\u3042", "\u3042   ".rstrip)
     assert_raise(Encoding::CompatibilityError) { "\u3042".encode("ISO-2022-JP").rstrip }
+  end
+
+  def test_rstrip_bang
+    s1 = S("  hello  ")
+    assert_equal("  hello", s1.rstrip!)
+    assert_equal("  hello", s1)
+
+    s2 = S("\u3042  ")
+    assert_equal("\u3042", s2.rstrip!)
+    assert_equal("\u3042", s2)
+
+    s3 = S("  \u3042")
+    assert_equal(nil, s3.rstrip!)
+    assert_equal("  \u3042", s3)
+
+    s4 = S("\u3042")
+    assert_equal(nil, s4.rstrip!)
+    assert_equal("\u3042", s4)
+
+    assert_raise(Encoding::CompatibilityError) { "\u3042".encode("ISO-2022-JP").rstrip! }
+  end
+
+  def test_lstrip
+    assert_equal("hello  ", "  hello  ".lstrip)
+    assert_equal("\u3042", "   \u3042".lstrip)
+  end
+
+  def test_lstrip_bang
+    s1 = S("  hello  ")
+    assert_equal("hello  ", s1.lstrip!)
+    assert_equal("hello  ", s1)
+
+    s2 = S("\u3042  ")
+    assert_equal(nil, s2.lstrip!)
+    assert_equal("\u3042  ", s2)
+
+    s3 = S("  \u3042")
+    assert_equal("\u3042", s3.lstrip!)
+    assert_equal("\u3042", s3)
+
+    s4 = S("\u3042")
+    assert_equal(nil, s4.lstrip!)
+    assert_equal("\u3042", s4)
   end
 
 =begin
@@ -2182,7 +2412,9 @@ class TestString < Test::Unit::TestCase
   end
 
   def test_prepend
-    assert_equal(S("hello world!"), "world!".prepend("hello "))
+    assert_equal(S("hello world!"), "!".prepend("hello ", "world"))
+    b = S("ue")
+    assert_equal(S("ueueue"), b.prepend(b, b))
 
     foo = Object.new
     def foo.to_str
@@ -2297,6 +2529,20 @@ class TestString < Test::Unit::TestCase
 
     assert_not_equal(str.object_id, (+str).object_id)
     assert_equal(str.object_id, (-str).object_id)
+  end
+
+  def test_ord
+    assert_equal(97, "a".ord)
+    assert_equal(97, "abc".ord)
+    assert_equal(0x3042, "\u3042\u3043".ord)
+    assert_raise(ArgumentError) { "".ord }
+  end
+
+  def test_chr
+    assert_equal("a", "abcde".chr)
+    assert_equal("a", "a".chr)
+    assert_equal("\u3042", "\u3042\u3043".chr)
+    assert_equal('', ''.chr)
   end
 end
 

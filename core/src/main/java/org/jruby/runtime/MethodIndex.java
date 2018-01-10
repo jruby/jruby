@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -33,9 +33,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.jruby.anno.FrameField;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
@@ -59,6 +62,9 @@ import org.jruby.runtime.callsite.XorCallSite;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Stream.concat;
 
 /**
  *
@@ -93,6 +99,9 @@ public class MethodIndex {
 
     public static final Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
     public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
+
+    public static final Map<String, Set<FrameField>> METHOD_FRAME_READS = new ConcurrentHashMap<>();
+    public static final Map<String, Set<FrameField>> METHOD_FRAME_WRITES = new ConcurrentHashMap<>();
 
     public static CallSite getCallSite(String name) {
         // fast and safe respond_to? call site logic
@@ -218,11 +227,60 @@ public class MethodIndex {
         return new SuperCallSite();
     }
 
+    public static void addMethodReadFieldsPacked(int readBits, String methodsPacked) {
+        processFrameFields(readBits, methodsPacked, "read", METHOD_FRAME_READS);
+    }
+
+    public static void addMethodWriteFieldsPacked(int writeBits, String methodsPacked) {
+        processFrameFields(writeBits, methodsPacked, "write", METHOD_FRAME_WRITES);
+    }
+
+    private static void processFrameFields(int bits, String methodNames, String usage, Map<String, Set<FrameField>> methodFrameAccesses) {
+        Set<FrameField> writes = FrameField.unpack(bits);
+
+        boolean needsFrame = FrameField.needsFrame(bits);
+        boolean needsScope = FrameField.needsScope(bits);
+
+        if (DEBUG) LOG.debug("Adding method fields for {}: {} for {}", usage, writes, methodNames);
+
+        if (writes.size() > 0) {
+            String[] names = Helpers.SEMICOLON_PATTERN.split(methodNames);
+            List<String> namesList = Arrays.asList(names);
+
+            addAwareness(needsFrame, needsScope, namesList);
+
+            addFieldAccesses(methodFrameAccesses, names, writes);
+        }
+    }
+
+    private static void addFieldAccesses(Map<String, Set<FrameField>> methodFrameWrites, String[] names, Set<FrameField> writes) {
+        for (String name : names) {
+            methodFrameWrites.compute(
+                    name,
+                    (key, cur) -> cur == null ? writes : concat(cur.stream(), writes.stream()).collect(toSet()));
+        }
+    }
+
+    private static void addAwareness(boolean needsFrame, boolean needsScope, List<String> namesList) {
+        if (needsFrame) FRAME_AWARE_METHODS.addAll(namesList);
+        if (needsScope) SCOPE_AWARE_METHODS.addAll(namesList);
+    }
+
+    public static void addMethodReadFields(String name, FrameField[] reads) {
+        addMethodReadFieldsPacked(FrameField.pack(reads), name);
+    }
+
+    public static void addMethodWriteFields(String name, FrameField[] write) {
+        addMethodWriteFieldsPacked(FrameField.pack(write), name);
+    }
+
+    @Deprecated
     public static void addFrameAwareMethods(String... methods) {
         if (DEBUG) LOG.debug("Adding frame-aware method names: {}", Arrays.toString(methods));
         FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
 
+    @Deprecated
     public static void addScopeAwareMethods(String... methods) {
         if (DEBUG) LOG.debug("Adding scope-aware method names: {}", Arrays.toString(methods));
         SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));

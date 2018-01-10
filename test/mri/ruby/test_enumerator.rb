@@ -103,6 +103,7 @@ class TestEnumerator < Test::Unit::TestCase
       1.times do
         foo = [1,2,3].to_enum
         GC.start
+        foo
       end
       GC.start
     end
@@ -644,6 +645,11 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal(1, e.peek)
     e.next
     assert_raise(StopIteration) { e.peek }
+  end
+
+  def test_uniq
+    assert_equal([1, 2, 3, 4, 5, 10],
+                 (1..Float::INFINITY).lazy.uniq{|x| (x**2) % 10 }.first(6))
   end
 end
 

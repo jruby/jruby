@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -308,7 +308,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private static RubyString makeShared(Ruby runtime, RubyString str, int index, int length) {
-        return str.makeShared19(runtime, index, length);
+        return str.makeShared(runtime, index, length);
     }
 
     private RubyArray match_array(Ruby runtime, int start) {
@@ -438,8 +438,30 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod(rest = true)
+    public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
+        check();
+        Ruby runtime = context.runtime;
+
+        RubyArray result = RubyArray.newArray(runtime, args.length);
+
+        for (IRubyObject arg : args) {
+            if (arg instanceof RubyFixnum) {
+                result.push(RubyRegexp.nth_match(arg.convertToInteger().getIntValue(), this));
+            } else {
+                int num = namevToBacktraceNumber(context, arg);
+                if (num >= 0) {
+                    result.push(RubyRegexp.nth_match(num, this));
+                } else {
+                    matchAryAref(context, arg, result);
+                }
+            }
+        }
+
+        return result;
+    }
+
     public IRubyObject values_at(IRubyObject[] args) {
-        return to_a().values_at(args);
+        return values_at(getRuntime().getCurrentContext(), args);
     }
 
     /** match_captures
@@ -482,10 +504,75 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
-    @Deprecated
-    public IRubyObject op_aref19(IRubyObject idx) {
-        return op_aref(idx);
+    // MRI: namev_to_backref_number
+    private int namevToBacktraceNumber(ThreadContext context, IRubyObject name) {
+        int num = -1;
+
+        switch (name.getType().getClassIndex()) {
+            case SYMBOL:
+                name = name.asString();
+	            /* fall through */
+            case STRING:
+                Ruby runtime = context.runtime;
+                if (regexp.isNil() || RubyEncoding.areCompatible(regexp, name) == null ||
+                        (num = nameToBackrefNumber(runtime, regexp.getPattern(), regs, name.convertToString())) < 1) {
+                    nameToBackrefError(runtime, name.toString());
+                }
+                return num;
+
+            default:
+                return -1;
+        }
     }
+
+    private int nameToBackrefError(Ruby runtime, String name) {
+        throw runtime.newIndexError("undefined group name reference " + name);
+    }
+
+    // MRI: match_ary_subseq
+    private IRubyObject matchArySubseq(ThreadContext context, int beg, int len, RubyArray result) {
+        int olen = regs.numRegs;
+        int wantedEnd = beg + len;
+        int j, end = olen < wantedEnd ? olen : wantedEnd;
+
+        if (result == null) result = RubyArray.newArray(context.runtime);
+        if (len == 0) return result;
+
+        for (j = beg; j < end; j++) {
+            result.push(RubyRegexp.nth_match(j, this));
+        }
+
+        // if not enough groups, force length to be as wide as desired by setting last value to nil
+        if (wantedEnd > j) {
+            int newLength = result.size() + wantedEnd - j;
+            result.store(newLength - 1, context.nil);
+        }
+
+        return result;
+    }
+
+    // MRI: match_ary_aref
+    private IRubyObject matchAryAref(ThreadContext context, IRubyObject index, RubyArray result) {
+        int[] begLen = new int[2];
+        int numRegs = regs.numRegs;
+
+        /* check if idx is Range */
+        IRubyObject isRange = RubyRange.rangeBeginLength(context, index, numRegs, begLen, 1);
+
+        if (isRange.isNil()) return context.nil;
+
+        if (!isRange.isTrue()) {
+            IRubyObject nthMatch = RubyRegexp.nth_match(index.convertToInteger().getIntValue(), this);
+
+            // this should never happen here, but MRI allows any VALUE for result
+            if (result.isNil()) return nthMatch;
+
+            return result.push(nthMatch);
+        }
+
+        return matchArySubseq(context, begLen[0], begLen[1], result);
+    }
+
 
     @Deprecated
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
@@ -718,6 +805,34 @@ public class RubyMatchData extends RubyObject {
     @Override
     public RubyFixnum hash() {
         return getRuntime().newFixnum( hashCode() );
+    }
+
+    @JRubyMethod
+    public RubyHash named_captures(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        RubyHash hash = RubyHash.newHash(runtime);
+
+        if (regexp.getPattern().numberOfNames() > 0) {
+            Iterator<NameEntry> nameEntryIterator = regexp.getPattern().namedBackrefIterator();
+            while (nameEntryIterator.hasNext()) {
+                NameEntry entry = nameEntryIterator.next();
+                RubyString key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
+                boolean found = false;
+
+                for (int i : entry.getBackRefs()) {
+                    IRubyObject value = RubyRegexp.nth_match(i, this);
+                    if (value.isTrue()) {
+                        hash.op_asetForString(runtime, key, value);
+                        found = true;
+                    }
+                }
+
+                if (!found) hash.op_asetForString(runtime, key, context.nil);
+            }
+        }
+
+        return hash;
     }
 
     /**

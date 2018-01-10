@@ -1,4 +1,6 @@
 exclude :test_gb18030, "perhaps a bug in pack wrt encoded text"
+exclude :test_invalid_replace_string, "Unicode update? #4731"
 exclude :test_to_cp50221, "needs investigation"
 exclude :test_unicode_public_review_issue_121, "broken via charset replacement"
 exclude :test_utf8_mac, "needs investigation"
+exclude :test_windows_1255, "Unicode update? #4731"

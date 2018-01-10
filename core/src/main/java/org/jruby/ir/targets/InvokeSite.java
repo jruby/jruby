@@ -44,13 +44,21 @@ import static java.lang.invoke.MethodHandles.lookup;
 * Created by headius on 10/23/14.
 */
 public abstract class InvokeSite extends MutableCallSite {
+
+    private static final Logger LOG = LoggerFactory.getLogger(InvokeSite.class);
+    static { // enable DEBUG output
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.setDebugEnable(true);
+    }
+    private static final boolean LOG_BINDING = LOG.isDebugEnabled();
+
+    private static final AtomicLong SITE_ID = new AtomicLong(1);
+
     final Signature signature;
     final Signature fullSignature;
     final int arity;
     protected final String methodName;
     final MethodHandle fallback;
     private final SiteTracker tracker = new SiteTracker();
-    private static final AtomicLong SITE_ID = new AtomicLong(1);
     private final long siteID = SITE_ID.getAndIncrement();
     private final int argOffset;
     protected final String file;
@@ -58,8 +66,6 @@ public abstract class InvokeSite extends MutableCallSite {
     private boolean boundOnce;
     private boolean literalClosure;
     CacheEntry cache = CacheEntry.NULL_CACHE;
-
-    private static final Logger LOG = LoggerFactory.getLogger(InvokeSite.class);
 
     public String name() {
         return methodName;
@@ -364,7 +370,6 @@ public abstract class InvokeSite extends MutableCallSite {
     MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, DynamicMethod method, SwitchPoint switchPoint) {
         MethodHandle fallback;
         MethodHandle gwt;
-        String bind = "bind";
 
         CacheAction cacheAction = testThresholds(testClass);
         switch (cacheAction) {
@@ -426,22 +431,25 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     private void logMethodMissing() {
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
-            LOG.info(methodName + "\ttriggered site #" + siteID + " method_missing (" + file + ":" + line + ")");
+        if (LOG_BINDING) {
+            LOG.debug(methodName + "\ttriggered site #" + siteID + " method_missing (" + file + ":" + line + ")");
+        }
     }
 
     private void logBind(CacheAction action) {
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
-            LOG.info(methodName + "\ttriggered site #" + siteID + " " + action + " (" + file + ":" + line + ")");
+        if (LOG_BINDING) {
+            LOG.debug(methodName + "\ttriggered site #" + siteID + " " + action + " (" + file + ":" + line + ")");
+        }
     }
 
     private void logPic(DynamicMethod method) {
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
-            LOG.info(methodName + "\tadded to PIC " + logMethod(method));
+        if (LOG_BINDING) {
+            LOG.debug(methodName + "\tadded to PIC " + logMethod(method));
+        }
     }
 
     private void logFail() {
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+        if (LOG_BINDING) {
             if (tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load()) {
                 LOG.info(methodName + "\tat site #" + siteID + " failed more than " + Options.INVOKEDYNAMIC_MAXFAIL.load() + " times; bailing out (" + file + ":" + line + ")");
             } else if (tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
@@ -481,8 +489,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
         context.callThreadPoll();
-        RubyClass selfType = ((RubyBasicObject)self).getMetaClass();
-        return selfType;
+        return ((RubyBasicObject) self).getMetaClass();
     }
 
     @Override
@@ -528,12 +535,12 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     private static String logMethod(DynamicMethod method) {
-        return "[#" + method.getSerialNumber() + " " + method.getImplementationClass() + "]";
+        return "[#" + method.getSerialNumber() + ' ' + method.getImplementationClass() + ']';
     }
 
     @JIT
     public static boolean testMetaclass(RubyClass metaclass, IRubyObject self) {
-        return metaclass == ((RubyBasicObject)self).getMetaClass();
+        return metaclass == ((RubyBasicObject) self).getMetaClass();
     }
 
     @JIT
@@ -542,7 +549,7 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     public String toString() {
-        return "InvokeSite[name=" + name() + ",arity=" + arity + ",type=" + type() + ",file=" + file + ",line=" + line + "]";
+        return getClass().getName() + "[name=" + name() + ",arity=" + arity + ",type=" + type() + ",file=" + file + ",line=" + line + ']';
     }
 
     private static final MethodHandle TEST_CLASS = Binder

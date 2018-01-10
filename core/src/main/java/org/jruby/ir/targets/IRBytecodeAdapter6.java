@@ -742,19 +742,19 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void searchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
+        adapter.invokedynamic("searchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0, 1);
     }
 
-    public void searchModuleForConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("searchModuleForConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
+    public void searchModuleForConst(String name, boolean noPrivateConsts, boolean callConstMissing) {
+        adapter.invokedynamic("searchModuleForConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0, callConstMissing ? 1 : 0);
     }
 
     public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
-        adapter.invokedynamic("inheritanceSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0);
+        adapter.invokedynamic("inheritanceSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), ConstantLookupSite.BOOTSTRAP, name, noPrivateConsts ? 1 : 0, 1);
     }
 
     public void lexicalSearchConst(String name) {
-        adapter.invokedynamic("lexicalSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), ConstantLookupSite.BOOTSTRAP, name, 0);
+        adapter.invokedynamic("lexicalSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), ConstantLookupSite.BOOTSTRAP, name, 0, 1);
     }
 
     public void pushNil() {
@@ -1015,6 +1015,14 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.label(done);
 
         invokeIRHelper("prepareBlock", sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class, BlockBody.class));
+    }
+
+    @Override
+    public void callEqq(boolean isSplattedValue) {
+        String siteName = getUniqueSiteName("===");
+        IRBytecodeAdapter.cacheCallSite(adapter, getClassData().clsName, siteName, "===", CallType.FUNCTIONAL, false);
+        adapter.ldc(isSplattedValue);
+        invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
     }
 
     private final Map<Object, String> cacheFieldNames = new HashMap<>();

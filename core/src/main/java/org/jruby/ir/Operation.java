@@ -34,7 +34,6 @@ public enum Operation {
 
     /** control-flow **/
     JUMP(OpFlags.f_is_jump_or_branch),
-    BEQ(OpFlags.f_is_jump_or_branch),
     BNE(OpFlags.f_is_jump_or_branch),
     B_UNDEF(OpFlags.f_is_jump_or_branch),
     B_NIL(OpFlags.f_is_jump_or_branch),
@@ -212,8 +211,10 @@ public enum Operation {
     /** Other JRuby internal primitives for optimizations */
     MODULE_GUARD(OpFlags.f_is_jump_or_branch), /* a guard acts as a branch */
     PUSH_METHOD_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    PUSH_BACKREF_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PUSH_METHOD_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_METHOD_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    POP_BACKREF_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PUSH_BLOCK_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PUSH_BLOCK_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_BLOCK_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),

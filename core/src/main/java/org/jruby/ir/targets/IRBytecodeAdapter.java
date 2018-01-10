@@ -510,7 +510,7 @@ public abstract class IRBytecodeAdapter {
      * @param name name of the constant
      * @param noPrivateConsts whether to ignore private constants
      */
-    public abstract void searchModuleForConst(String name, boolean noPrivateConsts);
+    public abstract void searchModuleForConst(String name, boolean noPrivateConsts, boolean callConstMissing);
 
     /**
      * Lookup a constant from a given class or module.
@@ -651,6 +651,13 @@ public abstract class IRBytecodeAdapter {
      * Stack required: context, self, dynamicScope
      */
     public abstract void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className);
+
+    /**
+     * Perform a === call appropriate for a case/when statement.
+     *
+     * Stack required: context, case value, when value
+     */
+    public abstract void callEqq(boolean isSplattedValue);
 
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;

@@ -526,6 +526,17 @@ END
     assert_equal(2, gen.limit, bug7935)
   end
 
+  def test_random_ulong_limited_no_rand
+    c = Class.new do
+      undef rand
+      def bytes(n)
+        "\0"*n
+      end
+    end
+    gen = c.new.extend(Random::Formatter)
+    assert_equal(1, [1, 2].sample(random: gen))
+  end
+
   def test_default_seed
     assert_separately([], <<-End)
       seed = Random::DEFAULT::seed
@@ -537,5 +548,25 @@ END
       rand3 = rand
       assert_equal(rand1, rand3)
     End
+  end
+
+  def test_raw_seed
+    [0, 1, 100].each do |size|
+      v = Random.raw_seed(size)
+      assert_kind_of(String, v)
+      assert_equal(size, v.bytesize)
+    end
+  end
+
+  def test_new_seed
+    size = 0
+    n = 8
+    n.times do
+      v = Random.new_seed
+      assert_kind_of(Integer, v)
+      size += v.size
+    end
+    # probability of failure <= 1/256**8
+    assert_operator(size.fdiv(n), :>, 15)
   end
 end

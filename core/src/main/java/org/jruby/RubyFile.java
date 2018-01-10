@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -237,14 +237,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return fileClass;
     }
 
-    private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyFile instance = new RubyFile(runtime, klass);
-
-            instance.setMetaClass(klass);
-
-            return instance;
+            return new RubyFile(runtime, klass);
         }
     };
 
@@ -286,16 +282,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @Override
-    protected IRubyObject rbIoClose(Ruby runtime) {
+    protected IRubyObject rbIoClose(ThreadContext context) {
         // Make sure any existing lock is released before we try and close the file
         if (openFile.currentLock != null) {
             try {
                 openFile.currentLock.release();
             } catch (IOException e) {
-                throw getRuntime().newIOError(e.getMessage());
+                throw context.runtime.newIOError(e.getMessage());
             }
         }
-        return super.rbIoClose(runtime);
+        return super.rbIoClose(context);
     }
 
     @JRubyMethod(required = 1)
@@ -1118,7 +1114,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             }
 
-            return runtime.newString(realPath);
+            return RubyString.newString(runtime, realPath, runtime.getEncodingService().getFileSystemEncoding());
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -1396,7 +1392,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.
     // mri: file_path_convert
     private static RubyString filePathConvert(ThreadContext context, RubyString path) {
-        if (!org.jruby.platform.Platform.IS_WINDOWS) {
+        if (!Platform.IS_WINDOWS) {
             Ruby runtime = context.getRuntime();
             EncodingService encodingService = runtime.getEncodingService();
             Encoding pathEncoding = path.getEncoding();
@@ -1666,10 +1662,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 relativePath = canonicalizePath(relativePath);
             }
 
-            if (Platform.IS_WINDOWS && !preFix.contains("file:") && startsWithDriveLetterOnWindows(relativePath)) {
-                // this is basically for classpath:/ and uri:classloader:/
-                relativePath = relativePath.substring(2).replace('\\', '/');
+            if (Platform.IS_WINDOWS) {
+                // FIXME: If this is only for classLoader uri's then we probably don't need file: check here.
+                // Also can we ever get a drive letter in relative path now?
+                if (!preFix.contains("file:") && startsWithDriveLetterOnWindows(relativePath)) {
+                    // this is basically for classpath:/ and uri:classloader:/
+                    relativePath = relativePath.substring(2);
+                }
+                if (classloaderURI) {
+                    relativePath = relativePath.replace('\\', '/');
+                }
             }
+
+
 
             return concatStrings(runtime, preFix, extra, relativePath, enc);
         }
@@ -1786,7 +1791,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             path = JRubyFile.create(cwd, relativePath);
         }
 
-        String realPath = padSlashes + canonicalize(path.getAbsolutePath());
+        String canonicalPath = null;
+        if (Platform.IS_WINDOWS && uriParts != null && "classpath:".equals(uriParts[0])) {
+            // FIXME: This is all total madness.  we extract off classpath: earlier in processing
+            // and then build a absolute path which on windows will stick a drive letter onto it
+            // but this is bogus in a classpath file path.  I think the proper fix for expand path
+            // is to split out non-file: scheme format paths into a totally different method.  Weaving
+            // uri and non-uri paths into one super long method is so rife with hurt that I am literally
+            // crying on my keyboard.
+            String absolutePath = path.getAbsolutePath();
+            if (absolutePath.length() >= 2 && absolutePath.charAt(1) == ':') {
+                canonicalPath = canonicalize(absolutePath.substring(2));
+            }
+        }
+
+        if (canonicalPath == null) canonicalPath = canonicalize(path.getAbsolutePath());
+
+        String realPath = padSlashes + canonicalPath;
+
         if (realPath.startsWith("file:") && preFix.length() > 0) realPath = realPath.substring(5);
 
         if (canonicalize) {
@@ -2011,6 +2033,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             throw runtime.newArgumentError("couldn't find HOME environment -- expanding `~'");
         }
         return (RubyString) home;
+    }
+
+    @Override
+    public Object toJava(Class target) {
+        if (target == java.io.File.class) {
+            final String path = getPath();
+            return path == null ? null : new java.io.File(path);
+        }
+        return super.toJava(target);
     }
 
     private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {

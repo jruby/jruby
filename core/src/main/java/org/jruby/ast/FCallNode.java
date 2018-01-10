@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -33,28 +33,43 @@
 package org.jruby.ast;
 
 import java.util.List;
+
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /** 
  * Represents a method call with self as an implicit receiver.
  */
 public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
-    private String name;
+    private ByteList name;
     protected Node argsNode;
     protected Node iterNode;
 
+    public FCallNode(ISourcePosition position, ByteList name) {
+        this(position, name, null, null);
+    }
+
+    @Deprecated
     public FCallNode(ISourcePosition position, String name) {
         this(position, name, null, null);
     }
+
+    @Deprecated
     public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
+        this(position, StringSupport.stringAsByteList(name), argsNode, iterNode);
+    }
+
+    public FCallNode(ISourcePosition position, ByteList name, Node argsNode, Node iterNode) {
         super(position, argsNode != null && argsNode.containsVariableAssignment() || iterNode != null && iterNode.containsVariableAssignment());
         this.name = name;
         this.argsNode = argsNode;
         this.iterNode = iterNode;
         setNewline();
     }
+
 
     public NodeType getNodeType() {
         return NodeType.FCALLNODE;
@@ -104,6 +119,10 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
      * @return Returns a String
      */
     public String getName() {
+        return StringSupport.byteListAsString(name);
+    }
+
+    public ByteList getByteName() {
         return name;
     }
     

@@ -55,11 +55,8 @@ public class IRReader implements IRPersistenceValues {
             final IRScope scope = pair.getKey();
             final int instructionsOffset = pair.getValue();
 
-//            System.out.println("lazy");
             scope.allocateInterpreterContext(new Callable<List<Instr>>() {
-                @Override
-                public List<Instr> call() throws Exception {
-//                    System.out.println("eager");
+                public List<Instr> call() {
                     return file.decodeInstructionsAt(scope, instructionsOffset);
                 }
             });

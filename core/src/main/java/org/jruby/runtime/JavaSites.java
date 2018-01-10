@@ -37,7 +37,11 @@ public class JavaSites {
     public final ComplexSites Complex = new ComplexSites();
     public final RationalSites Rational = new RationalSites();
     public final RangeSites Range = new RangeSites();
+    public final WarningSites Warning = new WarningSites();
     public final ZlibSites Zlib = new ZlibSites();
+    public final TimeoutSites Timeout = new TimeoutSites();
+    public final ArgfSites Argf = new ArgfSites();
+    public final TracePointSites TracePoint = new TracePointSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -81,6 +85,7 @@ public class JavaSites {
         public final CallSite convert_rational = new FunctionalCachingCallSite("convert");
         public final CheckedSites to_hash_checked = new CheckedSites("to_hash");
         public final CallSite write = new FunctionalCachingCallSite("write");
+        public final CallSite call = new FunctionalCachingCallSite("call");
     }
 
     public static class ArraySites {
@@ -120,6 +125,7 @@ public class JavaSites {
         public final CallSite to_s = new FunctionalCachingCallSite("to_s");
         public final CallSite op_match = new FunctionalCachingCallSite("=~");
         public final CallSite match = new FunctionalCachingCallSite("match");
+        public final CallSite match_p = new FunctionalCachingCallSite("match?");
         public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
         public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
         public final CallSite begin = new FunctionalCachingCallSite("begin");
@@ -160,8 +166,10 @@ public class JavaSites {
         public final CallSite div = new FunctionalCachingCallSite("div");
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite op_mod = new FunctionalCachingCallSite("%");
-        public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite op_lt = new FunctionalCachingCallSite("<");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CheckedSites op_lt_checked = new CheckedSites("<");
+        public final CheckedSites op_gt_checked = new CheckedSites(">");
         public final CallSite op_uminus = new FunctionalCachingCallSite("-@");
         public final CallSite zero = new FunctionalCachingCallSite("zero?");
         public final CallSite op_equals = new FunctionalCachingCallSite("==");
@@ -200,6 +208,8 @@ public class JavaSites {
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite op_quo = new FunctionalCachingCallSite("/");
         public final CallSite op_mod = new FunctionalCachingCallSite("%");
+        public final CallSite size = new FunctionalCachingCallSite("size");
+        public final CheckedSites to_i_checked = new CheckedSites("to_i");
     }
 
     public static class FixnumSites {
@@ -217,9 +227,15 @@ public class JavaSites {
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite basic_op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite basic_op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_exp_complex = new FunctionalCachingCallSite("**");
         public final CallSite op_lt_bignum = new FunctionalCachingCallSite("<");
         public final CallSite op_exp_rational = new FunctionalCachingCallSite("**");
+        public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
+        public final CheckedSites checked_op_and = new CheckedSites("&");
+        public final CheckedSites checked_op_or = new CheckedSites("|");
+        public final CheckedSites checked_op_xor = new CheckedSites("^");
     }
 
     public static class BignumSites {
@@ -233,10 +249,13 @@ public class JavaSites {
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite quo = new FunctionalCachingCallSite("quo");
         public final CallSite remainder = new FunctionalCachingCallSite("remainder");
-        public final CallSite op_and = new FunctionalCachingCallSite("&");
-        public final CallSite op_or = new FunctionalCachingCallSite("|");
-        public final CallSite op_xor = new FunctionalCachingCallSite("^");
+        public final CheckedSites checked_op_and = new CheckedSites("&");
+        public final CheckedSites checked_op_or = new CheckedSites("|");
+        public final CheckedSites checked_op_xor = new CheckedSites("^");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
+        public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
+        public final CachingCallSite basic_op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite basic_op_gt = new FunctionalCachingCallSite(">");
     }
 
     public static class FloatSites {
@@ -348,6 +367,8 @@ public class JavaSites {
         public final CallSite op_exp = new FunctionalCachingCallSite("**");
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
+        public final CallSite finite = new FunctionalCachingCallSite("finite?");
+        public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
     }
 
     public static class RationalSites {
@@ -363,16 +384,39 @@ public class JavaSites {
         public final CallSite remainder = new FunctionalCachingCallSite("remainder");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CheckedSites to_r_checked = new CheckedSites("to_r");
+        public final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
     }
 
     public static class RangeSites {
         public final RespondToCallSite respond_to_succ = new RespondToCallSite("succ");
         public final CheckedSites to_int_checked = new CheckedSites("to_int");
+        public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
+        public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
+        public final CallSite begin = new FunctionalCachingCallSite("begin");
+        public final CallSite end = new FunctionalCachingCallSite("end");
+        public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
+    }
+
+    public static class WarningSites {
+        public final CallSite warn = new FunctionalCachingCallSite("warn");
+        public final CallSite write = new FunctionalCachingCallSite("write");
     }
 
     public static class ZlibSites {
         public final RespondToCallSite reader_respond_to = new RespondToCallSite();
         public final RespondToCallSite writer_respond_to = new RespondToCallSite();
+    }
+
+    public static class TimeoutSites {
+        public final CallSite timeout = new FunctionalCachingCallSite("timeout");
+    }
+
+    public static class ArgfSites {
+        public final CallSite each_codepoint = new FunctionalCachingCallSite("each_codepoint");
+    }
+
+    public static class TracePointSites {
+        public final CheckedSites to_sym = new CheckedSites("to_sym");
     }
 
     public static class CheckedSites {

@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
@@ -33,7 +32,9 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
-    public static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
+
+    static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
+
     public static final String ROOT = "(root)";
     static int interpInstrsCount = 0;
 
@@ -85,13 +86,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
 
         scope.setModule(currModule);
-        DynamicScope tlbScope = irScope.getToplevelScope();
-        if (tlbScope == null) {
-            context.preMethodScopeOnly(scope);
-        } else {
-            context.preScopedBody(tlbScope);
-            tlbScope.growIfNeeded();
-        }
+
+        IRRuntimeHelpers.prepareScriptScope(context, scope);
+
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {

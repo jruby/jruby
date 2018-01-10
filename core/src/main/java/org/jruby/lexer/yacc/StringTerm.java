@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -31,7 +31,7 @@ import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
-import org.jruby.parser.Tokens;
+import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
@@ -84,93 +84,20 @@ public class StringTerm extends StrTerm {
                 ByteList regexpBytelist = ByteList.create("");
 
                 lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
-                return Tokens.tREGEXP_END;
+                return RubyParser.tREGEXP_END;
             }
 
             lexer.setValue("" + end);
-            return Tokens.tSTRING_END;
-    }
-
-    // Return of 0 means failed to find anything.  Non-zero means return that from lexer.
-    private int parsePeekVariableName(RubyLexer lexer) throws IOException {
-        int c = lexer.nextc(); // byte right after #
-        int significant = -1;
-        switch (c) {
-            case '$': {  // we unread back to before the $ so next lex can read $foo
-                int c2 = lexer.nextc();
-
-                if (c2 == '-') {
-                    int c3 = lexer.nextc();
-
-                    if (c3 == EOF) {
-                        lexer.pushback(c3); lexer.pushback(c2);
-                        return 0;
-                    }
-
-                    significant = c3;                              // $-0 potentially
-                    lexer.pushback(c3); lexer.pushback(c2);
-                    break;
-                } else if (lexer.isGlobalCharPunct(c2)) {          // $_ potentially
-                    lexer.setValue("#" + (char) c2);
-
-                    lexer.pushback(c2); lexer.pushback(c);
-                    return Tokens.tSTRING_DVAR;
-                }
-
-                significant = c2;                                  // $FOO potentially
-                lexer.pushback(c2);
-                break;
-            }
-            case '@': {  // we unread back to before the @ so next lex can read @foo
-                int c2 = lexer.nextc();
-
-                if (c2 == '@') {
-                    int c3 = lexer.nextc();
-
-                    if (c3 == EOF) {
-                        lexer.pushback(c3); lexer.pushback(c2);
-                        return 0;
-                    }
-
-                    significant = c3;                                // #@@foo potentially
-                    lexer.pushback(c3); lexer.pushback(c2);
-                    break;
-                }
-
-                significant = c2;                                    // #@foo potentially
-                lexer.pushback(c2);
-                break;
-            }
-            case '{':
-                //lexer.setBraceNest(lexer.getBraceNest() + 1);
-                lexer.setValue("#" + (char) c);
-                lexer.commandStart = true;
-                return Tokens.tSTRING_DBEG;
-            default:
-                // We did not find significant char after # so push it back to
-                // be processed as an ordinary string.
-                lexer.pushback(c);
-                return 0;
-        }
-
-        if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
-            lexer.pushback(c);
-            lexer.setValue("#" + significant);
-            return Tokens.tSTRING_DVAR;
-        }
-
-        return 0;
+            return RubyParser.tSTRING_END;
     }
 
     public int parseString(RubyLexer lexer) throws IOException {
         boolean spaceSeen = false;
         int c;
 
-        // FIXME: How much more obtuse can this be?
-        // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
             lexer.setValue("" + end);
-            return Tokens.tSTRING_END;
+            return RubyParser.tSTRING_END;
         }
 
         c = lexer.nextc();
@@ -190,11 +117,16 @@ public class StringTerm extends StrTerm {
         ByteList buffer = createByteList(lexer);
         lexer.newtok(true);
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
-            int token = parsePeekVariableName(lexer);
+            int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
 
-            if (token != 0) return token;
+            if (token != 0) {
+                return token;
+            } else {
+                buffer.append(c);
+            }
+        } else {
+            lexer.pushback(c);
         }
-        lexer.pushback(c);
 
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
@@ -205,7 +137,7 @@ public class StringTerm extends StrTerm {
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));
-        return Tokens.tSTRING_CONTENT;
+        return RubyParser.tSTRING_CONTENT;
     }
 
     private RegexpOptions parseRegexpFlags(RubyLexer lexer) throws IOException {

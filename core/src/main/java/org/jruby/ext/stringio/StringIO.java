@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -38,6 +38,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
+import org.jruby.RubyInteger;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -48,7 +49,9 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.java.addons.IOJavaAddons;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -57,6 +60,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.Getline;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 
@@ -118,6 +122,11 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     public void setEncoding(Encoding enc) {
         ptr.enc = enc;
+    }
+
+    @JRubyMethod(name = "new", rest = true, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return RubyIO.newInstance(context, recv, args, block);
     }
 
     @JRubyMethod(meta = true, rest = true)
@@ -306,36 +315,97 @@ public class StringIO extends RubyObject implements EncodingCapable {
     }
 
     // MRI: strio_each
-    @JRubyMethod(name = "each", optional = 2, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "each", writes = FrameField.LASTLINE)
+    public IRubyObject each(ThreadContext context, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
+
+        return Getline.getlineCall(context, GETLINE_YIELD, this, getEncoding(), 0, null, null, null, block);
+    }
+
+    // MRI: strio_each
+    @JRubyMethod(name = "each", writes = FrameField.LASTLINE)
+    public IRubyObject each(ThreadContext context, IRubyObject arg0, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", arg0);
+
+        return Getline.getlineCall(context, GETLINE_YIELD, this, getEncoding(), 1, arg0, null, null, block);
+    }
+
+    // MRI: strio_each
+    @JRubyMethod(name = "each", writes = FrameField.LASTLINE)
+    public IRubyObject each(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", Helpers.arrayOf(arg0, arg1));
+
+        return Getline.getlineCall(context, GETLINE_YIELD, this, getEncoding(), 2, arg0, arg1, null, block);
+    }
+
+    // MRI: strio_each
+    @JRubyMethod(name = "each")
+    public IRubyObject each(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", Helpers.arrayOf(arg0, arg1, arg2));
+
+        return Getline.getlineCall(context, GETLINE_YIELD, this, getEncoding(), 3, arg0, arg1, arg2, block);
+    }
+
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", args);
-
-        IRubyObject line;
-
-        if ( isLastArg0(args) ) {
-            throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
+        switch (args.length) {
+            case 0:
+                return each(context, block);
+            case 1:
+                return each(context, args[0], block);
+            case 2:
+                return each(context, args[0], args[1], block);
+            case 3:
+                return each(context, args[0], args[1], args[2], block);
+            default:
+                Arity.raiseArgumentError(context, args.length, 0, 3);
+                throw new RuntimeException("BUG");
         }
-
-        checkReadable();
-        while (!(line = getline(context, args)).isNil()) {
-            block.yieldSpecific(context, line);
-        }
-        return this;
     }
 
-    private static boolean isLastArg0(final IRubyObject[] args) {
-        final int len = args.length;
-        return len > 0 &&
-            ! args[len - 1].isNil() &&
-            args[len - 1].checkStringType19().isNil() &&
-            RubyNumeric.num2long( args[len - 1] ) == 0 ;
+    @JRubyMethod(name = "each_line")
+    public IRubyObject each_line(ThreadContext context, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line");
+
+        return each(context, block);
     }
 
-    @JRubyMethod(name = "each_line", optional = 2, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "each_line")
+    public IRubyObject each_line(ThreadContext context, IRubyObject arg0, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0);
+
+        return each(context, arg0, block);
+    }
+
+    @JRubyMethod(name = "each_line")
+    public IRubyObject each_line(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1);
+
+        return each(context, arg0, arg1, block);
+    }
+
+    @JRubyMethod(name = "each_line")
+    public IRubyObject each_line(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1, arg2);
+
+        return each(context, arg0, arg1, arg2, block);
+    }
+
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", args);
-
-        return each(context, args, block);
+        switch (args.length) {
+            case 0:
+                return each_line(context, block);
+            case 1:
+                return each_line(context, args[0], block);
+            case 2:
+                return each_line(context, args[0], args[1], block);
+            case 3:
+                return each_line(context, args[0], args[1], args[2], block);
+            default:
+                Arity.raiseArgumentError(context, args.length, 0, 3);
+                throw new RuntimeException("BUG");
+        }
     }
 
     @JRubyMethod(name = "lines", optional = 2)
@@ -478,135 +548,101 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return -1;
     }
 
-//        if (sepArg != null) {
-//            if (sepArg.isNil()) {
-//                int bytesAvailable = data.internal.getByteList().getRealSize() - (int)data.pos;
-//                int bytesToUse = (limit < 0 || limit >= bytesAvailable ? bytesAvailable : limit);
-//
-//                // add additional bytes to fix trailing broken character
-//                bytesToUse += StringSupport.bytesToFixBrokenTrailingCharacter(data.internal.getByteList(), bytesToUse);
-//
-//                ByteList buf = data.internal.getByteList().makeShared(
-//                    (int)data.pos, bytesToUse);
-//                data.pos += buf.getRealSize();
-//                return makeString(runtime, buf);
-//            }
-//
-//            sep = sepArg.convertToString().getByteList();
-//            if (sep.getRealSize() == 0) {
-//                isParagraph = true;
-//                sep = Stream.PARAGRAPH_SEPARATOR;
-//            }
-//        }
-//
-//        if (isEndOfString() || data.eof) return context.nil;
-//
-//        ByteList ss = data.internal.getByteList();
-//
-//        if (isParagraph) {
-//            swallowLF(ss);
-//            if (data.pos == ss.getRealSize()) {
-//                return runtime.getNil();
-//            }
-//        }
-//
-//        int sepIndex = ss.indexOf(sep, (int)data.pos);
-//
-//        ByteList add;
-//        if (-1 == sepIndex) {
-//            sepIndex = data.internal.getByteList().getRealSize();
-//            add = ByteList.EMPTY_BYTELIST;
-//        } else {
-//            add = sep;
-//        }
-//
-//        int bytes = sepIndex - (int)data.pos;
-//        int bytesToUse = (limit < 0 || limit >= bytes ? bytes : limit);
-//
-//        int bytesWithSep = sepIndex - (int)data.pos + add.getRealSize();
-//        int bytesToUseWithSep = (limit < 0 || limit >= bytesWithSep ? bytesWithSep : limit);
-//
-//        ByteList line = new ByteList(bytesToUseWithSep);
-//        if (is19) line.setEncoding(data.internal.getByteList().getEncoding());
-//        line.append(data.internal.getByteList(), (int)data.pos, bytesToUse);
-//        data.pos += bytesToUse;
-//
-//        if (is19) {
-//            // add additional bytes to fix trailing broken character
-//            int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(line, line.length());
-//            if (extraBytes != 0) {
-//                line.append(data.internal.getByteList(), (int)data.pos, extraBytes);
-//                data.pos += extraBytes;
-//            }
-//        }
-//
-//        int sepBytesToUse = bytesToUseWithSep - bytesToUse;
-//        line.append(add, 0, sepBytesToUse);
-//        data.pos += sepBytesToUse;
-//
-//        if (sepBytesToUse >= add.getRealSize()) {
-//            data.lineno++;
-//        }
-//
-//        return makeString(runtime, line);
-//    }
-//
-//    private void swallowLF(ByteList list) {
-//        while (ptr.pos < list.getRealSize()) {
-//            if (list.get((int)ptr.pos) == '\n') {
-//                ptr.pos++;
-//            } else {
-//                break;
-//            }
-//        }
-//    }
-
-    @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE)
-    public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
-        checkReadable();
-
-        IRubyObject str = getline(context, args);
-
-        context.setLastLine(str);
-        return str;
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    public IRubyObject gets(ThreadContext context) {
+        return Getline.getlineCall(context, GETLINE, this, getEncoding());
     }
 
-    // strio_getline
-    private IRubyObject getline(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    public IRubyObject gets(ThreadContext context, IRubyObject arg0) {
+        return Getline.getlineCall(context, GETLINE, this, getEncoding(), arg0);
+    }
 
-        IRubyObject str = context.nil;
-        int n, limit = -1;
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    public IRubyObject gets(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return Getline.getlineCall(context, GETLINE, this, getEncoding(), arg0, arg1);
+    }
 
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
+    public IRubyObject gets(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return Getline.getlineCall(context, GETLINE, this, getEncoding(), arg0, arg1, arg2);
+    }
+
+    public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 0:
-                str = runtime.getGlobalVariables().get("$/");
-                break;
-
+                return gets(context);
             case 1:
-                str = args[0];
-                if ( ! str.isNil() &&  ! (str instanceof RubyString) ) {
-                    IRubyObject tmp = str.checkStringType19();
-                    if (tmp.isNil()) {
-                        limit = RubyNumeric.num2int(str);
-                        if (limit == 0) return runtime.newString();
-                        str = runtime.getGlobalVariables().get("$/");
-                    }
-                    else {
-                        str = tmp;
-                    }
-                }
-                break;
-
+                return gets(context, args[0]);
             case 2:
-                if ( ! args[0].isNil() ) {
-                    str = args[0].convertToString();
-                }
-                if ( ! args[1].isNil() ) {
-                    limit = RubyNumeric.num2int(args[1]);
-                }
-                break;
+                return gets(context, args[0], args[1]);
+            case 3:
+                return gets(context, args[0], args[1], args[2]);
+            default:
+                Arity.raiseArgumentError(context, args.length, 0, 3);
+                throw new RuntimeException("BUG");
         }
+    }
+
+    private static final Getline.Callback<StringIO, IRubyObject> GETLINE = new Getline.Callback<StringIO, IRubyObject>() {
+        @Override
+        public IRubyObject getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
+            if (limit == 0) {
+                return RubyString.newEmptyString(context.runtime);
+            }
+
+            IRubyObject result = self.getline(context, rs, limit, chomp);
+
+            context.setLastLine(result);
+
+            return result;
+        }
+    };
+
+    private static final Getline.Callback<StringIO, StringIO> GETLINE_YIELD = new Getline.Callback<StringIO, StringIO>() {
+        @Override
+        public StringIO getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
+            IRubyObject line;
+
+            if (limit == 0) {
+                throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
+            }
+
+            while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
+                block.yieldSpecific(context, line);
+            }
+
+            return self;
+        }
+    };
+
+    private static final Getline.Callback<StringIO, RubyArray> GETLINE_ARY = new Getline.Callback<StringIO, RubyArray>() {
+        @Override
+        public RubyArray getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
+            RubyArray ary = context.runtime.newArray();
+            IRubyObject line;
+
+            if (limit == 0) {
+                throw context.runtime.newArgumentError("invalid limit: 0 for readlines");
+            }
+
+            while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
+                ary.append(line);
+            }
+
+            return ary;
+        }
+    };
+
+    // strio_getline
+    private IRubyObject getline(ThreadContext context, final IRubyObject rs, int limit, boolean chomp) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject str;
+
+        checkReadable();
+
+        int n;
 
         if (isEndOfString()) {
             return context.nil;
@@ -621,60 +657,86 @@ public class StringIO extends RubyObject implements EncodingCapable {
             int s = begin + ptr.pos;
             int e = begin + string.getRealSize();
             int p;
+            int w = 0;
 
             if (limit > 0 && s + limit < e) {
                 e = ptr.enc.rightAdjustCharHead(stringBytes, s, s + limit, e);
             }
-            if (str.isNil()) {
-                str = strioSubstr(runtime, ptr.pos, e - s);
-            } else if ((n = ((RubyString) str).size()) == 0) {
+            if (rs.isNil()) {
+                if (chomp) {
+                    w = chompNewlineWidth(stringBytes, s, e);
+                }
+                str = strioSubstr(runtime, ptr.pos, e - s - w);
+            } else if ((n = ((RubyString) rs).size()) == 0) {
                 // this is not an exact port; the original confused me
+                // in MRI, the next loop appears to have a complicated boolean to determine the index, but in actuality
+                // it just resolves to p (+ 0) as below. We theorize that the MRI logic may have originally been
+                // intended to skip all \n and \r, but because p does not get incremented before the \r check that
+                // logic never fires. We use the original logic that did not have these strange flaws.
+                // See https://github.com/ruby/ruby/commit/30540c567569d3486ccbf59b59d903d5778f04d5
                 p = s;
-                // remove leading \n
                 while (stringBytes[p] == '\n') {
                     if (++p == e) {
                         return context.nil;
                     }
                 }
                 s = p;
-                // find next \n or end; if followed by \n, include it too
-                p = StringSupport.memchr(stringBytes, p, '\n', e - p);
-                if (p != -1) {
-                    if (++p < e && stringBytes[p] == '\n') {
+                while ((p = StringSupport.memchr(stringBytes, p, '\n', e - p)) != -1 && (p != e)) {
+                    p += 1;
+                    if (p == e) break;
+
+                    if (stringBytes[p] == '\n') {
                         e = p + 1;
-                    } else {
-                        e = p;
+                        w = (chomp ? 1 : 0);
+                        break;
+                    }
+            	    else if (stringBytes[p] == '\r' && p < e && stringBytes[p + 1] == '\n') {
+                        e = p + 2;
+                        w = (chomp ? 2 : 0);
+                        break;
                     }
                 }
-                str = strioSubstr(runtime, s - begin, e - s);
+                if (w == 0 && chomp) {
+                    w = chompNewlineWidth(stringBytes, s, e);
+                }
+                str = strioSubstr(runtime, s - begin, e - s - w);
             } else if (n == 1) {
-                RubyString strStr = (RubyString) str;
+                RubyString strStr = (RubyString) rs;
                 ByteList strByteList = strStr.getByteList();
                 if ((p = StringSupport.memchr(stringBytes, s, strByteList.get(0), e - s)) != -1) {
                     e = p + 1;
+                    w = (chomp ? ((p > s && stringBytes[p-1] == '\r')?1:0) + 1 : 0);
                 }
-                str = strioSubstr(runtime, ptr.pos, e - s);
+                str = strioSubstr(runtime, ptr.pos, e - s - w);
             } else {
                 if (n < e - s) {
-                    RubyString strStr = (RubyString) str;
-                    ByteList strByteList = strStr.getByteList();
-                    byte[] strBytes = strByteList.getUnsafeBytes();
+                    RubyString rsStr = (RubyString) rs;
+                    ByteList rsByteList = rsStr.getByteList();
+                    byte[] rsBytes = rsByteList.getUnsafeBytes();
 
                     int[] skip = new int[1 << CHAR_BIT];
                     int pos;
-                    p = strByteList.getBegin();
-                    bm_init_skip(skip, strBytes, p, n);
-                    if ((pos = bm_search(strBytes, p, n, stringBytes, s, e - s, skip)) >= 0) {
+                    p = rsByteList.getBegin();
+                    bm_init_skip(skip, rsBytes, p, n);
+                    if ((pos = bm_search(rsBytes, p, n, stringBytes, s, e - s, skip)) >= 0) {
                         e = s + pos + n;
                     }
                 }
-                str = strioSubstr(runtime, ptr.pos, e - s);
+                str = strioSubstr(runtime, ptr.pos, e - s - w);
             }
             ptr.pos = e - begin;
             ptr.lineno++;
         }
 
         return str;
+    }
+
+    private static int chompNewlineWidth(byte[] bytes, int s, int e) {
+        if (e > s && bytes[--e] == '\n') {
+            if (e > s && bytes[--e] == '\r') return 2;
+            return 1;
+        }
+        return 0;
     }
 
     @JRubyMethod(name = {"length", "size"})
@@ -707,11 +769,13 @@ public class StringIO extends RubyObject implements EncodingCapable {
     public IRubyObject set_pos(IRubyObject arg) {
         checkInitialized();
 
-        int p = RubyNumeric.fix2int(arg);
+        long p = RubyNumeric.fix2long(arg);
 
         if (p < 0) throw getRuntime().newErrnoEINVALError(arg.toString());
 
-        ptr.pos = p;
+        if (p > Integer.MAX_VALUE) throw getRuntime().newArgumentError("JRuby does not support StringIO larger than " + Integer.MAX_VALUE + " bytes");
+
+        ptr.pos = (int)p;
 
         return arg;
     }
@@ -836,23 +900,40 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return string;
     }
 
-    @JRubyMethod(name = "readlines", optional = 2)
+    @JRubyMethod(name = "readlines")
+    public IRubyObject readlines(ThreadContext context) {
+        return Getline.getlineCall(context, GETLINE_ARY, this, getEncoding());
+    }
+
+    @JRubyMethod(name = "readlines")
+    public IRubyObject readlines(ThreadContext context, IRubyObject arg0) {
+        return Getline.getlineCall(context, GETLINE_ARY, this, getEncoding(), arg0);
+    }
+
+    @JRubyMethod(name = "readlines")
+    public IRubyObject readlines(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return Getline.getlineCall(context, GETLINE_ARY, this, getEncoding(), arg0, arg1);
+    }
+
+    @JRubyMethod(name = "readlines")
+    public IRubyObject readlines(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return Getline.getlineCall(context, GETLINE_ARY, this, getEncoding(), arg0, arg1, arg2);
+    }
+
     public IRubyObject readlines(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        if ( isLastArg0(args) ) {
-            throw runtime.newArgumentError("invalid limit: 0 for each_line");
+        switch (args.length) {
+            case 0:
+                return readlines(context);
+            case 1:
+                return readlines(context, args[0]);
+            case 2:
+                return readlines(context, args[0], args[1]);
+            case 3:
+                return readlines(context, args[0], args[1], args[2]);
+            default:
+                Arity.raiseArgumentError(context, args.length, 0, 3);
+                throw new RuntimeException("BUG");
         }
-
-        checkReadable();
-
-        RubyArray ary = runtime.newArray();
-        IRubyObject line;
-
-        while ( ! ( line = getline(context, args) ).isNil() ) {
-            ary.append(line);
-        }
-        return ary;
     }
 
     // MRI: strio_reopen
@@ -981,9 +1062,34 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "ungetc")
     public IRubyObject ungetc(ThreadContext context, IRubyObject arg) {
-        // TODO: Not a line-by-line port.
+        Encoding enc, enc2;
+
+        checkModifiable();
         checkReadable();
-        return ungetbyte(context, arg);
+
+        if (arg.isNil()) return arg;
+        if (arg instanceof RubyInteger) {
+            int len, cc = ((RubyInteger) arg).getIntValue();
+            byte[] buf = new byte[16];
+
+            enc = getEncoding();
+            len = enc.codeToMbcLength(cc);
+            if (len <= 0) EncodingUtils.encUintChr(context, cc, enc);
+            enc.codeToMbc(cc, buf, 0);
+            ungetbyteCommon(buf, 0, len);
+            return context.nil;
+        } else {
+            arg = arg.convertToString();
+            enc = getEncoding();
+            RubyString argStr = (RubyString) arg;
+            enc2 = argStr.getEncoding();
+            if (enc != enc2 && enc != ASCIIEncoding.INSTANCE) {
+                argStr = EncodingUtils.strConvEnc(context, argStr, enc2, enc);
+            }
+            ByteList argBytes = argStr.getByteList();
+            ungetbyteCommon(argBytes.unsafeBytes(), argBytes.begin(), argBytes.realSize());
+            return context.nil;
+        }
     }
 
     private void ungetbyteCommon(int c) {
@@ -1008,27 +1114,30 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     private void ungetbyteCommon(RubyString ungetBytes) {
         ByteList ungetByteList = ungetBytes.getByteList();
-        int len = ungetByteList.getRealSize();
+        ungetbyteCommon(ungetByteList.unsafeBytes(), ungetByteList.begin(), ungetByteList.realSize());
+    }
+
+    private void ungetbyteCommon(byte[] ungetBytes, int ungetBegin, int ungetLen) {
         final int start; // = ptr.pos;
 
-        if (len == 0) return;
+        if (ungetLen == 0) return;
 
         StringIOData ptr = this.ptr;
 
         synchronized (ptr) {
             ptr.string.modify();
 
-            if (len > ptr.pos) {
+            if (ungetLen > ptr.pos) {
                 start = 0;
             } else {
-                start = ptr.pos - len;
+                start = ptr.pos - ungetLen;
             }
 
-            ByteList bytes = ptr.string.getByteList();
+            ByteList byteList = ptr.string.getByteList();
 
-            if (isEndOfString()) bytes.length(Math.max(ptr.pos, len));
+            if (isEndOfString()) byteList.length(Math.max(ptr.pos, ungetLen));
 
-            bytes.replace(start, ptr.pos - start, ungetBytes.getByteList());
+            byteList.replace(start, ptr.pos - start, ungetBytes, ungetBegin, ungetLen);
 
             ptr.pos = start;
         }

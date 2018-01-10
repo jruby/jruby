@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems'
 
@@ -59,7 +59,7 @@ class TestGemRequire < Gem::TestCase
 
     install_specs c1, c2, b1, a1
 
-    dir = Dir.mktmpdir
+    dir = Dir.mktmpdir("test_require", @tempdir)
     dash_i_arg = File.join dir, 'lib'
 
     c_rb = File.join dash_i_arg, 'b', 'c.rb'
@@ -318,5 +318,58 @@ class TestGemRequire < Gem::TestCase
 
   def unresolved_names
     Gem::Specification.unresolved_deps.values.map(&:to_s).sort
+  end
+
+  def test_try_activate_error_unlocks_require_monitor
+    silence_warnings do
+      class << ::Gem
+        alias old_try_activate try_activate
+        def try_activate(*); raise 'raised from try_activate'; end
+      end
+    end
+
+    require 'does_not_exist_for_try_activate_test'
+  rescue RuntimeError => e
+    assert_match(/raised from try_activate/, e.message)
+    assert Kernel::RUBYGEMS_ACTIVATION_MONITOR.try_enter, "require monitor was not unlocked when try_activate raised"
+  ensure
+    silence_warnings do
+      class << ::Gem
+        alias try_activate old_try_activate
+      end
+    end
+    Kernel::RUBYGEMS_ACTIVATION_MONITOR.exit
+  end
+
+  def test_require_when_gem_defined
+    default_gem_spec = new_default_spec("default", "2.0.0.0",
+                                        nil, "default/gem.rb")
+    install_default_specs(default_gem_spec)
+    c = Class.new do
+      def self.gem(*args)
+        raise "received #gem with #{args.inspect}"
+      end
+    end
+    assert c.send(:require, "default/gem")
+    assert_equal %w(default-2.0.0.0), loaded_spec_names
+  end
+
+  def test_require_default_when_gem_defined
+    a = new_spec("a", "1", nil, "lib/a.rb")
+    install_specs a
+    c = Class.new do
+      def self.gem(*args)
+        raise "received #gem with #{args.inspect}"
+      end
+    end
+    assert c.send(:require, "a")
+    assert_equal %w(a-1), loaded_spec_names
+  end
+
+  def silence_warnings
+    old_verbose, $VERBOSE = $VERBOSE, false
+    yield
+  ensure
+    $VERBOSE = old_verbose
   end
 end

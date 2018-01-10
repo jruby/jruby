@@ -23,12 +23,22 @@ def compile_extension(name)
   ext = "#{name}_spec"
   lib = "#{object_path}/#{ext}.#{RbConfig::CONFIG['DLEXT']}"
   ruby_header = "#{RbConfig::CONFIG['rubyhdrdir']}/ruby.h"
+  libruby_so = RbConfig::CONFIG['LIBRUBY_SO'] if RbConfig::CONFIG["ENABLE_SHARED"] == "yes"
 
-  return lib if File.exist?(lib) and
-                File.mtime(lib) > File.mtime("#{extension_path}/rubyspec.h") and
-                File.mtime(lib) > File.mtime("#{extension_path}/#{ext}.c") and
-                File.mtime(lib) > File.mtime(ruby_header) and
-                true            # sentinel
+  begin
+    mtime = File.mtime(lib)
+  rescue Errno::ENOENT
+    # not found, then compile
+  else
+    case # if lib is older than headers, source or libruby, then recompile
+    when mtime <= File.mtime("#{extension_path}/rubyspec.h")
+    when mtime <= File.mtime("#{extension_path}/#{ext}.c")
+    when mtime <= File.mtime(ruby_header)
+    when libruby_so && mtime <= File.mtime("#{RbConfig::CONFIG['libdir']}/#{libruby_so}")
+    else
+      return lib # up-to-date
+    end
+  end
 
   # Copy needed source files to tmpdir
   tmpdir = tmp("cext_#{name}")
@@ -55,15 +65,9 @@ def compile_extension(name)
         $stderr.puts output if debug
       end
 
-      make = ENV['MAKE']
-      make ||= (RbConfig::CONFIG['host_os'].include?("mswin") ? "nmake" : "make")
-      if File.basename(make, ".*") == "nmake"
-        # suppress logo of nmake.exe to stderr
-        ENV["MAKEFLAGS"] = "l#{ENV["MAKEFLAGS"]}"
-      end
-
       # Do not capture stderr as we want to show compiler warnings
-      output = IO.popen([make, "V=1", "DESTDIR=", close_others: false], &:read)
+      make, opts = setup_make
+      output = IO.popen([make, "V=1", "DESTDIR=", opts], &:read)
       raise "#{make} failed:\n#{output}" unless $?.success?
       $stderr.puts output if debug
 
@@ -75,6 +79,31 @@ def compile_extension(name)
 
   File.chmod(0755, lib)
   lib
+end
+
+def setup_make
+  make = ENV['MAKE']
+  make ||= (RbConfig::CONFIG['host_os'].include?("mswin") ? "nmake" : "make")
+  make_flags = ENV["MAKEFLAGS"] || ''
+
+  # suppress logo of nmake.exe to stderr
+  if File.basename(make, ".*").downcase == "nmake" and !make_flags.include?("l")
+    ENV["MAKEFLAGS"] = "l#{make_flags}"
+  end
+
+  opts = {}
+  if /(?:\A|\s)--jobserver-(?:auth|fds)=(\d+),(\d+)/ =~ make_flags
+    begin
+      r = IO.for_fd($1.to_i(10), "rb", autoclose: false)
+      w = IO.for_fd($2.to_i(10), "wb", autoclose: false)
+    rescue Errno::EBADF
+    else
+      opts[r] = r
+      opts[w] = w
+    end
+  end
+
+  [make, opts]
 end
 
 def load_extension(name)

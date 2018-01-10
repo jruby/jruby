@@ -123,19 +123,21 @@ from MRI's tests (under test/mri), use one of the following commands:
 The MRI suite (under `test/mri`) has a runner script in `test/mri/runner.rb` that sets up
 an appropriate test environment. Many of the MRI tests will need to be run via this script.
 ```
-jruby -r ./test/mri_test_env.rb test/mri/runner.rb test/mri/<path to test>
+jruby test/mri/runner.rb test/mri/<path to test>
 ```
 
-You can pass `-v` to the runner for verbose output or `-n test_method_name` to only run a single test method.  If you are interested in all failures you can exlude the -r option (of mri_test_env.rb).  Some excluded tests are inherent limitations of JRuby and some are just problems we have not gotten to yet.
+You can pass `-v` to the runner for verbose output or `-n test_method_name` to only run a single test method.
 
 #### Run a test file with known-failing tests excluded
 
-The runner script provides a mechanism for "excluding" known failing tests. Ruby scripts under `test/mri/exclude`, named based on the name of the test case's class, exclude with comment tests known to fail.
+The runner script provides a mechanism for "excluding" known failing tests. These are usually features that JRuby has not yet implemented or can't implement on the JVM.
 
-To run a given test with these excludes enabled, you can use the EXCLUDES environment variable:
+Excludes are in the form of Ruby scripts under `test/mri/exclude`, named based on the name of the test case's class, exclude with comment tests known to fail.
+
+To run a given test with these excludes enabled, you can use the --excludes flag:
 
 ```
-EXCLUDES=test/mri/excludes bin/jruby test/mri/runner.rb <test file>
+bin/jruby test/mri/runner.rb --excludes=test/mri/excludes <test file>
 ```
 
 #### Run a single Ruby spec
@@ -149,7 +151,7 @@ jruby spec/mspec/bin/mspec ci spec/ruby/<path to spec>
 If `ci` is omitted or replaced with `run` you will see any specs known to fail. The `ci` command
 avoids running those specs.
 
-#### Run JRuby with with remote debugging
+#### Run JRuby with remote debugging
 
 If you are familiar with Java debuggers, you can attach one to a JRuby process using the JDWP agent.
 The exact flag may vary with debugger and platform:
@@ -180,9 +182,9 @@ mvn -Pdist -Dinvoker.skip=false
 
 JRuby runs CI tests on TravisCI. See [.travis.yml](https://github.com/jruby/jruby/blob/master/.travis.yml).
 
-#### maven integration tests - -Pjruby-complete or -Pmain
+#### Maven integration tests - -Pjruby-complete or -Pmain
 
-maven integration test will use the packed maven artifact to run the tests in a forked maven instance. these maven projects are locatated in
+maven integration tests will use the packed maven artifact to run the tests in a forked maven instance. These maven projects are locatated in
 
 ```
 maven/jruby/src/it
@@ -191,7 +193,7 @@ maven/jruby-jars/src/it
 maven/jruby-dist/src/it
 ```
 
-to trigger the tests with the build:
+To trigger the tests with the build:
 
 ```
 mvn -Pmain -Dinvoker.skip=false
@@ -200,8 +202,7 @@ mvn -Pdist -Dinvoker.skip=false
 mvn -Pjruby-jars -Dinvoker.skip=false
 ```
 
-to pick a particular test add the name of the directory inside the respective *src/it* folder, like (wildcards are possible):
-
+To pick a particular test, add the name of the directory inside the respective *src/it* folder, like (wildcards are possible):
 
 ```
 mvn -Pmain -Dinvoker.skip=false -Dinvoker.test=integrity
@@ -212,21 +213,21 @@ mvn -Pmain -Dinvoker.skip=false -Dinvoker.test=osgi*
 Clean Build
 -----------
 
-To clean the build it is important to use the same profile for the clean as what you want to build. the best way to clean build something is, i.e. jruby-jars
+To clean the build it is important to use the same profile for the clean as what you want to build. The best way to clean build something is, i.e. jruby-jars
 
 ```
 mvn clean install -Pjruby-jars
 ```
 
-this first cleans everything and then starts the new build in one go !
+This first cleans everything and then starts the new build in one go!
 
 Cleaning the build may be necessary after switching to a different
 version of JRuby (for example, after switching git branches) to ensure
 that everything is rebuilt properly.
 
-NOTE: ```mvn clean``` just cleans the **jruby-core** artifact and the **./lib/jruby.jar** !
+NOTE: ```mvn clean``` just cleans the **jruby-core** artifact and the **./lib/jruby.jar**!
 
-clean everything:
+Clean everything:
 
 ```
 mvn -Pclean
@@ -235,67 +236,67 @@ mvn -Pclean
 Distribution Packages
 ---------------------
 
-all distribution packages need maven-3.3.x or the use of supplied maven wrapper. all examples below will show the use of the maven wrapper.
+All distribution packages need maven-3.3.x or the use of supplied maven wrapper. All examples below will show the use of the maven wrapper.
 
-###the tar.gz and zip distribution packages###
+### The tar.gz and zip distribution packages
 
 ```
 ./mvnw -Pdist
 ```
 
-the files will be found in ./maven/jruby-dist/target
+The files will be in `./maven/jruby-dist/target`.
 
-###jruby-complete.jar###
+### `jruby-complete.jar`
 
 ```
 ./mvnw -Pcomplete
 ```
 
-the file will be in ./maven/jruby-complete/target
+The file will be in `./maven/jruby-complete/target`.
 
-###jruby maven artifacts###
+### jruby maven artifacts
 
 ```
 ./mvnw -Pmain
 ```
 
-and those files will be installed in you maven local-repository ready to use with maven, ivy, buildr, etc
+And those files will be installed in your maven local-repository ready to use with maven, ivy, buildr, etc.
 
-###jruby jars gem###
+### jruby jars gem
 
 ```
 ./mvnw -Pjruby-jars
 ```
 
-the gem will be in ./maven/jruby-jars/pkg
+The gem will be in `./maven/jruby-jars/pkg`.
 
-### building ALL packages ###
+### Building ALL packages
 
 ```
 ./mvnw -Pall
 ```
 
-### cleaning the build ###
+### Cleaning the build
 
-this will also clean the **ext** directories, i.e. a new build will then use the latest code from there for **lib/ruby**
+This will also clean the **ext** directories, i.e. a new build will then use the latest code from there for **lib/ruby**.
 
 ```
 ./mvnw -Pclean
 ```
 
-## release ##
+## Release
 
-first set the new version in the file *VERSION* inside the root directory and then to deploy the maven artifact to sonatype oss execute:
+First set the new version in the file *VERSION* inside the root directory and then to deploy the maven artifact to sonatype oss execute:
 
 ```
 ./mvnw clean deploy -Psonatype-oss-release
 ```
 
-go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place and then finally push the release to maven central and . . . 
+Go to https://oss.sonatype.org/ and close the deployment, which will check if all 'required' files are in place and then finally push the release to Maven Central and . . . 
 
 ### Start a new version
 
-After the release set the new development version in *VERSION* and generate the pom.xml files
+After the release, set the new development version in *VERSION* and generate the `pom.xml` files:
 
 ```
 ./mvnw

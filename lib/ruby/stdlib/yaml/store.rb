@@ -40,22 +40,28 @@ class YAML::Store < PStore
 
   # :call-seq:
   #   initialize( file_name, yaml_opts = {} )
+  #   initialize( file_name, thread_safe = false, yaml_opts = {} )
   #
   # Creates a new YAML::Store object, which will store data in +file_name+.
   # If the file does not already exist, it will be created.
   #
+  # YAML::Store objects are always reentrant. But if _thread_safe_ is set to true,
+  # then it will become thread-safe at the cost of a minor performance hit.
   #
   # Options passed in through +yaml_opts+ will be used when converting the
   # store to YAML via Hash#to_yaml().
-  def initialize file_name, yaml_opts = {}
-    @opt = yaml_opts
-    super
+  def initialize( *o )
+    @opt = {}
+    if o.last.is_a? Hash
+      @opt.update(o.pop)
+    end
+    super(*o)
   end
 
   # :stopdoc:
 
   def dump(table)
-    YAML.dump @table
+    table.to_yaml(@opt)
   end
 
   def load(content)
@@ -71,12 +77,85 @@ class YAML::Store < PStore
     false
   end
 
-  EMPTY_MARSHAL_DATA = YAML.dump({})
-  EMPTY_MARSHAL_CHECKSUM = Digest::MD5.digest(EMPTY_MARSHAL_DATA)
   def empty_marshal_data
-    EMPTY_MARSHAL_DATA
+    {}.to_yaml(@opt)
   end
   def empty_marshal_checksum
-    EMPTY_MARSHAL_CHECKSUM
+    CHECKSUM_ALGO.digest(empty_marshal_data)
+  end
+
+  # FIXME: These two constants and the method open_and_lock_file should not
+  # be in this file (taken from pstore).  See #4779.
+  RDWR_ACCESS = {mode: IO::RDWR | IO::CREAT | IO::BINARY, encoding: Encoding::UTF_8}.freeze
+  RD_ACCESS = {mode: IO::RDONLY | IO::BINARY, encoding: Encoding::UTF_8}.freeze
+  def open_and_lock_file(filename, read_only)
+    if read_only
+      begin
+        file = File.new(filename, RD_ACCESS)
+        begin
+          file.flock(File::LOCK_SH)
+          return file
+        rescue
+          file.close
+          raise
+        end
+      rescue Errno::ENOENT
+        return nil
+      end
+    else
+      file = File.new(filename, RDWR_ACCESS)
+      file.flock(File::LOCK_EX)
+      return file
+    end
+  end
+
+  # FIXME: These two constants and the method open_and_lock_file should not
+  # be in this file (taken from pstore).  See #4779.
+  RDWR_ACCESS = {mode: IO::RDWR | IO::CREAT | IO::BINARY, encoding: Encoding::UTF_8}.freeze
+  RD_ACCESS = {mode: IO::RDONLY | IO::BINARY, encoding: Encoding::UTF_8}.freeze
+  def open_and_lock_file(filename, read_only)
+    if read_only
+      begin
+        file = File.new(filename, RD_ACCESS)
+        begin
+          file.flock(File::LOCK_SH)
+          return file
+        rescue
+          file.close
+          raise
+        end
+      rescue Errno::ENOENT
+        return nil
+      end
+    else
+      file = File.new(filename, RDWR_ACCESS)
+      file.flock(File::LOCK_EX)
+      return file
+    end
+  end
+
+  # FIXME: These two constants and the method open_and_lock_file should not
+  # be in this file (taken from pstore).  See #4779.
+  RDWR_ACCESS = {mode: IO::RDWR | IO::CREAT | IO::BINARY, encoding: Encoding::UTF_8}.freeze
+  RD_ACCESS = {mode: IO::RDONLY | IO::BINARY, encoding: Encoding::UTF_8}.freeze
+  def open_and_lock_file(filename, read_only)
+    if read_only
+      begin
+        file = File.new(filename, RD_ACCESS)
+        begin
+          file.flock(File::LOCK_SH)
+          return file
+        rescue
+          file.close
+          raise
+        end
+      rescue Errno::ENOENT
+        return nil
+      end
+    else
+      file = File.new(filename, RDWR_ACCESS)
+      file.flock(File::LOCK_EX)
+      return file
+    end
   end
 end

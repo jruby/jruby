@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -41,6 +41,7 @@ import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
@@ -48,6 +49,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -84,46 +86,43 @@ public class Timeout implements Library {
     private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
 
     public static class TimeoutToplevel {
-        @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
-        public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        @JRubyMethod(visibility = PRIVATE)
+        public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject seconds, Block block) {
+            warnToplevel(context);
+
+            return sites(context).timeout.call(context, self, context.runtime.getModule("Timeout"), seconds, block);
+        }
+
+        @JRubyMethod(visibility = PRIVATE)
+        public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject seconds, IRubyObject exceptionType, Block block) {
+            warnToplevel(context);
+
+            return sites(context).timeout.call(context, self, context.runtime.getModule("Timeout"), seconds, exceptionType, block);
+        }
+        @JRubyMethod(visibility = PRIVATE)
+        public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject seconds, IRubyObject exceptionType, IRubyObject message, Block block) {
+            warnToplevel(context);
+
+            return sites(context).timeout.call(context, self, context.runtime.getModule("Timeout"), seconds, exceptionType, message, block);
+        }
+
+        private static void warnToplevel(ThreadContext context) {
             context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "Object#timeout is deprecated, use Timeout.timeout instead");
-            return Helpers.invoke(context, context.runtime.getModule("Timeout"), "timeout", args, block);
         }
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, Block block) {
-        IRubyObject timeout = context.runtime.getModule("Timeout");
-
-        // No seconds, just yield
-        if ( nilOrZeroSeconds(context, seconds) ) {
-            return block.yieldSpecific(context);
-        }
-
-        final Ruby runtime = context.runtime;
-
-        // No timeout in critical section
-        if (runtime.getThreadService().getCritical()) {
-            return raiseBecauseCritical(context);
-        }
-
-        final RubyThread currentThread = context.getThread();
-        final AtomicBoolean latch = new AtomicBoolean(false);
-
-        IRubyObject id = new RubyObject(runtime, runtime.getObject());
-        Runnable timeoutRunnable = TimeoutTask.newAnnonymousTask(currentThread, timeout, latch, id);
-
-        try {
-            return yieldWithTimeout(context, seconds, block, timeoutRunnable, latch);
-        }
-        catch (RaiseException re) {
-            raiseTimeoutErrorIfMatches(context, timeout, re, id);
-            throw re;
-        }
+        return timeout(context, recv, seconds, context.nil, block);
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, IRubyObject exceptionType, Block block) {
+        return timeout(context, recv, seconds, exceptionType, RubyString.newString(context.runtime, "execution expired"), block);
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, IRubyObject exceptionType, IRubyObject message, Block block) {
         IRubyObject timeout = context.runtime.getModule("Timeout");
         // No seconds, just yield
         if ( nilOrZeroSeconds(context, seconds) ) {
@@ -142,8 +141,8 @@ public class Timeout implements Library {
 
         IRubyObject id = new RubyObject(runtime, runtime.getObject());
         Runnable timeoutRunnable = exceptionType.isNil() ?
-                TimeoutTask.newAnnonymousTask(currentThread, timeout, latch, id) :
-                TimeoutTask.newTaskWithException(currentThread, timeout, latch, exceptionType);
+                TimeoutTask.newAnonymousTask(currentThread, timeout, latch, id, message.convertToString()) :
+                TimeoutTask.newTaskWithException(currentThread, timeout, latch, exceptionType, message.convertToString());
 
         try {
             return yieldWithTimeout(context, seconds, block, timeoutRunnable, latch);
@@ -190,30 +189,32 @@ public class Timeout implements Library {
         final IRubyObject timeout; // Timeout module
         final IRubyObject id; // needed for 'anonymous' timeout (no exception passed)
         final IRubyObject exception; // if there's exception (type) passed to timeout
+        final RubyString message; // message for exception
 
         private TimeoutTask(final RubyThread currentThread, final IRubyObject timeout,
-            final AtomicBoolean latch, final IRubyObject id, final IRubyObject exception) {
+            final AtomicBoolean latch, final IRubyObject id, final IRubyObject exception, final RubyString message) {
             this.currentThread = currentThread;
             this.timeout = timeout;
             this.latch = latch;
             this.id = id;
             this.exception = exception;
+            this.message = message;
         }
 
-        static TimeoutTask newAnnonymousTask(final RubyThread currentThread, final IRubyObject timeout,
-            final AtomicBoolean latch, final IRubyObject id) {
-            return new TimeoutTask(currentThread, timeout, latch, id, null);
+        static TimeoutTask newAnonymousTask(final RubyThread currentThread, final IRubyObject timeout,
+                                            final AtomicBoolean latch, final IRubyObject id, final RubyString message) {
+            return new TimeoutTask(currentThread, timeout, latch, id, null, message);
         }
 
         static TimeoutTask newTaskWithException(final RubyThread currentThread, final IRubyObject timeout,
-            final AtomicBoolean latch, final IRubyObject exception) {
-            return new TimeoutTask(currentThread, timeout, latch, null, exception);
+            final AtomicBoolean latch, final IRubyObject exception, final RubyString message) {
+            return new TimeoutTask(currentThread, timeout, latch, null, exception, message);
         }
 
         public void run() {
             if ( latch.compareAndSet(false, true) ) {
                 if ( exception == null ) {
-                    raiseAnnonymous();
+                    raiseAnonymous();
                 }
                 else {
                     raiseException();
@@ -221,16 +222,16 @@ public class Timeout implements Library {
             }
         }
 
-        private void raiseAnnonymous() {
+        private void raiseAnonymous() {
             final Ruby runtime = timeout.getRuntime();
-            IRubyObject anonException = getAnonymousException(timeout).newInstance(runtime.getCurrentContext(), runtime.newString("execution expired"), Block.NULL_BLOCK);
+            IRubyObject anonException = getAnonymousException(timeout).newInstance(runtime.getCurrentContext(), message, Block.NULL_BLOCK);
             anonException.getInternalVariables().setInternalVariable("__identifier__", id);
             currentThread.raise(anonException);
         }
 
         private void raiseException() {
             final Ruby runtime = timeout.getRuntime();
-            currentThread.raise(exception, runtime.newString("execution expired"));
+            currentThread.raise(exception, message);
         }
 
     }
@@ -292,6 +293,10 @@ public class Timeout implements Library {
 
     private static RubyClass getClassFrom(final IRubyObject timeout, final String name) {
         return ((RubyModule) timeout).getClass(name); // Timeout::[name]
+    }
+
+    private static JavaSites.TimeoutSites sites(ThreadContext context) {
+        return context.sites.Timeout;
     }
 
 }

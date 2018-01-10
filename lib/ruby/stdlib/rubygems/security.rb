@@ -340,9 +340,7 @@ module Gem::Security
   # Digest algorithm used to sign gems
 
   DIGEST_ALGORITHM =
-    if defined?(OpenSSL::Digest::SHA256) then
-      OpenSSL::Digest::SHA256
-    elsif defined?(OpenSSL::Digest::SHA1) then
+    if defined?(OpenSSL::Digest::SHA1) then
       OpenSSL::Digest::SHA1
     end
 
@@ -365,7 +363,7 @@ module Gem::Security
   ##
   # Length of keys created by KEY_ALGORITHM
 
-  KEY_LENGTH = 3072
+  KEY_LENGTH = 2048
 
   ##
   # Cipher used to encrypt the key pair used to sign gems.
@@ -374,14 +372,9 @@ module Gem::Security
   KEY_CIPHER = OpenSSL::Cipher.new('AES-256-CBC') if defined?(OpenSSL::Cipher)
 
   ##
-  # One day in seconds
-
-  ONE_DAY = 86400
-
-  ##
   # One year in seconds
 
-  ONE_YEAR = ONE_DAY * 365
+  ONE_YEAR = 86400 * 365
 
   ##
   # The default set of extensions are:
@@ -462,7 +455,7 @@ module Gem::Security
 
   ##
   # Creates a new key pair of the specified +length+ and +algorithm+.  The
-  # default is a 2048 bit RSA key.
+  # default is a 3072 bit RSA key.
 
   def self.create_key length = KEY_LENGTH, algorithm = KEY_ALGORITHM
     algorithm.new length

@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -36,11 +36,14 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
 
 /** 
  * Represents a false literal.
  */
 public class FalseNode extends Node implements INameNode, SideEffectFree {
+    static final ByteList FALSE = new ByteList(new byte[] {'f', 'a', 'l', 's', 'e'});
+
     public FalseNode(ISourcePosition position) {
         super(position, false);
     }
@@ -62,6 +65,10 @@ public class FalseNode extends Node implements INameNode, SideEffectFree {
      */
     public String getName() {
         return "false";
+    }
+
+    public ByteList getByteName() {
+        return FALSE;
     }
     
     public List<Node> childNodes() {

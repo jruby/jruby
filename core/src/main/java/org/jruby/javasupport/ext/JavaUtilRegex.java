@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -31,12 +31,8 @@ import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
@@ -115,17 +111,17 @@ public abstract class JavaUtilRegex {
         public static IRubyObject begin(final ThreadContext context, final IRubyObject self, final IRubyObject idx) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
             if ( idx instanceof RubySymbol ) {
-                return context.runtime.newFixnum( matcherStart(matcher, idx.toString()) );
+                return context.runtime.newFixnum( matcher.start(idx.toString()) );
             }
             final int group = idx.convertToInteger().getIntValue();
-            return context.runtime.newFixnum(matcher.start(group));
+            return context.runtime.newFixnum( matcher.start(group) );
         }
 
         @JRubyMethod
         public static IRubyObject end(final ThreadContext context, final IRubyObject self, final IRubyObject idx) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
             if ( idx instanceof RubySymbol ) {
-                return context.runtime.newFixnum( matcherEnd(matcher, idx.toString()) );
+                return context.runtime.newFixnum( matcher.end(idx.toString()) );
             }
             final int group = idx.convertToInteger().getIntValue();
             return context.runtime.newFixnum(matcher.end(group));
@@ -136,8 +132,8 @@ public abstract class JavaUtilRegex {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
             final IRubyObject beg; final IRubyObject end;
             if ( idx instanceof RubySymbol ) {
-                beg = context.runtime.newFixnum( matcherStart(matcher, idx.toString()) );
-                end = context.runtime.newFixnum( matcherEnd(matcher, idx.toString()) );
+                beg = context.runtime.newFixnum( matcher.start(idx.toString()) );
+                end = context.runtime.newFixnum( matcher.end(idx.toString()) );
             }
             else {
                 final int group = idx.convertToInteger().getIntValue();
@@ -224,47 +220,6 @@ public abstract class JavaUtilRegex {
         @JRubyMethod(rest = true)
         public static IRubyObject values_at(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
             return to_a(context, self).values_at(args);
-        }
-
-        private static Integer matcherStart(final java.util.regex.Matcher matcher, final String group) {
-            if ( startMethod == null ) { // only available since Java 8
-                throw new UnsupportedOperationException("start(String) only works on Java 8+");
-            }
-            return invoke(startMethod, matcher, group);
-        }
-
-        private static Integer matcherEnd(final java.util.regex.Matcher matcher, final String group) {
-            if ( endMethod == null ) { // only available since Java 8
-                throw new UnsupportedOperationException("end(String) only works on Java 8+");
-            }
-            return invoke(endMethod, matcher, group);
-        }
-
-        private static Integer invoke(final Method method, final java.util.regex.Matcher matcher, final String group) {
-            try {
-                return (Integer) method.invoke(matcher, group);
-            }
-            catch (IllegalAccessException e) {
-                Helpers.throwException(e); return null;
-            }
-            catch (InvocationTargetException e) {
-                Helpers.throwException(e.getTargetException()); return null;
-            }
-        }
-
-        private static final Method startMethod;
-        private static final Method endMethod;
-
-        static {
-            Method start, end;
-            try {
-                start = java.util.regex.Matcher.class.getMethod("start", String.class);
-                end = java.util.regex.Matcher.class.getMethod("end", String.class);
-            }
-            catch (NoSuchMethodException e) {
-                start = end = null; // Java 7
-            }
-            startMethod = start; endMethod = end;
         }
 
     }

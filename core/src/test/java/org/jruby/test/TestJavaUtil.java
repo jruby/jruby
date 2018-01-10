@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -51,7 +51,7 @@ public class TestJavaUtil extends TestCase {
 
     public void testConvertJavaToRuby() {
         assertEquals(JavaUtil.convertJavaToRuby(runtime, null).getType().name().toString(), "NilClass");
-        assertEquals(JavaUtil.convertJavaToRuby(runtime, new Integer(1000)).getType().name().toString(), "Fixnum");
+        assertEquals(JavaUtil.convertJavaToRuby(runtime, new Integer(1000)).getType().name().toString(), "Integer");
         assertEquals(JavaUtil.convertJavaToRuby(runtime, new Double(1.0)).getType().name().toString(), "Float");
         assertEquals(JavaUtil.convertJavaToRuby(runtime, Boolean.TRUE).getType().name().toString(), "TrueClass");
         assertEquals(JavaUtil.convertJavaToRuby(runtime, Boolean.FALSE).getType().name().toString(), "FalseClass");

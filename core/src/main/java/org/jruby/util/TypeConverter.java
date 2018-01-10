@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -115,29 +115,37 @@ public class TypeConverter {
         return val;
     }
 
+    @Deprecated // not-used
     public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
         return convertToType(obj, target, convertMethod, raise);
     }
 
+    @Deprecated // not-used
     public static IRubyObject convertToType19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites, boolean raise) {
         return convertToType(context, obj, target, sites, raise);
     }
 
+    @Deprecated // not-used
     public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod) {
         return convertToType(obj, target, convertMethod);
     }
 
+    @Deprecated // not-used
     public static IRubyObject convertToType19(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
         return convertToType(context, obj, target, sites);
     }
 
-    // MRI: rb_to_float 1.9
-    public static RubyNumeric toFloat(Ruby runtime, IRubyObject obj) {
-        if (obj instanceof RubyFloat) return (RubyNumeric) obj;
-        if (!runtime.getNumeric().isInstance(obj)) throw runtime.newTypeError(obj, "Float");
-
-        return (RubyNumeric) convertToType(obj, runtime.getFloat(), "to_f", true);
+    // MRI: rb_to_float - adjusted to handle also Java numbers (non RubyNumeric types)
+    public static RubyFloat toFloat(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyNumeric) {
+            return ((RubyNumeric) obj).convertToFloat();
+        }
+        if (obj instanceof RubyString || obj.isNil()) {
+            throw runtime.newTypeError(obj, "Float");
+        }
+        return (RubyFloat) TypeConverter.convertToType(obj, runtime.getFloat(), "to_f", true);
     }
+
     /**
      * Checks that this object is of type DATA and then returns it, otherwise raises failure (MRI: Check_Type(obj, T_DATA))
      *
@@ -262,9 +270,10 @@ public class TypeConverter {
 
     // rb_check_to_integer
     public static IRubyObject checkIntegerType(Ruby runtime, IRubyObject obj, String method) {
+        if (method.equals("to_int")) return checkIntegerType(runtime.getCurrentContext(), obj);
+
         if (obj instanceof RubyFixnum) return obj;
 
-        if (method.equals("to_int")) return checkIntegerType(runtime.getCurrentContext(), obj);
         if (method.equals("to_i")) {
             ThreadContext context = runtime.getCurrentContext();
             TypeConverterSites sites = sites(context);
@@ -280,7 +289,6 @@ public class TypeConverter {
     // rb_check_to_float
     public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyFloat) return obj;
-        if (!(obj instanceof RubyNumeric)) return runtime.getNil();
 
         ThreadContext context = runtime.getCurrentContext();
         TypeConverterSites sites = sites(context);
@@ -382,10 +390,7 @@ public class TypeConverter {
         for (;;) {
             if (val instanceof RubyFloat) {
                 if (base != 0) raiseIntegerBaseError(context);
-                double value = ((RubyFloat) val).getValue();
-                if (value <= RubyFixnum.MAX || value >= RubyFixnum.MIN) {
-                    return RubyNumeric.dbl2num(context.runtime, value);
-                }
+                return RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) val).getValue());
             } else if (val instanceof RubyInteger) {
                 if (base != 0) raiseIntegerBaseError(context);
                 return val;
@@ -398,9 +403,7 @@ public class TypeConverter {
 
             if (base != 0) {
                 tmp = TypeConverter.checkStringType(context.runtime, val);
-                if (!tmp.isNil()) {
-                    continue;
-                }
+                if (tmp != context.nil) continue;
                 raiseIntegerBaseError(context);
             }
 
@@ -408,10 +411,7 @@ public class TypeConverter {
         }
 
         tmp = TypeConverter.convertToType(context, val, runtime.getString(), "to_int", false);
-        if (tmp.isNil()) {
-            return val.convertToInteger("to_i");
-        }
-        return tmp;
+        return (tmp != context.nil) ? tmp : val.convertToInteger("to_i");
     }
 
     // MRI: rb_Array

@@ -26,11 +26,11 @@ public class IRScriptBody extends IRScope {
         }
     }
 
-    public DynamicScope getToplevelScope() {
+    public DynamicScope getScriptDynamicScope() {
         return toplevelScope;
     }
 
-    public void setTopLevelBindingScope(DynamicScope tlbScope) {
+    public void setScriptDynamicScope(DynamicScope tlbScope) {
         this.toplevelScope = tlbScope;
     }
 

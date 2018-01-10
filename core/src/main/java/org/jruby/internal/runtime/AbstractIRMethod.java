@@ -1,42 +1,29 @@
 package org.jruby.internal.runtime;
 
-import org.jruby.Ruby;
+import java.util.ArrayList;
+import java.util.List;
 import org.jruby.RubyModule;
-import org.jruby.anno.MethodDescriptor;
-import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.Interp;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.ir.persistence.IRDumper;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.cli.Options;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
-
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Cloneable {
 
-    private Signature signature;
+    protected final Signature signature;
     protected final IRScope method;
     protected final StaticScope staticScope;
     protected InterpreterContext interpreterContext = null;

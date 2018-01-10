@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -51,8 +51,7 @@ import static org.jruby.util.RubyDateFormat.FieldType.*;
 public class RubyDateFormat extends DateFormat {
     private static final long serialVersionUID = -250429218019023997L;
 
-    private boolean ruby_1_9;
-    private List<Token> compiledPattern;
+    private final List<Token> compiledPattern;
 
     private final DateFormatSymbols formatSymbols;
 
@@ -169,15 +168,18 @@ public class RubyDateFormat extends DateFormat {
         this(pattern, new DateFormatSymbols(aLocale));
     }
 
+    /**
+     * @deprecated
+     */
     public RubyDateFormat(String pattern, Locale aLocale, boolean ruby_1_9) {
         this(pattern, aLocale);
-        this.ruby_1_9 = ruby_1_9;
     }
     
     public RubyDateFormat(String pattern, DateFormatSymbols formatSymbols) {
         super();
 
         this.formatSymbols = formatSymbols;
+        this.compiledPattern = new LinkedList<>();
         applyPattern(pattern);
     }
     
@@ -190,7 +192,7 @@ public class RubyDateFormat extends DateFormat {
     }
 
     private void compilePattern(String pattern, boolean dateLibrary) {
-        compiledPattern = new LinkedList<Token>();
+        compiledPattern.clear();
         
         int len = pattern.length();
         boolean ignoredModifier = false;
@@ -637,7 +639,7 @@ public class RubyDateFormat extends DateFormat {
                 case FORMAT_MILLISEC:
                 case FORMAT_NANOSEC:
                     value = dt.getMillisOfSecond() * 1000000;
-                    if (ruby_1_9) value += nsec;
+                    value += nsec;
                     output = TimeOutputFormatter.formatNumber(value, 9, '0');
 
                     int defaultWidth = (format == FORMAT_NANOSEC) ? 9 : 3;

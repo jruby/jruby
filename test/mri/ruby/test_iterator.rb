@@ -74,7 +74,7 @@ class TestIterator < Test::Unit::TestCase
   def test_break
     done = true
     loop{
-      break
+      break if true
       done = false			# should not reach here
     }
     assert(done)
@@ -84,7 +84,7 @@ class TestIterator < Test::Unit::TestCase
     loop {
       break if done
       done = true
-      next
+      next if true
       bad = true			# should not reach here
     }
     assert(!bad)
@@ -94,7 +94,7 @@ class TestIterator < Test::Unit::TestCase
     loop {
       break if done
       done = true
-      redo
+      redo if true
       bad = true			# should not reach here
     }
     assert(!bad)
@@ -109,7 +109,7 @@ class TestIterator < Test::Unit::TestCase
 
   def test_append_method_to_built_in_class
     x = [[1,2],[3,4],[5,6]]
-    assert_equal(x.iter_test1{|x|x}, x.iter_test2{|x|x})
+    assert_equal(x.iter_test1{|e|e}, x.iter_test2{|e|e})
   end
 
   class IterTest

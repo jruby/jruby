@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KCode;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.ChannelHelper;
 import org.jruby.util.io.EncodingUtils;
@@ -108,6 +109,10 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("TRUE", runtime.getTrue());
         runtime.defineGlobalConstant("FALSE", runtime.getFalse());
         runtime.defineGlobalConstant("NIL", runtime.getNil());
+
+        runtime.getObject().deprecateConstant(runtime, "TRUE");
+        runtime.getObject().deprecateConstant(runtime, "FALSE");
+        runtime.getObject().deprecateConstant(runtime, "NIL");
 
         initARGV(runtime);
 
@@ -173,9 +178,9 @@ public class RubyGlobal {
         runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()), GLOBAL);
 
         if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
-            runtime.defineVariable(new GlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
+            runtime.defineVariable(new StringOrRegexpGlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
         } else {
-            runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
+            runtime.defineVariable(new StringOrRegexpGlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
         }
 
         RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
@@ -271,12 +276,27 @@ public class RubyGlobal {
     }
 
     public static void initSTDIO(Ruby runtime, GlobalVariables globals) {
-        RubyIO stdin = RubyIO.prepStdio(
-                runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
-        RubyIO stdout = RubyIO.prepStdio(
-                runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
-        RubyIO stderr = RubyIO.prepStdio(
-                runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+        RubyIO stdin, stdout, stderr;
+
+        // If we're the main for the process and native stdio is enabled, use default descriptors
+        if (!Platform.IS_WINDOWS && // Windows does not do native IO yet
+                runtime.getPosix().isNative() &&
+                runtime.getInstanceConfig().isHardExit() && // main JRuby only
+                Options.NATIVE_STDIO.load()) {
+            stdin = RubyIO.prepStdio(
+                    runtime, runtime.getIn(), new NativeDeviceChannel(0), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+            stdout = RubyIO.prepStdio(
+                    runtime, runtime.getOut(), new NativeDeviceChannel(1), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+            stderr = RubyIO.prepStdio(
+                    runtime, runtime.getErr(), new NativeDeviceChannel(2), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+        } else {
+            stdin = RubyIO.prepStdio(
+                    runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+            stdout = RubyIO.prepStdio(
+                    runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+            stderr = RubyIO.prepStdio(
+                    runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+        }
 
         if (runtime.getObject().getConstantFromNoConstMissing("STDIN") == null) {
             runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
@@ -390,7 +410,7 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            return case_aware_op_aref(context, key, false);
+            return asTainted(case_aware_op_aref(context, key, false));
         }
 
         @Override
@@ -413,6 +433,10 @@ public class RubyGlobal {
           return to_hash();
         }
 
+        private IRubyObject asTainted(IRubyObject obj) {
+            obj.setTaint(true);
+            return obj;
+        }
 
     }
 
@@ -711,6 +735,20 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString)) {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
+            }
+            return super.set(value);
+        }
+    }
+
+    public static class StringOrRegexpGlobalVariable extends GlobalVariable {
+        public StringOrRegexpGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            if (!value.isNil() && ! (value instanceof RubyString) && ! (value instanceof RubyRegexp)) {
+                throw runtime.newTypeError("value of " + name() + " must be String or Regexp");
             }
             return super.set(value);
         }

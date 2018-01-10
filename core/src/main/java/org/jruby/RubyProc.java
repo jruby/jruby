@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -176,6 +176,9 @@ public class RubyProc extends RubyObject implements DataType {
                     oldBinding.getLine());
             block = new Block(procBlock.getBody(), newBinding);
 
+            // Mark as escaped, so non-local flow errors immediately
+            block.escape();
+
             // modify the block with a new backref/lastline-grabbing scope
             StaticScope oldScope = block.getBody().getStaticScope();
             StaticScope newScope = oldScope.duplicate();
@@ -238,14 +241,6 @@ public class RubyProc extends RubyObject implements DataType {
         return getRuntime().newBinding(block.getBinding());
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return call19(context, args, block);
-    }
-
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return call(context, args, null, Block.NULL_BLOCK);
-    }
-
     /**
      * For Type.LAMBDA, ensures that the args have the correct arity.
      *
@@ -267,13 +262,17 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
-    public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
 
         return call(context, preppedArgs, null, blockCallArg);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        return call(context, args, null, Block.NULL_BLOCK);
+    }
+
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         assert args != null;
 
         Block newBlock;
@@ -315,7 +314,7 @@ public class RubyProc extends RubyObject implements DataType {
                     runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod
@@ -341,6 +340,11 @@ public class RubyProc extends RubyObject implements DataType {
 
     private boolean isThread() {
         return type.equals(Block.Type.THREAD);
+    }
+
+    @Deprecated
+    public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
+        return call(context, args, block);
     }
 
 }

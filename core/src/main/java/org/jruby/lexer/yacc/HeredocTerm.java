@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -30,7 +30,7 @@
 package org.jruby.lexer.yacc;
 
 import org.jcodings.Encoding;
-import org.jruby.parser.Tokens;
+import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 
 import static org.jruby.lexer.LexingCommon.*;
@@ -100,7 +100,7 @@ public class HeredocTerm extends StrTerm {
         // Found end marker for this heredoc
         if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
             lexer.heredoc_restore(this);
-            return Tokens.tSTRING_END;
+            return RubyParser.tSTRING_END;
         }
 
         if ((flags & STR_FUNC_EXPAND) == 0) {
@@ -139,7 +139,7 @@ public class HeredocTerm extends StrTerm {
 
                 if (lexer.getHeredocIndent() > 0) {
                     lexer.setValue(lexer.createStr(str, 0));
-                    return Tokens.tSTRING_CONTENT;
+                    return RubyParser.tSTRING_CONTENT;
                 }
                 // MRI null checks str in this case but it is unconditionally non-null?
                 if (lexer.nextc() == -1) return error(lexer, len, null, eos);
@@ -148,16 +148,14 @@ public class HeredocTerm extends StrTerm {
             ByteList tok = new ByteList();
             tok.setEncoding(lexer.getEncoding());
             if (c == '#') {
-                switch (c = lexer.nextc()) {
-                    case '$':
-                    case '@':
-                        lexer.pushback(c);
-                        return Tokens.tSTRING_DVAR;
-                    case '{':
-                        lexer.commandStart = true;
-                        return Tokens.tSTRING_DBEG;
+                int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
+
+                if (token != 0) {
+                    return token;
+                } else {
+                    tok.append(c);
+                    c = lexer.nextc();
                 }
-                tok.append('#');
             }
 
             // MRI has extra pointer which makes our code look a little bit more strange in comparison
@@ -173,14 +171,14 @@ public class HeredocTerm extends StrTerm {
                 }
                 if (c != '\n') {
                     lexer.setValue(lexer.createStr(tok, 0));
-                    return Tokens.tSTRING_CONTENT;
+                    return RubyParser.tSTRING_CONTENT;
                 }
                 tok.append(lexer.nextc());
 
                 if (lexer.getHeredocIndent() > 0) {
                     lexer.lex_goto_eol();
                     lexer.setValue(lexer.createStr(tok, 0));
-                    return Tokens.tSTRING_CONTENT;
+                    return RubyParser.tSTRING_CONTENT;
                 }
 
                 if ((c = lexer.nextc()) == EOF) return error(lexer, len, str, eos);
@@ -188,9 +186,8 @@ public class HeredocTerm extends StrTerm {
             str = tok;
         }
 
-        lexer.heredoc_restore(this);
-        lexer.setStrTerm(new StringTerm(-1, '\0', '\0', lexer.getRubySourceline()));
+        lexer.pushback(c);
         lexer.setValue(lexer.createStr(str, 0));
-        return Tokens.tSTRING_CONTENT;
+        return RubyParser.tSTRING_CONTENT;
     }
 }

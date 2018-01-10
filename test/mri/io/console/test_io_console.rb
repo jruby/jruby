@@ -7,6 +7,9 @@ rescue LoadError
 end
 
 class TestIO_Console < Test::Unit::TestCase
+end
+
+defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
   Bug6116 = '[ruby-dev:45309]'
 
   def test_raw
@@ -233,11 +236,42 @@ class TestIO_Console < Test::Unit::TestCase
       begin
         assert_equal([0, 0], s.winsize)
       rescue Errno::EINVAL # OpenSolaris 2009.06 TIOCGWINSZ causes Errno::EINVAL before TIOCSWINSZ.
+      else
+        assert_equal([80, 25], s.winsize = [80, 25])
+        assert_equal([80, 25], s.winsize)
+        #assert_equal([80, 25], m.winsize)
+        assert_equal([100, 40], m.winsize = [100, 40])
+        #assert_equal([100, 40], s.winsize)
+        assert_equal([100, 40], m.winsize)
       end
     }
   end
 
+  def test_set_winsize_invalid_dev
+    [IO::NULL, __FILE__].each do |path|
+      open(path) do |io|
+        begin
+          s = io.winsize
+        rescue SystemCallError => e
+          assert_raise(e.class) {io.winsize = [0, 0]}
+        else
+          assert(false, "winsize on #{path} succeed: #{s.inspect}")
+        end
+        assert_raise(ArgumentError) {io.winsize = [0, 0, 0]}
+      end
+    end
+  end
+
   if IO.console
+    def test_set_winsize_console
+      s = IO.console.winsize
+      assert_kind_of(Array, s)
+      assert_equal(2, s.size)
+      assert_kind_of(Integer, s[0])
+      assert_kind_of(Integer, s[1])
+      assert_nothing_raised(TypeError) {IO.console.winsize = s}
+    end
+
     def test_close
       IO.console.close
       assert_kind_of(IO, IO.console)
@@ -294,9 +328,9 @@ class TestIO_Console < Test::Unit::TestCase
     w.close if w
     Process.wait(pid) if pid
   end
-end if defined?(PTY) and defined?(IO::console)
+end
 
-class TestIO_Console < Test::Unit::TestCase
+defined?(IO.console) and TestIO_Console.class_eval do
   case
   when Process.respond_to?(:daemon)
     noctty = [EnvUtil.rubybin, "-e", "Process.daemon(true)"]
@@ -335,9 +369,24 @@ class TestIO_Console < Test::Unit::TestCase
       t2.close!
     end
   end
-end if defined?(IO.console)
+end
 
-class TestIO_Console < Test::Unit::TestCase
+defined?(IO.console) and IO.console and IO.console.respond_to?(:pressed?) and
+  TestIO_Console.class_eval do
+  def test_pressed_valid
+    assert_include([true, false], IO.console.pressed?("HOME"))
+    assert_include([true, false], IO.console.pressed?(:"HOME"))
+  end
+
+  def test_pressed_invalid
+    e = assert_raise(ArgumentError) do
+      IO.console.pressed?("HOME\0")
+    end
+    assert_match(/unknown virtual key code/, e.message)
+  end
+end
+
+TestIO_Console.class_eval do
   def test_stringio_getch
     assert_separately %w"--disable=gems -rstringio -rio/console", %q{
       assert_operator(StringIO, :method_defined?, :getch)

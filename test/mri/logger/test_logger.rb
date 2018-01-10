@@ -121,6 +121,7 @@ class TestLogger < Test::Unit::TestCase
   end
 
   def test_datetime_format
+    verbose, $VERBOSE = $VERBOSE, false
     dummy = STDERR
     logger = Logger.new(dummy)
     log = log_add(logger, INFO, "foo")
@@ -131,6 +132,8 @@ class TestLogger < Test::Unit::TestCase
     logger.datetime_format = ""
     log = log_add(logger, INFO, "foo")
     assert_match(/^$/, log.datetime)
+  ensure
+    $VERBOSE = verbose
   end
 
   def test_formatter
@@ -164,6 +167,48 @@ class TestLogger < Test::Unit::TestCase
     assert_nil(logger.progname)
     assert_equal(DEBUG, logger.level)
     assert_nil(logger.datetime_format)
+  end
+
+  def test_initialize_with_level
+    # default
+    logger = Logger.new(STDERR)
+    assert_equal(Logger::DEBUG, logger.level)
+    # config
+    logger = Logger.new(STDERR, level: :info)
+    assert_equal(Logger::INFO, logger.level)
+  end
+
+  def test_initialize_with_progname
+    # default
+    logger = Logger.new(STDERR)
+    assert_equal(nil, logger.progname)
+    # config
+    logger = Logger.new(STDERR, progname: :progname)
+    assert_equal(:progname, logger.progname)
+  end
+
+  def test_initialize_with_formatter
+    # default
+    logger = Logger.new(STDERR)
+    log = log(logger, :info, "foo")
+    assert_equal("foo\n", log.msg)
+    # config
+    logger = Logger.new(STDERR, formatter: proc { |severity, timestamp, progname, msg|
+      "#{severity}:#{msg}\n\n"
+    })
+    line = log_raw(logger, :info, "foo")
+    assert_equal("INFO:foo\n\n", line)
+  end
+
+  def test_initialize_with_datetime_format
+    # default
+    logger = Logger.new(STDERR)
+    log = log_add(logger, INFO, "foo")
+    assert_match(/^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\s*\d+ $/, log.datetime)
+    # config
+    logger = Logger.new(STDERR, datetime_format: "%d%b%Y@%H:%M:%S")
+    log = log_add(logger, INFO, "foo")
+    assert_match(/^\d\d\w\w\w\d\d\d\d@\d\d:\d\d:\d\d$/, log.datetime)
   end
 
   def test_reopen

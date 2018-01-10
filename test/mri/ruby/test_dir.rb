@@ -289,12 +289,14 @@ class TestDir < Test::Unit::TestCase
     ENV.delete("HOME")
     ENV.delete("LOGDIR")
 
-    assert_raise(ArgumentError) { Dir.home }
-    assert_raise(ArgumentError) { Dir.home("") }
     ENV["HOME"] = @nodir
     assert_nothing_raised(ArgumentError) {
       assert_equal(@nodir, Dir.home)
       assert_equal(@nodir, Dir.home(""))
+      if user = ENV["USER"]
+        ENV["HOME"] = env_home
+        assert_equal(File.expand_path(env_home), Dir.home(user))
+      end
     }
     %W[no:such:user \u{7559 5b88}:\u{756a}].each do |user|
       assert_raise_with_message(ArgumentError, /#{user}/) {Dir.home(user)}
@@ -331,4 +333,37 @@ class TestDir < Test::Unit::TestCase
       end
     }
   end
+
+  def test_empty?
+    assert_not_send([Dir, :empty?, @root])
+    a = File.join(@root, "a")
+    assert_send([Dir, :empty?, a])
+    %w[A .dot].each do |tmp|
+      tmp = File.join(a, tmp)
+      open(tmp, "w") {}
+      assert_not_send([Dir, :empty?, a])
+      File.delete(tmp)
+      assert_send([Dir, :empty?, a])
+      Dir.mkdir(tmp)
+      assert_not_send([Dir, :empty?, a])
+      Dir.rmdir(tmp)
+      assert_send([Dir, :empty?, a])
+    end
+    assert_raise(Errno::ENOENT) {Dir.empty?(@nodir)}
+    assert_not_send([Dir, :empty?, File.join(@root, "b")])
+  end
+
+  def test_glob_gc_for_fd
+    assert_separately(["-C", @root], "#{<<-"begin;"}\n#{<<-"end;"}", timeout: 3)
+    begin;
+      Process.setrlimit(Process::RLIMIT_NOFILE, 50)
+      begin
+        tap {tap {tap {(0..100).map {open(IO::NULL)}}}}
+      rescue Errno::EMFILE
+      end
+      list = Dir.glob("*").sort
+      assert_not_empty(list)
+      assert_equal([*"a".."z"], list)
+    end;
+  end if defined?(Process::RLIMIT_NOFILE)
 end

@@ -98,8 +98,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(10.0, Double.new("10").doubleValue())
 
     assert_equal(Random, r.class)
-    assert_equal(Fixnum, r.nextInt.class)
-    assert_equal(Fixnum, r.nextInt(10).class)
+    assert_equal(Integer, r.nextInt.class)
+    assert_equal(Integer, r.nextInt(10).class)
   end
 
   Long = java.lang.Long
@@ -116,7 +116,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_class_methods
     result = java.lang.System.currentTimeMillis()
-    assert_equal(Fixnum, result.class)
+    assert_equal(Integer, result.class)
   end
 
   Boolean = java.lang.Boolean
@@ -644,7 +644,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     r_returned = l.get(1)
     # Since Random is a public class we should get the value casted as that
     assert_equal("java.util.Random", r_returned.java_class.name)
-    assert(r_returned.nextInt.kind_of?(Fixnum))
+    assert(r_returned.nextInt.kind_of?(Integer))
   end
 
   HashMap = java.util.HashMap
@@ -1065,8 +1065,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_package_object_id
-    assert org.jruby.object_id.is_a?(Fixnum)
-    assert Java::java::lang.object_id.is_a?(Fixnum)
+    assert org.jruby.object_id.is_a?(Integer)
+    assert Java::java::lang.object_id.is_a?(Integer)
   end
 
   def test_package_singleton_method_hooks
@@ -1597,6 +1597,91 @@ CLASSDEF
         break if a == 0.0
       end
     end
+  end
+
+  def test_java_numbers_with_array
+    num1 = 0.5; num2 = 111
+    if defined?(JRUBY_VERSION)
+      num1 = java.lang.Float.new(num1)
+      num2 = java.lang.Short.new(num2)
+    end
+    pack = [ num1, num2 ].pack('D')
+    assert_equal "\x00\x00\x00\x00\x00\x00\xE0?".force_encoding('ASCII-8BIT'), pack
+
+    i = java.lang.Integer.new(1)
+    arr = []; arr[i] = 'one'
+    assert_equal 'one', arr.at(i)
+    assert_equal 'one', arr[1]
+    i = java.lang.Long.new(1)
+    assert_equal 'one', arr[i]
+  end
+
+  def test_java_numbers_coercing
+    num1 = 1; num2 = 2
+    if defined?(JRUBY_VERSION)
+      num1 = java.lang.Integer.new(num1)
+      num2 = java.lang.Byte.new(num2)
+    end
+    assert_equal 2, 2 / num1
+    assert_equal 1, 2.div(num2)
+
+    assert_equal 4, 2 * num2
+    big = 1_000_000_000_000_000_000_000_000
+    assert_equal 2 * big, big * num2
+
+    assert_equal 1, 5 % num2
+    assert_equal 0, big % num1
+    assert_equal 100, 10 ** num2
+
+    require 'bigdecimal'
+    dec = BigDecimal('4444.1234')
+    assert_equal BigDecimal('8888.2468'), dec * num2
+    assert_equal BigDecimal('4445.1234'), dec + num1
+  end
+
+  def test_java_numbers_with_rational
+    num1 = 0.5; num2 = 2
+    if defined?(JRUBY_VERSION)
+      num1 = java.lang.Double.new(num1)
+      num2 = java.lang.Integer.new(num2)
+    end
+    half = Rational('1/2')
+    assert_equal 1, half.div(num1)
+    assert_equal Rational('1/4'), half / num2
+  end
+
+  def test_java_numbers_treated_like_ruby_ones
+    i = java.lang.Integer.new(3)
+    assert_equal 3.0, i.to_f
+    assert_equal 3, i.to_i
+    assert_equal true, i.integer?
+
+    assert_equal 4, java.lang.Byte.new(4).to_i
+    assert_equal 5, java.lang.Byte.new(5).to_int
+
+    assert_equal 1, 10.gcd(i)
+
+    i = java.math.BigInteger.new('3')
+    assert_equal 3.0, i.to_f
+    assert_equal 3, i.to_i
+    assert_equal true, i.integer?
+
+    assert_equal 30, 10.lcm(i)
+
+    f = java.lang.Float.new(3)
+    assert_equal 3.0, f.to_f
+    assert_equal 3, f.to_i
+    assert_equal false, f.integer?
+
+    f = java.math.BigDecimal.new('3.0')
+    assert_equal 3.0, f.to_f
+    assert_equal 3, f.to_i
+    assert_equal false, f.integer?
+  end
+
+  def test_java_character_converts_to_i
+    c = '0'.to_java(:char)
+    assert_equal 48, c.to_i
   end
 
   # GH-3262

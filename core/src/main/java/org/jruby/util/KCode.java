@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -33,9 +33,9 @@ import org.jcodings.Encoding;
 public enum KCode {
     NIL(null, "ASCII", 0),
     NONE("NONE", "ASCII", 0),
-    UTF8("UTF8", "NonStrictUTF8", 64),
-    SJIS("SJIS", "NonStrictSJIS", 48),
-    EUC("EUC", "NonStrictEUCJP", 32);
+    UTF8("UTF8", "UTF8", 64),
+    SJIS("SJIS", "SJIS", 48),
+    EUC("EUC", "EUCJP", 32);
 
     private final String kcode;
     private final String encodingName;

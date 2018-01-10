@@ -157,6 +157,15 @@ class TestSymbol < Test::Unit::TestCase
     assert_equal(1, first, bug11594)
   end
 
+  private def return_from_proc
+    Proc.new { return 1 }.tap(&:call)
+  end
+
+  def test_return_from_symbol_proc
+    bug12462 = '[ruby-core:75856] [Bug #12462]'
+    assert_equal(1, return_from_proc, bug12462)
+  end
+
   def test_to_proc_for_hash_each
     bug11830 = '[ruby-core:72205] [Bug #11830]'
     assert_normal_exit(<<-'end;', bug11830) # do
@@ -165,7 +174,7 @@ class TestSymbol < Test::Unit::TestCase
   end
 
   def test_to_proc_iseq
-    assert_separately([], <<~"end;", timeout: 1) # do
+    assert_separately([], <<~"end;", timeout: 5) # do
       bug11845 = '[ruby-core:72381] [Bug #11845]'
       assert_nil(:class.to_proc.source_location, bug11845)
       assert_equal([[:rest]], :class.to_proc.parameters, bug11845)
@@ -177,12 +186,18 @@ class TestSymbol < Test::Unit::TestCase
   end
 
   def test_to_proc_binding
-    assert_separately([], <<~"end;", timeout: 1) # do
+    assert_separately([], <<~"end;", timeout: 5) # do
       bug12137 = '[ruby-core:74100] [Bug #12137]'
       assert_raise(ArgumentError, bug12137) {
         :succ.to_proc.binding
       }
     end;
+  end
+
+  def test_to_proc_instance_exec
+    bug = '[ruby-core:78839] [Bug #13074] should evaluate on the argument'
+    assert_equal(2, BasicObject.new.instance_exec(1, &:succ), bug)
+    assert_equal(3, BasicObject.new.instance_exec(1, 2, &:+), bug)
   end
 
   def test_call
@@ -220,6 +235,35 @@ class TestSymbol < Test::Unit::TestCase
     assert_equal([false, false], m2.call(self, m2), "#{bug8531} nested without block")
   end
 
+  def test_block_curry_proc
+    assert_separately([], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+    b = proc { true }.curry
+    assert(b.call, "without block")
+    assert(b.call { |o| o.to_s }, "with block")
+    assert(b.call(&:to_s), "with sym block")
+    end;
+  end
+
+  def test_block_curry_lambda
+    assert_separately([], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+    b = lambda { true }.curry
+    assert(b.call, "without block")
+    assert(b.call { |o| o.to_s }, "with block")
+    assert(b.call(&:to_s), "with sym block")
+    end;
+  end
+
+  def test_block_method_to_proc
+    assert_separately([], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+    b = method(:tap).to_proc
+    assert(b.call { |o| o.to_s }, "with block")
+    assert(b.call(&:to_s), "with sym block")
+    end;
+  end
+
   def test_succ
     assert_equal(:fop, :foo.succ)
   end
@@ -236,6 +280,14 @@ class TestSymbol < Test::Unit::TestCase
     assert_equal(1, :FoO.casecmp(:BaR))
     assert_equal(-1, :baR.casecmp(:FoO))
     assert_nil(:foo.casecmp("foo"))
+  end
+
+  def test_casecmp?
+    assert_equal(true, :FoO.casecmp?(:fOO))
+    assert_equal(false, :FoO.casecmp?(:BaR))
+    assert_equal(false, :baR.casecmp?(:FoO))
+    assert_nil(:foo.casecmp?("foo"))
+    assert_equal(true, :äöü.casecmp?(:ÄÖÜ))
   end
 
   def test_length
@@ -255,7 +307,73 @@ class TestSymbol < Test::Unit::TestCase
     assert_equal(:fOo, :FoO.swapcase)
   end
 
-  def test_symbol_poped
+  def test_MATCH # '=~'
+    assert_equal(10,  :"FeeFieFoo-Fum" =~ /Fum$/)
+    assert_equal(nil, "FeeFieFoo-Fum" =~ /FUM$/)
+
+    o = Object.new
+    def o.=~(x); x + "bar"; end
+    assert_equal("foobar", :"foo" =~ o)
+
+    assert_raise(TypeError) { :"foo" =~ "foo" }
+  end
+
+  def test_match_method
+    assert_equal("bar", :"foobarbaz".match(/bar/).to_s)
+
+    o = Regexp.new('foo')
+    def o.match(x, y, z); x + y + z; end
+    assert_equal("foobarbaz", :"foo".match(o, "bar", "baz"))
+    x = nil
+    :"foo".match(o, "bar", "baz") {|y| x = y }
+    assert_equal("foobarbaz", x)
+
+    assert_raise(ArgumentError) { :"foo".match }
+  end
+
+  def test_match_p_regexp
+    /backref/ =~ 'backref'
+    # must match here, but not in a separate method, e.g., assert_send,
+    # to check if $~ is affected or not.
+    assert_equal(true, "".match?(//))
+    assert_equal(true, :abc.match?(/.../))
+    assert_equal(true, 'abc'.match?(/b/))
+    assert_equal(true, 'abc'.match?(/b/, 1))
+    assert_equal(true, 'abc'.match?(/../, 1))
+    assert_equal(true, 'abc'.match?(/../, -2))
+    assert_equal(false, 'abc'.match?(/../, -4))
+    assert_equal(false, 'abc'.match?(/../, 4))
+    assert_equal(true, ("\u3042" + '\x').match?(/../, 1))
+    assert_equal(true, ''.match?(/\z/))
+    assert_equal(true, 'abc'.match?(/\z/))
+    assert_equal(true, 'Ruby'.match?(/R.../))
+    assert_equal(false, 'Ruby'.match?(/R.../, 1))
+    assert_equal(false, 'Ruby'.match?(/P.../))
+    assert_equal('backref', $&)
+  end
+
+  def test_match_p_string
+    /backref/ =~ 'backref'
+    # must match here, but not in a separate method, e.g., assert_send,
+    # to check if $~ is affected or not.
+    assert_equal(true, "".match?(''))
+    assert_equal(true, :abc.match?('...'))
+    assert_equal(true, 'abc'.match?('b'))
+    assert_equal(true, 'abc'.match?('b', 1))
+    assert_equal(true, 'abc'.match?('..', 1))
+    assert_equal(true, 'abc'.match?('..', -2))
+    assert_equal(false, 'abc'.match?('..', -4))
+    assert_equal(false, 'abc'.match?('..', 4))
+    assert_equal(true, ("\u3042" + '\x').match?('..', 1))
+    assert_equal(true, ''.match?('\z'))
+    assert_equal(true, 'abc'.match?('\z'))
+    assert_equal(true, 'Ruby'.match?('R...'))
+    assert_equal(false, 'Ruby'.match?('R...', 1))
+    assert_equal(false, 'Ruby'.match?('P...'))
+    assert_equal('backref', $&)
+  end
+
+  def test_symbol_popped
     assert_nothing_raised { eval('a = 1; :"#{ a }"; 1') }
   end
 
@@ -271,7 +389,7 @@ class TestSymbol < Test::Unit::TestCase
     assert_equal(Encoding::US_ASCII, "$-A".force_encoding("iso-8859-15").intern.encoding)
     assert_equal(Encoding::US_ASCII, "foobar~!".force_encoding("iso-8859-15").intern.encoding)
     assert_equal(Encoding::UTF_8, "\u{2192}".intern.encoding)
-    assert_raise(EncodingError) {"\xb0a".force_encoding("utf-8").intern}
+    assert_raise_with_message(EncodingError, /\\xb0/i) {"\xb0a".force_encoding("utf-8").intern}
   end
 
   def test_singleton_method
@@ -341,8 +459,8 @@ class TestSymbol < Test::Unit::TestCase
 
   def test_symbol_fstr_leak
     bug10686 = '[ruby-core:67268] [Bug #10686]'
-    x = 0
-    assert_no_memory_leak([], '200_000.times { |i| i.to_s.to_sym }; GC.start', <<-"end;", bug10686, limit: 1.71, rss: true)
+    x = x = 0
+    assert_no_memory_leak([], '200_000.times { |i| i.to_s.to_sym }; GC.start', <<-"end;", bug10686, limit: 1.71, rss: true, timeout: 20)
       200_000.times { |i| (i + 200_000).to_s.to_sym }
     end;
   end

@@ -5,6 +5,7 @@ import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.ISO8859_16Encoding;
+import org.jcodings.spi.ISO_8859_16;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
@@ -24,7 +25,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.encoding.ISO_8859_16;
 import org.jruby.util.io.EncodingUtils;
 
 public final class EncodingService {
@@ -268,7 +268,7 @@ public final class EncodingService {
             final String name = RubyNKF.NKFCharsetMap.get(id);
             if ( name != null ) return getEncodingFromNKFName(name);
         }
-        if ( ( arg = arg.checkStringType19() ).isNil() ) {
+        if ( ( arg = arg.checkStringType() ).isNil() ) {
             return null;
         }
         if ( ! ((RubyString) arg).getEncoding().isAsciiCompatible() ) {
@@ -442,17 +442,7 @@ public final class EncodingService {
             case LOCALE: return service.getLocaleEncoding();
             case EXTERNAL: return runtime.getDefaultExternalEncoding();
             case INTERNAL: return runtime.getDefaultInternalEncoding();
-            case FILESYSTEM:
-                if (Platform.IS_WINDOWS) {
-                    String fileEncoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
-                    try {
-                        return service.getEncodingFromString(fileEncoding);
-                    } catch (RaiseException re) {
-                        runtime.getWarnings().warning("could not load encoding for file.encoding of " + fileEncoding + ", using default external");
-                        if (runtime.isDebug()) re.printStackTrace();
-                    }
-                }
-                return runtime.getDefaultExternalEncoding();
+            case FILESYSTEM: return runtime.getDefaultFilesystemEncoding();
             default:
                 throw new RuntimeException("invalid SpecialEncoding: " + this);
             }

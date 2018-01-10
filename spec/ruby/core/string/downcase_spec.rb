@@ -46,15 +46,23 @@ describe "String#downcase!" do
     a.should == "hello"
   end
 
+  ruby_version_is '2.4' do
+    it "modifies self in place for all of Unicode" do
+      a = "ÄÖÜ"
+      a.downcase!.should equal(a)
+      a.should == "äöü"
+    end
+  end
+
   it "returns nil if no modifications were made" do
     a = "hello"
     a.downcase!.should == nil
     a.should == "hello"
   end
 
-  it "raises a RuntimeError when self is frozen" do
-    lambda { "HeLlo".freeze.downcase! }.should raise_error(RuntimeError)
-    lambda { "hello".freeze.downcase! }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} when self is frozen" do
+    lambda { "HeLlo".freeze.downcase! }.should raise_error(frozen_error_class)
+    lambda { "hello".freeze.downcase! }.should raise_error(frozen_error_class)
   end
 
   with_feature :encoding do

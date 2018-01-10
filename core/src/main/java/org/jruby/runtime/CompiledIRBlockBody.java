@@ -11,16 +11,11 @@ import java.lang.invoke.MethodHandles;
 
 public class CompiledIRBlockBody extends IRBlockBody {
     protected final MethodHandle handle;
-    protected volatile MethodHandle normalYieldSpecificHandle;
-    protected volatile MethodHandle normalYieldHandle;
-    protected volatile MethodHandle normalYieldUnwrapHandle;
-    protected volatile MethodHandle yieldTwoValuesHandle;
-    protected volatile MethodHandle yieldThreeValuesHandle;
 
     public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
         super(closure, Signature.decode(encodedSignature));
+        // evalType copied (shared) on MixedModeIRBlockBody#completeBuild
         this.handle = handle;
-
         // Done in the interpreter (WrappedIRClosure) but we do it here
         closure.getStaticScope().determineModule();
     }
@@ -67,10 +62,17 @@ public class CompiledIRBlockBody extends IRBlockBody {
         return handle;
     }
 
+    protected volatile MethodHandle normalYieldSpecificHandle;
+    protected volatile MethodHandle normalYieldHandle;
+    protected volatile MethodHandle normalYieldUnwrapHandle;
+    protected volatile MethodHandle yieldTwoValuesHandle;
+    protected volatile MethodHandle yieldThreeValuesHandle;
+
     public MethodHandle getNormalYieldSpecificHandle() {
+        MethodHandle normalYieldSpecificHandle = this.normalYieldSpecificHandle;
         if (normalYieldSpecificHandle != null) return normalYieldSpecificHandle;
 
-        return normalYieldSpecificHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class)
+        return this.normalYieldSpecificHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class)
                 .foldVoid(SET_NORMAL)
                 .fold(FOLD_METHOD1)
                 .fold(FOLD_TYPE1)
@@ -81,9 +83,10 @@ public class CompiledIRBlockBody extends IRBlockBody {
     }
 
     public MethodHandle getNormalYieldHandle() {
+        MethodHandle normalYieldHandle = this.normalYieldHandle;
         if (normalYieldHandle != null) return normalYieldHandle;
 
-        return normalYieldHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class)
+        return this.normalYieldHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class)
                 .foldVoid(SET_NORMAL)
                 .fold(FOLD_METHOD2)
                 .fold(FOLD_TYPE2)
@@ -95,9 +98,10 @@ public class CompiledIRBlockBody extends IRBlockBody {
     }
 
     public MethodHandle getNormalYieldUnwrapHandle() {
+        MethodHandle normalYieldUnwrapHandle = this.normalYieldUnwrapHandle;
         if (normalYieldUnwrapHandle != null) return normalYieldUnwrapHandle;
 
-        return normalYieldUnwrapHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class)
+        return this.normalYieldUnwrapHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class)
                 .foldVoid(SET_NORMAL)
                 .fold(FOLD_METHOD2)
                 .fold(FOLD_TYPE2)
@@ -109,9 +113,10 @@ public class CompiledIRBlockBody extends IRBlockBody {
     }
 
     public MethodHandle getYieldTwoValuesHandle() {
+        MethodHandle yieldTwoValuesHandle = this.yieldTwoValuesHandle;
         if (yieldTwoValuesHandle != null) return yieldTwoValuesHandle;
 
-        return yieldTwoValuesHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, IRubyObject.class)
+        return this.yieldTwoValuesHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, IRubyObject.class)
                 .foldVoid(SET_NORMAL)
                 .fold(FOLD_METHOD1)
                 .fold(FOLD_TYPE1)
@@ -124,9 +129,10 @@ public class CompiledIRBlockBody extends IRBlockBody {
     }
 
     public MethodHandle getYieldThreeValuesHandle() {
+        MethodHandle yieldThreeValuesHandle = this.yieldThreeValuesHandle;
         if (yieldThreeValuesHandle != null) return yieldThreeValuesHandle;
 
-        return yieldThreeValuesHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)
+        return this.yieldThreeValuesHandle = Binder.from(IRubyObject.class, ThreadContext.class, Block.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)
                 .foldVoid(SET_NORMAL)
                 .fold(FOLD_METHOD1)
                 .fold(FOLD_TYPE1)
@@ -159,4 +165,10 @@ public class CompiledIRBlockBody extends IRBlockBody {
             return null; // not reached
         }
     }
+
+    @Override
+    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
+        throw new UnsupportedOperationException("commonYieldPath not implemented");
+    }
+
 }

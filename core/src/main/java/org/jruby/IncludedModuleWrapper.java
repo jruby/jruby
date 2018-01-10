@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -35,8 +35,10 @@ package org.jruby;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 
@@ -224,5 +226,19 @@ public class IncludedModuleWrapper extends IncludedModule {
         if (method != null) return method.isNull() ? null : method;
 
         return null;
+    }
+
+    @Override
+    protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
+        // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
+        RubyModule module = origin;
+        RubyModule methodLoc = origin.getMethodLocation();
+
+        for (; module != methodLoc; module = module.getSuperClass()) {
+            module.addMethodSymbols(runtime, seen, ary, not, visibility);
+        }
+
+        // one last add for method location
+        module.addMethodSymbols(runtime, seen, ary, not, visibility);
     }
 }

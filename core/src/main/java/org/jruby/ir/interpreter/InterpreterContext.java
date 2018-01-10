@@ -2,13 +2,17 @@ package org.jruby.ir.interpreter;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Stack;
 import java.util.concurrent.Callable;
 
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
+import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -22,6 +26,11 @@ public class InterpreterContext {
     // much later after running compiler passes.  JIT will not use this field at all.
     protected Instr[] instructions;
 
+    // Contains pairs of values.  The first value is number of instrs in this range + number of instrs before
+    // this range.  The second number is the rescuePC.  getRescuePC(ipc) will walk this list and first odd value
+    // less than this value will be the rpc.
+    protected int[] rescueIPCs = null;
+
     // Cached computed fields
     private boolean hasExplicitCallProtocol;
     private boolean pushNewDynScope;
@@ -32,7 +41,6 @@ public class InterpreterContext {
 
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
     private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
-    private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
 
     public InterpreterEngine getEngine() {
         if (engine == null) {
@@ -50,7 +58,7 @@ public class InterpreterContext {
     }
 
     private InterpreterEngine engine;
-    public Callable<List<Instr>> instructionsCallback;
+    public final Callable<List<Instr>> instructionsCallback;
 
     private IRScope scope;
 
@@ -63,13 +71,14 @@ public class InterpreterContext {
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
+        this.instructionsCallback = null; // engine != null
     }
 
     public InterpreterContext(IRScope scope, Callable<List<Instr>> instructions) throws Exception {
-        this.instructionsCallback = instructions;
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
+        this.instructionsCallback = instructions;
     }
 
     private void retrieveFlags() {
@@ -85,13 +94,36 @@ public class InterpreterContext {
     private Instr[] prepareBuildInstructions(List<Instr> instructions) {
         int length = instructions.size();
         Instr[] linearizedInstrArray = instructions.toArray(new Instr[length]);
+
         for (int ipc = 0; ipc < length; ipc++) {
             Instr i = linearizedInstrArray[ipc];
 
             if (i instanceof LabelInstr) ((LabelInstr) i).getLabel().setTargetPC(ipc + 1);
         }
 
+        Stack<Integer> markers = new Stack();
+        rescueIPCs = new int[length];
+        int rpc = -1;
+
+        for (int ipc = 0; ipc < length; ipc++) {
+            Instr i = linearizedInstrArray[ipc];
+
+            if (i instanceof ExceptionRegionStartMarkerInstr) {
+                rpc = ((ExceptionRegionStartMarkerInstr) i).getFirstRescueBlockLabel().getTargetPC();
+                markers.push(rpc);
+            } else if (i instanceof ExceptionRegionEndMarkerInstr) {
+                markers.pop();
+                rpc = markers.isEmpty() ? -1 : markers.peek().intValue();
+            }
+
+            rescueIPCs[ipc] = rpc;
+        }
+
         return linearizedInstrArray;
+    }
+
+    public int[] getRescueIPCs() {
+        return rescueIPCs;
     }
 
     public int getRequiredArgsCount() {

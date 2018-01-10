@@ -421,7 +421,7 @@ formal_parameter : type variable_declarator_id {
 variable_declarator_id : IDENTIFIER {
      $$ = $1;
  } | variable_declarator_id LBRACK RBRACK {
-     // We know this is always preceded by 'type' production.
+     // We know this is always preceeded by 'type' production.
      $<Object>0 = new ArrayTypeNode($<TypeNode>0); 
      $$ = $1;
  }

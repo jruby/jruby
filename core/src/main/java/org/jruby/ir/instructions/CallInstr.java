@@ -10,18 +10,35 @@ import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
+import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
+import org.jruby.util.KeyValuePair;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /*
  * args field: [self, receiver, *args]
  */
 public class CallInstr extends CallBase implements ResultInstr {
     protected transient Variable result;
+
+    public static CallInstr createWithKwargs(IRScope scope, CallType callType, Variable result, String name,
+                                             Operand receiver, Operand[] args, Operand closure,
+                                             List<KeyValuePair<Operand, Operand>> kwargs) {
+        // FIXME: This is obviously total nonsense but this will be on an optimized path and we will not be constructing
+        // a new hash like this unless the eventual caller needs an ordinary hash.
+        Operand[] newArgs = new Operand[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 0, args.length);
+        newArgs[args.length] = new Hash(kwargs, true);
+
+        return create(scope, callType, result, name, receiver, newArgs, closure);
+    }
 
     public static CallInstr create(IRScope scope, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
         return create(scope, CallType.NORMAL, result, name, receiver, args, closure);

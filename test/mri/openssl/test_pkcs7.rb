@@ -3,32 +3,29 @@ require_relative 'utils'
 
 if defined?(OpenSSL::TestUtils)
 
-class OpenSSL::TestPKCS7 < Test::Unit::TestCase
+class OpenSSL::TestPKCS7 < OpenSSL::TestCase
   def setup
+    super
     @rsa1024 = OpenSSL::TestUtils::TEST_KEY_RSA1024
     @rsa2048 = OpenSSL::TestUtils::TEST_KEY_RSA2048
     ca = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=CA")
     ee1 = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=EE1")
     ee2 = OpenSSL::X509::Name.parse("/DC=org/DC=ruby-lang/CN=EE2")
 
-    now = Time.now
     ca_exts = [
       ["basicConstraints","CA:TRUE",true],
       ["keyUsage","keyCertSign, cRLSign",true],
       ["subjectKeyIdentifier","hash",false],
       ["authorityKeyIdentifier","keyid:always",false],
     ]
-    @ca_cert = issue_cert(ca, @rsa2048, 1, now, now+3600, ca_exts,
-                           nil, nil, OpenSSL::Digest::SHA1.new)
+    @ca_cert = issue_cert(ca, @rsa2048, 1, ca_exts, nil, nil)
     ee_exts = [
       ["keyUsage","Non Repudiation, Digital Signature, Key Encipherment",true],
       ["authorityKeyIdentifier","keyid:always",false],
       ["extendedKeyUsage","clientAuth, emailProtection, codeSigning",false],
     ]
-    @ee1_cert = issue_cert(ee1, @rsa1024, 2, now, now+1800, ee_exts,
-                           @ca_cert, @rsa2048, OpenSSL::Digest::SHA1.new)
-    @ee2_cert = issue_cert(ee2, @rsa1024, 3, now, now+1800, ee_exts,
-                           @ca_cert, @rsa2048, OpenSSL::Digest::SHA1.new)
+    @ee1_cert = issue_cert(ee1, @rsa1024, 2, ee_exts, @ca_cert, @rsa2048)
+    @ee2_cert = issue_cert(ee2, @rsa1024, 3, ee_exts, @ca_cert, @rsa2048)
   end
 
   def issue_cert(*args)
@@ -123,12 +120,6 @@ class OpenSSL::TestPKCS7 < Test::Unit::TestCase
   end
 
   def test_enveloped
-    if OpenSSL::OPENSSL_VERSION_NUMBER <= 0x0090704f
-      # PKCS7_encrypt() of OpenSSL-0.9.7d goes to SEGV.
-      # http://www.mail-archive.com/openssl-dev@openssl.org/msg17376.html
-      return
-    end
-
     certs = [@ee1_cert, @ee2_cert]
     cipher = OpenSSL::Cipher::AES.new("128-CBC")
     data = "aaaaa\nbbbbb\nccccc\n"

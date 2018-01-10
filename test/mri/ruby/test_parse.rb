@@ -535,9 +535,6 @@ class TestParse < Test::Unit::TestCase
     assert_nothing_raised(SyntaxError, bug) do
       assert_equal(sym, eval(':"foo\u{0}bar"'))
     end
-    assert_raise(SyntaxError) do
-      eval ':"foo\u{}bar"'
-    end
   end
 
   def test_parse_string
@@ -681,14 +678,14 @@ x = __ENCODING__
   def test_invalid_char
     bug10117 = '[ruby-core:64243] [Bug #10117]'
     invalid_char = /Invalid char `\\x01'/
-    x = 1
+    x = x = 1
     assert_in_out_err(%W"-e \x01x", "", [], invalid_char, bug10117)
     assert_syntax_error("\x01x", invalid_char, bug10117)
     assert_equal(nil, eval("\x04x"))
   end
 
   def test_literal_concat
-    x = "baz"
+    x = x = "baz"
     assert_equal("foobarbaz", eval('"foo" "bar#{x}"'))
   end
 
@@ -759,7 +756,7 @@ x = __ENCODING__
     $VERBOSE = true
     stderr = $stderr
     $stderr = StringIO.new("")
-    x = 1
+    x = x = 1
     assert_nil eval("x; nil")
     assert_nil eval("1+1; nil")
     assert_nil eval("TestParse; nil")
@@ -781,7 +778,7 @@ x = __ENCODING__
   end
 
   def test_assign_in_conditional
-    assert_raise(SyntaxError) do
+    assert_nothing_raised do
       eval <<-END, nil, __FILE__, __LINE__+1
         (x, y = 1, 2) ? 1 : 2
       END
@@ -825,7 +822,7 @@ x = __ENCODING__
     end
 
     assert_nothing_raised do
-      x = "bar"
+      x = x = "bar"
       eval <<-END, nil, __FILE__, __LINE__+1
         :"foo#{"x"}baz" ? 1 : 2
       END
@@ -869,9 +866,96 @@ x = __ENCODING__
 
   def test_named_capture_conflict
     a = 1
-    assert_warning(/named capture conflict/) {eval("a = 1; /(?<a>)/ =~ ''")}
+    assert_warning('') {eval("a = 1; /(?<a>)/ =~ ''")}
     a = "\u{3042}"
-    assert_warning(/#{a}/) {eval("#{a} = 1; /(?<#{a}>)/ =~ ''")}
+    assert_warning('') {eval("#{a} = 1; /(?<#{a}>)/ =~ ''")}
+  end
+
+  def test_rescue_in_command_assignment
+    bug = '[ruby-core:75621] [Bug #12402]'
+    all_assertions(bug) do |a|
+      a.for("lhs = arg") do
+        v = bug
+        v = raise(bug) rescue "ok"
+        assert_equal("ok", v)
+      end
+      a.for("lhs op_asgn arg") do
+        v = 0
+        v += raise(bug) rescue 1
+        assert_equal(1, v)
+      end
+      a.for("lhs[] op_asgn arg") do
+        v = [0]
+        v[0] += raise(bug) rescue 1
+        assert_equal([1], v)
+      end
+      a.for("lhs.m op_asgn arg") do
+        k = Struct.new(:m)
+        v = k.new(0)
+        v.m += raise(bug) rescue 1
+        assert_equal(k.new(1), v)
+      end
+      a.for("lhs::m op_asgn arg") do
+        k = Struct.new(:m)
+        v = k.new(0)
+        v::m += raise(bug) rescue 1
+        assert_equal(k.new(1), v)
+      end
+      a.for("lhs.C op_asgn arg") do
+        k = Struct.new(:C)
+        v = k.new(0)
+        v.C += raise(bug) rescue 1
+        assert_equal(k.new(1), v)
+      end
+      a.for("lhs::C op_asgn arg") do
+        v = Class.new
+        v::C ||= raise(bug) rescue 1
+        assert_equal(1, v::C)
+      end
+      a.for("lhs = command") do
+        v = bug
+        v = raise bug rescue "ok"
+        assert_equal("ok", v)
+      end
+      a.for("lhs op_asgn command") do
+        v = 0
+        v += raise bug rescue 1
+        assert_equal(1, v)
+      end
+      a.for("lhs[] op_asgn command") do
+        v = [0]
+        v[0] += raise bug rescue 1
+        assert_equal([1], v)
+      end
+      a.for("lhs.m op_asgn command") do
+        k = Struct.new(:m)
+        v = k.new(0)
+        v.m += raise bug rescue 1
+        assert_equal(k.new(1), v)
+      end
+      a.for("lhs::m op_asgn command") do
+        k = Struct.new(:m)
+        v = k.new(0)
+        v::m += raise bug rescue 1
+        assert_equal(k.new(1), v)
+      end
+      a.for("lhs.C op_asgn command") do
+        k = Struct.new(:C)
+        v = k.new(0)
+        v.C += raise bug rescue 1
+        assert_equal(k.new(1), v)
+      end
+      a.for("lhs::C op_asgn command") do
+        v = Class.new
+        v::C ||= raise bug rescue 1
+        assert_equal(1, v::C)
+      end
+    end
+  end
+
+  def test_yyerror_at_eol
+    assert_syntax_error("    0b", /\^/)
+    assert_syntax_error("    0b\n", /\^/)
   end
 
 =begin

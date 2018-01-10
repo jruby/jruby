@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyMarshal;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
@@ -243,7 +244,7 @@ public class Queue extends RubyObject implements DataType {
     }
 
     public static void setup(Ruby runtime) {
-        RubyClass cQueue = runtime.defineClass("Queue", runtime.getObject(), new ObjectAllocator() {
+        RubyClass cQueue = runtime.getThread().defineClassUnder("Queue", runtime.getObject(), new ObjectAllocator() {
 
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                 return new Queue(runtime, klass);
@@ -252,8 +253,10 @@ public class Queue extends RubyObject implements DataType {
         cQueue.undefineMethod("initialize_copy");
         cQueue.setReifiedClass(Queue.class);
         cQueue.defineAnnotatedMethods(Queue.class);
+        runtime.getObject().setConstant("Queue", cQueue);
 
-        runtime.defineClass("ClosedQueueError", runtime.getStopIteration(), runtime.getStopIteration().getAllocator());
+        RubyClass cClosedQueueError = cQueue.defineClassUnder("ClosedQueueError", runtime.getStopIteration(), runtime.getStopIteration().getAllocator());
+        runtime.getObject().setConstant("ClosedQueueError", cClosedQueueError);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -426,7 +429,7 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject marshal_dump(ThreadContext context) {
-        return ThreadLibrary.undumpable(context, this);
+        return RubyMarshal.undumpable(context, this);
     }
 
     @JRubyMethod

@@ -182,5 +182,13 @@ module Fiddle
     def test_no_memory_leak
       assert_no_memory_leak(%w[-W0 -rfiddle.so], '', '100_000.times {Fiddle::Handle.allocate}; GC.start', rss: true)
     end
+
+    if /cygwin|mingw|mswin/ =~ RUBY_PLATFORM
+      def test_fallback_to_ansi
+        k = Fiddle::Handle.new("kernel32.dll")
+        ansi = k["GetFileAttributesA"]
+        assert_equal(ansi, k["GetFileAttributes"], "should fallback to ANSI version")
+      end
+    end
   end
 end if defined?(Fiddle)

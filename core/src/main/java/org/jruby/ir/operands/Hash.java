@@ -107,7 +107,7 @@ public class Hash extends Operand {
         RubyHash hash;
         Iterator<KeyValuePair<Operand, Operand>> it = pairs.iterator();
 
-        if (isKWArgsHash && pairs.get(0).getKey() == Symbol.KW_REST_ARG_DUMMY) {
+        if (isKWArgsHash && pairs.get(0).getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
             hash = ((RubyHash) pairs.get(0).getValue().retrieve(context, self, currScope, currDynScope, temp)).dupFast(context);
             // Skip the first pair

@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -402,10 +402,43 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 newShared(runtime).casecmp19(context, ((RubySymbol) other).newShared(runtime));
     }
 
-    @JRubyMethod(name = {"=~", "match"})
+    @JRubyMethod(name = "casecmp?")
+    public IRubyObject casecmp_p(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.runtime;
+
+        return !(other instanceof RubySymbol) ? runtime.getNil() :
+            newShared(runtime).casecmp_p(context, ((RubySymbol) other).newShared(runtime));
+    }
+
+    @JRubyMethod(name = "=~")
     @Override
-    public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         return newShared(context.runtime).op_match19(context, other);
+    }
+
+    @JRubyMethod(name = "match")
+    public IRubyObject match_m(ThreadContext context, IRubyObject other, Block block) {
+        return newShared(context.runtime).match19(context, other, block);
+    }
+
+    @JRubyMethod(name = "match")
+    public IRubyObject match_m(ThreadContext context, IRubyObject other, IRubyObject pos, Block block) {
+        return newShared(context.runtime).match19(context, other, pos, block);
+    }
+
+    @JRubyMethod(name = "match", required = 1, rest = true)
+    public IRubyObject match_m(ThreadContext context, IRubyObject[] args, Block block) {
+        return newShared(context.runtime).match19(context, args, block);
+    }
+
+    @JRubyMethod(name = "match?")
+    public IRubyObject match_p(ThreadContext context, IRubyObject other) {
+        return newShared(context.runtime).match_p(context, other);
+    }
+
+    @JRubyMethod(name = "match?")
+    public IRubyObject match_p(ThreadContext context, IRubyObject other, IRubyObject pos) {
+        return newShared(context.runtime).match_p(context, other, pos);
     }
 
     @JRubyMethod(name = {"[]", "slice"})
@@ -738,9 +771,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public RubySymbol fastGetSymbol(String internedName, boolean hard) {
             RubySymbol symbol = null;
+            int hash = javaStringHashCode(internedName);
 
-            for (SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode()); e != null; e = e.next) {
-                if (isSymbolMatch(internedName, e)) {
+            for (SymbolEntry e = getEntryFromTable(symbolTable, hash); e != null; e = e.next) {
+                if (isSymbolMatch(internedName, hash, e)) {
                     if (hard) e.setHardReference();
                     symbol = e.symbol.get();
                     break;
@@ -764,10 +798,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         private static boolean isSymbolMatch(ByteList bytes, int hash, SymbolEntry entry) {
             return hash == entry.hash && bytes.equals(entry.bytes);
-        }
-
-        private static boolean isSymbolMatch(String internedName, SymbolEntry entry) {
-            return internedName == entry.name;
         }
 
         private RubySymbol createSymbol(final String name, final ByteList value, final int hash, boolean hard) {

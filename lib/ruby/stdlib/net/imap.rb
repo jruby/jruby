@@ -329,9 +329,7 @@ module Net
       end
       @receiver_thread.join
       synchronize do
-        unless @sock.closed?
-          @sock.close
-        end
+        @sock.close
       end
       raise e if e
     end
@@ -419,7 +417,7 @@ module Net
       send_command("AUTHENTICATE", auth_type) do |resp|
         if resp.instance_of?(ContinuationRequest)
           data = authenticator.process(resp.data.text.unpack("m")[0])
-          s = [data].pack("m").gsub(/\n/, "")
+          s = [data].pack("m0")
           send_string_data(s)
           put_string(CRLF)
         end
@@ -1007,8 +1005,8 @@ module Net
         if $1
           "&-"
         else
-          base64 = [$&.encode(Encoding::UTF_16BE)].pack("m")
-          "&" + base64.delete("=\n").tr("/", ",") + "-"
+          base64 = [$&.encode(Encoding::UTF_16BE)].pack("m0")
+          "&" + base64.delete("=").tr("/", ",") + "-"
         end
       }.force_encoding("ASCII-8BIT")
     end

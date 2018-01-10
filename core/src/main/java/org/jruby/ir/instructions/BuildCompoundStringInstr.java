@@ -24,14 +24,16 @@ import org.jruby.util.StringSupport;
 public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     final private Encoding encoding;
     final private boolean frozen;
+    final private boolean debug;
     final private String file;
     final private int line;
 
-    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding, boolean frozen, String file, int line) {
+    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding, boolean frozen, boolean debug, String file, int line) {
         super(Operation.BUILD_COMPOUND_STRING, result, pieces);
 
         this.encoding = encoding;
         this.frozen = frozen;
+        this.debug = debug;
         this.file = file;
         this.line = line;
     }
@@ -46,7 +48,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, frozen, file, line);
+        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, frozen, debug, file, line);
     }
 
     public boolean isSameEncodingAndCodeRange(RubyString str, StringLiteral newStr) {
@@ -64,7 +66,8 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     }
 
     public static BuildCompoundStringInstr decode(IRReaderDecoder d) {
-        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(), d.decodeBoolean(), d.decodeString(), d.decodeInt());
+        boolean debuggingFrozenStringLiteral = d.getCurrentScope().getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
+        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(), d.decodeBoolean(), debuggingFrozenStringLiteral, d.decodeString(), d.decodeInt());
     }
 
     @Override
@@ -82,7 +85,13 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
             }
         }
 
-        return frozen ? IRRuntimeHelpers.freezeLiteralString(context, str, file, line) : str;
+        if (frozen) {
+            if (debug) {
+                return IRRuntimeHelpers.freezeLiteralString(str, context, file, line);
+            }
+            return IRRuntimeHelpers.freezeLiteralString(str);
+        }
+        return str;
     }
 
     @Override

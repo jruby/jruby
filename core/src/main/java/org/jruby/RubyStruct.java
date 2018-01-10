@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -86,6 +86,7 @@ public class RubyStruct extends RubyObject {
         runtime.setStructClass(structClass);
         structClass.setClassIndex(ClassIndex.STRUCT);
         structClass.includeModule(runtime.getEnumerable());
+        structClass.setReifiedClass(RubyStruct.class);
         structClass.defineAnnotatedMethods(RubyStruct.class);
 
         return structClass;
@@ -112,7 +113,8 @@ public class RubyStruct extends RubyObject {
     }
 
     private RubyClass classOf() {
-        return getMetaClass() instanceof MetaClass ? getMetaClass().getSuperClass() : getMetaClass();
+        final RubyClass metaClass = getMetaClass();
+        return metaClass instanceof MetaClass ? metaClass.getSuperClass() : metaClass;
     }
 
     private void modify() {
@@ -128,7 +130,7 @@ public class RubyStruct extends RubyObject {
         IRubyObject[] values = this.values;
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            IRubyObject hash = context.safeRecurse(HASH_RECURSIVE, runtime, values[i], "hash", true);
+            IRubyObject hash = context.safeRecurse(HashRecursive.INSTANCE, runtime, values[i], "hash", true);
             h ^= RubyNumeric.num2long(hash);
         }
 
@@ -377,19 +379,21 @@ public class RubyStruct extends RubyObject {
         return context.nil;
     }
 
-    // NOTE: no longer used ... should it get deleted?
-    public static RubyArray members(IRubyObject recv, Block block) {
-        final Ruby runtime = recv.getRuntime();
-
-        final RubyArray member = __member__((RubyClass) recv);
+    static RubyArray members(RubyClass type) {
+        final RubyArray member = __member__(type);
         final int len = member.getLength();
-        RubyArray result = RubyArray.newBlankArray(runtime, len);
+        IRubyObject[] result = new IRubyObject[len];
 
         for ( int i = 0; i < len; i++ ) {
-            result.store(i, member.eltInternal(i));
+            result[i] = member.eltInternal(i);
         }
 
-        return result;
+        return RubyArray.newArrayNoCopy(type.getClassRuntime(), result);
+    }
+
+    @Deprecated // NOTE: no longer used ... should it get deleted?
+    public static RubyArray members(IRubyObject recv, Block block) {
+        return members((RubyClass) recv);
     }
 
     private static RubyArray __member__(RubyClass clazz) {
@@ -404,13 +408,14 @@ public class RubyStruct extends RubyObject {
         return __member__(classOf());
     }
 
+    @JRubyMethod(name = "members")
     public RubyArray members() {
-        return members19();
+        return members(classOf());
     }
 
-    @JRubyMethod(name = "members")
-    public RubyArray members19() {
-        return members19(classOf(), Block.NULL_BLOCK);
+    @Deprecated
+    public final RubyArray members19() {
+        return members();
     }
 
     @JRubyMethod
@@ -472,7 +477,7 @@ public class RubyStruct extends RubyObject {
         if (other == this) return context.tru;
 
         // recursion guard
-        return context.safeRecurse(EQUAL_RECURSIVE, other, this, "==", true);
+        return context.safeRecurse(EqualRecursive.INSTANCE, other, this, "==", true);
     }
 
     @JRubyMethod(name = "eql?", required = 1)
@@ -486,7 +491,7 @@ public class RubyStruct extends RubyObject {
         if (other == this) return context.tru;
 
         // recursion guard
-        return context.safeRecurse(EQL_RECURSIVE, other, this, "eql?", true);
+        return context.safeRecurse(EqlRecursive.INSTANCE, other, this, "eql?", true);
     }
 
     private static final byte[] STRUCT_BEG = { '#','<','s','t','r','u','c','t',' ' };
@@ -536,7 +541,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"inspect", "to_s"})
     public RubyString inspect(final ThreadContext context) {
         // recursion guard
-        return (RubyString) context.safeRecurse(INSPECT_RECURSIVE, this, this, "inspect", false);
+        return (RubyString) context.safeRecurse(InspectRecursive.INSTANCE, this, this, "inspect", false);
     }
 
     @JRubyMethod(name = {"to_a", "values"})
@@ -646,12 +651,11 @@ public class RubyStruct extends RubyObject {
         return values[newIdx] = value;
     }
 
-    // FIXME: This is copied code from RubyArray.  Both RE, Struct, and Array should share one impl
+    // NOTE: copied from RubyArray, both RE, Struct, and Array should share one impl
     @JRubyMethod(rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
-        final Ruby runtime = getRuntime();
         final int olen = values.length;
-        RubyArray result = runtime.newArray(args.length);
+        RubyArray result = getRuntime().newArray(args.length);
 
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
@@ -660,15 +664,16 @@ public class RubyStruct extends RubyObject {
                 continue;
             }
 
-            final int[] beglen;
+            final int[] begLen;
             if ( ! ( arg instanceof RubyRange ) ) {
+                // do result.append
             }
-            else if ( ( beglen = ((RubyRange) args[i]).begLenInt(olen, 0) ) == null ) {
+            else if ( ( begLen = ((RubyRange) args[i]).begLenInt(olen, 0) ) == null ) {
                 continue;
             }
             else {
-                final int beg = beglen[0];
-                final int len = beglen[1];
+                final int beg = begLen[0];
+                final int len = begLen[1];
                 for (int j = 0; j < len; j++) {
                     result.append( aref(j + beg) );
                 }
@@ -818,6 +823,9 @@ public class RubyStruct extends RubyObject {
     }
 
     private static class EqlRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
+
+        static final EqlRecursive INSTANCE = new EqlRecursive();
+
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject other, IRubyObject self, boolean recur) {
             if (recur) return context.tru;
@@ -831,9 +839,10 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    private static final EqlRecursive EQL_RECURSIVE = new EqlRecursive();
-
     private static class HashRecursive implements ThreadContext.RecursiveFunctionEx<Ruby> {
+
+        static final HashRecursive INSTANCE = new HashRecursive();
+
         @Override
         public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
             if (recur) return RubyFixnum.zero(runtime);
@@ -841,9 +850,10 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    private static final HashRecursive HASH_RECURSIVE = new HashRecursive();
-
     private static class EqualRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
+
+        private static final EqualRecursive INSTANCE = new EqualRecursive();
+
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject other, IRubyObject self, boolean recur) {
             if (recur) return context.tru;
@@ -857,13 +867,13 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    private static final EqualRecursive EQUAL_RECURSIVE = new EqualRecursive();
-
     private static class InspectRecursive implements ThreadContext.RecursiveFunctionEx<RubyStruct> {
+
+        private static final ThreadContext.RecursiveFunctionEx INSTANCE = new InspectRecursive();
+
         public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
             return self.inspectStruct(context, recur);
         }
     }
 
-    private static final ThreadContext.RecursiveFunctionEx INSPECT_RECURSIVE = new InspectRecursive();
 }

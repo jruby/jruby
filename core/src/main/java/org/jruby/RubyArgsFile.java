@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -46,7 +46,9 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -444,6 +446,28 @@ public class RubyArgsFile extends RubyObject {
         return recv;
     }
 
+    @JRubyMethod
+    public static IRubyObject each_codepoint(ThreadContext context, IRubyObject recv, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+
+        CallSite each_codepoint = sites(context).each_codepoint;
+        while (data.next_argv(context)) {
+            each_codepoint.call(context, recv, data.currentFile, block);
+        }
+
+        return context.nil;
+    }
+
+    @JRubyMethod
+    public static IRubyObject codepoints(ThreadContext context, IRubyObject recv, Block block) {
+        context.runtime.getWarnings().warn("ARGF#codepoints is deprecated; use #each_codepoint instead");
+
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
+
+        return each_codepoint(context, recv, block);
+    }
+
     /** Invoke a block for each line.
      *
      */
@@ -506,7 +530,7 @@ public class RubyArgsFile extends RubyObject {
 
     public static void argf_close(ThreadContext context, IRubyObject file) {
         if(file instanceof RubyIO) {
-            ((RubyIO)file).rbIoClose(context.runtime);
+            ((RubyIO) file).rbIoClose(context);
         } else {
             file.callMethod(context, "close");
         }
@@ -808,5 +832,9 @@ public class RubyArgsFile extends RubyObject {
         if (!data.next_argv(context)) throw context.runtime.newArgumentError(errorMessage);
 
         return (RubyIO) data.currentFile;
+    }
+
+    private static JavaSites.ArgfSites sites(ThreadContext context) {
+        return context.sites.Argf;
     }
 }

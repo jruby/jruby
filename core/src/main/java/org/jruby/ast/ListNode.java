@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -30,6 +30,7 @@
 package org.jruby.ast;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -40,7 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * In particular, f_arg production rule uses this to capture arg information for
  * the editor projects who want position info saved.
  */
-public class ListNode extends Node {
+public class ListNode extends Node implements Iterable<Node> {
     private static final Node[] EMPTY = new Node[0];
     private static final int INITIAL_SIZE = 4;
     private Node[] list;
@@ -173,5 +174,28 @@ public class ListNode extends Node {
     
     public Node get(int idx) {
         return list[idx];
+    }
+
+    @Override
+    public Iterator<Node> iterator() {
+        return new Iterator<Node>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < list.length;
+            }
+
+            @Override
+            public Node next() {
+                if (i >= list.length) throw new IndexOutOfBoundsException(String.valueOf(i));
+                return list[i++];
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException("remove");
+            }
+        };
     }
 }

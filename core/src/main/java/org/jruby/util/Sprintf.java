@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -599,7 +599,7 @@ public class Sprintf {
                     arg = args.getArg();
 
                     int c; int n;
-                    tmp = arg.checkStringType19();
+                    tmp = arg.checkStringType();
                     if (!tmp.isNil()) {
                         if (((RubyString)tmp).strLength() != 1) {
                             throw runtime.newArgumentError("%c requires a character");
@@ -700,10 +700,10 @@ public class Sprintf {
                     arg = args.getArg();
 
                     ClassIndex type = arg.getMetaClass().getClassIndex();
-                    if (type != ClassIndex.FIXNUM && type != ClassIndex.BIGNUM) {
+                    if (type != ClassIndex.INTEGER) {
                         switch(type) {
                         case FLOAT:
-                            arg = RubyNumeric.dbl2num(runtime, ((RubyFloat) arg).getValue());
+                            arg = RubyNumeric.dbl2ival(runtime, ((RubyFloat) arg).getValue());
                             break;
                         case STRING:
                             arg = ((RubyString) arg).stringToInum(0, true);
@@ -754,22 +754,26 @@ public class Sprintf {
                     // uses C-sprintf, in part, to format numeric output, while
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
-                    if (type == ClassIndex.FIXNUM) {
-                        negative = ((RubyFixnum)arg).getLongValue() < 0;
-                        zero = ((RubyFixnum)arg).getLongValue() == 0;
-                        if (negative && fchar == 'u') {
-                            bytes = getUnsignedNegativeBytes((RubyFixnum)arg);
+                    if (type == ClassIndex.INTEGER) {
+                        if (arg instanceof RubyFixnum) {
+                            negative = ((RubyFixnum) arg).getLongValue() < 0;
+                            zero = ((RubyFixnum) arg).getLongValue() == 0;
+                            if (negative && fchar == 'u') {
+                                bytes = getUnsignedNegativeBytes((RubyFixnum) arg);
+                            } else {
+                                bytes = getFixnumBytes((RubyFixnum) arg, base, sign, fchar == 'X');
+                            }
                         } else {
-                            bytes = getFixnumBytes((RubyFixnum)arg,base,sign,fchar=='X');
+                            negative = ((RubyBignum) arg).getValue().signum() < 0;
+                            zero = ((RubyBignum) arg).getValue().equals(BigInteger.ZERO);
+                            if (negative && fchar == 'u' && usePrefixForZero) {
+                                bytes = getUnsignedNegativeBytes((RubyBignum) arg);
+                            } else {
+                                bytes = getBignumBytes((RubyBignum) arg, base, sign, fchar == 'X');
+                            }
                         }
                     } else {
-                        negative = ((RubyBignum)arg).getValue().signum() < 0;
-                        zero = ((RubyBignum)arg).getValue().equals(BigInteger.ZERO);
-                        if (negative && fchar == 'u' && usePrefixForZero) {
-                            bytes = getUnsignedNegativeBytes((RubyBignum)arg);
-                        } else {
-                            bytes = getBignumBytes((RubyBignum)arg,base,sign,fchar=='X');
-                        }
+                        throw runtime.newTypeError(arg, runtime.getInteger());
                     }
                     if ((flags & FLAG_SHARP) != 0) {
                         if (!zero || usePrefixForZero) {
@@ -883,19 +887,10 @@ public class Sprintf {
                 case 'g': {
                     arg = args.getArg();
 
-                    if (!(arg instanceof RubyFloat)) {
-                        // FIXME: what is correct 'recv' argument?
-                        // (this does produce the desired behavior)
-                        if (usePrefixForZero) {
-                            arg = RubyKernel.new_float(arg,arg);
-                        } else {
-                            arg = RubyKernel.new_float19(arg,arg);
-                        }
-                    }
-                    double dval = ((RubyFloat)arg).getDoubleValue();
+                    double dval = RubyKernel.new_float(runtime.getFloat(), arg).getDoubleValue();
                     boolean nan = dval != dval;
                     boolean inf = dval == Double.POSITIVE_INFINITY || dval == Double.NEGATIVE_INFINITY;
-                    boolean negative = dval < 0.0d || (dval == 0.0d && (new Float(dval)).equals(new Float(-0.0)));
+                    boolean negative = dval < 0.0d || (dval == 0.0d && Double.doubleToLongBits(dval) == Double.doubleToLongBits(-0.0));
 
                     byte[] digits;
                     int nDigits = 0;
@@ -1560,18 +1555,24 @@ public class Sprintf {
 
     private static int round(byte[] bytes, int nDigits, int roundPos, boolean roundDown) {
         int next = roundPos + 1;
-        if (next >= nDigits || bytes[next] < '5' ||
-                // MRI rounds up on nnn5nnn, but not nnn5 --
-                // except for when they do
-                (roundDown && bytes[next] == '5' && next == nDigits - 1)) {
-            return nDigits;
-        }
+        if (next >= nDigits) return nDigits;
+        if (bytes[next] < '5') return nDigits;
+        if (roundDown && bytes[next] == '5' && next == nDigits - 1) return nDigits;
+
         if (roundPos < 0) { // "%.0f" % 0.99
             System.arraycopy(bytes,0,bytes,1,nDigits);
             bytes[0] = '1';
             return nDigits + 1;
         }
+        // round half to even
+        if (roundPos + 1 < nDigits && bytes[roundPos + 1] == '5') {
+            if ((bytes[roundPos] - '0') % 2 == 0) {
+                // round down
+                return nDigits;
+            }
+        }
         bytes[roundPos] += 1;
+        
         while (bytes[roundPos] > '9') {
             bytes[roundPos] = '0';
             roundPos--;

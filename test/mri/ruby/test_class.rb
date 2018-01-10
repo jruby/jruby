@@ -46,9 +46,9 @@ class TestClass < Test::Unit::TestCase
     assert_same(Class, c.class)
     assert_same(Object, c.superclass)
 
-    c = Class.new(Fixnum)
+    c = Class.new(Integer)
     assert_same(Class, c.class)
-    assert_same(Fixnum, c.superclass)
+    assert_same(Integer, c.superclass)
   end
 
   def test_00_new_basic
@@ -371,8 +371,30 @@ class TestClass < Test::Unit::TestCase
       end;
     }
     assert_raise_with_message(TypeError, /#{n}/) {
+      Class.new(c)
+    }
+    assert_raise_with_message(TypeError, /#{n}/) {
       m.module_eval "class #{n} < Class.new; end"
     }
+  end
+
+  define_method :test_invalid_reset_superclass do
+    class A; end
+    class SuperclassCannotBeReset < A
+    end
+    assert_equal A, SuperclassCannotBeReset.superclass
+
+    assert_raise_with_message(TypeError, /superclass mismatch/) {
+      class SuperclassCannotBeReset < String
+      end
+    }
+
+    assert_raise_with_message(TypeError, /superclass mismatch/, "[ruby-core:75446]") {
+      class SuperclassCannotBeReset < Object
+      end
+    }
+
+    assert_equal A, SuperclassCannotBeReset.superclass
   end
 
   def test_cloned_singleton_method_added
@@ -534,6 +556,14 @@ class TestClass < Test::Unit::TestCase
     ps.each{|p| p.call} # define xyzzy methods for each singleton classes
     ms.each{|m|
       assert_equal(m, m.xyzzy, "Bug #10871")
+    }
+  end
+
+  def test_namescope_error_message
+    m = Module.new
+    o = m.module_eval "class A\u{3042}; self; end.new"
+    assert_raise_with_message(TypeError, /A\u{3042}/) {
+      o::Foo
     }
   end
 

@@ -1,0 +1,1 @@
+fails:Symbol#upcase capitalizes all Unicode characters

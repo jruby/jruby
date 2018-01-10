@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -199,10 +199,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "cause")
     public IRubyObject cause(ThreadContext context) {
         assert cause != null;
-
-        if (cause == RubyBasicObject.UNDEF) return context.nil;
-
-        return cause;
+        return cause == RubyBasicObject.UNDEF ? context.nil : cause;
     }
 
     public void setCause(IRubyObject cause) {
@@ -211,7 +208,7 @@ public class RubyException extends RubyObject {
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
     public Object getCause() {
-        return cause;
+        return cause == RubyBasicObject.UNDEF ? null : cause;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {

@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -225,9 +225,12 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "birthtime")
     public IRubyObject birthtime() {
         checkInitialized();
-        FileTime btime = RubyFile.getBirthtimeWithNIO(file.absolutePath());
-        if (btime != null) return getRuntime().newTime(btime.toMillis());
-        return ctime();
+        FileTime btime = null;
+
+        if (file == null || (btime = RubyFile.getBirthtimeWithNIO(file.absolutePath())) == null) {
+            return ctime();
+        }
+        return getRuntime().newTime(btime.toMillis());
     }
 
     @JRubyMethod(name = "dev")
@@ -344,6 +347,9 @@ public class RubyFileStat extends RubyObject {
             buf.append("atime=").append(atime()).append(", ");
             buf.append("mtime=").append(mtime()).append(", ");
             buf.append("ctime=").append(ctime());
+            if (Platform.IS_BSD || Platform.IS_MAC) {
+                buf.append(", ").append("birthtime=").append(birthtime());
+            }
         }
         buf.append('>');
         

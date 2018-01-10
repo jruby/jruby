@@ -24,12 +24,22 @@ require 'jruby/compiler/java_signature'
 #
 class Class
   JClass = java.lang.Class
+  private_constant :JClass
 
   ##
   # Get an array of all known subclasses of this class. If recursive == true,
   # include all descendants.
   def subclasses(recursive = false)
-    JRuby.reference0(self).subclasses(recursive).to_a.freeze
+    subclasses = []
+    ObjectSpace.each_object(singleton_class) do |klass|
+      next if klass.equal? self
+      if recursive
+        subclasses << klass
+      else
+        subclasses << klass if klass.superclass.equal? self
+      end
+    end
+    subclasses
   end
 
   ##

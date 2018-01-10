@@ -1,9 +1,9 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -38,14 +38,22 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * method definition node.
  */
 public class DefnNode extends MethodDefNode implements INameNode {
+    public DefnNode(ISourcePosition position, ByteList name, ArgsNode argsNode,
+                    StaticScope scope, Node bodyNode, int endLine) {
+        super(position, name, argsNode, scope, bodyNode, endLine);
+    }
+
+    @Deprecated
     public DefnNode(ISourcePosition position, String name, ArgsNode argsNode,
             StaticScope scope, Node bodyNode, int endLine) {
-        super(position, name, argsNode, scope, bodyNode, endLine);
+        super(position, StringSupport.stringAsByteList(name), argsNode, scope, bodyNode, endLine);
     }
 
     public NodeType getNodeType() {

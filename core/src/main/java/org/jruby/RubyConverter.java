@@ -1,8 +1,8 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.eclipse.org/legal/epl-v10.html
  *
@@ -28,6 +28,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
+import org.jcodings.specific.ISO8859_1Encoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -96,8 +97,20 @@ public class RubyConverter extends RubyObject {
         NONASCII_TO_ASCII.put(UTF32BEEncoding.INSTANCE, UTF8Encoding.INSTANCE);
         NONASCII_TO_ASCII.put(UTF32LEEncoding.INSTANCE, UTF8Encoding.INSTANCE);
         NONASCII_TO_ASCII.put(
+                EncodingDB.getEncodings().get("CP50220".getBytes()).getEncoding(),
+                EncodingDB.getEncodings().get("CP51932".getBytes()).getEncoding());
+        NONASCII_TO_ASCII.put(
+                EncodingDB.getEncodings().get("CP50221".getBytes()).getEncoding(),
+                EncodingDB.getEncodings().get("CP51932".getBytes()).getEncoding());
+        NONASCII_TO_ASCII.put(EncodingDB.getEncodings().get("IBM037".getBytes()).getEncoding(), ISO8859_1Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(EncodingDB.getEncodings().get("UTF-16".getBytes()).getEncoding(), UTF8Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(EncodingDB.getEncodings().get("UTF-32".getBytes()).getEncoding(), UTF8Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(
                 EncodingDB.getEncodings().get("ISO-2022-JP".getBytes()).getEncoding(),
                 EncodingDB.getEncodings().get("stateless-ISO-2022-JP".getBytes()).getEncoding());
+        NONASCII_TO_ASCII.put(
+                EncodingDB.getEncodings().get("ISO-2022-JP-KDDI".getBytes()).getEncoding(),
+                EncodingDB.getEncodings().get("stateless-ISO-2022-JP-KDDI".getBytes()).getEncoding());
     }
 
     public static RubyClass createConverterClass(Ruby runtime) {
