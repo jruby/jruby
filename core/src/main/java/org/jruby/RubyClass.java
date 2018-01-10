@@ -1097,19 +1097,27 @@ public class RubyClass extends RubyModule {
         return subclasses(false);
     }
 
-    public synchronized Collection<RubyClass> subclasses(boolean includeDescendants) {
+    public Collection<RubyClass> subclasses(boolean includeDescendants) {
         Set<RubyClass> subclasses = this.subclasses;
         if (subclasses != null) {
-            Collection<RubyClass> mine = new ArrayList<>(subclasses);
-            if (includeDescendants) {
-                for (RubyClass klass: subclasses) {
-                    mine.addAll(klass.subclasses(includeDescendants));
-                }
-            }
+            Collection<RubyClass> mine = new ArrayList<>();
+            subclassesInner(mine, includeDescendants);
 
             return mine;
         }
         return Collections.EMPTY_LIST;
+    }
+
+    private void subclassesInner(Collection<RubyClass> mine, boolean includeDescendants) {
+        Set<RubyClass> subclasses = this.subclasses;
+        if (subclasses != null) {
+            mine.addAll(subclasses);
+            if (includeDescendants) {
+                for (RubyClass klass: subclasses) {
+                    klass.subclassesInner(mine, includeDescendants);
+                }
+            }
+        }
     }
 
     /**
@@ -1121,12 +1129,19 @@ public class RubyClass extends RubyModule {
      *
      * @param subclass The subclass to add
      */
-    public synchronized void addSubclass(RubyClass subclass) {
-        synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> subclasses = this.subclasses;
-            if (subclasses == null) this.subclasses = subclasses = new WeakHashSet<>(4);
-            subclasses.add(subclass);
+    public void addSubclass(RubyClass subclass) {
+        Set<RubyClass> subclasses = this.subclasses;
+        if (subclasses == null) {
+            // check again
+            synchronized (this) {
+                subclasses = this.subclasses;
+                if (subclasses == null) {
+                    this.subclasses = subclasses = Collections.synchronizedSet(new WeakHashSet<RubyClass>(4));
+                }
+            }
         }
+
+        subclasses.add(subclass);
     }
 
     /**
@@ -1134,13 +1149,11 @@ public class RubyClass extends RubyModule {
      *
      * @param subclass The subclass to remove
      */
-    public synchronized void removeSubclass(RubyClass subclass) {
-        synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> subclasses = this.subclasses;
-            if (subclasses == null) return;
+    public void removeSubclass(RubyClass subclass) {
+        Set<RubyClass> subclasses = this.subclasses;
+        if (subclasses == null) return;
 
-            subclasses.remove(subclass);
-        }
+        subclasses.remove(subclass);
     }
 
     /**
@@ -1149,25 +1162,21 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to remove
      * @param newSubclass The subclass to replace it with
      */
-    public synchronized void replaceSubclass(RubyClass subclass, RubyClass newSubclass) {
-        synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> subclasses = this.subclasses;
-            if (subclasses == null) return;
+    public void replaceSubclass(RubyClass subclass, RubyClass newSubclass) {
+        Set<RubyClass> subclasses = this.subclasses;
+        if (subclasses == null) return;
 
-            subclasses.remove(subclass);
-            subclasses.add(newSubclass);
-        }
+        subclasses.remove(subclass);
+        subclasses.add(newSubclass);
     }
 
     @Override
     public void becomeSynchronized() {
         // make this class and all subclasses sync
-        synchronized (runtime.getHierarchyLock()) {
-            super.becomeSynchronized();
-            Set<RubyClass> subclasses = this.subclasses;
-            if (subclasses != null) {
-                for (RubyClass subclass : subclasses) subclass.becomeSynchronized();
-            }
+        super.becomeSynchronized();
+        Set<RubyClass> subclasses = this.subclasses;
+        if (subclasses != null) {
+            for (RubyClass subclass : subclasses) subclass.becomeSynchronized();
         }
     }
 
@@ -1187,11 +1196,9 @@ public class RubyClass extends RubyModule {
     public void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
 
-        synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> subclasses = this.subclasses;
-            if (subclasses != null) {
-                for (RubyClass subclass : subclasses) subclass.invalidateCacheDescendants();
-            }
+        Set<RubyClass> subclasses = this.subclasses;
+        if (subclasses != null) {
+            for (RubyClass subclass : subclasses) subclass.invalidateCacheDescendants();
         }
     }
 
@@ -1207,12 +1214,7 @@ public class RubyClass extends RubyModule {
         if (subclasses == null || subclasses.isEmpty()) return;
 
         // cascade into subclasses
-        synchronized (runtime.getHierarchyLock()) {
-            subclasses = this.subclasses;
-            if (subclasses != null) {
-                for (RubyClass subclass : subclasses) subclass.addInvalidatorsAndFlush(invalidators);
-            }
-        }
+        for (RubyClass subclass : subclasses) subclass.addInvalidatorsAndFlush(invalidators);
     }
 
     public final Ruby getClassRuntime() {
@@ -2325,7 +2327,7 @@ public class RubyClass extends RubyModule {
     protected final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
-    private Set<RubyClass> subclasses;
+    private volatile Set<RubyClass> subclasses;
     public static final int CS_IDX_INITIALIZE = 0;
     public enum CS_NAMES {
         INITIALIZE("initialize");
