@@ -1430,9 +1430,29 @@ public class RubyHash extends RubyObject implements Map {
         return block.isGiven() ? each_keyCommon(context, block) : enumeratorizeWithSize(context, this, "each_key", enumSizeFn());
     }
 
+    @JRubyMethod(name = "transform_keys")
+    public IRubyObject transform_keys(final ThreadContext context, final Block block) {
+        return ((RubyHash)dup()).transform_keys_bang(context, block);
+    }
+
     @JRubyMethod(name = "transform_values")
     public IRubyObject transform_values(final ThreadContext context, final Block block) {
         return ((RubyHash)dup()).transform_values_bang(context, block);
+    }
+
+    @JRubyMethod(name = "transform_keys!")
+    public IRubyObject transform_keys_bang(final ThreadContext context, final Block block) {
+        if (block.isGiven()) {
+            testFrozen("Hash");
+            RubyHash bak = (RubyHash)dup();
+            rb_clear();
+            bak.keys().forEach((k) -> {
+                op_aset(context, block.yield(context, (IRubyObject)k), bak.op_aref(context, (IRubyObject)k));
+            });
+            return this;
+        }
+
+        return enumeratorizeWithSize(context, this, "transform_keys!", enumSizeFn());
     }
 
     @JRubyMethod(name = "transform_values!")
