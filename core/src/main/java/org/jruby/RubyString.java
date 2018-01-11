@@ -2129,7 +2129,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int end = p + byteList.getRealSize();
         RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
         Encoding resultEnc = runtime.getDefaultInternalEncoding();
-        boolean isUnicode = StringSupport.isUnicode(enc);
+        boolean isUnicode = enc.isUnicode();
         boolean asciiCompat = enc.isAsciiCompatible();
 
 
@@ -2562,7 +2562,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int range = begin + value.getRealSize();
         final Matcher matcher = prepared.matcher(value.getUnsafeBytes(), begin, range);
 
-        if (RubyRegexp.matcherSearch(runtime, matcher, begin, range, Option.NONE) >= 0) {
+        if (RubyRegexp.matcherSearch(context, matcher, begin, range, Option.NONE) >= 0) {
             repl = RubyRegexp.regsub19(context, repl, this, matcher, pattern);
             RubyMatchData match = RubyRegexp.createMatchData(context, this, matcher, pattern);
             match.regexp = regexp;
@@ -2570,7 +2570,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
             return subBangCommon(context, matcher.getBegin(), matcher.getEnd(), repl, repl.flags);
         }
-        return context.setBackRef(runtime.getNil());
+        return context.setBackRef(context.nil);
     }
 
     private IRubyObject subBangCommon(ThreadContext context, final int beg, final int end,
@@ -2709,7 +2709,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         final Matcher matcher = prepared.matcher(spBytes, spBeg, spBeg + spLen);
 
-        int beg = RubyRegexp.matcherSearch(runtime, matcher, spBeg, spBeg + spLen, Option.NONE);
+        int beg = RubyRegexp.matcherSearch(context, matcher, spBeg, spBeg + spLen, Option.NONE);
         if (beg < 0) {
             if (useBackref) context.setBackRef(context.nil);
             return bang ? context.nil : strDup(runtime); /* bang: true, no match, no substitution */
@@ -2758,7 +2758,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
             cp = spBeg + offset;
             if (offset > spLen) break;
-            beg = RubyRegexp.matcherSearch(runtime, matcher, cp, spBeg + spLen, Option.NONE);
+            beg = RubyRegexp.matcherSearch(context, matcher, cp, spBeg + spLen, Option.NONE);
         } while (beg >= 0);
 
         if (spLen > offset) dest.cat(spBytes, cp, spLen - offset, str_enc);
@@ -3690,7 +3690,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         int ptr = value.getBegin();
         int len = value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
 
         RubyArray result = runtime.newArray();
         Encoding enc = value.getEncoding();

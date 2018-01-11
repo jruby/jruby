@@ -18,7 +18,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
+import static org.jruby.ir.IRFlags.REQUIRES_CLASS;
 
 public class RuntimeHelperCall extends NOperandResultBaseInstr {
     public enum Methods {
@@ -60,7 +60,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         // FIXME: Impl of this helper uses frame class.  Determine if we can do this another way.
         if (helperMethod == Methods.IS_DEFINED_SUPER) {
             modifiedScope = true;
-            scope.getFlags().add(REQUIRES_FRAME);
+            scope.getFlags().add(REQUIRES_CLASS);
         }
 
         return modifiedScope;

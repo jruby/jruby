@@ -61,6 +61,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
@@ -174,12 +175,10 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -266,6 +265,7 @@ public final class Ruby implements Constantizable {
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
+        this.caches             = new Caches();
 
         Random myRandom;
         try {
@@ -292,7 +292,7 @@ public final class Ruby implements Constantizable {
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES.ordinal() * MethodNames.values().length - 1);
 
-        checkpointInvalidator = OptoFactory.newConstantInvalidator();
+        checkpointInvalidator = OptoFactory.newConstantInvalidator(this);
 
         if (config.isObjectSpaceEnabled()) {
             objectSpacer = ENABLED_OBJECTSPACE;
@@ -311,6 +311,7 @@ public final class Ruby implements Constantizable {
         this.beanManager.register(configBean);
         this.beanManager.register(parserStats);
         this.beanManager.register(runtimeBean);
+        this.beanManager.register(caches);
     }
 
     void reinitialize(boolean reinitCore) {
@@ -891,6 +892,15 @@ public final class Ruby implements Constantizable {
     }
 
     /**
+     * Get the Caches management object.
+     *
+     * @return the current runtime's Caches management object
+     */
+    public Caches getCaches() {
+        return caches;
+    }
+
+    /**
      * @deprecated use #newInstance()
      */
     public static Ruby getDefaultInstance() {
@@ -1429,6 +1439,16 @@ public final class Ruby implements Constantizable {
             setDefaultExternalEncoding(availableEncoding);
         }
 
+        // Filesystem should always have a value
+        if (Platform.IS_WINDOWS) {
+            encoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
+            Encoding filesystemEncoding = encodingService.loadEncoding(ByteList.create(encoding));
+            if (filesystemEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
+            setDefaultFilesystemEncoding(filesystemEncoding);
+        } else {
+            setDefaultFilesystemEncoding(getDefaultExternalEncoding());
+        }
+
         encoding = config.getInternalEncoding();
         if (encoding != null && !encoding.equals("")) {
             Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
@@ -1586,7 +1606,7 @@ public final class Ruby implements Constantizable {
         syntaxError = defineClassIfAllowed("SyntaxError", scriptError);
         loadError = defineClassIfAllowed("LoadError", scriptError);
         notImplementedError = defineClassIfAllowed("NotImplementedError", scriptError);
-        securityError = defineClassIfAllowed("SecurityError", standardError);
+        securityError = defineClassIfAllowed("SecurityError", exceptionClass);
         noMemoryError = defineClassIfAllowed("NoMemoryError", exceptionClass);
         regexpError = defineClassIfAllowed("RegexpError", standardError);
         interruptedRegexpError = defineClassIfAllowed("InterruptedRegexpError", regexpError); // Proposal to RubyCommons for interrupting Regexps
@@ -1710,7 +1730,6 @@ public final class Ruby implements Constantizable {
         addLazyBuiltin("bigdecimal.jar", "bigdecimal", "org.jruby.ext.bigdecimal.BigDecimalLibrary");
         addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.ext.io.wait.IOWaitLibrary");
         addLazyBuiltin("etc.jar", "etc", "org.jruby.ext.etc.EtcLibrary");
-        addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.weakref.WeakRefLibrary");
         addLazyBuiltin("timeout.rb", "timeout", "org.jruby.ext.timeout.Timeout");
         addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.SocketLibrary");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.ext.rbconfig.RbConfigLibrary");
@@ -2789,6 +2808,14 @@ public final class Ruby implements Constantizable {
         this.defaultExternalEncoding = defaultExternalEncoding;
     }
 
+    public Encoding getDefaultFilesystemEncoding() {
+        return defaultFilesystemEncoding;
+    }
+
+    public void setDefaultFilesystemEncoding(Encoding defaultFilesystemEncoding) {
+        this.defaultFilesystemEncoding = defaultFilesystemEncoding;
+    }
+
     /**
      * Get the default java.nio.charset.Charset for the current default internal encoding.
      */
@@ -2990,11 +3017,22 @@ public final class Ruby implements Constantizable {
 
     public void addBoundMethod(String className, String methodName, String rubyName) {
         Map<String, String> javaToRuby = boundMethods.get(className);
-        if (javaToRuby == null) {
-            javaToRuby = new HashMap<String, String>();
-            boundMethods.put(className, javaToRuby);
-        }
+        if (javaToRuby == null) boundMethods.put(className, javaToRuby = new HashMap<>());
         javaToRuby.put(methodName, rubyName);
+    }
+
+    public void addBoundMethodsPacked(String className, String packedTuples) {
+        String[] names = Helpers.SEMICOLON_PATTERN.split(packedTuples);
+        for (int i = 0; i < names.length; i += 2) {
+            addBoundMethod(className, names[i], names[i+1]);
+        }
+    }
+
+    public void addSimpleBoundMethodsPacked(String className, String packedNames) {
+        String[] names = Helpers.SEMICOLON_PATTERN.split(packedNames);
+        for (String name : names) {
+            addBoundMethod(className, name, name);
+        }
     }
 
     public Map<String, Map<String, String>> getBoundMethods() {
@@ -4365,7 +4403,7 @@ public final class Ruby implements Constantizable {
     }
 
     private Invalidator addConstantInvalidator(String constantName) {
-        Invalidator invalidator = OptoFactory.newConstantInvalidator();
+        final Invalidator invalidator = OptoFactory.newConstantInvalidator(this);
         constantNameInvalidators.putIfAbsent(constantName, invalidator);
 
         // fetch the invalidator back from the ConcurrentHashMap to ensure that
@@ -4958,6 +4996,9 @@ public final class Ruby implements Constantizable {
     // Compilation
     private final JITCompiler jitCompiler;
 
+    // Cache invalidation
+    private final Caches caches;
+
     // Note: this field and the following static initializer
     // must be located be in this order!
     private volatile static boolean securityRestricted = false;
@@ -4982,7 +5023,7 @@ public final class Ruby implements Constantizable {
 
     private LoadService loadService;
 
-    private Encoding defaultInternalEncoding, defaultExternalEncoding;
+    private Encoding defaultInternalEncoding, defaultExternalEncoding, defaultFilesystemEncoding;
     private EncodingService encodingService;
 
     private GlobalVariables globalVariables = new GlobalVariables(this);
@@ -5190,4 +5231,5 @@ public final class Ruby implements Constantizable {
                     + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
         }
     }
+
 }

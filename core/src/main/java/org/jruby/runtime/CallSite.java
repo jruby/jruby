@@ -202,7 +202,7 @@ public abstract class CallSite {
      * @param block the block argument to pass
      * @return the result of the call
      */
-    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg3, Block block);
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
 
     /**
      * Call the site's method against the target object passing one argument and

@@ -1,5 +1,6 @@
 package org.jruby;
 
+@Deprecated
 public enum CompatVersion {
 
     @Deprecated RUBY1_8,
@@ -8,14 +9,17 @@ public enum CompatVersion {
     @Deprecated RUBY2_1,
     @Deprecated BOTH;
 
+    @Deprecated
     public boolean is1_9() {
         return this == RUBY1_9 || this == RUBY2_0 || this == RUBY2_1;
     }
 
+    @Deprecated
     public boolean is2_0() {
         return this == RUBY2_0 || this == RUBY2_1;
     }
 
+    @Deprecated
     public static CompatVersion getVersionFromString(String compatString) {
         if (compatString.equalsIgnoreCase("RUBY1_8")) {
             return CompatVersion.RUBY1_8;
@@ -37,7 +41,8 @@ public enum CompatVersion {
             return null;
         }
     }
-    
+
+    @Deprecated
     public static boolean shouldBindMethod(CompatVersion runtimeVersion, CompatVersion methodVersion) {
         if (runtimeVersion == RUBY1_8) return methodVersion == RUBY1_8 || methodVersion == BOTH;
         if (runtimeVersion == RUBY1_9) return methodVersion == RUBY1_9 || methodVersion == BOTH;

@@ -26,6 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.opto;
 
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.cli.Options;
@@ -48,8 +49,8 @@ public class OptoFactory {
         return OptoFactory.CONSTANT_FACTORY.create(type, object);
     }
 
-    public static Invalidator newConstantInvalidator() {
-        return new SwitchPointInvalidator();
+    public static Invalidator newConstantInvalidator(Ruby runtime) {
+        return new ConstantInvalidator(runtime.getCaches());
     }
 
     private static Boolean indyEnabled() {
@@ -72,10 +73,6 @@ public class OptoFactory {
             }
         }
         return new GenerationInvalidator(module);
-    }
-
-    private static Boolean indyConstants() {
-        return Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
     }
 
     private static void disableIndy() {

@@ -2053,9 +2053,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if (fptr.fd() == null) return context.nil;
             final Ruby runtime = context.runtime;
 
+            fptr.finalizeFlush(context, false);
+
             // interrupt waiting threads
             fptr.interruptBlockingThreads(context);
-            fptr.waitForBlockingThreads(context);
+            try {
+                fptr.unlock();
+                fptr.waitForBlockingThreads(context);
+            } finally {
+                fptr.lock();
+            }
+
             fptr.cleanup(runtime, false);
 
             if (fptr.getProcess() != null) {
@@ -3459,20 +3467,31 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         Ruby runtime = context.runtime;
 
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
-        IRubyObject io = openKeyArgs(context, recv, args, opt);
+        RubyIO io = (RubyIO) openKeyArgs(context, recv, args, opt);
         if (io.isNil()) return io;
 
-        // io_s_foreach
+        // replace arg with coerced opts
+        if (!opt.isNil()) args[args.length - 1] = opt;
 
-        IRubyObject[] methodArguments = processReadlinesMethodArguments(context, args);
-
+        // io_s_foreach, roughly
         try {
-            IRubyObject str;
-            while (!(str = ((RubyIO)io).gets(context, methodArguments)).isNil()) {
-                block.yield(context, str);
+            switch (args.length) {
+                case 1:
+                    Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), block);
+                    break;
+                case 2:
+                    Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], block);
+                    break;
+                case 3:
+                    Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], args[2], block);
+                    break;
+                case 4:
+                    Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], args[2], args[3], block);
+                    break;
             }
         } finally {
-            ((RubyIO)io).close();
+            io.close();
+            context.setLastLine(context.nil);
             runtime.getGlobalVariables().clear("$_");
         }
 
@@ -3813,25 +3832,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IRubyObject io = openKeyArgs(context, recv, args, opt);
         if (io.isNil()) return io;
 
-        IRubyObject[] methodArguments = processReadlinesMethodArguments(context, args);
+        IRubyObject[] methodArguments = Arrays.copyOfRange(args, 1, args.length);
+
+        // replace with coerced, so we don't coerce again later
+        if (!opt.isNil()) methodArguments[methodArguments.length - 1] = opt;
 
         return readlinesCommon(context, (RubyIO) io, methodArguments);
-    }
-
-    private static IRubyObject[] processReadlinesMethodArguments(ThreadContext context, IRubyObject[] args) {
-        int count = args.length;
-        IRubyObject[] methodArguments = IRubyObject.NULL_ARRAY;
-
-        RespondToCallSite respond_to_to_int = sites(context).respond_to_to_int;
-        if(count >= 3 && (args[2] instanceof RubyFixnum || respond_to_to_int.respondsTo(context, args[2], args[2]))) {
-            methodArguments = new IRubyObject[]{args[1], args[2]};
-        } else if (count >= 2 && (args[1] instanceof RubyFixnum || respond_to_to_int.respondsTo(context, args[1], args[1]))) {
-            methodArguments = new IRubyObject[]{args[1]};
-        } else if (count >= 2 && !(args[1] instanceof RubyHash))  {
-            methodArguments = new IRubyObject[]{args[1]};
-        }
-
-        return methodArguments;
     }
 
     private static RubyArray readlinesCommon(ThreadContext context, RubyIO file, IRubyObject[] newArguments) {

@@ -11,7 +11,7 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 
-import static org.jruby.ir.IRFlags.USES_BACKREF_OR_LASTLINE;
+import static org.jruby.ir.IRFlags.REQUIRES_BACKREF;
 
 public class MatchInstr extends CallInstr implements FixedArityInstr {
     private static final ByteList MATCH = new ByteList(new byte[] {'=', '~'});
@@ -27,7 +27,7 @@ public class MatchInstr extends CallInstr implements FixedArityInstr {
         super.computeScopeFlags(scope);
         // $~ is implicitly used since Backref and NthRef operands
         // access it and $~ is not made explicit in those operands.
-        scope.getFlags().add(USES_BACKREF_OR_LASTLINE);
+        scope.getFlags().add(REQUIRES_BACKREF);
         return true;
     }
 

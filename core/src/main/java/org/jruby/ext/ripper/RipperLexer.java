@@ -98,8 +98,15 @@ public class RipperLexer extends LexingCommon {
     public boolean ignoreNextScanEvent = false;
 
     protected void ambiguousOperator(String op, String syn) {
-        warn("`" + op + "' after local variable or literal is interpreted as binary operator");
-        warn("even though it seems like " + syn);
+        parser.dispatch("on_operator_ambiguous", getRuntime().newSymbol(op), getRuntime().newString(syn));
+    }
+
+    protected boolean onMagicComment(String name, ByteList value) {
+        boolean found = super.onMagicComment(name, value);
+
+        parser.dispatch("on_magic_comment", getRuntime().newString(name), getRuntime().newString(value));
+
+        return found;
     }
 
     private int getFloatToken(String number, int suffix) {
@@ -487,14 +494,6 @@ public class RipperLexer extends LexingCommon {
             begin = '\0';
         }
 
-        // consume spaces here to record them as part of token
-        int w = nextc();
-        while (Character.isWhitespace(w)) {
-            value = value + (char) w;
-            w = nextc();
-        }
-        pushback(w);
-        
         switch (c) {
         case 'Q':
             lex_strterm = new StringTerm(str_dquote, begin ,end);
@@ -2346,18 +2345,7 @@ public class RipperLexer extends LexingCommon {
     // This is different than MRI in that we return a boolean since we only care whether it was added
     // or not.  The MRI version returns the byte supplied which is never used as a value.
     public boolean tokenAddMBC(int first_byte, ByteList buffer) {
-        int length = precise_mbclen();
-
-        if (length <= 0) {
-            compile_error("invalid multibyte char (" + getEncoding() + ")");
-            return false;
-        }
-
-        tokAdd(first_byte, buffer);                  // add first byte since we have it.
-        lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
-        if (length > 1) tokCopy(length - 1, buffer); // copy next n bytes over.
-
-        return true;
+        return tokadd_mbchar(first_byte, buffer);
     }
 
     // MRI: parser_tokadd_utf8 sans regexp literal parsing

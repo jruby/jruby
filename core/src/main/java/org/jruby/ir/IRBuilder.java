@@ -1378,7 +1378,7 @@ public class IRBuilder {
         Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
 
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), classVar, NullBlock.INSTANCE));
-        newIRBuilder(manager, body).buildModuleOrClassBody(classNode.getBodyNode(), classNode.getLine());
+        newIRBuilder(manager, body).buildModuleOrClassBody(classNode.getBodyNode(), classNode.getLine(), classNode.getEndLine());
         return processBodyResult;
     }
 
@@ -1393,7 +1393,7 @@ public class IRBuilder {
 
         // sclass bodies inherit the block of their containing method
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, scope.getYieldClosureVariable()));
-        newIRBuilder(manager, body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine());
+        newIRBuilder(manager, body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine(), sclassNode.getEndLine());
         return processBodyResult;
     }
 
@@ -3168,7 +3168,7 @@ public class IRBuilder {
         Variable moduleVar = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
 
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
-        newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine());
+        newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine(), moduleNode.getEndLine());
         return processBodyResult;
     }
 
@@ -3470,7 +3470,7 @@ public class IRBuilder {
     private static final ByteList _END_ = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_'});
 
     public Operand buildPostExe(PostExeNode postExeNode) {
-        IRScope topLevel = scope.getTopLevelScope();
+        IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
 
         IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), _END_, true);
@@ -3486,7 +3486,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        IRScope topLevel = scope.getTopLevelScope();
+        IRScope topLevel = scope.getRootLexicalScope();
         IRClosure beginClosure = new IRFor(manager, scope, preExeNode.getLine(), topLevel.getStaticScope(),
                 Signature.from(preExeNode), IRFor._BEGIN_);
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
@@ -4084,9 +4084,9 @@ public class IRBuilder {
         return newArgs;
     }
 
-    private InterpreterContext buildModuleOrClassBody(Node bodyNode, int linenumber) {
+    private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), linenumber));
+            addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine));
         }
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -4095,11 +4095,10 @@ public class IRBuilder {
         Operand bodyReturnValue = build(bodyNode);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // FIXME: We also should add a line number instruction so that backtraces
-            // inside the trace function get the correct line. Unfortunately, we don't
-            // have one here and we can't do it dynamically like TraceInstr does.
-            // See https://github.com/jruby/jruby/issues/4051
-            addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), -1));
+            // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
+            // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
+            addInstr(manager.newLineNumber(endLine));
+            addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine));
         }
 
         addInstr(new ReturnInstr(bodyReturnValue));

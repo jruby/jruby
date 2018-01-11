@@ -30,12 +30,14 @@ package org.jruby.anno;
 
 import java.util.List;
 import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Visibility;
 
 public abstract class TypePopulator {
@@ -88,6 +90,11 @@ public abstract class TypePopulator {
             assert clazz == this.clazz : "populator for " + this.clazz + " used for " + clazz;
 
             // fallback on non-pregenerated logic
+
+            // populate method index; this is done statically in generated code
+            AnnotationBinder.populateMethodIndex(clumper.readGroups, MethodIndex::addMethodReadFieldsPacked);
+            AnnotationBinder.populateMethodIndex(clumper.writeGroups, MethodIndex::addMethodWriteFieldsPacked);
+
             final Ruby runtime = target.getRuntime();
             final MethodFactory methodFactory = MethodFactory.createFactory(runtime.getJRubyClassLoader());
 
@@ -95,18 +102,18 @@ public abstract class TypePopulator {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
                 target.defineAnnotatedMethod(name, methods, methodFactory);
-                addBoundMethodsUnlessOmited(runtime, name, methods);
+                addBoundMethodsUnlessOmitted(runtime, name, methods);
             }
 
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
                 target.defineAnnotatedMethod(name, methods, methodFactory);
-                addBoundMethodsUnlessOmited(runtime, name, methods);
+                addBoundMethodsUnlessOmitted(runtime, name, methods);
             }
         }
 
-        private static void addBoundMethodsUnlessOmited(final Ruby runtime, final String name, final List<JavaMethodDescriptor> methods) {
+        private static void addBoundMethodsUnlessOmitted(final Ruby runtime, final String name, final List<JavaMethodDescriptor> methods) {
             final int size = methods.size();
             if ( size == 1 ) {
                 final JavaMethodDescriptor desc = methods.get(0);

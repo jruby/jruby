@@ -66,7 +66,7 @@ public class BuildBackrefInstr extends NoOperandResultBaseInstr {
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.REQUIRES_FRAME);
+        scope.getFlags().add(IRFlags.REQUIRES_BACKREF);
 
         return true;
     }

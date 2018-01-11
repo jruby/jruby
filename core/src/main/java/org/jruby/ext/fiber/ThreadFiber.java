@@ -37,8 +37,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getClass("Fiber")); // FIXME: getFiber()
 
-        rootFiber.data = new FiberData(new FiberQueue(runtime), null, rootFiber);
-        rootFiber.thread = context.getThread();
+        RubyThread currentThread = context.getThread();
+        rootFiber.data = new FiberData(new FiberQueue(runtime), currentThread, rootFiber);
+        rootFiber.thread = currentThread;
         context.setRootFiber(rootFiber);
     }
     

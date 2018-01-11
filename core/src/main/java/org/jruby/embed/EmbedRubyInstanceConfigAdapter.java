@@ -35,7 +35,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
-import org.jruby.CompatVersion;
 import org.jruby.Profile;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
@@ -164,10 +163,6 @@ public interface EmbedRubyInstanceConfigAdapter {
      * run in the process.
      */
     public void setRunRubyInProcess(boolean inprocess);
-
-    public CompatVersion getCompatVersion();
-
-    public void setCompatVersion(CompatVersion version);
 
     /**
      * Tests whether the Object Space is enabled or not.
@@ -451,4 +446,10 @@ public interface EmbedRubyInstanceConfigAdapter {
      * @return version information.
      */
     public String getSupportedRubyVersion();
+
+    @Deprecated
+    public org.jruby.CompatVersion getCompatVersion();
+
+    @Deprecated
+    public void setCompatVersion(org.jruby.CompatVersion version);
 }

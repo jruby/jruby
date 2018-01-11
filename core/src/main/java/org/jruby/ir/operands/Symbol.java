@@ -9,7 +9,7 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
-public class Symbol extends ImmutableLiteral {
+public class Symbol extends ImmutableLiteral implements Stringable {
     public static final Symbol KW_REST_ARG_DUMMY = new Symbol(new ByteList());
 
     private final ByteList bytes;

@@ -1575,7 +1575,7 @@ primary         : literal
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($5);
 
-                    $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3);
+                    $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3, lexer.getRubySourceline());
                     support.popCurrentScope();
                 }
                 | keyword_class tLSHFT expr {
@@ -1588,7 +1588,7 @@ primary         : literal
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($7);
 
-                    $$ = new SClassNode($1, $3, support.getCurrentScope(), body);
+                    $$ = new SClassNode($1, $3, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
                     support.setInDef($<Boolean>4.booleanValue());
                     support.setInSingle($<Integer>6.intValue());
@@ -1601,7 +1601,7 @@ primary         : literal
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($4);
 
-                    $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body);
+                    $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
                 }
                 | keyword_def fname {

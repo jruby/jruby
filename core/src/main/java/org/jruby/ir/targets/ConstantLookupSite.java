@@ -110,6 +110,8 @@ public class ConstantLookupSite extends MutableCallSite {
     }
 
     public IRubyObject searchModuleForConst(ThreadContext context, IRubyObject cmVal) throws Throwable {
+        if (!(cmVal instanceof RubyModule)) throw context.runtime.newTypeError(cmVal + " is not a type/class");
+
         RubyModule module = (RubyModule) cmVal;
 
         if (checkForBailout(module)) {
@@ -140,6 +142,8 @@ public class ConstantLookupSite extends MutableCallSite {
     }
 
     public IRubyObject noCacheSearchModuleForConst(ThreadContext context, IRubyObject cmVal) {
+        if (!(cmVal instanceof RubyModule)) throw context.runtime.newTypeError(cmVal + " is not a type/class");
+
         RubyModule module = (RubyModule) cmVal;
 
         // Inheritance lookup

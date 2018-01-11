@@ -36,7 +36,7 @@ public class BeanManagerFactory {
         public void register(JITCompilerMBean jitCompiler) {}
         public void register(ConfigMBean config) {}
         public void register(ParserStatsMBean parserStats) {}
-        public void register(MethodCacheMBean methodCache) {}
+        public void register(CachesMBean methodCache) {}
         public void register(Runtime runtime) {}
         public void unregisterCompiler() {}
         public void unregisterConfig() {}

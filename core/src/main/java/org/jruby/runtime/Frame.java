@@ -177,6 +177,14 @@ public final class Frame {
         this.visibility = Visibility.PRIVATE;
     }
 
+    public void updateFrameForBackref() {
+        // nothing
+    }
+
+    public void clearFrameForBackref() {
+        this.backRef = null;
+    }
+
     /**
      * Clear the frame, as when the call completes. Clearing prevents cached
      * frames from holding references after the call is done.
