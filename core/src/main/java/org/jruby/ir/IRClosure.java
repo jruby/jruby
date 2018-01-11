@@ -56,7 +56,9 @@ public class IRClosure extends IRScope {
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");
         this.closureId = lexicalParent.getNextClosureId();
-        setByteName(prefix.dup().append(closureId));
+        ByteList name = prefix.dup();
+        name.append(Integer.toString(closureId).getBytes());
+        setByteName(name);
         this.body = null;
     }
 
