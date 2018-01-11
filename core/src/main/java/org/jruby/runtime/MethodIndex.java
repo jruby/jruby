@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.anno.FrameField;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
@@ -47,7 +48,6 @@ import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.callsite.GtCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.GeCallSite;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callsite.CmpCallSite;
 import org.jruby.runtime.callsite.EqCallSite;
 import org.jruby.runtime.callsite.BitAndCallSite;
@@ -60,6 +60,7 @@ import org.jruby.runtime.callsite.SuperCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.callsite.XorCallSite;
 import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.util.StringSupport;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -244,16 +245,15 @@ public class MethodIndex {
         if (DEBUG) LOG.debug("Adding method fields for {}: {} for {}", usage, writes, methodNames);
 
         if (writes.size() > 0) {
-            String[] names = Helpers.SEMICOLON_PATTERN.split(methodNames);
-            List<String> namesList = Arrays.asList(names);
+            List<String> names = StringSupport.split(methodNames, ';');
 
-            addAwareness(needsFrame, needsScope, namesList);
+            addAwareness(needsFrame, needsScope, names);
 
             addFieldAccesses(methodFrameAccesses, names, writes);
         }
     }
 
-    private static void addFieldAccesses(Map<String, Set<FrameField>> methodFrameWrites, String[] names, Set<FrameField> writes) {
+    private static void addFieldAccesses(Map<String, Set<FrameField>> methodFrameWrites, List<String> names, Set<FrameField> writes) {
         for (String name : names) {
             methodFrameWrites.compute(
                     name,
@@ -261,9 +261,9 @@ public class MethodIndex {
         }
     }
 
-    private static void addAwareness(boolean needsFrame, boolean needsScope, List<String> namesList) {
-        if (needsFrame) FRAME_AWARE_METHODS.addAll(namesList);
-        if (needsScope) SCOPE_AWARE_METHODS.addAll(namesList);
+    private static void addAwareness(boolean needsFrame, boolean needsScope, List<String> names) {
+        if (needsFrame) FRAME_AWARE_METHODS.addAll(names);
+        if (needsScope) SCOPE_AWARE_METHODS.addAll(names);
     }
 
     public static void addMethodReadFields(String name, FrameField[] reads) {
