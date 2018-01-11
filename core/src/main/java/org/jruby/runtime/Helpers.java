@@ -541,7 +541,9 @@ public class Helpers {
         return value != null ? value : runtime.getNil();
     }
 
-    @Deprecated // not used
+    /**
+     * @see Ruby#getNullToNilHandle()
+     */
     public static IRubyObject nullToNil(IRubyObject value, IRubyObject nil) {
         return value != null ? value : nil;
     }
