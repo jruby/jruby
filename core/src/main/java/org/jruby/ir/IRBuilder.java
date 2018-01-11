@@ -1,6 +1,5 @@
 package org.jruby.ir;
 
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
@@ -21,6 +20,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 
@@ -85,12 +85,6 @@ import static org.jruby.ir.operands.ScopeModule.*;
 public class IRBuilder {
     static final Operand[] NO_ARGS = new Operand[]{};
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
-
-    public static final ByteList USING_METHOD = new ByteList(new byte[] {'u', 's', 'i', 'n', 'g'});
-    public static final ByteList DEFINE_METHOD_METHOD = new ByteList(new byte[] {'d', 'e', 'f', 'i', 'n', 'e', '_', 'm', 'e', 't', 'h', 'o', 'd'});
-    public static final ByteList FREEZE_METHOD = new ByteList(new byte[] {'f', 'r', 'e', 'e', 'z', 'e'});
-    public static final ByteList AREF_METHOD = new ByteList(new byte[] {'[', ']'});
-    public static final ByteList NEW_METHOD = new ByteList(new byte[] {'n', 'e', 'w'});
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
@@ -1048,7 +1042,7 @@ public class IRBuilder {
         Node receiverNode = callNode.getReceiverNode();
 
         // Frozen string optimization: check for "string".freeze
-        if (receiverNode instanceof StrNode && FREEZE_METHOD.equals(callNode.getByteName())) {
+        if (receiverNode instanceof StrNode && CommonByteLists.FREEZE_METHOD.equals(callNode.getByteName())) {
             StrNode asString = (StrNode) receiverNode;
             return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFileName(), asString.getPosition().getLine());
         }
@@ -1061,7 +1055,7 @@ public class IRBuilder {
         // obj["string"] optimization for Hash
         ArrayNode argsAry;
         if (!callNode.isLazy() &&
-                AREF_METHOD.equals(callNode.getByteName()) &&
+                CommonByteLists.AREF_METHOD.equals(callNode.getByteName()) &&
                 callNode.getArgsNode() instanceof ArrayNode &&
                 (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
                 argsAry.get(0) instanceof StrNode &&
@@ -1121,7 +1115,8 @@ public class IRBuilder {
 
     private void determineIfProcNew(Node receiverNode, ByteList name, CallInstr callInstr) {
         // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (NEW_METHOD.equals(name) && receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().equals("Proc")) {
+        if (CommonByteLists.NEW_METHOD.equals(name) &&
+                receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().equals("Proc")) {
             callInstr.setProcNew(true);
         }
     }
@@ -2079,9 +2074,8 @@ public class IRBuilder {
     static final ArgumentDescriptor[] NO_ARG_DESCS = new ArgumentDescriptor[0];
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getByteName(), isInstanceMethod, defNode.getLine(), defNode.getScope(), needsCodeCoverage());
-
-        //return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
+        return new IRMethod(manager, scope, defNode, defNode.getByteName(), isInstanceMethod, defNode.getLine(),
+                defNode.getScope(), needsCodeCoverage());
     }
 
     public Operand buildDefn(MethodDefNode node) { // Instance method
@@ -2218,7 +2212,7 @@ public class IRBuilder {
                         argName == null || argName.length() == 0 ? ArgumentType.anonrest : ArgumentType.rest,
                         argName);
             }
-            argName = (argName == null || argName.realSize() == 0) ? new ByteList(new byte[] {'*'}) : argName;
+            argName = (argName == null || argName.realSize() == 0) ? CommonByteLists.STAR : argName;
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
@@ -2696,7 +2690,7 @@ public class IRBuilder {
 
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
-            if (DEFINE_METHOD_METHOD.equals(fcallNode.getByteName()) && block instanceof WrappedIRClosure) {
+            if (CommonByteLists.DEFINE_METHOD_METHOD.equals(fcallNode.getByteName()) && block instanceof WrappedIRClosure) {
                 IRClosure closure = ((WrappedIRClosure) block).getClosure();
 
                 // To convert to a method we need its variable scoping to appear like a normal method.
@@ -2735,7 +2729,7 @@ public class IRBuilder {
         IRScope outerScope = scope.getNearestTopLocalVariableScope();
 
         // 'using single_mod_arg' possible nearly everywhere but method scopes.
-        if (USING_METHOD.equals(methodName) && !(outerScope instanceof IRMethod) && args.length == 1) {
+        if (CommonByteLists.USING_METHOD.equals(methodName) && !(outerScope instanceof IRMethod) && args.length == 1) {
             scope.setIsMaybeUsingRefinements();
         }
     }
@@ -2743,8 +2737,6 @@ public class IRBuilder {
     public Operand buildFixnum(FixnumNode node) {
         return new Fixnum(node.getValue());
     }
-
-    private final static ByteList NEW = new ByteList(new byte[] {'e', 'n', 'd'});
 
     public Operand buildFlip(FlipNode flipNode) {
         /* ----------------------------------------------------------------------
@@ -2784,7 +2776,8 @@ public class IRBuilder {
         if (nearestNonClosureBuilder == null) {
             Variable excType = createTemporaryVariable();
             addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError"));
-            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), NEW, excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
+            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), CommonByteLists.NEW,
+                    excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
             addInstr(new ThrowExceptionInstr(exc));
             return buildNil();
         }
@@ -2850,13 +2843,12 @@ public class IRBuilder {
         return new Float(node.getValue());
     }
 
-    private static final ByteList EACH = new ByteList(new byte[] {'e', 'a', 'c', 'h'});
-
     public Operand buildFor(ForNode forNode) {
         Variable result = createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode());
         Operand  forBlock = buildForIter(forNode);
-        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, EACH, receiver, NO_ARGS, forBlock, scope.maybeUsingRefinements());
+        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, CommonByteLists.EACH, receiver, NO_ARGS,
+                forBlock, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
         return result;
@@ -3229,10 +3221,10 @@ public class IRBuilder {
 
         // Ex: e.val ||= n
         //     e.val &&= n
-        String opName = opAsgnNode.getOperatorName();
-        if (opName.equals("||") || opName.equals("&&")) {
+        boolean isOrOr = opAsgnNode.isOr();
+        if (isOrOr || opAsgnNode.isAnd()) {
             l = getNewLabel();
-            addInstr(createBranch(readerValue, opName.equals("||") ? manager.getTrue() : manager.getFalse(), l));
+            addInstr(createBranch(readerValue, isOrOr ? manager.getTrue() : manager.getFalse(), l));
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode());
@@ -3289,9 +3281,7 @@ public class IRBuilder {
     }
 
     public Operand buildOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
-        String op = node.getOperator();
-
-        if ("||".equals(op)) {
+        if (node.isOr()) {
             Variable result = createTemporaryVariable();
             Label done = getNewLabel();
             Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, false);
@@ -3301,7 +3291,7 @@ public class IRBuilder {
             addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
             addInstr(new LabelInstr(done));
             return result;
-        } else if ("&&".equals(op)) {
+        } else if (node.isAnd()) {
             Variable result = createTemporaryVariable();
             Label done = getNewLabel();
             Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, true);
@@ -3467,13 +3457,12 @@ public class IRBuilder {
         return scope.allocateInterpreterContext(instructions);
     }
 
-    private static final ByteList _END_ = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_'});
-
     public Operand buildPostExe(PostExeNode postExeNode) {
         IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
 
-        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), _END_, true);
+        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(),
+                Signature.from(postExeNode), CommonByteLists._END_, true);
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
 

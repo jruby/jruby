@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.StringSupport;
 
 /**
@@ -90,6 +91,14 @@ public class OpAsgnNode extends Node {
 
     public ByteList getOperatorByteName() {
         return operatorName;
+    }
+
+    public boolean isOr() {
+        return CommonByteLists.OR_OR.equals(operatorName);
+    }
+
+    public boolean isAnd() {
+        return CommonByteLists.AMPERSAND_AMPERSAND.equals(operatorName);
     }
 
     /**

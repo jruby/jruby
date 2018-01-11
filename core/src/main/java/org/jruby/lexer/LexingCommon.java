@@ -18,6 +18,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -88,7 +89,7 @@ public abstract class LexingCommon {
     protected ByteList EQ_TILDE = new ByteList(new byte[] {'=', '~'}, USASCII_ENCODING);
     protected ByteList EQ_GT = new ByteList(new byte[] {'=', '>'}, USASCII_ENCODING);
     protected ByteList EQ = new ByteList(new byte[] {'='}, USASCII_ENCODING);
-    public static final ByteList AMPERSAND_AMPERSAND = new ByteList(new byte[] {'&', '&'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList AMPERSAND_AMPERSAND = CommonByteLists.AMPERSAND_AMPERSAND;
     protected ByteList AMPERSAND = new ByteList(new byte[] {'&'}, USASCII_ENCODING);
     public ByteList AMPERSAND_DOT = new ByteList(new byte[] {'&', '.'}, USASCII_ENCODING);
     public final ByteList BANG = new ByteList(new byte[] {'!'}, USASCII_ENCODING);
@@ -116,7 +117,7 @@ public abstract class LexingCommon {
     protected ByteList MINUS = new ByteList(new byte[] {'-'}, USASCII_ENCODING);
     protected ByteList MINUS_GT = new ByteList(new byte[] {'-', '>'}, USASCII_ENCODING);
     protected ByteList PERCENT = new ByteList(new byte[] {'%'}, USASCII_ENCODING);
-    public static final ByteList OR_OR = new ByteList(new byte[] {'|', '|'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList OR_OR = CommonByteLists.OR_OR;
     protected ByteList OR = new ByteList(new byte[] {'|'}, USASCII_ENCODING);
     protected ByteList PLUS_AT = new ByteList(new byte[] {'+', '@'}, USASCII_ENCODING);
     protected ByteList PLUS = new ByteList(new byte[] {'+'}, USASCII_ENCODING);

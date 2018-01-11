@@ -37,6 +37,7 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.StringSupport;
 
 /** Represents an operator assignment to an element.
@@ -112,11 +113,11 @@ public class OpElementAsgnNode extends Node {
     }
     
     public boolean isOr() {
-        return operatorName == LexingCommon.OR_OR;
+        return CommonByteLists.OR_OR.equals(operatorName);
     }
 
     public boolean isAnd() {
-        return operatorName == LexingCommon.AMPERSAND_AMPERSAND;
+        return CommonByteLists.AMPERSAND_AMPERSAND.equals(operatorName);
     }
 
     /**

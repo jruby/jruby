@@ -5,6 +5,7 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.StringSupport;
 
 /**
@@ -26,6 +27,14 @@ public class OpAsgnConstDeclNode extends Node implements BinaryOperatorNode {
     @Deprecated
     public OpAsgnConstDeclNode(ISourcePosition position, Node lhs, String operator, Node rhs) {
         this(position, lhs, StringSupport.stringAsByteList(operator), rhs);
+    }
+
+    public boolean isOr() {
+        return CommonByteLists.OR_OR.equals(operator);
+    }
+
+    public boolean isAnd() {
+        return CommonByteLists.AMPERSAND_AMPERSAND.equals(operator);
     }
 
     @Override
