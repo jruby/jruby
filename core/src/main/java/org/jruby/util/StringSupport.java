@@ -2537,6 +2537,7 @@ public final class StringSupport {
 
     public static String bytelistAsBinaryString(ByteList bytelist) {
         return new String(bytelist.unsafeBytes(), bytelist.begin(), bytelist.realSize(), ASCIIEncoding.INSTANCE.getCharset());
+    }
 
     @Deprecated
     public static boolean isUnicode(Encoding enc) {
