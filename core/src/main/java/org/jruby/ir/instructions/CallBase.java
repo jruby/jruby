@@ -95,6 +95,13 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return StringSupport.byteListAsString(name);
     }
 
+    /**
+     * Return 8859_1 string since this is what method table stores now.
+     */
+    public String getRawName() {
+        return name.toString();
+    }
+
     public ByteList getByteName() {
         return name;
     }

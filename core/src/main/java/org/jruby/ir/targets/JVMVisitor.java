@@ -564,7 +564,7 @@ public class JVMVisitor extends IRVisitor {
 
         compileCallCommon(
                 jvmMethod(),
-                attrAssignInstr.getName(),
+                attrAssignInstr.getRawName(),
                 callArgs,
                 attrAssignInstr.getReceiver(),
                 callArgs.length,
@@ -1058,7 +1058,7 @@ public class JVMVisitor extends IRVisitor {
         }
 
         IRBytecodeAdapter m = jvmMethod();
-        String name = callInstr.getName();
+        String name = callInstr.getRawName();
         Operand[] args = callInstr.getCallArgs();
         Operand receiver = callInstr.getReceiver();
         int numArgs = args.length;
@@ -1158,7 +1158,7 @@ public class JVMVisitor extends IRVisitor {
 
         @Override
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
-        String name = classsuperinstr.getName();
+        String name = classsuperinstr.getRawName();
         Operand[] args = classsuperinstr.getCallArgs();
         Operand definingModule = classsuperinstr.getDefiningModule();
         boolean[] splatMap = classsuperinstr.splatMap();
@@ -1403,7 +1403,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) {
-        String name = instancesuperinstr.getName();
+        String name = instancesuperinstr.getRawName();
         Operand[] args = instancesuperinstr.getCallArgs();
         Operand definingModule = instancesuperinstr.getDefiningModule();
         boolean[] splatMap = instancesuperinstr.splatMap();
@@ -1526,7 +1526,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void NoResultCallInstr(NoResultCallInstr noResultCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = noResultCallInstr.getName();
+        String name = noResultCallInstr.getRawName();
         Operand[] args = noResultCallInstr.getCallArgs();
         Operand receiver = noResultCallInstr.getReceiver();
         int numArgs = args.length;
@@ -1539,7 +1539,7 @@ public class JVMVisitor extends IRVisitor {
 
     public void oneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = oneFixnumArgNoBlockCallInstr.getName();
+        String name = oneFixnumArgNoBlockCallInstr.getRawName();
         long fixnum = oneFixnumArgNoBlockCallInstr.getFixnumArg();
         Operand receiver = oneFixnumArgNoBlockCallInstr.getReceiver();
         Variable result = oneFixnumArgNoBlockCallInstr.getResult();
@@ -1564,7 +1564,7 @@ public class JVMVisitor extends IRVisitor {
 
     public void oneFloatArgNoBlockCallInstr(OneFloatArgNoBlockCallInstr oneFloatArgNoBlockCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = oneFloatArgNoBlockCallInstr.getName();
+        String name = oneFloatArgNoBlockCallInstr.getRawName();
         double flote = oneFloatArgNoBlockCallInstr.getFloatArg();
         Operand receiver = oneFloatArgNoBlockCallInstr.getReceiver();
         Variable result = oneFloatArgNoBlockCallInstr.getResult();
@@ -2216,7 +2216,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) {
-        String name = unresolvedsuperinstr.getName();
+        String name = unresolvedsuperinstr.getRawName();
         Operand[] args = unresolvedsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
@@ -2260,7 +2260,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ZSuperInstr(ZSuperInstr zsuperinstr) {
-        String name = zsuperinstr.getName();
+        String name = zsuperinstr.getRawName();
         Operand[] args = zsuperinstr.getCallArgs();
         // this would be getDefiningModule but that is not used for unresolved super
         Operand definingModule = UndefinedValue.UNDEFINED;
