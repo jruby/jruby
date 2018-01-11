@@ -888,10 +888,10 @@ fsym           : fname {
                }
 
 // Node:fitem
-fitem           : fsym {
+fitem           : fsym {  // LiteralNode
                     $$ = $1;
                 }
-                | dsym {
+                | dsym {  // SymbolNode/DSymbolNode
                     $$ = $1;
                 }
 

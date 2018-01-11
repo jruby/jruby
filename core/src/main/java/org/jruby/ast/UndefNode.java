@@ -48,6 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class UndefNode extends Node {
     private Node name;
 
+    // name can be SymbolNode/DSymbolNode/LiteralNdoe
     public UndefNode(ISourcePosition position, Node name) {
         super(position, false);
         this.name = name;
