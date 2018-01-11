@@ -434,8 +434,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     /**
      * Determine based on the method name what frame fields it is likely to need.
-     *
-     * @param name the name of the method that will be called
      */
     private void captureFrameReadsAndWrites() {
         // grab a reference to frame fields this method name is known to be associated with
@@ -453,8 +451,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                 frameWrites = ALL;
             }
         } else {
-            frameReads = MethodIndex.METHOD_FRAME_READS.getOrDefault(name, Collections.EMPTY_SET);
-            frameWrites = MethodIndex.METHOD_FRAME_WRITES.getOrDefault(name, Collections.EMPTY_SET);
+            frameReads = MethodIndex.METHOD_FRAME_READS.getOrDefault(getName(), Collections.EMPTY_SET);
+            frameWrites = MethodIndex.METHOD_FRAME_WRITES.getOrDefault(getName(), Collections.EMPTY_SET);
         }
     }
 
