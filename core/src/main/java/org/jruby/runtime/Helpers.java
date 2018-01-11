@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
-import com.headius.modulator.Modulator;
 import jnr.constants.platform.Errno;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
@@ -40,7 +39,6 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.parser.StaticScope;
-import org.jruby.platform.Platform;
 import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
