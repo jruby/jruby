@@ -42,6 +42,7 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.log.Logger;
@@ -422,7 +423,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.aloadMany(0, 1, 2);
         mv.invokespecial(sup, "<init>", JAVA_SUPER_SIG);
         mv.aload(0);
-        mv.ldc(parameterDesc);
+        mv.ldc(parameterDesc.toString());
         mv.invokevirtual(p(JavaMethod.class), "setParameterDesc", sig(void.class, String.class));
         mv.voidreturn();
         mv.end();

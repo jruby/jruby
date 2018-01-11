@@ -299,7 +299,7 @@ public class IRBuilder {
     protected IRManager manager;
     protected IRScope scope;
     protected List<Instr> instructions;
-    protected List<String> argumentDescriptions;
+    protected List<Object> argumentDescriptions;
     protected boolean needsCodeCoverage;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
@@ -317,8 +317,8 @@ public class IRBuilder {
     public void addArgumentDescription(ArgumentType type, ByteList name) {
         if (argumentDescriptions == null) argumentDescriptions = new ArrayList<>();
 
-        argumentDescriptions.add(type.toString());
-        argumentDescriptions.add(name == null ? null : name.toString());
+        argumentDescriptions.add(type);
+        argumentDescriptions.add(name);
     }
 
     public void addInstr(Instr instr) {
@@ -2056,13 +2056,12 @@ public class IRBuilder {
 
         ArgumentDescriptor[] argDesc;
         if (argumentDescriptions == null) {
-            argDesc = NO_ARG_DESCS;
+            argDesc = ArgumentDescriptor.EMPTY_ARRAY;
         } else {
             argDesc = new ArgumentDescriptor[argumentDescriptions.size() / 2];
-            for (int i = 0; i < argumentDescriptions.size();) {
-                argDesc[i / 2] = new ArgumentDescriptor(
-                        ArgumentType.valueOf(argumentDescriptions.get(i++)),
-                        argumentDescriptions.get(i++));
+            for (int i = 0; i < argumentDescriptions.size(); i += 2) {
+                argDesc[i / 2] = new ArgumentDescriptor((ArgumentType) argumentDescriptions.get(i),
+                        (ByteList) argumentDescriptions.get(i+1));
             }
         }
 
@@ -2070,8 +2069,6 @@ public class IRBuilder {
 
         return scope.allocateInterpreterContext(instructions);
     }
-
-    static final ArgumentDescriptor[] NO_ARG_DESCS = new ArgumentDescriptor[0];
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
         return new IRMethod(manager, scope, defNode, defNode.getByteName(), isInstanceMethod, defNode.getLine(),
