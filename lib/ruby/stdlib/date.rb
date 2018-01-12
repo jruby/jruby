@@ -252,7 +252,6 @@ class Date
     xs.each{|x| x.freeze unless x.nil?}.freeze
   end
 
-  # TODO backport - update from MRI :
   class Infinity < Numeric # :nodoc:
 
     include Comparable
@@ -263,44 +262,47 @@ class Date
 
     protected :d
 
-    def zero? () false end
-    def finite? () false end
-    def infinite? () d.nonzero? end
-    def nan? () d.zero? end
+    def zero?() false end
+    def finite?() false end
+    def infinite?() d.nonzero? end
+    def nan?() d.zero? end
 
     def abs() self.class.new end
 
-    def -@ () self.class.new(-d) end
-    def +@ () self.class.new(+d) end
+    def -@() self.class.new(-d) end
+    def +@() self.class.new(+d) end
 
-    def <=> (other)
+    def <=>(other)
       case other
-      when Infinity
-        d <=> other.d
-      when Numeric
-        d
-      else
-        begin
-          l, r = other.coerce(self)
-          l <=> r
-        rescue NoMethodError
-          nil
-        end
+        when Infinity; return d <=> other.d
+        when Numeric; return d
+        else
+          begin
+            l, r = other.coerce(self)
+            return l <=> r
+          rescue NoMethodError
+          end
       end
+      nil
     end
 
     def coerce(other)
       case other
-      when Numeric
-        [-d, d]
-      else
-        super
+        when Numeric; return -d, d
+        else
+          super
       end
     end
 
-    def to_s
-      @d == 1 ? "Inf" : "-Inf"
+    def to_f
+      return 0 if @d == 0
+      if @d > 0
+        Float::INFINITY
+      else
+        -Float::INFINITY
+      end
     end
+
   end
 
   # The Julian Day Number of the Day of Calendar Reform for Italy
@@ -883,8 +885,8 @@ class Date
       h,   fr = fr.divmod(3600)
       min, fr = fr.divmod(60)
       s,   fr = fr.divmod(1)
-      offset = elem[:offset]
-      seconds += offset unless offset.nil?
+      #offset = elem[:offset]
+      #seconds += offset unless offset.nil?
       elem[:jd] = 2440588 + d # UNIX_EPOCH_IN_CJD
       elem[:hour] = h
       elem[:min] = min
@@ -1309,8 +1311,6 @@ class Date
   #   self.class.new!(@dt.withChronology(chronology(sg, @of)), @of, sg, @sub_millis)
   # end
 
-  # TODO test working `england`
-  #
   # # Create a copy of this Date object that uses the Italian/Catholic
   # # Day of Calendar Reform.
   # def italy() new_start(self.class::ITALY) end
@@ -1861,15 +1861,14 @@ class DateTime < Date
     new_by_frags(elem, sg)
   end
 
-  public :hour, :min, :sec, :sec_fraction, :zone, :offset, :new_offset,
-         :minute, :second, :second_fraction
-
   def to_s # 4p
     format('%.4d-%02d-%02dT%02d:%02d:%02d%s',
            year, mon, mday, hour, min, sec, zone)
   end
 
 end
+
+org.jruby.ext.date.DateLibrary.load JRuby.runtime
 
 class Time
 
@@ -1938,6 +1937,9 @@ end
 
 class DateTime < Date
 
+  public :hour, :min, :sec, :sec_fraction, :zone, :offset, :new_offset,
+         :minute, :second, :second_fraction
+
   def to_time
     Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400.0))
   end
@@ -1953,5 +1955,3 @@ class DateTime < Date
   private_class_method :today
   public_class_method  :now
 end
-
-org.jruby.ext.date.DateLibrary.load JRuby.runtime
