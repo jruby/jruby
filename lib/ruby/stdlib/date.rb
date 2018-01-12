@@ -243,8 +243,7 @@ class Date
   DAYNAMES = %w(Sunday Monday Tuesday Wednesday Thursday Friday Saturday)
 
   # Abbreviated month names, in English.
-  ABBR_MONTHNAMES = [nil] + %w(Jan Feb Mar Apr May Jun
-                               Jul Aug Sep Oct Nov Dec)
+  ABBR_MONTHNAMES = [nil] + %w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
 
   # Abbreviated day names, in English.
   ABBR_DAYNAMES = %w(Sun Mon Tue Wed Thu Fri Sat)
@@ -253,8 +252,7 @@ class Date
     xs.each{|x| x.freeze unless x.nil?}.freeze
   end
 
-  JODA = org.joda.time
-
+  # TODO backport - update from MRI :
   class Infinity < Numeric # :nodoc:
 
     include Comparable
@@ -326,10 +324,12 @@ class Date
   SECONDS_IN_DAY         = Rational(1, 86400) # :nodoc:
 
   MJD_EPOCH_IN_AJD       = Rational(4800001, 2) # 1858-11-17 # :nodoc:
-  UNIX_EPOCH_IN_AJD      = Rational(4881175, 2) # 1970-01-01 # :nodoc:
-  MJD_EPOCH_IN_CJD       = 2400001 # :nodoc:
-  UNIX_EPOCH_IN_CJD      = 2440588 # :nodoc:
-  LD_EPOCH_IN_CJD        = 2299160 # :nodoc:
+  #UNIX_EPOCH_IN_AJD      = Rational(4881175, 2) # 1970-01-01 # :nodoc:
+  #MJD_EPOCH_IN_CJD       = 2400001 # :nodoc:
+  #UNIX_EPOCH_IN_CJD      = 2440588 # :nodoc:
+  #LD_EPOCH_IN_CJD        = 2299160 # :nodoc:
+
+  JODA = org.joda.time
 
   t = Module.new do
 
@@ -495,6 +495,12 @@ class Date
       return y, m, ((jd - j) / 7).floor + 1, jd_to_wday(jd)
     end
 
+    # Convert a Julian Day Number to the day of the week.
+    #
+    # Sunday is day-of-week 0; Saturday is day-of-week 6.
+    def jd_to_wday(jd) (jd + 1) % 7 end # :nodoc:
+    private :jd_to_wday # ONLY USED IN ONE PLACE
+
     # Convert an Astronomical Julian Day Number to a (civil) Julian
     # Day Number.
     #
@@ -537,28 +543,23 @@ class Date
 
     # Convert an Astronomical Julian Day Number to an
     # Astronomical Modified Julian Day Number.
-    def ajd_to_amjd(ajd) ajd - MJD_EPOCH_IN_AJD end # :nodoc:
+    # def ajd_to_amjd(ajd) ajd - MJD_EPOCH_IN_AJD end # :nodoc:
 
     # Convert a Modified Julian Day Number to a Julian
     # Day Number.
-    def mjd_to_jd(mjd) mjd + MJD_EPOCH_IN_CJD end # :nodoc:
+    # def mjd_to_jd(mjd) mjd + MJD_EPOCH_IN_CJD end # :nodoc:
 
     # Convert a Julian Day Number to a Modified Julian Day
     # Number.
-    def jd_to_mjd(jd) jd - MJD_EPOCH_IN_CJD end # :nodoc:
+    # def jd_to_mjd(jd) jd - MJD_EPOCH_IN_CJD end # :nodoc:
 
     # Convert a count of the number of days since the adoption
     # of the Gregorian Calendar (in Italy) to a Julian Day Number.
-    def ld_to_jd(ld) ld +  LD_EPOCH_IN_CJD end # :nodoc:
+    # def ld_to_jd(ld) ld +  LD_EPOCH_IN_CJD end # :nodoc:
 
     # Convert a Julian Day Number to the number of days since
     # the adoption of the Gregorian Calendar (in Italy).
-    def jd_to_ld(jd) jd -  LD_EPOCH_IN_CJD end # :nodoc:
-
-    # Convert a Julian Day Number to the day of the week.
-    #
-    # Sunday is day-of-week 0; Saturday is day-of-week 6.
-    def jd_to_wday(jd) (jd + 1) % 7 end # :nodoc:
+    # def jd_to_ld(jd) jd -  LD_EPOCH_IN_CJD end # :nodoc:
 
     # Is +jd+ a valid Julian Day Number?
     #
@@ -733,22 +734,17 @@ class Date
   extend  t
   include t
 
-  DEFAULT_TZ = ENV['TZ']
-  DEFAULT_DTZ = JODA::DateTimeZone.getDefault
-  CHRONO_ITALY_DEFAULT_DTZ = chronology(ITALY, DEFAULT_DTZ)
-  CHRONO_ITALY_UTC = JODA.chrono::GJChronology.getInstance(JODA::DateTimeZone::UTC)
-
-  # Is a year a leap year in the Julian calendar?
+  # # Is a year a leap year in the Julian calendar?
+  # #
+  # # All years divisible by 4 are leap years in the Julian calendar.
+  # def self.julian_leap? (y) y % 4 == 0 end
   #
-  # All years divisible by 4 are leap years in the Julian calendar.
-  def self.julian_leap? (y) y % 4 == 0 end
-
-  # Is a year a leap year in the Gregorian calendar?
-  #
-  # All years divisible by 4 are leap years in the Gregorian calendar,
-  # except for years divisible by 100 and not by 400.
-  def self.gregorian_leap? (y) y % 4 == 0 && y % 100 != 0 || y % 400 == 0 end
-  class << self; alias_method :leap?, :gregorian_leap? end
+  # # Is a year a leap year in the Gregorian calendar?
+  # #
+  # # All years divisible by 4 are leap years in the Gregorian calendar,
+  # # except for years divisible by 100 and not by 400.
+  # def self.gregorian_leap? (y) y % 4 == 0 && y % 100 != 0 || y % 400 == 0 end
+  # class << self; alias_method :leap?, :gregorian_leap? end
 
   class << self; alias_method :new!, :new end
 
@@ -888,10 +884,8 @@ class Date
       min, fr = fr.divmod(60)
       s,   fr = fr.divmod(1)
       offset = elem[:offset]
-      unless offset.nil?
-        seconds += offset
-      end
-      elem[:jd] = UNIX_EPOCH_IN_CJD + d
+      seconds += offset unless offset.nil?
+      elem[:jd] = 2440588 + d # UNIX_EPOCH_IN_CJD
       elem[:hour] = h
       elem[:min] = min
       elem[:sec] = s
@@ -1132,40 +1126,40 @@ class Date
   #
   # Using one of the factory methods such as Date::civil is
   # generally easier and safer.
-  def initialize(dt_or_ajd=0, of=0, sg=ITALY, sub_millis=0)
-    if JODA::DateTime === dt_or_ajd
-      @dt = dt_or_ajd
-      @sub_millis = sub_millis
-      of ||= Rational(@dt.getChronology.getZone.getOffset(@dt), 86_400_000)
-    else
-      # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
-      millis, @sub_millis = ((dt_or_ajd - UNIX_EPOCH_IN_AJD) * 86400000).divmod(1)
-      raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" if millis > java.lang.Long::MAX_VALUE
-      @dt = JODA::DateTime.new(millis, chronology(sg, of))
-    end
-
-    @of = of # offset
-    @sg = sg # start
-  end
+  # def initialize(dt_or_ajd=0, of=0, sg=ITALY, sub_millis=0)
+  #   if JODA::DateTime === dt_or_ajd
+  #     @dt = dt_or_ajd
+  #     @sub_millis = sub_millis
+  #     of ||= Rational(@dt.getChronology.getZone.getOffset(@dt), 86_400_000)
+  #   else
+  #     # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
+  #     millis, @sub_millis = ((dt_or_ajd - UNIX_EPOCH_IN_AJD) * 86400000).divmod(1)
+  #     raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" if millis > java.lang.Long::MAX_VALUE
+  #     @dt = JODA::DateTime.new(millis, chronology(sg, of))
+  #   end
+  #
+  #   @of = of # offset
+  #   @sg = sg # start
+  # end
 
   attr_reader :dt, :sub_millis
   protected   :dt, :sub_millis
 
   # Get the date as an Astronomical Julian Day Number.
-  def ajd
-    # Rational(@dt.getMillis + @sub_millis, 86400000) + 2440587.5
-    Rational(210866760000000 + @dt.getMillis + @sub_millis, 86400000)
-  end
+  # def ajd
+  #   # Rational(@dt.getMillis + @sub_millis, 86400000) + 2440587.5
+  #   Rational(210866760000000 + @dt.getMillis + @sub_millis, 86400000)
+  # end
 
   # Get the date as an Astronomical Modified Julian Day Number.
-  def amjd
-    ajd_to_amjd(ajd)
-  end
+  # def amjd
+  #   ajd_to_amjd(ajd)
+  # end
 
   # Get the date as a Julian Day Number.
-  def jd
-    (JODA::DateTimeUtils.toJulianDay(@dt.getMillis) + @of.to_f + 0.5).floor
-  end
+  # def jd
+  #   (JODA::DateTimeUtils.toJulianDay(@dt.getMillis) + @of.to_f + 0.5).floor
+  # end
 
   # Get any fractional day part of the date.
   def day_fraction
@@ -1173,104 +1167,104 @@ class Date
     Rational(ms, 86_400_000)
   end
 
-  # Get the date as a Modified Julian Day Number.
-  def mjd() jd_to_mjd(jd) end
+  # # Get the date as a Modified Julian Day Number.
+  # def mjd() jd_to_mjd(jd) end
 
-  # Get the date as the number of days since the Day of Calendar
-  # Reform (in Italy and the Catholic countries).
-  def ld() jd_to_ld(jd) end
+  # # Get the date as the number of days since the Day of Calendar
+  # # Reform (in Italy and the Catholic countries).
+  # def ld() jd_to_ld(jd) end
 
-  def joda_year_to_date_year(year)
-    if year < 0 and julian?
-      # Joda-time returns -x for year x BC in JulianChronology (so there is no year 0),
-      # while date.rb returns -x+1, following astronomical year numbering (with year 0)
-      year + 1
-    else
-      year
-    end
-  end
-  private :joda_year_to_date_year
-
-  # Get the year of this date.
-  def year
-    joda_year_to_date_year(@dt.getYear)
-  end
-
-  # Get the day-of-the-year of this date.
+  # def joda_year_to_date_year(year)
+  #   if year < 0 and julian?
+  #     # Joda-time returns -x for year x BC in JulianChronology (so there is no year 0),
+  #     # while date.rb returns -x+1, following astronomical year numbering (with year 0)
+  #     year + 1
+  #   else
+  #     year
+  #   end
+  # end
+  # private :joda_year_to_date_year
   #
-  # January 1 is day-of-the-year 1
-  def yday
-    @dt.getDayOfYear
-  end
-
-  # Get the month of this date.
+  # # Get the year of this date.
+  # def year
+  #   joda_year_to_date_year(@dt.getYear)
+  # end
   #
-  # January is month 1.
-  def mon
-    @dt.getMonthOfYear
-  end
-  alias_method :month, :mon
-
-  # Get the day-of-the-month of this date.
-  def mday
-    @dt.getDayOfMonth
-  end
-  alias_method :day, :mday
-
-  # Get the hour of this date.
-  def hour
-    @dt.getHourOfDay
-  end
-
-  # Get the minute of this date.
-  def min
-    @dt.getMinuteOfHour
-  end
-  alias_method :minute, :min
-
-  # Get the second of this date.
-  def sec
-    @dt.getSecondOfMinute
-  end
-  alias_method :second, :sec
+  # # Get the day-of-the-year of this date.
+  # #
+  # # January 1 is day-of-the-year 1
+  # def yday
+  #   @dt.getDayOfYear
+  # end
+  #
+  # # Get the month of this date.
+  # #
+  # # January is month 1.
+  # def mon
+  #   @dt.getMonthOfYear
+  # end
+  # alias_method :month, :mon
+  #
+  # # Get the day-of-the-month of this date.
+  # def mday
+  #   @dt.getDayOfMonth
+  # end
+  # alias_method :day, :mday
+  #
+  # # Get the hour of this date.
+  # def hour
+  #   @dt.getHourOfDay
+  # end
+  #
+  # # Get the minute of this date.
+  # def min
+  #   @dt.getMinuteOfHour
+  # end
+  # alias_method :minute, :min
+  #
+  # # Get the second of this date.
+  # def sec
+  #   @dt.getSecondOfMinute
+  # end
+  # alias_method :second, :sec
 
   # Get the fraction-of-a-second of this date.
-  def sec_fraction
-    Rational(@dt.getMillisOfSecond + @sub_millis, 1000)
-  end
-  alias_method :second_fraction, :sec_fraction
+  # def sec_fraction
+  #   Rational(@dt.getMillisOfSecond + @sub_millis, 1000)
+  # end
+  # alias_method :second_fraction, :sec_fraction
 
-  private :hour, :min, :sec, :sec_fraction,
-          :minute, :second, :second_fraction
+  # private :hour, :min, :sec, :sec_fraction,
+  #         :minute, :second, :second_fraction
 
   def zone() strftime('%:z') end
   private :zone
 
-  # Get the commercial year of this date.  See *Commercial* *Date*
-  # in the introduction for how this differs from the normal year.
-  def cwyear
-    joda_year_to_date_year(@dt.getWeekyear)
-  end
-
-  # Get the commercial week of the year of this date.
-  def cweek
-    @dt.getWeekOfWeekyear
-  end
-
-  # Get the commercial day of the week of this date.  Monday is
-  # commercial day-of-week 1; Sunday is commercial day-of-week 7.
-  def cwday
-    @dt.getDayOfWeek
-  end
-
-  # Get the week day of this date.  Sunday is day-of-week 0;
-  # Saturday is day-of-week 6.
-  def wday
-    @dt.getDayOfWeek % 7
-  end
+  # # Get the commercial year of this date.  See *Commercial* *Date*
+  # # in the introduction for how this differs from the normal year.
+  # def cwyear
+  #   joda_year_to_date_year(@dt.getWeekyear)
+  # end
+  #
+  # # Get the commercial week of the year of this date.
+  # def cweek
+  #   @dt.getWeekOfWeekyear
+  # end
+  #
+  # # Get the commercial day of the week of this date.  Monday is
+  # # commercial day-of-week 1; Sunday is commercial day-of-week 7.
+  # def cwday
+  #   @dt.getDayOfWeek
+  # end
+  #
+  # # Get the week day of this date.  Sunday is day-of-week 0;
+  # # Saturday is day-of-week 6.
+  # def wday
+  #   @dt.getDayOfWeek % 7
+  # end
 
   DAYNAMES.each_with_index do |n, i|
-    define_method(n.downcase + '?'){wday == i}
+    define_method(n.downcase + '?') { wday == i }
   end
 
   def nth_kday? (n, k)
@@ -1278,70 +1272,74 @@ class Date
   end
   private :nth_kday?
 
-  # Is the current date old-style (Julian Calendar)?
-  def julian?
-    jd < @sg
-  end
+  # # Is the current date old-style (Julian Calendar)?
+  # def julian?
+  #   jd < @sg
+  # end
+  #
+  # # Is the current date new-style (Gregorian Calendar)?
+  # def gregorian? () !julian? end
 
-  # Is the current date new-style (Gregorian Calendar)?
-  def gregorian? () !julian? end
-
-  def fix_style # :nodoc:
-    if julian?
-    then self.class::JULIAN
-    else self.class::GREGORIAN end
-  end
-  private :fix_style
+  # def fix_style # :nodoc:
+  #   if julian?
+  #   then self.class::JULIAN
+  #   else self.class::GREGORIAN end
+  # end
+  # private :fix_style
 
   # Is this a leap year?
-  def leap?
-    julian? ? Date.julian_leap?(year) : Date.gregorian_leap?(year)
-  end
+  # def leap?
+  #   julian? ? Date.julian_leap?(year) : Date.gregorian_leap?(year)
+  # end
 
-  # When is the Day of Calendar Reform for this Date object?
-  def start
-    case @dt.getChronology
-    when JODA.chrono::JulianChronology
-      JULIAN
-    when JODA.chrono::GregorianChronology
-      GREGORIAN
-    else
-      JODA::DateTimeUtils.toJulianDayNumber @dt.getChronology.getGregorianCutover.getMillis
-    end
-  end
+  # # When is the Day of Calendar Reform for this Date object?
+  # def start
+  #   case @dt.getChronology
+  #   when JODA.chrono::JulianChronology
+  #     JULIAN
+  #   when JODA.chrono::GregorianChronology
+  #     GREGORIAN
+  #   else
+  #     JODA::DateTimeUtils.toJulianDayNumber @dt.getChronology.getGregorianCutover.getMillis
+  #   end
+  # end
 
   # Create a copy of this Date object using a new Day of Calendar Reform.
-  def new_start(sg=self.class::ITALY)
-    self.class.new!(@dt.withChronology(chronology(sg, @of)), @of, sg, @sub_millis)
-  end
+  # def new_start(sg=self.class::ITALY)
+  #   self.class.new!(@dt.withChronology(chronology(sg, @of)), @of, sg, @sub_millis)
+  # end
 
-  # Create a copy of this Date object that uses the Italian/Catholic
-  # Day of Calendar Reform.
-  def italy() new_start(self.class::ITALY) end
+  # TODO test working `england`
+  #
+  # # Create a copy of this Date object that uses the Italian/Catholic
+  # # Day of Calendar Reform.
+  # def italy() new_start(self.class::ITALY) end
+  #
+  # # Create a copy of this Date object that uses the English/Colonial
+  # # Day of Calendar Reform.
+  # def england() new_start(self.class::ENGLAND) end
+  #
+  # # Create a copy of this Date object that always uses the Julian
+  # # Calendar.
+  # def julian() new_start(self.class::JULIAN) end
+  #
+  # # Create a copy of this Date object that always uses the Gregorian
+  # # Calendar.
+  # def gregorian() new_start(self.class::GREGORIAN) end
 
-  # Create a copy of this Date object that uses the English/Colonial
-  # Day of Calendar Reform.
-  def england() new_start(self.class::ENGLAND) end
+  # def offset
+  #   Rational(@dt.getChronology.getZone.getOffset(@dt), 86_400_000)
+  # end
 
-  # Create a copy of this Date object that always uses the Julian
-  # Calendar.
-  def julian() new_start(self.class::JULIAN) end
-
-  # Create a copy of this Date object that always uses the Gregorian
-  # Calendar.
-  def gregorian() new_start(self.class::GREGORIAN) end
-
-  def offset
-    Rational(@dt.getChronology.getZone.getOffset(@dt), 86_400_000)
-  end
-
-  def new_offset(of=0)
-    if String === of
-      of = Rational(zone_to_diff(of) || 0, 86400)
-    end
-    self.class.new!(@dt.withChronology(chronology(@sg, of)), of, @sg, @sub_millis)
-  end
-  private :offset, :new_offset
+  # TODO test working new_offset 'str'
+  #
+  # def new_offset(of=0)
+  #   if String === of
+  #     of = Rational(zone_to_diff(of) || 0, 86400)
+  #   end
+  #   self.class.new!(@dt.withChronology(chronology(@sg, of)), of, @sg, @sub_millis)
+  # end
+  # private :offset, :new_offset
 
   # Return a new Date object that is +n+ days later than the
   # current one.
@@ -1354,7 +1352,7 @@ class Date
   # particular, two Dates cannot be added to each other.
   def + (n)
     case n
-    when Fixnum
+    when Integer
       self.class.new!(@dt.plusDays(n), @of, @sg, @sub_millis)
     when Numeric
       ms, sub = (n * 86_400_000).divmod(1)
@@ -1403,31 +1401,31 @@ class Date
   # two DateTime instances.  When comparing a DateTime instance
   # with a Date instance, the time of the latter will be
   # considered as falling on midnight UTC.
-  class org::joda::time::DateTime
-    java_alias :compareDT, :compareTo, [org.joda.time.ReadableInstant]
-  end
-  def <=> (other)
-    if other.kind_of?(Date)
-      # The method compareTo doesn't compare the sub milliseconds so after compare the two dates
-      # then we have to compare the sub milliseconds to make sure that both are exactly equal.
-      @dt.compareDT(other.dt).nonzero? || @sub_millis <=> other.sub_millis
-    else
-       __internal_cmp(other)
-    end
-  end
-
-  private def __internal_cmp(other)
-    if other.kind_of? Numeric
-      ajd <=> other
-    else
-      begin
-        l, r = other.coerce(self)
-        l <=> r
-      rescue NoMethodError
-        nil
-      end
-    end
-  end
+  # class org::joda::time::DateTime
+  #   java_alias :compareDT, :compareTo, [org.joda.time.ReadableInstant]
+  # end
+  # def <=> (other)
+  #   if other.kind_of?(Date)
+  #     # The method compareTo doesn't compare the sub milliseconds so after compare the two dates
+  #     # then we have to compare the sub milliseconds to make sure that both are exactly equal.
+  #     @dt.compareDT(other.dt).nonzero? || @sub_millis <=> other.sub_millis
+  #   else
+  #      __internal_cmp(other)
+  #   end
+  # end
+  #
+  # private def __internal_cmp(other)
+  #   if other.kind_of? Numeric
+  #     ajd <=> other
+  #   else
+  #     begin
+  #       l, r = other.coerce(self)
+  #       l <=> r
+  #     rescue NoMethodError
+  #       nil
+  #     end
+  #   end
+  # end
 
   # The relationship operator for Date.
   #
@@ -1525,10 +1523,10 @@ class Date
   # Is this Date equal to +other+?
   #
   # +other+ must both be a Date object, and represent the same date.
-  def eql? (other) Date === other && self == other end
+  # def eql? (other) Date === other && self == other end
 
   # Calculate a hash value for this date.
-  def hash() @dt.getMillis end
+  # def hash() @dt.getMillis end
 
   # Return internal object state as a programmer-readable string.
   def inspect
@@ -1917,6 +1915,11 @@ class Date
     civil(t.year, t.mon, t.mday, sg)
   end
 
+  DEFAULT_TZ = ENV['TZ']
+  DEFAULT_DTZ = JODA::DateTimeZone.getDefault
+  CHRONO_ITALY_DEFAULT_DTZ = chronology(ITALY, DEFAULT_DTZ)
+  CHRONO_ITALY_UTC = JODA.chrono::GJChronology.getInstance(JODA::DateTimeZone::UTC)
+
   # Create a new DateTime object representing the current time.
   #
   # +sg+ specifies the Day of Calendar Reform.
@@ -1950,3 +1953,5 @@ class DateTime < Date
   private_class_method :today
   public_class_method  :now
 end
+
+org.jruby.ext.date.DateLibrary.load JRuby.runtime

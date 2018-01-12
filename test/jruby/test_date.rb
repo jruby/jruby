@@ -1,8 +1,12 @@
 require 'test/unit'
-require 'date'
 
-class TestDateJodaTime < Test::Unit::TestCase
-  def test_years_around_0
+class TestDate < Test::Unit::TestCase
+
+  def setup
+    require 'date'
+  end
+
+  def test_years_around_0 # Joda Time vs (Ruby) Date
     (-2..2).each do |year|
       assert_equal year, Date.new(year).year
       assert_equal year, DateTime.new(year).year
@@ -12,4 +16,5 @@ class TestDateJodaTime < Test::Unit::TestCase
       end
     end
   end
+
 end
