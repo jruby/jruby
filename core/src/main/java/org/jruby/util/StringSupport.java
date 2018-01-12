@@ -34,7 +34,6 @@ import org.jcodings.constants.CharacterType;
 import org.jcodings.exception.EncodingError;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;

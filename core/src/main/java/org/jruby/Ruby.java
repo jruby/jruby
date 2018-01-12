@@ -66,6 +66,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.MRIRecursionGuard;
+import org.jruby.util.StringSupport;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
 import org.jruby.util.io.EncodingUtils;
@@ -3022,14 +3023,14 @@ public final class Ruby implements Constantizable {
     }
 
     public void addBoundMethodsPacked(String className, String packedTuples) {
-        String[] names = Helpers.SEMICOLON_PATTERN.split(packedTuples);
-        for (int i = 0; i < names.length; i += 2) {
-            addBoundMethod(className, names[i], names[i+1]);
+        List<String> names = StringSupport.split(packedTuples, ';');
+        for (int i = 0; i < names.size(); i += 2) {
+            addBoundMethod(className, names.get(i), names.get(i+1));
         }
     }
 
     public void addSimpleBoundMethodsPacked(String className, String packedNames) {
-        String[] names = Helpers.SEMICOLON_PATTERN.split(packedNames);
+        List<String> names = StringSupport.split(packedNames, ';');
         for (String name : names) {
             addBoundMethod(className, name, name);
         }
@@ -5145,7 +5146,7 @@ public final class Ruby implements Constantizable {
     private EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<RubyThread.Status, RubyString>(RubyThread.Status.class);
 
     public interface ObjectSpacer {
-        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
+        void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
     }
 
     private static final ObjectSpacer DISABLED_OBJECTSPACE = new ObjectSpacer() {

@@ -34,12 +34,30 @@ class YAMLStoreTest < Test::Unit::TestCase
     end
   end
   
+  def test_unicode_data_should_be_loaded_correctly_when_in_readonly_mode
+    @yamlstore.transaction do
+      @yamlstore[:unicode] = "Tütü"
+    end
+    @yamlstore.transaction(true) do
+      assert_equal "Tütü", @yamlstore[:unicode]
+    end
+  end
+  
   def test_data_should_be_loaded_correctly_when_in_readwrite_mode
     @yamlstore.transaction do
       @yamlstore[:foo] = "bar"
     end
     @yamlstore.transaction do
       assert_equal "bar", @yamlstore[:foo]
+    end
+  end
+  
+  def test_unicode_data_should_be_loaded_correctly_when_in_readwrite_mode
+    @yamlstore.transaction do
+      @yamlstore[:unicoderw] = "Tütü"
+    end
+    @yamlstore.transaction do
+      assert_equal "Tütü", @yamlstore[:unicoderw]
     end
   end
   
