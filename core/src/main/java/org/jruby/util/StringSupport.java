@@ -2525,6 +2525,22 @@ public final class StringSupport {
         return newList;
     }
 
+    public static ByteList stringAsUTF8ByteList(String string) {
+        if (string == null) return null;
+
+        return new ByteList(string.getBytes(), UTF8Encoding.INSTANCE);
+    }
+
+    public static List<ByteList> stringsAsUTF8ByteList(List<String> strings) {
+        List<ByteList> bytelists = new ArrayList<>();
+
+        for (String string: strings) {
+            bytelists.add(stringAsUTF8ByteList(string));
+        }
+
+        return bytelists;
+    }
+
     public static String byteListAsString(ByteList bytes) {
         try {
             Charset charset = bytes.getEncoding().getCharset();

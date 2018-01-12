@@ -26,6 +26,7 @@
 package org.jruby.runtime.profile;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.ByteList;
 
 /**
  * Implementations of this interface will be used to enhance methods with profiling information/ callbacks.
@@ -51,5 +52,5 @@ public interface MethodEnhancer {
      * @param delegate the method to enhance
      * @return the enhanced method. if nothing is to be done, the delegate itself can be returned
      */
-    public DynamicMethod enhance( String name, DynamicMethod delegate );
+    public DynamicMethod enhance(ByteList name, DynamicMethod delegate);
 }

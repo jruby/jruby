@@ -161,7 +161,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return StringSupport.byteListAsString(symbolBytes);
     }
 
-    final ByteList getBytes() {
+    public final ByteList getBytes() {
         return symbolBytes;
     }
 

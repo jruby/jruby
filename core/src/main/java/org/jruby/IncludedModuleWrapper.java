@@ -41,6 +41,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
+import org.jruby.util.ByteList;
 
 /**
  * This class is used to provide an intermediate superclass for modules and classes that include
@@ -109,12 +110,12 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    public Map<String, DynamicMethod> getMethods() {
+    public Map<ByteList, DynamicMethod> getMethods() {
         return origin.getMethods();
     }
 
     @Override
-    public Map<String, DynamicMethod> getMethodsForWrite() {
+    public Map<ByteList, DynamicMethod> getMethodsForWrite() {
         return origin.getMethodsForWrite();
     }
 
@@ -211,7 +212,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    protected DynamicMethod searchMethodCommon(String name) {
+    protected DynamicMethod searchMethodCommon(ByteList name) {
         // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
         RubyModule module = origin;
         RubyModule methodLoc = origin.getMethodLocation();

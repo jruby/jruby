@@ -1988,7 +1988,7 @@ public class IRRuntimeHelpers {
         return site.call(context, caller, target, keyStr.strDup(context.runtime));
     }
 
-    public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, String methodName) {
+    public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, ByteList methodName) {
         Map<RubyClass, RubyModule> refinements;
         RubyModule refinement;
         DynamicMethod method = null;

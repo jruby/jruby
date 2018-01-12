@@ -6,6 +6,8 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.NullMethod;
+import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 
 import java.util.regex.Pattern;
 
@@ -28,19 +30,19 @@ public class BlankSlateWrapper extends IncludedModuleWrapper {
     }
 
     @Override
-    protected DynamicMethod searchMethodCommon(String name) {
+    protected DynamicMethod searchMethodCommon(ByteList name) {
         // this module is special and only searches itself;
+        String methodName = name.toString();
 
-        // do not go to superclasses except for special methods :
-        if (name.equals("__constants__")) {
-            return superClass.searchMethodInner("constants");
+        switch (methodName) {
+            // do not go to superclasses except for special methods :
+            case "__constants__":
+                return superClass.searchMethodInner(CommonByteLists.CONSTANTS);
+            case "__methods__":
+                return superClass.searchMethodInner(CommonByteLists.METHODS);
         }
-        if (name.equals("__methods__")) {
-            return superClass.searchMethodInner("methods");
-        }
-        if (KEEP.matcher(name).find()) {
-            return superClass.searchMethodInner(name);
-        }
+
+        if (KEEP.matcher(methodName).find()) return superClass.searchMethodInner(name);
 
         return NullMethod.getInstance();
     }

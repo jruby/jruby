@@ -87,10 +87,12 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ArraySupport;
+import org.jruby.util.ByteList;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.StringSupport;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1552,10 +1554,13 @@ public class RubyClass extends RubyModule {
             final Set<String> instanceMethods = new HashSet<String>(getMethods().size());
 
             // define instance methods
-            for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
-                final String methodName = methodEntry.getKey();
+            for (Map.Entry<ByteList, DynamicMethod> methodEntry : getMethods().entrySet()) {
+                final ByteList name = methodEntry.getKey();
+                // Since we are reifying to a Java type we should be using method names which are representable
+                // as a Java charset.  If this is not the case we should add some error check or skip those entries?
+                String methodName = StringSupport.byteListAsString(name);
 
-                if ( ! JavaNameMangler.willMethodMangleOk(methodName) ) {
+                if (!JavaNameMangler.willMethodMangleOk(methodName)) {
                     LOG.debug("{} method: '{}' won't be part of reified Java class", getName(), methodName);
                     continue;
                 }
@@ -1662,8 +1667,11 @@ public class RubyClass extends RubyModule {
             }
 
             // define class/static methods
-            for (Map.Entry<String,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
-                String methodName = methodEntry.getKey();
+            for (Map.Entry<ByteList,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
+                ByteList name = methodEntry.getKey();
+                // Since we are reifying to a Java type we should be using method names which are representable
+                // as a Java charset.  If this is not the case we should add some error check or skip those entries?
+                String methodName = StringSupport.byteListAsString(name);
 
                 if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
 

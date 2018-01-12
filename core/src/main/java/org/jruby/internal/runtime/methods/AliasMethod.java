@@ -35,19 +35,25 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
- *
- * @author  jpetersen
+ * Represents a method which has been aliased.
  */
 public class AliasMethod extends DynamicMethod {
     private DynamicMethod oldMethod;
     private String oldName;
 
     public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, String oldName) {
+        this(implementationClass, oldMethod, StringSupport.stringAsUTF8ByteList(oldName));
+    }
+
+    public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, ByteList oldName) {
         super(implementationClass, oldMethod.getVisibility());
 
-        this.oldName = oldName;
+        // FIXME: bytelist_love: Replace oldName as ByteList once we start changing call signatures and all method types.
+        this.oldName = StringSupport.byteListAsString(oldName);
         this.oldMethod = oldMethod;
     }
 

@@ -30,6 +30,8 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.RubyWarnings;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,8 +80,11 @@ public class ProfiledMethods {
         return methods;
     }
 
-    public void addProfiledMethod( final String name, final DynamicMethod method ) {
+    public void addProfiledMethod(final String name, final DynamicMethod method) {
+        addProfiledMethod(StringSupport.stringAsUTF8ByteList(name), method);
+    }
 
+    public void addProfiledMethod(ByteList name, DynamicMethod method ) {
         final long serial = method.getSerialNumber();
 
         if ( getMethods().size() >= getProfileMaxMethods()) {
@@ -87,7 +92,7 @@ public class ProfiledMethods {
             return;
         }
 
-        getMethods().putIfAbsent( serial, new ProfiledMethod(name, method) );
+        getMethods().putIfAbsent(serial, new ProfiledMethod(name, method));
     }
 
     public ProfiledMethod getProfiledMethod( final long serial ) {

@@ -43,7 +43,10 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.ClassProvider;
+import org.jruby.util.CommonByteLists;
+import org.jruby.util.TypeConverter;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -246,11 +249,7 @@ public class JavaPackage extends RubyModule {
     }
 
     private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        final String name = mname.asJavaString();
-        if ( BlankSlateWrapper.handlesMethod(name) != null ) {
-            return context.runtime.getFalse(); // not missing!
-        }
-        return context.runtime.getTrue();
+        return context.runtime.newBoolean(BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).getBytes())!= null);
     }
 
     @JRubyMethod(name = "method_missing", visibility = Visibility.PRIVATE)
@@ -345,7 +344,7 @@ public class JavaPackage extends RubyModule {
         }
 
         @Override
-        protected DynamicMethod searchMethodCommon(String name) {
+        protected DynamicMethod searchMethodCommon(ByteList name) {
             // this module is special and only searches itself;
 
             // TODO implement a switch to allow for 'more-aligned' behavior
@@ -353,8 +352,9 @@ public class JavaPackage extends RubyModule {
             return (name = handlesMethod(name)) != null ? superClass.searchMethodInner(name) : NullMethod.INSTANCE;
         }
 
-        private static String handlesMethod(final String name) {
-            switch (name) {
+        private static ByteList handlesMethod(final ByteList name) {
+            // FIXME: We should consider pure-bytelist search here.
+            switch (name.toString()) {
                 case "class" : case "singleton_class" : return name;
                 case "object_id" : case "name" : return name;
                 // these are handled already at the JavaPackage.class :
@@ -377,8 +377,8 @@ public class JavaPackage extends RubyModule {
                     return name;
 
                 // NOTE: these should maybe get re-thought and deprecated (for now due compatibility)
-                case "__constants__" : return "constants";
-                case "__methods__" : return "methods";
+                case "__constants__" : return CommonByteLists.CONSTANTS;
+                case "__methods__" : return CommonByteLists.METHODS;
             }
 
             final int last = name.length() - 1;

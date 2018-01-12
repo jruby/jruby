@@ -63,6 +63,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
@@ -662,28 +663,30 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
                 if (methodNames == null) {
                     // lock in the overridden methods for the new class, and any as-yet uninstantiated ancestor class.
-                    Map<String, DynamicMethod> methods;
+                    Map<ByteList, DynamicMethod> methods;
                     synchronized(methods = ancestor.getMethods()) {
                         methodNames = new ArrayList<>(methods.size());
-                        for (String methodName: methods.keySet()) {
-                            if ( ! isExcludedMethod(methodName) ) {
-                                names.add(methodName);
-                                methodNames.add(methodName);
+                        for (ByteList methodName: methods.keySet()) {
+                            String name = methodName.toString(); // plain is ok here since we only care about 7bit names.
+
+                            if ( ! isExcludedMethod(name) ) {
+                                names.add(name);
+                                methodNames.add(name);
                             }
                         }
                     }
                     ancestor.setInternalVariable("__java_ovrd_methods", methodNames);
-                }
-                else {
+                } else {
                     names.addAll(methodNames);
                 }
-            }
-            else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
-                Map<String, DynamicMethod> methods;
+            } else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
+                Map<ByteList, DynamicMethod> methods;
                 synchronized(methods = ancestor.getMethods()) {
-                    for (String methodName: methods.keySet()) {
-                        if ( ! isExcludedMethod(methodName) ) {
-                            names.add(methodName);
+                    for (ByteList methodName: methods.keySet()) {
+                        String name = methodName.toString(); // plain is ok here since we only care about 7bit names.
+
+                        if ( ! isExcludedMethod(name) ) {
+                            names.add(name);
                         }
                     }
                 }

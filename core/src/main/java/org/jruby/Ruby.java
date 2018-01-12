@@ -4493,7 +4493,7 @@ public final class Ruby implements Constantizable {
      * @param name the name of the method
      * @param method
      */
-    void addProfiledMethod(final String name, final DynamicMethod method) {
+    void addProfiledMethod(final ByteList name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
 

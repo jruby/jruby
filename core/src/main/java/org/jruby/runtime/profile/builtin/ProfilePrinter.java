@@ -26,7 +26,6 @@
 package org.jruby.runtime.profile.builtin;
 
 import org.jruby.MetaClass;
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig.ProfilingMode;
@@ -34,6 +33,8 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.IntHashMap.Entry;
 
@@ -46,8 +47,6 @@ public abstract class ProfilePrinter {
      * Printer implementation factory for supported profiling modes.
      * @param mode the profiling mode
      * @param profileData
-     * @param runtime
-     * @see Ruby#printProfileData(ProfileData)
      */
     public static ProfilePrinter newPrinter(ProfilingMode mode, ProfileData profileData) {
         return newPrinter(mode, profileData, null);
@@ -58,17 +57,13 @@ public abstract class ProfilePrinter {
         if (topInvocation == null) topInvocation = profileData.computeResults();
         if (mode == ProfilingMode.FLAT) {
             printer = new FlatProfilePrinter(profileData, topInvocation);
-        }
-        else if (mode == ProfilingMode.GRAPH) {
+        } else if (mode == ProfilingMode.GRAPH) {
             printer = new GraphProfilePrinter(profileData, topInvocation);
-        }
-        else if (mode == ProfilingMode.HTML) {
+        } else if (mode == ProfilingMode.HTML) {
             printer = new HtmlProfilePrinter(profileData, topInvocation);
-        }
-        else if (mode == ProfilingMode.JSON) {
+        } else if (mode == ProfilingMode.JSON) {
             printer = new JsonProfilePrinter(profileData, topInvocation);
-        }
-        else {
+        } else {
             printer = null;
         }
         return printer;
@@ -136,10 +131,12 @@ public abstract class ProfilePrinter {
     static String methodName(ProfiledMethod profileMethod) {
         final String displayName;
         if (profileMethod != null) {
-            String name = profileMethod.getName();
             DynamicMethod method = profileMethod.getMethod();
-            if (name == null) name = method.getName();
-            displayName = moduleHashMethod(method.getImplementationClass(), name);
+            ByteList name = profileMethod.getName();
+            // FIXME: bytelist_love: replace with just bytelist once we process Method to be ByteList.
+            if (name == null) name = StringSupport.stringAsUTF8ByteList(method.getName());
+            // FIXME: bytelist_love: consider all bytelist version of moduleHashMethod once name in Module is ByteList.
+            displayName = moduleHashMethod(method.getImplementationClass(), name.toString());
         } else {
             displayName = "<unknown>";
         }
