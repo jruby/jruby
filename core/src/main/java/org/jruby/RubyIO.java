@@ -1755,14 +1755,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     private static int interpretSeekWhence(IRubyObject vwhence) {
         if (vwhence instanceof RubySymbol) {
-            if (vwhence.toString() == "SET")
-                return PosixShim.SEEK_SET;
-            if (vwhence.toString() == "CUR")
-                return PosixShim.SEEK_CUR;
-            if (vwhence.toString() == "END")
-                return PosixShim.SEEK_END;
+            String string = vwhence.toString();
+
+            if ("SET".equals(string)) return PosixShim.SEEK_SET;
+            if ("CUR".equals(string)) return PosixShim.SEEK_CUR;
+            if ("END".equals(string)) return PosixShim.SEEK_END;
         }
-        return (int)vwhence.convertToInteger().getLongValue();
+        return (int) vwhence.convertToInteger().getLongValue();
     }
 
     // rb_io_rewind
