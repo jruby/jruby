@@ -1504,7 +1504,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 }
                 value.setUnsafeBytes(obytes);
             }
-            
+
             setCodeRange(cr);
         }
         return this;
@@ -1584,7 +1584,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "casecmp")
     public IRubyObject casecmp19(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
-        RubyString otherStr = other.convertToString();
+
+        IRubyObject tmp = other.checkStringType();
+        if (tmp.isNil()) return runtime.getNil();
+
+        RubyString otherStr = (RubyString) tmp;
         Encoding enc = StringSupport.areCompatible(this, otherStr);
         if (enc == null) return runtime.getNil();
 
@@ -1608,7 +1612,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "casecmp?")
     public IRubyObject casecmp_p(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
-        RubyString otherStr = other.convertToString();
+
+        IRubyObject tmp = other.checkStringType();
+        if (tmp.isNil()) return runtime.getNil();
+        RubyString otherStr = (RubyString) tmp;
 
         Encoding enc = StringSupport.areCompatible(this, otherStr);
         if (enc == null) return runtime.getNil();
