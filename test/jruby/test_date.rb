@@ -17,4 +17,68 @@ class TestDate < Test::Unit::TestCase
     end
   end
 
+  def test_date_time_methods
+    date = Date.new(1, 2, 3)
+    assert_equal 1, date.year
+    assert_equal 2, date.month
+    assert_equal 3, date.day
+    assert_equal 34, date.yday
+    assert_equal 4, date.wday
+    assert_equal 1, date.cwyear
+    assert_equal 0, date.send(:hour)
+    assert_equal 0, date.send(:min)
+    assert_equal 0, date.send(:second)
+  end
+
+  def test_new_start
+    date = Date.new(2000, 1, 1)
+
+    new_date = date.italy
+    assert_equal 2000, new_date.year
+    assert_equal 1, new_date.month
+    assert_equal 1, new_date.day
+
+    new_date = date.england
+    assert_equal 2000, new_date.year
+    assert_equal 1, new_date.month
+    assert_equal 1, new_date.day
+
+    new_date = date.julian
+    assert_equal 1999, new_date.year
+    assert_equal 12, new_date.month
+    assert_equal 19, new_date.day
+
+    new_date = date.new_start
+    assert_equal 2000, new_date.year
+    assert_equal 1, new_date.month
+    assert_equal 1, new_date.day
+    assert_equal Date::ITALY, new_date.start
+
+    new_date = date.new_start(Date::JULIAN)
+    assert_equal 1999, new_date.year
+    assert_equal 12, new_date.month
+    assert_equal 19, new_date.day
+    assert_equal Date::JULIAN, new_date.start
+
+    new_date = new_date.new_start(Date::GREGORIAN)
+    assert_equal 2000, new_date.year
+    assert_equal 1, new_date.month
+    assert_equal 1, new_date.day
+    assert_equal Date::GREGORIAN, new_date.start
+
+    # new_date = date.new_start(1)
+    # assert_equal 1999, new_date.year
+    # assert_equal 12, new_date.month
+    # assert_equal 19, new_date.day
+  end
+
+  def test_julian
+    date = Date.new(2000, 1, 1)
+    assert_equal true, date.gregorian?
+    assert_equal false, date.julian?
+
+    date = Date.new(1000, 1, 1)
+    assert_equal true, date.julian?
+  end
+
 end

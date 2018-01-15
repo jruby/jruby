@@ -384,7 +384,7 @@ public class RubyDate extends RubyObject {
         if (year < 0 && isJulian()) {
             // Joda-time returns -x for year x BC in JulianChronology (so there is no year 0),
             // while date.rb returns -x+1, following astronomical year numbering (with year 0)
-            return year++;
+            return ++year;
         }
         return year;
     }
