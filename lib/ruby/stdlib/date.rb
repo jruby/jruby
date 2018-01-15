@@ -736,20 +736,6 @@ class Date
   extend  t
   include t
 
-  # # Is a year a leap year in the Julian calendar?
-  # #
-  # # All years divisible by 4 are leap years in the Julian calendar.
-  # def self.julian_leap? (y) y % 4 == 0 end
-  #
-  # # Is a year a leap year in the Gregorian calendar?
-  # #
-  # # All years divisible by 4 are leap years in the Gregorian calendar,
-  # # except for years divisible by 100 and not by 400.
-  # def self.gregorian_leap? (y) y % 4 == 0 && y % 100 != 0 || y % 400 == 0 end
-  # class << self; alias_method :leap?, :gregorian_leap? end
-
-  class << self; alias_method :new!, :new end
-
   def self.valid_jd? (jd, sg=ITALY)
     !!_valid_jd?(jd, sg)
   end
