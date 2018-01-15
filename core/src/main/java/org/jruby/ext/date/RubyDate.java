@@ -126,6 +126,26 @@ public class RubyDate extends RubyObject {
         this.off = off; this.start = start;
     }
 
+    /**
+     * @note since <code>Date.new</code> is a <code>civil</code> alias, this won't ever get used
+     * @deprecated kept due AR-JDBC (uses RubyClass.newInstance(...) to 'fast' allocate a Date instance)
+     */
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject dt) {
+        return new_(context, null, dt);
+        // return new RubyDate(context.runtime, (DateTime) JavaUtil.unwrapJavaValue(dt));
+    }
+
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject ajd, IRubyObject of) {
+        return new_(context, null, ajd, of);
+    }
+
+    @JRubyMethod(visibility = Visibility.PRIVATE) // used by marshal_load
+    public IRubyObject initialize(ThreadContext context, IRubyObject ajd, IRubyObject of, IRubyObject sg) {
+        return new_(context, null, ajd, of, sg);
+    }
+
     // Date.new!(dt_or_ajd=0, of=0, sg=ITALY, sub_millis=0)
 
     /**
@@ -186,7 +206,7 @@ public class RubyDate extends RubyObject {
         return (int) start;
     }
 
-    private static final long DAY_MS = 86400000; // 24 * 60 * 60 * 1000
+    private static final long DAY_MS = 86_400_000; // 24 * 60 * 60 * 1000
     private static RubyFixnum DAY_MS_CACHE;
 
     private long initMillis(final ThreadContext context, IRubyObject ajd) {
@@ -341,9 +361,9 @@ public class RubyDate extends RubyObject {
 
     public final boolean isJulian() {
         // JULIAN.<=>(numeric)     => +1
-        if (start == JULIAN) return true;
+        //if (start == JULIAN) return true;
         // GREGORIAN.<=>(numeric)  => -1
-        if (start == GREGORIAN) return false;
+        //if (start == GREGORIAN) return false;
 
         return getJulianDayNumber() < start;
     }
@@ -356,7 +376,7 @@ public class RubyDate extends RubyObject {
         long num = 210_866_760_000_000l;
         num += this.dt.getMillis() + subMillis;
 
-        return RubyRational.newInstance(context, RubyFixnum.newFixnum(runtime, num), RubyFixnum.newFixnum(runtime, 86_400_000));
+        return RubyRational.newInstance(context, RubyFixnum.newFixnum(runtime, num), RubyFixnum.newFixnum(runtime, DAY_MS));
     }
 
     // Get the date as an Astronomical Modified Julian Day Number.
@@ -409,6 +429,13 @@ public class RubyDate extends RubyObject {
         return RubyFixnum.newFixnum(context.runtime, dt.getDayOfMonth());
     }
 
+    // Get any fractional day part of the date.
+    @JRubyMethod(name = "day_fraction")
+    public IRubyObject day_fraction(ThreadContext context) {
+        long ms = dt.getSecondOfDay() * 1000 + dt.getMillisOfSecond() + (long) subMillis;
+        return RubyRational.newRationalCanonicalize(context, ms, DAY_MS);
+    }
+
     @JRubyMethod(name = "hour", visibility = Visibility.PRIVATE)
     public RubyInteger hour(ThreadContext context) {
         return RubyFixnum.newFixnum(context.runtime, dt.getHourOfDay());
@@ -426,9 +453,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "sec_fraction", alias = "second_fraction", visibility = Visibility.PRIVATE)
     public IRubyObject sec_fraction(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        RubyFixnum num = RubyFixnum.newFixnum(runtime, dt.getMillisOfSecond() + (long) subMillis);
-        return RubyRational.newInstance(context, num, RubyFixnum.newFixnum(runtime, 1000));
+        return RubyRational.newRationalCanonicalize(context, dt.getMillisOfSecond() + (long) subMillis, 1000);
     }
 
     @JRubyMethod
@@ -477,10 +502,7 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject offset(ThreadContext context) {
         final int offset = dt.getChronology().getZone().getOffset(dt);
-        return RubyRational.newInstance(context,
-                RubyFixnum.newFixnum(context.runtime, offset),
-                RubyFixnum.newFixnum(context.runtime, 86_400_000)
-        );
+        return RubyRational.newRationalCanonicalize(context, offset, DAY_MS);
     }
 
     @JRubyMethod(optional = 1, visibility = Visibility.PRIVATE)
@@ -556,6 +578,154 @@ public class RubyDate extends RubyObject {
     }
 
     //
+
+    @JRubyMethod(name = "+")
+    public IRubyObject op_plus(ThreadContext context, IRubyObject n) {
+        if (n instanceof RubyFixnum) {
+            int days = n.convertToInteger().getIntValue();
+            return new RubyDate(context.runtime, dt.plusDays(+days), off, start, subMillis);
+        }
+        if (n instanceof RubyNumeric) {
+            return op_plus_numeric(context, (RubyNumeric) n);
+        }
+        throw context.runtime.newTypeError("expected numeric");
+    }
+
+    private IRubyObject op_plus_numeric(ThreadContext context, RubyNumeric n) {
+        final Ruby runtime = context.runtime;
+        // ms, sub = (n * 86_400_000).divmod(1)
+        // sub = 0 if sub == 0 # avoid Rational(0, 1)
+        // sub_millis = @sub_millis + sub
+        // if sub_millis >= 1
+        //   sub_millis -= 1
+        //   ms += 1
+        // end
+        IRubyObject val = n.callMethod(context, "*", RubyFixnum.newFixnum(runtime, DAY_MS));
+
+        RubyArray res = (RubyArray) ((RubyNumeric) val).divmod(context, RubyFixnum.one(context.runtime));
+        long ms = ((RubyInteger) res.eltInternal(0)).getLongValue();
+        RubyNumeric sub = (RubyNumeric) res.eltInternal(1);
+        if ( sub.zero_p(context).isTrue() ) sub = RubyFixnum.zero(runtime); // avoid Rational(0, 1)
+        double sub_millis = subMillis + sub.getDoubleValue();
+        if (sub_millis >= 1) {
+            sub_millis -= 1; ms += 1;
+        }
+        return new RubyDate(runtime, dt.plus(ms), off, start, (float) sub_millis);
+    }
+
+    @JRubyMethod(name = "-")
+    public IRubyObject op_minus(ThreadContext context, IRubyObject n) {
+        if (n instanceof RubyFixnum) {
+            int days = n.convertToInteger().getIntValue();
+            return new RubyDate(context.runtime, dt.plusDays(-days), off, start, subMillis);
+        }
+        if (n instanceof RubyNumeric) {
+            return op_plus_numeric(context, (RubyNumeric) ((RubyNumeric) n).op_uminus(context));
+        }
+        if (n instanceof RubyDate) {
+            return op_minus_date(context, (RubyDate) n);
+        }
+        throw context.runtime.newTypeError("expected numeric or date");
+    }
+
+    private IRubyObject op_minus_date(ThreadContext context, final RubyDate that) {
+        long diff = this.dt.getMillis() - that.dt.getMillis();
+        float diff_sub = this.subMillis - that.subMillis;
+        if (diff_sub != 0) diff += diff_sub;
+        return RubyRational.newRationalCanonicalize(context, diff, DAY_MS);
+    }
+
+    // Return a new Date one day after this one.
+    @JRubyMethod(name = "next", alias = "succ")
+    public IRubyObject next(ThreadContext context) {
+        return next_day(context);
+    }
+
+    @JRubyMethod
+    public IRubyObject next_day(ThreadContext context) {
+        return new RubyDate(context.runtime, dt.plusDays(+1), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject next_day(ThreadContext context, IRubyObject n) {
+        int days = n.convertToInteger().getIntValue();
+        return new RubyDate(context.runtime, dt.plusDays(+days), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject prev_day(ThreadContext context) {
+        return new RubyDate(context.runtime, dt.plusDays(-1), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject prev_day(ThreadContext context, IRubyObject n) {
+        int days = n.convertToInteger().getIntValue();
+        return new RubyDate(context.runtime, dt.plusDays(-days), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject next_month(ThreadContext context) {
+        return new RubyDate(context.runtime, dt.plusMonths(+1), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject next_month(ThreadContext context, IRubyObject n) {
+        int months = n.convertToInteger().getIntValue();
+        return new RubyDate(context.runtime, dt.plusMonths(+months), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject prev_month(ThreadContext context) {
+        return new RubyDate(context.runtime, dt.plusMonths(-1), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject prev_month(ThreadContext context, IRubyObject n) {
+        int months = n.convertToInteger().getIntValue();
+        return new RubyDate(context.runtime, dt.plusMonths(-months), off, start, subMillis);
+    }
+
+    @JRubyMethod(name = ">>")
+    public IRubyObject shift_fw(ThreadContext context, IRubyObject n) {
+        return next_month(context, n);
+    }
+
+    @JRubyMethod(name = "<<")
+    public IRubyObject shift_bw(ThreadContext context, IRubyObject n) {
+        return prev_month(context, n);
+    }
+
+    @JRubyMethod
+    public IRubyObject next_year(ThreadContext context) {
+        return new RubyDate(context.runtime, dt.plusYears(+1), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject next_year(ThreadContext context, IRubyObject n) {
+        int years = n.convertToInteger().getIntValue();
+        return new RubyDate(context.runtime, dt.plusYears(+years), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject prev_year(ThreadContext context) {
+        return new RubyDate(context.runtime, dt.plusYears(-1), off, start, subMillis);
+    }
+
+    @JRubyMethod
+    public IRubyObject prev_year(ThreadContext context, IRubyObject n) {
+        int years = n.convertToInteger().getIntValue();
+        return new RubyDate(context.runtime, dt.plusYears(-years), off, start, subMillis);
+    }
+
+    @JRubyMethod // [ ajd, @of, @sg ]
+    public IRubyObject marshal_dump(ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        return context.runtime.newArrayNoCopy(new IRubyObject[] {
+                ajd(context),
+                RubyFixnum.newFixnum(runtime, off),
+                RubyFixnum.newFixnum(runtime, start)
+        });
+    }
 
     // def jd_to_ajd(jd, fr, of=0) jd + fr - of - Rational(1, 2) end
     private static double jd_to_ajd(long jd, int fr, int of) { return jd + fr - of - 0.5; }

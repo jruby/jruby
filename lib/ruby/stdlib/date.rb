@@ -1109,285 +1109,11 @@ class Date
     new_by_frags(elem, sg)
   end
 
-  # *NOTE* this is the documentation for the method new!().  If
-  # you are reading this as the documentation for new(), that is
-  # because rdoc doesn't fully support the aliasing of the
-  # initialize() method.
-  # new() is in
-  # fact an alias for #civil(): read the documentation for that
-  # method instead.
-  #
-  # Create a new Date object.
-  #
-  # +ajd+ is the Astronomical Julian Day Number.
-  # +of+ is the offset from UTC as a fraction of a day.
-  # Both default to 0.
-  #
-  # +sg+ specifies the Day of Calendar Reform to use for this
-  # Date object.
-  #
-  # Using one of the factory methods such as Date::civil is
-  # generally easier and safer.
-  # def initialize(dt_or_ajd=0, of=0, sg=ITALY, sub_millis=0)
-  #   if JODA::DateTime === dt_or_ajd
-  #     @dt = dt_or_ajd
-  #     @sub_millis = sub_millis
-  #     of ||= Rational(@dt.getChronology.getZone.getOffset(@dt), 86_400_000)
-  #   else
-  #     # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
-  #     millis, @sub_millis = ((dt_or_ajd - UNIX_EPOCH_IN_AJD) * 86400000).divmod(1)
-  #     raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" if millis > java.lang.Long::MAX_VALUE
-  #     @dt = JODA::DateTime.new(millis, chronology(sg, of))
-  #   end
-  #
-  #   @of = of # offset
-  #   @sg = sg # start
-  # end
-
-  attr_reader :dt, :sub_millis
-  protected   :dt, :sub_millis
-
-  # Get the date as an Astronomical Julian Day Number.
-  # def ajd
-  #   # Rational(@dt.getMillis + @sub_millis, 86400000) + 2440587.5
-  #   Rational(210866760000000 + @dt.getMillis + @sub_millis, 86400000)
-  # end
-
-  # Get the date as an Astronomical Modified Julian Day Number.
-  # def amjd
-  #   ajd_to_amjd(ajd)
-  # end
-
-  # Get the date as a Julian Day Number.
-  # def jd
-  #   (JODA::DateTimeUtils.toJulianDay(@dt.getMillis) + @of.to_f + 0.5).floor
-  # end
-
-  # Get any fractional day part of the date.
-  def day_fraction
-    ms = ((hour * 60 + min) * 60 + sec) * 1000 + @dt.getMillisOfSecond + @sub_millis
-    Rational(ms, 86_400_000)
-  end
-
-  # # Get the date as a Modified Julian Day Number.
-  # def mjd() jd_to_mjd(jd) end
-
-  # # Get the date as the number of days since the Day of Calendar
-  # # Reform (in Italy and the Catholic countries).
-  # def ld() jd_to_ld(jd) end
-
-  # def joda_year_to_date_year(year)
-  #   if year < 0 and julian?
-  #     # Joda-time returns -x for year x BC in JulianChronology (so there is no year 0),
-  #     # while date.rb returns -x+1, following astronomical year numbering (with year 0)
-  #     year + 1
-  #   else
-  #     year
-  #   end
-  # end
-  # private :joda_year_to_date_year
-  #
-  # # Get the year of this date.
-  # def year
-  #   joda_year_to_date_year(@dt.getYear)
-  # end
-  #
-  # # Get the day-of-the-year of this date.
-  # #
-  # # January 1 is day-of-the-year 1
-  # def yday
-  #   @dt.getDayOfYear
-  # end
-  #
-  # # Get the month of this date.
-  # #
-  # # January is month 1.
-  # def mon
-  #   @dt.getMonthOfYear
-  # end
-  # alias_method :month, :mon
-  #
-  # # Get the day-of-the-month of this date.
-  # def mday
-  #   @dt.getDayOfMonth
-  # end
-  # alias_method :day, :mday
-  #
-  # # Get the hour of this date.
-  # def hour
-  #   @dt.getHourOfDay
-  # end
-  #
-  # # Get the minute of this date.
-  # def min
-  #   @dt.getMinuteOfHour
-  # end
-  # alias_method :minute, :min
-  #
-  # # Get the second of this date.
-  # def sec
-  #   @dt.getSecondOfMinute
-  # end
-  # alias_method :second, :sec
-
-  # Get the fraction-of-a-second of this date.
-  # def sec_fraction
-  #   Rational(@dt.getMillisOfSecond + @sub_millis, 1000)
-  # end
-  # alias_method :second_fraction, :sec_fraction
-
-  # private :hour, :min, :sec, :sec_fraction,
-  #         :minute, :second, :second_fraction
-
   def zone() strftime('%:z') end
   private :zone
 
-  # # Get the commercial year of this date.  See *Commercial* *Date*
-  # # in the introduction for how this differs from the normal year.
-  # def cwyear
-  #   joda_year_to_date_year(@dt.getWeekyear)
-  # end
-  #
-  # # Get the commercial week of the year of this date.
-  # def cweek
-  #   @dt.getWeekOfWeekyear
-  # end
-  #
-  # # Get the commercial day of the week of this date.  Monday is
-  # # commercial day-of-week 1; Sunday is commercial day-of-week 7.
-  # def cwday
-  #   @dt.getDayOfWeek
-  # end
-  #
-  # # Get the week day of this date.  Sunday is day-of-week 0;
-  # # Saturday is day-of-week 6.
-  # def wday
-  #   @dt.getDayOfWeek % 7
-  # end
-
   DAYNAMES.each_with_index do |n, i|
     define_method(n.downcase + '?') { wday == i }
-  end
-
-  def nth_kday? (n, k)
-    k == wday && jd === nth_kday_to_jd(year, mon, n, k, start)
-  end
-  private :nth_kday?
-
-  # # Is the current date old-style (Julian Calendar)?
-  # def julian?
-  #   jd < @sg
-  # end
-  #
-  # # Is the current date new-style (Gregorian Calendar)?
-  # def gregorian? () !julian? end
-
-  # def fix_style # :nodoc:
-  #   if julian?
-  #   then self.class::JULIAN
-  #   else self.class::GREGORIAN end
-  # end
-  # private :fix_style
-
-  # Is this a leap year?
-  # def leap?
-  #   julian? ? Date.julian_leap?(year) : Date.gregorian_leap?(year)
-  # end
-
-  # # When is the Day of Calendar Reform for this Date object?
-  # def start
-  #   case @dt.getChronology
-  #   when JODA.chrono::JulianChronology
-  #     JULIAN
-  #   when JODA.chrono::GregorianChronology
-  #     GREGORIAN
-  #   else
-  #     JODA::DateTimeUtils.toJulianDayNumber @dt.getChronology.getGregorianCutover.getMillis
-  #   end
-  # end
-
-  # Create a copy of this Date object using a new Day of Calendar Reform.
-  # def new_start(sg=self.class::ITALY)
-  #   self.class.new!(@dt.withChronology(chronology(sg, @of)), @of, sg, @sub_millis)
-  # end
-
-  # # Create a copy of this Date object that uses the Italian/Catholic
-  # # Day of Calendar Reform.
-  # def italy() new_start(self.class::ITALY) end
-  #
-  # # Create a copy of this Date object that uses the English/Colonial
-  # # Day of Calendar Reform.
-  # def england() new_start(self.class::ENGLAND) end
-  #
-  # # Create a copy of this Date object that always uses the Julian
-  # # Calendar.
-  # def julian() new_start(self.class::JULIAN) end
-  #
-  # # Create a copy of this Date object that always uses the Gregorian
-  # # Calendar.
-  # def gregorian() new_start(self.class::GREGORIAN) end
-
-  # def offset
-  #   Rational(@dt.getChronology.getZone.getOffset(@dt), 86_400_000)
-  # end
-
-  # TODO test working new_offset 'str'
-  #
-  # def new_offset(of=0)
-  #   if String === of
-  #     of = Rational(zone_to_diff(of) || 0, 86400)
-  #   end
-  #   self.class.new!(@dt.withChronology(chronology(@sg, of)), of, @sg, @sub_millis)
-  # end
-  # private :offset, :new_offset
-
-  # Return a new Date object that is +n+ days later than the
-  # current one.
-  #
-  # +n+ may be a negative value, in which case the new Date
-  # is earlier than the current one; however, #-() might be
-  # more intuitive.
-  #
-  # If +n+ is not a Numeric, a TypeError will be thrown.  In
-  # particular, two Dates cannot be added to each other.
-  def + (n)
-    case n
-    when Integer
-      self.class.new!(@dt.plusDays(n), @of, @sg, @sub_millis)
-    when Numeric
-      ms, sub = (n * 86_400_000).divmod(1)
-      sub = 0 if sub == 0 # avoid Rational(0, 1)
-      sub_millis = @sub_millis + sub
-      if sub_millis >= 1
-        sub_millis -= 1
-        ms += 1
-      end
-      self.class.new!(@dt.plus(ms), @of, @sg, sub_millis)
-    else
-      raise TypeError, 'expected numeric'
-    end
-  end
-
-  # If +x+ is a Numeric value, create a new Date object that is
-  # +x+ days earlier than the current one.
-  #
-  # If +x+ is a Date, return the number of days between the
-  # two dates; or, more precisely, how many days later the current
-  # date is than +x+.
-  #
-  # If +x+ is neither Numeric nor a Date, a TypeError is raised.
-  def - (x)
-    case x
-    when Numeric
-      self + (-x)
-    when Date
-      diff = @dt.getMillis - x.dt.getMillis
-      diff_sub = @sub_millis - x.sub_millis
-      diff += diff_sub if diff_sub != 0
-      Rational(diff, 86_400_000)
-    else
-      raise TypeError, 'expected numeric or date'
-    end
   end
 
   # Compare this date with another date.
@@ -1449,43 +1175,6 @@ class Date
     end
   end
 
-  def next_day(n=1) self + n end
-  def prev_day(n=1) self - n end
-
-  # Return a new Date one day after this one.
-  def next() next_day end
-  alias_method :succ, :next
-
-  # Return a new Date object that is +n+ months later than
-  # the current one.
-  #
-  # If the day-of-the-month of the current Date is greater
-  # than the last day of the target month, the day-of-the-month
-  # of the returned Date will be the last day of the target month.
-  def >> (n)
-    n = n.to_int rescue raise(TypeError, "n must be a Fixnum")
-    self.class.new!(@dt.plusMonths(n), @of, @sg, @sub_millis)
-  end
-
-  # Return a new Date object that is +n+ months earlier than
-  # the current one.
-  #
-  # If the day-of-the-month of the current Date is greater
-  # than the last day of the target month, the day-of-the-month
-  # of the returned Date will be the last day of the target month.
-  def << (n) self >> -n end
-
-  def next_month(n=1) self >> n end
-  def prev_month(n=1) self << n end
-
-  def next_year(n=1)
-    self.class.new!(@dt.plusYears(n.to_i), @of, @sg, @sub_millis)
-  end
-
-  def prev_year(n=1)
-    next_year(-n)
-  end
-
   # Step the current date forward +step+ days at a
   # time (or backward, if +step+ is negative) until
   # we reach +limit+ (inclusive), yielding the resultant
@@ -1525,9 +1214,6 @@ class Date
   # +other+ must both be a Date object, and represent the same date.
   # def eql? (other) Date === other && self == other end
 
-  # Calculate a hash value for this date.
-  # def hash() @dt.getMillis end
-
   # Return internal object state as a programmer-readable string.
   def inspect
     s = (hour * 60 + min) * 60 + sec - (@of*86_400).to_i
@@ -1543,13 +1229,10 @@ class Date
   # The format used is YYYY-MM-DD.
   def to_s() format('%.4d-%02d-%02d', year, mon, mday) end # 4p
 
-  # Dump to Marshal format.
-  def marshal_dump() [ajd, @of, @sg] end
-
   # Load from Marshal format.
+  # @private
+  # @note marshal_dump differs from MRI, implemented as [ ajd, @of, @sg ]
   def marshal_load(a)
-    ajd, of, sg = nil
-
     case a.size
     when 2 # 1.6.x
       ajd = a[0] - HALF_DAYS_IN_DAY
