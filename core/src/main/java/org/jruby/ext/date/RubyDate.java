@@ -38,11 +38,12 @@ import org.joda.time.chrono.GregorianChronology;
 import org.joda.time.chrono.JulianChronology;
 
 import org.jruby.*;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,7 +60,7 @@ import org.jruby.util.TypeConverter;
  * @author enebo
  * @author kares
  */
-@JRubyModule(name = "Date")
+@JRubyClass(name = "Date")
 public class RubyDate extends RubyObject {
 
     //private static final DateTimeZone DEFAULT_DTZ = DateTimeZone.getDefault();
@@ -91,15 +92,36 @@ public class RubyDate extends RubyObject {
     private int start = ITALY; // @sg
     private float subMillis; // @sub_millis
 
+    static RubyClass createDateClass(Ruby runtime) {
+        RubyClass Date = runtime.defineClass("Date", runtime.getObject(), ALLOCATOR);
+        Date.setReifiedClass(RubyDate.class);
+        Date.includeModule(runtime.getComparable());
+        Date.defineAnnotatedMethods(RubyDate.class);
+        return Date;
+    }
+
+    // Julian Day Number day 0 ... `def self.civil(y=-4712, m=1, d=1, sg=ITALY)`
+    static final DateTime defaultDateTime = new DateTime(-4712, 1, 1, 0, 0, CHRONO_ITALY_UTC);
+
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+        @Override
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new RubyDate(runtime, klass, defaultDateTime);
+        }
+    };
+
     private static RubyClass getDate(final Ruby runtime) {
         return (RubyClass) runtime.getObject().getConstantAt("Date");
     }
 
-    public RubyDate(Ruby runtime, DateTime dt) {
-        super(runtime, getDate(runtime));
+    public RubyDate(Ruby runtime, RubyClass klass, DateTime dt) {
+        super(runtime, klass);
 
-        this.dt = dt;
-        // TODO calc off?
+        this.dt = dt; // assuming of = 0 (UTC)
+    }
+
+    public RubyDate(Ruby runtime, DateTime dt) {
+        this(runtime, getDate(runtime), dt);
     }
 
     RubyDate(Ruby runtime, DateTime dt, int off, int start, float subMillis) {

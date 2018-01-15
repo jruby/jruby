@@ -9,9 +9,8 @@ import java.io.IOException;
 public class DateLibrary implements Library {
 
     public static void load(Ruby runtime) {
-        // assuming date.rb is loading first, for now :
-        RubyClass Date = runtime.getClass("Date");
-        Date.defineAnnotatedMethods(RubyDate.class);
+        RubyClass Date = RubyDate.createDateClass(runtime);
+        RubyDateTime.createDateTimeClass(runtime, Date);
     }
 
     public void load(final Ruby runtime, boolean wrap) throws IOException {

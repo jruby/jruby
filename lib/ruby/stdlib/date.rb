@@ -193,6 +193,8 @@
 #
 #     puts secs_to_new_year()
 
+org.jruby.ext.date.DateLibrary.load JRuby.runtime
+
 require 'date/format'
 require 'date.jar'
 
@@ -228,8 +230,6 @@ require 'date.jar'
 # date objects to be compared and sorted, ranges of dates
 # to be created, and so forth.
 class Date
-
-  include Comparable
 
   # Full month names, in English.  Months count from 1 to 12; a
   # month's numerical representation indexed into this array
@@ -1550,8 +1550,6 @@ class DateTime < Date
   end
 
 end
-
-org.jruby.ext.date.DateLibrary.load JRuby.runtime
 
 class Time
 
