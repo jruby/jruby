@@ -63,7 +63,7 @@ verify that JRuby is still fully functional.
 
 ### Hacking the Build System
 
-for a general overview of the different directories and maven artifacts see [JRuby Build)](https://github.com/jruby/jruby/wiki/JRuby-Build----Some-Inside-Info)
+for a general overview of the different directories and maven artifacts see [JRuby Build](https://github.com/jruby/jruby/wiki/JRuby-Build----Some-Inside-Info)
 
 For this only  the ***pom.rb*** needs to edited. using mvn-3.3.x or the maven wrapper `./mvnw` will generate the pom.xml file where needed. For the jar files of the build those pom.xml will be generated for some use-cases, i.e. some IDEs need them.
 
