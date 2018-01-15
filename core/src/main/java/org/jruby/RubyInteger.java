@@ -457,11 +457,7 @@ public abstract class RubyInteger extends RubyNumeric {
         int ndigits = num2int(digits);
 
         RoundingMode roundingMode = getRoundingMode(context, opts);
-
-        if (ndigits > 0) {
-            return RubyKernel.new_float(runtime, this);
-        }
-        if (ndigits == 0) {
+        if (ndigits >= 0) {
             return this;
         }
 

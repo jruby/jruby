@@ -181,8 +181,8 @@ class TestInteger < Test::Unit::TestCase
     assert_int_equal(11111, 11111.round)
     assert_int_equal(11111, 11111.round(0))
 
-    assert_float_equal(11111.0, 11111.round(1))
-    assert_float_equal(11111.0, 11111.round(2))
+    assert_int_equal(11111, 11111.round(1))
+    assert_int_equal(11111, 11111.round(2))
 
     assert_int_equal(11110, 11111.round(-1))
     assert_int_equal(11100, 11111.round(-2))
@@ -255,8 +255,8 @@ class TestInteger < Test::Unit::TestCase
     assert_int_equal(11111, 11111.floor)
     assert_int_equal(11111, 11111.floor(0))
 
-    assert_float_equal(11111.0, 11111.floor(1))
-    assert_float_equal(11111.0, 11111.floor(2))
+    assert_int_equal(11111, 11111.floor(1))
+    assert_int_equal(11111, 11111.floor(2))
 
     assert_int_equal(11110, 11110.floor(-1))
     assert_int_equal(11110, 11119.floor(-1))
@@ -280,8 +280,8 @@ class TestInteger < Test::Unit::TestCase
     assert_int_equal(11111, 11111.ceil)
     assert_int_equal(11111, 11111.ceil(0))
 
-    assert_float_equal(11111.0, 11111.ceil(1))
-    assert_float_equal(11111.0, 11111.ceil(2))
+    assert_int_equal(11111, 11111.ceil(1))
+    assert_int_equal(11111, 11111.ceil(2))
 
     assert_int_equal(11110, 11110.ceil(-1))
     assert_int_equal(11120, 11119.ceil(-1))
@@ -299,14 +299,17 @@ class TestInteger < Test::Unit::TestCase
 
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1120, 1111_1111_1111_1111_1111_1111_1111_1111.ceil(-1))
     assert_int_equal(-1111_1111_1111_1111_1111_1111_1111_1110, (-1111_1111_1111_1111_1111_1111_1111_1111).ceil(-1))
+
+    assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1111, 1111_1111_1111_1111_1111_1111_1111_1111.ceil(1))
+    assert_int_equal(10**400, (10**400).ceil(1))
   end
 
   def test_truncate
     assert_int_equal(11111, 11111.truncate)
     assert_int_equal(11111, 11111.truncate(0))
 
-    assert_float_equal(11111.0, 11111.truncate(1))
-    assert_float_equal(11111.0, 11111.truncate(2))
+    assert_int_equal(11111, 11111.truncate(1))
+    assert_int_equal(11111, 11111.truncate(2))
 
     assert_int_equal(11110, 11110.truncate(-1))
     assert_int_equal(11110, 11119.truncate(-1))
@@ -324,6 +327,8 @@ class TestInteger < Test::Unit::TestCase
 
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1110, 1111_1111_1111_1111_1111_1111_1111_1111.truncate(-1))
     assert_int_equal(-1111_1111_1111_1111_1111_1111_1111_1110, (-1111_1111_1111_1111_1111_1111_1111_1111).truncate(-1))
+    assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1111, 1111_1111_1111_1111_1111_1111_1111_1111.truncate(1))
+    assert_int_equal(10**400, (10**400).truncate(1))
   end
 
   MimicInteger = Struct.new(:to_int)

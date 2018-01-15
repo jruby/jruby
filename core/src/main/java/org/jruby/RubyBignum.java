@@ -270,9 +270,7 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject ceil(ThreadContext context, IRubyObject arg){
         int ndigits = arg.convertToInteger().getIntValue();
         BigInteger self = value;
-        if (ndigits > 0){
-            return convertToFloat();
-        } else if (ndigits == 0){
+        if (ndigits >= 0){
             return this;
         } else {
             int posdigits = Math.abs(ndigits);
@@ -293,9 +291,7 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject floor(ThreadContext context, IRubyObject arg){
         int ndigits = arg.convertToInteger().getIntValue();
         BigInteger self = value;
-        if (ndigits > 0){
-            return convertToFloat();
-        } else if (ndigits == 0){
+        if (ndigits >= 0){
             return this;
         } else {
             int posdigits = Math.abs(ndigits);

@@ -305,9 +305,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject ceil(ThreadContext context, IRubyObject arg){
         long ndigits = arg.convertToInteger().getLongValue();
         long self = getLongValue();
-        if (ndigits > 0) {
-            return convertToFloat();
-        } else if (ndigits == 0){
+        if (ndigits >= 0) {
             return this;
         } else {
             long posdigits = Math.abs(ndigits);
@@ -328,9 +326,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject floor(ThreadContext context, IRubyObject arg){
         long ndigits = (arg).convertToInteger().getLongValue();
         long self = getLongValue();
-        if (ndigits > 0) {
-            return convertToFloat();
-        } else if (ndigits == 0){
+        if (ndigits >= 0) {
             return this;
         } else {
             long posdigits = Math.abs(ndigits);
