@@ -114,6 +114,10 @@ public class RubyDate extends RubyObject {
         return (RubyClass) runtime.getObject().getConstantAt("Date");
     }
 
+    private RubyDate(Ruby runtime) {
+        super(runtime, getDate(runtime));
+    }
+
     public RubyDate(Ruby runtime, RubyClass klass, DateTime dt) {
         super(runtime, klass);
 
@@ -153,19 +157,33 @@ public class RubyDate extends RubyObject {
      * @deprecated kept due AR-JDBC (uses RubyClass.newInstance(...) to 'fast' allocate a Date instance)
      */
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject dt) {
-        return new_(context, null, dt);
-        // return new RubyDate(context.runtime, (DateTime) JavaUtil.unwrapJavaValue(dt));
+    public RubyDate initialize(ThreadContext context, IRubyObject dt) {
+        this.dt = (DateTime) JavaUtil.unwrapJavaValue(dt);
+        return this;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject ajd, IRubyObject of) {
-        return new_(context, null, ajd, of);
+    public RubyDate initialize(ThreadContext context, IRubyObject ajd, IRubyObject of) {
+        initialize(context, ajd, of, ITALY);
+        return this;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE) // used by marshal_load
-    public IRubyObject initialize(ThreadContext context, IRubyObject ajd, IRubyObject of, IRubyObject sg) {
-        return new_(context, null, ajd, of, sg);
+    public RubyDate initialize(ThreadContext context, IRubyObject ajd, IRubyObject of, IRubyObject sg) {
+        initialize(context, ajd, of, convertStart(sg));
+        return this;
+    }
+
+    private void initialize(final ThreadContext context, IRubyObject arg, IRubyObject of, final int start) {
+        final int off = of.convertToInteger().getIntValue();
+
+        this.off = off; this.start = start;
+
+        if (arg instanceof JavaProxy) { // backwards - compatibility with JRuby's date.rb
+            this.dt = (DateTime) JavaUtil.unwrapJavaValue(arg);
+            return;
+        }
+        this.dt = new DateTime(initMillis(context, arg), getChronology(start, off));
     }
 
     // Date.new!(dt_or_ajd=0, of=0, sg=ITALY, sub_millis=0)
@@ -194,14 +212,7 @@ public class RubyDate extends RubyObject {
      */
     @JRubyMethod(name = "new!", meta = true)
     public static IRubyObject new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of) {
-        final int off = of.convertToInteger().getIntValue();
-
-        if (ajd instanceof JavaProxy) { // backwards - compatibility with JRuby's date.rb
-            RubyDate instance = new RubyDate(context.runtime, (DateTime) JavaUtil.unwrapJavaValue(ajd));
-            instance.off = off;
-            return instance;
-        }
-        return new RubyDate(context, ajd, getChronology(ITALY, off), off);
+        return new RubyDate(context.runtime).initialize(context, ajd, of);
     }
 
     /**
@@ -209,16 +220,7 @@ public class RubyDate extends RubyObject {
      */
     @JRubyMethod(name = "new!", meta = true)
     public static IRubyObject new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of, IRubyObject sg) {
-        final int off = of.convertToInteger().getIntValue();
-        final int start = convertStart(sg);
-
-        if (ajd instanceof JavaProxy) { // backwards - compatibility with JRuby's date.rb
-            RubyDate instance = new RubyDate(context.runtime, (DateTime) JavaUtil.unwrapJavaValue(ajd));
-            instance.off = off;
-            instance.start = start;
-            return instance;
-        }
-        return new RubyDate(context, ajd, getChronology(start, off), off, start);
+        return new RubyDate(context.runtime).initialize(context, ajd, of, sg);
     }
 
     private static int convertStart(IRubyObject sg) {
