@@ -85,10 +85,6 @@ public class IncludedModuleWrapper extends IncludedModule {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
-    public void setMethods(Map newMethods) {
-        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
-    }
-
     public RubyModule getDelegate() {
         return origin;
     }
