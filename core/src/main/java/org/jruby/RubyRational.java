@@ -246,8 +246,8 @@ public class RubyRational extends RubyNumeric {
         }
 
         IRubyObject gcd = f_gcd(context, num, den);
-        IRubyObject _num = f_idiv(context, num, gcd); // TODO use RubyInteger#fdiv
-        IRubyObject _den = f_idiv(context, den, gcd); // TODO use RubyInteger#fdiv
+        IRubyObject _num = num.idiv(context, gcd);
+        IRubyObject _den = den.idiv(context, gcd);
 
         if (Numeric.CANON && canonicalization && f_one_p(context, _den)) {
             return _num;
@@ -426,11 +426,11 @@ public class RubyRational extends RubyNumeric {
         return den;
     }
 
-    public IRubyObject getNumerator() {
+    public RubyInteger getNumerator() {
         return num;
     }
 
-    public IRubyObject getDenominator() {
+    public RubyInteger getDenominator() {
         return den;
     }
 
@@ -883,12 +883,9 @@ public class RubyRational extends RubyNumeric {
 
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject n) {
-        Ruby runtime = context.runtime;
 
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, n);
-        if (!opts.isNil()) {
-            n = context.nil;
-        }
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, n);
+        if (opts != context.nil) n = context.nil;
 
         RoundingMode mode = RubyNumeric.getRoundingMode(context, opts);
 
@@ -914,7 +911,7 @@ public class RubyRational extends RubyNumeric {
         Ruby runtime = context.runtime;
         IRubyObject b, s;
 
-        if (n.isNil()) {
+        if (n == context.nil) {
             return doRound(context, mode);
         }
 
