@@ -2602,6 +2602,9 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "extend_object", required = 1, visibility = PRIVATE)
     public IRubyObject extend_object(IRubyObject obj) {
+        if (!isModule()) {
+            throw getRuntime().newTypeError(this, getRuntime().getModule());
+        }
         obj.getSingletonClass().includeModule(this);
         return obj;
     }
