@@ -971,7 +971,6 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_round_half_down
     private RubyInteger roundHalfDown(ThreadContext context) {
-        Ruby runtime = context.runtime;
 
         RubyInteger num = this.num, den = this.den;
         IRubyObject neg;
@@ -982,9 +981,9 @@ public class RubyRational extends RubyNumeric {
             num = (RubyInteger) num.op_uminus(context);
         }
 
-        num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
-        num = (RubyInteger) num.op_minus(context, RubyFixnum.one(runtime));
-        den = (RubyInteger) den.op_mul(context, RubyFixnum.two(runtime));
+        num = (RubyInteger) ((RubyInteger) num.op_mul(context, 2)).op_plus(context, den);
+        num = (RubyInteger) num.op_minus(context, 1);
+        den = (RubyInteger) den.op_mul(context, 2);
         num = (RubyInteger) num.idiv(context, den);
 
         if (neg.isTrue())
@@ -995,7 +994,6 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_round_half_even
     private RubyInteger roundHalfEven(ThreadContext context) {
-        Ruby runtime = context.runtime;
 
         RubyInteger num = this.num, den = this.den;
         IRubyObject neg;
@@ -1007,12 +1005,12 @@ public class RubyRational extends RubyNumeric {
             num = (RubyInteger) num.op_uminus(context);
         }
 
-        num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
-        den = (RubyInteger) den.op_mul(context, RubyFixnum.two(runtime));
+        num = (RubyInteger) ((RubyInteger) num.op_mul(context, 2)).op_plus(context, den);
+        den = (RubyInteger) den.op_mul(context, 2);
         qr = (RubyArray) num.divmod(context, den);
         num = (RubyInteger) qr.eltOk(0);
         if (((RubyInteger) qr.eltOk(1)).zero_p(context).isTrue()) {
-            num = (RubyInteger) num.op_and(context, RubyFixnum.newFixnum(runtime, ~1L));
+            num = (RubyInteger) num.op_and(context, RubyFixnum.newFixnum(context.runtime, ~1L));
         }
 
         if (neg.isTrue()) {
@@ -1024,7 +1022,6 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_round_half_up
     private RubyInteger roundHalfUp(ThreadContext context) {
-        Ruby runtime = context.runtime;
 
         RubyInteger num = this.num, den = this.den;
         IRubyObject neg;
@@ -1035,8 +1032,8 @@ public class RubyRational extends RubyNumeric {
             num = (RubyInteger) num.op_uminus(context);
         }
 
-        num = (RubyInteger) ((RubyInteger) num.op_mul(context, RubyFixnum.two(runtime))).op_plus(context, den);
-        den = (RubyInteger) den.op_mul(context, RubyFixnum.two(runtime));
+        num = (RubyInteger) ((RubyInteger) num.op_mul(context, 2)).op_plus(context, den);
+        den = (RubyInteger) den.op_mul(context, 2);
         num = (RubyInteger) num.idiv(context, den);
 
         if (neg.isTrue()) {

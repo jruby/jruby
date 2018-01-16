@@ -484,7 +484,7 @@ public abstract class RubyInteger extends RubyNumeric {
 	        /* then int_pow overflow */
             return RubyFixnum.zero(runtime);
         }
-        h = (RubyNumeric) f.idiv(context, int2fix(runtime, 2));
+        h = (RubyNumeric) f.idiv(context, 2);
         r = (RubyNumeric) this.op_mod(context, f);
         n = (RubyNumeric) this.op_minus(context, r);
         r = (RubyNumeric) r.op_cmp(context, h);
@@ -684,11 +684,23 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "+")
     public abstract IRubyObject op_plus(ThreadContext context, IRubyObject other);
 
+    public IRubyObject op_plus(ThreadContext context, long other) {
+        return op_plus(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = "-")
     public abstract IRubyObject op_minus(ThreadContext context, IRubyObject other);
 
+    public IRubyObject op_minus(ThreadContext context, long other) {
+        return op_minus(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = "*")
     public abstract IRubyObject op_mul(ThreadContext context, IRubyObject other);
+
+    public IRubyObject op_mul(ThreadContext context, long other) {
+        return op_mul(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
 
     // MRI: rb_int_idiv, polymorphism handles fixnum vs bignum
     @JRubyMethod(name = "div")
