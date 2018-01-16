@@ -944,8 +944,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
-            if ((kcodeBytes.getRealSize() > 0 && kcodeBytes.getUnsafeBytes()[kcodeBytes.getBegin()] == 'n') ||
-                (kcodeBytes.getRealSize() > 1 && kcodeBytes.getUnsafeBytes()[kcodeBytes.getBegin() + 1] == 'N')) {
+            if (kcodeBytes.getRealSize() > 0 && (kcodeBytes.get(0) == 'n' || kcodeBytes.get(0) == 'N')) {
+                newOptions.setEncodingNone(true);
                 return regexpInitialize(arg0.convertToString().getByteList(), ASCIIEncoding.INSTANCE, newOptions);
             } else {
                 getRuntime().getWarnings().warn("encoding option is ignored - " + kcodeBytes);
