@@ -662,6 +662,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     c = bytes[p] & 0xff;
                 } else {
                     cl = StringSupport.preciseLength(enc, bytes, p, end);
+                    if (cl < 0) {
+                        p += StringSupport.length(enc, bytes, p, end);
+                        continue;
+                    }
                     c = enc.mbcToCode(bytes, p, end);
                 }
 
