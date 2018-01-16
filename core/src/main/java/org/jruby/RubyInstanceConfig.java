@@ -765,10 +765,6 @@ public class RubyInstanceConfig {
         this.hasInlineScript = hasInlineScript;
     }
 
-    public boolean hasInlineScript() {
-        return hasInlineScript;
-    }
-
     public Collection<String> getRequiredLibraries() {
         return requiredLibraries;
     }
