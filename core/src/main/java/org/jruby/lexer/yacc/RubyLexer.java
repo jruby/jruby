@@ -1883,6 +1883,7 @@ public class RubyLexer extends LexingCommon {
         }
 
         ByteList oneCharBL = new ByteList(1);
+        oneCharBL.setEncoding(getEncoding());
         oneCharBL.append(c);
         yaccValue = new StrNode(getPosition(), oneCharBL);
         setState(EXPR_END);
