@@ -18,6 +18,16 @@ class TestObject < Test::Unit::TestCase
     assert_same(object, object.itself, feature6373)
   end
 
+  def test_yield_self
+    feature = '[ruby-core:46320] [Feature #6721]'
+    object = Object.new
+    assert_same(self, object.yield_self {self}, feature)
+    assert_same(object, object.yield_self {|x| break x}, feature)
+    enum = object.yield_self
+    assert_instance_of(Enumerator, enum)
+    assert_equal(1, enum.size)
+  end
+
   def test_dup
     assert_equal 1, 1.dup
     assert_equal true, true.dup
