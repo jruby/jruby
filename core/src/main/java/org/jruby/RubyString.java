@@ -1135,8 +1135,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @JRubyMethod(name = "-@") // -'foo' returns frozen string
-    public final IRubyObject minus_at() {
-        return isFrozen() ? this : this.dupFrozen();
+    public final IRubyObject minus_at(ThreadContext context) {
+        return isFrozen() ? this : context.runtime.freezeAndDedupString(this);
     }
 
     @JRubyMethod(name = "+@") // +'foo' returns modifiable string
