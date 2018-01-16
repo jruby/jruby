@@ -50,16 +50,17 @@ public class SClassNode extends Node {
     private final Node receiverNode;
     private final StaticScope scope;
     private final Node bodyNode;
+    private final int endLine;
 
-    public SClassNode(ISourcePosition position, Node recvNode, StaticScope scope, Node bodyNode) {
+    public SClassNode(ISourcePosition position, Node recvNode, StaticScope scope, Node bodyNode, int endLine) {
         super(position, recvNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
         assert scope != null : "scope is not null";
-        assert recvNode != null : "receiverNode is not null";
         
         this.receiverNode = recvNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
+        this.endLine = endLine;
     }
 
     public NodeType getNodeType() {
@@ -81,6 +82,13 @@ public class SClassNode extends Node {
      */
     public Node getBodyNode() {
         return bodyNode;
+    }
+
+    /**
+     * Gets line where the 'end' was for this module.
+     */
+    public int getEndLine() {
+        return endLine;
     }
     
     /**

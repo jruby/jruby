@@ -3,10 +3,8 @@ package org.jruby.test;
 import junit.framework.TestCase;
 import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.CompatVersion;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.util.io.EncodingUtils;
 

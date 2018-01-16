@@ -1,1 +1,2 @@
 fails:String#to_sym does not special case +(binary) and -(binary)
+fails:String#to_sym raises an EncodingError for UTF-8 String containing invalid bytes

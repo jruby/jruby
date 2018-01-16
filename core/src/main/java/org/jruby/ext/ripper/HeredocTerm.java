@@ -166,16 +166,14 @@ public class HeredocTerm extends StrTerm {
             ByteList tok = new ByteList();
             tok.setEncoding(lexer.getEncoding());
             if (c == '#') {
-                switch (c = lexer.nextc()) {
-                case '$':
-                case '@':
-                    lexer.pushback(c);
-                    return RubyParser.tSTRING_DVAR;
-                case '{':
-                    lexer.commandStart = true;
-                    return RubyParser.tSTRING_DBEG;
+                int token = lexer.peekVariableName(RipperParser.tSTRING_DVAR, RipperParser.tSTRING_DBEG);
+
+                if (token != 0) {
+                    return token;
+                } else {
+                    tok.append(c);
+                    c = lexer.nextc();
                 }
-                tok.append('#');
             }
 
             // MRI has extra pointer which makes our code look a little bit more strange in comparison
@@ -195,16 +193,22 @@ public class HeredocTerm extends StrTerm {
                     return RubyParser.tSTRING_CONTENT;
                 }
                 tok.append(lexer.nextc());
-                
+
+                if (lexer.getHeredocIndent() > 0) {
+                    lexer.lex_goto_eol();
+                    lexer.setValue(lexer.createStr(tok, 0));
+                    lexer.flush_string_content(enc[0]);
+                    return RubyParser.tSTRING_CONTENT;
+                }
+
                 if ((c = lexer.nextc()) == EOF) return error(lexer, len, str, eos);
             } while (!lexer.whole_match_p(eos, indent));
             str = tok;
         }
         
-        lexer.dispatchHeredocEnd();
-        lexer.heredoc_restore(this);
-        lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
+        lexer.pushback(c);
         lexer.setValue(lexer.createStr(str, 0));
+        lexer.flush_string_content(lexer.getEncoding());
         return RubyParser.tSTRING_CONTENT;
     }
 }

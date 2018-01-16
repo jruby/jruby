@@ -29,6 +29,7 @@ public class OpAsgnConstDeclNode extends Node implements BinaryOperatorNode {
     }
 
     @Override
+    // This can only be Colon3 or Colon2
     public Node getFirstNode() {
         return lhs;
     }

@@ -294,6 +294,12 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return;   // don't Promote to full build during runtime boot
 
         if (callCount++ >= Options.JIT_THRESHOLD.load()) runtime.getJITCompiler().buildThresholdReached(context, this);
+
+        if (Options.IR_PRINT.load()) {
+            ByteArrayOutputStream baos = IRDumper.printIR(method, true, true);
+
+            LOG.info("Printing full IR for " + method.getName() + ":\n" + new String(baos.toByteArray()));
+        }
     }
 
     public String getClassName(ThreadContext context) {

@@ -84,7 +84,7 @@ public class ChannelFD implements Closeable {
 
         this.currentLock = dup2Source.currentLock;
 
-        return 0;
+        return fakeFileno;
     }
 
     public void close() throws IOException {

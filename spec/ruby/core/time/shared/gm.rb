@@ -19,4 +19,37 @@ describe :time_gm, shared: true do
   it "interprets post-Gregorian reform dates using Gregorian calendar" do
     Time.send(@method, 1582, 10, 15, 12).to_i.should == -12219249600 # 2299161j
   end
+
+  it "handles fractional usec close to rounding limit" do
+    time = Time.send(@method, 2000, 1, 1, 12, 30, 0, 9999r/10000)
+
+    time.usec.should == 0
+    time.nsec.should == 999
+  end
+
+  platform_is :linux do
+    it "handles real leap seconds" do
+      with_timezone 'right/UTC' do
+        time = Time.send(@method, 1972, 6, 30, 23, 59, 60)
+
+        time.sec.should == 60
+        time.min.should == 59
+        time.hour.should == 23
+        time.day.should == 30
+        time.month.should == 6
+      end
+    end
+
+    it "handles bad leap seconds by carrying values forward" do
+      with_timezone 'UTC' do
+        time = Time.send(@method, 1972, 6, 30, 23, 59, 60)
+
+        time.sec.should == 0
+        time.min.should == 0
+        time.hour.should == 0
+        time.day.should == 1
+        time.month.should == 7
+      end
+    end
+  end
 end

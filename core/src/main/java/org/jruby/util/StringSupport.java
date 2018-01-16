@@ -34,7 +34,6 @@ import org.jcodings.constants.CharacterType;
 import org.jcodings.exception.EncodingError;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
@@ -652,11 +651,6 @@ public final class StringSupport {
                 throw runtime.newSecurityError("string contains null byte");
             }
         }
-    }
-
-    public static boolean isUnicode(Encoding enc) {
-        byte[] name = enc.getName();
-        return name.length > 4 && name[0] == 'U' && name[1] == 'T' && name[2] == 'F' && name[4] != '7';
     }
 
     public static String escapedCharFormat(int c, boolean isUnicode) {
@@ -2498,7 +2492,6 @@ public final class StringSupport {
         return (cr ^ (cr >> 1)) & CR_7BIT;
     }
 
-
     /**
      * This is a far from perfect method in that it will totally choke on anything not UTF-8.
      * However virtually nothing which was represented internally as a String would work with
@@ -2539,5 +2532,10 @@ public final class StringSupport {
         } catch (UnsupportedCharsetException e) {}
 
         return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+    }
+
+    @Deprecated
+    public static boolean isUnicode(Encoding enc) {
+        return enc.isUnicode();
     }
 }

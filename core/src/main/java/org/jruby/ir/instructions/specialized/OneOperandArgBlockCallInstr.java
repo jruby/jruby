@@ -27,9 +27,15 @@ public class OneOperandArgBlockCallInstr extends CallInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
+        // NOTE: This logic shouod always match the CALL_10B logic in InterpreterEngine.processCall
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
+
+        if (hasLiteralClosure()) {
+            return getCallSite().callIter(context, self, object, arg1, preparedBlock);
+        }
+
         return getCallSite().call(context, self, object, arg1, preparedBlock);
     }
 }

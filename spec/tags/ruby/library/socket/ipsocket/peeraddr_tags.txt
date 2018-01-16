@@ -1,0 +1,1 @@
+fails:Socket::IPSocket#peeraddr raises error if socket is not connected

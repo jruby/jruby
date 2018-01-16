@@ -2,6 +2,8 @@ language: java
 
 sudo: false
 
+dist: trusty
+
 cache:
  directories:
    - $HOME/.m2
@@ -10,12 +12,12 @@ before_install:
   - unset _JAVA_OPTIONS
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=120M"; else export MAVEN_OPTS="-XX:CompressedClassSpaceSize=96M -XX:MaxMetaspaceSize=120M"; fi
-  - export MAVEN_OPTS="-Xmn52M -Xmx504M $MAVEN_OPTS"
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export JAVA_OPTS="$JAVA_OPTS -XX:MaxPermSize=96M"; else export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=72M -XX:MaxMetaspaceSize=96M"; fi
+  - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:MaxMetaspaceSize=144M -XX:CompressedClassSpaceSize=96M"
+  - export JAVA_OPTS="$JAVA_OPTS -XX:MaxMetaspaceSize=96M -XX:CompressedClassSpaceSize=96M"
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
+  - unset _JAVA_OPTIONS # travis/travis#8408
   - export PATH="`pwd`/bin:$PATH"
   - echo $HOME
   - echo $JAVA_OPTS
@@ -29,7 +31,7 @@ os:
 
 env:
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn36M -Xmx768M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms48M -Xmx640M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
     - MALLOC_ARENA_MAX=2
   matrix:
     - PHASE='-Ptest'
@@ -79,6 +81,23 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
+    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+      jdk: oraclejdk9
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk9
+    - env: PHASE='-Pcomplete'
+      jdk: oraclejdk9
+  allow_failures:
+    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+      jdk: oraclejdk9
 
 install:
   - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
@@ -100,3 +119,8 @@ notifications:
 
 services:
   - redis-server
+
+addons:
+  apt:
+    packages:
+      - oracle-java9-installer

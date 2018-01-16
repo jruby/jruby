@@ -61,12 +61,15 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.MRIRecursionGuard;
+import org.jruby.util.StringSupport;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
+import org.jruby.util.io.EncodingUtils;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -173,13 +176,10 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
-import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -266,6 +266,7 @@ public final class Ruby implements Constantizable {
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
+        this.caches             = new Caches();
 
         Random myRandom;
         try {
@@ -292,7 +293,7 @@ public final class Ruby implements Constantizable {
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES.ordinal() * MethodNames.values().length - 1);
 
-        checkpointInvalidator = OptoFactory.newConstantInvalidator();
+        checkpointInvalidator = OptoFactory.newConstantInvalidator(this);
 
         if (config.isObjectSpaceEnabled()) {
             objectSpacer = ENABLED_OBJECTSPACE;
@@ -311,6 +312,7 @@ public final class Ruby implements Constantizable {
         this.beanManager.register(configBean);
         this.beanManager.register(parserStats);
         this.beanManager.register(runtimeBean);
+        this.beanManager.register(caches);
     }
 
     void reinitialize(boolean reinitCore) {
@@ -891,6 +893,15 @@ public final class Ruby implements Constantizable {
     }
 
     /**
+     * Get the Caches management object.
+     *
+     * @return the current runtime's Caches management object
+     */
+    public Caches getCaches() {
+        return caches;
+    }
+
+    /**
      * @deprecated use #newInstance()
      */
     public static Ruby getDefaultInstance() {
@@ -1257,7 +1268,7 @@ public final class Ruby implements Constantizable {
             loadBundler();
         }
 
-        setNetworkStack();
+        deprecatedNetworkStackProperty();
 
         // Done booting JRuby runtime
         bootingRuntime = false;
@@ -1429,6 +1440,16 @@ public final class Ruby implements Constantizable {
             setDefaultExternalEncoding(availableEncoding);
         }
 
+        // Filesystem should always have a value
+        if (Platform.IS_WINDOWS) {
+            encoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
+            Encoding filesystemEncoding = encodingService.loadEncoding(ByteList.create(encoding));
+            if (filesystemEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
+            setDefaultFilesystemEncoding(filesystemEncoding);
+        } else {
+            setDefaultFilesystemEncoding(getDefaultExternalEncoding());
+        }
+
         encoding = config.getInternalEncoding();
         if (encoding != null && !encoding.equals("")) {
             Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
@@ -1586,7 +1607,7 @@ public final class Ruby implements Constantizable {
         syntaxError = defineClassIfAllowed("SyntaxError", scriptError);
         loadError = defineClassIfAllowed("LoadError", scriptError);
         notImplementedError = defineClassIfAllowed("NotImplementedError", scriptError);
-        securityError = defineClassIfAllowed("SecurityError", standardError);
+        securityError = defineClassIfAllowed("SecurityError", exceptionClass);
         noMemoryError = defineClassIfAllowed("NoMemoryError", exceptionClass);
         regexpError = defineClassIfAllowed("RegexpError", standardError);
         interruptedRegexpError = defineClassIfAllowed("InterruptedRegexpError", regexpError); // Proposal to RubyCommons for interrupting Regexps
@@ -1710,7 +1731,6 @@ public final class Ruby implements Constantizable {
         addLazyBuiltin("bigdecimal.jar", "bigdecimal", "org.jruby.ext.bigdecimal.BigDecimalLibrary");
         addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.ext.io.wait.IOWaitLibrary");
         addLazyBuiltin("etc.jar", "etc", "org.jruby.ext.etc.EtcLibrary");
-        addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.weakref.WeakRefLibrary");
         addLazyBuiltin("timeout.rb", "timeout", "org.jruby.ext.timeout.Timeout");
         addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.SocketLibrary");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.ext.rbconfig.RbConfigLibrary");
@@ -2789,6 +2809,14 @@ public final class Ruby implements Constantizable {
         this.defaultExternalEncoding = defaultExternalEncoding;
     }
 
+    public Encoding getDefaultFilesystemEncoding() {
+        return defaultFilesystemEncoding;
+    }
+
+    public void setDefaultFilesystemEncoding(Encoding defaultFilesystemEncoding) {
+        this.defaultFilesystemEncoding = defaultFilesystemEncoding;
+    }
+
     /**
      * Get the default java.nio.charset.Charset for the current default internal encoding.
      */
@@ -2798,7 +2826,7 @@ public final class Ruby implements Constantizable {
             enc = UTF8Encoding.INSTANCE;
         }
 
-        Charset charset = enc.getCharset();
+        Charset charset = EncodingUtils.charsetForEncoding(enc);
 
         return charset;
     }
@@ -2990,11 +3018,22 @@ public final class Ruby implements Constantizable {
 
     public void addBoundMethod(String className, String methodName, String rubyName) {
         Map<String, String> javaToRuby = boundMethods.get(className);
-        if (javaToRuby == null) {
-            javaToRuby = new HashMap<String, String>();
-            boundMethods.put(className, javaToRuby);
-        }
+        if (javaToRuby == null) boundMethods.put(className, javaToRuby = new HashMap<>());
         javaToRuby.put(methodName, rubyName);
+    }
+
+    public void addBoundMethodsPacked(String className, String packedTuples) {
+        List<String> names = StringSupport.split(packedTuples, ';');
+        for (int i = 0; i < names.size(); i += 2) {
+            addBoundMethod(className, names.get(i), names.get(i+1));
+        }
+    }
+
+    public void addSimpleBoundMethodsPacked(String className, String packedNames) {
+        List<String> names = StringSupport.split(packedNames, ';');
+        for (String name : names) {
+            addBoundMethod(className, name, name);
+        }
     }
 
     public Map<String, Map<String, String>> getBoundMethods() {
@@ -4365,7 +4404,7 @@ public final class Ruby implements Constantizable {
     }
 
     private Invalidator addConstantInvalidator(String constantName) {
-        Invalidator invalidator = OptoFactory.newConstantInvalidator();
+        final Invalidator invalidator = OptoFactory.newConstantInvalidator(this);
         constantNameInvalidators.putIfAbsent(constantName, invalidator);
 
         // fetch the invalidator back from the ConcurrentHashMap to ensure that
@@ -4653,22 +4692,6 @@ public final class Ruby implements Constantizable {
 
     public int getRuntimeNumber() {
         return runtimeNumber;
-    }
-
-    private void setNetworkStack() {
-        try {
-            if (config.getIPv4Preferred()) {
-                System.setProperty("java.net.preferIPv4Stack", "true");
-            } else {
-                System.setProperty("java.net.preferIPv4Stack", "false");
-            }
-        } catch (AccessControlException ace) {
-            if (isVerbose()) {
-                LOG.warn("warning: unable to set network stack system property due "
-                        + "to security restrictions, please set it manually as JVM "
-                        + "parameter (-Djava.net.preferIPv4Stack=true|false)");
-            }
-        }
     }
 
     /**
@@ -4974,6 +4997,9 @@ public final class Ruby implements Constantizable {
     // Compilation
     private final JITCompiler jitCompiler;
 
+    // Cache invalidation
+    private final Caches caches;
+
     // Note: this field and the following static initializer
     // must be located be in this order!
     private volatile static boolean securityRestricted = false;
@@ -4998,7 +5024,7 @@ public final class Ruby implements Constantizable {
 
     private LoadService loadService;
 
-    private Encoding defaultInternalEncoding, defaultExternalEncoding;
+    private Encoding defaultInternalEncoding, defaultExternalEncoding, defaultFilesystemEncoding;
     private EncodingService encodingService;
 
     private GlobalVariables globalVariables = new GlobalVariables(this);
@@ -5120,7 +5146,7 @@ public final class Ruby implements Constantizable {
     private EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<RubyThread.Status, RubyString>(RubyThread.Status.class);
 
     public interface ObjectSpacer {
-        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
+        void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
     }
 
     private static final ObjectSpacer DISABLED_OBJECTSPACE = new ObjectSpacer() {
@@ -5192,4 +5218,19 @@ public final class Ruby implements Constantizable {
     // reuse the same formats over and over.  This is also unbounded (for now) since all applications
     // I know of use very few of them.  Even if there are many the size of these lists are modest.
     private final Map<String, List<StrptimeToken>> strptimeFormatCache = new ConcurrentHashMap<>();
+
+    @Deprecated
+    private void setNetworkStack() {
+        deprecatedNetworkStackProperty();
+    }
+
+    @SuppressWarnings("deprecated")
+    private void deprecatedNetworkStackProperty() {
+        if (Options.PREFER_IPV4.load()) {
+            LOG.warn("Warning: not setting network stack system property because socket subsystem may already be booted."
+                    + "If you need this option please set it manually as a JVM property.\n"
+                    + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
+        }
+    }
+
 }

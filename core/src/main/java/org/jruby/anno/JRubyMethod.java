@@ -32,7 +32,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.jruby.CompatVersion;
 import org.jruby.runtime.Visibility;
 
 
@@ -72,41 +71,41 @@ public @interface JRubyMethod {
      */
     boolean frame() default false;
     /**
-     * Whether this method expects to have a heap-based variable scope allocated for it.
-     */
-    @Deprecated
-    boolean scope() default false;
-    /**
-     * Whether this method is specific to Ruby 1.9
-     */
-    CompatVersion compat() default CompatVersion.BOTH;
-    /**
      * The visibility of this method.
      */
     Visibility visibility() default Visibility.PUBLIC;
-    /**
-     * Whether to use a frame slot for backtrace information
-     */
-    @Deprecated
-    boolean backtrace() default false;
+
     /**
      * What, if anything, method reads from caller's frame
      */
     FrameField[] reads() default {};
+
     /**
      * What, if anything, method writes to caller's frame
      */
     FrameField[] writes() default {};
+
     /**
      * Argument types to coerce to before calling
      */
     Class[] argTypes() default {};
+
     /**
      * Whether to use a frame slot for backtrace information
      */
     boolean omit() default false;
+
     /**
      * Whether this method should show up as defined in response to respond_to? calls
      */
     boolean notImplemented() default false;
+
+    @Deprecated
+    boolean scope() default false;
+
+    @Deprecated
+    org.jruby.CompatVersion compat() default org.jruby.CompatVersion.BOTH;
+
+    @Deprecated
+    boolean backtrace() default false;
 }

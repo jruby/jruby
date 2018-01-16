@@ -476,8 +476,7 @@ public class RubyNumeric extends RubyObject {
         final IRubyObject result;
         try {
             result = coerceBody(context, other);
-        }
-        catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
+        } catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
             if (context.runtime.getStandardError().isInstance( e.getException() )) {
                 context.setErrorInfo($ex); // restore $!
                 RubyWarnings warnings = context.runtime.getWarnings();
@@ -649,7 +648,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "singleton_method_added")
     public static IRubyObject sadded(IRubyObject self, IRubyObject name) {
-        throw self.getRuntime().newTypeError("can't define singleton method " + name + " for " + self.getType().getName());
+        throw self.getRuntime().newTypeError("can't define singleton method \"" + name + "\" for " + self.getType().getName());
     }
 
     /** num_init_copy

@@ -221,6 +221,19 @@ public class IRBuilder {
         }
 
         public void cloneIntoHostScope(IRBuilder builder) {
+            // $! should be restored before the ensure block is run
+            if (savedGlobalException != null) {
+                // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
+                if (!needsBacktrace) builder.addInstr(builder.manager.needsBacktrace(true));
+                builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+            }
+
+            // Sometimes we process a rescue and it hits something like non-local flow like a 'next' and
+            // there are no actual instrs pushed yet (but ebi has reserved a frame for it -- e.g. the rescue/ensure
+            // the next is in).  Since it is doing nothing we have nothing to clone.  By skipping this we prevent
+            // setting exception regions and simplify CFG construction.
+            if (instrs.size() == 0) return;
+
             SimpleCloneInfo ii = new SimpleCloneInfo(builder.scope, true);
 
             // Clone required labels.
@@ -229,13 +242,6 @@ public class IRBuilder {
             ii.renameLabel(start);
             for (Instr i: instrs) {
                 if (i instanceof LabelInstr) ii.renameLabel(((LabelInstr)i).getLabel());
-            }
-
-            // $! should be restored before the ensure block is run
-            if (savedGlobalException != null) {
-                // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
-                if (!needsBacktrace) builder.addInstr(builder.manager.needsBacktrace(true));
-                builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
             }
 
             // Clone instructions now
@@ -1012,7 +1018,7 @@ public class IRBuilder {
         addInstr(new LabelInstr(rBeginLabel));
         addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
         Variable callResult = (Variable)codeBlock.run();
-        addInstr(new JumpInstr(rEndLabel, true));
+        addInstr(new JumpInstr(rEndLabel));
         addInstr(new ExceptionRegionEndMarkerInstr());
 
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
@@ -1369,7 +1375,7 @@ public class IRBuilder {
         Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
 
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), classVar, NullBlock.INSTANCE));
-        newIRBuilder(manager, body).buildModuleOrClassBody(classNode.getBodyNode(), classNode.getLine());
+        newIRBuilder(manager, body).buildModuleOrClassBody(classNode.getBodyNode(), classNode.getLine(), classNode.getEndLine());
         return processBodyResult;
     }
 
@@ -1383,7 +1389,7 @@ public class IRBuilder {
 
         // sclass bodies inherit the block of their containing method
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, scope.getYieldClosureVariable()));
-        newIRBuilder(manager, body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine());
+        newIRBuilder(manager, body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine(), sclassNode.getEndLine());
         return processBodyResult;
     }
 
@@ -1546,7 +1552,7 @@ public class IRBuilder {
         addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
         Object v1 = protectedCode.run(); // YIELD: Run the protected code block
         addInstr(new CopyInstr(rv, (Operand)v1));
-        addInstr(new JumpInstr(rEndLabel, true));
+        addInstr(new JumpInstr(rEndLabel));
         addInstr(new ExceptionRegionEndMarkerInstr());
 
         // SSS FIXME: Create an 'Exception' operand type to eliminate the constant lookup below
@@ -3158,7 +3164,7 @@ public class IRBuilder {
         Variable moduleVar = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
 
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
-        newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine());
+        newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine(), moduleNode.getEndLine());
         return processBodyResult;
     }
 
@@ -3259,30 +3265,48 @@ public class IRBuilder {
         return result;
     }
 
-    // FIXME: All three paths feel a bit inefficient.  They all interact with the constant first to know
-    // if it exists or whether it should raise if it doesn't...then it will access it against for the put
-    // logic.  I could avoid that work but then there would be quite a bit more logic in Java.   This is a
-    // pretty esoteric corner of Ruby so I am not inclined to put anything more than a comment that it can be
-    // improved.
+    private Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
+        Variable leftModule = createTemporaryVariable();
+        String name;
+
+        if (lhs instanceof Colon2Node) {
+            Colon2Node colon2Node = (Colon2Node) lhs;
+            name = colon2Node.getName();
+            Operand leftValue = build(colon2Node.getLeftNode());
+            copy(leftModule, leftValue);
+        } else { // colon3
+            copy(leftModule, new ObjectClass());
+            name = ((Colon3Node) lhs).getName();
+        }
+
+        addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
+
+        return leftModule;
+    }
+
     public Operand buildOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
         String op = node.getOperator();
 
         if ("||".equals(op)) {
             Variable result = createTemporaryVariable();
-            Label isDefined = getNewLabel();
             Label done = getNewLabel();
-            Variable defined = createTemporaryVariable();
-            addInstr(new CopyInstr(defined, buildGetDefinition(node.getFirstNode())));
-            addInstr(BNEInstr.create(isDefined, defined, manager.getNil()));
-            addInstr(new CopyInstr(result, putConstantAssignment(node, build(node.getSecondNode()))));
-            addInstr(new JumpInstr(done));
-            addInstr(new LabelInstr(isDefined));
-            addInstr(new CopyInstr(result, build(node.getFirstNode())));
+            Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, false);
+            addInstr(BNEInstr.create(done, result, UndefinedValue.UNDEFINED));
+            Operand rhsValue = build(node.getSecondNode());
+            copy(result, rhsValue);
+            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
             addInstr(new LabelInstr(done));
             return result;
         } else if ("&&".equals(op)) {
-            build(node.getFirstNode()); // Get once to make sure it is there or will throw if not
-            return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, build(node.getSecondNode()))));
+            Variable result = createTemporaryVariable();
+            Label done = getNewLabel();
+            Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, true);
+            addInstr(new BFalseInstr(done, result));
+            Operand rhsValue = build(node.getSecondNode());
+            copy(result, rhsValue);
+            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
+            addInstr(new LabelInstr(done));
+            return result;
         }
 
         Variable result = createTemporaryVariable();
@@ -3440,7 +3464,7 @@ public class IRBuilder {
     }
 
     public Operand buildPostExe(PostExeNode postExeNode) {
-        IRScope topLevel = scope.getTopLevelScope();
+        IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
 
         IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), "_END_", true);
@@ -3456,7 +3480,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        IRScope topLevel = scope.getTopLevelScope();
+        IRScope topLevel = scope.getRootLexicalScope();
         IRClosure beginClosure = new IRFor(manager, scope, preExeNode.getLine(), topLevel.getStaticScope(),
                 Signature.from(preExeNode), "_BEGIN_");
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
@@ -3584,7 +3608,7 @@ public class IRBuilder {
             // - If we dont have any ensure blocks, simply jump to the end of the rescue block
             // - If we do, execute the ensure code.
             ensure.cloneIntoHostScope(this);
-            addInstr(new JumpInstr(rEndLabel, true));
+            addInstr(new JumpInstr(rEndLabel));
         }   //else {
             // If the body had an explicit return, the return instruction IR build takes care of setting
             // up execution of all necessary ensure blocks. So, nothing to do here!
@@ -3660,7 +3684,7 @@ public class IRBuilder {
             // around the current rescue block)
             activeEnsureBlockStack.peek().cloneIntoHostScope(this);
 
-            addInstr(new JumpInstr(endLabel, true));
+            addInstr(new JumpInstr(endLabel));
         }
     }
 
@@ -4053,9 +4077,9 @@ public class IRBuilder {
         return newArgs;
     }
 
-    private InterpreterContext buildModuleOrClassBody(Node bodyNode, int linenumber) {
+    private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), linenumber));
+            addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine));
         }
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -4064,11 +4088,10 @@ public class IRBuilder {
         Operand bodyReturnValue = build(bodyNode);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // FIXME: We also should add a line number instruction so that backtraces
-            // inside the trace function get the correct line. Unfortunately, we don't
-            // have one here and we can't do it dynamically like TraceInstr does.
-            // See https://github.com/jruby/jruby/issues/4051
-            addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), -1));
+            // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
+            // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
+            addInstr(manager.newLineNumber(endLine));
+            addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine));
         }
 
         addInstr(new ReturnInstr(bodyReturnValue));

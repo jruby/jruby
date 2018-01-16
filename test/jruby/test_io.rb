@@ -211,6 +211,11 @@ class TestIO < Test::Unit::TestCase
       assert_raises(Errno::EISDIR) { File.open('.', 'r') }
     end
   end
+    
+  def test_open_child_of_file
+    ensure_files @file
+    assert_raises(WINDOWS ? Errno::ENOENT : Errno::ENOTDIR) { File.open(File.join(@file, 'child')) }
+  end
 
   unless WINDOWS # Windows doesn't take kindly to perm mode tests
     def test_sysopen
@@ -384,6 +389,21 @@ class TestIO < Test::Unit::TestCase
     a = true
     File.read(@devnull) { a = false }
     assert(a)
+  end
+
+  unless WINDOWS
+    # On Windows an error is raised when opening a directory instead of when reading.
+    def test_read_directory
+      File.open('.', 'r') do |f|
+        assert_raise(Errno::EISDIR) { f.read }
+      end
+    end
+
+    def test_gets_directory
+      File.open('.', 'r') do |f|
+        assert_raise(Errno::EISDIR) { f.gets }
+      end
+    end
   end
 
   if (WINDOWS)

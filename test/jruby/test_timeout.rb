@@ -77,7 +77,7 @@ class TestTimeout < Test::Unit::TestCase
       http.start do |h|
         h.request_get '/index.html'
         # ensure we timeout even if we're fast
-        sleep(0.01)
+        sleep(1)
       end
     end
   end

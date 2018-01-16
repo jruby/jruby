@@ -1,12 +1,13 @@
 package org.jruby.util.io;
 
+import com.headius.modulator.Modulator;
 import jnr.enxio.channels.NativeDeviceChannel;
+import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.enxio.channels.NativeSocketChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
-import org.jruby.runtime.Helpers;
 
 import java.io.FileDescriptor;
 import java.lang.reflect.Field;
@@ -99,12 +100,8 @@ public class FilenoUtil {
     }
 
     public static int filenoFrom(Channel channel) {
-        if (channel instanceof NativeDeviceChannel) {
-            return ((NativeDeviceChannel)channel).getFD();
-        }
-
-        if (channel instanceof NativeSocketChannel) {
-            return ((NativeSocketChannel)channel).getFD();
+        if (channel instanceof NativeSelectableChannel) {
+            return ((NativeSelectableChannel)channel).getFD();
         }
 
         return getFilenoUsingReflection(channel);
@@ -142,7 +139,7 @@ public class FilenoUtil {
                 selChImpl = Class.forName("sun.nio.ch.SelChImpl");
                 try {
                     getFD = selChImpl.getMethod("getFD");
-                    if (!Helpers.trySetAccessible(getFD)) {
+                    if (!Modulator.trySetAccessible(getFD)) {
                         getFD = null;
                     }
                 } catch (Exception e) {
@@ -161,7 +158,7 @@ public class FilenoUtil {
                 fileChannelImpl = Class.forName("sun.nio.ch.FileChannelImpl");
                 try {
                     fd = fileChannelImpl.getDeclaredField("fd");
-                    if (!Helpers.trySetAccessible(fd)) {
+                    if (!Modulator.trySetAccessible(fd)) {
                         fd = null;
                     }
                 } catch (Exception e) {
@@ -177,7 +174,7 @@ public class FilenoUtil {
             Field ffd;
             try {
                 ffd = FileDescriptor.class.getDeclaredField("fd");
-                if (!Helpers.trySetAccessible(ffd)) {
+                if (!Modulator.trySetAccessible(ffd)) {
                     ffd = null;
                 }
             } catch (Exception e) {

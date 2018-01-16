@@ -26,8 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.unsafe;
 
-import com.headius.unsafe.fences.UnsafeFences;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
@@ -90,7 +88,4 @@ public final class UnsafeHolder {
             return sun.misc.Unsafe.INVALID_FIELD_OFFSET;
         }
     }
-
-    @Deprecated
-    public static final boolean SUPPORTS_FENCES = UnsafeFences.SUPPORTS_FENCES;
 }

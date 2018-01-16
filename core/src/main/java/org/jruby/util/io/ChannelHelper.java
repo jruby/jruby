@@ -10,9 +10,8 @@
  */
 package org.jruby.util.io;
 
-import jnr.posix.util.FieldAccess;
+import com.headius.modulator.Modulator;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.runtime.Helpers;
 
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
@@ -30,7 +29,24 @@ import java.nio.channels.WritableByteChannel;
  */
 public abstract class ChannelHelper {
 
+    private static final Field filterInField;
+    private static final Field filterOutField;
+
     private ChannelHelper() { /* */ }
+
+    static {
+        Field _filterInField = null, _filterOutField = null;
+        try {
+            _filterInField = FilterInputStream.class.getDeclaredField("in");
+        } catch (Exception e) {
+        }
+        try {
+            _filterOutField = FilterOutputStream.class.getDeclaredField("out");
+        } catch (Exception e) {
+        }
+        filterInField = _filterInField;
+        filterOutField = _filterOutField;
+    }
 
     public static ReadableByteChannel readableChannel(final InputStream inputStream) {
         if ( inputStream instanceof ByteArrayInputStream ) {
@@ -72,7 +88,6 @@ public abstract class ChannelHelper {
 
         // Java 7+ uses a stream that drains the child on exit, which when
         // unwrapped breaks because the channel gets drained prematurely.
-//        System.out.println("class is :" + filteredStream.getClass().getName());
         if (filteredStream.getClass().getName().indexOf("ProcessPipeInputStream") != 1) {
             return filteredStream;
         }
@@ -93,26 +108,27 @@ public abstract class ChannelHelper {
      *         not a FilterOutputStream to begin with.
      */
     public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
-        while (filteredStream instanceof FilterOutputStream) {
-            try {
-                Field out = FilterInputStream.class.getDeclaredField("out");
-                OutputStream tmpStream =
-                        Helpers.trySetAccessible(out) ? (OutputStream) out.get(filteredStream) : null;
+        if (filterOutField != null) {
+            while (filteredStream instanceof FilterOutputStream) {
+                try {
+                    OutputStream tmpStream =
+                            Modulator.trySetAccessible(filterOutField) ? (OutputStream) filterOutField.get(filteredStream) : null;
 
-                // try to unwrap as a Drip stream
-                if (!(tmpStream instanceof FilterOutputStream)) {
-                    // try to get stream out of drip stream
-                    OutputStream dripStream = unwrapDripStream(tmpStream);
+                    // try to unwrap as a Drip stream
+                    if (!(tmpStream instanceof FilterOutputStream)) {
+                        // try to get stream out of drip stream
+                        OutputStream dripStream = unwrapDripStream(tmpStream);
 
-                    if (dripStream != null) {
-                        // got it, use it for the next cycle
-                        tmpStream = dripStream;
+                        if (dripStream != null) {
+                            // got it, use it for the next cycle
+                            tmpStream = dripStream;
+                        }
                     }
-                }
 
-                filteredStream = tmpStream;
-            } catch (Exception e) {
-                break; // break out if we've dug as deep as we can
+                    filteredStream = tmpStream;
+                } catch (Exception e) {
+                    break; // break out if we've dug as deep as we can
+                }
             }
         }
         return filteredStream;
@@ -131,30 +147,31 @@ public abstract class ChannelHelper {
      *         not a FilterInputStream to begin with.
      */
     public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
-        while (filteredStream instanceof FilterInputStream) {
-            try {
-                Field in = FilterInputStream.class.getDeclaredField("in");
-                InputStream tmpStream =
-                        Helpers.trySetAccessible(in) ? (InputStream) in.get(filteredStream) : null;
+        if (filterInField != null) {
+            while (filteredStream instanceof FilterInputStream) {
+                try {
+                    InputStream tmpStream =
+                            Modulator.trySetAccessible(filterInField) ? (InputStream) filterInField.get(filteredStream) : null;
 
-                // could not acquire
-                if (tmpStream == null) break;
+                    // could not acquire
+                    if (tmpStream == null) break;
 
-                // try to unwrap result as a Drip stream
-                if (!(tmpStream instanceof FilterInputStream)) {
+                    // try to unwrap result as a Drip stream
+                    if (!(tmpStream instanceof FilterInputStream)) {
 
-                    // try to get stream out of drip stream
-                    InputStream dripStream = unwrapDripStream(tmpStream);
+                        // try to get stream out of drip stream
+                        InputStream dripStream = unwrapDripStream(tmpStream);
 
-                    if (dripStream != null) {
-                        // got it, use it for the next cycle
-                        tmpStream = dripStream;
+                        if (dripStream != null) {
+                            // got it, use it for the next cycle
+                            tmpStream = dripStream;
+                        }
                     }
-                }
 
-                filteredStream = tmpStream;
-            } catch (Exception e) {
-                break; // break out if we've dug as deep as we can
+                    filteredStream = tmpStream;
+                } catch (Exception e) {
+                    break; // break out if we've dug as deep as we can
+                }
             }
         }
         return filteredStream;
@@ -164,7 +181,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field out = stream.getClass().getDeclaredField("out");
-                return Helpers.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
+                return Modulator.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
             } catch (Exception e) {
             }
         }
@@ -175,7 +192,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field in = stream.getClass().getDeclaredField("in");
-                return Helpers.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
+                return Modulator.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
             } catch (Exception e) {
             }
         }

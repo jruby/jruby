@@ -329,11 +329,13 @@ psych/visitors/test_emitter.rb
 psych/visitors/test_to_ruby.rb
 psych/visitors/test_yaml_tree.rb
 
-ripper/test_files.rb
+# Assumes MRI source layout to randomly rip .rb files
+# ripper/test_files.rb
 ripper/test_filter.rb
 ripper/test_parser_events.rb
 ripper/test_ripper.rb
 ripper/test_scanner_events.rb
+ripper/test_sexp.rb
 
 scanf/test_scanf.rb
 scanf/test_scanfblocks.rb

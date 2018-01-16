@@ -1,1 +1,2 @@
 fails:String#capitalize works for all of Unicode
+fails:String#capitalize! capitalizes self in place for all of Unicode

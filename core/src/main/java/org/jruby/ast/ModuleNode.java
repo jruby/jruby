@@ -44,17 +44,18 @@ public class ModuleNode extends Node implements IScopingNode {
     private final Colon3Node cpath;
     private final StaticScope scope;
     private final Node bodyNode;
+    private final int endLine;
 
-    public ModuleNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode) {
+    public ModuleNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode, int endLine) {
         super(position, cpath.containsVariableAssignment() || bodyNode.containsVariableAssignment());
 
-        assert cpath != null : "cpath is not null";
         assert scope != null : "scope is not null";
         assert bodyNode != null : "bodyNode is not null";
 
         this.cpath = cpath;
         this.scope = scope;
         this.bodyNode = bodyNode;
+        this.endLine = endLine;
     }
 
     public NodeType getNodeType() {
@@ -77,7 +78,14 @@ public class ModuleNode extends Node implements IScopingNode {
     public Node getBodyNode() {
         return bodyNode;
     }
-    
+
+    /**
+     * Gets line where the 'end' was for this module.
+     */
+    public int getEndLine() {
+        return endLine;
+    }
+
     /**
      * Get the static scoping information.
      * 

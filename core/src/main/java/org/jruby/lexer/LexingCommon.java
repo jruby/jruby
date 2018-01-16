@@ -13,12 +13,18 @@ import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.ext.JavaLang;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.KCode;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Code and constants common to both ripper and main parser.
@@ -174,7 +180,7 @@ public abstract class LexingCommon {
     public String createAsEncodedString(byte[] bytes, int start, int length, Encoding encoding) {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
-            Charset charset = getEncoding().getCharset();
+            Charset charset = EncodingUtils.charsetForEncoding(getEncoding());
             if (charset != null) {
                 if (charset == RubyEncoding.UTF8) {
                     return RubyEncoding.decodeUTF8(bytes, start, length);
@@ -288,6 +294,78 @@ public abstract class LexingCommon {
 
     public boolean isASCII(int c) {
         return Encoding.isMbcAscii((byte) c);
+    }
+
+    // Return of 0 means failed to find anything.  Non-zero means return that from lexer.
+    public int peekVariableName(int tSTRING_DVAR, int tSTRING_DBEG) throws IOException {
+        int c = nextc(); // byte right after #
+        int significant = -1;
+        switch (c) {
+            case '$': {  // we unread back to before the $ so next lex can read $foo
+                int c2 = nextc();
+
+                if (c2 == '-') {
+                    int c3 = nextc();
+
+                    if (c3 == EOF) {
+                        pushback(c3); pushback(c2);
+                        return 0;
+                    }
+
+                    significant = c3;                              // $-0 potentially
+                    pushback(c3); pushback(c2);
+                    break;
+                } else if (isGlobalCharPunct(c2)) {          // $_ potentially
+                    setValue("#" + (char) c2);
+
+                    pushback(c2); pushback(c);
+                    return tSTRING_DVAR;
+                }
+
+                significant = c2;                                  // $FOO potentially
+                pushback(c2);
+                break;
+            }
+            case '@': {  // we unread back to before the @ so next lex can read @foo
+                int c2 = nextc();
+
+                if (c2 == '@') {
+                    int c3 = nextc();
+
+                    if (c3 == EOF) {
+                        pushback(c3); pushback(c2);
+                        return 0;
+                    }
+
+                    significant = c3;                                // #@@foo potentially
+                    pushback(c3); pushback(c2);
+                    break;
+                }
+
+                significant = c2;                                    // #@foo potentially
+                pushback(c2);
+                break;
+            }
+            case '{':
+                //setBraceNest(getBraceNest() + 1);
+                setValue("#" + (char) c);
+                commandStart = true;
+                return tSTRING_DBEG;
+            default:
+                // We did not find significant char after # so push it back to
+                // be processed as an ordinary string.
+                pushback(c);
+                return 0;
+        }
+
+        pushback(c);
+
+        if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
+            setValue("#" + significant);
+            return tSTRING_DVAR;
+        }
+
+        return 0;
     }
 
     // FIXME: I added number gvars here and they did not.
@@ -605,6 +683,7 @@ public abstract class LexingCommon {
 
         if (length <= 0) {
             compile_error("invalid multibyte char (" + getEncoding() + ")");
+            return false;
         } else if (length > 1) {
             tokenCR = StringSupport.CR_VALID;
         }
@@ -618,7 +697,10 @@ public abstract class LexingCommon {
     public boolean tokadd_mbchar(int first_byte, ByteList buffer) {
         int length = precise_mbclen();
 
-        if (length <= 0) compile_error("invalid multibyte char (" + getEncoding() + ")");
+        if (length <= 0) {
+            compile_error("invalid multibyte char (" + getEncoding() + ")");
+            return false;
+        }
 
         tokAdd(first_byte, buffer);                  // add first byte since we have it.
         lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
@@ -991,17 +1073,139 @@ public abstract class LexingCommon {
             String name = magicLine.subSequence(beg, end).toString().replace('-', '_');
             ByteList value = magicLine.makeShared(vbeg, vend - vbeg);
 
-            if ("coding".equals(name) || "encoding".equals(name)) {
-                magicCommentEncoding(value);
-            } else if ("frozen_string_literal".equals(name)) {
-                setCompileOptionFlag(name, value);
-            } else if ("warn_indent".equals(name)) {
-                setTokenInfo(name, value);
-            } else {
-                return false;
-            }
+            if (!onMagicComment(name, value)) return false;
         }
 
         return true;
+    }
+
+    protected boolean onMagicComment(String name, ByteList value) {
+        if ("coding".equalsIgnoreCase(name) || "encoding".equalsIgnoreCase(name)) {
+            magicCommentEncoding(value);
+            return true;
+        } else if ("frozen_string_literal".equalsIgnoreCase(name)) {
+            setCompileOptionFlag(name, value);
+            return true;
+        } else if ("warn_indent".equalsIgnoreCase(name)) {
+            setTokenInfo(name, value);
+            return true;
+        }
+        return false;
+    }
+
+    protected abstract RegexpOptions parseRegexpFlags() throws IOException;
+
+    protected RegexpOptions parseRegexpFlags(StringBuilder unknownFlags) throws IOException {
+        RegexpOptions options = new RegexpOptions();
+        int c;
+
+        newtok(true);
+        for (c = nextc(); c != EOF && Character.isLetter(c); c = nextc()) {
+            switch (c) {
+            case 'i':
+                options.setIgnorecase(true);
+                break;
+            case 'x':
+                options.setExtended(true);
+                break;
+            case 'm':
+                options.setMultiline(true);
+                break;
+            case 'o':
+                options.setOnce(true);
+                break;
+            case 'n':
+                options.setExplicitKCode(KCode.NONE);
+                break;
+            case 'e':
+                options.setExplicitKCode(KCode.EUC);
+                break;
+            case 's':
+                options.setExplicitKCode(KCode.SJIS);
+                break;
+            case 'u':
+                options.setExplicitKCode(KCode.UTF8);
+                break;
+            case 'j':
+                options.setJava(true);
+                break;
+            default:
+                unknownFlags.append((char) c);
+                break;
+            }
+        }
+        pushback(c);
+
+        return options;
+    }
+
+    public void checkRegexpFragment(Ruby runtime, ByteList value, RegexpOptions options) {
+        setRegexpEncoding(runtime, value, options);
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject $ex = context.getErrorInfo();
+        try {
+            RubyRegexp.preprocessCheck(runtime, value);
+        } catch (RaiseException re) {
+            context.setErrorInfo($ex);
+            compile_error(re.getMessage());
+        }
+    }
+
+    public void checkRegexpSyntax(Ruby runtime, ByteList value, RegexpOptions options) {
+        final String stringValue = value.toString();
+        // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
+        if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
+            return;
+
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject $ex = context.getErrorInfo();
+        try {
+            // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
+            RubyRegexp.newRegexpParser(runtime, value, (RegexpOptions)options.clone());
+        } catch (RaiseException re) {
+            context.setErrorInfo($ex);
+            compile_error(re.getMessage());
+        }
+    }
+
+    protected abstract void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding);
+
+    // MRI: reg_fragment_setenc_gen
+    public void setRegexpEncoding(Ruby runtime, ByteList value, RegexpOptions options) {
+        Encoding optionsEncoding = options.setup(runtime);
+
+        // Change encoding to one specified by regexp options as long as the string is compatible.
+        if (optionsEncoding != null) {
+            if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
+                mismatchedRegexpEncodingError(optionsEncoding, value.getEncoding());
+            }
+
+            value.setEncoding(optionsEncoding);
+        } else if (options.isEncodingNone()) {
+            if (value.getEncoding() != ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+                mismatchedRegexpEncodingError(optionsEncoding, value.getEncoding());
+            }
+            value.setEncoding(ASCII8BIT_ENCODING);
+        } else if (getEncoding() == USASCII_ENCODING) {
+            if (!is7BitASCII(value)) {
+                value.setEncoding(USASCII_ENCODING); // This will raise later
+            } else {
+                value.setEncoding(ASCII8BIT_ENCODING);
+            }
+        }
+    }
+
+    private boolean is7BitASCII(ByteList value) {
+      return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    }
+
+    // TODO: Put somewhere more consolidated (similiar
+    protected char optionsEncodingChar(Encoding optionEncoding) {
+        if (optionEncoding == USASCII_ENCODING) return 'n';
+        if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
+        if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
+        if (optionEncoding == UTF8_ENCODING) return 'u';
+
+        return ' ';
     }
 }

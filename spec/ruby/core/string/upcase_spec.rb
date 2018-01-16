@@ -46,14 +46,23 @@ describe "String#upcase!" do
     a.should == "HELLO"
   end
 
+
+  ruby_version_is '2.4' do
+    it "modifies self in place for all of Unicode" do
+      a = "äöü"
+      a.upcase!.should equal(a)
+      a.should == "ÄÖÜ"
+    end
+  end
+
   it "returns nil if no modifications were made" do
     a = "HELLO"
     a.upcase!.should == nil
     a.should == "HELLO"
   end
 
-  it "raises a RuntimeError when self is frozen" do
-    lambda { "HeLlo".freeze.upcase! }.should raise_error(RuntimeError)
-    lambda { "HELLO".freeze.upcase! }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} when self is frozen" do
+    lambda { "HeLlo".freeze.upcase! }.should raise_error(frozen_error_class)
+    lambda { "HELLO".freeze.upcase! }.should raise_error(frozen_error_class)
   end
 end

@@ -409,6 +409,7 @@
 #define HAVE_NUM2CHR                       1
 #define HAVE_RB_CMPINT                     1
 #define HAVE_RB_INT2INUM                   1
+#define HAVE_RB_UINT2INUM                  1
 #define HAVE_RB_INTEGER                    1
 #define HAVE_RB_LL2INUM                    1
 #define HAVE_RB_NUM2DBL                    1
@@ -422,6 +423,7 @@
 #define HAVE_RB_NUM_COERCE_BIN             1
 #define HAVE_RB_NUM_COERCE_CMP             1
 #define HAVE_RB_NUM_COERCE_RELOP           1
+#define HAVE_RB_ABSINT_SINGLEBIT_P         1
 #define HAVE_RB_NUM_ZERODIV                1
 
 /* Fixnum */
@@ -431,6 +433,8 @@
 #endif
 
 /* Object */
+#define HAVE_FL_ABLE                       1
+#define HAVE_FL_TEST                       1
 #define HAVE_OBJ_TAINT                     1
 #define HAVE_OBJ_TAINTED                   1
 #define HAVE_OBJ_INFECT                    1
@@ -557,6 +561,7 @@
 #define HAVE_RB_STR_SUBSEQ                 1
 #define HAVE_RB_VSPRINTF                   1
 #define HAVE_RB_STRING                     1
+#define HAVE_SAFE_STRING_VALUE             1
 
 /* Struct */
 #define HAVE_RB_STRUCT_AREF                1

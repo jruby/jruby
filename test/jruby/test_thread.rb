@@ -360,22 +360,22 @@ class TestThread < Test::Unit::TestCase
 
   def test_thread_name
     Thread.new do
-      assert_match(/\#\<Thread\:0x\h+(@[\w\/\._]+\:\d+)?\srun\>/, Thread.current.inspect)
+      assert_match(/\#\<Thread\:0x\h+(@[\w\/\.\-_]+\:\d+)?\srun\>/, Thread.current.inspect)
       # TODO? currently in JIT file comes as "" and line as 0
       assert_match(/Ruby\-\d+\-Thread\-\d+\:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)) if defined? JRUBY_VERSION
     end.join
 
     Thread.new do
       Thread.current.name = 'foo'
-      assert_match(/\#\<Thread\:0x\h+@foo(@[\w\/\._]+\:\d+)?\srun\>/, Thread.current.inspect)
+      assert_match(/\#\<Thread\:0x\h+@foo(@[\w\/\.\-_]+\:\d+)?\srun\>/, Thread.current.inspect)
       assert_match(/Ruby\-\d+\-Thread\-\d+\@foo:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)) if defined? JRUBY_VERSION
 
       Thread.current.name = 'bar'
-      assert_match(/\#\<Thread\:0x\h+@bar(@[\w\/\._]+\:\d+)?\srun\>/, Thread.current.inspect)
+      assert_match(/\#\<Thread\:0x\h+@bar(@[\w\/\.\-_]+\:\d+)?\srun\>/, Thread.current.inspect)
       assert_match(/Ruby\-\d+\-Thread\-\d+\@bar:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)) if defined? JRUBY_VERSION
 
       Thread.current.name = nil
-      assert_match(/\#\<Thread\:0x\h+(@[\w\/\._]+\:\d+)?\srun\>/, Thread.current.inspect)
+      assert_match(/\#\<Thread\:0x\h+(@[\w\/\.\-_]+\:\d+)?\srun\>/, Thread.current.inspect)
       assert_match(/Ruby\-\d+\-Thread\-\d+\:\s(.*\.rb)?\:\d+/, native_thread_name(Thread.current)) if defined? JRUBY_VERSION
     end.join
 

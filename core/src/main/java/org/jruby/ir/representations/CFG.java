@@ -318,11 +318,14 @@ public class CFG {
                 // Mark the BB as a rescue entry BB
                 firstRescueBB.markRescueEntryBB();
 
-                // Record a mapping from the region's exclusive basic blocks to the first bb that will start exception handling for all their exceptions.
-                // Add an exception edge from every exclusive bb of the region to firstRescueBB
+                // Record a mapping from the region's exclusive basic blocks to the first bb that will start exception
+                // handling for all their exceptions. Add an exception edge from every exclusive bb of the region to
+                // firstRescueBB unless it is incapable of raising.
                 for (BasicBlock b: rr.getExclusiveBBs()) {
-                    setRescuerBB(b, firstRescueBB);
-                    graph.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
+                    if (b.canRaiseExceptions()) {
+                        setRescuerBB(b, firstRescueBB);
+                        graph.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
+                    }
                 }
             }
         }
@@ -524,7 +527,11 @@ public class CFG {
             if (!mergedBBs.contains(b) && outDegree(b) == 1) {
                 for (Edge<BasicBlock> e : getOutgoingEdges(b)) {
                     BasicBlock outB = e.getDestination().getData();
-                    if (e.getType() != EdgeType.EXCEPTION && inDegree(outB) == 1 && mergeBBs(b, outB)) {
+
+                    // 1:1 BBs can just be one since there is only one place to go.  An empty entering any BB can merge
+                    // since the empty one does nothing (Note: mergeBBs uses empty as destination impl-wise but outcome
+                    // is the same).
+                    if (e.getType() != EdgeType.EXCEPTION && (inDegree(outB) == 1 || b.isEmpty()) && mergeBBs(b, outB)) {
                         mergedBBs.add(outB);
                     }
                 }
@@ -585,35 +592,6 @@ public class CFG {
         }
         for (Edge<BasicBlock> edge: toRemove) {
             graph.removeEdge(edge);
-        }
-
-        // SSS FIXME: Can't we not add some of these exception edges in the first place??
-        // Remove exception edges from blocks that couldn't possibly thrown an exception!
-        toRemove = new ArrayList<>();
-        for (BasicBlock b : graph.allData()) {
-            boolean noExceptions = true;
-            for (Instr i : b.getInstrs()) {
-                if (i.canRaiseException()) {
-                    noExceptions = false;
-                    break;
-                }
-            }
-
-            if (noExceptions) {
-                for (Edge<BasicBlock> e : graph.findVertexFor(b).getOutgoingEdgesOfType(EdgeType.EXCEPTION)) {
-                    BasicBlock source = e.getSource().getData();
-                    BasicBlock destination = e.getDestination().getData();
-                    toRemove.add(e);
-
-                    if (rescuerMap.get(source) == destination) rescuerMap.remove(source);
-                }
-            }
-        }
-
-        if (!toRemove.isEmpty()) {
-            for (Edge<BasicBlock> edge: toRemove) {
-                graph.removeEdge(edge);
-            }
         }
 
         deleteOrphanedBlocks(graph);

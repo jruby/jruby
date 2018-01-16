@@ -1,0 +1,1 @@
+fails:Rational#/ rescues exception (StandardError and subclasses) raised in other#coerce and raises TypeError

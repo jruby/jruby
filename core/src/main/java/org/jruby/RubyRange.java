@@ -54,6 +54,14 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.runtime.Helpers.hashEnd;
+import static org.jruby.runtime.Helpers.hashStart;
+import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Helpers.murmurCombine;
+import static org.jruby.runtime.Helpers.safeHash;
+
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.RespondToCallSite;
@@ -67,7 +75,6 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.intervalStepSize;
-import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -287,15 +294,21 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        long hash = isExclusive ? 1 : 0;
-        long h = hash;
+        Ruby runtime = context.runtime;
 
-        long v = invokedynamic(context, begin, MethodNames.HASH).convertToInteger().getLongValue();
-        hash ^= v << 1;
-        v = invokedynamic(context, end, MethodNames.HASH).convertToInteger().getLongValue();
-        hash ^= v << 9;
-        hash ^= h << 24;
-        return context.runtime.newFixnum(hash);
+        int exclusiveBit = isExclusive ? 1 : 0;
+        long hash = exclusiveBit;
+        IRubyObject v;
+
+        hash = hashStart(runtime, hash);
+        v = safeHash(context, begin);
+        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        v = safeHash(context, end);
+        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        hash = murmurCombine(hash, exclusiveBit << 24);
+        hash = hashEnd(hash);
+
+        return runtime.newFixnum(hash);
     }
 
     private static RubyString inspectValue(final ThreadContext context, IRubyObject value) {

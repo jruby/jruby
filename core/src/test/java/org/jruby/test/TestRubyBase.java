@@ -36,11 +36,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import junit.framework.TestCase;
-import org.jruby.CompatVersion;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
-import org.jruby.RubyInstanceConfig;
 
 /**
  * @author Benoit

@@ -180,6 +180,14 @@ fi
 # ----- Execute The Requested Command -----------------------------------------
 JAVA_ENCODING=""
 
+if [ -r "/dev/urandom" ]; then
+  # OpenJDK tries really hard to prevent you from using urandom.
+  # See https://bugs.openjdk.java.net/browse/JDK-6202721
+  # Non-file URL causes fallback to slow threaded SeedGenerator.
+  # See https://bz.apache.org/bugzilla/show_bug.cgi?id=56139
+  JAVA_SECURITY_EGD="file:/dev/urandom"
+fi
+
 declare -a java_args
 declare -a ruby_args
 mode=""
@@ -219,21 +227,13 @@ do
             CP="$CP$CP_DELIMITER$2"
             CLASSPATH=""
             shift
-        elif [ "${val:0:3}" = "-G:" ]; then # Graal options
-            opt=${val:3}
-            case $opt in
-              +*)
-                opt="${opt:1}=true" ;;
-              -*)
-                opt="${opt:1}=false" ;;
-            esac
-            echo "$1 is deprecated - use -J-Dgraal.$opt instead" >&2
-            java_args=("${java_args[@]}" "-Dgraal.$opt")
         else
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
             elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
                 JAVA_ENCODING=$val
+            elif [ "${val:0:20}" = "-Djava.security.egd=" ]; then
+                JAVA_SECURITY_EGD=$val
             fi
             java_args=("${java_args[@]}" "${1:2}")
         fi
@@ -313,6 +313,12 @@ done
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
 if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
   java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
+fi
+
+# Force OpenJDK-based JVMs to use /dev/urandom for random number generation
+# See https://github.com/jruby/jruby/issues/4685 among others.
+if [[ -n "$JAVA_SECURITY_EGD" ]]; then
+  java_args=("${java_args[@]}" "-Djava.security.egd=$JAVA_SECURITY_EGD")
 fi
 
 # Append the rest of the arguments

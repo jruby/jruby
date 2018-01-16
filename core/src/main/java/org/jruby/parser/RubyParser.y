@@ -689,18 +689,18 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
-                   $$ = new InstAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                   $$ = new InstAsgnNode(lexer.tokline, $1, NilImplicitNode.NIL);
                 }
                 | tGVAR {
-                   $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                   $$ = new GlobalAsgnNode(lexer.tokline, $1, NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(lexer.tokline, $1, null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
-                    $$ = new ClassVarAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(lexer.tokline, $1, NilImplicitNode.NIL);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     support.compile_error("Can't assign to nil");
@@ -756,7 +756,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    ISourcePosition position = lexer.getPosition();
+                    ISourcePosition position = lexer.tokline;
 
                     $$ = new ConstDeclNode(position, (ByteList) null, support.new_colon3(position, $2), NilImplicitNode.NIL);
                 }
@@ -768,18 +768,18 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
-                   $$ = new InstAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                   $$ = new InstAsgnNode(lexer.tokline, $1, NilImplicitNode.NIL);
                 }
                 | tGVAR {
-                   $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                   $$ = new GlobalAsgnNode(lexer.tokline, $1, NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(lexer.tokline, $1, null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
-                    $$ = new ClassVarAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(lexer.tokline, $1, NilImplicitNode.NIL);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     support.compile_error("Can't assign to nil");
@@ -835,7 +835,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    ISourcePosition position = lexer.getPosition();
+                    ISourcePosition position = lexer.tokline;
 
                     $$ = new ConstDeclNode(position, (ByteList) null, support.new_colon3(position, $2), NilImplicitNode.NIL);
                 }
@@ -851,10 +851,10 @@ cname           : tIDENTIFIER {
                 }
 
 cpath           : tCOLON3 cname {
-                    $$ = support.new_colon3(lexer.getPosition(), $2);
+                    $$ = support.new_colon3(lexer.tokline, $2);
                 }
                 | cname {
-                    $$ = support.new_colon2(lexer.getPosition(), null, $1);
+                    $$ = support.new_colon2(lexer.tokline, null, $1);
                 }
                 | primary_value tCOLON2 cname {
                     $$ = support.new_colon2(support.getPosition($1), $1, $3);
@@ -881,11 +881,11 @@ fname          : tIDENTIFIER {
 
 // LiteralNode:fsym
 fsym           : fname {
-                    $$ = new LiteralNode(lexer.getPosition(), $1);
-                }
-                | symbol {
-                    $$ = new LiteralNode(lexer.getPosition(), $1);
-                }
+                   $$ = new LiteralNode(lexer.getPosition(), $1);
+               }
+               | symbol {
+                   $$ = new LiteralNode(lexer.getPosition(), $1);
+               }
 
 // Node:fitem
 fitem           : fsym {
@@ -1168,7 +1168,7 @@ arg             : lhs '=' arg_rhs {
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg_rhs {
                     ISourcePosition pos = lexer.getPosition();
-                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, $1), $3, $4);
+                    $$ = support.newOpConstAsgn(pos, new Colon3Node(pos, $2), $3, $4);
                 }
                 | backref tOP_ASGN arg_rhs {
                     support.backrefAssignError($1);
@@ -1320,7 +1320,7 @@ paren_args      : tLPAREN2 opt_call_args rparen {
 
 opt_paren_args  : none | paren_args
 
-opt_call_args   : none 
+opt_call_args   : none
                 | call_args
                 | args ',' {
                     $$ = $1;
@@ -1481,7 +1481,7 @@ primary         : literal
                     $$ = support.new_colon2(support.getPosition($1), $1, $3);
                 }
                 | tCOLON3 tCONSTANT {
-                    $$ = support.new_colon3(lexer.getPosition(), $2);
+                    $$ = support.new_colon3(lexer.tokline, $2);
                 }
                 | tLBRACK aref_args tRBRACK {
                     ISourcePosition position = support.getPosition($2);
@@ -1575,7 +1575,7 @@ primary         : literal
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($5);
 
-                    $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3);
+                    $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3, lexer.getRubySourceline());
                     support.popCurrentScope();
                 }
                 | keyword_class tLSHFT expr {
@@ -1588,7 +1588,7 @@ primary         : literal
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($7);
 
-                    $$ = new SClassNode($1, $3, support.getCurrentScope(), body);
+                    $$ = new SClassNode($1, $3, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
                     support.setInDef($<Boolean>4.booleanValue());
                     support.setInSingle($<Integer>6.intValue());
@@ -1601,7 +1601,7 @@ primary         : literal
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($4);
 
-                    $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body);
+                    $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
                 }
                 | keyword_def fname {
@@ -1957,7 +1957,7 @@ opt_rescue      : keyword_rescue exc_list exc_var then compstmt opt_rescue {
                     Node body = support.makeNullNil(node);
                     $$ = new RescueBodyNode($1, $2, body, $6);
                 }
-                | { 
+                | {
                     $$ = null; 
                 }
 
@@ -2121,7 +2121,7 @@ xstring_contents: /* none */ {
                     $$ = support.literal_concat(support.getPosition($1), $1, $<Node>2);
                 }
 
-regexp_contents :  /* none */ {
+regexp_contents: /* none */ {
                     $$ = null;
                 }
                 | regexp_contents string_content {
@@ -2216,7 +2216,7 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      }
                 }
 
- numeric        : simple_numeric {
+numeric         : simple_numeric {
                     $$ = $1;  
                 }
                 | tUMINUS_NUM simple_numeric %prec tLOWEST {
@@ -2241,38 +2241,38 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.declareIdentifier($1);
                 }
                 | tIVAR {
-                    $$ = new InstVarNode(lexer.getPosition(), $1);
+                    $$ = new InstVarNode(lexer.tokline, $1);
                 }
                 | tGVAR {
-                    $$ = new GlobalVarNode(lexer.getPosition(), $1);
+                    $$ = new GlobalVarNode(lexer.tokline, $1);
                 }
                 | tCONSTANT {
-                    $$ = new ConstNode(lexer.getPosition(), $1);
+                    $$ = new ConstNode(lexer.tokline, $1);
                 }
                 | tCVAR {
-                    $$ = new ClassVarNode(lexer.getPosition(), $1);
+                    $$ = new ClassVarNode(lexer.tokline, $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil { 
-                    $$ = new NilNode(lexer.getPosition());
+                    $$ = new NilNode(lexer.tokline);
                 }
                 | keyword_self {
-                    $$ = new SelfNode(lexer.getPosition());
+                    $$ = new SelfNode(lexer.tokline);
                 }
                 | keyword_true { 
-                    $$ = new TrueNode(lexer.getPosition());
+                    $$ = new TrueNode(lexer.tokline);
                 }
                 | keyword_false {
-                    $$ = new FalseNode(lexer.getPosition());
+                    $$ = new FalseNode(lexer.tokline);
                 }
                 | keyword__FILE__ {
-                    $$ = new FileNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
+                    $$ = new FileNode(lexer.tokline, new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                 }
                 | keyword__LINE__ {
-                    $$ = new FixnumNode(lexer.getPosition(), lexer.tokline.getLine()+1);
+                    $$ = new FixnumNode(lexer.tokline, lexer.tokline.getLine()+1);
                 }
                 | keyword__ENCODING__ {
-                    $$ = new EncodingNode(lexer.getPosition(), lexer.getEncoding());
+                    $$ = new EncodingNode(lexer.tokline, lexer.getEncoding());
                 } /*mri:keyword_variable*/
 
 // [!null]
@@ -2280,18 +2280,18 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.assignableLabelOrIdentifier($1, null);
                 }
                 | tIVAR {
-                   $$ = new InstAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                   $$ = new InstAsgnNode(lexer.tokline, $1, NilImplicitNode.NIL);
                 }
                 | tGVAR {
-                   $$ = new GlobalAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                   $$ = new GlobalAsgnNode(lexer.tokline, $1, NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    $$ = new ConstDeclNode(lexer.getPosition(), $1, null, NilImplicitNode.NIL);
+                    $$ = new ConstDeclNode(lexer.tokline, $1, null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
-                    $$ = new ClassVarAsgnNode(lexer.getPosition(), $1, NilImplicitNode.NIL);
+                    $$ = new ClassVarAsgnNode(lexer.tokline, $1, NilImplicitNode.NIL);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     support.compile_error("Can't assign to nil");

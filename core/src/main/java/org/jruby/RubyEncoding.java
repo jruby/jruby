@@ -27,6 +27,7 @@ package org.jruby;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -281,14 +282,15 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             if (cs.length() > CHAR_THRESHOLD) {
                 buffer = UTF8.encode(CharBuffer.wrap(cs));
             } else {
-                buffer = byteBuffer;
+                Buffer buf = buffer = byteBuffer;
                 CharBuffer cbuffer = charBuffer;
-                buffer.clear();
-                cbuffer.clear();
+                Buffer cbuf = cbuffer;
+                buf.clear();
+                cbuf.clear();
                 cbuffer.put(cs.toString());
-                cbuffer.flip();
+                cbuf.flip();
                 encoder.encode(cbuffer, buffer, true);
-                buffer.flip();
+                buf.flip();
             }
 
             byte[] bytes = new byte[buffer.limit()];
@@ -301,14 +303,15 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             if (length > CHAR_THRESHOLD) {
                 cbuffer = UTF8.decode(ByteBuffer.wrap(bytes, start, length));
             } else {
-                cbuffer = charBuffer;
+                Buffer cbuf = cbuffer = charBuffer;
                 ByteBuffer buffer = byteBuffer;
-                cbuffer.clear();
-                buffer.clear();
+                Buffer buf = buffer;
+                cbuf.clear();
+                buf.clear();
                 buffer.put(bytes, start, length);
-                buffer.flip();
+                buf.flip();
                 decoder.decode(buffer, cbuffer, true);
-                cbuffer.flip();
+                cbuf.flip();
             }
 
             return cbuffer.toString();

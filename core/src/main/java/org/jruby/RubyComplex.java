@@ -988,17 +988,29 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "finite?")
     @Override
     public IRubyObject finite_p(ThreadContext context) {
+        if (checkFinite(context, real) && checkFinite(context, image)) {
+            return context.tru;
+        }
+        return context.fals;
+    }
+
+    // MRI: f_finite_p
+    public boolean checkFinite(ThreadContext context, IRubyObject value) {
         IRubyObject magnitude = magnitude(context);
 
         if (magnitude instanceof RubyInteger || magnitude instanceof RubyRational) {
-            return context.runtime.getTrue();
+            return true;
         }
 
         if (magnitude instanceof RubyFloat) {
-            return context.runtime.newBoolean(!((RubyFloat) magnitude).infinite_p().isTrue());
+            return ((RubyFloat) magnitude).finite_p().isTrue();
         }
 
-        return sites(context).finite.call(context, magnitude, magnitude);
+        if (magnitude instanceof RubyRational) {
+            return true;
+        }
+
+        return sites(context).finite.call(context, magnitude, magnitude).isTrue();
     }
 
     @JRubyMethod(name = "infinite?")

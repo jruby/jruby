@@ -1,14 +1,20 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.EnumSet;
 
 // FIXME: When presistence is revisited this should strip these out of code streams on save and add them in if
 // tracing is on for load.
@@ -71,13 +77,22 @@ public class TraceInstr extends NoOperandInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        if (context.runtime.hasEventHooks()) {
-            // FIXME: Try and statically generate END linenumber instead of hacking it.
-            int linenumber = getLinenumber() == -1 ? context.getLine()+1 : getLinenumber();
-
-            context.trace(getEvent(), getName(), context.getFrameKlazz(), getFilename(), linenumber);
-        }
+        IRRuntimeHelpers.callTrace(context, getEvent(), getName(), getFilename(), getLinenumber());
 
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.TraceInstr(this);
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        EnumSet<IRFlags> flags = scope.getFlags();
+
+        flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
+
+        return true;
     }
 }

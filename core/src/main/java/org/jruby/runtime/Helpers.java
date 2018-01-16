@@ -1,11 +1,9 @@
 package org.jruby.runtime;
 
 import java.io.IOException;
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
+
+import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -14,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import jnr.constants.platform.Errno;
 import org.jruby.*;
@@ -40,7 +39,6 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.parser.StaticScope;
-import org.jruby.platform.Platform;
 import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -71,6 +69,8 @@ import org.jruby.util.io.EncodingUtils;
  *
  */
 public class Helpers {
+
+    public static final Pattern SEMICOLON_PATTERN = Pattern.compile(";");
 
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
@@ -185,7 +185,8 @@ public class Helpers {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
-            switch ( errorMessage ) {
+
+            switch (errorMessage) {
                 case "Bad file descriptor":
                     return Errno.EBADF;
                 case "File not open":
@@ -213,7 +214,11 @@ public class Helpers {
                 case "Message too large": // Alpine Linux
                 case "Message too long":
                     return Errno.EMSGSIZE;
+                case "Is a directory":
+                    return Errno.EISDIR;
             }
+        } else if (t instanceof PortUnreachableException) {
+            return Errno.ECONNREFUSED;
         }
         return null;
     }
@@ -526,14 +531,19 @@ public class Helpers {
         return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(runtime, value);
     }
 
+    @Deprecated // not used
     public static IRubyObject nullToNil(IRubyObject value, ThreadContext context) {
         return value != null ? value : context.nil;
     }
 
+    @Deprecated // not used
     public static IRubyObject nullToNil(IRubyObject value, Ruby runtime) {
         return value != null ? value : runtime.getNil();
     }
 
+    /**
+     * @see Ruby#getNullToNilHandle()
+     */
     public static IRubyObject nullToNil(IRubyObject value, IRubyObject nil) {
         return value != null ? value : nil;
     }
@@ -1319,6 +1329,7 @@ public class Helpers {
         return RubyString.newStringShared(context.runtime, value);
     }
 
+    @SuppressWarnings("deprecation")
     public static StaticScope preLoad(ThreadContext context, String[] varNames) {
         StaticScope staticScope = context.runtime.getStaticScopeFactory().newLocalScope(null, varNames);
         preLoadCommon(context, staticScope, false);
@@ -1427,7 +1438,6 @@ public class Helpers {
     }
 
     // mri: rb_Array
-    // FIXME: Replace arrayValue/asArray18 with this on 9k (currently dead -- respond_to? logic broken further down the line -- fix that first)
     @Deprecated
     public static RubyArray asArray(ThreadContext context, IRubyObject value) {
         return TypeConverter.rb_Array(context, value);
@@ -1477,6 +1487,7 @@ public class Helpers {
         return (RubyArray) value;
     }
 
+    @Deprecated // not used
     public static RubyArray splatValue(IRubyObject value) {
         if (value.isNil()) {
             return value.getRuntime().newArray(value);
@@ -1511,12 +1522,6 @@ public class Helpers {
 
     @Deprecated // no longer used
     public static IRubyObject[] splatToArguments(IRubyObject value) {
-        return splatToArgumentsCommon(value.getRuntime(), value);
-    }
-
-    @Deprecated // no longer used
-    public static IRubyObject[] splatToArguments19(IRubyObject value) {
-        if (value.isNil()) return IRubyObject.NULL_ARRAY;
         return splatToArgumentsCommon(value.getRuntime(), value);
     }
 
@@ -1557,12 +1562,6 @@ public class Helpers {
     @SuppressWarnings("deprecation") @Deprecated // no longer used
     public static IRubyObject[] argsCatToArguments(IRubyObject[] args, IRubyObject cat) {
         IRubyObject[] ary = splatToArguments(cat);
-        return argsCatToArgumentsCommon(args, ary);
-    }
-
-    @SuppressWarnings("deprecation") @Deprecated // no longer used
-    public static IRubyObject[] argsCatToArguments19(IRubyObject[] args, IRubyObject cat) {
-        IRubyObject[] ary = splatToArguments19(cat);
         return argsCatToArgumentsCommon(args, ary);
     }
 
@@ -1614,6 +1613,7 @@ public class Helpers {
         receiver.callMethod(context, "singleton_method_added", name);
     }
 
+    @SuppressWarnings("deprecation")
     static String encodeScope(StaticScope scope) {
         StringBuilder namesBuilder = new StringBuilder(scope.getType().name()); // 0
 
@@ -1631,6 +1631,7 @@ public class Helpers {
         return namesBuilder.toString();
     }
 
+    @SuppressWarnings("deprecation")
     static StaticScope decodeScope(ThreadContext context, StaticScope parent, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
         String scopeTypeName = decodedScope[0][0];
@@ -1703,6 +1704,7 @@ public class Helpers {
         return rubyClass;
     }
 
+    @Deprecated // not used
     public static IRubyObject arrayEntryOrNil(RubyArray array, int index) {
         if (index < array.getLength()) {
             return array.eltInternal(index);
@@ -1711,6 +1713,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not used
     public static IRubyObject arrayEntryOrNilZero(RubyArray array) {
         if (0 < array.getLength()) {
             return array.eltInternal(0);
@@ -1719,6 +1722,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not used
     public static IRubyObject arrayEntryOrNilOne(RubyArray array) {
         if (1 < array.getLength()) {
             return array.eltInternal(1);
@@ -1727,6 +1731,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not used
     public static IRubyObject arrayEntryOrNilTwo(RubyArray array) {
         if (2 < array.getLength()) {
             return array.eltInternal(2);
@@ -1735,6 +1740,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not used
     public static IRubyObject arrayPostOrNil(RubyArray array, int pre, int post, int index) {
         if (pre + post < array.getLength()) {
             return array.eltInternal(array.getLength() - post + index);
@@ -1745,6 +1751,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not used
     public static IRubyObject arrayPostOrNilZero(RubyArray array, int pre, int post) {
         if (pre + post < array.getLength()) {
             return array.eltInternal(array.getLength() - post + 0);
@@ -1755,6 +1762,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not used
     public static IRubyObject arrayPostOrNilOne(RubyArray array, int pre, int post) {
         if (pre + post < array.getLength()) {
             return array.eltInternal(array.getLength() - post + 1);
@@ -1765,6 +1773,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not used
     public static IRubyObject arrayPostOrNilTwo(RubyArray array, int pre, int post) {
         if (pre + post < array.getLength()) {
             return array.eltInternal(array.getLength() - post + 2);
@@ -1775,6 +1784,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not used
     public static RubyArray subarrayOrEmpty(RubyArray array, Ruby runtime, int index) {
         if (index < array.getLength()) {
             return createSubarray(array, index);
@@ -1783,6 +1793,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not used
     public static RubyArray subarrayOrEmpty(RubyArray array, Ruby runtime, int index, int post) {
         if (index + post < array.getLength()) {
             return createSubarray(array, index, post);
@@ -2025,6 +2036,7 @@ public class Helpers {
         return ((RubyArray)first.dup()).append(second);
     }
 
+    @JIT
     public static RubyArray argsPush(IRubyObject first, IRubyObject second) {
         return ((RubyArray)first.dup()).append(second);
     }
@@ -2220,6 +2232,7 @@ public class Helpers {
         return context.runtimeCache.getMethod(context, metaclass, metaclass.getClassIndex().ordinal() * (index + 1), name);
     }
 
+    @Deprecated // not used
     public static IRubyObject lastElement(IRubyObject[] ary) {
         return ary[ary.length - 1];
     }
@@ -2227,20 +2240,6 @@ public class Helpers {
     @Deprecated // not used
     public static RubyString appendAsString(RubyString target, IRubyObject other) {
         return target.append(other.asString());
-    }
-
-    @Deprecated // not used
-    public static RubyString appendAsString19(RubyString target, IRubyObject other) {
-        return target.append19(other.asString());
-    }
-
-    /**
-     * We need to splat incoming array to a block when |a, *b| (any required +
-     * rest) or |a, b| (>1 required).
-     */
-    @Deprecated // not used
-    public static boolean needsSplat19(int requiredCount, boolean isRest) {
-        return (isRest && requiredCount > 0) || (!isRest && requiredCount > 1);
     }
 
     // . Array given to rest should pass itself
@@ -2262,6 +2261,7 @@ public class Helpers {
         return new IRubyObject[] { value };
     }
 
+    @Deprecated // not used
     public static RubyString appendByteList(RubyString target, ByteList source) {
         target.getByteList().append(source);
         return target;
@@ -2273,30 +2273,6 @@ public class Helpers {
                 value1 == value2 : value1.op_equal(context, value2).isTrue();
 
         return !eql;
-    }
-
-    @Deprecated
-    public static RubyString appendByteList19(RubyString target, ByteList source, int codeRange) {
-        target.cat19(source, codeRange);
-        return target;
-    }
-
-    @Deprecated
-    public static RubyString shortcutAppend18(RubyString string, IRubyObject object) {
-        if (object instanceof RubyFixnum || object instanceof RubyFloat || object instanceof RubySymbol) {
-            return string.append(object);
-        } else {
-            return string.append(object.asString());
-        }
-    }
-
-    @Deprecated
-    public static RubyString shortcutAppend(RubyString string, IRubyObject object) {
-        if (object instanceof RubyFixnum || object instanceof RubyFloat || object instanceof RubySymbol) {
-            return string.append19(object);
-        } else {
-            return string.append19(object.asString());
-        }
     }
 
     public static void irCheckArgsArrayArity(ThreadContext context, RubyArray args, int required, int opt, boolean rest) {
@@ -2345,7 +2321,7 @@ public class Helpers {
         if (encoding == USASCIIEncoding.INSTANCE || encoding == ASCIIEncoding.INSTANCE) {
             return value.toString(); // raw
         } else if (encoding instanceof UnicodeEncoding) {
-            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), value.getEncoding().getCharset());
+            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), EncodingUtils.charsetForEncoding(value.getEncoding()));
         } else {
             return value.toString(); // raw
         }
@@ -2389,7 +2365,7 @@ public class Helpers {
      * @return the decoded string
      */
     public static String byteListToString(final ByteList bytes) {
-        final Charset charset = bytes.getEncoding().getCharset();
+        final Charset charset = EncodingUtils.charsetForEncoding(bytes.getEncoding());
         if ( charset != null ) {
             return new String(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize(), charset);
         }
@@ -2406,19 +2382,11 @@ public class Helpers {
         return null; // not reached
     }
 
+    @Deprecated // un-used
     public static void rewriteStackTrace(final Ruby runtime, final Throwable e) {
         final StackTraceElement[] javaTrace = e.getStackTrace();
         BacktraceData backtraceData = runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(runtime.getCurrentContext(), javaTrace);
         e.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(runtime)));
-    }
-
-    public static String stringJoin(String delimiter, String[] strings) {
-        if (strings.length == 0) return "";
-        StringBuilder sb = new StringBuilder(strings[0]);
-        for (int i = 1; i < strings.length; i++) {
-            sb.append(delimiter).append(strings[i]);
-        }
-        return sb.toString();
     }
 
     public static <T> T[] arrayOf(T... values) {
@@ -2580,53 +2548,4 @@ public class Helpers {
                 (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
     }
 
-    /**
-     * When running on Java 9 this method will use module openness to do setAccessible, if possible.
-     *
-     * @param member the method, field, or constructor to attempt to setAccessible
-     * @return whether the setAccessible was successful
-     */
-    public static boolean trySetAccessible(Member member) {
-        if (!(member instanceof AccessibleObject)) return false;
-
-        AccessibleObject ao = (AccessibleObject) member;
-
-        if (ao.isAccessible()) return true;
-
-        if (getModule != null) {
-            try {
-                Class<?> declaringClass = member.getDeclaringClass();
-                Object module = getModule.invoke(declaringClass);
-                if ((Boolean) isOpen.invoke(module, declaringClass.getPackage().getName())) {
-                    ao.setAccessible(true);
-                    return true;
-                }
-                return false;
-            } catch (Exception e) {
-                return false;
-            }
-        } else {
-            try {
-                ao.setAccessible(true);
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
-        }
-    }
-
-    private static final Method getModule;
-    private static final Method isOpen;
-    static {
-        Method _getModule = null;
-        Method _isOpen = null;
-        try {
-            _getModule = Class.class.getMethod("getModule");
-            Class module = Class.forName("java.lang.Module");
-            _isOpen = module.getMethod("isOpen", String.class);
-        } catch (Exception e) {
-        }
-        getModule = _getModule;
-        isOpen = _isOpen;
-    }
 }

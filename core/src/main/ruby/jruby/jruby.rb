@@ -28,10 +28,10 @@ module JRuby
 
     # Parse the given block or the provided content, returning a JRuby AST node.
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
-    def parse(content, filename = '', extra_position_info = false, lineno = 0); end if false
+    def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0); end if false
 
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
-    def compile_ir(content, filename = '', extra_position_info = false); end if false
+    def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block); end if false
 
     # Parse and compile the given block or provided content.
     # @return [JRuby::CompiledScript]

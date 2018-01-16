@@ -28,11 +28,6 @@ public class FullInterpreterContext extends InterpreterContext {
     // FIXME: At some point when we relinearize after running another phase of passes we should document that here to know how this field is changed
     private BasicBlock[] linearizedBBList = null;
 
-    // Contains pairs of values.  The first value is number of instrs in this range + number of instrs before
-    // this range.  The second number is the rescuePC.  getRescuePC(ipc) will walk this list and first odd value
-    // less than this value will be the rpc.
-    private int[] rescueIPCs = null;
-
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dataFlowProblems;
 
@@ -188,6 +183,6 @@ public class FullInterpreterContext extends InterpreterContext {
             if (ipc <= rescueIPCs[i]) return rescueIPCs[i + 1];
         }
 
-        throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc + getInstructions());
+        throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc);
     }
 }

@@ -37,6 +37,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -62,6 +65,8 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static volatile File tempDir;
 
+    private List<String> cachedJarPaths = Collections.synchronizedList(new ArrayList<String>());
+
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
     }
@@ -86,6 +91,8 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                 out.close();
                 in.close();
                 url = f.toURI().toURL();
+
+                cachedJarPaths.add(URLUtil.getPath(url));
             }
             catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
@@ -183,6 +190,23 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             getJDBCDriverUnloader().run();
         }
         catch (Exception ex) { LOG.debug(ex); }
+
+        terminateJarIndexCacheEntries();
+    }
+
+    protected void terminateJarIndexCacheEntries() {
+        for (String jarPath : cachedJarPaths){
+            try {
+                // Remove reference from jar cache
+                JarResource.removeJarResource(jarPath);
+
+                // Delete temp jar on disk
+                File jarFile = new File(jarPath);
+                jarFile.delete();
+            } catch (Exception e) {
+                // keep trying to clean up other temp jars
+            }
+        }
     }
 
     @Deprecated

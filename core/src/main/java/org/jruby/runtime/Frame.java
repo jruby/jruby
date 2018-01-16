@@ -88,7 +88,7 @@ public final class Frame {
     private IRubyObject lastLine;
 
     /** whether this frame has been captured into a binding **/
-    private boolean captured;
+    boolean captured;
 
     /** A dummy frame **/
     public static final Frame DUMMY = new Frame();
@@ -175,6 +175,14 @@ public final class Frame {
         this.self = self;
         this.name = null;
         this.visibility = Visibility.PRIVATE;
+    }
+
+    public void updateFrameForBackref() {
+        // nothing
+    }
+
+    public void clearFrameForBackref() {
+        this.backRef = null;
     }
 
     /**

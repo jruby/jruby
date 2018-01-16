@@ -280,8 +280,6 @@ class Gem::Dependency
       requirement.satisfied_by?(spec.version) && env_req.satisfied_by?(spec.version)
     }.map(&:to_spec)
 
-    Gem::BundlerVersionFinder.filter!(matches) if name == "bundler".freeze
-
     if platform_only
       matches.reject! { |spec|
         spec.nil? || !Gem::Platform.match(spec.platform)

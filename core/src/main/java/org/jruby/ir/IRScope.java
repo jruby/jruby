@@ -176,7 +176,8 @@ public abstract class IRScope implements ParseResult {
         flags.add(CAN_CAPTURE_CALLERS_BINDING);
         flags.add(BINDING_HAS_ESCAPED);
         flags.add(USES_EVAL);
-        flags.add(USES_BACKREF_OR_LASTLINE);
+        flags.add(REQUIRES_BACKREF);
+        flags.add(REQUIRES_LASTLINE);
         flags.add(REQUIRES_DYNSCOPE);
         flags.add(USES_ZSUPER);
 
@@ -344,11 +345,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setFileName(String filename) {
-        getTopLevelScope().setFileName(filename);
+        getRootLexicalScope().setFileName(filename);
     }
 
     public String getFileName() {
-        return getTopLevelScope().getFileName();
+        return getRootLexicalScope().getFileName();
     }
 
     public int getLineNumber() {
@@ -358,7 +359,7 @@ public abstract class IRScope implements ParseResult {
     /**
      * Returns the top level scope
      */
-    public IRScope getTopLevelScope() {
+    public IRScope getRootLexicalScope() {
         IRScope current = this;
 
         for (; current != null && !current.isScriptScope(); current = current.getLexicalParent()) {}
@@ -396,10 +397,6 @@ public abstract class IRScope implements ParseResult {
 
     public boolean bindingHasEscaped() {
         return flags.contains(BINDING_HAS_ESCAPED);
-    }
-
-    public boolean usesBackrefOrLastline() {
-        return flags.contains(USES_BACKREF_OR_LASTLINE);
     }
 
     public boolean usesEval() {
@@ -650,6 +647,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void initScopeFlags() {
+        // CON: why isn't this just clear?
         flags.remove(CAN_CAPTURE_CALLERS_BINDING);
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
@@ -657,8 +655,18 @@ public abstract class IRScope implements ParseResult {
         flags.remove(HAS_NONLOCAL_RETURNS);
         flags.remove(USES_ZSUPER);
         flags.remove(USES_EVAL);
-        flags.remove(USES_BACKREF_OR_LASTLINE);
         flags.remove(REQUIRES_DYNSCOPE);
+
+        flags.remove(REQUIRES_LASTLINE);
+        flags.remove(REQUIRES_BACKREF);
+        flags.remove(REQUIRES_VISIBILITY);
+        flags.remove(REQUIRES_BLOCK);
+        flags.remove(REQUIRES_SELF);
+        flags.remove(REQUIRES_METHODNAME);
+        flags.remove(REQUIRES_LINE);
+        flags.remove(REQUIRES_CLASS);
+        flags.remove(REQUIRES_FILENAME);
+        flags.remove(REQUIRES_SCOPE);
     }
 
     private void bindingEscapedScopeFlagsCheck() {
@@ -1171,9 +1179,13 @@ public abstract class IRScope implements ParseResult {
             switch (flag) {
                 case BINDING_HAS_ESCAPED:
                 case CAN_CAPTURE_CALLERS_BINDING:
-                case REQUIRES_FRAME:
+                case REQUIRES_LASTLINE:
+                case REQUIRES_BACKREF:
                 case REQUIRES_VISIBILITY:
-                case USES_BACKREF_OR_LASTLINE:
+                case REQUIRES_BLOCK:
+                case REQUIRES_SELF:
+                case REQUIRES_METHODNAME:
+                case REQUIRES_CLASS:
                 case USES_EVAL:
                 case USES_ZSUPER:
                     requireFrame = true;
@@ -1181,6 +1193,30 @@ public abstract class IRScope implements ParseResult {
         }
 
         return requireFrame;
+    }
+
+    public boolean needsOnlyBackref() {
+        boolean backrefSeen = false;
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case CAN_CAPTURE_CALLERS_BINDING:
+                case REQUIRES_LASTLINE:
+                case REQUIRES_VISIBILITY:
+                case REQUIRES_BLOCK:
+                case REQUIRES_SELF:
+                case REQUIRES_METHODNAME:
+                case REQUIRES_CLASS:
+                case USES_EVAL:
+                case USES_ZSUPER:
+                    return false;
+                case REQUIRES_BACKREF:
+                    backrefSeen = true;
+                    break;
+            }
+        }
+
+        return backrefSeen;
     }
 
     public boolean reuseParentScope() {

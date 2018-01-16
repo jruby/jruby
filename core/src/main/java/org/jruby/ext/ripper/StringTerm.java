@@ -28,10 +28,14 @@
 package org.jruby.ext.ripper;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.lexer.LexerSource;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 import static org.jruby.lexer.LexingCommon.*;
 
@@ -48,11 +52,17 @@ public class StringTerm extends StrTerm {
     // How many strings are nested in the current string term
     private int nest;
 
+    private List<ByteList> regexpFragments;
+    private boolean regexpDynamic;
+
     public StringTerm(int flags, int begin, int end) {
         this.flags = flags;
         this.begin = (char) begin;
         this.end   = (char) end;
         this.nest  = 0;
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            this.regexpFragments = new ArrayList<>();
+        }
     }
 
     public int getFlags() {
@@ -63,22 +73,31 @@ public class StringTerm extends StrTerm {
         return new ByteList(ByteList.NULL_ARRAY, lexer.getEncoding());
     }
 
-    private int endFound(RipperLexer lexer, LexerSource src, ByteList buffer) throws IOException {
+    private int endFound(RipperLexer lexer) throws IOException {
             if ((flags & STR_FUNC_QWORDS) != 0) {
                 flags = -1;
-                buffer.append(end);
                 return ' ';
             }
 
             if ((flags & STR_FUNC_REGEXP) != 0) {
-                String options = parseRegexpFlags(lexer, src);
-                buffer.append(options.getBytes());
-
+                validateRegexp(lexer);
                 return RubyParser.tREGEXP_END;
             }
 
-            buffer.append(end);
             return RubyParser.tSTRING_END;
+    }
+
+    private void validateRegexp(RipperLexer lexer) throws IOException {
+        Ruby runtime = lexer.getRuntime();
+        RegexpOptions options = lexer.parseRegexpFlags();
+        for (ByteList fragment : regexpFragments) {
+            lexer.checkRegexpFragment(runtime, fragment, options);
+        }
+        if (!regexpDynamic && regexpFragments.size() == 1) {
+            lexer.checkRegexpSyntax(runtime, regexpFragments.get(0), options);
+        }
+        regexpFragments.clear();
+        regexpDynamic = false;
     }
 
     @Override
@@ -86,8 +105,6 @@ public class StringTerm extends StrTerm {
         boolean spaceSeen = false;
         int c;
 
-        // FIXME: How much more obtuse can this be?
-        // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
             lexer.ignoreNextScanEvent = true;
             return RubyParser.tSTRING_END;
@@ -105,7 +122,7 @@ public class StringTerm extends StrTerm {
         }
 
         if (c == end && nest == 0) {
-            return endFound(lexer, src, buffer);
+            return endFound(lexer);
         }
         
         if (spaceSeen) {
@@ -114,19 +131,19 @@ public class StringTerm extends StrTerm {
         }        
 
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
-            c = lexer.nextc();
-            switch (c) {
-            case '$':
-            case '@':
-                lexer.pushback(c);
-                return RubyParser.tSTRING_DVAR;
-            case '{':
-                return RubyParser.tSTRING_DBEG;
+            int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
+
+            if (token != 0) {
+                if ((flags & STR_FUNC_REGEXP) != 0) {
+                    regexpDynamic = true;
+                }
+                return token;
+            } else {
+                buffer.append(c);
             }
-            buffer.append((byte) '#');
+        } else {
+            lexer.pushback(c);
         }
-        lexer.pushback(c);
-        
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
 
@@ -141,33 +158,11 @@ public class StringTerm extends StrTerm {
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            regexpFragments.add(buffer);
+        }
         lexer.flush_string_content(enc[0]);
         return RubyParser.tSTRING_CONTENT;
-    }
-
-    private String parseRegexpFlags(RipperLexer lexer, LexerSource src) throws IOException {
-        StringBuilder buf = new StringBuilder(end);
-
-        int c;
-        StringBuilder unknownFlags = new StringBuilder(10);
-
-        for (c = lexer.nextc(); c != EOF
-                && Character.isLetter(c); c = lexer.nextc()) {
-            switch (c) {
-                case 'i': case 'x': case 'm': case 'o': case 'n':
-                case 'e': case 's': case 'u':
-                    buf.append((char) c);
-                break;
-            default:
-                unknownFlags.append((char) c);
-                break;
-            }
-        }
-        lexer.pushback(c);
-        if (unknownFlags.length() != 0) {
-            lexer.compile_error("unknown regexp option" + (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags.toString());
-        }
-        return buf.toString();
     }
 
     private void mixedEscape(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
