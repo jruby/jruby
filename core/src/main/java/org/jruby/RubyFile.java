@@ -1148,6 +1148,35 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)
+    public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        long[] atimeval = null;
+        long[] mtimeval = null;
+
+        if (args[0] != context.nil || args[1] != context.nil) {
+            atimeval = extractTimeval(context, args[0]);
+            mtimeval = extractTimeval(context, args[1]);
+        }
+
+        for (int i = 2, j = args.length; i < j; i++) {
+            RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
+
+            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
+
+            if (!fileToTouch.exists()) {
+                throw runtime.newErrnoENOENTError(filename.toString());
+            }
+
+            int result = runtime.getPosix().lutimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
+            if (result == -1) {
+                throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+            }
+        }
+
+        return runtime.newFixnum(args.length - 2);
+    }
+
+    @JRubyMethod(required = 2, rest = true, meta = true)
     public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         long[] atimeval = null;
