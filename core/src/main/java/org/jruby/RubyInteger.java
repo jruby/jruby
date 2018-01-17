@@ -630,25 +630,25 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcdlcm")
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
-        other = RubyInteger.intValue(context, other);
-        return context.runtime.newArray(f_gcd(context, this, other), f_lcm(context, this, other));
+        final RubyInteger otherInt = RubyInteger.intValue(context, other);
+        return context.runtime.newArray(f_gcd(context, this, otherInt), f_lcm(context, this, otherInt));
     }
 
-    static IRubyObject intValue(ThreadContext context, IRubyObject num) {
-        IRubyObject i;
+    static RubyInteger intValue(ThreadContext context, IRubyObject num) {
+        RubyInteger i;
         if (( i = RubyInteger.toInteger(context, num) ) == null) {
             throw context.runtime.newTypeError("not an integer");
         }
         return i;
     }
 
-    static IRubyObject toInteger(ThreadContext context, IRubyObject num) {
-        if (num instanceof RubyInteger) return num;
+    static RubyInteger toInteger(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyInteger) return (RubyInteger) num;
         if (num instanceof RubyNumeric && !integer_p(context).call(context, num, num).isTrue()) { // num.integer?
             return null;
         }
         if (num instanceof RubyString) return null; // do not want String#to_i
-        return num.checkCallMethod(context, sites(context).to_i_checked);
+        return (RubyInteger) num.checkCallMethod(context, sites(context).to_i_checked);
     }
 
     @JRubyMethod(name = "digits")
