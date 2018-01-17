@@ -762,7 +762,6 @@ public class RubyFloat extends RubyNumeric {
         }
 
         final Ruby runtime = context.runtime;
-        RubyFixnum one = RubyFixnum.one(runtime);
 
         IRubyObject eps, a, b;
         if (args.length != 0) {
@@ -770,8 +769,6 @@ public class RubyFloat extends RubyNumeric {
             a = f_sub(context, this, eps);
             b = f_add(context, this, eps);
         } else {
-            IRubyObject flt;
-            IRubyObject p, q;
             long[] exp = new long[1];
 
             // float_decode_internal
@@ -782,18 +779,18 @@ public class RubyFloat extends RubyNumeric {
             RubyInteger rf = RubyBignum.newBignorm(runtime, f);
             RubyFixnum rn = RubyFixnum.newFixnum(runtime, n);
 
-            if (rf.zero_p(context).isTrue() || fix2int(rn) >= 0) {
+            if (rf.isZero() || fix2int(rn) >= 0) {
                 return RubyRational.newRationalRaw(runtime, rf.op_lshift(context, rn));
             }
 
-            RubyInteger two_times_f, den;
+            final RubyFixnum one = RubyFixnum.one(runtime);
+            RubyInteger den;
 
-            RubyFixnum two = RubyFixnum.two(runtime);
-            two_times_f = (RubyInteger) two.op_mul(context, rf);
-            den = (RubyInteger) RubyFixnum.one(runtime).op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
+            RubyInteger two_times_f = (RubyInteger) rf.op_mul(context, 2);
+            den = (RubyInteger) one.op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
 
-            a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, RubyFixnum.one(runtime)), den);
-            b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, RubyFixnum.one(runtime)), den);
+            a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, one), den);
+            b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, one), den);
         }
 
         if (sites(context).op_equal.call(context, a, a, b).isTrue()) return f_to_r(context, this);
