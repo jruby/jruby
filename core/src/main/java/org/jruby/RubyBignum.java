@@ -1028,7 +1028,12 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return context.runtime.newBoolean(value.equals(BigInteger.ZERO));
+        return context.runtime.newBoolean(isZero());
+    }
+
+    @Override
+    public final boolean isZero() {
+        return value.equals(BigInteger.ZERO);
     }
 
     public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {

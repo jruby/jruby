@@ -187,6 +187,16 @@ public class RubyFloat extends RubyNumeric {
         return (int) Math.signum(value); // NOTE: (int) NaN ?
     }
 
+    @Override
+    public IRubyObject isNegative(ThreadContext context) {
+        return context.runtime.newBoolean(signum() < 0);
+    }
+
+    @Override
+    public IRubyObject isPositive(ThreadContext context) {
+        return context.runtime.newBoolean(signum() > 0);
+    }
+
     public static RubyFloat newFloat(Ruby runtime, double value) {
         return new RubyFloat(runtime, value);
     }
@@ -675,6 +685,11 @@ public class RubyFloat extends RubyNumeric {
     @Override
     public IRubyObject zero_p(ThreadContext context) {
         return RubyBoolean.newBoolean(context.runtime, value == 0.0);
+    }
+
+    @Override
+    public final boolean isZero() {
+        return value == 0.0;
     }
 
     /**

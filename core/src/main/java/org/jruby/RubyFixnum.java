@@ -1258,6 +1258,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return newFixnum((long) ((BIT_SIZE + 7) / 8));
     }
 
+    @Deprecated
     public IRubyObject zero_p() {
         return zero_p(getRuntime().getCurrentContext());
     }
@@ -1267,7 +1268,12 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(getRuntime(), value == 0);
+        return RubyBoolean.newBoolean(context.runtime, value == 0);
+    }
+
+    @Override
+    public final boolean isZero() {
+        return value == 0;
     }
 
     @Override

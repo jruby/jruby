@@ -489,7 +489,7 @@ public abstract class RubyInteger extends RubyNumeric {
         n = (RubyNumeric) this.op_minus(context, r);
         r = (RubyNumeric) r.op_cmp(context, h);
         if (r.isPositive(context).isTrue() ||
-                (r.zero_p(context).isTrue() && doRoundCheck(context, roundingMode, this, n, f))) {
+                (r.isZero() && doRoundCheck(context, roundingMode, this, n, f))) {
             n = (RubyNumeric) n.op_plus(context, f);
         }
         return n;
