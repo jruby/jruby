@@ -78,6 +78,17 @@ public class Numeric {
         return RubyFixnum.newFixnum(context.runtime, cmp);
     }
 
+    public static RubyFixnum f_cmp(ThreadContext context, RubyInteger x, long y) {
+        final int cmp;
+        if (x instanceof RubyFixnum) {
+            cmp = Long.compare(((RubyFixnum) x).getLongValue(), y);
+        }
+        else { // RubyBignum
+            cmp = x.getBigIntegerValue().compareTo(BigInteger.valueOf(y));
+        }
+        return RubyFixnum.newFixnum(context.runtime, cmp);
+    }
+
     /** f_div
      * 
      */
