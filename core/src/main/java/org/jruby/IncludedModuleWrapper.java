@@ -86,10 +86,6 @@ public class IncludedModuleWrapper extends IncludedModule {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
-    public void setMethods(Map newMethods) {
-        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
-    }
-
     public RubyModule getDelegate() {
         return origin;
     }
@@ -230,7 +226,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
+    protected void addMethodSymbols(Ruby runtime, Set<ByteList> seen, RubyArray ary, boolean not, Visibility visibility) {
         // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
         RubyModule module = origin;
         RubyModule methodLoc = origin.getMethodLocation();

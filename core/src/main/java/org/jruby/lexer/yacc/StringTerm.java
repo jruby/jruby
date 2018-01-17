@@ -33,7 +33,6 @@ import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
 import static org.jruby.lexer.LexingCommon.*;
@@ -80,7 +79,7 @@ public class StringTerm extends StrTerm {
             }
 
             if ((flags & STR_FUNC_REGEXP) != 0) {
-                RegexpOptions options = parseRegexpFlags(lexer);
+                RegexpOptions options = lexer.parseRegexpFlags();
                 ByteList regexpBytelist = ByteList.create("");
 
                 lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
@@ -138,55 +137,6 @@ public class StringTerm extends StrTerm {
 
         lexer.setValue(lexer.createStr(buffer, flags));
         return RubyParser.tSTRING_CONTENT;
-    }
-
-    private RegexpOptions parseRegexpFlags(RubyLexer lexer) throws IOException {
-        RegexpOptions options = new RegexpOptions();
-        int c;
-        StringBuilder unknownFlags = new StringBuilder(10);
-
-        lexer.newtok(true);
-        for (c = lexer.nextc(); c != EOF
-                && Character.isLetter(c); c = lexer.nextc()) {
-            switch (c) {
-            case 'i':
-                options.setIgnorecase(true);
-                break;
-            case 'x':
-                options.setExtended(true);
-                break;
-            case 'm':
-                options.setMultiline(true);
-                break;
-            case 'o':
-                options.setOnce(true);
-                break;
-            case 'n':
-                options.setExplicitKCode(KCode.NONE);
-                break;
-            case 'e':
-                options.setExplicitKCode(KCode.EUC);
-                break;
-            case 's':
-                options.setExplicitKCode(KCode.SJIS);
-                break;
-            case 'u':
-                options.setExplicitKCode(KCode.UTF8);
-                break;
-            case 'j':
-                options.setJava(true);
-                break;
-            default:
-                unknownFlags.append((char) c);
-                break;
-            }
-        }
-        lexer.pushback(c);
-        if (unknownFlags.length() != 0) {
-            lexer.compile_error(PID.REGEXP_UNKNOWN_OPTION, "unknown regexp option" +
-                    (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags);
-        }
-        return options;
     }
 
     private void mixedEscape(RubyLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {

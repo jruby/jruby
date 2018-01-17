@@ -248,7 +248,7 @@ public class RubyNumeric extends RubyObject {
     /**
      * MRI: macro DBL2IVAL
      */
-    public static IRubyObject dbl2ival(Ruby runtime, double val) {
+    public static RubyInteger dbl2ival(Ruby runtime, double val) {
         if (fixable(runtime, val)) {
             return RubyFixnum.newFixnum(runtime, (long) val);
         }
@@ -758,6 +758,10 @@ public class RubyNumeric extends RubyObject {
      */
     public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         return div(context, other);
+    }
+
+    public IRubyObject idiv(ThreadContext context, long other) {
+        return idiv(context, RubyFixnum.newFixnum(context.runtime, other));
     }
 
     /** num_divmod

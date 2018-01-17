@@ -274,7 +274,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     ClassWriter cw = createJavaMethodCtor(generatedClassPath, superClassString, info.getParameterDesc());
 
-                    addAnnotatedMethodInvoker(cw, "call", superClassString, descs);
+                    addAnnotatedMethodInvoker(cw, superClassString, descs);
 
                     c = endClass(cw, generatedClassName);
                 }
@@ -676,29 +676,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void addAnnotatedMethodInvoker(ClassWriter cw, String callName, String superClass, List<JavaMethodDescriptor> descs) {
+    private void addAnnotatedMethodInvoker(ClassWriter cw, String superClass, List<JavaMethodDescriptor> descs) {
         for (JavaMethodDescriptor desc: descs) {
-            int specificArity = -1;
-            if (desc.optional == 0 && !desc.rest) {
-                if (desc.required == 0) {
-                    if (desc.actualRequired <= 3) {
-                        specificArity = desc.actualRequired;
-                    } else {
-                        specificArity = -1;
-                    }
-                } else if (desc.required >= 0 && desc.required <= 3) {
-                    specificArity = desc.required;
-                }
-            }
+            int specificArity = desc.calculateSpecificCallArity();
 
-            boolean hasBlock = desc.hasBlock;
-            SkinnyMethodAdapter mv;
-
-            mv = beginMethod(cw, callName, specificArity, hasBlock);
+            SkinnyMethodAdapter mv = beginMethod(cw, "call", specificArity, desc.hasBlock);
             mv.visitCode();
-
-            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, hasBlock);
-
+            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, desc.hasBlock);
             mv.end();
         }
     }

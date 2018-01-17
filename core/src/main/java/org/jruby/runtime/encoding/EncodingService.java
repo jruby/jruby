@@ -328,7 +328,7 @@ public final class EncodingService {
      *
      * @param str the object to coerce and use to look up encoding. The coerced String
      * must be ASCII-compatible.
-     * @return the Encoding object found, nil (for internal), or raises ArgumentError
+     * @return the Encoding object found, nil (for internal)
      */
     public Encoding findEncodingNoError(IRubyObject str) {
         return findEncodingCommon(str, false);

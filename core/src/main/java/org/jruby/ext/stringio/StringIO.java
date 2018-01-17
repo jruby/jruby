@@ -1069,7 +1069,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         if (arg.isNil()) return arg;
         if (arg instanceof RubyInteger) {
-            int len, cc = ((RubyInteger) arg).getIntValue();
+            int len, cc = RubyNumeric.num2int(arg);
             byte[] buf = new byte[16];
 
             enc = getEncoding();

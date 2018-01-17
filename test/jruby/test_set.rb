@@ -103,6 +103,17 @@ class TestSet < Test::Unit::TestCase
     assert_equal 2, dup.size
   end
 
+  def test_dup_to_a
+    set = Set[1, 2]
+    assert_equal set.to_a, set.dup.to_a
+    assert_equal set.to_a, set.clone.dup.to_a
+
+    set = SortedSet[2, 1, 3]
+    dup = set.dup
+    assert_equal set.to_a, dup.to_a
+    assert_equal [1, 2, 3], dup.clone.to_a
+  end
+
   def test_to_java
     assert set = Set.new.to_java
     assert set.toString.start_with?('#<Set:0x')

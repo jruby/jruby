@@ -143,6 +143,20 @@ public class RubySortedSet extends RubySet implements SortedSet {
         return sort(context); // instead of this.hash.keys();
     }
 
+    @Override
+    public IRubyObject initialize_dup(ThreadContext context, IRubyObject orig) {
+        super.initialize_dup(context, orig);
+        if (this != orig) order.addAll(((RubySortedSet) orig).order);
+        return this;
+    }
+
+    @Override
+    public IRubyObject initialize_clone(ThreadContext context, IRubyObject orig) {
+        super.initialize_clone(context, orig);
+        if (this != orig) order.addAll(((RubySortedSet) orig).order);
+        return this;
+    }
+
     // NOTE: weirdly Set/SortedSet in Ruby do not have sort!
 
     @Override

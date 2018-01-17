@@ -506,7 +506,7 @@ public class Numeric {
         do {
             while (y % 2 == 0) {
                 if (!fitSqrtLong(x)) {
-                    IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, RubyFixnum.newFixnum(runtime, y));
+                    IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, y);
                     if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
                     return v;
                 }
@@ -515,7 +515,7 @@ public class Numeric {
             }
             
             if (multiplyOverflows(x, z)) {
-                IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, RubyFixnum.newFixnum(runtime, y));
+                IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, y);
                 if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
                 return v;
             }

@@ -362,16 +362,7 @@ public class IndyBinder extends AbstractProcessor {
 
                 meta |= anno.meta();
 
-                int specificArity = -1;
-                if (desc.optional == 0 && !desc.rest) {
-                    if (desc.required == 0) {
-                        if (desc.actualRequired <= 3) {
-                            specificArity = desc.actualRequired;
-                        }
-                    } else if (desc.required >= 0 && desc.required <= 3) {
-                        specificArity = desc.required;
-                    }
-                }
+                int specificArity = desc.calculateSpecificCallArity();
 
                 if (specificArity != -1) {
                     if (specificArity < min) min = specificArity;
