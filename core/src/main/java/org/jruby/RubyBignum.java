@@ -96,10 +96,14 @@ public class RubyBignum extends RubyInteger {
      */
     public static RubyBignum newBignum(Ruby runtime, double value) {
         try {
-            return newBignum(runtime, new BigDecimal(value).toBigInteger());
+            return newBignum(runtime, toBigInteger(value));
         } catch (NumberFormatException nfe) {
             throw runtime.newFloatDomainError(Double.toString(value));
         }
+    }
+
+    public static BigInteger toBigInteger(double value) {
+        return new BigDecimal(value).toBigInteger();
     }
 
     /**
@@ -109,7 +113,7 @@ public class RubyBignum extends RubyInteger {
      */
     public static RubyInteger newBignorm(Ruby runtime, double value) {
         try {
-            return bignorm(runtime, new BigDecimal(value).toBigInteger());
+            return bignorm(runtime, toBigInteger(value));
         } catch (NumberFormatException nfe) {
             throw runtime.newFloatDomainError(Double.toString(value));
         }

@@ -175,12 +175,20 @@ public class RubyFloat extends RubyNumeric {
 
     @Override
     public BigInteger getBigIntegerValue() {
-        return BigInteger.valueOf((long)value);
+        return RubyBignum.toBigInteger(value);
     }
 
     @Override
     public RubyFloat convertToFloat() {
     	return this;
+    }
+
+    @Override
+    public RubyInteger convertToInteger() {
+        if (RubyFixnum.MIN <= value && value <= RubyFixnum.MAX) {
+            return RubyFixnum.newFixnum(getRuntime(), (long) value);
+        }
+        return RubyBignum.newBignum(getRuntime(), getBigIntegerValue());
     }
 
     public int signum() {
