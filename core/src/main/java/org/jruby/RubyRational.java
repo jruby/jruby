@@ -1179,8 +1179,7 @@ public class RubyRational extends RubyNumeric {
         if (args.length == 0) return to_r(context);
 
         if (f_negative_p(context, this)) {
-            return f_negate(context,
-                    ((RubyRational) f_abs(context, this)).rationalize(context, args));
+            return f_negate(context, ((RubyRational) f_abs(context, this)).rationalize(context, args));
         }
 
         IRubyObject eps = f_abs(context, args[0]);
@@ -1188,10 +1187,8 @@ public class RubyRational extends RubyNumeric {
         b = f_add(context, this, eps);
 
         if (f_equal(context, a, b).isTrue()) return this;
-        IRubyObject[] ary = new IRubyObject[2];
-        ary[0] = a;
-        ary[1] = b;
-        IRubyObject[] ans = nurat_rationalize_internal(context, ary);
+
+        IRubyObject[] ans = nurat_rationalize_internal(context, a, b);
 
         return newInstance(context, this.metaClass, (RubyInteger) ans[0], (RubyInteger) ans[1]);
     }

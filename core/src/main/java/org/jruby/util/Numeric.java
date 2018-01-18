@@ -177,8 +177,12 @@ public class Numeric {
     /** f_xor
      * 
      */
-    public  static IRubyObject f_xor(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static IRubyObject f_xor(ThreadContext context, IRubyObject x, IRubyObject y) {
         return sites(context).op_xor.call(context, x, x, y);
+    }
+
+    public static IRubyObject f_xor(ThreadContext context, RubyInteger x, RubyInteger y) {
+        return x.op_xor(context, y);
     }
 
     /** f_abs
@@ -186,6 +190,14 @@ public class Numeric {
      */
     public static IRubyObject f_abs(ThreadContext context, IRubyObject x) {
         return sites(context).abs.call(context, x, x);
+    }
+
+    public static RubyInteger f_abs(ThreadContext context, RubyInteger x) {
+        return (RubyInteger) x.abs(context);
+    }
+
+    public static RubyFloat f_abs(ThreadContext context, RubyFloat x) {
+        return (RubyFloat) x.abs(context);
     }
 
     /** f_abs2
@@ -278,7 +290,7 @@ public class Numeric {
     public static IRubyObject f_negate(ThreadContext context, IRubyObject x) {
         return sites(context).op_uminus.call(context, x, x);
     }
-    
+
     /** f_to_f
      * 
      */
@@ -691,10 +703,8 @@ public class Numeric {
         This rational number is already in lowest terms because
         p[i]*q[i-1]-p[i-1]*q[i] = (-1)^i.
     */
-    public static IRubyObject[] nurat_rationalize_internal(ThreadContext context, IRubyObject[] ary) {
-        IRubyObject a, b, p, q;
-        a = ary[0];
-        b = ary[1];
+    public static IRubyObject[] nurat_rationalize_internal(ThreadContext context, IRubyObject a, IRubyObject b) {
+        IRubyObject p, q;
         IRubyObject c, k, t, p0, p1, p2, q0, q1, q2;
 
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
@@ -722,8 +732,12 @@ public class Numeric {
         p = f_add(context, f_mul(context, c, p1), p0);
         q = f_add(context, f_mul(context, c, q1), q0);
 
-        return new IRubyObject[]{ p, q };
+        return new IRubyObject[] { p, q };
 
+    }
+
+    public static IRubyObject[] nurat_rationalize_internal(ThreadContext context, IRubyObject[] ary) {
+        return nurat_rationalize_internal(context, ary[0], ary[1]);
     }
 
     public static void checkInteger(ThreadContext context, IRubyObject obj) {

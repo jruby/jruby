@@ -796,17 +796,14 @@ public class RubyFloat extends RubyNumeric {
 
             RubyInteger two_times_f = (RubyInteger) rf.op_mul(context, 2);
             den = (RubyInteger) one.op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
-
-            a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, one), den);
-            b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, one), den);
+            
+            a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, 1), den);
+            b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, 1), den);
         }
 
         if (sites(context).op_equal.call(context, a, a, b).isTrue()) return f_to_r(context, this);
 
-        IRubyObject[] ary = new IRubyObject[2];
-        ary[0] = a;
-        ary[1] = b;
-        IRubyObject[] ans = nurat_rationalize_internal(context, ary);
+        IRubyObject[] ans = nurat_rationalize_internal(context, a, b);
 
         return RubyRational.newRationalRaw(runtime, ans[0], ans[1]);
     }
