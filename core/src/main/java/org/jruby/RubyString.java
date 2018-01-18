@@ -4017,13 +4017,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context, IRubyObject arg) {
-        return start_with_pCommon(arg) ? context.runtime.getTrue() : context.runtime.getFalse();
+      if (arg instanceof RubyRegexp) {
+          return rindexCommon(context, arg, 0).isNil() ? context.runtime.getFalse() : context.runtime.getTrue();
+      } else {
+          return start_with_pCommon(arg) ? context.runtime.getTrue() : context.runtime.getFalse();
+      }
     }
 
     @JRubyMethod(name = "start_with?", rest = true)
     public IRubyObject start_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
-            if (start_with_pCommon(args[i])) return context.runtime.getTrue();
+            if (start_with_p(context, args[i]).isTrue()) return context.runtime.getTrue();
         }
         return context.runtime.getFalse();
     }
