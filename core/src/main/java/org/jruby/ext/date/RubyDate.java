@@ -51,6 +51,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateParser;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.util.Numeric.*;
+
 /**
  * JRuby's <code>Date</code> implementation - 'native' parts.
  * In MRI, since 2.x, all of date.rb has been moved to native (C) code.
@@ -341,7 +343,7 @@ public class RubyDate extends RubyObject {
             if (ex.getException() instanceof RubyNoMethodError) return context.nil;
             throw ex;
         }
-        return res.eltInternal(0).callMethod(context, "<=>", res.eltInternal(1));
+        return f_cmp(context, res.eltInternal(0), res.eltInternal(1));
     }
 
     @Override
