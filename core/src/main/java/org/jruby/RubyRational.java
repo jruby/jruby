@@ -63,6 +63,7 @@ import java.io.IOException;
 import java.math.RoundingMode;
 
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -1180,11 +1181,11 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "to_s")
-    public IRubyObject to_s(ThreadContext context) {
-        RubyString str = RubyString.newEmptyString(context.getRuntime());
-        str.append(f_to_s(context, num));
+    public RubyString to_s(ThreadContext context) {
+        RubyString str = RubyString.newString(context.runtime, new ByteList(10), USASCIIEncoding.INSTANCE);
+        str.append(num.to_s());
         str.cat((byte)'/');
-        str.append(f_to_s(context, den));
+        str.append(den.to_s());
         return str;
     }
 
@@ -1192,12 +1193,12 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
-        RubyString str = RubyString.newEmptyString(context.getRuntime());
+    public RubyString inspect(ThreadContext context) {
+        RubyString str = RubyString.newString(context.runtime, new ByteList(12), USASCIIEncoding.INSTANCE);
         str.cat((byte)'(');
-        str.append(f_inspect(context, num));
+        str.append(num.inspect());
         str.cat((byte)'/');
-        str.append(f_inspect(context, den));
+        str.append(den.inspect());
         str.cat((byte)')');
         return str;
     }
