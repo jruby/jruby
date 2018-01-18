@@ -422,7 +422,7 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
-        return bignorm(getRuntime(), value.negate());
+        return bignorm(context.runtime, value.negate());
     }
 
     /** rb_big_plus
