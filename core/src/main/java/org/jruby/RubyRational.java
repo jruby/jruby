@@ -163,10 +163,14 @@ public class RubyRational extends RubyNumeric {
         return canonicalizeInternal(context, runtime.getRational(), runtime.newFixnum(x), runtime.newFixnum(y));
     }
 
+    static RubyNumeric newRationalNoReduce(ThreadContext context, RubyInteger x, RubyInteger y) {
+        return canonicalizeInternalNoReduce(context, context.runtime.getRational(), x, y);
+    }
+
     /** f_rational_new_no_reduce2
      * 
      */
-    private static IRubyObject newRationalNoReduce(ThreadContext context, RubyClass clazz, RubyInteger x, RubyInteger y) {
+    private static RubyNumeric newRationalNoReduce(ThreadContext context, RubyClass clazz, RubyInteger x, RubyInteger y) {
         return canonicalizeInternalNoReduce(context, clazz, x, y);
     }
 
@@ -381,7 +385,7 @@ public class RubyRational extends RubyNumeric {
         if (a1 instanceof RubyFloat) {
             a1 = f_to_r(context, a1);
         } else if (a1 instanceof RubyString) {
-            a1 = str_to_r_strict(context, a1);
+            a1 = str_to_r_strict(context, (RubyString) a1);
         } else {
             if (a1 instanceof RubyObject && sites(context).respond_to_to_r.respondsTo(context, a1, a1)) {
                 a1 = f_to_r(context, a1);
@@ -391,7 +395,7 @@ public class RubyRational extends RubyNumeric {
         if (a2 instanceof RubyFloat) {
             a2 = f_to_r(context, a2);
         } else if (a2 instanceof RubyString) {
-            a2 = str_to_r_strict(context, a2);
+            a2 = str_to_r_strict(context, (RubyString) a2);
         }
 
         if (a1 instanceof RubyRational) {
@@ -1288,21 +1292,20 @@ public class RubyRational extends RubyNumeric {
         }
     };
 
-    static RubyArray str_to_r_internal(ThreadContext context, IRubyObject recv) {
-        RubyString s = recv.convertToString();
-        ByteList bytes = s.getByteList();
-
+    static IRubyObject[] str_to_r_internal(final ThreadContext context, final RubyString str) {
         final Ruby runtime = context.runtime;
         final IRubyObject nil = context.nil;
 
-        if (bytes.getRealSize() == 0) return runtime.newArray(nil, recv);
+        ByteList bytes = str.getByteList();
 
-        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).match_m(context, s, false);
+        if (bytes.getRealSize() == 0) return new IRubyObject[] { nil, str };
+
+        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).match_m(context, str, false);
         
         if (m != nil) {
-            RubyMatchData match = (RubyMatchData)m;
+            RubyMatchData match = (RubyMatchData) m;
             IRubyObject si = match.at(1);
-            RubyString nu = (RubyString)match.at(2);
+            RubyString nu = (RubyString) match.at(2);
             IRubyObject de = match.at(3);
             IRubyObject re = match.post_match(context);
             
@@ -1328,7 +1331,7 @@ public class RubyRational extends RubyNumeric {
                     i++;
                 }
 
-                IRubyObject l = f_expt(context, RubyFixnum.newFixnum(runtime, 10), RubyFixnum.newFixnum(runtime, count));
+                RubyInteger l = (RubyInteger) RubyFixnum.newFixnum(runtime, 10).op_pow(context, count);
                 v = f_mul(context, v, l);
                 v = f_add(context, v, f_to_i(context, fp));
                 v = f_div(context, v, l);
@@ -1340,24 +1343,23 @@ public class RubyRational extends RubyNumeric {
             }
 
             if (exp != nil) {
-                v = f_mul(context, v, f_expt(context, RubyFixnum.newFixnum(runtime, 10), f_to_i(context, exp)));
+                v = f_mul(context, v, f_expt(context, RubyFixnum.newFixnum(runtime, 10), (RubyInteger) f_to_i(context, exp)));
             }
 
             if (de != nil) {
                 v = f_div(context, v, f_to_i(context, de));
             }
-            return runtime.newArray(v, re);
+            return new IRubyObject[] { v, re };
         }
-        return runtime.newArray(nil, recv);
+        return new IRubyObject[] { nil, str };
     }
     
-    private static IRubyObject str_to_r_strict(ThreadContext context, IRubyObject recv) {
-        RubyArray a = str_to_r_internal(context, recv);
-        if (a.eltInternal(0).isNil() || a.eltInternal(1).convertToString().getByteList().length() > 0) {
-            IRubyObject s = recv.callMethod(context, "inspect");
-            throw context.runtime.newArgumentError("invalid value for convert(): " + s.convertToString());
+    private static RubyNumeric str_to_r_strict(ThreadContext context, RubyString str) {
+        IRubyObject[] ary = str_to_r_internal(context, str);
+        if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
+            throw context.runtime.newArgumentError("invalid value for convert(): " + str.inspect(context.runtime));
         }
-        return a.eltInternal(0);
+        return (RubyNumeric) ary[0]; // (RubyRational)
     }
 
     /**
