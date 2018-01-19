@@ -189,6 +189,10 @@ public class RubyRational extends RubyNumeric {
         return newRationalBang(context, clazz, x, RubyFixnum.one(context.runtime));
     }
 
+    private static RubyRational newRationalBang(ThreadContext context, RubyClass clazz, long x) {
+        return newRationalBang(context, clazz, RubyFixnum.newFixnum(context.runtime, x), RubyFixnum.one(context.runtime));
+    }
+
     @Override
     public ClassIndex getNativeClassIndex() {
         return ClassIndex.RATIONAL;
@@ -357,7 +361,7 @@ public class RubyRational extends RubyNumeric {
             throw context.runtime.newTypeError("can't convert nil into Rational");
         }
 
-        return convertCommon(context, recv, a1, context.runtime.getNil());
+        return convertCommon(context, (RubyClass) recv, a1, context.nil);
     }
 
     /** nurat_s_convert
@@ -368,11 +372,10 @@ public class RubyRational extends RubyNumeric {
         if (a1 == context.nil || a2 == context.nil) {
             throw context.runtime.newTypeError("can't convert nil into Rational");
         }
-        
-        return convertCommon(context, recv, a1, a2);
+        return convertCommon(context, (RubyClass) recv, a1, a2);
     }
     
-    private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
+    private static IRubyObject convertCommon(ThreadContext context, RubyClass clazz, IRubyObject a1, IRubyObject a2) {
         if (a1 instanceof RubyComplex) {
             RubyComplex a1c = (RubyComplex) a1;
             if (k_exact_p(a1c.getImage()) && f_zero_p(context, a1c.getImage())) a1 = a1c.getReal();
@@ -381,9 +384,13 @@ public class RubyRational extends RubyNumeric {
             RubyComplex a2c = (RubyComplex) a2;
             if (k_exact_p(a2c.getImage()) && f_zero_p(context, a2c.getImage())) a2 = a2c.getReal();
         }
-        
-        if (a1 instanceof RubyFloat) {
-            a1 = f_to_r(context, a1);
+
+        // NOTE: MRI (2.4) bypasses any custom Integer#to_r or Float#to_r implementation
+
+        if (a1 instanceof RubyInteger) { // don't fallback to respond_to?(:to_r) bellow
+            a1 = ((RubyInteger) a1).to_r(context);
+        } else if (a1 instanceof RubyFloat) {
+            a1 = ((RubyFloat) a1).to_r(context); // f_to_r
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, (RubyString) a1);
         } else {
@@ -391,9 +398,9 @@ public class RubyRational extends RubyNumeric {
                 a1 = f_to_r(context, a1);
             }
         }
-        
+
         if (a2 instanceof RubyFloat) {
-            a2 = f_to_r(context, a2);
+            a2 = ((RubyFloat) a2).to_r(context); // f_to_r
         } else if (a2 instanceof RubyString) {
             a2 = str_to_r_strict(context, (RubyString) a2);
         }
@@ -406,13 +413,13 @@ public class RubyRational extends RubyNumeric {
             if (!(a1 instanceof RubyNumeric && f_integer_p(context, a1).isTrue())) {
                 return TypeConverter.convertToType(context, a1, context.runtime.getRational(), sites(context).to_r_checked);
             }
-            return newInstance(context, (RubyClass) recv, a1);
+            return newInstance(context, clazz, a1);
         } else {
             if ((a1 instanceof RubyNumeric && a2 instanceof RubyNumeric) &&
                 (!f_integer_p(context, a1).isTrue() || !f_integer_p(context, a2).isTrue())) {
                 return f_div(context, a1, a2);
             }
-            return newInstance(context, (RubyClass) recv, a1, a2);
+            return newInstance(context, clazz, a1, a2);
         }
     }
 
@@ -560,11 +567,11 @@ public class RubyRational extends RubyNumeric {
     /** f_muldiv
      * 
      */
-    private static IRubyObject f_muldiv(ThreadContext context, RubyClass clazz,
-                                 RubyInteger anum, RubyInteger aden,
-                                 RubyInteger bnum, RubyInteger bden, final boolean mult) {
+    private static RubyNumeric f_muldiv(ThreadContext context, RubyClass clazz,
+                                        RubyInteger anum, RubyInteger aden,
+                                        RubyInteger bnum, RubyInteger bden, final boolean mult) {
         if (!mult) {
-            if (bnum.signum() < 0) {
+            if (f_negative_p(context, bnum)) {
                 anum = anum.negate();
                 bnum = bnum.negate();
             }
@@ -657,10 +664,8 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "**")
     public IRubyObject op_expt(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-
         if (k_exact_p(other) && f_zero_p(context, other)) {
-            return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.one(runtime));
+            return RubyRational.newRationalBang(context, getMetaClass(), 1);
         }
 
         if (other instanceof RubyRational) {
@@ -672,15 +677,14 @@ public class RubyRational extends RubyNumeric {
         if (k_numeric_p(other) && k_exact_p(other)) {
             if (f_one_p(context, den)) {
                 if (f_one_p(context, num)) {
-                    return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.one(runtime));
+                    return RubyRational.newRationalBang(context, getMetaClass(), 1);
                 }
                 if (f_minus_one_p(context, num) && k_integer_p(other)) {
-                    return RubyRational.newRationalBang(context, getMetaClass(),
-                            f_odd_p(context, other) ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime));
+                    return RubyRational.newRationalBang(context, getMetaClass(), f_odd_p(context, other) ? -1 : 1);
                 }
                 if (f_zero_p(context, num)) {
                     if (f_negative_p(context, other)) throw context.runtime.newZeroDivisionError();
-                    return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.zero(runtime));
+                    return RubyRational.newRationalBang(context, getMetaClass(), 0);
                 }
             }
         }
@@ -699,21 +703,20 @@ public class RubyRational extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         if (other == 0) {
-            return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.one(runtime));
+            return RubyRational.newRationalBang(context, getMetaClass(), 1);
         }
 
         // Deal with special cases of 0**n and 1**n
         if (f_one_p(context, den)) {
             if (f_one_p(context, num)) {
-                return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.one(runtime));
+                return RubyRational.newRationalBang(context, getMetaClass(), 1);
             }
             if (f_minus_one_p(context, num)) {
-                return RubyRational.newRationalBang(context, getMetaClass(),
-                        other % 2 != 0 ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime));
+                return RubyRational.newRationalBang(context, getMetaClass(), other % 2 != 0 ? -1 : 1);
             }
             if (f_zero_p(context, num)) {
                 if (other < 0) throw context.runtime.newZeroDivisionError();
-                return RubyRational.newRationalBang(context, getMetaClass(), RubyFixnum.zero(runtime));
+                return RubyRational.newRationalBang(context, getMetaClass(), 0);
             }
         }
 
