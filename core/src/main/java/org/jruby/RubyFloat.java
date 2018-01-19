@@ -745,7 +745,7 @@ public class RubyFloat extends RubyNumeric {
      *
      */
     static final int DBL_MANT_DIG = 53;
-    static final int FLT_RADIX = 2;
+
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         long[] exp = new long[1];
@@ -755,9 +755,9 @@ public class RubyFloat extends RubyNumeric {
 
         Ruby runtime = context.runtime;
 
-        IRubyObject rf = RubyNumeric.dbl2ival(runtime, f);
-        IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
-        return f_mul(context, rf, f_expt(context, RubyFixnum.newFixnum(runtime, FLT_RADIX), rn));
+        RubyInteger rf = RubyNumeric.dbl2ival(runtime, f);
+        RubyFixnum rn = RubyFixnum.newFixnum(runtime, n);
+        return f_mul(context, rf, f_expt(context, RubyFixnum.two(runtime), rn));
     }
 
     /** float_rationalize
