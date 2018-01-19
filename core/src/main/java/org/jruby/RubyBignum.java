@@ -164,7 +164,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public RubyInteger negate() {
-        return RubyBignum.newBignum(getRuntime(), value.negate());
+        return bignorm(getRuntime(), value.negate());
     }
 
     /*  ================
