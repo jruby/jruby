@@ -4024,6 +4024,32 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
       }
     }
 
+    @JRubyMethod(name = "delete_prefix")
+    public IRubyObject delete_prefix(ThreadContext context, IRubyObject arg) {
+        IRubyObject tmp = arg.checkStringType();
+        if (tmp.isNil()) throw context.runtime.newTypeError("no implicit conversion of " + arg.getMetaClass().getName() + " into String");
+        RubyString prefix = (RubyString)tmp;
+        if (this.start_with_p(context, prefix).isTrue()) {
+            RubyString result = (RubyString) substr19(context.runtime, prefix.strLength(), this.strLength() - prefix.strLength());
+            return result.isEmpty() ? this : result;
+        } else {
+            return this;
+        }
+    }
+
+    @JRubyMethod(name = "delete_prefix!")
+    public IRubyObject delete_prefix_bang(ThreadContext context, IRubyObject arg) {
+        RubyString result = (RubyString) delete_prefix(context, arg);
+        modifyCheck();
+        if (!equals(result)) {
+            copyCodeRangeForSubstr(result, result.value.getEncoding());
+            this.value = result.value;
+            return this;
+        } else {
+            return context.runtime.getNil();
+        }
+    }
+
     @JRubyMethod(name = "start_with?", rest = true)
     public IRubyObject start_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
