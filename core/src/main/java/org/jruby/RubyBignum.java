@@ -96,10 +96,14 @@ public class RubyBignum extends RubyInteger {
      */
     public static RubyBignum newBignum(Ruby runtime, double value) {
         try {
-            return newBignum(runtime, new BigDecimal(value).toBigInteger());
+            return newBignum(runtime, toBigInteger(value));
         } catch (NumberFormatException nfe) {
             throw runtime.newFloatDomainError(Double.toString(value));
         }
+    }
+
+    public static BigInteger toBigInteger(double value) {
+        return new BigDecimal(value).toBigInteger();
     }
 
     /**
@@ -109,7 +113,7 @@ public class RubyBignum extends RubyInteger {
      */
     public static RubyInteger newBignorm(Ruby runtime, double value) {
         try {
-            return bignorm(runtime, new BigDecimal(value).toBigInteger());
+            return bignorm(runtime, toBigInteger(value));
         } catch (NumberFormatException nfe) {
             throw runtime.newFloatDomainError(Double.toString(value));
         }
@@ -160,7 +164,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public RubyInteger negate() {
-        return RubyBignum.newBignum(getRuntime(), value.negate());
+        return bignorm(getRuntime(), value.negate());
     }
 
     /*  ================
@@ -418,7 +422,7 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
-        return bignorm(getRuntime(), value.negate());
+        return bignorm(context.runtime, value.negate());
     }
 
     /** rb_big_plus
@@ -1028,7 +1032,12 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return context.runtime.newBoolean(value.equals(BigInteger.ZERO));
+        return context.runtime.newBoolean(isZero());
+    }
+
+    @Override
+    public final boolean isZero() {
+        return value.equals(BigInteger.ZERO);
     }
 
     public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {

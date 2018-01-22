@@ -26,28 +26,54 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
-import junit.framework.TestCase;
-
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyRational;
+import org.junit.Test;
 
-public class TestRubyRational extends TestCase {
-    private Ruby runtime;
+import static org.junit.Assert.*;
 
-    public TestRubyRational(String name) {
-	super(name);
-    }
+public class TestRubyRational extends junit.framework.TestCase {
 
-    public void setUp() {
-        runtime = Ruby.newInstance();
-    }
+    private Ruby runtime = Ruby.newInstance();
 
-    // JRUBY-5941
-    public void testRationalToDouble() throws Exception {
+    @Test // JRUBY-5941
+    public void testRationalToDouble() {
         RubyRational rational = RubyRational.newRational(runtime, 1, 1000);
         double toDouble = rational.getDoubleValue();
         double expected = ((RubyFloat)rational.to_f(runtime.getCurrentContext())).getDoubleValue();
-        assertEquals(expected, toDouble);
+        assertEquals(expected, toDouble, 0);
     }
+
+    @Test
+    public void testRationalSignum() {
+        assertEquals(newRational(1, 1000).signum(), +1);
+        assertEquals(newRational(1, -100).signum(), -1);
+        assertEquals(newRational(-1, 100).signum(), -1);
+        assertEquals(newRational(-1, -10).signum(), +1);
+        assertEquals(newRational(0, 1000).signum(),  0);
+        assertEquals(newRational(0, -100).signum(),  0);
+    }
+
+    @Test
+    public void testConvertToInteger() {
+        RubyRational r = RubyRational.newRational(runtime, 11, 1);
+        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, 11));
+        r = newRational(-12, 2);
+        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, -6));
+        r = newRational(10, 20);
+        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, 0));
+        r = newRational(0, 5);
+        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, 0));
+        r = newRational(5, -2);
+        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, -2));
+        r = newRational(13, 7);
+        assertEquals(r.convertToInteger(), RubyFixnum.newFixnum(runtime, 1));
+    }
+
+    private RubyRational newRational(final long num, final long den) {
+        return (RubyRational) RubyRational.newInstance(runtime.getCurrentContext(), runtime.newFixnum(num), runtime.newFixnum(den));
+    }
+
 }

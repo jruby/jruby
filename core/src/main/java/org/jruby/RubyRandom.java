@@ -302,7 +302,7 @@ public class RubyRandom extends RubyObject {
         }
 
         RubyInteger max = arg.convertToInteger();
-        if (max.zero_p(context).isTrue()) {
+        if (max.isZero()) {
             return randFloat(context, random);
         }
         IRubyObject r = randInt(context, random, max, false);

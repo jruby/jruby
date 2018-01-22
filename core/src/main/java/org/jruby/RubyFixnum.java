@@ -186,7 +186,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyInteger negate() {
-        return RubyFixnum.newFixnum(getRuntime(), -value);
+        return negate(getRuntime(), value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
@@ -450,10 +450,14 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
+        return negate(context.runtime, value);
+    }
+
+    private static RubyInteger negate(final Ruby runtime, final long value) {
         if (value == MIN) { // a gotcha
-            return RubyBignum.newBignum(getRuntime(), BigInteger.valueOf(value).negate());
+            return RubyBignum.newBignum(runtime, BigInteger.valueOf(value).negate());
         }
-        return RubyFixnum.newFixnum(getRuntime(), -value);
+        return RubyFixnum.newFixnum(runtime, -value);
     }
 
     /** fix_plus
@@ -1258,6 +1262,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return newFixnum((long) ((BIT_SIZE + 7) / 8));
     }
 
+    @Deprecated
     public IRubyObject zero_p() {
         return zero_p(getRuntime().getCurrentContext());
     }
@@ -1267,7 +1272,12 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(getRuntime(), value == 0);
+        return RubyBoolean.newBoolean(context.runtime, value == 0);
+    }
+
+    @Override
+    public final boolean isZero() {
+        return value == 0;
     }
 
     @Override

@@ -744,8 +744,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "div")
     public IRubyObject div(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyNumeric) {
-            RubyNumeric numeric = (RubyNumeric) other;
-            if (numeric.zero_p(context).isTrue()) {
+            if (((RubyNumeric) other).isZero()) {
                 throw context.runtime.newZeroDivisionError();
             }
         }
@@ -857,6 +856,10 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject zero_p(ThreadContext context) {
         final Ruby runtime = context.runtime;
         return equalInternal(context, this, RubyFixnum.zero(runtime)) ? runtime.getTrue() : runtime.getFalse();
+    }
+
+    public boolean isZero() {
+        return zero_p(getRuntime().getCurrentContext()).isTrue();
     }
 
     /** num_nonzero_p

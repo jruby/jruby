@@ -5407,6 +5407,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(runtime));
     }
 
+    private static final ByteList UNDERSCORE = new ByteList(new byte[] { '_' }, false);
+
     /** string_to_r
      *
      */
@@ -5414,16 +5416,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject to_r(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        RubyString underscore = runtime.newString(new ByteList(new byte[]{'_'}));
         RubyRegexp underscore_pattern = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat);
-        IRubyObject s = this.gsubCommon19(context, null, underscore, null, underscore_pattern, false, 0, false);
+        IRubyObject s = this.gsubCommon19(context, null, runtime.newString(UNDERSCORE), null, underscore_pattern, false, 0, false);
 
-        RubyArray a = RubyRational.str_to_r_internal(context, s);
+        IRubyObject[] ary = RubyRational.str_to_r_internal(context, (RubyString) s);
 
-        IRubyObject first = a.eltInternal(0);
-        if ( ! first.isNil() ) return first;
+        IRubyObject first = ary[0];
+        if ( first != context.nil ) return first;
 
-        return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(runtime));
+        return RubyRational.newRationalNoReduce(context, RubyFixnum.zero(runtime), RubyFixnum.one(runtime));
     }
 
     public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

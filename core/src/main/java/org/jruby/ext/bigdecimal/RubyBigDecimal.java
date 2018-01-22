@@ -1621,12 +1621,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return arg == null ? 0 : formatFractionalDigitGroups(arg);
     }
 
-    private boolean isZero() {
+    @Override
+    public final boolean isZero() {
         return !isNaN() && !isInfinity() && (value.signum() == 0);
-    }
-
-    private boolean isOne() {
-        return value.abs().compareTo(BigDecimal.ONE) == 0;
     }
 
     private boolean isNaN() {
