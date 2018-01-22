@@ -1059,7 +1059,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     public static String objectToSymbolString(IRubyObject object) {
         if (object instanceof RubySymbol) {
-            return ((RubySymbol) object).toString();
+            return ((RubySymbol) object).getRawString();
         }
         if (object instanceof RubyString) {
             return ((RubyString) object).getByteList().toString();
