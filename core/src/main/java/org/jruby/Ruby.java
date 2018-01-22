@@ -4581,26 +4581,9 @@ public final class Ruby implements Constantizable {
             deduped = string.strDup(this);
             deduped.setFrozen(true);
 
-            WeakReference<RubyString> weakref = new WeakReference<>(deduped);
-            WeakReference<RubyString> existing;
-            RubyString existingDeduped;
-
-            // Check if someone else beat us to it.
-            // NOTE: This still races because Map.compute* API is Java 8+.
-            while ((existing = dedupMap.putIfAbsent(deduped, weakref)) != null ) {
-
-                existingDeduped = existing.get();
-
-                if (existingDeduped != null) {
-                    deduped = existingDeduped;
-                    break;
-                }
-
-                // keep trying to put it if existing has been evacuated
-            }
-        }
-
-        if (deduped.getEncoding() != string.getEncoding()) {
+            // NOTE: This still races because Map.put/computeIfAbsent API is Java 8+.
+            dedupMap.put(deduped, new WeakReference<>(deduped));
+        } else if (deduped.getEncoding() != string.getEncoding()) {
             // if encodings don't match, new string loses; can't dedup
             // FIXME: This may never happen, if we are properly considering encoding in RubyString.hashCode
             deduped = string.strDup(this);
