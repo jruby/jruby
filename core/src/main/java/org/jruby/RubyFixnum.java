@@ -246,25 +246,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return (int) (value ^ value >>> 32);
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-
-        if (other instanceof RubyFixnum) {
-            RubyFixnum num = (RubyFixnum)other;
-
-            if (num.value == value) {
-                return true;
-            }
-        } else if (other instanceof RubyFloat) {
-            return (double)value == ((RubyFloat) other).getDoubleValue();
-        }
-
-        return false;
-    }
-
     /*  ================
      *  Instance Methods
      *  ================
@@ -935,7 +916,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return value == other;
     }
 
-    public boolean fastEqual(RubyFixnum other) {
+    public final boolean fastEqual(RubyFixnum other) {
         return value == other.value;
     }
 
@@ -948,6 +929,15 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return RubyBoolean.newBoolean(context.runtime, (double) value == ((RubyFloat) other).getDoubleValue());
         }
         return super.op_num_equal(context, other);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (other instanceof RubyFixnum) {
+            return value == ((RubyFixnum) other).value;
+        }
+        return false;
     }
 
     @Override

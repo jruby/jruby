@@ -929,6 +929,15 @@ public class RubyBignum extends RubyInteger {
         return (int)coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (other instanceof RubyBignum) {
+            return value.compareTo(((RubyBignum) other).value) == 0;
+        }
+        return false;
+    }
+
     /** rb_big_cmp
      *
      */
@@ -996,6 +1005,11 @@ public class RubyBignum extends RubyInteger {
     @Override
     public RubyFixnum hash() {
         return getRuntime().newFixnum(value.hashCode());
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
     }
 
     /** rb_big_to_f

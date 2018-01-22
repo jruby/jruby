@@ -1208,6 +1208,11 @@ public class RubyRational extends RubyNumeric {
         return f_xor(context, (RubyInteger) invokedynamic(context, num, HASH), (RubyInteger) invokedynamic(context, den, HASH));
     }
 
+    @Override
+    public int hashCode() {
+        return num.hashCode() ^ den.hashCode();
+    }
+
     /** nurat_to_s
      * 
      */
