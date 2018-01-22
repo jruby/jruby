@@ -597,15 +597,9 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_divmod
      *
      */
+    @Override
     @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        if (!other.isNil() && other instanceof RubyFloat
-                && ((RubyFloat)other).getDoubleValue() == 0) {
-            throw context.runtime.newZeroDivisionError();
-        }
-
-        Ruby runtime = context.runtime;
-
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
             otherValue = fix2big((RubyFixnum) other);
@@ -613,18 +607,20 @@ public class RubyBignum extends RubyInteger {
             otherValue = ((RubyBignum) other).value;
         } else {
             if (other instanceof RubyFloat && ((RubyFloat)other).getDoubleValue() == 0) {
-                throw runtime.newZeroDivisionError();
+                throw context.runtime.newZeroDivisionError();
             }
             return coerceBin(context, sites(context).divmod, other);
         }
 
-        if (otherValue.signum() == 0) throw runtime.newZeroDivisionError();
+        if (otherValue.signum() == 0) throw context.runtime.newZeroDivisionError();
 
         BigInteger[] results = value.divideAndRemainder(otherValue);
         if ((value.signum() * otherValue.signum()) == -1 && results[1].signum() != 0) {
             results[0] = results[0].subtract(BigInteger.ONE);
             results[1] = otherValue.add(results[1]);
         }
+
+        Ruby runtime = context.runtime;
         return RubyArray.newArray(runtime, bignorm(runtime, results[0]), bignorm(runtime, results[1]));
     }
 
