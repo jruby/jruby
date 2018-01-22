@@ -195,8 +195,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static java.lang.invoke.MethodHandles.explicitCastArguments;
@@ -4579,41 +4577,11 @@ public final class Ruby implements Constantizable {
         RubyString deduped;
 
         if (dedupedRef == null || (deduped = dedupedRef.get()) == null) {
-            // Never use value as key
             deduped = string.strDup(this);
             deduped.setFrozen(true);
-
-            final WeakReference<RubyString> weakref = new WeakReference<>(deduped);
-
-            // try to insert new
-            dedupedRef = dedupMap.computeIfAbsent(string, new Function<RubyString, WeakReference<RubyString>>() {
-                @Override
-                public WeakReference<RubyString> apply(RubyString key) {
-                    return weakref;
-                }
-            });
-            if (dedupedRef == null) return deduped;
-
-            // entry exists, return result if not vacated
-            RubyString unduped = dedupedRef.get();
-            if (unduped != null) return unduped;
-
-            // ref is there but vacated, try to replace it until we have a result
-            while (true) {
-                dedupedRef = dedupMap.computeIfPresent(string, new BiFunction<RubyString, WeakReference<RubyString>, WeakReference<RubyString>>() {
-                    @Override
-                    public WeakReference<RubyString> apply(RubyString key, WeakReference<RubyString> old) {
-                        return old.get() == null ? weakref : old;
-                    }
-                });
-
-                // return result if not vacated
-                unduped = dedupedRef.get();
-                if (unduped != null) return unduped;
-            }
+            dedupMap.put(string, new WeakReference<RubyString>(deduped));
         } else if (deduped.getEncoding() != string.getEncoding()) {
             // if encodings don't match, new string loses; can't dedup
-            // FIXME: This may never happen, if we are properly considering encoding in RubyString.hashCode
             deduped = string.strDup(this);
             deduped.setFrozen(true);
         }
