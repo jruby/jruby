@@ -249,8 +249,20 @@ public class RubyNumeric extends RubyObject {
      * MRI: macro DBL2IVAL
      */
     public static RubyInteger dbl2ival(Ruby runtime, double val) {
-        if (fixable(runtime, val)) {
-            return RubyFixnum.newFixnum(runtime, (long) val);
+        // MRI: macro FIXABLE, RB_FIXABLE (inlined + adjusted) :
+        if (Double.isNaN(val) || Double.isInfinite(val))  {
+            throw runtime.newFloatDomainError(Double.toString(val));
+        }
+
+        final long fix = (long) val;
+        if (fix == RubyFixnum.MIN || fix == RubyFixnum.MAX) {
+            BigInteger big = BigDecimal.valueOf(val).toBigInteger();
+            if (posFixable(big) && negFixable(big)) {
+                return RubyFixnum.newFixnum(runtime, fix);
+            }
+        }
+        else if (posFixable(val) && negFixable(val)) {
+            return RubyFixnum.newFixnum(runtime, fix);
         }
         return RubyBignum.newBignorm(runtime, val);
     }
@@ -429,7 +441,7 @@ public class RubyNumeric extends RubyObject {
             return null;
         }
 
-        return coerceResult(runtime, result, true).toJavaArrayMaybeUnsafe();
+        return coerceResult(context, result, true).toJavaArrayMaybeUnsafe();
     }
 
     protected final IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other, boolean err) {
@@ -490,15 +502,15 @@ public class RubyNumeric extends RubyObject {
             throw e;
         }
 
-        return coerceResult(context.runtime, result, err);
+        return coerceResult(context, result, err);
     }
 
-    private static RubyArray coerceResult(final Ruby runtime, final IRubyObject result, final boolean err) {
+    private static RubyArray coerceResult(final ThreadContext context, final IRubyObject result, final boolean err) {
         if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2 ) {
-            if (err) throw runtime.newTypeError("coerce must return [x, y]");
+            if (err) throw context.runtime.newTypeError("coerce must return [x, y]");
 
-            if (!result.isNil()) {
-                RubyWarnings warnings = runtime.getWarnings();
+            if (result != context.nil) {
+                RubyWarnings warnings = context.runtime.getWarnings();
                 warnings.warn("Bad return value for #coerce, called by numerical comparison operators.");
                 warnings.warn("#coerce must return [x, y]. The next release will raise an error for this.");
             }
@@ -579,6 +591,8 @@ public class RubyNumeric extends RubyObject {
     /** rb_num_coerce_cmp
      *  coercion used for comparisons
      */
+
+    @Deprecated // no longer used
     protected final IRubyObject coerceCmp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
@@ -599,6 +613,8 @@ public class RubyNumeric extends RubyObject {
     /** rb_num_coerce_relop
      *  coercion used for relative operators
      */
+
+    @Deprecated // no longer used
     protected final IRubyObject coerceRelOp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
@@ -619,7 +635,7 @@ public class RubyNumeric extends RubyObject {
 
     private IRubyObject unwrapCoerced(ThreadContext context, String method, IRubyObject other, RubyArray ary) {
         IRubyObject result = (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
-        if (result.isNil()) {
+        if (result == context.nil) {
             return RubyComparable.cmperr(this, other);
         }
         return result;
@@ -628,7 +644,7 @@ public class RubyNumeric extends RubyObject {
     private IRubyObject unwrapCoerced(ThreadContext context, CallSite site, IRubyObject other, RubyArray ary) {
         IRubyObject car = ary.eltInternal(0);
         IRubyObject result = site.call(context, car, car, ary.eltInternal(1));
-        if (result.isNil()) {
+        if (result == context.nil) {
             return RubyComparable.cmperr(this, other);
         }
         return result;
@@ -1410,13 +1426,11 @@ public class RubyNumeric extends RubyObject {
             throw runtime.newFloatDomainError(Double.toString(f));
         }
         long l = (long) f;
-        if (l == RubyFixnum.MIN ||
-                l == RubyFixnum.MAX){
+        if (l == RubyFixnum.MIN || l == RubyFixnum.MAX) {
             BigInteger bigint = BigDecimal.valueOf(f).toBigInteger();
             return posFixable(bigint) && negFixable(bigint);
-        } else {
-            return posFixable(f) && negFixable(f);
         }
+        return posFixable(f) && negFixable(f);
     }
 
     // MRI: macro POSFIXABLE, RB_POSFIXABLE
