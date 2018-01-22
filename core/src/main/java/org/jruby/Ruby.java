@@ -195,6 +195,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static java.lang.invoke.MethodHandles.explicitCastArguments;
@@ -4577,14 +4579,36 @@ public final class Ruby implements Constantizable {
         RubyString deduped;
 
         if (dedupedRef == null || (deduped = dedupedRef.get()) == null) {
+            // Never use incoming value as key
             deduped = string.strDup(this);
             deduped.setFrozen(true);
-            dedupMap.put(string, new WeakReference<RubyString>(deduped));
-        } else if (deduped.getEncoding() != string.getEncoding()) {
+
+            WeakReference<RubyString> weakref = new WeakReference<>(deduped);
+            WeakReference<RubyString> existing;
+            RubyString existingDeduped;
+
+            // Check if someone else beat us to it.
+            // NOTE: This still races because Map.compute* API is Java 8+.
+            while ((existing = dedupMap.putIfAbsent(deduped, weakref)) != null ) {
+
+                existingDeduped = existing.get();
+
+                if (existingDeduped != null) {
+                    deduped = existingDeduped;
+                    break;
+                }
+
+                // keep trying to put it if existing has been evacuated
+            }
+        }
+
+        if (deduped.getEncoding() != string.getEncoding()) {
             // if encodings don't match, new string loses; can't dedup
+            // FIXME: This may never happen, if we are properly considering encoding in RubyString.hashCode
             deduped = string.strDup(this);
             deduped.setFrozen(true);
         }
+
         return deduped;
     }
 
