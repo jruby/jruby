@@ -5395,14 +5395,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject to_c(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        RubyString underscore = runtime.newString(new ByteList(new byte[]{'_'}));
         RubyRegexp underscore_pattern = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat);
-        IRubyObject s = this.gsubCommon19(context, null, underscore, null, underscore_pattern, false, 0, false);
+        IRubyObject s = this.gsubCommon19(context, null, runtime.newString(UNDERSCORE), null, underscore_pattern, false, 0, false);
 
-        RubyArray a = RubyComplex.str_to_c_internal(context, s);
+        IRubyObject[] ary = RubyComplex.str_to_c_internal(context, (RubyString) s);
 
-        IRubyObject first = a.eltInternal(0);
-        if ( ! first.isNil() ) return first;
+        IRubyObject first = ary[0];
+        if ( first != context.nil ) return first;
 
         return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(runtime));
     }

@@ -100,23 +100,37 @@ public class Numeric {
     /** f_gt_p 
      * 
      */
-    public static IRubyObject f_gt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static boolean f_gt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue() ? context.runtime.getTrue() : context.runtime.getFalse();
+            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue();
         }
-        return sites(context).op_gt.call(context, x, x, y);
+        return sites(context).op_gt.call(context, x, x, y).isTrue();
+    }
+
+    public static boolean f_gt_p(ThreadContext context, RubyInteger x, RubyInteger y) {
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
+            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue();
+        }
+        return x.getBigIntegerValue().compareTo(y.getBigIntegerValue()) > 0;
     }
 
     /** f_lt_p 
      * 
      */
-    public static IRubyObject f_lt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static boolean f_lt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue() ? context.runtime.getTrue() : context.runtime.getFalse();
+            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue();
         }
-        return sites(context).op_lt.call(context, x, x, y);
+        return sites(context).op_lt.call(context, x, x, y).isTrue();
     }
-    
+
+    public static boolean f_lt_p(ThreadContext context, RubyInteger x, RubyInteger y) {
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
+            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue();
+        }
+        return x.getBigIntegerValue().compareTo(y.getBigIntegerValue()) < 0;
+    }
+
     /** f_mod
      * 
      */
@@ -729,7 +743,7 @@ public class Numeric {
 
         while (true) {
             c = sites(context).ceil.call(context, a, a);
-            if (f_lt_p(context, c, b).isTrue()) {
+            if (f_lt_p(context, c, b)) {
                 break;
             }
             k = f_sub(context, c, one);

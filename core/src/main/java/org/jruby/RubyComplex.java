@@ -419,10 +419,10 @@ public class RubyComplex extends RubyNumeric {
     @Deprecated
     public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
         switch (args.length) {
-        case 1: return convert(context, clazz, args[0]);        
-        case 2: return convert(context, clazz, args[0], args[1]);
+            case 1: return convert(context, clazz, args[0]);
+            case 2: return convert(context, clazz, args[0], args[1]);
         }
-        Arity.raiseArgumentError(context.runtime, args.length, 1, 1);
+        Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
         return null;
     }
 
@@ -451,8 +451,8 @@ public class RubyComplex extends RubyNumeric {
     
     private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv,
         IRubyObject a1, IRubyObject a2, final boolean singleArg) {
-        if (a1 instanceof RubyString) a1 = str_to_c_strict(context, a1);
-        if (a2 instanceof RubyString) a2 = str_to_c_strict(context, a2);
+        if (a1 instanceof RubyString) a1 = str_to_c_strict(context, (RubyString) a1);
+        if (a2 instanceof RubyString) a2 = str_to_c_strict(context, (RubyString) a2);
 
         if (a1 instanceof RubyComplex) {
             RubyComplex a1c = (RubyComplex) a1;
@@ -610,9 +610,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "fdiv")
     @Override
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
-        IRubyObject complex = newComplex(context, getMetaClass(),
-                                         f_to_f(context, real),   
-                                         f_to_f(context, image));
+        IRubyObject complex = newComplex(context, getMetaClass(), f_to_f(context, real), f_to_f(context, image));
 
         return f_div(context, complex, other);
     }
@@ -641,13 +639,13 @@ public class RubyComplex extends RubyNumeric {
                     f_mul(context, otherComplex.image, RubyMath.log_19(context, this, new IRubyObject[] {r})));
             return f_complex_polar(context, getMetaClass(), nr, ntheta);
         } else if (other instanceof RubyInteger) {
-            IRubyObject one = RubyFixnum.one(context.runtime);
-            if (f_gt_p(context, other, RubyFixnum.zero(context.runtime)).isTrue()) {
+            final RubyFixnum one = RubyFixnum.one(context.runtime);
+            if (f_gt_p(context, (RubyInteger) other, RubyFixnum.zero(context.runtime))) {
                 IRubyObject x = this;
                 IRubyObject z = x;
-                IRubyObject n = f_sub(context, other, one);
+                RubyInteger n = f_sub(context, (RubyInteger) other, one);
 
-                IRubyObject two = RubyFixnum.two(context.runtime);
+                final RubyFixnum two = RubyFixnum.two(context.runtime);
                 
                 while (!f_zero_p(context, n)) {
                     
@@ -660,7 +658,7 @@ public class RubyComplex extends RubyNumeric {
                                                       f_mul(context, xComplex.image, xComplex.image)),
                                        f_mul(context, f_mul(context, two, xComplex.real), xComplex.image));
                         
-                        n = a.eltInternal(0);
+                        n = (RubyInteger) a.eltInternal(0);
                         a = f_divmod(context, n, two).convertToArray();
                     }
                     z = f_mul(context, z, x);
@@ -668,7 +666,7 @@ public class RubyComplex extends RubyNumeric {
                 }
                 return z;
             }
-            return f_expt(context, f_div(context, f_to_r(context, one), this), f_negate(context, other));
+            return f_expt(context, f_div(context, f_to_r(context, one), this), f_negate(context, (RubyInteger) other));
         } else if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
             RubyArray a = f_polar(context, this).convertToArray();
             IRubyObject r = a.eltInternal(0);
@@ -1033,19 +1031,20 @@ public class RubyComplex extends RubyNumeric {
     private static final ByteList SEP = RubyFile.SLASH;
     private static final ByteList _eE = new ByteList(new byte[] { '.', 'e', 'E' }, false);
 
-    static RubyArray str_to_c_internal(ThreadContext context, IRubyObject recv) {
-        RubyString s = recv.convertToString();
-        ByteList bytes = s.getByteList();
+    static IRubyObject[] str_to_c_internal(ThreadContext context, RubyString str) {
+        final Ruby runtime = context.runtime;
+        final IRubyObject nil = context.nil;
 
-        Ruby runtime = context.runtime;
-        if (bytes.getRealSize() == 0) return runtime.newArray(context.nil, recv);
+        ByteList bytes = str.getByteList();
+
+        if (bytes.getRealSize() == 0) return new IRubyObject[] { context.nil, str };
 
         IRubyObject sr, si, re;
-        sr = si = re = context.nil;
+        sr = si = re = nil;
         boolean po = false;
-        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat0).match_m(context, s, false);
+        IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat0).match_m(context, str, false);
 
-        if (!m.isNil()) {
+        if (m != nil) {
             RubyMatchData match = (RubyMatchData)m;
             sr = match.at(1);
             si = match.at(2);
@@ -1053,67 +1052,66 @@ public class RubyComplex extends RubyNumeric {
             po = true;
         }
 
-        if (m.isNil()) {
-            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat1).match_m(context, s, false);
+        if (m == nil) {
+            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat1).match_m(context, str, false);
 
-            if (!m.isNil()) {
+            if (m != nil) {
                 RubyMatchData match = (RubyMatchData)m;
-                sr = runtime.getNil();
+                sr = nil;
                 si = match.at(1);
-                if (si.isNil()) si = runtime.newString();
+                if (si == nil) si = runtime.newString();
                 IRubyObject t = match.at(2);
-                if (t.isNil()) t = runtime.newString(new ByteList(new byte[]{'1'}, false));
-                si.convertToString().cat(t.convertToString().getByteList());
+                if (t == nil) t = runtime.newString(RubyInteger.singleCharByteList((byte) '1'));
+                ((RubyString) (si = si.convertToString())).cat(t.convertToString());
                 re = match.post_match(context);
                 po = false;
             }
         }
 
-        if (m.isNil()) {
-            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat2).match_m(context, s, false);
-            if (m.isNil()) return runtime.newArray(context.nil, recv);
-            RubyMatchData match = (RubyMatchData)m;
+        if (m == nil) {
+            m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat2).match_m(context, str, false);
+            if (m == nil) return new IRubyObject[] { context.nil, str };
+            RubyMatchData match = (RubyMatchData) m;
             sr = match.at(1);
-            if (match.at(2).isNil()) {
+            if (match.at(2) == nil) {
                 si = context.nil;
             } else {
                 si = match.at(3);
                 IRubyObject t = match.at(4);
-                if (t.isNil()) t = runtime.newString(RubyInteger.singleCharByteList((byte) '1'));
-                si.convertToString().cat(t.convertToString().getByteList());
+                if (t == nil) t = runtime.newString(RubyInteger.singleCharByteList((byte) '1'));
+                ((RubyString) (si = si.convertToString())).cat(t.convertToString());
             }
             re = match.post_match(context);
             po = false;
         }
 
-        IRubyObject r = RubyFixnum.zero(runtime);
-        IRubyObject i = r;
+        final RubyFixnum zero = RubyFixnum.zero(runtime);
 
-        r = convertString(context, sr, r);
-        i = convertString(context, si, i);
+        RubyNumeric r = convertString(context, sr, zero);
+        RubyNumeric i = convertString(context, si, zero);
 
-        return runtime.newArray(po ? newComplexPolar(context, r, i) : newComplexCanonicalize(context, r, i), re);
+        return new IRubyObject[] { po ? newComplexPolar(context, r, i) : newComplexCanonicalize(context, r, i), re };
     }
 
-    private static IRubyObject convertString(ThreadContext context, final IRubyObject s, IRubyObject def) {
-        if (s == context.nil) return def;
+    private static RubyNumeric convertString(ThreadContext context, final IRubyObject s, RubyFixnum zero) {
+        if (s == context.nil) return zero;
         final Ruby runtime = context.runtime;
         if (s.callMethod(context, "include?", RubyString.newStringShared(runtime, SEP)).isTrue()) {
-            return f_to_r(context, s);
+            return (RubyNumeric) f_to_r(context, s);
         }
-        if (f_gt_p(context, s.callMethod(context, "count", RubyString.newStringShared(runtime, _eE)), RubyFixnum.zero(runtime)).isTrue()) {
-            return f_to_f(context, s);
+        if (f_gt_p(context, s.callMethod(context, "count", RubyString.newStringShared(runtime, _eE)), zero)) {
+            return (RubyNumeric) f_to_f(context, s);
         }
-        return f_to_i(context, s);
+        return (RubyNumeric) f_to_i(context, s);
     }
 
-    private static IRubyObject str_to_c_strict(ThreadContext context, IRubyObject recv) {
-        RubyArray a = str_to_c_internal(context, recv);
-        if (a.eltInternal(0).isNil() || a.eltInternal(1).convertToString().getByteList().length() > 0) {
-            IRubyObject s = recv.callMethod(context, "inspect");
-            throw context.runtime.newArgumentError("invalid value for convert(): " + s.convertToString());
+    // MRI: string_to_c_strict
+    private static RubyNumeric str_to_c_strict(ThreadContext context, RubyString str) {
+        IRubyObject[] ary = str_to_c_internal(context, str);
+        if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
+            throw context.runtime.newArgumentError("invalid value for convert(): " + str.inspect(context.runtime));
         }
-        return a.eltInternal(0);
+        return (RubyNumeric) ary[0]; // (RubyComplex)
     }
 
     private static JavaSites.ComplexSites sites(ThreadContext context) {
