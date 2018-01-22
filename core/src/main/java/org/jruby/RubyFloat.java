@@ -185,10 +185,12 @@ public class RubyFloat extends RubyNumeric {
 
     @Override
     public RubyInteger convertToInteger() {
-        if (RubyFixnum.MIN <= value && value <= RubyFixnum.MAX) {
-            return RubyFixnum.newFixnum(getRuntime(), (long) value);
-        }
-        return RubyBignum.newBignum(getRuntime(), getBigIntegerValue());
+        return toInteger(getRuntime());
+    }
+
+    private RubyInteger toInteger(final Ruby runtime) {
+        if (value > 0.0) return dbl2ival(runtime, Math.floor(value));
+        return dbl2ival(runtime, Math.ceil(value));
     }
 
     public int signum() {
@@ -706,8 +708,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     @Override
     public IRubyObject truncate(ThreadContext context) {
-        if (value > 0.0) return floor(context);
-        return ceil(context);
+        return toInteger(context.runtime);
     }
 
     /**
@@ -823,7 +824,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context, IRubyObject digits) {
         double number, f;
-        int ndigits =  num2int(digits);
+        int ndigits = num2int(digits);
 
         if (ndigits < 0) {
             return ((RubyInteger) truncate(context)).floor(context, digits);
