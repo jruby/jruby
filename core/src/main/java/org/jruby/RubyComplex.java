@@ -1024,11 +1024,7 @@ public class RubyComplex extends RubyNumeric {
         }
 
         if (magnitude instanceof RubyFloat) {
-            RubyFloat flote = (RubyFloat) magnitude;
-            if (flote.infinite_p().isTrue()) {
-                return context.runtime.newFixnum(flote.getDoubleValue() < 0 ? -1 : 1);
-            }
-            return context.nil;
+            return ((RubyFloat) magnitude).infinite_p();
         }
 
         return sites(context).infinite.call(context, magnitude, magnitude);
