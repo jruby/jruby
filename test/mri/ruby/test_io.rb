@@ -1203,6 +1203,63 @@ class TestIO < Test::Unit::TestCase
     end)
   end
 
+  def test_write_with_multiple_arguments
+    pipe(proc do |w|
+      w.write("foo", "bar")
+      w.close
+    end, proc do |r|
+      assert_equal("foobar", r.read)
+    end)
+  end
+
+  def test_write_with_multiple_arguments_and_buffer
+    mkcdtmpdir do
+      line = "x"*9+"\n"
+      file = "test.out"
+      open(file, "wb") do |w|
+        w.write(line)
+        assert_equal(11, w.write(line, "\n"))
+      end
+      open(file, "rb") do |r|
+        assert_equal([line, line, "\n"], r.readlines)
+      end
+
+      line = "x"*99+"\n"
+      open(file, "wb") do |w|
+        w.write(line*81)        # 8100 bytes
+        assert_equal(100, w.write("a"*99, "\n"))
+      end
+      open(file, "rb") do |r|
+        81.times {assert_equal(line, r.gets)}
+        assert_equal("a"*99+"\n", r.gets)
+      end
+    end
+  end
+
+  def test_write_with_many_arguments
+    [1023, 1024].each do |n|
+      pipe(proc do |w|
+        w.write(*(["a"] * n))
+        w.close
+      end, proc do |r|
+        assert_equal("a" * n, r.read)
+      end)
+    end
+  end
+
+  def test_write_with_multiple_nonstring_arguments
+    assert_in_out_err([], "STDOUT.write(:foo, :bar)", ["foobar"])
+  end
+
+  def test_write_buffered_with_multiple_arguments
+    out, err, (_, status) = EnvUtil.invoke_ruby(["-e", "sleep 0.1;puts 'foo'"], "", true, true) do |_, o, e, i|
+      [o.read, e.read, Process.waitpid2(i)]
+    end
+    assert_predicate(status, :success?)
+    assert_equal("foo\n", out)
+    assert_empty(err)
+  end
+
   def test_write_non_writable
     with_pipe do |r, w|
       assert_raise(IOError) do
