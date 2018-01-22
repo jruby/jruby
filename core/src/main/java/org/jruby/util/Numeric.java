@@ -132,14 +132,16 @@ public class Numeric {
         if (y instanceof RubyFixnum) {
             long iy = ((RubyFixnum) y).getLongValue();
             if (iy == 1) return x;
-            if (iy == 0 && x instanceof RubyInteger) {
-                return RubyFixnum.zero(runtime);
+            if (x instanceof RubyInteger) {
+                if (iy == 0) return RubyFixnum.zero(runtime);
+                return f_mul(context, (RubyInteger) x, (RubyFixnum) y);
             }
         } else if (x instanceof RubyFixnum) {
             long ix = ((RubyFixnum) x).getLongValue();
             if (ix == 1) return y;
-            if (ix == 0 && y instanceof RubyInteger) {
-                return RubyFixnum.zero(runtime);
+            if (y instanceof RubyInteger) {
+                if (ix == 0) return RubyFixnum.zero(runtime);
+                return f_mul(context, (RubyFixnum) x, (RubyInteger) y);
             }
         }
         return sites(context).op_times.call(context, x, x, y);
@@ -394,14 +396,26 @@ public class Numeric {
         if (x instanceof RubyInteger) return ((RubyInteger) x).signum() == -1;
         return sites(context).op_lt.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
     }
-    
+
+    public static boolean f_negative_p(ThreadContext context, RubyInteger x) {
+        return x.signum() == -1;
+    }
+
+    public static boolean f_negative_p(ThreadContext context, RubyFloat x) {
+        return x.signum() == -1;
+    }
+
     /** f_zero_p
      * 
      */
     public static boolean f_zero_p(ThreadContext context, IRubyObject x) {
-        if (x instanceof RubyInteger) return ((RubyInteger) x).signum() == 0;
+        if (x instanceof RubyInteger) return ((RubyInteger) x).isZero();
         if (x instanceof RubyFloat) return ((RubyFloat) x).signum() == 0;
         return sites(context).op_equals.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
+    }
+
+    public static boolean f_zero_p(ThreadContext context, RubyInteger x) {
+        return x.isZero();
     }
     
     /** f_one_p
