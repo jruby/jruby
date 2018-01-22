@@ -254,8 +254,8 @@ public class Numeric {
     /** f_real_p
      * 
      */
-    public static IRubyObject f_real_p(ThreadContext context, IRubyObject x) {
-        return sites(context).real.call(context, x, x);
+    public static boolean f_real_p(ThreadContext context, IRubyObject x) {
+        return sites(context).real.call(context, x, x).isTrue();
     }
 
     /** f_integer_p

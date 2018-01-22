@@ -61,7 +61,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -123,8 +122,8 @@ public class RubyComplex extends RubyNumeric {
     /** internal
      * 
      */
-    private RubyComplex(Ruby runtime, IRubyObject clazz, IRubyObject real, IRubyObject image) {
-        super(runtime, (RubyClass)clazz);
+    private RubyComplex(Ruby runtime, RubyClass clazz, IRubyObject real, IRubyObject image) {
+        super(runtime, clazz);
         this.real = real;
         this.image = image;
     }
@@ -167,14 +166,14 @@ public class RubyComplex extends RubyNumeric {
     /** f_complex_new1
      * 
      */
-    static IRubyObject newComplex(ThreadContext context, IRubyObject clazz, IRubyObject x) {
+    static IRubyObject newComplex(ThreadContext context, RubyClass clazz, IRubyObject x) {
         return newComplex(context, clazz, x, RubyFixnum.zero(context.runtime));
     }
 
     /** f_complex_new2
      * 
      */
-    static IRubyObject newComplex(ThreadContext context, IRubyObject clazz, IRubyObject x, IRubyObject y) {
+    static IRubyObject newComplex(ThreadContext context, RubyClass clazz, IRubyObject x, IRubyObject y) {
         assert !(x instanceof RubyComplex);
         return canonicalizeInternal(context, clazz, x, y);
     }
@@ -182,7 +181,7 @@ public class RubyComplex extends RubyNumeric {
     /** f_complex_new_bang2
      * 
      */
-    static RubyComplex newComplexBang(ThreadContext context, IRubyObject clazz, IRubyObject x, IRubyObject y) {
+    static RubyComplex newComplexBang(ThreadContext context, RubyClass clazz, IRubyObject x, IRubyObject y) {
 // FIXME: what should these really be? Numeric?       assert x instanceof RubyComplex && y instanceof RubyComplex;
         return new RubyComplex(context.runtime, clazz, x, y);
     }
@@ -190,7 +189,7 @@ public class RubyComplex extends RubyNumeric {
     /** f_complex_new_bang1
      * 
      */
-    public static RubyComplex newComplexBang(ThreadContext context, IRubyObject clazz, IRubyObject x) {
+    public static RubyComplex newComplexBang(ThreadContext context, RubyClass clazz, IRubyObject x) {
 // FIXME: what should this really be?       assert x instanceof RubyComplex;
         return newComplexBang(context, clazz, x, RubyFixnum.zero(context.runtime));
     }
@@ -210,7 +209,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     private static IRubyObject m_cos(ThreadContext context, IRubyObject x) {
-        if (f_real_p(context, x).isTrue()) return RubyMath.cos(context, x, x);
+        if (f_real_p(context, x)) return RubyMath.cos(context, x, x);
         RubyComplex complex = (RubyComplex)x;
         return newComplex(context, context.runtime.getComplex(),
                           f_mul(context, RubyMath.cos(context, x, complex.real), RubyMath.cosh(context, x, complex.image)),
@@ -221,7 +220,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     private static IRubyObject m_sin(ThreadContext context, IRubyObject x) {
-        if (f_real_p(context, x).isTrue()) return RubyMath.sin(context, x, x);
+        if (f_real_p(context, x)) return RubyMath.sin(context, x, x);
         RubyComplex complex = (RubyComplex)x;
         return newComplex(context, context.runtime.getComplex(),
                           f_mul(context, RubyMath.sin(context, x, complex.real), RubyMath.cosh(context, x, complex.image)),
@@ -232,7 +231,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     private static IRubyObject m_sqrt(ThreadContext context, IRubyObject x) {
-        if (f_real_p(context, x).isTrue()) {
+        if (f_real_p(context, x)) {
             if (!f_negative_p(context, x)) return RubyMath.sqrt(context, x, x);
             return newComplex(context, context.runtime.getComplex(),
                               RubyFixnum.zero(context.runtime),
@@ -267,14 +266,14 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstanceBang(ThreadContext context, IRubyObject recv, IRubyObject real) {
         if (!(real instanceof RubyNumeric)) real = f_to_i(context, real);
-        return new RubyComplex(context.runtime, recv, real, RubyFixnum.zero(context.runtime));
+        return new RubyComplex(context.runtime, (RubyClass) recv, real, RubyFixnum.zero(context.runtime));
     }
 
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstanceBang(ThreadContext context, IRubyObject recv, IRubyObject real, IRubyObject image) {
         if (!(real instanceof RubyNumeric)) real = f_to_i(context, real);
         if (!(image instanceof RubyNumeric)) image = f_to_i(context, image);
-        return new RubyComplex(context.runtime, recv, real, image);
+        return new RubyComplex(context.runtime, (RubyClass) recv, real, image);
     }
 
     /** nucomp_canonicalization
@@ -295,7 +294,7 @@ public class RubyComplex extends RubyNumeric {
         case RATIONAL:
             break;
         default:
-            if (!(num instanceof RubyNumeric ) || !f_real_p(context, num).isTrue()) {
+            if (!(num instanceof RubyNumeric ) || !f_real_p(context, num)) {
                  throw context.runtime.newTypeError("not a real");
             }
         }
@@ -304,24 +303,22 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_s_canonicalize_internal
      * 
      */
-    private static final boolean CL_CANON = Numeric.CANON;
-    private static IRubyObject canonicalizeInternal(ThreadContext context, IRubyObject clazz, IRubyObject real, IRubyObject image) {
+    private static RubyNumeric canonicalizeInternal(ThreadContext context, RubyClass clazz, IRubyObject real, IRubyObject image) {
         if (Numeric.CANON) {
-            if (f_zero_p(context, image) &&
-                    (!CL_CANON || k_exact_p(image)) &&
-                    canonicalization)
-                    return real;
+            if (f_zero_p(context, image) && k_exact_p(image) && canonicalization) return (RubyNumeric) real;
         }
-        if (f_real_p(context, real).isTrue() && f_real_p(context, image).isTrue()) {
+        boolean realReal = f_real_p(context, real);
+        boolean imagReal = f_real_p(context, image);
+        if (realReal && imagReal) {
             return new RubyComplex(context.runtime, clazz, real, image);
         }
-        if (f_real_p(context, real).isTrue()) {
+        if (realReal) {
             RubyComplex complex = (RubyComplex)image;
             return new RubyComplex(context.runtime, clazz,
                                    f_sub(context, real, complex.image),
                                    f_add(context, RubyFixnum.zero(context.runtime), complex.real));
         }
-        if (f_real_p(context, image).isTrue()) {
+        if (imagReal) {
             RubyComplex complex = (RubyComplex)real;
             return new RubyComplex(context.runtime, clazz,
                                    complex.real,
@@ -356,7 +353,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = {"rect", "rectangular"}, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject real) {
         realCheck(context, real);
-        return canonicalizeInternal(context, recv, real, RubyFixnum.zero(context.runtime));
+        return canonicalizeInternal(context, (RubyClass) recv, real, RubyFixnum.zero(context.runtime));
     }
 
     // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
@@ -368,13 +365,13 @@ public class RubyComplex extends RubyNumeric {
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject real, IRubyObject image) {
         realCheck(context, real);
         realCheck(context, image);
-        return canonicalizeInternal(context, recv, real, image);
+        return canonicalizeInternal(context, (RubyClass) recv, real, image);
     }
 
     /** f_complex_polar
      * 
      */
-    private static IRubyObject f_complex_polar(ThreadContext context, IRubyObject clazz, IRubyObject x, IRubyObject y) {
+    private static IRubyObject f_complex_polar(ThreadContext context, RubyClass clazz, IRubyObject x, IRubyObject y) {
         assert !(x instanceof RubyComplex) && !(y instanceof RubyComplex);
         return canonicalizeInternal(context, clazz,
                                              f_mul(context, x, m_cos(context, y)),
@@ -402,7 +399,7 @@ public class RubyComplex extends RubyNumeric {
         }
         realCheck(context, abs);
         realCheck(context, arg);
-        return f_complex_polar(context, clazz, abs, arg);
+        return f_complex_polar(context, (RubyClass) clazz, abs, arg);
     }
 
     /** rb_Complex1
@@ -472,20 +469,20 @@ public class RubyComplex extends RubyNumeric {
         }
 
         if (a1 instanceof RubyComplex) {
-            if (a2.isNil() || (k_exact_p(a2) && f_zero_p(context, a2))) return a1;
+            if (a2 == context.nil || (k_exact_p(a2) && f_zero_p(context, a2))) return a1;
         }
 
-        if (a2.isNil()) {
+        if (a2 == context.nil) {
             if (a1 instanceof RubyNumeric) {
-                if (!f_real_p(context, a1).isTrue()) return a1;
+                if (!f_real_p(context, (RubyNumeric) a1)) return a1;
             }
-            else if (singleArg && ! a1.isNil() && responds_to_to_c(context, a1)) {
+            else if (singleArg && a1 != context.nil && responds_to_to_c(context, a1)) {
                 return a1.callMethod(context, "to_c");
             }
             return newInstance(context, recv, a1);
         } else {
             if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
-                (!f_real_p(context, a1).isTrue() || !f_real_p(context, a2).isTrue())) {
+                (!f_real_p(context, (RubyNumeric) a1) || !f_real_p(context, (RubyNumeric) a2))) {
                 Ruby runtime = context.runtime;
                 return f_add(context, a1,
                              f_mul(context, a2, newComplexBang(context, runtime.getComplex(),
@@ -529,7 +526,7 @@ public class RubyComplex extends RubyNumeric {
             return newComplex(context, getMetaClass(), 
                               f_add(context, real, otherComplex.real),
                               f_add(context, image, otherComplex.image));
-        } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
+        } else if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
             return newComplex(context, getMetaClass(), f_add(context, real, other), image);
         }
         return coerceBin(context, sites(context).op_plus, other);
@@ -545,7 +542,7 @@ public class RubyComplex extends RubyNumeric {
             return newComplex(context, getMetaClass(), 
                               f_sub(context, real, otherComplex.real),
                               f_sub(context, image, otherComplex.image));
-        } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
+        } else if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
             return newComplex(context, getMetaClass(), f_sub(context, real, other), image);
         }
         return coerceBin(context, sites(context).op_minus, other);
@@ -570,7 +567,7 @@ public class RubyComplex extends RubyNumeric {
                                 safe_mul(context, image, otherComplex.real, aizero, brzero));
             
             return newComplex(context, getMetaClass(), realp, imagep); 
-        } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
+        } else if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
             return newComplex(context, getMetaClass(),
                     f_mul(context, real, other),
                     f_mul(context, image, other));
@@ -595,7 +592,7 @@ public class RubyComplex extends RubyNumeric {
             }
             return f_quo(context, f_mul(context, this, f_conjugate(context, other)), f_abs2(context, other));
         } else if (other instanceof RubyNumeric) {
-            if (f_real_p(context, other).isTrue()) {
+            if (f_real_p(context, (RubyNumeric) other)) {
                 return newComplex(context, getMetaClass(),
                         f_quo(context, real, other),
                         f_quo(context, image, other));
@@ -672,7 +669,7 @@ public class RubyComplex extends RubyNumeric {
                 return z;
             }
             return f_expt(context, f_div(context, f_to_r(context, one), this), f_negate(context, other));
-        } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
+        } else if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
             RubyArray a = f_polar(context, this).convertToArray();
             IRubyObject r = a.eltInternal(0);
             IRubyObject theta = a.eltInternal(1);
@@ -695,7 +692,7 @@ public class RubyComplex extends RubyNumeric {
             return context.runtime.newBoolean(test);
         }
 
-        if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
+        if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
             boolean test = f_equal(context, real, other).isTrue() && f_zero_p(context, image);
 
             return context.runtime.newBoolean(test);
@@ -709,7 +706,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
+        if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
             return context.runtime.newArray(newComplexBang(context, getMetaClass(), other), this);
         }
         if (other instanceof RubyComplex) {
@@ -778,9 +775,13 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "real?")
+    @Override
     public IRubyObject real_p(ThreadContext context) {
         return context.runtime.getFalse();
     }
+
+    @Override
+    public boolean isReal() { return false; }
 
     /** nucomp_complex_p
      * 
@@ -926,8 +927,8 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "marshal_load")
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
-        real = load.size() > 0 ? load.eltInternal(0) : context.runtime.getNil();
-        image = load.size() > 1 ? load.eltInternal(1) : context.runtime.getNil();
+        real = load.size() > 0 ? load.eltInternal(0) : context.nil;
+        image = load.size() > 1 ? load.eltInternal(1) : context.nil;
 
         if (load.hasVariables()) syncVariables((IRubyObject)load);
         return this;

@@ -837,8 +837,15 @@ public class RubyNumeric extends RubyObject {
     *
     */
     @JRubyMethod(name = "real?")
+    public IRubyObject real_p(ThreadContext context) {
+        return context.runtime.newBoolean(isReal());
+    }
+
+    public boolean isReal() { return true; } // only RubyComplex isn't real
+
+    @Deprecated
     public IRubyObject scalar_p() {
-        return getRuntime().getTrue();
+        return getRuntime().newBoolean(isReal());
     }
 
     /** num_int_p
