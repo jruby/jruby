@@ -712,6 +712,13 @@ public class RubyRational extends RubyNumeric {
             return runtime.newArray(other, f_to_f(context, this));
         } else if (other instanceof RubyRational) {
             return runtime.newArray(other, this);
+        } else if (other instanceof RubyComplex) {
+            RubyComplex otherComplex = (RubyComplex)other;
+            if (k_exact_p(otherComplex.getImage()) && f_zero_p(context, otherComplex.getImage())) {
+                return runtime.newArray(RubyRational.newRationalBang(context, getMetaClass(), otherComplex.getReal()), this);
+            } else {
+                return runtime.newArray(other, RubyComplex.newComplexCanonicalize(context, this));
+            }
         }
         throw runtime.newTypeError(other.getMetaClass() + " can't be coerced into " + getMetaClass());
     }
