@@ -829,21 +829,37 @@ public class RubyComplex extends RubyNumeric {
         return f_xor(context, invokedynamic(context, real, HASH), invokedynamic(context, image, HASH));
     }
 
+    @Override
+    public int hashCode() {
+        final IRubyObject hash = hash(getRuntime().getCurrentContext());
+        if (hash instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hash);
+        return nonFixnumHashCode(hash);
+    }
+
     /** nucomp_eql_p
      * 
      */
     @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+        return context.runtime.newBoolean(equals(context, other));
+    }
+
+    private boolean equals(ThreadContext context, Object other) {
         if (other instanceof RubyComplex) {
             RubyComplex otherComplex = (RubyComplex)other;
             if (real.getMetaClass() == otherComplex.real.getMetaClass() &&
                 image.getMetaClass() == otherComplex.image.getMetaClass() &&
                 f_equal(context, this, otherComplex).isTrue()) {
-                return context.runtime.getTrue();
+                return true;
             }
         }
-        return context.runtime.getFalse();
+        return false;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return equals(getRuntime().getCurrentContext(), other);
     }
 
     /** f_signbit
