@@ -31,6 +31,7 @@ import org.joni.Regex;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
+import org.jruby.RubyComplex;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
@@ -246,9 +247,9 @@ public class Numeric {
 
     /** f_exact_p
      * 
-     */
-    public static IRubyObject f_exact_p(ThreadContext context, IRubyObject x) {
-        return sites(context).exact.call(context, x, x);
+     */ // NOTE: not (really) used
+    public static boolean f_exact_p(ThreadContext context, IRubyObject x) {
+        return sites(context).exact.call(context, x, x).isTrue();
     }
 
     /** f_numerator
@@ -269,6 +270,18 @@ public class Numeric {
      * 
      */
     public static boolean f_real_p(ThreadContext context, IRubyObject x) {
+        // NOTE: can not use instanceof RubyNumeric + ((RubyNumeric) x).isReal()
+        // since Numeric is not a terminal type -> might get sub-classed by user
+        switch (x.getMetaClass().getClassIndex()) {
+            case FLOAT:
+            case FIXNUM:
+            case BIGNUM:
+            case RATIONAL:
+                return ((RubyNumeric) x).isReal(); // true
+            case COMPLEX:
+                return ((RubyComplex) x).isReal(); // false
+
+        }
         return sites(context).real.call(context, x, x).isTrue();
     }
 
@@ -284,6 +297,10 @@ public class Numeric {
      */
     public static IRubyObject f_divmod(ThreadContext context, IRubyObject x, IRubyObject y) {
         return sites(context).divmod.call(context, x, x, y);
+    }
+
+    public static IRubyObject f_divmod(ThreadContext context, RubyInteger x, IRubyObject y) {
+        return x.divmod(context, y);
     }
 
     /** f_floor
@@ -307,6 +324,10 @@ public class Numeric {
         return sites(context).op_uminus.call(context, x, x);
     }
 
+    public static RubyInteger f_negate(ThreadContext context, RubyInteger x) {
+        return x.negate();
+    }
+
     /** f_to_f
      * 
      */
@@ -327,7 +348,11 @@ public class Numeric {
     public static IRubyObject f_to_r(ThreadContext context, IRubyObject x) {
         return sites(context).to_r.call(context, x, x);
     }
-    
+
+    public static RubyNumeric f_to_r(ThreadContext context, RubyInteger x) {
+        return (RubyNumeric) x.to_r(context);
+    }
+
     /** f_to_s
      * 
      */
@@ -387,6 +412,10 @@ public class Numeric {
      */
     public static IRubyObject f_quo(ThreadContext context, IRubyObject x, IRubyObject y) {
         return sites(context).quo.call(context, x, x, y);
+    }
+
+    public static IRubyObject f_quo(ThreadContext context, RubyFloat x, RubyFloat y) {
+        return x.quo(context, y);
     }
 
     /** f_rshift

@@ -311,7 +311,6 @@ public class JavaSites {
         public final CallSite read = new FunctionalCachingCallSite("read");
         public final CallSite to_f = new FunctionalCachingCallSite("to_f");
         public final CallSite new_ = new FunctionalCachingCallSite("new");
-        public final RespondToCallSite respond_to_to_int = new RespondToCallSite("to_int");
         public final RespondToCallSite respond_to_to_io = new RespondToCallSite("to_io");
         public final RespondToCallSite respond_to_to_hash = new RespondToCallSite("to_hash");
     }
@@ -369,6 +368,7 @@ public class JavaSites {
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite finite = new FunctionalCachingCallSite("finite?");
         public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
+        public final CheckedSites to_c_checked = new CheckedSites("to_c");
     }
 
     public static class RationalSites {
