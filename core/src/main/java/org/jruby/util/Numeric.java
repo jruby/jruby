@@ -288,8 +288,21 @@ public class Numeric {
     /** f_integer_p
      * 
      */
-    public static IRubyObject f_integer_p(ThreadContext context, IRubyObject x) {
-        return sites(context).integer.call(context, x, x);
+    public static boolean f_integer_p(ThreadContext context, IRubyObject x) {
+        return sites(context).integer.call(context, x, x).isTrue();
+    }
+
+    public static boolean f_integer_p(ThreadContext context, RubyNumeric x) {
+        switch (x.getMetaClass().getClassIndex()) {
+            case FIXNUM:
+            case BIGNUM:
+                return true;
+            case FLOAT:
+            case RATIONAL:
+            case COMPLEX:
+                return false;
+        }
+        return sites(context).integer.call(context, x, x).isTrue();
     }
 
     /** f_divmod

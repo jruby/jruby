@@ -789,19 +789,19 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     // Calculate appropriate zero or infinity depending on exponent...
-    private RubyBigDecimal newPowOfInfinity(ThreadContext context, IRubyObject exp) {
+    private RubyBigDecimal newPowOfInfinity(ThreadContext context, RubyNumeric exp) {
         if (Numeric.f_negative_p(context, exp)) {
             if (infinitySign >= 0) return newZero(context.runtime, 0);
 
             // (-Infinity) ** (-even_integer) -> +0 AND (-Infinity) ** (-odd_integer) -> -0
-            if (Numeric.f_integer_p(context, exp).isTrue()) return newZero(context.runtime, is_even(exp) ? 1 : -1);
+            if (Numeric.f_integer_p(context, exp)) return newZero(context.runtime, is_even(exp) ? 1 : -1);
 
             return newZero(context.runtime, -1); // (-Infinity) ** (-non_integer) -> -0
         }
 
         if (infinitySign >= 0) return newInfinity(context.runtime, 1);
 
-        if (Numeric.f_integer_p(context, exp).isTrue()) return newInfinity(context.runtime, is_even(exp) ? 1 : -1);
+        if (Numeric.f_integer_p(context, exp)) return newInfinity(context.runtime, is_even(exp) ? 1 : -1);
 
         throw context.runtime.newMathDomainError("a non-integral exponent for a negative base");
     }
@@ -825,7 +825,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if (isNaN()) return newNaN(runtime);
 
-        if (isInfinity()) return newPowOfInfinity(context, exp);
+        if (isInfinity()) return newPowOfInfinity(context, (RubyNumeric) exp);
 
         final int times; final double rem; // exp's decimal part
         // when pow is not an integer we're play the oldest trick :
@@ -1867,7 +1867,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return infinitySign == -1 ? "-Infinity" : "Infinity";
     }
 
-    private static boolean is_even(IRubyObject x) {
+    private static boolean is_even(final RubyNumeric x) {
         if (x instanceof RubyFixnum) return RubyNumeric.fix2long((RubyFixnum) x) % 2 == 0;
         if (x instanceof RubyBignum) return RubyBignum.big2long((RubyBignum) x) % 2 == 0;
 

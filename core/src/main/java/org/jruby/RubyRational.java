@@ -410,13 +410,13 @@ public class RubyRational extends RubyNumeric {
         }
 
         if (a2 == context.nil) {
-            if (!(a1 instanceof RubyNumeric && f_integer_p(context, a1).isTrue())) {
+            if (!(a1 instanceof RubyNumeric && f_integer_p(context, (RubyNumeric) a1))) {
                 return TypeConverter.convertToType(context, a1, context.runtime.getRational(), sites(context).to_r_checked);
             }
             return newInstance(context, clazz, a1);
         } else {
             if ((a1 instanceof RubyNumeric && a2 instanceof RubyNumeric) &&
-                (!f_integer_p(context, a1).isTrue() || !f_integer_p(context, a2).isTrue())) {
+                (!f_integer_p(context, (RubyNumeric) a1) || !f_integer_p(context, (RubyNumeric) a2))) {
                 return f_div(context, a1, a2);
             }
             return newInstance(context, clazz, a1, a2);
