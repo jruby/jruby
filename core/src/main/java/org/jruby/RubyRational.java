@@ -674,7 +674,7 @@ public class RubyRational extends RubyNumeric {
             }
             return f_cmp(context, f_sub(context, num1, num2), RubyFixnum.zero(context.runtime));
         }
-        return coerceBin(context, sites(context).op_cmp, other);
+        return coerceCmp(context, sites(context).op_cmp, other);
     }
 
     /** nurat_equal_p
