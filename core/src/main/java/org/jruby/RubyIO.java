@@ -4298,7 +4298,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
                     return context.runtime.newFixnum(size);
                 } catch (IOException ioe) {
-                    ioe.printStackTrace();
                     throw runtime.newIOErrorFromException(ioe);
                 } finally {
                     if (userProvidedReadIO) {
