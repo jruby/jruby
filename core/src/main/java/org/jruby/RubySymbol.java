@@ -256,27 +256,22 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     final RubyString inspect(final Ruby runtime) {
-        ByteList result = new ByteList(symbolBytes.getRealSize() + 1);
-        result.setEncoding(symbolBytes.getEncoding());
-        result.append((byte)':');
-        result.append(symbolBytes);
-
         // TODO: 1.9 rb_enc_symname_p
         Encoding resenc = runtime.getDefaultInternalEncoding();
         if (resenc == null) resenc = runtime.getDefaultExternalEncoding();
 
-        RubyString str = RubyString.newString(runtime, result);
+        RubyString str = RubyString.newString(runtime, symbolBytes);
 
-        if (isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol)) {
-            return str;
+        if (!(isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol))) {
+            str = str.inspect(runtime);
         }
 
-        str = str.inspect(runtime);
-        ByteList bytes = str.getByteList();
-        bytes.set(0, ':');
-        bytes.set(1, '"');
+        ByteList result = new ByteList(str.getByteList().getRealSize() + 1);
+        result.setEncoding(str.getEncoding());
+        result.append((byte)':');
+        result.append(str.getBytes());
 
-        return str;
+        return RubyString.newString(runtime, result);
     }
 
     @Deprecated

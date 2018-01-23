@@ -984,9 +984,6 @@ public abstract class LexingCommon {
         return -1;
     }
 
-    public static final String magicString = "^[^\\S]*([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*[^\\S]*$";
-    public static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
-
     public boolean parser_magic_comment(ByteList magicLine) {
         boolean indicator = false;
         int vbeg, vend;
@@ -1006,9 +1003,6 @@ public abstract class LexingCommon {
 
         /* %r"([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*" */
         while (length > 0) {
-            int i;
-            long n = 0;
-
             for (; length > 0; str++, --length) {
                 char c = magicLine.charAt(str);
 

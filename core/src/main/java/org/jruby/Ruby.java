@@ -4707,6 +4707,7 @@ public final class Ruby implements Constantizable {
             deduped = string.strDup(this);
             deduped.setFrozen(true);
         }
+
         return deduped;
     }
 

@@ -5311,6 +5311,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubySymbol specialCaseIntern = checkSpecialCasesIntern(value);
         if (specialCaseIntern != null) return specialCaseIntern;
 
+        if (scanForCodeRange() == CR_BROKEN) {
+            throw getRuntime().newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
+        }
+
         RubySymbol symbol = getRuntime().getSymbolTable().getSymbol(value);
         if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
         return symbol;
