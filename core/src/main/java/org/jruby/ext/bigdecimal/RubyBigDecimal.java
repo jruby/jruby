@@ -1867,7 +1867,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return infinitySign == -1 ? "-Infinity" : "Infinity";
     }
 
-    private boolean is_even(IRubyObject x) {
+    private static boolean is_even(IRubyObject x) {
         if (x instanceof RubyFixnum) return RubyNumeric.fix2long((RubyFixnum) x) % 2 == 0;
         if (x instanceof RubyBignum) return RubyBignum.big2long((RubyBignum) x) % 2 == 0;
 
