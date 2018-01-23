@@ -80,6 +80,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -766,13 +767,14 @@ public class RubyKernel {
     @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE, reads = SCOPE)
     public static RubyArray local_variables19(ThreadContext context, IRubyObject recv) {
         final Ruby runtime = context.runtime;
-        HashSet<String> encounteredLocalVariables = new HashSet<String>();
+        Set<ByteList> encounteredLocalVariables = new HashSet<>();
         RubyArray allLocalVariables = runtime.newArray();
         DynamicScope currentScope = context.getCurrentScope();
 
         while (currentScope != null) {
-            for (String name : currentScope.getStaticScope().getVariables()) {
-                if (IdUtil.isLocal(name) && !encounteredLocalVariables.contains(name)) {
+            for (ByteList name : currentScope.getStaticScope().getByteVariables()) {
+                // FIXME: bytelist_love: Make charsetless checking of isLocal.
+                if (IdUtil.isLocal(name.toString()) && !encounteredLocalVariables.contains(name)) {
                     allLocalVariables.push(runtime.newSymbol(name));
                     encounteredLocalVariables.add(name);
                 }
