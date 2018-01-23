@@ -1,4 +1,3 @@
-exclude :test_cmp, "needs investigation"
 exclude :test_coerce, "needs investigation"
 exclude :test_coerce2, "needs investigation"
 exclude :test_conv, "needs investigation"
