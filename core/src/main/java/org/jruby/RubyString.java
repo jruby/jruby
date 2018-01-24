@@ -1341,6 +1341,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return ptr_cr_ret[0];
     }
 
+    public final RubyString catString(String str) {
+        cat19(encodeBytelist(str, getEncoding()), CR_UNKNOWN);
+        return this;
+    }
+
     public final RubyString cat(RubyString str) {
         return cat(str.getByteList());
     }
