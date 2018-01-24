@@ -240,40 +240,63 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
     public IRubyObject inspect() {
-        StringBuilder str = new StringBuilder(24).append("#<");
-        char sharp = '#';
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        RubyString str = RubyString.newString(runtime, "#<");
+        String sharp = "#";
         
-        str.append(getMetaClass().getRealClass().getName()).append(": ");
+        str.catString(getType().getName()).catString(": ");
+
+        RubyModule definedClass;
+        RubyModule mklass = method.getImplementationClass();
+
+        if (method instanceof AliasMethod) {
+            definedClass = method.getRealMethod().getImplementationClass();
+        }
+        else {
+            definedClass = method.getDefinedClass();
+        }
+
+        if (definedClass.isIncluded()) {
+            definedClass = definedClass.getMetaClass();
+        }
 
         if (implementationModule.isSingleton()) {
             IRubyObject attached = ((MetaClass) implementationModule).getAttached();
             if (receiver == null) {
-                str.append(implementationModule.inspect().toString());
+                str.cat19(inspect(context, implementationModule).convertToString());
             } else if (receiver == attached) {
-                str.append(attached.inspect().toString());
-                sharp = '.';
+                str.cat19(inspect(context, attached).convertToString());
+                sharp = ".";
             } else {
-                str.append(receiver.inspect().toString());
-                str.append('(').append(attached.inspect().toString()).append(')');
-                sharp = '.';
+                str.cat19(inspect(context, receiver).convertToString());
+                str.catString("(");
+                str.cat19(inspect(context, attached).convertToString());
+                str.catString(")");
+                sharp = ".";
             }
         } else {
-            str.append(originModule.getName());
+            str.catString(originModule.getName());
             if (implementationModule != originModule) {
-                str.append('(').append(implementationModule.getName()).append(')');
+                str.catString("(");
+                str.catString(implementationModule.getName());
+                str.catString(")");
             }
         }
-
-        str.append(sharp).append(methodName); // (real-name) if alias
-        final String realName= method.getRealMethod().getName();
-        if ( realName != null && ! methodName.equals(realName) ) {
-            str.append('(').append(realName).append(')');
+        str.catString(sharp);
+        str.catString(this.methodName);
+        if (!methodName.equals(method.getName())) {
+            str.catString("(");
+            str.catString(method.getName());
+            str.catString(")");
         }
-        str.append('>');
-        
-        RubyString res = RubyString.newString(getRuntime(), str);
-        res.setTaint(isTaint());
-        return res;
+        if (method.isNotImplemented()) {
+            str.catString(" (not-implemented)");
+        }
+        str.catString(">");
+
+        return str;
     }
 
     @JRubyMethod
