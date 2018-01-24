@@ -767,15 +767,16 @@ public class RubyKernel {
     @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE, reads = SCOPE)
     public static RubyArray local_variables19(ThreadContext context, IRubyObject recv) {
         final Ruby runtime = context.runtime;
-        Set<ByteList> encounteredLocalVariables = new HashSet<>();
+        Set<RubySymbol> encounteredLocalVariables = new HashSet<>();
         RubyArray allLocalVariables = runtime.newArray();
         DynamicScope currentScope = context.getCurrentScope();
 
         while (currentScope != null) {
-            for (ByteList name : currentScope.getStaticScope().getByteVariables()) {
-                // FIXME: bytelist_love: Make charsetless checking of isLocal.
+            for (ByteList rawByteListName : currentScope.getStaticScope().getByteVariables()) {
+                RubySymbol name = runtime.newSymbol(rawByteListName);
+                // FIXME: Technically a non-charset String will still not work here.
                 if (IdUtil.isLocal(name.toString()) && !encounteredLocalVariables.contains(name)) {
-                    allLocalVariables.push(runtime.newSymbol(name));
+                    allLocalVariables.push(name);
                     encounteredLocalVariables.add(name);
                 }
             }
