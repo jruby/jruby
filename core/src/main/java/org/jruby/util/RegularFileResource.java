@@ -234,7 +234,7 @@ class RegularFileResource extends AbstractFileResource {
             return channel;
         }
 
-        if (file.isDirectory() && flags.isWritable()) {
+        if (file.isDirectory()) {
             throw new ResourceException.FileIsDirectory(absolutePath());
         }
 
