@@ -253,19 +253,16 @@ public class RubyException extends RubyObject {
     }
 
     public IRubyObject getBacktrace() {
-        if (backtrace == null) {
-            initBacktrace();
-        }
+        if (backtrace == null) initBacktrace();
+
         return backtrace;
     }
 
     public void initBacktrace() {
         Ruby runtime = getRuntime();
-        if (backtraceData == null) {
-            backtrace = runtime.getNil();
-        } else {
-            backtrace = TraceType.generateMRIBacktrace(runtime, backtraceData.getBacktrace(runtime));
-        }
+
+        backtrace = backtraceData == null ?
+                runtime.getNil() : TraceType.generateMRIBacktrace(runtime, backtraceData.getBacktrace(runtime));
     }
 
     @Override

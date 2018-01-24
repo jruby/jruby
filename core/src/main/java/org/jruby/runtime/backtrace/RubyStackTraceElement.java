@@ -3,6 +3,7 @@ package org.jruby.runtime.backtrace;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.CommonByteLists;
 
 public class RubyStackTraceElement implements java.io.Serializable {
     public static final RubyStackTraceElement[] EMPTY_ARRAY = new RubyStackTraceElement[0];
@@ -76,15 +77,15 @@ public class RubyStackTraceElement implements java.io.Serializable {
         return asStackTraceElement().toString();
     }
 
-    public RubyString to_s_mri(ThreadContext context) {
+    public static RubyString to_s_mri(ThreadContext context, RubyStackTraceElement element) {
         RubySymbol methodSym = context.runtime.newSymbol(element.getMethodName());
         RubyString line = context.runtime.newString();
 
         line.setEncoding(methodSym.getEncoding());
         line.cat(element.getFileName().getBytes());
-        line.cat(new byte[] {':'});
-        line.append(context.runtime.newFixnum(lineNumber));
-        line.cat(new byte[] {':', 'i', 'n', '`'});
+        line.cat(CommonByteLists.COLON);
+        line.append(context.runtime.newFixnum(element.getLineNumber()));
+        line.cat(CommonByteLists.SINGLE_QUOTE);
         line.cat(methodSym.getBytes());
         line.cat(new byte[] {'\''});
 

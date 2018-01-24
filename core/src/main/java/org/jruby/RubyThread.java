@@ -495,7 +495,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject to_s(ThreadContext context) {
-            return element.to_s_mri(context);
+            return RubyStackTraceElement.to_s_mri(context, element);
         }
 
         public static RubyArray newLocationArray(Ruby runtime, RubyStackTraceElement[] elements) {

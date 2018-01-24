@@ -478,20 +478,11 @@ public class TraceType {
     public static IRubyObject generateMRIBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {
         if (trace == null) return runtime.getNil();
 
-        final RubyClass stringClass = runtime.getString();
+        ThreadContext context = runtime.getCurrentContext();
         final IRubyObject[] traceArray = new IRubyObject[trace.length];
-        final StringBuilder line = new StringBuilder();
 
         for (int i = 0; i < trace.length; i++) {
-            RubyStackTraceElement element = trace[i];
-            line.setLength(0);
-            line.append( element.getFileName() )
-                .append(':')
-                .append( element.getLineNumber() )
-                .append(":in `")
-                .append( element.getMethodName() )
-                .append('\'');
-            traceArray[i] = new RubyString(runtime, stringClass, line.toString()); // must toString
+            traceArray[i] = RubyStackTraceElement.to_s_mri(context, trace[i]);
         }
 
         return RubyArray.newArrayMayCopy(runtime, traceArray);
