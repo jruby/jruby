@@ -764,11 +764,10 @@ public final class ThreadContext {
         // MRI started returning [] instead of nil some time after 1.9 (#4891)
         if (traceLength < 0) return runtime.newEmptyArray();
 
-        final RubyClass stringClass = runtime.getString();
         final IRubyObject[] traceArray = new IRubyObject[traceLength];
 
         for (int i = 0; i < traceLength; i++) {
-            traceArray[i] = new RubyString(runtime, stringClass, fullTrace[i + level].mriStyleString());
+            traceArray[i] = fullTrace[i + level].to_s_mri(this);
         }
 
         RubyArray backTrace = RubyArray.newArrayMayCopy(runtime, traceArray);

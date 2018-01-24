@@ -62,14 +62,14 @@ public class TraceType {
         return format.printBacktrace(exception, console);
     }
 
-    public static void logBacktrace(RubyStackTraceElement[] trace) {
+    public static void logBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {
         if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
 
         final StringBuilder buffer = new StringBuilder(64 + trace.length * 48);
 
         buffer.append("Backtrace generated:\n");
 
-        renderBacktraceJRuby(trace, buffer, false);
+        renderBacktraceJRuby(runtime, trace, buffer, false);
 
         // NOTE: other logXxx method do not remove the new-line
         // ... but if this is desired they should do so as well
@@ -246,7 +246,7 @@ public class TraceType {
             BacktraceData data = getBacktraceData(context, Thread.currentThread().getStackTrace(), nativeException);
 
             context.runtime.incrementBacktraceCount();
-            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(data.getBacktrace(context.runtime));
+            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(context.runtime, data.getBacktrace(context.runtime));
 
             return data;
         }
@@ -269,7 +269,7 @@ public class TraceType {
             BacktraceData data = useGather.getBacktraceData(context, javaTrace, false);
 
             context.runtime.incrementBacktraceCount();
-            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(data.getBacktrace(context.runtime));
+            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(context.runtime, data.getBacktrace(context.runtime));
 
             return data;
         }
@@ -300,7 +300,7 @@ public class TraceType {
             }
 
             public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
-                renderBacktraceJRuby(elts, buffer, color);
+                renderBacktraceJRuby(null, elts, buffer, color);
             }
         };
 
@@ -385,14 +385,14 @@ public class TraceType {
     private static final String EVAL_COLOR = "\033[0;33m";
     private static final String CLEAR_COLOR = "\033[0m";
 
-    public static String printBacktraceJRuby(RubyStackTraceElement[] frames, String type, String message, boolean color) {
+    public static String printBacktraceJRuby(Ruby runtime, RubyStackTraceElement[] frames, String type, String message, boolean color) {
         if (frames == null) frames = RubyStackTraceElement.EMPTY_ARRAY;
 
         StringBuilder buffer = new StringBuilder(64 + frames.length * 48);
 
         buffer.append(type).append(": ").append(message).append('\n');
 
-        renderBacktraceJRuby(frames, buffer, color);
+        renderBacktraceJRuby(runtime, frames, buffer, color);
 
         return buffer.toString();
     }
@@ -410,11 +410,10 @@ public class TraceType {
         }
         String type = exception.getMetaClass().getName();
 
-        RubyStackTraceElement[] frames = exception.getBacktraceElements();
-        return printBacktraceJRuby(frames, type, message, color);
+        return printBacktraceJRuby(exception.getRuntime(), exception.getBacktraceElements(), type, message, color);
     }
 
-    private static void renderBacktraceJRuby(RubyStackTraceElement[] frames, StringBuilder buffer, boolean color) {
+    private static void renderBacktraceJRuby(Ruby runtime, RubyStackTraceElement[] frames, StringBuilder buffer, boolean color) {
         // find longest method name
         int longestMethod = 0;
         for (RubyStackTraceElement frame : frames) {
@@ -438,7 +437,7 @@ public class TraceType {
             buffer.append("  ");
 
             // method name
-            String methodName = frame.getMethodName();
+            String methodName = runtime == null ? frame.getMethodName() : runtime.newSymbol(frame.getMethodName()).toString();
             for (int j = 0; j < longestMethod - methodName.length(); j++) {
                 buffer.append(' ');
             }
