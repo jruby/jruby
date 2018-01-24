@@ -2185,8 +2185,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int fd = -1;
 
         if (fptr == null || (fd = fptr.fd().realFileno) == -1
-                || !posix.isNative()) {
-            runtime.getWarnings().warning("close_on_exec is not implemented for this stream type: " + fptr.fd().ch.getClass().getSimpleName());
+                || !posix.isNative() || Platform.IS_WINDOWS ) {
+            runtime.getWarnings().warning("close_on_exec is not implemented on this platform for this stream type: " + fptr.fd().ch.getClass().getSimpleName());
             return context.nil;
         }
 
