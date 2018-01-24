@@ -744,7 +744,6 @@ public class RubyRational extends RubyNumeric {
         return op_mod19(context, other);
     }
 
-    @JRubyMethod(name = {"modulo", "%"})
     public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
 
