@@ -2439,12 +2439,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "fcntl")
     public IRubyObject fcntl(ThreadContext context, IRubyObject cmd) {
-        return ctl(context.runtime, cmd, null);
+        return ctl(context, cmd, null);
     }
 
     @JRubyMethod(name = "fcntl")
     public IRubyObject fcntl(ThreadContext context, IRubyObject cmd, IRubyObject arg) {
-        return ctl(context.runtime, cmd, arg);
+        return ctl(context, cmd, arg);
     }
 
     @JRubyMethod(name = "ioctl", required = 1, optional = 1)
@@ -2458,10 +2458,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
             arg = context.runtime.getNil();
         }
 
-        return ctl(context.runtime, cmd, arg);
+        return ctl(context, cmd, arg);
     }
 
-    private IRubyObject ctl(Ruby runtime, IRubyObject cmd, IRubyObject arg) {
+    private IRubyObject ctl(ThreadContext context, IRubyObject cmd, IRubyObject arg) {
+        Ruby runtime = context.runtime;
         long realCmd = cmd.convertToInteger().getLongValue();
         long nArg = 0;
 
@@ -2494,25 +2495,31 @@ public class RubyIO extends RubyObject implements IOEncodable {
         //   for mode changes which should persist across fork() boundaries.  Since JVM has no fork
         //   this is not a problem for us.
         if (realCmd == FcntlLibrary.FD_CLOEXEC) {
-            close_on_exec_set(runtime.getCurrentContext(), runtime.getTrue());
+            close_on_exec_set(context, runtime.getTrue());
         } else if (realCmd == Fcntl.F_SETFD.intValue()) {
             if (arg != null && (nArg & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC) {
-                close_on_exec_set(runtime.getCurrentContext(), arg);
+                close_on_exec_set(context, arg);
             } else {
                 throw runtime.newNotImplementedError("F_SETFD only supports FD_CLOEXEC");
             }
         } else if (realCmd == Fcntl.F_GETFD.intValue()) {
-            return runtime.newFixnum(close_on_exec_p(runtime.getCurrentContext()).isTrue() ? FD_CLOEXEC : 0);
+            return runtime.newFixnum(close_on_exec_p(context).isTrue() ? FD_CLOEXEC : 0);
         } else if (realCmd == Fcntl.F_SETFL.intValue()) {
             if ((nArg & OpenFlags.O_NONBLOCK.intValue()) != 0) {
-                boolean block = (nArg & ModeFlags.NONBLOCK) != ModeFlags.NONBLOCK;
-
-                fptr.setBlocking(runtime, block);
+                fptr.setBlocking(runtime, true);
             } else {
-                throw runtime.newNotImplementedError("F_SETFL only supports O_NONBLOCK");
+                fptr.setBlocking(runtime, false);
+            }
+
+            if ((nArg & OpenFlags.O_CLOEXEC.intValue()) != 0) {
+                close_on_exec_set(context, context.tru);
+            } else {
+                close_on_exec_set(context, context.fals);
             }
         } else if (realCmd == Fcntl.F_GETFL.intValue()) {
-            return fptr.isBlocking() ? RubyFixnum.zero(runtime) : RubyFixnum.newFixnum(runtime, ModeFlags.NONBLOCK);
+            return runtime.newFixnum(
+                    (fptr.isBlocking() ? 0 : OpenFlags.O_NONBLOCK.intValue()) |
+                            (close_on_exec_p(context).isTrue() ? FD_CLOEXEC : 0));
         } else {
             throw runtime.newNotImplementedError("JRuby only supports F_SETFL and F_GETFL with NONBLOCK for fcntl/ioctl");
         }
