@@ -365,10 +365,6 @@ public class RubyRational extends RubyNumeric {
             a1 = f_to_r(context, a1);
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
-        } else {
-            if (a1 instanceof RubyObject && responds_to_to_r(context, a1)) {
-                a1 = f_to_r(context, a1);
-            }
         }
         
         if (a2 instanceof RubyFloat) {
@@ -382,7 +378,9 @@ public class RubyRational extends RubyNumeric {
         }
 
         if (a2.isNil()) {
-            if (a1 instanceof RubyNumeric && !f_integer_p(context, a1).isTrue()) return a1;
+            if (!(a1 instanceof RubyNumeric && f_integer_p(context, a1).isTrue())) {
+                return TypeConverter.convertToType(a1, context.getRuntime().getRational(), "to_r");
+            }
             return newInstance(context, recv, a1);
         } else {
             if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
