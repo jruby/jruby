@@ -37,6 +37,7 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -249,10 +250,10 @@ public class RubyMethod extends AbstractRubyMethod {
         str.catString(getType().getName()).catString(": ");
 
         RubyModule definedClass;
-        RubyModule mklass = method.getImplementationClass();
+        RubyModule mklass = originModule;
 
-        if (method instanceof AliasMethod) {
-            definedClass = method.getRealMethod().getImplementationClass();
+        if (method instanceof AliasMethod || method instanceof WrapperMethod) {
+            definedClass = method.getRealMethod().getDefinedClass();
         }
         else {
             definedClass = method.getDefinedClass();
@@ -262,10 +263,10 @@ public class RubyMethod extends AbstractRubyMethod {
             definedClass = definedClass.getMetaClass();
         }
 
-        if (implementationModule.isSingleton()) {
-            IRubyObject attached = ((MetaClass) implementationModule).getAttached();
+        if (mklass.isSingleton()) {
+            IRubyObject attached = ((MetaClass) mklass).getAttached();
             if (receiver == null) {
-                str.cat19(inspect(context, implementationModule).convertToString());
+                str.cat19(inspect(context, mklass).convertToString());
             } else if (receiver == attached) {
                 str.cat19(inspect(context, attached).convertToString());
                 sharp = ".";
@@ -277,10 +278,10 @@ public class RubyMethod extends AbstractRubyMethod {
                 sharp = ".";
             }
         } else {
-            str.catString(originModule.getName());
-            if (implementationModule != originModule) {
+            str.catString(mklass.getName());
+            if (definedClass != mklass) {
                 str.catString("(");
-                str.catString(implementationModule.getName());
+                str.catString(definedClass.getName());
                 str.catString(")");
             }
         }
