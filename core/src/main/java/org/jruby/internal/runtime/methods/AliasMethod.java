@@ -50,52 +50,52 @@ public class AliasMethod extends DynamicMethod {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused) {
         return oldMethod.call(context, self, klazz, name);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg) {
         return oldMethod.call(context, self, klazz, name, arg);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2) {
         return oldMethod.call(context, self, klazz, name, arg1, arg2);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         return oldMethod.call(context, self, klazz, name, arg1, arg2, arg3);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args) {
         return oldMethod.call(context, self, klazz, name, args);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, Block block) {
         return oldMethod.call(context, self, klazz, name, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, Block block) {
         return oldMethod.call(context, self, klazz, name, arg1, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, Block block) {
         return oldMethod.call(context, self, klazz, name, arg1, arg2, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         return oldMethod.call(context, self, klazz, name, arg1, arg2, arg3, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args, Block block) {
         return oldMethod.call(context, self, klazz, name, args, block);
     }
 
