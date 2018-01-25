@@ -2823,6 +2823,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             RubySymbol each = runtime.newSymbol("each");
             for (int i = 0; i < args.length; i++) {
                 IRubyObject arg = args[i];
+                if (!arg.respondsTo("each")) throw runtime.newTypeError(arg, "must respond to :each");
                 newArgs[i] = to_enum.call(context, arg, arg, each);
             }
         }
