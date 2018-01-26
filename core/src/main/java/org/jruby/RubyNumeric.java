@@ -61,6 +61,7 @@ import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.f_to_r;
 
 /**
  * Base class for all numerical types in ruby.
@@ -1183,21 +1184,21 @@ public class RubyNumeric extends RubyObject {
         return sites(context).op_equals.call(context, other, other, this);
     }
 
-    /** num_numerator
+    /** numeric_numerator
      *
      */
     @JRubyMethod(name = "numerator")
     public IRubyObject numerator(ThreadContext context) {
-        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        IRubyObject rational = f_to_r(context, this);
         return sites(context).numerator.call(context, rational, rational);
     }
 
-    /** num_denominator
+    /** numeric_denominator
      *
      */
     @JRubyMethod(name = "denominator")
     public IRubyObject denominator(ThreadContext context) {
-        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        IRubyObject rational = f_to_r(context, this);
         return sites(context).denominator.call(context, rational, rational);
     }
 
