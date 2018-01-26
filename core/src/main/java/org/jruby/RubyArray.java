@@ -3329,6 +3329,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         RubyHash hash = makeHash(context, block);
         if (realLength == hash.size()) return context.runtime.getNil();
 
+        // after evaluating the block, a new modify check is needed
+        modifyCheck();
+
         // TODO: (CON) This could be a no-op for packed arrays if size does not change
         unpack();
 
