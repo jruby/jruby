@@ -1184,7 +1184,7 @@ public class RubyNumeric extends RubyObject {
         return sites(context).op_equals.call(context, other, other, this);
     }
 
-    /** num_numerator
+    /** numeric_numerator
      *
      */
     @JRubyMethod(name = "numerator")
@@ -1193,7 +1193,7 @@ public class RubyNumeric extends RubyObject {
         return sites(context).numerator.call(context, rational, rational);
     }
 
-    /** num_denominator
+    /** numeric_denominator
      *
      */
     @JRubyMethod(name = "denominator")
