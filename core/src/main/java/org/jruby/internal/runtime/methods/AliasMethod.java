@@ -45,7 +45,7 @@ public class AliasMethod extends DynamicMethod {
     private String oldName;
 
     public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, String oldName) {
-        super(implementationClass, oldMethod.getVisibility());
+        super(implementationClass, oldMethod.getVisibility(), oldName);
 
         this.oldName = oldName;
         this.oldMethod = oldMethod;

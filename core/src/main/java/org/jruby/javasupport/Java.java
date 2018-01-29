@@ -1092,7 +1092,7 @@ public class Java implements Library {
     static final class ProcToInterface extends org.jruby.internal.runtime.methods.DynamicMethod {
 
         ProcToInterface(final RubyClass singletonClass) {
-            super(singletonClass, PUBLIC);
+            super(singletonClass, PUBLIC, "call");
         }
 
         @Override // method_missing impl :

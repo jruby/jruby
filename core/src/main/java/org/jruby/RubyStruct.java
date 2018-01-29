@@ -225,8 +225,9 @@ public class RubyStruct extends RubyObject {
             final String memberName = args[i].asJavaString();
             // if we are storing a name as well, index is one too high for values
             final int index = (name == null && !nilName) ? i : i - 1;
-            newStruct.addMethod(memberName, new Accessor(newStruct, index));
-            newStruct.addMethod(memberName + '=', new Mutator(newStruct, index));
+            newStruct.addMethod(memberName, new Accessor(newStruct, memberName, index));
+            String nameAsgn = memberName + '=';
+            newStruct.addMethod(nameAsgn, new Mutator(newStruct, nameAsgn, index));
         }
 
         if (block.isGiven()) {
@@ -765,8 +766,8 @@ public class RubyStruct extends RubyObject {
     private static class Accessor extends DynamicMethod {
         private final int index;
 
-        public Accessor(RubyClass newStruct, int index) {
-            super(newStruct, Visibility.PUBLIC);
+        public Accessor(RubyClass newStruct, String name, int index) {
+            super(newStruct, Visibility.PUBLIC, name);
             this.index = index;
         }
 
@@ -783,15 +784,15 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public DynamicMethod dup() {
-            return new Accessor((RubyClass) getImplementationClass(), index);
+            return new Accessor((RubyClass) getImplementationClass(), name, index);
         }
     }
 
     private static class Mutator extends DynamicMethod {
         private final int index;
 
-        public Mutator(RubyClass newStruct, int index) {
-            super(newStruct, Visibility.PUBLIC);
+        public Mutator(RubyClass newStruct, String name, int index) {
+            super(newStruct, Visibility.PUBLIC, name);
             this.index = index;
         }
 
@@ -808,7 +809,7 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public DynamicMethod dup() {
-            return new Accessor((RubyClass) getImplementationClass(), index);
+            return new Mutator((RubyClass) getImplementationClass(), name, index);
         }
     }
 

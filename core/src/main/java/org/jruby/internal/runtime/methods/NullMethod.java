@@ -48,6 +48,7 @@ public class NullMethod extends DynamicMethod {
      * Constructor for the one NullMethod instance.
      */
     private NullMethod() {
+        super("null");
     }
 
     /**
