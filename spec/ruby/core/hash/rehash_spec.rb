@@ -43,11 +43,11 @@ describe "Hash#rehash" do
     h[a] = true
     h[b] = true
     b << 2
-    h.length.should == 2
-    h.keys == [a, b]
+    h.size.should == 2
+    h.keys.should == [a, b]
     h.rehash
-    h.length.should == 1
-    h.keys == [a]
+    h.size.should == 1
+    h.keys.should == [a]
   end
 
   it "raises a #{frozen_error_class} if called on a frozen instance" do

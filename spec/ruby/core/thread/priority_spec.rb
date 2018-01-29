@@ -64,8 +64,9 @@ describe "Thread#priority=" do
   end
 
   it "sets priority even when the thread has died" do
-    @thread.join
-    @thread.priority = 3
-    @thread.priority.should == 3
+    thread = Thread.new {}
+    thread.join
+    thread.priority = 3
+    thread.priority.should == 3
   end
 end
