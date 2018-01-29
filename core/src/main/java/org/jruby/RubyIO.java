@@ -1450,6 +1450,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return write(context, str, false);
     }
 
+    @JRubyMethod(name = "write", rest = true)
+    public IRubyObject write(ThreadContext context, IRubyObject[] args) {
+        long bytes = Arrays.stream(args)
+            .map(s -> write(context, s, false))
+            .map(n -> RubyNumeric.num2long(n))
+            .reduce(0l, (x, y) -> x + y);
+        return RubyFixnum.newFixnum(context.runtime, bytes);
+    }
+
     // io_write
     public IRubyObject write(ThreadContext context, IRubyObject str, boolean nosync) {
         Ruby runtime = context.runtime;
