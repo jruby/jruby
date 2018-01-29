@@ -76,31 +76,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     public HandleMethod(
             RubyModule implementationClass,
             Visibility visibility,
-            long encodedSignature,
-            boolean builtin,
-            boolean notImplemented,
-            String parameterDesc,
-            final int min,
-            final int max,
-            final Callable<MethodHandle>... makers) {
-
-        super(implementationClass, visibility);
-        this.signature = Signature.decode(encodedSignature);
-        this.builtin = builtin;
-        this.notImplemented = notImplemented;
-        this.parameterDesc = parameterDesc;
-        this.min = min;
-        this.max = max;
-        this.maker0 = makers[0];
-        this.maker1 = makers[1];
-        this.maker2 = makers[2];
-        this.maker3 = makers[3];
-        this.maker4 = makers[4];
-    }
-
-    public HandleMethod(
-            RubyModule implementationClass,
-            Visibility visibility,
+            String name,
             long encodedSignature,
             boolean builtin,
             boolean notImplemented,
@@ -113,7 +89,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
             final Callable<MethodHandle> maker3,
             final Callable<MethodHandle> maker4) {
 
-        super(implementationClass, visibility);
+        super(implementationClass, visibility, name);
         this.signature = Signature.decode(encodedSignature);
         this.builtin = builtin;
         this.notImplemented = notImplemented;
@@ -284,7 +260,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
 
     @Override
     public DynamicMethod dup() {
-        return new HandleMethod(implementationClass, getVisibility(), signature.encode(), builtin, notImplemented, parameterDesc, min, max, maker0, maker1, maker2, maker3, maker4);
+        return new HandleMethod(implementationClass, getVisibility(), name, signature.encode(), builtin, notImplemented, parameterDesc, min, max, maker0, maker1, maker2, maker3, maker4);
     }
 
     @Override

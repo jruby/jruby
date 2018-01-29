@@ -65,25 +65,12 @@ public abstract class DynamicMethod {
     /** Flags for builtin, notimpl, etc */
     protected byte flags;
     /** The simple, base name this method was defined under. May be null.*/
-    protected String name;
+    protected final String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
 
     private static final int BUILTIN_FLAG = 0x1;
     private static final int NOTIMPL_FLAG = 0x2;
-
-    /**
-     * Base constructor for dynamic method handles.
-     *
-     * @param implementationClass The class to which this method will be
-     * immediately bound
-     * @param visibility The visibility assigned to this method
-     * pre/post invocation logic.
-     */
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
-        assert implementationClass != null;
-        init(implementationClass, visibility);
-    }
 
     /**
      * Base constructor for dynamic method handles with names.
@@ -94,15 +81,19 @@ public abstract class DynamicMethod {
      * @param name The simple name of this method
      */
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, String name) {
-        this(implementationClass, visibility);
+        assert implementationClass != null;
+        assert name != null;
         this.name = name;
+        init(implementationClass, visibility);
     }
 
     /**
      * A no-arg constructor used only by the UndefinedMethod subclass and
      * CompiledMethod handles. instanceof assertions make sure this is so.
      */
-    protected DynamicMethod() {
+    protected DynamicMethod(String name) {
+        this.visibility = (byte) Visibility.PUBLIC.ordinal();
+        this.name = name;
 //        assert (this instanceof UndefinedMethod ||
 //                this instanceof CompiledMethod ||
 //                this instanceof );
@@ -495,15 +486,6 @@ public abstract class DynamicMethod {
     }
 
     /**
-     * Set the base name for this method.
-     *
-     * @param name the name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
      * Get the "handle" associated with this DynamicMethod.
      * 
      * @return the handle
@@ -570,5 +552,13 @@ public abstract class DynamicMethod {
 
     @Deprecated
     public void setCallConfig(CallConfiguration callConfig) {
+    }
+
+    /**
+     * @deprecated Use {@link DynamicMethod#DynamicMethod(RubyModule, Visibility, String)}
+     */
+    @Deprecated
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
+        this(implementationClass, visibility, "(anonymous)");
     }
 }

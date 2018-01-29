@@ -80,7 +80,6 @@ public abstract class AbstractInvoker extends Pointer {
     public IRubyObject attach(ThreadContext context, IRubyObject obj, IRubyObject methodName) {
         
         DynamicMethod m = createDynamicMethod(obj.getSingletonClass());
-        m.setName(methodName.asJavaString());
         obj.getSingletonClass().addMethod(methodName.asJavaString(), m);
         if (obj instanceof RubyModule) {
             ((RubyModule) obj).addMethod(methodName.asJavaString(), m);

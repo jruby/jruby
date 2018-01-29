@@ -53,9 +53,9 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
      * Constructor for ProcMethod.
      * @param visibility
      */
-    public ProcMethod(RubyModule implementationClass, RubyProc proc, Visibility visibility) {
+    public ProcMethod(RubyModule implementationClass, RubyProc proc, Visibility visibility, String name) {
         // FIXME: set up a call configuration for this
-        super(implementationClass, visibility);
+        super(implementationClass, visibility, name);
         this.proc = proc;
     }
 
@@ -64,7 +64,7 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
     }
     
     public DynamicMethod dup() {
-        return new ProcMethod(getImplementationClass(), proc, getVisibility());
+        return new ProcMethod(getImplementationClass(), proc, getVisibility(), name);
     }
 
     // TODO: Push isSame up to DynamicMethod to simplify general equality

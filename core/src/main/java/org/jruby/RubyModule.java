@@ -1212,11 +1212,6 @@ public class RubyModule extends RubyObject {
             method.setImplementationClass(methodLocation);
         }
 
-        // if method does not have a name already, set it
-        if (method.getName() == null) {
-            method.setName(name);
-        }
-
         methodLocation.getMethodsForWrite().put(name, method);
 
         getRuntime().addProfiledMethod(name, method);
@@ -2064,7 +2059,7 @@ public class RubyModule extends RubyObject {
         // a method definition.
         block.getBody().getStaticScope().makeArgumentScope();
 
-        return new ProcMethod(this, proc, visibility);
+        return new ProcMethod(this, proc, visibility, name);
     }
 
     public IRubyObject name() {

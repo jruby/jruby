@@ -39,7 +39,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -50,7 +49,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
@@ -62,7 +60,11 @@ import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.util.Numeric.*;
+import static org.jruby.util.Numeric.f_abs;
+import static org.jruby.util.Numeric.f_arg;
+import static org.jruby.util.Numeric.f_mul;
+import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.f_to_r;
 
 /**
  * Base class for all numerical types in ruby.
@@ -1236,21 +1238,21 @@ public class RubyNumeric extends RubyObject {
         return numFuncall(context, other, sites(context).op_equals, this);
     }
 
-    /** num_numerator
+    /** numeric_numerator
      *
      */
     @JRubyMethod(name = "numerator")
     public IRubyObject numerator(ThreadContext context) {
-        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        IRubyObject rational = f_to_r(context, this);
         return sites(context).numerator.call(context, rational, rational);
     }
 
-    /** num_denominator
+    /** numeric_denominator
      *
      */
     @JRubyMethod(name = "denominator")
     public IRubyObject denominator(ThreadContext context) {
-        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        IRubyObject rational = f_to_r(context, this);
         return sites(context).denominator.call(context, rational, rational);
     }
 

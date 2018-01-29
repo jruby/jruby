@@ -298,6 +298,7 @@ public class Helpers {
         private final Visibility lastVisibility;
 
         public MethodMissingMethod(DynamicMethod delegate, Visibility lastVisibility, CallType lastCallStatus) {
+            super(delegate.getImplementationClass(), lastVisibility, delegate.getName());
             this.delegate = delegate;
             this.lastCallStatus = lastCallStatus;
             this.lastVisibility = lastVisibility;

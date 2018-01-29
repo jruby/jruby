@@ -92,8 +92,6 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         super(implementationClass, visibility, name);
     }
 
-    protected JavaMethod() {}
-
     public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope) {
         this.staticScope = staticScope;
         setArity(arity);

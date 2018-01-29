@@ -97,7 +97,7 @@ public abstract class IOChannel implements Channel {
         ByteList buffer;
 
         if (src.hasArray()) {
-            buffer = new ByteList(src.array(), src.position(), src.remaining(), false);
+            buffer = new ByteList(src.array(), src.position(), src.remaining(), true);
         } else {
             buffer = new ByteList(src.remaining());
             buffer.append(src, src.remaining());
