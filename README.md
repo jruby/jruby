@@ -1,6 +1,7 @@
 # JRuby - an implementation of the Ruby language on the JVM
 
 Master: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=master)](https://travis-ci.org/jruby/jruby)
+9.1 branch: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=jruby-9.1)](https://travis-ci.org/jruby/jruby/branches)
 1.7 branch: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=jruby-1_7)](https://travis-ci.org/jruby/jruby/branches)
 
 ## About
