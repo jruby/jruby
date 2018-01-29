@@ -767,7 +767,7 @@ public final class ThreadContext {
         final IRubyObject[] traceArray = new IRubyObject[traceLength];
 
         for (int i = 0; i < traceLength; i++) {
-            traceArray[i] = fullTrace[i + level].to_s_mri(this);
+            traceArray[i] = RubyStackTraceElement.to_s_mri(this, fullTrace[i + level]);
         }
 
         RubyArray backTrace = RubyArray.newArrayMayCopy(runtime, traceArray);
@@ -861,7 +861,7 @@ public final class ThreadContext {
 
         if (javaStackTrace == null || javaStackTrace.length == 0) return "";
 
-        return TraceType.printBacktraceJRuby(
+        return TraceType.printBacktraceJRuby(null,
                 new BacktraceData(javaStackTrace, BacktraceElement.EMPTY_ARRAY, true, false, false).getBacktraceWithoutRuby(),
                 ex.getClass().getName(),
                 ex.getLocalizedMessage(),
