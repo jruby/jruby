@@ -71,6 +71,7 @@ public class OpenFile implements Finalizable {
     public static final int TRUNC              = 0x00000800;
     public static final int TEXTMODE           = 0x00001000;
     public static final int SETENC_BY_BOM      = 0x00100000;
+    public static final int TMPFILE            = 0x00410000;
     public static final int PREP         = (1<<16);
 
     public static final int SYNCWRITE = SYNC | WRITABLE;

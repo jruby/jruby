@@ -455,6 +455,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
+        if ((openFile.getMode() & OpenFile.TMPFILE) != 0) {
+            throw context.runtime.newIOError("File is unnamed (TMPFILE?)");
+        }
         IRubyObject newPath = context.runtime.getNil();
         final String path = getPath();
         if (path != null) {

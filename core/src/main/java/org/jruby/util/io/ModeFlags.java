@@ -73,6 +73,7 @@ public class ModeFlags implements Cloneable {
     public static final int NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
     /** binary flag, to ensure no encoding changes are made while writing */
     public static final int BINARY = OpenFlags.O_BINARY.intValue();
+    public static final int TMPFILE = OpenFlags.O_TMPFILE.intValue();
     /** textmode flag, MRI has no equivalent but we use ModeFlags currently
      * to also capture what are oflags.
      */
@@ -272,6 +273,15 @@ public class ModeFlags implements Cloneable {
     }
     
     /**
+     * Whether the flags specify "unnamed temporary".
+     *
+     * @return true if unnamed temporary mode, false otherwise
+     */
+    public boolean isTemporary() {
+        return (flags & TMPFILE) != 0;
+    }
+
+    /**
      * Whether the flags specify to create nonexisting files.
      * 
      * @return true if nonexisting files should be created, false otherwise
@@ -347,6 +357,7 @@ public class ModeFlags implements Cloneable {
         if (isExclusive()) buf.append("EXCLUSIVE ");
         if (isReadOnly()) buf.append("READONLY ");
         if (isText()) buf.append("TEXT ");
+        if (isTemporary()) buf.append("TMPFILE ");
         if (isTruncate()) buf.append("TRUNCATE ");
         if (isWritable()) {
             if (isReadable()) {
@@ -395,6 +406,9 @@ public class ModeFlags implements Cloneable {
         }
         if ((flags & BINARY) == BINARY) {
             fmodeFlags |= OpenFile.BINMODE;
+        }
+        if ((flags & TMPFILE) == TMPFILE) {
+            fmodeFlags |= OpenFile.TMPFILE;
         }
 
         // This is unique to us to keep bridge betweeen mode_flags and oflags
