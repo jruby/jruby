@@ -85,7 +85,7 @@ public class RubyStackTraceElement implements java.io.Serializable {
         line.cat(element.getFileName().getBytes());
         line.cat(CommonByteLists.COLON);
         line.append(context.runtime.newFixnum(element.getLineNumber()));
-        line.cat(CommonByteLists.SINGLE_QUOTE);
+        line.cat(CommonByteLists.BACKTRACE_IN);
         line.cat(methodSym.getBytes());
         line.cat(new byte[] {'\''});
 
