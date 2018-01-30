@@ -1275,11 +1275,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public boolean equals(Object other) {
         if (this == other) return true;
 
-        if (other instanceof RubyString) {
-            if (((RubyString) other).value.equal(value)) return true;
-        }
+        return (other instanceof RubyString) && equals((RubyString) other);
+    }
 
-        return false;
+    private boolean equals(RubyString other) {
+        return ((RubyString) other).value.equal(value);
     }
 
     /** rb_obj_as_string
@@ -1582,61 +1582,61 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return initialize(context, arg0);
     }
 
-    public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
-        return casecmp19(context, other);
+    @Deprecated
+    public IRubyObject casecmp19(ThreadContext context, IRubyObject other) {
+        return casecmp(context, other);
     }
 
     @JRubyMethod(name = "casecmp")
-    public IRubyObject casecmp19(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
+    public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
         RubyString otherStr = other.convertToString();
         Encoding enc = StringSupport.areCompatible(this, otherStr);
-        if (enc == null) return runtime.getNil();
+        if (enc == null) return context.nil;
 
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
-            return RubyFixnum.newFixnum(runtime, value.caseInsensitiveCmp(otherStr.value));
-        } else {
-            final int ret = StringSupport.multiByteCasecmp(enc, value, otherStr.value);
-
-            if (ret < 0) {
-                return RubyFixnum.minus_one(runtime);
-            }
-
-            if (ret > 0) {
-                return RubyFixnum.one(runtime);
-            }
-
-            return RubyFixnum.zero(runtime);
+            return RubyFixnum.newFixnum(context.runtime, value.caseInsensitiveCmp(otherStr.value));
         }
+
+        final int ret = StringSupport.multiByteCasecmp(enc, value, otherStr.value);
+
+        if (ret < 0) {
+            return RubyFixnum.minus_one(context.runtime);
+        }
+
+        if (ret > 0) {
+            return RubyFixnum.one(context.runtime);
+        }
+
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod(name = "casecmp?")
     public IRubyObject casecmp_p(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
         RubyString otherStr = other.convertToString();
 
         Encoding enc = StringSupport.areCompatible(this, otherStr);
-        if (enc == null) return runtime.getNil();
+        if (enc == null) return context.nil;
 
-        RubyString downcasedString = this.downcase19(context);
-        RubyString otherDowncasedString = otherStr.downcase19(context);
+        RubyString downcasedString = this.downcase(context);
+        RubyString otherDowncasedString = otherStr.downcase(context);
         return downcasedString.equals(otherDowncasedString) ? context.runtime.getTrue() : context.runtime.getFalse();
     }
 
     /** rb_str_match
      *
      */
-    @Override
-    public IRubyObject op_match(ThreadContext context, IRubyObject other) {
-        return op_match19(context, other);
-    }
 
     @JRubyMethod(name = "=~", writes = BACKREF)
     @Override
-    public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
         if (other instanceof RubyString) throw context.runtime.newTypeError("type mismatch: String given");
         return sites(context).op_match.call(context, other, other, this);
+    }
+
+    @Deprecated
+    public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
+        return op_match(context, other);
     }
     /**
      * String#match(pattern)
@@ -1867,62 +1867,61 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
     }
 
+    @Deprecated
+    public RubyString downcase19(ThreadContext context) {
+        return downcase(context);
+    }
+
+    @Deprecated
+    public IRubyObject downcase_bang19(ThreadContext context) {
+        return downcase_bang(context);
+    }
+
     /** rb_str_downcase / rb_str_downcase_bang
      *
      */
-    @Deprecated
-    public RubyString downcase(ThreadContext context) {
-        return downcase19(context);
-    }
-
-    @Deprecated
-    public IRubyObject downcase_bang(ThreadContext context) {
-        return downcase_bang19(context);
-    }
 
     @JRubyMethod(name = "downcase")
-    public RubyString downcase19(ThreadContext context) {
+    public RubyString downcase(ThreadContext context) {
         RubyString str = strDup(context.runtime);
-        str.downcase_bang19(context);
+        str.downcase_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "downcase!")
-    public IRubyObject downcase_bang19(ThreadContext context) {
-        Ruby runtime = context.runtime;
+    public IRubyObject downcase_bang(ThreadContext context) {
         Encoding enc = checkDummyEncoding();
 
         if (value.getRealSize() == 0) {
             modifyCheck();
-            return runtime.getNil();
+            return context.nil;
         }
 
         modifyAndKeepCodeRange();
 
         int s = value.getBegin();
         int end = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
 
         if (singleByteOptimizable(enc)) {
-            return singleByteDowncase(runtime, bytes, s, end);
-        } else {
-            return multiByteDowncase(runtime, enc, bytes, s, end);
+            return singleByteDowncase(context, bytes, s, end);
         }
+        return multiByteDowncase(context, enc, bytes, s, end);
     }
 
-    private IRubyObject singleByteDowncase(Ruby runtime, byte[]bytes, int s, int end) {
+    private IRubyObject singleByteDowncase(ThreadContext context, byte[] bytes, int s, int end) {
         boolean modify = StringSupport.singleByteDowncase(bytes, s, end);
 
-        return modify ? this : runtime.getNil();
+        return modify ? this : context.nil;
     }
 
-    private IRubyObject multiByteDowncase(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+    private IRubyObject multiByteDowncase(ThreadContext context, Encoding enc, byte[] bytes, int s, int end) {
         try {
             boolean modify = StringSupport.multiByteDowncase(enc, bytes, s, end);
 
-            return modify ? this : runtime.getNil();
+            return modify ? this : context.nil;
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw context.runtime.newArgumentError(e.getMessage());
         }
     }
 

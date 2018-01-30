@@ -385,7 +385,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
 
-        return !(other instanceof RubySymbol) ? runtime.getNil() :
+        return !(other instanceof RubySymbol) ? context.nil :
                 newShared(runtime).op_cmp(context, ((RubySymbol)other).newShared(runtime));
     }
 
@@ -393,22 +393,22 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
 
-        return !(other instanceof RubySymbol) ? runtime.getNil() :
-                newShared(runtime).casecmp19(context, ((RubySymbol) other).newShared(runtime));
+        return !(other instanceof RubySymbol) ? context.nil :
+                newShared(runtime).casecmp(context, ((RubySymbol) other).newShared(runtime));
     }
 
     @JRubyMethod(name = "casecmp?")
     public IRubyObject casecmp_p(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
 
-        return !(other instanceof RubySymbol) ? runtime.getNil() :
+        return !(other instanceof RubySymbol) ? context.nil :
             newShared(runtime).casecmp_p(context, ((RubySymbol) other).newShared(runtime));
     }
 
     @JRubyMethod(name = "=~")
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
-        return newShared(context.runtime).op_match19(context, other);
+        return newShared(context.runtime).op_match(context, other);
     }
 
     @JRubyMethod(name = "match")
@@ -467,7 +467,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public IRubyObject downcase(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        return newSymbol(runtime, newShared(runtime).downcase19(context).getByteList());
+        return newSymbol(runtime, newShared(runtime).downcase(context).getByteList());
     }
 
     @JRubyMethod
