@@ -829,10 +829,6 @@ public class RubyRational extends RubyNumeric {
         return f_floor(context, f_div(context, this, other));
     }
 
-    /** nurat_mod
-     * 
-     */
-    @JRubyMethod(name = {"modulo", "%"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
 
