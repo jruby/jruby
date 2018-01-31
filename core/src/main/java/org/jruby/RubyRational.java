@@ -818,10 +818,6 @@ public class RubyRational extends RubyNumeric {
         throw runtime.newTypeError(other.getMetaClass() + " can't be coerced into " + getMetaClass());
     }
 
-    /** nurat_idiv
-     * 
-     */
-    @JRubyMethod(name = "div")
     @Override
     public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
