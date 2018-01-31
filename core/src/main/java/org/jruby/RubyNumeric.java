@@ -953,16 +953,7 @@ public class RubyNumeric extends RubyObject {
             }
         }
         IRubyObject r = UNDEF;
-        try {
-            context.setExceptionRequiresBacktrace(false);
-            r = stepCompareWithZero(context, num);
-        } catch (RaiseException re) {
-        } finally {
-            context.setExceptionRequiresBacktrace(true);
-        }
-        if (r == UNDEF) {
-            coerceFailed(context, num);
-        }
+        r = stepCompareWithZero(context, num);
         return !r.isTrue();
     }
 
