@@ -779,7 +779,82 @@ public class RubyDate extends RubyObject {
         return GJChronology.getInstance(zone, cutover);
     }
 
-    private static final ByteList DEFAULT_FORMAT = new ByteList(new byte[] {'%', 'F'});
+    @Override
+    public final IRubyObject inspect() {
+        return inspect(getRuntime().getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyString inspect(ThreadContext context) {
+        long off = this.off * 86_400;
+        long s = (dt.getHourOfDay() * 60 + dt.getMinuteOfHour()) * 60 + dt.getSecondOfMinute() - off;
+        long ns = (long) ((dt.getMillisOfSecond() + subMillis) * 1_000_000);
+        // TODO ns = ns.to_i if Rational === ns and ns.denominator == 1
+        ByteList str = new ByteList(54); // e.g. #<Date: 2018-01-15 ((2458134j,0s,0n),+0s,2299161j)>
+        str.append('#').append('<');
+        str.append(((RubyString) getMetaClass().to_s()).getByteList());
+        str.append(':').append(' ');
+        str.append(to_s(context).getByteList()); // to_s
+        str.append(' ').append('(').append('(');
+        str.append(ConvertBytes.longToByteList(getJulianDayNumber(), 10));
+        str.append('j').append(',');
+        str.append(ConvertBytes.longToByteList(s, 10));
+        str.append('s').append(',');
+        str.append(ConvertBytes.longToByteList(ns, 10));
+        str.append('n').append(')');
+        str.append(',');
+        if (off >= 0) str.append('+');
+        str.append(ConvertBytes.longToByteList(off, 10));
+        str.append('s').append(',');
+        if (start == GREGORIAN) {
+            str.append('-').append('I').append('n').append('f');
+        }
+        else if (start == JULIAN) {
+            str.append('I').append('n').append('f');
+        }
+        else {
+            str.append(ConvertBytes.longToByteList(start, 10));
+        }
+        str.append('j').append(')').append('>');
+
+        return RubyString.newStringLight(context.runtime, str);
+    }
+
+    private static final ByteList TO_S_FORMAT = new ByteList(ByteList.plain("%.4d-%02d-%02d"), false);
+
+    @Override
+    public final IRubyObject to_s() {
+        return to_s(getRuntime().getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyString to_s(ThreadContext context) {
+        // format('%.4d-%02d-%02d', year, mon, mday)
+        IRubyObject[] args = new IRubyObject[] {
+            RubyString.newStringLight(context.runtime, TO_S_FORMAT),
+            year(context), mon(context), mday(context)
+        };
+        return (RubyString) RubyKernel.sprintf(context, this, args);
+    }
+
+    // date/format.rb
+
+    @JRubyMethod // def strftime(fmt='%F')
+    public RubyString strftime(ThreadContext context) {
+        return strftime(context, RubyString.newStringLight(context.runtime, DEFAULT_FORMAT));
+    }
+
+    @JRubyMethod // alias_method :format, :strftime
+    public RubyString strftime(ThreadContext context, IRubyObject fmt) {
+        IRubyObject subMillis = this.subMillis == 0 ? context.nil : RubyFloat.newFloat(context.runtime, this.subMillis);
+        RubyString format = context.getRubyDateFormatter().compileAndFormat(
+                fmt.convertToString(), true, this.dt, 0, subMillis
+        );
+        if (fmt.isTaint()) format.setTaint(true);
+        return format;
+    }
+
+    private static final ByteList DEFAULT_FORMAT = new ByteList(new byte[] {'%', 'F'}, false);
 
     public static IRubyObject _strptime(ThreadContext context, IRubyObject str) {
         return _strptime(context, str, context.runtime.newString(DEFAULT_FORMAT));
