@@ -41,7 +41,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         private final CallSite jcreateSite = MethodIndex.getFunctionalCallSite("__jcreate!");
 
-        InitializeMethod(final RubyClass clazz) { super(clazz, Visibility.PRIVATE); }
+        InitializeMethod(final RubyClass clazz, final String name) { super(clazz, Visibility.PRIVATE, name); }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -177,7 +177,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     }
 
     protected static void initialize(final RubyClass ConcreteJavaProxy) {
-        ConcreteJavaProxy.addMethod("initialize", new InitializeMethod(ConcreteJavaProxy));
+        ConcreteJavaProxy.addMethod("initialize", new InitializeMethod(ConcreteJavaProxy, "initialize"));
         // We define a custom "new" method to ensure that __jcreate! is getting called,
         // so that if the user doesn't call super in their subclasses, the object will
         // still get set up properly. See JRUBY-4704.

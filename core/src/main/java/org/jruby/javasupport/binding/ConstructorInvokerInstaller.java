@@ -39,7 +39,7 @@ public class ConstructorInvokerInstaller extends MethodInstaller {
             proxy.addMethod(name, new ConstructorInvoker(proxy, constructors));
         }
         else { // if there's no constructor, we must prevent construction
-            proxy.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC) {
+            proxy.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, name) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     throw context.runtime.newTypeError("no public constructors for " + clazz);

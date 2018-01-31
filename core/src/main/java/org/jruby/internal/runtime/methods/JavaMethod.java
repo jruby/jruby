@@ -83,19 +83,14 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         {null, null, null, JavaMethodThreeOrNBlock.class},
     };
 
-
-    public JavaMethod(RubyModule implementationClass, Visibility visibility) {
-        this(implementationClass, visibility, CallConfiguration.FrameFullScopeNone);
-    }
-
-    public JavaMethod(RubyModule implementationClass, Visibility visibility, String name) {
-        super(implementationClass, visibility, name);
-    }
-
     public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope) {
         this.staticScope = staticScope;
         setArity(arity);
         super.init(implementationClass, visibility);
+    }
+
+    public JavaMethod(RubyModule implementationClass, Visibility visibility, String name) {
+        super(implementationClass, visibility, name);
     }
 
     public DynamicMethod dup() {
@@ -105,86 +100,6 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         catch (CloneNotSupportedException ex) {
             throw new AssertionError(ex);
         }
-    }
-
-    protected final void preFrameAndScope(ThreadContext context, IRubyObject self, String name, Block block) {
-        context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope);
-    }
-
-    protected final void preFrameAndDummyScope(ThreadContext context, IRubyObject self, String name, Block block) {
-        context.preMethodFrameAndDummyScope(implementationClass, name, self, block, staticScope);
-    }
-
-    protected final void preFrameOnly(ThreadContext context, IRubyObject self, String name, Block block) {
-        context.preMethodFrameOnly(implementationClass, name, self, block);
-    }
-
-    protected final void preScopeOnly(ThreadContext context) {
-        context.preMethodScopeOnly(staticScope);
-    }
-
-    protected final void preNoFrameDummyScope(ThreadContext context) {
-        context.preMethodNoFrameAndDummyScope(staticScope);
-    }
-
-    protected final void preBacktraceOnly(ThreadContext context, String name) {
-        context.preMethodBacktraceOnly(name);
-    }
-
-    protected final void preBacktraceDummyScope(ThreadContext context, String name) {
-        context.preMethodBacktraceDummyScope(name, staticScope);
-    }
-
-    protected final void preBacktraceAndScope(ThreadContext context, String name) {
-        context.preMethodBacktraceAndScope(name, staticScope);
-    }
-
-    protected final void preNoop() {}
-
-    protected final static void postFrameAndScope(ThreadContext context) {
-        context.postMethodFrameAndScope();
-    }
-
-    protected final static void postFrameOnly(ThreadContext context) {
-        context.postMethodFrameOnly();
-    }
-
-    protected final static void postScopeOnly(ThreadContext context) {
-        context.postMethodScopeOnly();
-    }
-
-    protected final static void postNoFrameDummyScope(ThreadContext context) {
-        context.postMethodScopeOnly();
-    }
-
-    protected final static void postBacktraceOnly(ThreadContext context) {
-        context.postMethodBacktraceOnly();
-    }
-
-    protected final static void postBacktraceDummyScope(ThreadContext context) {
-        context.postMethodBacktraceDummyScope();
-    }
-
-    protected final static void postBacktraceAndScope(ThreadContext context) {
-        context.postMethodBacktraceAndScope();
-    }
-
-    protected final static void postNoop(ThreadContext context) {}
-
-    protected final void callTrace(ThreadContext context, boolean enabled, String name) {
-        if (enabled) context.trace(RubyEvent.C_CALL, name, getImplementationClass());
-    }
-
-    protected final void returnTrace(ThreadContext context, boolean enabled, String name) {
-        if (enabled) context.trace(RubyEvent.C_RETURN, name, getImplementationClass());
-    }
-
-    protected final void callTraceCompiled(ThreadContext context, boolean enabled, String name, String file, int line) {
-        if (enabled) context.trace(RubyEvent.CALL, name, getImplementationClass(), file, line);
-    }
-
-    protected final void returnTraceCompiled(ThreadContext context, boolean enabled, String name) {
-        if (enabled) context.trace(RubyEvent.RETURN, name, getImplementationClass());
     }
 
     public void setArity(Arity arity) {
@@ -276,11 +191,12 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement N with block
     public static abstract class JavaMethodNBlock extends JavaMethod {
-        public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility) {
-            super(implementationClass, visibility);
-        }
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
+        }
+        @Deprecated
+        public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
         }
         @Deprecated
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
@@ -295,6 +211,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement zero to N with block
     public static abstract class JavaMethodZeroOrNBlock extends JavaMethodNBlock {
+        public JavaMethodZeroOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -313,6 +233,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrNBlock extends JavaMethodZeroOrNBlock {
+        public JavaMethodZeroOrOneOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -331,6 +255,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrTwoOrNBlock extends JavaMethodZeroOrOneOrNBlock {
+        public JavaMethodZeroOrOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -349,6 +277,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrTwoOrThreeOrNBlock extends JavaMethodZeroOrOneOrTwoOrNBlock {
+        public JavaMethodZeroOrOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -369,6 +301,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement one to N with block
     public static abstract class JavaMethodOneOrNBlock extends JavaMethodNBlock {
+        public JavaMethodOneOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -387,6 +323,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodOneOrTwoOrNBlock extends JavaMethodOneOrNBlock {
+        public JavaMethodOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -405,6 +345,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodOneOrTwoOrThreeOrNBlock extends JavaMethodOneOrTwoOrNBlock {
+        public JavaMethodOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -425,6 +369,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement two to N with block
     public static abstract class JavaMethodTwoOrNBlock extends JavaMethodNBlock {
+        public JavaMethodTwoOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodTwoOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -443,6 +391,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodTwoOrThreeOrNBlock extends JavaMethodTwoOrNBlock {
+        public JavaMethodTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -463,6 +415,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement three to N with block
     public static abstract class JavaMethodThreeOrNBlock extends JavaMethodNBlock {
+        public JavaMethodThreeOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodThreeOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -483,6 +439,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement zero to three with block
     public static abstract class JavaMethodZeroBlock extends JavaMethodZeroOrNBlock {
+        public JavaMethodZeroBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -498,6 +458,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneBlock extends JavaMethodZeroOrOneOrNBlock {
+        public JavaMethodZeroOrOneBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -519,6 +483,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrTwoBlock extends JavaMethodZeroOrOneOrTwoOrNBlock {
+        public JavaMethodZeroOrOneOrTwoBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneOrTwoBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -542,6 +510,9 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrTwoOrThreeBlock extends JavaMethodZeroOrOneOrTwoOrThreeOrNBlock {
+        public JavaMethodZeroOrOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
         public JavaMethodZeroOrOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -568,6 +539,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement one to three with block
     public static abstract class JavaMethodOneBlock extends JavaMethodOneOrNBlock {
+        public JavaMethodOneBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -588,6 +563,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodOneOrTwoBlock extends JavaMethodOneOrTwoOrNBlock {
+        public JavaMethodOneOrTwoBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneOrTwoBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -609,6 +588,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodOneOrTwoOrThreeBlock extends JavaMethodOneOrTwoOrThreeOrNBlock {
+        public JavaMethodOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -634,6 +617,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement two to three with block
     public static abstract class JavaMethodTwoBlock extends JavaMethodTwoOrNBlock {
+        public JavaMethodTwoBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodTwoBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -649,6 +636,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodTwoOrThreeBlock extends JavaMethodTwoOrThreeOrNBlock {
+        public JavaMethodTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -672,6 +663,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement three with block
     public static abstract class JavaMethodThreeBlock extends JavaMethodThreeOrNBlock {
+        public JavaMethodThreeBlock(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodThreeBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -688,11 +683,12 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement N
     public static abstract class JavaMethodN extends JavaMethodNBlock {
-        public JavaMethodN(RubyModule implementationClass, Visibility visibility) {
-            super(implementationClass, visibility);
-        }
         public JavaMethodN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
+        }
+        @Deprecated
+        public JavaMethodN(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
         }
         @Deprecated
         public JavaMethodN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
@@ -747,11 +743,12 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement zero to N
     public static abstract class JavaMethodZeroOrN extends JavaMethodN {
-        public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility) {
-            super(implementationClass, visibility);
-        }
         public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
+        }
+        @Deprecated
+        public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
         }
         @Deprecated
         public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
@@ -772,6 +769,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrN extends JavaMethodZeroOrN {
+        public JavaMethodZeroOrOneOrN(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -790,6 +791,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrTwoOrN extends JavaMethodZeroOrOneOrN {
+        public JavaMethodZeroOrOneOrTwoOrN(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneOrTwoOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -808,6 +813,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrTwoOrThreeOrN extends JavaMethodZeroOrOneOrTwoOrN {
+        public JavaMethodZeroOrOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -828,11 +837,12 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement one to N
     public static abstract class JavaMethodOneOrN extends JavaMethodN {
-        public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility) {
-            super(implementationClass, visibility);
-        }
         public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
+        }
+        @Deprecated
+        public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
         }
         @Deprecated
         public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
@@ -853,6 +863,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodOneOrTwoOrN extends JavaMethodOneOrN {
+        public JavaMethodOneOrTwoOrN(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneOrTwoOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -871,6 +885,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodOneOrTwoOrThreeOrN extends JavaMethodOneOrTwoOrN {
+        public JavaMethodOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -891,6 +909,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement two to N
     public static abstract class JavaMethodTwoOrN extends JavaMethodN {
+        public JavaMethodTwoOrN(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodTwoOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -909,6 +931,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodTwoOrThreeOrN extends JavaMethodTwoOrN {
+        public JavaMethodTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -929,6 +955,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement three to N
     public static abstract class JavaMethodThreeOrN extends JavaMethodN {
+        public JavaMethodThreeOrN(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodThreeOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -949,11 +979,12 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement zero to three
     public static abstract class JavaMethodZero extends JavaMethodZeroOrN {
-        public JavaMethodZero(RubyModule implementationClass, Visibility visibility) {
-            super(implementationClass, visibility);
-        }
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
+        }
+        @Deprecated
+        public JavaMethodZero(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
         }
         @Deprecated
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
@@ -975,6 +1006,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOne extends JavaMethodZeroOrOneOrN {
+        public JavaMethodZeroOrOne(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOne(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -997,6 +1032,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrTwo extends JavaMethodZeroOrOneOrTwoOrN {
+        public JavaMethodZeroOrOneOrTwo(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneOrTwo(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -1021,6 +1060,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodZeroOrOneOrTwoOrThree extends JavaMethodZeroOrOneOrTwoOrThreeOrN {
+        public JavaMethodZeroOrOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodZeroOrOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -1048,12 +1091,13 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement one to three
     public static abstract class JavaMethodOne extends JavaMethodOneOrN {
-        public JavaMethodOne(RubyModule implementationClass, Visibility visibility) {
-            super(implementationClass, visibility);
-            setParameterList(ONE_REQ);
-        }
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
+            setParameterList(ONE_REQ);
+        }
+        @Deprecated
+        public JavaMethodOne(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
             setParameterList(ONE_REQ);
         }
         @Deprecated
@@ -1079,6 +1123,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodOneOrTwo extends JavaMethodOneOrTwoOrN {
+        public JavaMethodOneOrTwo(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneOrTwo(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -1100,6 +1148,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodOneOrTwoOrThree extends JavaMethodOneOrTwoOrThreeOrN {
+        public JavaMethodOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -1125,6 +1177,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement two to three
     public static abstract class JavaMethodTwo extends JavaMethodTwoOrN {
+        public JavaMethodTwo(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+            setParameterList(TWO_REQ);
+        }
+        @Deprecated
         public JavaMethodTwo(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
             setParameterList(TWO_REQ);
@@ -1147,6 +1204,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     public static abstract class JavaMethodTwoOrThree extends JavaMethodTwoOrThreeOrN {
+        public JavaMethodTwoOrThree(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+        }
+        @Deprecated
         public JavaMethodTwoOrThree(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
@@ -1170,6 +1231,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement three
     public static abstract class JavaMethodThree extends JavaMethodThreeOrN {
+        public JavaMethodThree(RubyModule implementationClass, Visibility visibility, String name) {
+            super(implementationClass, visibility, name);
+            setParameterList(THREE_REQ);
+        }
         public JavaMethodThree(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
             setParameterList(THREE_REQ);
@@ -1212,5 +1277,111 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     @Deprecated
     public void setCallerRequirement(CallConfiguration callerRequirement) {
+    }
+
+    @Deprecated
+    public JavaMethod(RubyModule implementationClass, Visibility visibility) {
+        this(implementationClass, visibility, CallConfiguration.FrameFullScopeNone);
+    }
+
+    @Deprecated
+    protected final void preFrameAndScope(ThreadContext context, IRubyObject self, String name, Block block) {
+        context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope);
+    }
+
+    @Deprecated
+    protected final void preFrameAndDummyScope(ThreadContext context, IRubyObject self, String name, Block block) {
+        context.preMethodFrameAndDummyScope(implementationClass, name, self, block, staticScope);
+    }
+
+    @Deprecated
+    protected final void preFrameOnly(ThreadContext context, IRubyObject self, String name, Block block) {
+        context.preMethodFrameOnly(implementationClass, name, self, block);
+    }
+
+    @Deprecated
+    protected final void preScopeOnly(ThreadContext context) {
+        context.preMethodScopeOnly(staticScope);
+    }
+
+    @Deprecated
+    protected final void preNoFrameDummyScope(ThreadContext context) {
+        context.preMethodNoFrameAndDummyScope(staticScope);
+    }
+
+    @Deprecated
+    protected final void preBacktraceOnly(ThreadContext context, String name) {
+        context.preMethodBacktraceOnly(name);
+    }
+
+    @Deprecated
+    protected final void preBacktraceDummyScope(ThreadContext context, String name) {
+        context.preMethodBacktraceDummyScope(name, staticScope);
+    }
+
+    @Deprecated
+    protected final void preBacktraceAndScope(ThreadContext context, String name) {
+        context.preMethodBacktraceAndScope(name, staticScope);
+    }
+
+    @Deprecated
+    protected final void preNoop() {}
+
+    @Deprecated
+    protected final static void postFrameAndScope(ThreadContext context) {
+        context.postMethodFrameAndScope();
+    }
+
+    @Deprecated
+    protected final static void postFrameOnly(ThreadContext context) {
+        context.postMethodFrameOnly();
+    }
+
+    @Deprecated
+    protected final static void postScopeOnly(ThreadContext context) {
+        context.postMethodScopeOnly();
+    }
+
+    @Deprecated
+    protected final static void postNoFrameDummyScope(ThreadContext context) {
+        context.postMethodScopeOnly();
+    }
+
+    @Deprecated
+    protected final static void postBacktraceOnly(ThreadContext context) {
+        context.postMethodBacktraceOnly();
+    }
+
+    @Deprecated
+    protected final static void postBacktraceDummyScope(ThreadContext context) {
+        context.postMethodBacktraceDummyScope();
+    }
+
+    @Deprecated
+    protected final static void postBacktraceAndScope(ThreadContext context) {
+        context.postMethodBacktraceAndScope();
+    }
+
+    @Deprecated
+    protected final static void postNoop(ThreadContext context) {}
+
+    @Deprecated
+    protected final void callTrace(ThreadContext context, boolean enabled, String name) {
+        if (enabled) context.trace(RubyEvent.C_CALL, name, getImplementationClass());
+    }
+
+    @Deprecated
+    protected final void returnTrace(ThreadContext context, boolean enabled, String name) {
+        if (enabled) context.trace(RubyEvent.C_RETURN, name, getImplementationClass());
+    }
+
+    @Deprecated
+    protected final void callTraceCompiled(ThreadContext context, boolean enabled, String name, String file, int line) {
+        if (enabled) context.trace(RubyEvent.CALL, name, getImplementationClass(), file, line);
+    }
+
+    @Deprecated
+    protected final void returnTraceCompiled(ThreadContext context, boolean enabled, String name) {
+        if (enabled) context.trace(RubyEvent.RETURN, name, getImplementationClass());
     }
 }

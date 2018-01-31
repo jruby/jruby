@@ -122,7 +122,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
     /** The super constructor signature for Java-based method handles. */
-    private final static String JAVA_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class));
+    private final static String JAVA_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class, String.class));
 
     /** The lvar index of "this" */
     public static final int THIS_INDEX = 0;
@@ -187,7 +187,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     //    return signature.isFixed() && signature.required() <= 3;
     //}
 
-    private static final Class[] RubyModule_and_Visibility = new Class[]{ RubyModule.class, Visibility.class };
+    private static final Class[] RubyModule_and_Visibility_and_Name = new Class[]{ RubyModule.class, Visibility.class, String.class };
 
     /**
      * Use code generation to provide a method handle based on an annotated Java
@@ -208,7 +208,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             DescriptorInfo info = new DescriptorInfo(descs);
             if (DEBUG) LOG.debug(" min: " + info.getMin() + ", max: " + info.getMax());
 
-            JavaMethod ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, anno.visibility());
+            JavaMethod ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility_and_Name).newInstance(implementationClass, anno.visibility(), desc1.name);
 
             TypePopulator.populateMethod(
                     ic,
@@ -324,7 +324,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         try {
             Class c = getAnnotatedMethodClass(Collections.singletonList(desc));
 
-            JavaMethod ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, desc.anno.visibility());
+            JavaMethod ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility_and_Name).newInstance(implementationClass, desc.anno.visibility(), desc.name);
 
             TypePopulator.populateMethod(
                     ic,
@@ -419,7 +419,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         cw.visitSource(sourceFile, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null);
         mv.start();
-        mv.aloadMany(0, 1, 2);
+        mv.aloadMany(0, 1, 2, 3);
         mv.invokespecial(sup, "<init>", JAVA_SUPER_SIG);
         mv.aload(0);
         mv.ldc(parameterDesc);

@@ -136,16 +136,7 @@ public class RubyPathname extends RubyObject {
     private static void defineDelegateMethodsGeneric(RubyClass cPathname, final RubyModule klass,
             final ReturnValueMapper mapper, final AddArg addArg, String... methods) {
         for (String method : methods) {
-            cPathname.addMethod(method, new JavaMethod.JavaMethodNBlock(cPathname,
-                    Visibility.PUBLIC) {
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject _self, RubyModule clazz,
-                        String name, IRubyObject[] args, Block block) {
-                    RubyPathname self = (RubyPathname) _self;
-                    args = addArg.addArg(args, self.getPath());
-                    return mapper.map(context, (RubyClass) clazz, klass.callMethod(context, name, args, block));
-                }
-            });
+            cPathname.addMethod(method, new PathnameDelegateMethod(cPathname, method, addArg, mapper, klass));
         }
     }
 
@@ -435,5 +426,26 @@ public class RubyPathname extends RubyObject {
             paths.store(i, newInstance(context, clazz, path));
         }
         return paths;
+    }
+
+    private static class PathnameDelegateMethod extends JavaMethod.JavaMethodNBlock {
+        private final AddArg addArg;
+        private final ReturnValueMapper mapper;
+        private final RubyModule klass;
+
+        public PathnameDelegateMethod(RubyClass cPathname, String method, AddArg addArg, ReturnValueMapper mapper, RubyModule klass) {
+            super(cPathname, Visibility.PUBLIC, method);
+            this.addArg = addArg;
+            this.mapper = mapper;
+            this.klass = klass;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject _self, RubyModule clazz,
+                                String name, IRubyObject[] args, Block block) {
+            RubyPathname self = (RubyPathname) _self;
+            args = addArg.addArg(args, self.getPath());
+            return mapper.map(context, (RubyClass) clazz, klass.callMethod(context, name, args, block));
+        }
     }
 }
