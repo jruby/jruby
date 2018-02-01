@@ -3492,8 +3492,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         try {
             Arrays.sort(values, begin, begin + realLength, new DefaultComparator(context, honorOverride) {
                 protected int compareGeneric(IRubyObject o1, IRubyObject o2) {
-                    //TODO: ary_sort_check should be done here
-                    return super.compareGeneric(o1, o2);
+                    int result = super.compareGeneric(o1, o2);
+                    modifyCheck();
+                    return result;
                 }
             });
         }
@@ -3630,8 +3631,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         Arrays.sort(newValues, 0, length, new BlockComparator(context, block, gt, lt) {
             @Override
             public int compare(IRubyObject obj1, IRubyObject obj2) {
-                //TODO: ary_sort_check should be done here
-                return super.compare(obj1, obj2);
+                int result = super.compare(obj1, obj2);
+                modifyCheck();
+                return result;
             }
         });
 
