@@ -1509,7 +1509,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 }
                 value.setUnsafeBytes(obytes);
             }
-            
+
             setCodeRange(cr);
         }
         return this;
@@ -4277,11 +4277,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final int pos;
         final RubyString sep;
         if (arg instanceof RubyRegexp) {
-            RubyRegexp regex = (RubyRegexp)arg;
-
-            pos = regex.search(context, this, value.getRealSize(), true);
-
-            if (pos < 0) return rpartitionMismatch(runtime);
+            IRubyObject tmp = rindex(context, arg);
+            if (tmp.isNil()) return rpartitionMismatch(runtime);
+            pos = (int)tmp.convertToInteger().getIntValue();
             sep = (RubyString)RubyRegexp.nth_match(0, context.getBackRef());
         } else {
             IRubyObject tmp = arg.checkStringType();
