@@ -474,35 +474,14 @@ public class RubyNumeric extends RubyObject {
         }
         final IRubyObject $ex = context.getErrorInfo();
         final IRubyObject result;
-        try {
-            result = coerceBody(context, other);
-        }
-        catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
-            if (context.runtime.getStandardError().isInstance( e.getException() )) {
-                context.setErrorInfo($ex); // restore $!
-                RubyWarnings warnings = context.runtime.getWarnings();
-                warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
-                warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
-                if (err) {
-                    coerceFailed(context, other);
-                }
-                return null;
-            }
-            throw e;
-        }
 
+        result = coerceBody(context, other);
         return coerceResult(context.runtime, result, err);
     }
 
     private static RubyArray coerceResult(final Ruby runtime, final IRubyObject result, final boolean err) {
         if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2 ) {
-            if (err) throw runtime.newTypeError("coerce must return [x, y]");
-
-            if (!result.isNil()) {
-                RubyWarnings warnings = runtime.getWarnings();
-                warnings.warn("Bad return value for #coerce, called by numerical comparison operators.");
-                warnings.warn("#coerce must return [x, y]. The next release will raise an error for this.");
-            }
+            if (err || !result.isNil()) throw runtime.newTypeError("coerce must return [x, y]");
             return null;
         }
 
@@ -974,16 +953,7 @@ public class RubyNumeric extends RubyObject {
             }
         }
         IRubyObject r = UNDEF;
-        try {
-            context.setExceptionRequiresBacktrace(false);
-            r = stepCompareWithZero(context, num);
-        } catch (RaiseException re) {
-        } finally {
-            context.setExceptionRequiresBacktrace(true);
-        }
-        if (r == UNDEF) {
-            coerceFailed(context, num);
-        }
+        r = stepCompareWithZero(context, num);
         return !r.isTrue();
     }
 

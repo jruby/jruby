@@ -54,18 +54,16 @@ class TestNumeric < Test::Unit::TestCase
 
     bug7688 = '[ruby-core:51389] [Bug #7688]'
     a = Class.new(Numeric) do
-      def coerce(x); raise StandardError; end
+      def coerce(x); raise StandardError, "my error"; end
     end.new
-    assert_raise_with_message(TypeError, /can't be coerced into /) { 1 + a }
-    warn = /will no more rescue exceptions of #coerce.+ in the next release/m
-    assert_warn(warn, bug7688) { assert_raise(ArgumentError) { 1 < a } }
+    assert_raise_with_message(StandardError, "my error") { 1 + a }
+    assert_raise_with_message(StandardError, "my error") { 1 < a }
 
     a = Class.new(Numeric) do
       def coerce(x); :bad_return_value; end
     end.new
     assert_raise_with_message(TypeError, "coerce must return [x, y]") { 1 + a }
-    warn = /Bad return value for #coerce.+next release will raise an error/m
-    assert_warn(warn, bug7688) { assert_raise(ArgumentError) { 1 < a } }
+    assert_raise_with_message(TypeError, "coerce must return [x, y]") { 1 < a }
   end
 
   def test_singleton_method
@@ -252,13 +250,15 @@ class TestNumeric < Test::Unit::TestCase
   end
 
   def test_step
+    # RbConfig::LIMITS is something new in MRI 2.5.0, we don't have it yet
+    # bignum = RbConfig::LIMITS['FIXNUM_MAX'] + 1
     bignum = Integer::FIXNUM_MAX + 1
     assert_raise(ArgumentError) { 1.step(10, 1, 0) { } }
     assert_raise(ArgumentError) { 1.step(10, 1, 0).size }
     assert_raise(ArgumentError) { 1.step(10, 0) { } }
     assert_raise(ArgumentError) { 1.step(10, 0).size }
-    assert_raise(TypeError) { 1.step(10, "1") { } }
-    assert_raise(TypeError) { 1.step(10, "1").size }
+    assert_raise(ArgumentError) { 1.step(10, "1") { } }
+    assert_raise(ArgumentError) { 1.step(10, "1").size }
     assert_raise(TypeError) { 1.step(10, nil) { } }
     assert_raise(TypeError) { 1.step(10, nil).size }
     assert_nothing_raised { 1.step(by: 0, to: nil) }
