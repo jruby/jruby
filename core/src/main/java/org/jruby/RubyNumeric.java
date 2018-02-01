@@ -37,9 +37,7 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -50,7 +48,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
@@ -480,12 +477,11 @@ public class RubyNumeric extends RubyObject {
     }
 
     private static RubyArray coerceResult(final Ruby runtime, final IRubyObject result, final boolean err) {
-        if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2 ) {
-            if (err || !result.isNil()) throw runtime.newTypeError("coerce must return [x, y]");
-            return null;
-        }
+        if (result instanceof RubyArray && ((RubyArray) result).getLength() == 2) return (RubyArray) result;
 
-        return (RubyArray) result;
+        if (err || !result.isNil()) throw runtime.newTypeError("coerce must return [x, y]");
+
+        return null;
     }
 
     /** coerce_rescue
@@ -952,9 +948,8 @@ public class RubyNumeric extends RubyObject {
                 return ((RubyBignum) num).isNegative(context).isTrue();
             }
         }
-        IRubyObject r = UNDEF;
-        r = stepCompareWithZero(context, num);
-        return !r.isTrue();
+
+        return !stepCompareWithZero(context, num).isTrue();
     }
 
     private IRubyObject stepCompareWithZero(ThreadContext context, IRubyObject num) {
