@@ -46,8 +46,15 @@ public class ProfiledMethods {
 
     private final NonBlockingHashMapLong<ProfiledMethod> methods;
 
+    /**
+     * TODO Andre Kullmann : what is the runtime good for ??
+     */
     private final Ruby runtime;
 
+    /**
+     * TODO if the runtime is really necessary, please check if a setter in the interface is possible.
+     * @param runtime what is it good for ?
+     */
     public ProfiledMethods( final Ruby runtime ) {
 
         if( runtime == null )
