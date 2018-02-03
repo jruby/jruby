@@ -72,7 +72,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     @SuppressWarnings("unchecked") // NULL_CACHE
     RubyToJavaInvoker(RubyModule host, Member member) {
-        super(host, Visibility.PUBLIC);
+        super(host, Visibility.PUBLIC, member.getName());
         this.runtime = host.getRuntime();
 
         final T callable;
@@ -98,7 +98,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     @SuppressWarnings("unchecked") // NULL_CACHE
     RubyToJavaInvoker(RubyModule host, Member[] members) {
-        super(host, Visibility.PUBLIC);
+        super(host, Visibility.PUBLIC, members[0].getName());
         this.runtime = host.getRuntime();
 
         // initialize all the callables for this method

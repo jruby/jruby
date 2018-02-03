@@ -78,7 +78,7 @@ public class JavaInterfaceTemplate {
     private static class DummyMethodImpl extends org.jruby.internal.runtime.methods.JavaMethod {
 
         DummyMethodImpl(RubyModule targetModule) {
-            super(targetModule, Visibility.PUBLIC);
+            super(targetModule, Visibility.PUBLIC, "dummy");
         }
 
         @Override
@@ -414,7 +414,7 @@ public class JavaInterfaceTemplate {
         private final Block implBlock;
 
         BlockInterfaceImpl(final RubyClass implClass, final Block implBlock, final IRubyObject[] methodNames) {
-            super(implClass, Visibility.PUBLIC);
+            super(implClass, Visibility.PUBLIC, "block_interface_impl");
             this.implBlock = implBlock; this.methodNames = methodNames;
         }
 
@@ -460,11 +460,11 @@ public class JavaInterfaceTemplate {
 
         public DynamicMethod dup() { return this; }
 
-        final ConcreteMethod getConcreteMethod() { return new ConcreteMethod(); }
+        final ConcreteMethod getConcreteMethod() { return new ConcreteMethod(name); }
 
         private final class ConcreteMethod extends JavaMethod {
 
-            ConcreteMethod() {
+            ConcreteMethod(String name) {
                 super(BlockInterfaceImpl.this.implementationClass, Visibility.PUBLIC);
             }
 
