@@ -136,8 +136,7 @@ public class RubyPathname extends RubyObject {
     private static void defineDelegateMethodsGeneric(RubyClass cPathname, final RubyModule klass,
             final ReturnValueMapper mapper, final AddArg addArg, String... methods) {
         for (String method : methods) {
-            cPathname.addMethod(method, new JavaMethod.JavaMethodNBlock(cPathname,
-                    Visibility.PUBLIC) {
+            cPathname.addMethod(method, new JavaMethod.JavaMethodNBlock(cPathname, Visibility.PUBLIC, method) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject _self, RubyModule clazz,
                         String name, IRubyObject[] args, Block block) {

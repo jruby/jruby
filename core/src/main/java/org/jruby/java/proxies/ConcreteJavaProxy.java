@@ -41,7 +41,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         private final CallSite jcreateSite = MethodIndex.getFunctionalCallSite("__jcreate!");
 
-        InitializeMethod(final RubyClass clazz) { super(clazz, Visibility.PRIVATE); }
+        InitializeMethod(final RubyClass clazz) { super(clazz, Visibility.PRIVATE, "initialize"); }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -92,7 +92,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         final DynamicMethod newMethod;
 
         NewMethod(final RubyClass clazz) {
-            super(clazz, Visibility.PUBLIC);
+            super(clazz, Visibility.PUBLIC, "new");
             newMethod = clazz.searchMethod("new");
         }
 

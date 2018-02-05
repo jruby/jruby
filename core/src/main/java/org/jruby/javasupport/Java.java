@@ -498,7 +498,7 @@ public class Java implements Library {
         // solved here by adding an exception-throwing "inherited"
         if ( Modifier.isFinal(clazz.getModifiers()) ) {
             final String clazzName = clazz.getCanonicalName();
-            proxy.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC) {
+            proxy.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, "inherited") {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     throw context.runtime.newTypeError("can not extend final Java class: " + clazzName);
@@ -1052,7 +1052,7 @@ public class Java implements Library {
         }
 
         final RubyClass singleton = parentPackage.getSingletonClass();
-        singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage));
+        singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
         return true;
     }
 
@@ -1061,8 +1061,8 @@ public class Java implements Library {
         private final RubyModule packageOrClass;
         private final RubyModule parentPackage;
 
-        JavaAccessor(final RubyClass singleton, final RubyModule packageOrClass, final RubyModule parentPackage) {
-            super(singleton, PUBLIC);
+        JavaAccessor(final RubyClass singleton, final RubyModule packageOrClass, final RubyModule parentPackage, final String name) {
+            super(singleton, PUBLIC, name);
             this.parentPackage = parentPackage; this.packageOrClass = packageOrClass;
         }
 
