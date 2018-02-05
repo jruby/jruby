@@ -150,8 +150,14 @@ describe "Collection Ruby extensions" do
     expect( arr.dup ).to_not equal arr
 
     # immutable and non-Cloneable
-    # arr = Java::java_integration::fixtures::coll::NonCloneableImmutableList.new
-    # expect( arr.dup ).to equal arr
+    arr = Java::java_integration::fixtures::coll::NonCloneableImmutableList.new
+    expect { arr.dup }.to raise_error # Java::JavaLang::UnsupportedOperationException
+
+    arr = Java::java_integration::fixtures::coll::NonCloneableImmutableList2::INSTANCE
+    expect { arr.dup }.to raise_error(Java::JavaLang::IllegalStateException) # since 9.2 (swallowed previously)
+
+    arr = Java::java_integration::fixtures::coll::NonCloneableImmutableList3.new
+    expect { arr.dup }.to raise_error(Java::JavaLang::UnsupportedOperationException) # not CloneNotSupportedException
   end
 
   it 'clones' do
@@ -179,6 +185,10 @@ describe "Collection Ruby extensions" do
     arr = Java::java_integration::fixtures::coll::NonCloneableList.new; arr.add(42)
     expect( arr.clone ).to eql arr
     expect( arr.clone ).to_not equal arr
+
+    # immutable and non-Cloneable
+    arr = Java::java_integration::fixtures::coll::NonCloneableImmutableList.new
+    expect { arr.clone }.to raise_error # Java::JavaLang::UnsupportedOperationException
   end
 
   it '#include?' do
