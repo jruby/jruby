@@ -1407,7 +1407,7 @@ public class RipperLexer extends LexingCommon {
         case '_':       /* $_: last read line string */
             c = nextc();
             if (isIdentifierChar(c)) {
-                if (tokadd_ident(c)) return EOF;
+                if (!tokadd_ident(c)) return EOF;
 
                 last_state = lex_state;
                 setState(EXPR_END);
