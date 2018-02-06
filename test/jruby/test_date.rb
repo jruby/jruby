@@ -17,6 +17,68 @@ class TestDate < Test::Unit::TestCase
     end
   end
 
+  def test_new_civil
+    date = Date.new
+    assert_equal -4712, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
+
+    date = Date.new -4712
+    assert_equal -4712, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
+
+    date = Date.new 0
+    assert_equal 0, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
+
+    date = Date.new 1
+    assert_equal 1, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
+
+    date = Date.new -1
+    assert_equal -1, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
+
+    date = Date.new -2, 10
+    assert_equal -2, date.year
+    assert_equal 10, date.month
+    assert_equal 1, date.day
+
+    date = Date.new 1492, -3, -3
+    assert_equal 1492, date.year
+    assert_equal 10, date.month
+    assert_equal 29, date.day
+
+    date = Date.new -6, -6, -6
+    assert_equal -6, date.year
+    assert_equal 7, date.month
+    assert_equal 26, date.day
+
+    date = Date.new -9, -11, -20
+    assert_equal -9, date.year
+    assert_equal 2, date.month
+    assert_equal 9, date.day
+
+    date = Date.new -9999, -12, -31
+    assert_equal -9999, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
+
+    date = Date.new -6, -6, -6, Date::ITALY
+    assert_equal -6, date.year
+    assert_equal 7, date.month
+    assert_equal 26, date.day
+
+    date = Date.new -6, -6, -6, Date::GREGORIAN
+    assert_equal -6, date.year
+    assert_equal 7, date.month
+    assert_equal 26, date.day
+  end
+
   def test_date_time_methods
     date = Date.new(1, 2, 3)
     assert_equal 1, date.year
@@ -33,6 +95,18 @@ class TestDate < Test::Unit::TestCase
     assert_equal 2001, date.year
     assert_equal 3, date.month
     assert_equal 31, date.day
+
+    date = Date.new(1001, 2, -10)
+    assert_equal 1001, date.year
+    assert_equal 2, date.month
+    assert_equal 19, date.day
+
+    begin
+      Date.new(1900, 1, 0)
+      fail 'expected to fail'
+    rescue ArgumentError => e
+      assert_equal 'invalid date', e.message
+    end
   end
 
   def test_new_start
@@ -116,11 +190,17 @@ class TestDate < Test::Unit::TestCase
 
     date = Date.new(-111, 10, 11)
     assert_equal '-0111-10-11', date.to_s
+
+    date = Date.new(-1111, 11)
+    assert_equal '-1111-11-01', date.strftime
   end
 
   def test_inspect
     date = Date.new(2000, 12, 31)
     assert_equal '#<Date: 2000-12-31 ((2451910j,0s,0n),+0s,2299161j)>', date.inspect
+
+    date = Date.new(-2, 2)
+    assert_equal '#<Date: -0002-02-01 ((1720359j,0s,0n),+0s,2299161j)>', date.inspect
 
     date = Date.today
     assert_match /#<Date: 20\d\d\-\d\d\-\d\d \(\(\d+j,0s,0n\),\+0s,2299161j\)>/, date.inspect
@@ -162,6 +242,18 @@ class TestDate < Test::Unit::TestCase
 
     date = DateTime.new(2000, 10, 10, 12, 24, 36, 48)
     assert_equal Rational(1241, 2400), date.day_fraction
+  end
+
+  def test_civil_invalid_sg
+    date = Date.civil(2000, 1, 1, sg = 2426355 + 1_000_000)
+    assert_equal 2000, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
+
+    date = Date.civil(2000, 1, 1, sg = Date::JULIAN)
+    assert_equal 2000, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
   end
 
 end
