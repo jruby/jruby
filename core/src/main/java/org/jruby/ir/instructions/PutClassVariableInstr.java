@@ -11,9 +11,10 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class PutClassVariableInstr extends PutInstr implements FixedArityInstr {
-    public PutClassVariableInstr(Operand scope, String varName, Operand value) {
+    public PutClassVariableInstr(Operand scope, ByteList varName, Operand value) {
         super(Operation.PUT_CVAR, scope, varName, value);
     }
 
@@ -36,7 +37,7 @@ public class PutClassVariableInstr extends PutInstr implements FixedArityInstr {
     }
 
     public static PutClassVariableInstr decode(IRReaderDecoder d) {
-        return new PutClassVariableInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
+        return new PutClassVariableInstr(d.decodeOperand(), d.decodeByteList(), d.decodeOperand());
     }
 
     @Override

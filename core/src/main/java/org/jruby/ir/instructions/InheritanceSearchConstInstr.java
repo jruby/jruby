@@ -14,6 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
+import org.jruby.util.ByteList;
 
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
@@ -21,12 +22,12 @@ import org.jruby.runtime.opto.Invalidator;
 // this call to the parent scope.
 
 public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    String   constName;
+    ByteList constName;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName) {
+    public InheritanceSearchConstInstr(Variable result, Operand currentModule, ByteList constName) {
         super(Operation.INHERITANCE_SEARCH_CONST, result, currentModule);
 
         assert result != null: "InheritanceSearchConstInstr result is null";
@@ -34,16 +35,15 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
         this.constName = constName;
     }
 
-    @Deprecated
-    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean unused) {
-        this(result, currentModule, constName);
-    }
-
     public Operand getCurrentModule() {
         return getOperand1();
     }
 
     public String getConstName() {
+        return constName.toString();
+    }
+
+    public ByteList getConstByteName() {
         return constName;
     }
 
@@ -63,12 +63,13 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
     }
 
     private Object cache(Ruby runtime, RubyModule module) {
-        Object constant = module.getConstantNoConstMissingSKipAutoload(constName);
+        String id = getConstName();
+        Object constant = module.getConstantNoConstMissingSKipAutoload(id);
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            Invalidator invalidator = runtime.getConstantInvalidator(constName);
+            Invalidator invalidator = runtime.getConstantInvalidator(id);
             cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator, module.hashCode());
         }
         return constant;
@@ -82,7 +83,7 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
     }
 
     public static InheritanceSearchConstInstr decode(IRReaderDecoder d) {
-        return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+        return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeByteList());
     }
 
     @Override

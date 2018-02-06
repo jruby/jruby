@@ -33,17 +33,13 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /** 
  * Represents a false literal.
  */
-public class FalseNode extends Node implements INameNode, SideEffectFree {
-    static final ByteList FALSE = new ByteList(new byte[] {'f', 'a', 'l', 's', 'e'});
-
+public class FalseNode extends Node implements SideEffectFree {
     public FalseNode(ISourcePosition position) {
         super(position, false);
     }
@@ -58,17 +54,6 @@ public class FalseNode extends Node implements INameNode, SideEffectFree {
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitFalseNode(this);
-    }
-    
-    /**
-     * Name of false node.
-     */
-    public String getName() {
-        return "false";
-    }
-
-    public ByteList getByteName() {
-        return FALSE;
     }
     
     public List<Node> childNodes() {

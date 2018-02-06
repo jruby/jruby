@@ -4,12 +4,13 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.util.ByteList;
 
 // Represents result = source.ref or result = source where source is not a stack variable
 public abstract class GetInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private final String  ref;
+    private final ByteList ref;
 
-    public GetInstr(Operation op, Variable result, Operand source, String ref) {
+    public GetInstr(Operation op, Variable result, Operand source, ByteList ref) {
         super(op, result, source);
 
         assert result != null: getClass().getSimpleName() + " result is null";
@@ -18,6 +19,10 @@ public abstract class GetInstr extends OneOperandResultBaseInstr implements Fixe
     }
 
     public String getRef() {
+        return ref.toString();
+    }
+
+    public ByteList getByteRef() {
         return ref;
     }
 

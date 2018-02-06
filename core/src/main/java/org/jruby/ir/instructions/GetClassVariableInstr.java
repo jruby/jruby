@@ -6,26 +6,26 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
-import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class GetClassVariableInstr extends GetInstr implements FixedArityInstr {
-    public GetClassVariableInstr(Variable dest, Operand scope, String varName) {
+    public GetClassVariableInstr(Variable dest, Operand scope, ByteList varName) {
         super(Operation.GET_CVAR, dest, scope, varName);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new GetClassVariableInstr(ii.getRenamedVariable(getResult()),
-                getSource().cloneForInlining(ii), getRef());
+                getSource().cloneForInlining(ii), getByteRef());
     }
 
     public static GetClassVariableInstr decode(IRReaderDecoder d) {
-        return new GetClassVariableInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+        return new GetClassVariableInstr(d.decodeVariable(), d.decodeOperand(), d.decodeByteList());
     }
 
     @Override

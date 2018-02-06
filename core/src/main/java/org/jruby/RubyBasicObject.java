@@ -802,18 +802,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public IRubyObject anyToString() {
-        String cname = getMetaClass().getRealClass().getName();
-        String hex = Integer.toHexString(System.identityHashCode(this));
+        Ruby runtime = getRuntime();
+
+        // FIXME: bytelist_love - making these tiny strings over and over...
         /* 6:tags 16:addr 1:eos */
-        ByteList bytes = new ByteList(2 + cname.length() + 3 + hex.length() + 1);
-        bytes.append('#').append('<');
-        bytes.append(cname.getBytes(RubyEncoding.UTF8));
-        bytes.append(':').append('0').append('x');
-        bytes.append(hex.getBytes());
-        bytes.append('>');
-        RubyString str = RubyString.newString(getRuntime(), bytes, UTF8Encoding.INSTANCE);
-        str.setTaint(isTaint());
-        return str;
+        RubyString bytes = runtime.newString("#<");
+        bytes.append(getMetaClass().getRealClass().rubyName());
+        bytes.append(runtime.newString(":0x"));
+        bytes.append(runtime.newString(Integer.toHexString(System.identityHashCode(this))));
+        bytes.append(runtime.newString(">"));
+        bytes.setTaint(isTaint());
+        return bytes;
+    }
+
+    /**
+     * raw (id) strings are not properly encoded but in an iso_8859_1 form.  This method will lookup
+     * properly encoded string from the symbol table.
+     */
+    public RubyString decode(String id) {
+        return (RubyString) getRuntime().newSymbol(id).to_s();
     }
 
     /** rb_check_string_type
@@ -1116,7 +1123,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * The logic here is to use the special objectId accessor slot from the
-     * parent as a lazy store for an object ID. IDs are generated atomically,
+     * parent as a lazy store for an object symbol. IDs are generated atomically,
      * in serial, and guaranteed unique for up to 2^63 objects. The special
      * objectId slot is managed separately from the "normal" vars so it
      * does not marshal, clone/dup, or refuse to be initially set when the
@@ -1333,7 +1340,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (finalizer == null) {
             // since this is the first time we're registering a finalizer, we
             // must also register this object in ObjectSpace, so that future
-            // calls to undefine_finalizer, which takes an object ID, can
+            // calls to undefine_finalizer, which takes an object symbol, can
             // locate the object properly. See JRUBY-4839.
             long id = getObjectId();
             IRubyObject fixnumId = id();

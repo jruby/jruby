@@ -33,17 +33,13 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * Represents 'self' keyword
  */
-public class SelfNode extends Node implements INameNode, SideEffectFree {
-    static final ByteList SELF = new ByteList(new byte[] {'s', 'e', 'l', 'f'});
-
+public class SelfNode extends Node implements SideEffectFree {
     public SelfNode(ISourcePosition position) {
         super(position, false);
     }
@@ -58,17 +54,6 @@ public class SelfNode extends Node implements INameNode, SideEffectFree {
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitSelfNode(this);
-    }
-    
-    /**
-     * Get name of self node.
-     */
-    public String getName() {
-        return "self";
-    }
-
-    public ByteList getByteName() {
-        return SELF;
     }
     
     public List<Node> childNodes() {

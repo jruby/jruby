@@ -39,19 +39,19 @@ public class VariableAccessor {
     protected final String name;
     /** the index allocated for it in the variable table */
     protected final int index;
-    /** the ID of the class associated with this variable */
+    /** the symbol of the class associated with this variable */
     protected final int classId;
     /** the "real" class associated with this variable */
     protected final RubyClass realClass;
 
     /**
      * Construct a new VariableAccessor for the given "real" class, name,
-     * variable index, and class ID.
+     * variable index, and class symbol.
      * 
      * @param realClass the "real" class
      * @param name the variable's name
      * @param index the variable's index
-     * @param classId the class's ID
+     * @param classId the class's symbol
      */
     public VariableAccessor(RubyClass realClass, String name, int index, int classId) {
         this.index = index;
@@ -61,7 +61,7 @@ public class VariableAccessor {
     }
 
     /**
-     * Get the ID of the class associated with this variable.
+     * Get the symbol of the class associated with this variable.
      * 
      * @return this variable's class's id
      */

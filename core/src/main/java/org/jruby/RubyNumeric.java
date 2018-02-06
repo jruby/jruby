@@ -39,7 +39,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -50,7 +49,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
@@ -63,6 +61,7 @@ import java.math.RoundingMode;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.*;
+import static org.jruby.util.RubyStringBuilder.buildString;
 
 /**
  * Base class for all numerical types in ruby.
@@ -272,9 +271,8 @@ public class RubyNumeric extends RubyObject {
         if (arg instanceof RubyRational && runtime.getRational().searchMethod("to_f").isBuiltin()) {
             return ((RubyRational) arg).getDoubleValue();
         }
-
         if (arg instanceof RubyBoolean || arg instanceof RubyString || arg.isNil()) {
-            throw runtime.newTypeError("can't convert " + arg.inspect() + " into Float");
+            throw runtime.newTypeError(buildString(runtime, "can't convert ", arg.inspect(), " into Float"));
         }
 
         IRubyObject val = TypeConverter.convertToType(arg, runtime.getFloat(), "to_f");
@@ -423,8 +421,7 @@ public class RubyNumeric extends RubyObject {
             context.setErrorInfo($ex); // restore $!
 
             if (error) {
-                throw runtime.newTypeError(
-                        other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());
+                throw runtime.newTypeError(buildString(runtime, other.getMetaClass().rubyName(), " can't be coerced into ", getMetaClass().rubyName()));
             }
             return null;
         }
@@ -565,7 +562,7 @@ public class RubyNumeric extends RubyObject {
             @Override
             public IRubyObject call(ThreadContext context, JavaSites.CheckedSites site, IRubyObject obj, boolean recur) {
                 if (recur) {
-                    throw context.runtime.newNameError("recursive call to " + site.methodName, site.methodName);
+                    throw context.runtime.newNameError(buildString(context.runtime, "recursive call to ", decode(site.methodName)), site.methodName);
                 }
                 return x.getMetaClass().finvokeChecked(context, x, site, obj);
             }
@@ -648,7 +645,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "singleton_method_added")
     public static IRubyObject sadded(IRubyObject self, IRubyObject name) {
-        throw self.getRuntime().newTypeError("can't define singleton method \"" + name + "\" for " + self.getType().getName());
+        Ruby runtime = self.getRuntime();
+        throw runtime.newTypeError(buildString(runtime, "can't define singleton method \"", name, "\" for ", self.getType().rubyName()));
     }
 
     /** num_init_copy
@@ -657,7 +655,7 @@ public class RubyNumeric extends RubyObject {
     @Override
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject arg) {
-        throw getRuntime().newTypeError("can't copy " + getType().getName());
+        throw getRuntime().newTypeError(buildString(getRuntime(), "can't copy ", getType().rubyName()));
     }
 
     /** num_coerce

@@ -33,33 +33,27 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  *	An explicit block argument (&amp;my_block) in parameter list.
  */
 public class BlockArgNode extends Node implements INameNode {
     private final int count;
-    private ByteList name;
+    private RubySymbol name;
 
-    public BlockArgNode(ISourcePosition position, int count, ByteList name) {
+    public BlockArgNode(ISourcePosition position, int count, RubySymbol name) {
         super(position, false);
         this.count = count;
         this.name = name;
     }
 
-    @Deprecated
-    public BlockArgNode(ISourcePosition position, int count, String name) {
-        this(position, count, StringSupport.stringAsByteList(name));
-    }
-
-
     public BlockArgNode(ArgumentNode argNode) {
-        this(argNode.getPosition(), argNode.getIndex(), argNode.getByteName());
+        this(argNode.getPosition(), argNode.getIndex(), argNode.getSymbolName());
     }
 
     public NodeType getNodeType() {
@@ -88,16 +82,15 @@ public class BlockArgNode extends Node implements INameNode {
      * @return it's name
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
-        return name;
+        return name.getBytes();
     }
 
-    @Deprecated
-    public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
+    public RubySymbol getSymbolName() {
+        return name;
     }
 	
     public List<Node> childNodes() {

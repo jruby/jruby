@@ -166,6 +166,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     /**
+     * Make an instance variable out of this symbol (e.g. :foo will generate :foo=).
+     * @return the new symbol
+     */
+    public RubySymbol asAccessor() {
+        ByteList bytes = getBytes().dup();
+
+        bytes.append((byte) '=');
+
+        return newSymbol(getRuntime(), bytes);
+    }
+
+    /**
      * RubySymbol is created by passing in a String and bytes are extracted from that.  We will
      * pass in encoding of that string after construction but before use so it does not forget
      * what it is.

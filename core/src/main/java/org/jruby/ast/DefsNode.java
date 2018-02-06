@@ -33,12 +33,11 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /** 
  * Represents a singleton method definition.
@@ -46,22 +45,12 @@ import org.jruby.util.StringSupport;
 public class DefsNode extends MethodDefNode implements INameNode {
     private final Node receiverNode;
 
-    public DefsNode(ISourcePosition position, Node receiverNode, ByteList name, ArgsNode argsNode,
+    public DefsNode(ISourcePosition position, Node receiverNode, RubySymbol name, ArgsNode argsNode,
                     StaticScope scope, Node bodyNode, int endLine) {
         super(position, name, argsNode, scope, bodyNode, endLine);
 
         assert receiverNode != null : "receiverNode is not null";
 
-        this.receiverNode = receiverNode;
-    }
-
-    @Deprecated
-    public DefsNode(ISourcePosition position, Node receiverNode, String name, ArgsNode argsNode,
-            StaticScope scope, Node bodyNode, int endLine) {
-        super(position, StringSupport.stringAsByteList(name), argsNode, scope, bodyNode, endLine);
-        
-        assert receiverNode != null : "receiverNode is not null";
-        
         this.receiverNode = receiverNode;
     }
 

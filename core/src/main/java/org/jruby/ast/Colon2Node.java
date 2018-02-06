@@ -33,11 +33,10 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /** 
  * Represents a '::' constant access or method call (Java::JavaClass).
@@ -45,14 +44,9 @@ import org.jruby.util.StringSupport;
 public abstract class Colon2Node extends Colon3Node implements INameNode {
     protected final Node leftNode;
 
-    public Colon2Node(ISourcePosition position, Node leftNode, ByteList name) {
+    public Colon2Node(ISourcePosition position, Node leftNode, RubySymbol name) {
         super(position, name, leftNode != null && leftNode.containsVariableAssignment);
         this.leftNode = leftNode;
-    }
-
-    @Deprecated
-    public Colon2Node(ISourcePosition position, Node leftNode, String name) {
-        this(position, leftNode, StringSupport.stringAsByteList(name));
     }
 
     public NodeType getNodeType() {

@@ -34,32 +34,27 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * An assignment to a local variable.
  */
 public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedNode {
     // The name of the variable
-    private ByteList name;
+    private RubySymbol name;
     
     // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
     // is what index in the right scope to set the value.
     private final int location;
 
-    public LocalAsgnNode(ISourcePosition position, ByteList name, int location, Node valueNode) {
+    public LocalAsgnNode(ISourcePosition position, RubySymbol name, int location, Node valueNode) {
         super(position, valueNode, true);
         this.name = name;
         this.location = location;
-    }
-
-    @Deprecated
-    public LocalAsgnNode(ISourcePosition position, String name, int location, Node valueNode) {
-        this(position, StringSupport.stringAsByteList(name), location, valueNode);
     }
 
     public NodeType getNodeType() {
@@ -78,20 +73,15 @@ public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedN
      * Name of the local assignment.
      **/
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
-        return name;
+        return name.getBytes();
     }
-    
-    /**
-     * Change the name of this local assignment (for refactoring)
-     * @param name
-     */
-    @Deprecated
-    public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
+
+    public RubySymbol getSymbolName() {
+        return name;
     }
 
     /**

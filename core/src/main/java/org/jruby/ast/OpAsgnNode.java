@@ -33,11 +33,11 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
-import org.jruby.util.StringSupport;
 
 /**
  *
@@ -45,12 +45,13 @@ import org.jruby.util.StringSupport;
 public class OpAsgnNode extends Node {
     private final Node receiverNode;
     private final Node valueNode;
-    private final ByteList variableName;
-    private final ByteList operatorName;
-    private final ByteList variableNameAsgn;
+    private final RubySymbol variableName;
+    private final RubySymbol operatorName;
+    private final RubySymbol variableNameAsgn;
     private final boolean isLazy;
 
-    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, ByteList variableName, ByteList operatorName, boolean isLazy) {
+    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, RubySymbol variableName,
+                      RubySymbol operatorName, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment());
 
         assert receiverNode != null : "receiverNode is not null";
@@ -60,13 +61,8 @@ public class OpAsgnNode extends Node {
         this.valueNode = valueNode;
         this.variableName = variableName;
         this.operatorName = operatorName;
-        this.variableNameAsgn = ((ByteList) variableName.clone()).append('=');
+        this.variableNameAsgn = variableName.asAccessor();
         this.isLazy = isLazy;
-    }
-
-    @Deprecated
-    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName, boolean isLazy) {
-        this(position, receiverNode, valueNode, StringSupport.stringAsByteList(variableName), StringSupport.stringAsByteList(operatorName), isLazy);
     }
 
     public NodeType getNodeType() {
@@ -86,19 +82,23 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getOperatorName() {
-        return StringSupport.byteListAsString(operatorName);
+        return operatorName.asJavaString();
     }
 
     public ByteList getOperatorByteName() {
+        return operatorName.getBytes();
+    }
+
+    public RubySymbol getOperatorSymbolName() {
         return operatorName;
     }
 
     public boolean isOr() {
-        return CommonByteLists.OR_OR.equals(operatorName);
+        return CommonByteLists.OR_OR.equals(operatorName.getBytes());
     }
 
     public boolean isAnd() {
-        return CommonByteLists.AMPERSAND_AMPERSAND.equals(operatorName);
+        return CommonByteLists.AMPERSAND_AMPERSAND.equals(operatorName.getBytes());
     }
 
     /**
@@ -122,18 +122,26 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getVariableName() {
-        return StringSupport.byteListAsString(variableName);
+        return variableName.asJavaString();
     }
 
     public ByteList getVariableByteName() {
+        return variableName.getBytes();
+    }
+
+    public RubySymbol getVariableSymbolName() {
         return variableName;
     }
     
     public String getVariableNameAsgn() {
-        return StringSupport.byteListAsString(variableNameAsgn);
+        return variableNameAsgn.asJavaString();
     }
 
     public ByteList getVariableByteNameAsgn() {
+        return variableNameAsgn.getBytes();
+    }
+
+    public RubySymbol getVariableSymbolNameAsgn() {
         return variableNameAsgn;
     }
     

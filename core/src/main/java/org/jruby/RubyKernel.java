@@ -276,7 +276,7 @@ public class RubyKernel {
     @JRubyMethod(name = "open", required = 1, optional = 3, module = true, visibility = PRIVATE)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
-        //        ID to_open = 0;
+        //        symbol to_open = 0;
         boolean redirect = false;
         int argc = args.length;
 
@@ -772,8 +772,8 @@ public class RubyKernel {
         DynamicScope currentScope = context.getCurrentScope();
 
         while (currentScope != null) {
-            for (ByteList rawByteListName : currentScope.getStaticScope().getByteVariables()) {
-                RubySymbol name = runtime.newSymbol(rawByteListName);
+            for (String id: currentScope.getStaticScope().getVariables()) {
+                RubySymbol name = runtime.newSymbol(id);
                 // FIXME: Technically a non-charset String will still not work here.
                 if (IdUtil.isLocal(name.toString()) && !encounteredLocalVariables.contains(name)) {
                     allLocalVariables.push(name);

@@ -88,6 +88,7 @@ import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.murmurCombine;
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.RubyStringBuilder.buildString;
 
 /**
  * The implementation of the built-in class Array in Ruby.
@@ -2348,7 +2349,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                     case -1: smaller = false;
                 }
             } else {
-                throw runtime.newTypeError("wrong argument type " + v.getType().getName() + " (must be numeric, true, false or nil");
+                throw runtime.newTypeError(buildString(runtime, "wrong argument type ", v.getType().rubyName(), " (must be numeric, true, false or nil"));
             }
             if (smaller) {
                 high = mid;
@@ -4725,7 +4726,7 @@ float_loop:
         if (!opts.isNil()) {
             buffer = ArgsUtil.extractKeywordArg(context, "buffer", opts);
             if (!buffer.isNil() && !(buffer instanceof RubyString)) {
-                throw runtime.newTypeError("buffer must be String, not " + buffer.getType().getName());
+                throw runtime.newTypeError(buildString(runtime, "buffer must be String, not ", buffer.getType().rubyName()));
             }
         }
 

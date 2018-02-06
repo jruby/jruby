@@ -61,7 +61,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -75,6 +74,7 @@ import org.jruby.util.Numeric;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.safe_mul;
+import static org.jruby.util.RubyStringBuilder.buildString;
 
 /**
  *  1.9 complex.c as of revision: 20011
@@ -709,13 +709,14 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.runtime;
+
         if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
-            return context.runtime.newArray(newComplexBang(context, getMetaClass(), other), this);
+            return runtime.newArray(newComplexBang(context, getMetaClass(), other), this);
         }
-        if (other instanceof RubyComplex) {
-            return context.runtime.newArray(other, this);
-        }
-        throw context.runtime.newTypeError(other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());
+        if (other instanceof RubyComplex) return runtime.newArray(other, this);
+
+        throw runtime.newTypeError(buildString(runtime, other.getMetaClass().rubyName(), " can't be coerced into ", getMetaClass().rubyName()));
     }
 
     /** nucomp_abs 
@@ -1113,8 +1114,7 @@ public class RubyComplex extends RubyNumeric {
     private static IRubyObject str_to_c_strict(ThreadContext context, IRubyObject recv) {
         RubyArray a = str_to_c_internal(context, recv);
         if (a.eltInternal(0).isNil() || a.eltInternal(1).convertToString().getByteList().length() > 0) {
-            IRubyObject s = recv.callMethod(context, "inspect");
-            throw context.runtime.newArgumentError("invalid value for convert(): " + s.convertToString());
+            throw context.runtime.newArgumentError(buildString(context.runtime, "invalid value for convert(): ", recv.callMethod(context, "inspect")));
         }
         return a.eltInternal(0);
     }

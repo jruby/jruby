@@ -33,32 +33,27 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Access a local variable 
  */
 public class LocalVarNode extends Node implements INameNode, IScopedNode, SideEffectFree {
     // The name of the variable
-    private ByteList name;
+    private RubySymbol name;
     
     // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
     // is what index in the right scope to set the value.
     private final int location;
 
-    public LocalVarNode(ISourcePosition position, int location, ByteList name) {
+    public LocalVarNode(ISourcePosition position, int location, RubySymbol name) {
         super(position, false);
         this.location = location;
         this.name = name;
-    }
-
-    @Deprecated
-    public LocalVarNode(ISourcePosition position, int location, String name) {
-        this(position, location, StringSupport.stringAsByteList(name));
     }
 
     public NodeType getNodeType() {
@@ -98,20 +93,15 @@ public class LocalVarNode extends Node implements INameNode, IScopedNode, SideEf
      * @return the name of the variable
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
-        return name;
+        return name.getBytes();
     }
-    
-    /**
-     * Set the name of this variable (for refactoring support)
-     * @param name the new name
-     */
-    @Deprecated
-    public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
+
+    public RubySymbol getSymbolName() {
+        return name;
     }
     
     public List<Node> childNodes() {

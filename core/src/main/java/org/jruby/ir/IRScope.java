@@ -345,7 +345,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.toString();
     }
 
     public ByteList getByteName() {
@@ -875,7 +875,7 @@ public abstract class IRScope implements ParseResult {
 
     public LocalVariable getNewLocalVariable(ByteList name, int scopeDepth) {
         assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
-        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
+        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name.toString()));
         localVars.put(name, lvar);
         return lvar;
     }

@@ -57,7 +57,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
 import org.jruby.anno.FrameField;
@@ -132,6 +131,8 @@ import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
+
+import static org.jruby.util.RubyStringBuilder.buildString;
 
 
 /**
@@ -544,6 +545,73 @@ public class RubyModule extends RubyObject {
     public String getName() {
         if (cachedName != null) return cachedName;
         return calculateName();
+    }
+
+    /**
+     * Generate a fully-qualified class name or a #-style name for anonymous and singleton classes which
+     * is properly encoded.
+     *
+     * @return a properly encoded class name.
+     *
+     * Note: getName() is only really valid for ASCII values.  This should be favored over using it.
+     */
+    public RubyString rubyName() {
+        return cachedRubyName != null ? cachedRubyName : calculateRubyName();
+    }
+
+    public RubyString rubyBaseName() {
+        String baseName = getBaseName();
+
+        return baseName == null ? null : (RubyString) getRuntime().newSymbol(baseName).to_s();
+    }
+
+    private RubyString calculateAnonymousRubyName() {
+        Ruby runtime = getRuntime();
+        RubyString anonBase = runtime.newString("#<"); // anonymous classes get the #<Class:0xdeadbeef> format
+        anonBase.append(metaClass.getRealClass().rubyName()).append(runtime.newString(":0x"));
+        anonBase.append(runtime.newString(Integer.toHexString(System.identityHashCode(this)))).append(runtime.newString(">"));
+
+        return anonBase;
+    }
+
+    private RubyString calculateRubyName() {
+        boolean cache = true;
+
+        if (getBaseName() == null) return calculateAnonymousRubyName(); // no name...anonymous!
+
+        Ruby runtime = getRuntime();
+        RubyClass objectClass = runtime.getObject();
+        List<RubyString> parents = new ArrayList<>();
+        for (RubyModule p = getParent(); p != null && p != objectClass; p = p.getParent()) {
+            if (p == this) break;  // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+
+            RubyString name = p.rubyBaseName();
+
+            // This is needed when the enclosing class or module is a singleton.
+            // In that case, we generated a name such as null::Foo, which broke
+            // Marshalling, among others. The correct thing to do in this situation
+            // is to insert the generate the name of form #<Class:01xasdfasd> if
+            // it's a singleton module/class, which this code accomplishes.
+            if (name == null) {
+                cache = false;
+                name = p.rubyName();
+            }
+
+            parents.add(name);
+        }
+
+        Collections.reverse(parents);
+
+        RubyString colons = runtime.newString("::");
+        RubyString fullName = runtime.newString();
+        for (RubyString parent:  parents) {
+            fullName.cat19(parent).cat19(colons);
+        }
+        fullName.cat19(rubyBaseName());
+
+        if (cache) cachedRubyName = fullName;
+
+        return fullName;
     }
 
     /**
@@ -1746,7 +1814,7 @@ public class RubyModule extends RubyObject {
                 RubyClass tmp = clazz.getSuperClass();
                 while (tmp != null && tmp.isIncluded()) tmp = tmp.getSuperClass(); // need to skip IncludedModuleWrappers
                 if (tmp != null) tmp = tmp.getRealClass();
-                if (tmp != superClazz) throw runtime.newTypeError("superclass mismatch for class " + name);
+                if (tmp != superClazz) throw runtime.newTypeError(buildString(runtime, "superclass mismatch for class ", decode(name)));
                 // superClazz = null;
             }
         } else if ((clazz = searchProvidersForClass(name, superClazz)) != null) {
@@ -2110,12 +2178,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "name")
     public IRubyObject name19() {
-        Ruby runtime = getRuntime();
-        if (getBaseName() == null) {
-            return runtime.getNil();
-        } else {
-            return runtime.newString(getName());
-        }
+        return getBaseName() == null ? getRuntime().getNil() : rubyName();
     }
 
     protected IRubyObject cloneMethods(RubyModule clone) {
@@ -2263,19 +2326,23 @@ public class RubyModule extends RubyObject {
     @Override
     public IRubyObject to_s() {
         if(isSingleton()){
-            IRubyObject attached = ((MetaClass)this).getAttached();
-            StringBuilder buffer = new StringBuilder("#<Class:");
+            IRubyObject attached = ((MetaClass) this).getAttached();
+            RubyString buffer = getRuntime().newString("#<Class:");
+
             if (attached != null) { // FIXME: figure out why we getService null sometimes
-                if(attached instanceof RubyClass || attached instanceof RubyModule){
-                    buffer.append(attached.inspect());
-                }else{
-                    buffer.append(attached.anyToString());
+                if (attached instanceof RubyClass || attached instanceof RubyModule) {
+                    buffer.cat19(attached.inspect().convertToString());
+                } else {
+                    buffer.cat19((RubyString) attached.anyToString());
                 }
             }
-            buffer.append('>');
-            return getRuntime().newString(buffer.toString());
+            buffer.cat19(getRuntime().newString(">"));
+
+            return buffer;
         }
-        return getRuntime().newString(getName());
+        IRubyObject a = rubyName();
+
+        return a;
     }
 
     /** rb_mod_eqq
@@ -3287,9 +3354,7 @@ public class RubyModule extends RubyObject {
 
         int sep = name.indexOf("::");
         // symbol form does not allow ::
-        if (symbol instanceof RubySymbol && sep != -1) {
-            throw runtime.newNameError("wrong constant name", name);
-        }
+        if (symbol instanceof RubySymbol && sep != -1) throw runtime.newNameError("wrong constant name", name);
 
         RubyModule mod = this;
 
@@ -4608,6 +4673,7 @@ public class RubyModule extends RubyObject {
      * The cached name, only cached once this class and all containing classes are non-anonymous
      */
     private String cachedName;
+    private RubyString cachedRubyName;
 
     @SuppressWarnings("unchecked")
     private volatile Map<String, ConstantEntry> constants = Collections.EMPTY_MAP;

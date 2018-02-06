@@ -10,9 +10,10 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class PutConstInstr extends PutInstr implements FixedArityInstr {
-    public PutConstInstr(Operand scopeOrObj, String constName, Operand val) {
+    public PutConstInstr(Operand scopeOrObj, ByteList constName, Operand val) {
         super(Operation.PUT_CONST, scopeOrObj, constName, val);
     }
 
@@ -33,7 +34,7 @@ public class PutConstInstr extends PutInstr implements FixedArityInstr {
     }
 
     public static PutConstInstr decode(IRReaderDecoder d) {
-        return new PutConstInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
+        return new PutConstInstr(d.decodeOperand(), d.decodeByteList(), d.decodeOperand());
     }
 
     @Override

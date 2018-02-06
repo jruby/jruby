@@ -423,7 +423,7 @@ public class IRBuilder {
             case COLON3NODE: return buildColon3((Colon3Node) node);
             case COMPLEXNODE: return buildComplex((ComplexNode) node);
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node);
-            case CONSTNODE: return searchConst(((ConstNode) node).getName());
+            case CONSTNODE: return searchConst(((ConstNode) node).getByteName());
             case DASGNNODE: return buildDAsgn((DAsgnNode) node);
             case DEFINEDNODE: return buildGetDefinition(((DefinedNode) node).getExpressionNode());
             case DEFNNODE: return buildDefn((MethodDefNode) node);
@@ -684,7 +684,7 @@ public class IRBuilder {
                 buildAttrAssignAssignment(node, rhsVal);
                 break;
             case CLASSVARASGNNODE:
-                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getName(), rhsVal));
+                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getByteName(), rhsVal));
                 break;
             case CONSTDECLNODE:
                 buildConstDeclAssignment((ConstDeclNode) node, rhsVal);
@@ -700,7 +700,7 @@ public class IRBuilder {
                 break;
             case INSTASGNNODE:
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getName(), rhsVal));
+                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getByteName(), rhsVal));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -778,7 +778,7 @@ public class IRBuilder {
             case CLASSVARASGNNODE:
                 v = createTemporaryVariable();
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
-                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getName(), v));
+                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getByteName(), v));
                 break;
             case CONSTDECLNODE:
                 v = createTemporaryVariable();
@@ -794,7 +794,7 @@ public class IRBuilder {
                 v = createTemporaryVariable();
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getName(), v));
+                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getByteName(), v));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -1395,7 +1395,7 @@ public class IRBuilder {
     // @@c
     public Operand buildClassVar(ClassVarNode node) {
         Variable ret = createTemporaryVariable();
-        addInstr(new GetClassVariableInstr(ret, classVarDefinitionContainer(), node.getName()));
+        addInstr(new GetClassVariableInstr(ret, classVarDefinitionContainer(), node.getByteName()));
         return ret;
     }
 
@@ -1413,7 +1413,7 @@ public class IRBuilder {
     // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode) {
         Operand val = build(classVarAsgnNode.getValueNode());
-        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getName(), val));
+        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getByteName(), val));
         return val;
     }
 
@@ -1473,7 +1473,7 @@ public class IRBuilder {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            return putConstant(constDeclNode.getName(), value);
+            return putConstant(constDeclNode.getByteName(), value);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             return putConstant((Colon2Node) constNode, value);
         } else { // colon3, assign in Object
@@ -1481,20 +1481,20 @@ public class IRBuilder {
         }
     }
 
-    private Operand putConstant(String name, Operand value) {
+    private Operand putConstant(ByteList name, Operand value) {
         addInstr(new PutConstInstr(findContainerModule(), name, value));
 
         return value;
     }
 
     private Operand putConstant(Colon3Node node, Operand value) {
-        addInstr(new PutConstInstr(new ObjectClass(), node.getName(), value));
+        addInstr(new PutConstInstr(new ObjectClass(), node.getByteName(), value));
 
         return value;
     }
 
     private Operand putConstant(Colon2Node node, Operand value) {
-        addInstr(new PutConstInstr(build(node.getLeftNode()), node.getName(), value));
+        addInstr(new PutConstInstr(build(node.getLeftNode()), node.getByteName(), value));
 
         return value;
     }
@@ -1507,11 +1507,11 @@ public class IRBuilder {
         return putConstant((Colon3Node) constNode, value);
     }
 
-    private Operand searchModuleForConst(Operand startingModule, String name) {
+    private Operand searchModuleForConst(Operand startingModule, ByteList name) {
         return addResultInstr(new SearchModuleForConstInstr(createTemporaryVariable(), startingModule, name, true));
     }
 
-    private Operand searchConst(String name) {
+    private Operand searchConst(ByteList name) {
         return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, startingSearchScope(), false));
     }
 
@@ -1519,14 +1519,14 @@ public class IRBuilder {
         Node lhs = colon2.getLeftNode();
 
         // Colon2ImplicitNode - (module|class) Foo.  Weird, but it is a wrinkle of AST inheritance.
-        if (lhs == null) return searchConst(colon2.getName());
+        if (lhs == null) return searchConst(colon2.getByteName());
 
         // Colon2ConstNode (Left::name)
-        return searchModuleForConst(build(lhs), colon2.getName());
+        return searchModuleForConst(build(lhs), colon2.getByteName());
     }
 
     public Operand buildColon3(Colon3Node node) {
-        return searchModuleForConst(new ObjectClass(), node.getName());
+        return searchModuleForConst(new ObjectClass(), node.getByteName());
     }
 
     public Operand buildComplex(ComplexNode node) {
@@ -1574,7 +1574,7 @@ public class IRBuilder {
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         addInstr(new LabelInstr(rescueLabel));
         addInstr(new ReceiveRubyExceptionInstr(exc));
-        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception"));
+        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), CommonByteLists.EXCEPTION));
         outputExceptionCheck(excType, exc, caughtLabel);
 
         // Fall-through when the exc !== Exception; rethrow 'exc'
@@ -1733,7 +1733,7 @@ public class IRBuilder {
             Label defLabel = getNewLabel();
             Label doneLabel = getNewLabel();
             Variable tmpVar  = createTemporaryVariable();
-            String constName = ((ConstNode) node).getName();
+            ByteList constName = ((ConstNode) node).getByteName();
             addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), constName));
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
@@ -2772,7 +2772,7 @@ public class IRBuilder {
         // for JIT/AOT.  Also it means needing to grow the size of any heap scope for variables.
         if (nearestNonClosureBuilder == null) {
             Variable excType = createTemporaryVariable();
-            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError"));
+            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), CommonByteLists.NOT_IMPLEMENTED_ERROR));
             Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), CommonByteLists.NEW,
                     excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
             addInstr(new ThrowExceptionInstr(exc));
@@ -2999,12 +2999,12 @@ public class IRBuilder {
     public Operand buildInstAsgn(final InstAsgnNode instAsgnNode) {
         Operand val = build(instAsgnNode.getValueNode());
         // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-        addInstr(new PutFieldInstr(buildSelf(), instAsgnNode.getName(), val));
+        addInstr(new PutFieldInstr(buildSelf(), instAsgnNode.getByteName(), val));
         return val;
     }
 
     public Operand buildInstVar(InstVarNode node) {
-        return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getName()));
+        return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getByteName()));
     }
 
     private InterpreterContext buildIterInner(IterNode iterNode) {
@@ -3108,16 +3108,16 @@ public class IRBuilder {
                 int offset = slot & 0xffff;
 
                 // For now, we'll continue to implicitly reference "$~"
-                ByteList var = getVarNameFromScopeTree(scope, depth, offset);
+                ByteList var = manager.runtime.newSymbol(getVarNameFromScopeTree(scope, depth, offset)).getBytes();
                 addInstr(new SetCapturedVarInstr(getLocalVariable(var, depth), result, var));
             }
         }
         return result;
     }
 
-    private ByteList getVarNameFromScopeTree(IRScope scope, int depth, int offset) {
+    private String getVarNameFromScopeTree(IRScope scope, int depth, int offset) {
         if (depth == 0) {
-            return scope.getStaticScope().getByteVariables()[offset];
+            return scope.getStaticScope().getVariables()[offset];
         }
         return getVarNameFromScopeTree(scope.getLexicalParent(), depth - 1, offset);
     }
@@ -3260,16 +3260,16 @@ public class IRBuilder {
 
     private Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
         Variable leftModule = createTemporaryVariable();
-        String name;
+        ByteList name;
 
         if (lhs instanceof Colon2Node) {
             Colon2Node colon2Node = (Colon2Node) lhs;
-            name = colon2Node.getName();
+            name = colon2Node.getByteName();
             Operand leftValue = build(colon2Node.getLeftNode());
             copy(leftModule, leftValue);
         } else { // colon3
             copy(leftModule, new ObjectClass());
-            name = ((Colon3Node) lhs).getName();
+            name = ((Colon3Node) lhs).getByteName();
         }
 
         addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
@@ -3285,7 +3285,7 @@ public class IRBuilder {
             addInstr(BNEInstr.create(done, result, UndefinedValue.UNDEFINED));
             Operand rhsValue = build(node.getSecondNode());
             copy(result, rhsValue);
-            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
+            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getByteName(), rhsValue));
             addInstr(new LabelInstr(done));
             return result;
         } else if (node.isAnd()) {
@@ -3295,7 +3295,7 @@ public class IRBuilder {
             addInstr(new BFalseInstr(done, result));
             Operand rhsValue = build(node.getSecondNode());
             copy(result, rhsValue);
-            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
+            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getByteName(), rhsValue));
             addInstr(new LabelInstr(done));
             return result;
         }

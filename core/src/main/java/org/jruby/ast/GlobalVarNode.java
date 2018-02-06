@@ -33,26 +33,21 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  *	access to a global variable.
  */
 public class GlobalVarNode extends Node implements INameNode, SideEffectFree {
-    private ByteList name;
+    private RubySymbol name;
 
-    public GlobalVarNode(ISourcePosition position, ByteList name) {
+    public GlobalVarNode(ISourcePosition position, RubySymbol name) {
         super(position, false);
         this.name = name;
-    }
-
-    @Deprecated
-    public GlobalVarNode(ISourcePosition position, String name) {
-        this(position, StringSupport.stringAsByteList(name));
     }
 
     public NodeType getNodeType() {
@@ -72,10 +67,14 @@ public class GlobalVarNode extends Node implements INameNode, SideEffectFree {
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
 

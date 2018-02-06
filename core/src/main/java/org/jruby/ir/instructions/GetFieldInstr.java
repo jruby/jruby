@@ -13,22 +13,25 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.util.ByteList;
+
+import static org.jruby.util.RubyStringBuilder.buildString;
 
 public class GetFieldInstr extends GetInstr implements FixedArityInstr {
     private transient VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
-    public GetFieldInstr(Variable dest, Operand obj, String fieldName) {
+    public GetFieldInstr(Variable dest, Operand obj, ByteList fieldName) {
         super(Operation.GET_FIELD, dest, obj, fieldName);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new GetFieldInstr(ii.getRenamedVariable(getResult()),
-                getSource().cloneForInlining(ii), getRef());
+                getSource().cloneForInlining(ii), getByteRef());
     }
 
     public static GetFieldInstr decode(IRReaderDecoder d) {
-        return new GetFieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+        return new GetFieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeByteList());
     }
 
     public VariableAccessor getAccessor(IRubyObject o) {
@@ -49,7 +52,8 @@ public class GetFieldInstr extends GetInstr implements FixedArityInstr {
         Object result = a == null ? null : (IRubyObject)a.get(object);
         if (result == null) {
             if (context.runtime.isVerbose()) {
-                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + getRef() + " not initialized");
+                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED,
+                        buildString(context.runtime, "instance variable ", context.runtime.newSymbol(getRef()), " not initialized"));
             }
             result = context.nil;
         }

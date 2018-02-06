@@ -33,7 +33,6 @@
 package org.jruby;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
@@ -59,7 +58,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -91,6 +89,7 @@ import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
+import static org.jruby.util.RubyStringBuilder.buildString;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -663,17 +662,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
-        RubyThread rubyThread = new RubyThread(recv.getRuntime(), (RubyClass) recv);
+        Ruby runtime = recv.getRuntime();
+        RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
 
         if (callInit) {
             rubyThread.callInit(args, block);
 
             if (rubyThread.threadImpl == ThreadLike.DUMMY) {
-                throw recv.getRuntime().newThreadError("uninitialized thread - check " + ((RubyClass) recv).getName() + "#initialize");
+                throw runtime.newThreadError(buildString(runtime, "uninitialized thread - check " , ((RubyClass) recv).rubyName(), "#initialize"));
             }
         } else {
             // for Thread::start, which does not call the subclass's initialize
-            rubyThread.initialize(recv.getRuntime().getCurrentContext(), args, block);
+            rubyThread.initialize(runtime.getCurrentContext(), args, block);
         }
 
         return rubyThread;
@@ -891,7 +891,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         } else if (originalKey instanceof RubyString) {
             return getRuntime().newSymbol(originalKey.asJavaString());
         } else {
-            throw getRuntime().newTypeError(originalKey + " is not a symbol nor a string");
+            throw getRuntime().newTypeError(buildString(getRuntime(), originalKey, " is not a symbol nor a string"));
         }
     }
 
@@ -1693,9 +1693,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     protected void printReportExceptionWarning() {
-        PrintStream errorStream = getRuntime().getErrorStream();
+        Ruby runtime = getRuntime();
         String name = threadImpl.getReportName();
-        errorStream.println("warning: thread \"" + name + "\" terminated with exception:");
+        runtime.getErrorStream().println("warning: thread \"" + name + "\" terminated with exception:");
     }
 
     /**

@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -36,13 +37,13 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * The rest argument for a method (def foo(a, *b, c)).
  */
 public class RestArgNode extends ArgumentNode implements INameNode {
-    public RestArgNode(ISourcePosition position, String name, int index) {
+    public RestArgNode(ISourcePosition position, RubySymbol name, int index) {
         super(position, name, index);
     }
 
     // 1.9 only - lvar assign logic returns an Argument node
     public RestArgNode(ArgumentNode argNode) {
-        this(argNode.getPosition(), argNode.getName(), argNode.getIndex());
+        this(argNode.getPosition(), argNode.getSymbolName(), argNode.getIndex());
     }
 
     @Override

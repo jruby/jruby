@@ -28,6 +28,8 @@
 package org.jruby.ast;
 
 import java.util.List;
+
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -64,11 +66,14 @@ public class OptArgNode extends Node implements INameNode {
     }
 
     public String getName() {
-        // FIXME: When is this not a INameNode?
-        return value instanceof INameNode ? ((INameNode) value).getName() : null;
+        return ((INameNode) value).getName();
     }
 
     public ByteList getByteName() {
-        return value instanceof INameNode ? ((INameNode) value).getByteName() : null;
+        return ((INameNode) value).getByteName();
+    }
+
+    public RubySymbol getSymbolName() {
+        return ((INameNode) value).getSymbolName();
     }
 }

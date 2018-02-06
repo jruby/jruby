@@ -34,28 +34,23 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Class variable declaration.
  */
 @Deprecated
 public class ClassVarDeclNode extends AssignableNode implements INameNode {
-    private ByteList name;
+    private RubySymbol name;
 
-    public ClassVarDeclNode(ISourcePosition position, ByteList name, Node valueNode) {
+    public ClassVarDeclNode(ISourcePosition position, RubySymbol name, Node valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
 
         this.name = name;
-    }
-
-    @Deprecated
-    public ClassVarDeclNode(ISourcePosition position, String name, Node valueNode) {
-        this(position, StringSupport.stringAsByteList(name), valueNode);
     }
 
     public NodeType getNodeType() {
@@ -75,10 +70,14 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
     

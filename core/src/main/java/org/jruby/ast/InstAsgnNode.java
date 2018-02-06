@@ -34,31 +34,26 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /** 
  * Represents an instance variable assignment.
  */
 public class InstAsgnNode extends AssignableNode implements INameNode {
-    private ByteList name;
+    private RubySymbol name;
 
     /**
      * @param name the name of the instance variable
      * @param valueNode the value of the variable
      **/
-    public InstAsgnNode(ISourcePosition position, ByteList name, Node valueNode) {
+    public InstAsgnNode(ISourcePosition position, RubySymbol name, Node valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;
-    }
-
-    @Deprecated
-    public InstAsgnNode(ISourcePosition position, String name, Node valueNode) {
-        this(position, StringSupport.stringAsByteList(name), valueNode);
     }
 
     public NodeType getNodeType() {
@@ -78,19 +73,18 @@ public class InstAsgnNode extends AssignableNode implements INameNode {
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
     
     public List<Node> childNodes() {
         return createList(getValueNode());
-    }
-
-    @Deprecated
-    public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
     }
 }

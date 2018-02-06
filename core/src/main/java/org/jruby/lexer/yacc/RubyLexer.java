@@ -274,7 +274,8 @@ public class RubyLexer extends LexingCommon {
         // FIXME: Get token from newtok index to lex_p?
         ByteList value = createTokenByteList();
 
-        if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(value) >= 0) {
+        // FIXME: bytelist_love: use ID helper here once it is made.
+        if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(value.toString()) >= 0) {
             setState(EXPR_END);
         }
 
@@ -1095,8 +1096,9 @@ public class RubyLexer extends LexingCommon {
     }
 
     private int identifierToken(int result, ByteList value) {
+        // FIXME: bytelist_love: use ID helper here once it is made.
         if (result == RubyParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
-                parserSupport.getCurrentScope().isDefined(value) >= 0) {
+                parserSupport.getCurrentScope().isDefined(value.toString()) >= 0) {
             setState(EXPR_END|EXPR_LABEL);
         }
 

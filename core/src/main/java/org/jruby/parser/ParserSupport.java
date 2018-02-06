@@ -43,12 +43,12 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
+import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
@@ -57,6 +57,7 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
@@ -139,23 +140,23 @@ public class ParserSupport {
         switch (node.getNodeType()) {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
-            ByteList name = ((INameNode) node).getByteName();
+            RubySymbol name = ((INameNode) node).getSymbolName();
             if (name.equals(lexer.getCurrentArg())) {
                 warn(ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
             }
             return currentScope.declare(node.getPosition(), name);
         case CONSTDECLNODE: // CONSTANT
-            return new ConstNode(node.getPosition(), ((INameNode) node).getByteName());
+            return new ConstNode(node.getPosition(), ((INameNode) node).getSymbolName());
         case INSTASGNNODE: // INSTANCE VARIABLE
-            return new InstVarNode(node.getPosition(), ((INameNode) node).getByteName());
+            return new InstVarNode(node.getPosition(), ((INameNode) node).getSymbolName());
         case CLASSVARDECLNODE:
         case CLASSVARASGNNODE:
-            return new ClassVarNode(node.getPosition(), ((INameNode) node).getByteName());
+            return new ClassVarNode(node.getPosition(), ((INameNode) node).getSymbolName());
         case GLOBALASGNNODE:
-            return new GlobalVarNode(node.getPosition(), ((INameNode) node).getByteName());
+            return new GlobalVarNode(node.getPosition(), ((INameNode) node).getSymbolName());
         }
 
-        getterIdentifierError(node.getPosition(), ((INameNode) node).getByteName());
+        getterIdentifierError(node.getPosition(), ((INameNode) node).getSymbolName());
         return null;
     }
 
@@ -163,44 +164,21 @@ public class ParserSupport {
         if (name.equals(lexer.getCurrentArg())) {
             warn(ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
         }
-        return currentScope.declare(lexer.tokline, name);
-    }
 
-    @Deprecated
-    public Node declareIdentifier(String name) {
-        if (name.equals(lexer.getCurrentArg())) {
-            warn(ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
-        }
-        return currentScope.declare(lexer.tokline, name);
+        return currentScope.declare(lexer.tokline, symbolID(name));
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableLabelOrIdentifier(ByteList name, Node value) {
-        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
-    }
-
-    @Deprecated
-    public AssignableNode assignableLabelOrIdentifier(String name, Node value) {
-        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
+        return currentScope.assign(lexer.getPosition(), symbolID(name), makeNullNil(value));
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableKeyword(ByteList name, Node value) {
-        return currentScope.assignKeyword(lexer.getPosition(), name, makeNullNil(value));
-    }
-
-    @Deprecated
-    public AssignableNode assignableKeyword(String name, Node value) {
-        return currentScope.assignKeyword(lexer.getPosition(), name, makeNullNil(value));
-    }
-
-    // Only calls via f_kw so we know it has to be tLABEL
-    @Deprecated
-    public AssignableNode assignableLabel(String name, Node value) {
-        return currentScope.assignKeyword(lexer.getPosition(), name, makeNullNil(value));
+        return currentScope.assignKeyword(lexer.getPosition(), symbolID(name), makeNullNil(value));
     }
     
-    protected void getterIdentifierError(ISourcePosition position, ByteList identifier) {
+    protected void getterIdentifierError(ISourcePosition position, RubySymbol identifier) {
         lexer.compile_error(PID.BAD_IDENTIFIER, "identifier " + identifier + " is not valid to get");
     }
 
@@ -272,35 +250,17 @@ public class ParserSupport {
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableInCurr(ByteList name, Node value) {
-        currentScope.addVariableThisScope(name);
-        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
-    }
-
-    @Deprecated
-    public AssignableNode assignableInCurr(String name, Node value) {
-        currentScope.addVariableThisScope(name);
-        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
+        currentScope.addVariableThisScope(ID(name));
+        return currentScope.assign(lexer.getPosition(), symbolID(name), makeNullNil(value));
     }
 
     public Node getOperatorCallNode(Node firstNode, ByteList operator) {
         checkExpression(firstNode);
 
-        return new CallNode(firstNode.getPosition(), firstNode, operator, null, null, false);
-    }
-
-    @Deprecated
-    public Node getOperatorCallNode(Node firstNode, String operator) {
-        value_expr(lexer, firstNode);
-
-        return new CallNode(firstNode.getPosition(), firstNode, operator, null, null);
+        return new CallNode(firstNode.getPosition(), firstNode, symbolID(operator), null, null, false);
     }
     
     public Node getOperatorCallNode(Node firstNode, ByteList operator, Node secondNode) {
-        return getOperatorCallNode(firstNode, operator, secondNode, null);
-    }
-
-    @Deprecated
-    public Node getOperatorCallNode(Node firstNode, String operator, Node secondNode) {
         return getOperatorCallNode(firstNode, operator, secondNode, null);
     }
 
@@ -313,20 +273,7 @@ public class ParserSupport {
         value_expr(lexer, firstNode);
         value_expr(lexer, secondNode);
 
-        return new CallNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode), null, false);
-    }
-
-    @Deprecated
-    public Node getOperatorCallNode(Node firstNode, String operator, Node secondNode, ISourcePosition defaultPosition) {
-        if (defaultPosition != null) {
-            firstNode = checkForNilNode(firstNode, defaultPosition);
-            secondNode = checkForNilNode(secondNode, defaultPosition);
-        }
-
-        checkExpression(firstNode);
-        checkExpression(secondNode);
-
-        return new CallNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode), null);
+        return new CallNode(firstNode.getPosition(), firstNode, symbolID(operator), new ArrayNode(secondNode.getPosition(), secondNode), null, false);
     }
 
     public Node getMatchNode(Node firstNode, Node secondNode) {
@@ -348,7 +295,7 @@ public class ParserSupport {
             return new Match3Node(firstNode.getPosition(), firstNode, secondNode);
         }
 
-        return getOperatorCallNode(firstNode, "=~", secondNode);
+        return getOperatorCallNode(firstNode, CommonByteLists.EQUAL_TILDE, secondNode);
     }
 
     /**
@@ -361,7 +308,7 @@ public class ParserSupport {
     public Node aryset(Node receiver, Node index) {
         value_expr(lexer, receiver);
 
-        return new_attrassign(receiver.getPosition(), receiver, "[]=", index, false);
+        return new_attrassign(receiver.getPosition(), receiver, CommonByteLists.ASET_METHOD, index, false);
     }
 
     /**
@@ -375,23 +322,11 @@ public class ParserSupport {
         return attrset(receiver, lexer.DOT, name);
     }
 
-    @Deprecated
-    public Node attrset(Node receiver, String name) {
-        return attrset(receiver, ".", name);
-    }
-
     public Node attrset(Node receiver, ByteList callType, ByteList name) {
         checkExpression(receiver);
 
 
         return new_attrassign(receiver.getPosition(), receiver, name.append('='), null, isLazy(callType));
-    }
-
-    @Deprecated
-    public Node attrset(Node receiver, String callType, String name) {
-        value_expr(lexer, receiver);
-
-        return new_attrassign(receiver.getPosition(), receiver, name + "=", null, isLazy(callType));
     }
 
     public void backrefAssignError(Node node) {
@@ -697,7 +632,7 @@ public class ParserSupport {
         case DREGEXPNODE: {
             ISourcePosition position = node.getPosition();
 
-            return new Match2Node(position, node, new GlobalVarNode(position, DOLLAR_UNDERSCORE));
+            return new Match2Node(position, node, new GlobalVarNode(position, symbolID(DOLLAR_UNDERSCORE)));
         }
         case ANDNODE:
             leftNode = cond0(((AndNode) node).getFirstNode());
@@ -715,11 +650,12 @@ public class ParserSupport {
             
             ByteList label = new ByteList(new byte[] {'F', 'L', 'I', 'P'}, USASCII_ENCODING);
             label.append(Long.toString(node.hashCode()).getBytes());
+            RubySymbol symbolID = symbolID(label);
 
             return new FlipNode(node.getPosition(),
                     getFlipConditionNode(((DotNode) node).getBeginNode()),
                     getFlipConditionNode(((DotNode) node).getEndNode()),
-                    dotNode.isExclusive(), currentScope.getLocalScope().addVariable(label));
+                    dotNode.isExclusive(), currentScope.getLocalScope().addVariable(symbolID.getRawString()));
         }
         case REGEXPNODE:
             if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
@@ -748,7 +684,7 @@ public class ParserSupport {
 
         if (node instanceof FixnumNode) {
             warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
-            return getOperatorCallNode(node, lexer.EQ_EQ, new GlobalVarNode(node.getPosition(), lexer.DOLLAR_DOT));
+            return getOperatorCallNode(node, lexer.EQ_EQ, new GlobalVarNode(node.getPosition(), symbolID(lexer.DOLLAR_DOT)));
         } 
 
         return node;
@@ -875,42 +811,31 @@ public class ParserSupport {
 
         ISourcePosition position = lexer.tokline;  // FIXME: ruby_sourceline in new lexer.
 
-        Node newNode = new OpElementAsgnNode(position, receiverNode, operatorName, argsNode, valueNode);
+        Node newNode = new OpElementAsgnNode(position, receiverNode, symbolID(operatorName), argsNode, valueNode);
 
         fixpos(newNode, receiverNode);
 
         return newNode;
     }
 
-    @Deprecated
-    public Node new_opElementAsgnNode(Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
-        return new_opElementAsgnNode(receiverNode, StringSupport.stringAsByteList(operatorName), argsNode, valueNode);
+    public RubySymbol symbolID(ByteList identifierValue) {
+        return getConfiguration().getRuntime().newSymbol(identifierValue);
     }
 
+    // FIXME: bytelist_love: Move to common helper location
+    // Return raw 8859_1 string which is used as key for identifier in symbol table.
+    private static String ID(ByteList identifier) {
+        return identifier.toString();
+    }
 
     public Node newOpAsgn(ISourcePosition position, Node receiverNode, ByteList callType, Node valueNode, ByteList variableName, ByteList operatorName) {
-        return new OpAsgnNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
-    }
-
-    @Deprecated
-    public Node newOpAsgn(ISourcePosition position, Node receiverNode, String callType, Node valueNode, String variableName, String operatorName) {
-        return new OpAsgnNode(position, receiverNode, valueNode, variableName, operatorName, isLazy(callType));
+        return new OpAsgnNode(position, receiverNode, valueNode, symbolID(variableName), symbolID(operatorName), isLazy(callType));
     }
 
     public Node newOpConstAsgn(ISourcePosition position, Node lhs, ByteList operatorName, Node rhs) {
         // FIXME: Maybe need to fixup position?
         if (lhs != null) {
-            return new OpAsgnConstDeclNode(position, lhs, operatorName, rhs);
-        } else {
-            return new BeginNode(position, NilImplicitNode.NIL);
-        }
-    }
-
-    @Deprecated
-    public Node newOpConstAsgn(ISourcePosition position, Node lhs, String operatorName, Node rhs) {
-        // FIXME: Maybe need to fixup position?
-        if (lhs != null) {
-            return new OpAsgnConstDeclNode(position, lhs, operatorName, rhs);
+            return new OpAsgnConstDeclNode(position, lhs, symbolID(operatorName), rhs);
         } else {
             return new BeginNode(position, NilImplicitNode.NIL);
         }
@@ -925,12 +850,7 @@ public class ParserSupport {
     }
     
     public Node new_attrassign(ISourcePosition position, Node receiver, ByteList name, Node args, boolean isLazy) {
-        return new AttrAssignNode(position, receiver, name, args, isLazy);
-    }
-
-    @Deprecated
-    public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args, boolean isLazy) {
-        return new AttrAssignNode(position, receiver, name, args, isLazy);
+        return new AttrAssignNode(position, receiver, symbolID(name), args, isLazy);
     }
     
     private boolean isNumericOperator(String name) {
@@ -957,23 +877,10 @@ public class ParserSupport {
             if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
 
             BlockPassNode blockPass = (BlockPassNode) argsNode;
-            return new CallNode(position(receiver, argsNode), receiver, name, blockPass.getArgsNode(), blockPass, isLazy(callType));
+            return new CallNode(position(receiver, argsNode), receiver, symbolID(name), blockPass.getArgsNode(), blockPass, isLazy(callType));
         }
 
-        return new CallNode(position(receiver, argsNode), receiver, name, argsNode, iter, isLazy(callType));
-
-    }
-
-    @Deprecated
-    public Node new_call(Node receiver, String callType, String name, Node argsNode, Node iter) {
-        if (argsNode instanceof BlockPassNode) {
-            if (iter != null) lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
-
-            BlockPassNode blockPass = (BlockPassNode) argsNode;
-            return new CallNode(position(receiver, argsNode), receiver, name, blockPass.getArgsNode(), blockPass, isLazy(callType));
-        }
-
-        return new CallNode(position(receiver, argsNode), receiver, name, argsNode, iter, isLazy(callType));
+        return new CallNode(position(receiver, argsNode), receiver, symbolID(name), argsNode, iter, isLazy(callType));
 
     }
 
@@ -981,31 +888,14 @@ public class ParserSupport {
         return new_call(receiver, lexer.DOT, name, argsNode, iter);
     }
 
-    @Deprecated
-    public Node new_call(Node receiver, String name, Node argsNode, Node iter) {
-        return new_call(receiver, ".", name, argsNode, iter);
-    }
-
     public Colon2Node new_colon2(ISourcePosition position, Node leftNode, ByteList name) {
-        if (leftNode == null) return new Colon2ImplicitNode(position, name);
+        if (leftNode == null) return new Colon2ImplicitNode(position, symbolID(name));
 
-        return new Colon2ConstNode(position, leftNode, name);
-    }
-
-    @Deprecated
-    public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
-        if (leftNode == null) return new Colon2ImplicitNode(position, name);
-
-        return new Colon2ConstNode(position, leftNode, name);
+        return new Colon2ConstNode(position, leftNode, symbolID(name));
     }
 
     public Colon3Node new_colon3(ISourcePosition position, ByteList name) {
-        return new Colon3Node(position, name);
-    }
-
-    @Deprecated
-    public Colon3Node new_colon3(ISourcePosition position, String name) {
-        return new Colon3Node(position, name);
+        return new Colon3Node(position, symbolID(name));
     }
 
     public void frobnicate_fcall_args(FCallNode fcall, Node args, Node iter) {
@@ -1028,12 +918,7 @@ public class ParserSupport {
     }
 
     public Node new_fcall(ByteList operation) {
-        return new FCallNode(lexer.tokline, operation);
-    }
-
-    @Deprecated
-    public Node new_fcall(String operation) {
-        return new FCallNode(lexer.tokline, operation);
+        return new FCallNode(lexer.tokline, symbolID(operation));
     }
 
     public Node new_super(ISourcePosition position, Node args) {
@@ -1127,16 +1012,12 @@ public class ParserSupport {
     }
 
     public Node asSymbol(ISourcePosition position, ByteList value) {
-        return new SymbolNode(position, value);
+        return new SymbolNode(position, symbolID(value));
     }
 
-    @Deprecated
-    public Node asSymbol(ISourcePosition position, String value) {
-        return new SymbolNode(position, value, lexer.getEncoding(), lexer.getTokenCR());
-    }
         
     public Node asSymbol(ISourcePosition position, Node value) {
-        return value instanceof StrNode ? new SymbolNode(position, ((StrNode) value).getValue()) :
+        return value instanceof StrNode ? new SymbolNode(position, symbolID(((StrNode) value).getValue())) :
                 new DSymbolNode(position, (DStrNode) value);
     }
     
@@ -1279,19 +1160,14 @@ public class ParserSupport {
         if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
 
         ByteList restKwargsName = keywordRestArgName;
+        String raw = restKwargsName.toString();
 
-        int slot = currentScope.exists(restKwargsName);
-        if (slot == -1) slot = currentScope.addVariable(restKwargsName);
+        int slot = currentScope.exists(raw);
+        if (slot == -1) slot = currentScope.addVariable(raw);
 
-        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, restKwargsName, slot);
+        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, symbolID(restKwargsName), slot);
 
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
-    }
-
-    @Deprecated
-    public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg, 
-            String keywordRestArgName, BlockArgNode blockArg) {
-        return new_args_tail(position, keywordArg, StringSupport.stringAsByteList(keywordRestArgName), blockArg);
     }
 
     public Node remove_duplicate_keys(HashNode hash) {
@@ -1367,25 +1243,16 @@ public class ParserSupport {
     }
 
     public Node new_bv(ByteList identifier) {
-        if (!is_local_id(identifier)) getterIdentifierError(lexer.getPosition(), identifier);
+        if (!is_local_id(identifier)) getterIdentifierError(lexer.getPosition(), symbolID(identifier));
 
         shadowing_lvar(identifier);
         
         return arg_var(identifier);
     }
 
-    @Deprecated
-    public Node new_bv(String identifier) {
-        return new_bv(StringSupport.stringAsByteList(identifier));
-    }
-
-    public ArgumentNode arg_var(ByteList name) {
-        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name));
-    }
-
-    @Deprecated
-    public ArgumentNode arg_var(String name) {
-        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name));
+    public ArgumentNode arg_var(ByteList id) {
+        RubySymbol name = symbolID(id);
+        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name.getRawString()));
     }
 
     public ByteList formal_argument(ByteList identifier) {
@@ -1405,10 +1272,12 @@ public class ParserSupport {
     public ByteList shadowing_lvar(ByteList name) {
         if (name.realSize() == 1 && name.charAt(0) == '_') return name;
 
-        StaticScope current = getCurrentScope();
-        if (current.exists(name) >= 0) yyerror("duplicated argument name");
+        String id = ID(name);
 
-        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
+        StaticScope current = getCurrentScope();
+        if (current.exists(id) >= 0) yyerror("duplicated argument name");
+
+        if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(id) >= 0 &&
                 Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
             warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), "shadowing outer local variable - " + StringSupport.byteListAsString(name));
         }
@@ -1482,7 +1351,8 @@ public class ParserSupport {
 
         for (int i = 0; i < length; i++) {
             if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
-                int slot = scope.isDefined(names[i]);
+                String id = ID(names[i]);
+                int slot = scope.isDefined(id);
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn
                     if (warnings.isVerbose() && !scope.isNamedCapture(slot)) {
@@ -1490,7 +1360,7 @@ public class ParserSupport {
                     }
                     locals.add(slot);
                 } else {
-                    locals.add(getCurrentScope().addNamedCaptureVariable(names[i]));
+                    locals.add(getCurrentScope().addNamedCaptureVariable(id));
                 }
             }
         }

@@ -33,6 +33,7 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -160,7 +161,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 164 "-"
+					// line 165 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -1859,13 +1860,13 @@ states[20] = new ParserState() {
 };
 states[21] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new VAliasNode(((ISourcePosition)yyVals[-2+yyTop]), ((ByteList)yyVals[-1+yyTop]), ((ByteList)yyVals[0+yyTop]));
+                    yyVal = new VAliasNode(((ISourcePosition)yyVals[-2+yyTop]), support.symbolID(((ByteList)yyVals[-1+yyTop])), support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[22] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new VAliasNode(((ISourcePosition)yyVals[-2+yyTop]), ((ByteList)yyVals[-1+yyTop]), ((BackRefNode)yyVals[0+yyTop]).getByteName());
+                    yyVal = new VAliasNode(((ISourcePosition)yyVals[-2+yyTop]), support.symbolID(((ByteList)yyVals[-1+yyTop])), support.symbolID(((BackRefNode)yyVals[0+yyTop]).getByteName()));
     return yyVal;
   }
 };
@@ -2274,27 +2275,26 @@ states[92] = new ParserState() {
 };
 states[93] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new InstAsgnNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), NilImplicitNode.NIL);
+                   yyVal = new InstAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
 states[94] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new GlobalAsgnNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), NilImplicitNode.NIL);
+                   yyVal = new GlobalAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
 states[95] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
-
-                    yyVal = new ConstDeclNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), null, NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), null, NilImplicitNode.NIL);
     return yyVal;
   }
 };
 states[96] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new ClassVarAsgnNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), NilImplicitNode.NIL);
+                    yyVal = new ClassVarAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2379,7 +2379,7 @@ states[108] = new ParserState() {
 
                     ISourcePosition position = support.getPosition(((Node)yyVals[-2+yyTop]));
 
-                    yyVal = new ConstDeclNode(position, (ByteList) null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), ((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), ((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2391,7 +2391,7 @@ states[109] = new ParserState() {
 
                     ISourcePosition position = lexer.tokline;
 
-                    yyVal = new ConstDeclNode(position, (ByteList) null, support.new_colon3(position, ((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, (RubySymbol) null, support.new_colon3(position, ((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2409,13 +2409,13 @@ states[111] = new ParserState() {
 };
 states[112] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new InstAsgnNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), NilImplicitNode.NIL);
+                    yyVal = new InstAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
 states[113] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new GlobalAsgnNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), NilImplicitNode.NIL);
+                    yyVal = new GlobalAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2423,13 +2423,13 @@ states[114] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    yyVal = new ConstDeclNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), null, NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), null, NilImplicitNode.NIL);
     return yyVal;
   }
 };
 states[115] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new ClassVarAsgnNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), NilImplicitNode.NIL);
+                    yyVal = new ClassVarAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2514,7 +2514,7 @@ states[127] = new ParserState() {
 
                     ISourcePosition position = support.getPosition(((Node)yyVals[-2+yyTop]));
 
-                    yyVal = new ConstDeclNode(position, (ByteList) null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), ((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), ((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2526,7 +2526,7 @@ states[128] = new ParserState() {
 
                     ISourcePosition position = lexer.tokline;
 
-                    yyVal = new ConstDeclNode(position, (ByteList) null, support.new_colon3(position, ((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(position, (RubySymbol) null, support.new_colon3(position, ((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -2600,13 +2600,13 @@ states[139] = new ParserState() {
 };
 states[140] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new LiteralNode(lexer.getPosition(), ((ByteList)yyVals[0+yyTop]));
+                   yyVal = new LiteralNode(lexer.getPosition(), support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[141] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new LiteralNode(lexer.getPosition(), ((ByteList)yyVals[0+yyTop]));
+                   yyVal = new LiteralNode(lexer.getPosition(), support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -3138,7 +3138,7 @@ states[225] = new ParserState() {
 states[226] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     ISourcePosition pos = lexer.getPosition();
-                    yyVal = support.newOpConstAsgn(pos, new Colon3Node(pos, ((ByteList)yyVals[-2+yyTop])), ((ByteList)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.newOpConstAsgn(pos, new Colon3Node(pos, support.symbolID(((ByteList)yyVals[-2+yyTop]))), ((ByteList)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3892,7 +3892,7 @@ states[350] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     Node body = support.makeNullNil(((Node)yyVals[-1+yyTop]));
 
-                    yyVal = new DefnNode(((ISourcePosition)yyVals[-5+yyTop]), ((ByteList)yyVals[-4+yyTop]), (ArgsNode) yyVals[-2+yyTop], support.getCurrentScope(), body, ((ISourcePosition)yyVals[0+yyTop]).getLine());
+                    yyVal = new DefnNode(((ISourcePosition)yyVals[-5+yyTop]), support.symbolID(((ByteList)yyVals[-4+yyTop])), (ArgsNode) yyVals[-2+yyTop], support.getCurrentScope(), body, ((ISourcePosition)yyVals[0+yyTop]).getLine());
                     support.popCurrentScope();
                     support.setInDef(false);
                     lexer.setCurrentArg(((ByteList)yyVals[-3+yyTop]));
@@ -3920,7 +3920,7 @@ states[353] = new ParserState() {
                     Node body = ((Node)yyVals[-1+yyTop]);
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    yyVal = new DefsNode(((ISourcePosition)yyVals[-8+yyTop]), ((Node)yyVals[-7+yyTop]), ((ByteList)yyVals[-4+yyTop]), (ArgsNode) yyVals[-2+yyTop], support.getCurrentScope(), body, ((ISourcePosition)yyVals[0+yyTop]).getLine());
+                    yyVal = new DefsNode(((ISourcePosition)yyVals[-8+yyTop]), ((Node)yyVals[-7+yyTop]), support.symbolID(((ByteList)yyVals[-4+yyTop])), (ArgsNode) yyVals[-2+yyTop], support.getCurrentScope(), body, ((ISourcePosition)yyVals[0+yyTop]).getLine());
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                     lexer.setCurrentArg(((ByteList)yyVals[-3+yyTop]));
@@ -4437,7 +4437,7 @@ states[443] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     Node node;
                     if (((Node)yyVals[-3+yyTop]) != null) {
-                        node = support.appendToBlock(support.node_assign(((Node)yyVals[-3+yyTop]), new GlobalVarNode(((ISourcePosition)yyVals[-5+yyTop]), lexer.DOLLAR_BANG)), ((Node)yyVals[-1+yyTop]));
+                        node = support.appendToBlock(support.node_assign(((Node)yyVals[-3+yyTop]), new GlobalVarNode(((ISourcePosition)yyVals[-5+yyTop]), support.symbolID(lexer.DOLLAR_BANG))), ((Node)yyVals[-1+yyTop]));
                         if (((Node)yyVals[-1+yyTop]) != null) {
                             node.setPosition(((ISourcePosition)yyVals[-5+yyTop]));
                         }
@@ -4780,19 +4780,19 @@ states[494] = new ParserState() {
 };
 states[495] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                     yyVal = new GlobalVarNode(lexer.getPosition(), ((ByteList)yyVals[0+yyTop]));
+                     yyVal = new GlobalVarNode(lexer.getPosition(), support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[496] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                     yyVal = new InstVarNode(lexer.getPosition(), ((ByteList)yyVals[0+yyTop]));
+                     yyVal = new InstVarNode(lexer.getPosition(), support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[497] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                     yyVal = new ClassVarNode(lexer.getPosition(), ((ByteList)yyVals[0+yyTop]));
+                     yyVal = new ClassVarNode(lexer.getPosition(), support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -4886,25 +4886,25 @@ states[511] = new ParserState() {
 };
 states[512] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new InstVarNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]));
+                    yyVal = new InstVarNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[513] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new GlobalVarNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]));
+                    yyVal = new GlobalVarNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[514] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new ConstNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]));
+                    yyVal = new ConstNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[515] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new ClassVarNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]));
+                    yyVal = new ClassVarNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -4959,13 +4959,13 @@ states[523] = new ParserState() {
 };
 states[524] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new InstAsgnNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), NilImplicitNode.NIL);
+                    yyVal = new InstAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
 states[525] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new GlobalAsgnNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), NilImplicitNode.NIL);
+                    yyVal = new GlobalAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -4973,13 +4973,13 @@ states[526] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
 
-                    yyVal = new ConstDeclNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), null, NilImplicitNode.NIL);
+                    yyVal = new ConstDeclNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), null, NilImplicitNode.NIL);
     return yyVal;
   }
 };
 states[527] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new ClassVarAsgnNode(lexer.tokline, ((ByteList)yyVals[0+yyTop]), NilImplicitNode.NIL);
+                    yyVal = new ClassVarAsgnNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), NilImplicitNode.NIL);
     return yyVal;
   }
 };
@@ -5439,7 +5439,8 @@ states[596] = new ParserState() {
 };
 states[597] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new UnnamedRestArgNode(lexer.getPosition(), "", support.getCurrentScope().addVariable("*"));
+  /* FIXME: bytelist_love: somewhat silly to remake the empty bytelist over and over but this type should change (using null vs "" is a strange distinction).*/
+  yyVal = new UnnamedRestArgNode(lexer.getPosition(), support.symbolID(new ByteList(new byte[] {})), support.getCurrentScope().addVariable("*"));
     return yyVal;
   }
 };
@@ -5675,7 +5676,7 @@ states[644] = new ParserState() {
   }
 };
 }
-					// line 2733 "RubyParser.y"
+					// line 2734 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5690,4 +5691,4 @@ states[644] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10559 "-"
+					// line 10560 "-"

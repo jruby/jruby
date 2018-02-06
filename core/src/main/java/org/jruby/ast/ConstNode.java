@@ -33,26 +33,21 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * The access to a Constant.
  */
 public class ConstNode extends Node implements INameNode {
-    private ByteList name;
+    private RubySymbol name;
 
-    public ConstNode(ISourcePosition position, ByteList name) {
+    public ConstNode(ISourcePosition position, RubySymbol name) {
         super(position, false);
         this.name = name;
-    }
-
-    @Deprecated
-    public ConstNode(ISourcePosition position, String name) {
-        this(position, StringSupport.stringAsByteList(name));
     }
 
     public NodeType getNodeType() {
@@ -72,19 +67,18 @@ public class ConstNode extends Node implements INameNode {
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    @Deprecated
-    public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
     }
 }

@@ -15,19 +15,20 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
+import org.jruby.util.ByteList;
 
 // Const search:
 // - looks up lexical scopes
 // - then inheritance hierarchy if lexical search fails
 // - then invokes const_missing if inheritance search fails
 public class SearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private final String   constName;
-    private final boolean  noPrivateConsts;
+    private final ByteList constName;
+    private final boolean noPrivateConsts;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public SearchConstInstr(Variable result, String constName, Operand startingScope, boolean noPrivateConsts) {
+    public SearchConstInstr(Variable result, ByteList constName, Operand startingScope, boolean noPrivateConsts) {
         super(Operation.SEARCH_CONST, result, startingScope);
 
         assert result != null: "SearchConstInstr result is null";
@@ -42,6 +43,10 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
     }
 
     public String getConstName() {
+        return constName.toString();
+    }
+
+    public ByteList getConstByteName() {
         return constName;
     }
 
@@ -57,13 +62,13 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getConstName());
+        e.encode(getConstByteName());
         e.encode(getStartingScope());
         e.encode(isNoPrivateConsts());
     }
 
     public static SearchConstInstr decode(IRReaderDecoder d) {
-        return new SearchConstInstr(d.decodeVariable(), d.decodeString(), d.decodeOperand(), d.decodeBoolean());
+        return new SearchConstInstr(d.decodeVariable(), d.decodeByteList(), d.decodeOperand(), d.decodeBoolean());
     }
 
     @Override
@@ -79,23 +84,24 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
         // Lexical lookup
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
+        String id = getConstName();
         StaticScope staticScope = (StaticScope) getStartingScope().retrieve(context, self, currScope, currDynScope, temp);
-        Object constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+        Object constant = (staticScope == null) ? object.getConstant(id) : staticScope.getConstantInner(id);
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
-            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(id, false) : module.getConstantNoConstMissing(id);
         }
 
         // Call const_missing or cache
         if (constant == null) {
-            constant = module.callMethod(context, "const_missing", runtime.fastNewSymbol(constName));
+            constant = module.callMethod(context, "const_missing", runtime.fastNewSymbol(id));
         } else {
             // recache
-            Invalidator invalidator = runtime.getConstantInvalidator(constName);
+            Invalidator invalidator = runtime.getConstantInvalidator(id);
             cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator);
         }
 

@@ -11,11 +11,12 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.util.ByteList;
 
 public class PutFieldInstr extends PutInstr implements FixedArityInstr {
     private transient VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
-    public PutFieldInstr(Operand obj, String fieldName, Operand value) {
+    public PutFieldInstr(Operand obj, ByteList fieldName, Operand value) {
         super(Operation.PUT_FIELD, obj, fieldName, value);
     }
 
@@ -47,7 +48,7 @@ public class PutFieldInstr extends PutInstr implements FixedArityInstr {
     }
 
     public static PutFieldInstr decode(IRReaderDecoder d) {
-        return new PutFieldInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
+        return new PutFieldInstr(d.decodeOperand(), d.decodeByteList(), d.decodeOperand());
     }
 
     @Override

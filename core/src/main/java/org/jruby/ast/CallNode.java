@@ -34,11 +34,11 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * A method or operator call.
@@ -47,21 +47,10 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     private final Node receiverNode;
     private Node argsNode;
     protected Node iterNode;
-    private ByteList name;
+    private RubySymbol name;
     private final boolean isLazy;
 
-    public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
-            Node iterNode) {
-        this(position, receiverNode, name, argsNode, iterNode, false);
-    }
-
-    @Deprecated
-    public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode,
-                    Node iterNode, boolean isLazy) {
-        this(position, receiverNode, StringSupport.stringAsByteList(name), argsNode, iterNode, isLazy);
-    }
-
-    public CallNode(ISourcePosition position, Node receiverNode, ByteList name, Node argsNode,
+    public CallNode(ISourcePosition position, Node receiverNode, RubySymbol name, Node argsNode,
                     Node iterNode, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment() ||
                 argsNode != null && argsNode.containsVariableAssignment() ||
@@ -124,10 +113,14 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
      * @return name
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
 

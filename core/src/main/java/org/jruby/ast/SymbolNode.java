@@ -36,25 +36,20 @@ import java.util.List;
 
 import org.jcodings.Encoding;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Represents a symbol (:symbol_name).
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
-    private final ByteList name;
+    private final RubySymbol name;
 
-    @Deprecated
-    public SymbolNode(ISourcePosition position, String name, Encoding encoding, int cr) {
-        this(position, new ByteList(name.getBytes(encoding.getCharset()), encoding));
-    }
-
-    public SymbolNode(ISourcePosition position, ByteList value) {
+    public SymbolNode(ISourcePosition position, RubySymbol value) {
         super(position, false);
 
         this.name = value;
@@ -79,7 +74,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
      * @return Returns a String
      */
     public String getName() {
-        return StringSupport.byteListAsString(name);
+        return name.asJavaString();
     }
 
     public Encoding getEncoding() {
@@ -87,6 +82,10 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
     }
 
     public ByteList getByteName() {
+        return name.getBytes();
+    }
+
+    public RubySymbol getSymbolName() {
         return name;
     }
 
@@ -95,6 +94,6 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
     }
 
     public ByteList getBytes() {
-        return name;
+        return name.getBytes();
     }
 }

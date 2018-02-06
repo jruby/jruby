@@ -33,6 +33,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.ByteList;
@@ -42,18 +43,13 @@ import org.jruby.util.StringSupport;
  * Represents an alias of a global variable.
  */
 public class VAliasNode extends Node {
-    private ByteList oldName;
-    private ByteList newName;
+    private RubySymbol oldName;
+    private RubySymbol newName;
 
-    public VAliasNode(ISourcePosition position, ByteList newName, ByteList oldName) {
+    public VAliasNode(ISourcePosition position, RubySymbol newName, RubySymbol oldName) {
         super(position, false);
         this.oldName = oldName;
         this.newName = newName;
-    }
-
-    @Deprecated
-    public VAliasNode(ISourcePosition position, String newName, String oldName) {
-        this(position, StringSupport.stringAsByteList(newName), StringSupport.stringAsByteList(oldName));
     }
 
     public NodeType getNodeType() {
@@ -73,7 +69,11 @@ public class VAliasNode extends Node {
      * @return Returns a String
      */
     public String getNewName() {
-        return StringSupport.byteListAsString(newName);
+        return newName.asJavaString();
+    }
+
+    public RubySymbol getNewSymbolName() {
+        return newName;
     }
 
     /**
@@ -81,9 +81,13 @@ public class VAliasNode extends Node {
      * @return Returns a String
      */
     public String getOldName() {
-        return StringSupport.byteListAsString(oldName);
+        return oldName.asJavaString();
     }
-    
+
+    public RubySymbol getOldSymbolName() {
+        return oldName;
+    }
+
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }

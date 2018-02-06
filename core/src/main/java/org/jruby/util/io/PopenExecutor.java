@@ -1407,7 +1407,7 @@ public class PopenExecutor {
                     else {
                         pgroup = val.convertToInteger().getLongValue();
                         if (pgroup < 0) {
-                            throw runtime.newArgumentError("negative process group ID : " + pgroup);
+                            throw runtime.newArgumentError("negative process group symbol : " + pgroup);
                         }
                     }
                     eargp.pgroup_given_set();

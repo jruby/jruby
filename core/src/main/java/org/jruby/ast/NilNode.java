@@ -41,8 +41,7 @@ import org.jruby.util.ByteList;
 /**
  * represents 'nil'
  */
-public class NilNode extends Node implements INameNode, SideEffectFree {
-    static final ByteList NIL = new ByteList(new byte[] {'n', 'i', 'l'});
+public class NilNode extends Node implements SideEffectFree {
 
     public NilNode(ISourcePosition position) {
         super(position, false);
@@ -58,17 +57,6 @@ public class NilNode extends Node implements INameNode, SideEffectFree {
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitNilNode(this);
-    }
-    
-    /**
-     * Name of nil node.
-     **/
-    public String getName() {
-        return "nil";
-    }
-
-    public ByteList getByteName() {
-        return NIL;
     }
     
     public List<Node> childNodes() {

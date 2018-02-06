@@ -14,6 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
+import org.jruby.util.ByteList;
 
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
@@ -21,12 +22,12 @@ import org.jruby.runtime.opto.Invalidator;
 // this call to the parent scope.
 
 public class LexicalSearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    String constName;
+    ByteList constName;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public LexicalSearchConstInstr(Variable result, Operand definingScope, String constName) {
+    public LexicalSearchConstInstr(Variable result, Operand definingScope, ByteList constName) {
         super(Operation.LEXICAL_SEARCH_CONST, result, definingScope);
 
         assert result != null: "LexicalSearchConstInstr result is null";
@@ -39,6 +40,10 @@ public class LexicalSearchConstInstr extends OneOperandResultBaseInstr implement
     }
 
     public String getConstName() {
+        return constName.toString();
+    }
+
+    public ByteList getConstByteName() {
         return constName;
     }
 
@@ -56,23 +61,24 @@ public class LexicalSearchConstInstr extends OneOperandResultBaseInstr implement
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getDefiningScope());
-        e.encode(getConstName());
+        e.encode(getConstByteName());
     }
 
     public static LexicalSearchConstInstr decode(IRReaderDecoder d) {
-        return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+        return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeByteList());
     }
 
     private Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         StaticScope staticScope = (StaticScope) getDefiningScope().retrieve(context, self, currScope, currDynScope, temp);
+        String id = getConstName();
 
-        IRubyObject constant = staticScope.getConstantDefined(constName);
+        IRubyObject constant = staticScope.getConstantDefined(id);
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            Invalidator invalidator = context.runtime.getConstantInvalidator(constName);
+            Invalidator invalidator = context.runtime.getConstantInvalidator(id);
             cache = new ConstantCache(constant, invalidator.getData(), invalidator);
         }
 

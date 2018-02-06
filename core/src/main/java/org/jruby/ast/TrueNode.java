@@ -32,17 +32,13 @@
 package org.jruby.ast;
 
 import java.util.List;
-import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * Represents 'true'.
  */
-public class TrueNode extends Node implements INameNode, SideEffectFree {
-    static final ByteList TRUE = new ByteList(new byte[] {'t', 'r', 'u', 'e'});
-
+public class TrueNode extends Node implements SideEffectFree {
     public TrueNode(ISourcePosition position) {
         super(position, false);
     }
@@ -57,17 +53,6 @@ public class TrueNode extends Node implements INameNode, SideEffectFree {
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitTrueNode(this);
-    }
-    
-    /**
-     * Name of the true node.
-     */
-    public String getName() {
-        return "true";
-    }
-
-    public ByteList getByteName() {
-        return TRUE;
     }
     
     public List<Node> childNodes() {

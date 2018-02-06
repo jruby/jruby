@@ -251,7 +251,7 @@ public class IRClosure extends IRScope {
 
     public LocalVariable getNewLocalVariable(ByteList name, int depth) {
         if (depth == 0 && !(this instanceof IRFor)) {
-            LocalVariable lvar = new ClosureLocalVariable(name, 0, getStaticScope().addVariableThisScope(name));
+            LocalVariable lvar = new ClosureLocalVariable(name, 0, getStaticScope().addVariableThisScope(name.toString()));
             localVars.put(name, lvar);
             return lvar;
         } else {

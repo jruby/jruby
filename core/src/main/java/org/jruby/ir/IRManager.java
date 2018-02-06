@@ -1,6 +1,8 @@
 package org.jruby.ir;
 
 import java.util.EnumSet;
+
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
@@ -61,11 +63,13 @@ public class IRManager {
     private List<CompilerPass> jitPasses;
     private List<CompilerPass> safePasses;
     private final RubyInstanceConfig config;
+    public final Ruby runtime;
 
     // If true then code will not execute (see ir/ast tool)
     private boolean dryRun = false;
 
-    public IRManager(RubyInstanceConfig config) {
+    public IRManager(Ruby runtime, RubyInstanceConfig config) {
+        this.runtime = runtime;
         this.config = config;
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_BUILD_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);

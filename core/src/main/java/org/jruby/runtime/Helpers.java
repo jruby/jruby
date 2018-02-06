@@ -18,11 +18,8 @@ import jnr.constants.platform.Errno;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
-import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.OptArgNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
@@ -59,6 +56,7 @@ import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.CodegenUtils.sig;
+import static org.jruby.util.RubyStringBuilder.buildString;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import org.jruby.util.io.EncodingUtils;
@@ -612,7 +610,7 @@ public class Helpers {
         IRubyObject proc = TypeConverter.convertToType(maybeProc, runtime.getProc(), "to_proc", false);
 
         if (!(proc instanceof RubyProc)) {
-            throw runtime.newTypeError("wrong argument type " + maybeProc.getMetaClass().getName() + " (expected Proc)");
+            throw runtime.newTypeError(buildString(runtime, "wrong argument type ", maybeProc.getMetaClass().rubyName(), " (expected Proc)"));
         }
 
         return proc;
@@ -909,7 +907,8 @@ public class Helpers {
     public static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule klass, String name) {
         if (klass == null) {
             if (name != null) {
-                throw context.runtime.newNameError("superclass method '" + name + "' disabled", name);
+                Ruby runtime = context.runtime;
+                throw runtime.newNameError(buildString(runtime, "superclass method '", decode(runtime, name), "' disabled"), name);
             }
         }
         if (name == null) {
@@ -978,7 +977,7 @@ public class Helpers {
 
     public static IRubyObject setConstantInModule(ThreadContext context, String name, IRubyObject value, IRubyObject module) {
         if (!(module instanceof RubyModule)) {
-            throw context.runtime.newTypeError(module.toString() + " is not a class/module");
+            throw context.runtime.newTypeError(buildString(context.runtime, module, " is not a class/module"));
         }
         ((RubyModule) module).setConstant(name, value);
 
@@ -1681,7 +1680,7 @@ public class Helpers {
         }
 
         if ("__id__".equals(name) || "__send__".equals(name)) {
-            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem");
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, buildString(runtime, "redefining `", symbol.to_s(), "' may cause serious problem"));
         }
 
         if ("initialize".equals(name) || "initialize_copy".equals(name) || name.equals("initialize_dup") || name.equals("initialize_clone") || name.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
@@ -1693,7 +1692,7 @@ public class Helpers {
 
     public static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-            throw runtime.newTypeError("can't define singleton method \"" + name + "\" for " + receiver.getMetaClass().getBaseName());
+            throw runtime.newTypeError(buildString(runtime, "can't define singleton method \"", decode(runtime, name), "\" for ", receiver.getMetaClass().rubyBaseName()));
         }
 
         if (receiver.isFrozen()) {
@@ -1806,7 +1805,8 @@ public class Helpers {
     public static RubyModule checkIsModule(IRubyObject maybeModule) {
         if (maybeModule instanceof RubyModule) return (RubyModule)maybeModule;
 
-        throw maybeModule.getRuntime().newTypeError(maybeModule + " is not a class/module");
+        Ruby runtime = maybeModule.getRuntime();
+        throw runtime.newTypeError(buildString(runtime, maybeModule, " is not a class/module"));
     }
 
     public static IRubyObject getGlobalVariable(Ruby runtime, String name) {
@@ -1830,8 +1830,13 @@ public class Helpers {
         return context.nil;
     }
 
+    public static RubyString decode(Ruby runtime, String id) {
+        return (RubyString) runtime.newSymbol(id).to_s();
+    }
+
     private static void warnAboutUninitializedIvar(Ruby runtime, String internedName) {
-        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + internedName + " not initialized");
+        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED,
+                buildString(runtime, "instance variable ", decode(runtime, internedName), " not initialized"));
     }
 
     public static IRubyObject setInstanceVariable(IRubyObject value, IRubyObject self, String name) {
