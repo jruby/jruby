@@ -249,7 +249,7 @@ public class JavaPackage extends RubyModule {
     }
 
     private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        return context.runtime.newBoolean(BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).getBytes())!= null);
+        return context.runtime.newBoolean(BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).getBytes()) == null);
     }
 
     @JRubyMethod(name = "method_missing", visibility = Visibility.PRIVATE)
