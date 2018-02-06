@@ -287,6 +287,10 @@ public class JavaSites {
                 return cmp.call(context, other, other, recv);
             }
         };
+
+        public final RespondToCallSite respond_to_to_int = new RespondToCallSite("to_int");
+        public final CachingCallSite to_int = new FunctionalCachingCallSite("to_int");
+        public final CachingCallSite to_i = new FunctionalCachingCallSite("to_i");
     }
 
     public static class EnumerableSites {
