@@ -53,6 +53,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyDateParser;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.ext.date.DateUtils.*;
 import static org.jruby.util.Numeric.*;
@@ -68,6 +70,8 @@ import static org.jruby.util.Numeric.*;
  */
 @JRubyClass(name = "Date")
 public class RubyDate extends RubyObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RubyDate.class);
 
     //private static final DateTimeZone DEFAULT_DTZ = DateTimeZone.getDefault();
 
@@ -322,26 +326,25 @@ public class RubyDate extends RubyObject {
         final int y = getYear(year);
         final int m = getMonth(month);
         final int d = mday.convertToInteger().getIntValue();
-        return civilImpl(context, y, m ,d);
+        return civilImpl(context, y, m ,d, defaultDateTime.getChronology());
     }
 
-    private static RubyDate civilImpl(ThreadContext context, final int y, final int m, final int d) {
-        final DateTime dt;
-        final Chronology chronology = defaultDateTime.getChronology();
-        long millis = defaultDateTime.getMillis();
+    private static RubyDate civilImpl(ThreadContext context, final int y, final int m, final int d, final Chronology chronology) {
+        DateTime dt;
         try {
-            millis = chronology.year().set(millis, y);
-            millis = chronology.monthOfYear().set(millis, m);
             if (d >= 0) { // let d == 0 fail (raise 'invalid date')
-                millis = chronology.dayOfMonth().set(millis, d);
+                dt = new DateTime(y, m, d, 0, 0, chronology);
             }
             else {
+                dt = new DateTime(y, m, 1, 0, 0, chronology);
+                long millis = dt.getMillis();
                 int last = chronology.dayOfMonth().getMaximumValue(millis);
                 millis = chronology.dayOfMonth().set(millis, last + d + 1); // d < 0 (d == -1 -> d == 31)
+                dt = dt.withMillis(millis);
             }
-            dt = defaultDateTime.withMillis(millis);
         }
         catch (IllegalArgumentException ex) {
+            if (context.runtime.isDebug() || LOG.isDebugEnabled()) LOG.info(ex);
             throw context.runtime.newArgumentError("invalid date");
         }
         return new RubyDate(context.runtime, dt);
@@ -355,8 +358,8 @@ public class RubyDate extends RubyObject {
         final int y = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
         final int m = getMonth(args[1]);
         final int d = args[2].convertToInteger().getIntValue();
-        
-        RubyDate date = civilImpl(context, y, m, d);
+
+        RubyDate date = civilImpl(context, y, m, d, getChronology(sg, 0));
         date.start = sg;
         return date;
 
