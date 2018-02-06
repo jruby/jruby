@@ -355,19 +355,18 @@ public class RubyDate extends RubyObject {
         final int y = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
         final int m = getMonth(args[1]);
         final int d = args[2].convertToInteger().getIntValue();
-        if (d > 0) { // TODO: maybe isn't necessary and we shall let JODA always handle validity?
-            RubyDate date = civilImpl(context, y, m, d);
-            date.start = sg;
-            return date;
-        }
+        
+        RubyDate date = civilImpl(context, y, m, d);
+        date.start = sg;
+        return date;
 
-        Long jd = DateUtils._valid_civil_p(y, m, d, sg);
-        if (jd == null) throw context.runtime.newArgumentError("invalid date");
-
-        final Ruby runtime = context.runtime;
-        RubyFloat ajd = RubyFloat.newFloat(runtime, jd_to_ajd(jd, 0, 0));
-
-        return new RubyDate(runtime).initialize(context, ajd, RubyFixnum.zero(runtime), args[3]);
+        //Long jd = DateUtils._valid_civil_p(y, m, d, sg);
+        //if (jd == null) throw context.runtime.newArgumentError("invalid date");
+        //
+        //final Ruby runtime = context.runtime;
+        //RubyFloat ajd = RubyFloat.newFloat(runtime, jd_to_ajd(jd, 0, 0));
+        //
+        //return new RubyDate(runtime).initialize(context, ajd, RubyFixnum.zero(runtime), args[3]);
     }
 
     // NOTE: no Bignum special care since JODA does not support 'huge' years anyway
