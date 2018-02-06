@@ -84,10 +84,10 @@ public class RubyDate extends RubyObject {
     private static final int ENGLAND = 2361222; // 1752-09-14
 
     // A constant used to indicate that a Date should always use the Julian calendar.
-    private static final int JULIAN = (int) Float.POSITIVE_INFINITY; // Infinity.new
+    static final int JULIAN = (int) Float.POSITIVE_INFINITY; // Infinity.new
 
     // A constant used to indicate that a Date should always use the Gregorian calendar.
-    private static final int GREGORIAN = (int) Float.NEGATIVE_INFINITY; // -Infinity.new
+    static final int GREGORIAN = (int) Float.NEGATIVE_INFINITY; // -Infinity.new
 
     static final int REFORM_BEGIN_YEAR = 1582;
     static final int REFORM_END_YEAR = 1930;
@@ -110,7 +110,7 @@ public class RubyDate extends RubyObject {
     }
 
     // Julian Day Number day 0 ... `def self.civil(y=-4712, m=1, d=1, sg=ITALY)`
-    static final DateTime defaultDateTime = new DateTime(-4712, 1, 1, 0, 0, CHRONO_ITALY_UTC);
+    static final DateTime defaultDateTime = new DateTime(-4712 - 1, 1, 1, 0, 0, CHRONO_ITALY_UTC);
 
     private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         @Override
@@ -184,7 +184,7 @@ public class RubyDate extends RubyObject {
     }
 
     private void initialize(final ThreadContext context, IRubyObject arg, IRubyObject of, final int start) {
-        final int off = of.convertToInteger().getIntValue(); // TODO off
+        final int off = of.convertToInteger().getIntValue();
 
         this.off = off; this.start = start;
 
@@ -275,6 +275,139 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "new!", meta = true)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of, IRubyObject sg) {
         return new RubyDate(context.runtime).initialize(context, ajd, of, sg);
+    }
+
+    // Date.civil([year=-4712[, month=1[, mday=1[, start=Date::ITALY]]]])
+    // Date.new([year=-4712[, month=1[, mday=1[, start=Date::ITALY]]]])
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true)
+    public static RubyDate civil(ThreadContext context, IRubyObject self) {
+        return new RubyDate(context.runtime, defaultDateTime);
+    }
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true)
+    public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject year) {
+        int y = getYear(year);
+        final DateTime dt;
+        try {
+            dt = defaultDateTime.withYear(y);
+        }
+        catch (IllegalArgumentException ex) {
+            throw context.runtime.newArgumentError("invalid date");
+        }
+        return new RubyDate(context.runtime, dt);
+    }
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true)
+    public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month) {
+        int y = getYear(year);
+        int m = getMonth(month);
+        final DateTime dt;
+        final Chronology chronology = defaultDateTime.getChronology();
+        long millis = defaultDateTime.getMillis();
+        try {
+            millis = chronology.year().set(millis, y);
+            millis = chronology.monthOfYear().set(millis, m);
+            dt = defaultDateTime.withMillis(millis);
+        }
+        catch (IllegalArgumentException ex) {
+            throw context.runtime.newArgumentError("invalid date");
+        }
+        return new RubyDate(context.runtime, dt);
+    }
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true)
+    public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month, IRubyObject mday) {
+        // return civil(context, self, new IRubyObject[] { year, month, mday, RubyFixnum.newFixnum(context.runtime, ITALY) });
+        final int y = getYear(year);
+        final int m = getMonth(month);
+        final int d = mday.convertToInteger().getIntValue();
+        return civilImpl(context, y, m ,d);
+    }
+
+    private static RubyDate civilImpl(ThreadContext context, final int y, final int m, final int d) {
+        final DateTime dt;
+        final Chronology chronology = defaultDateTime.getChronology();
+        long millis = defaultDateTime.getMillis();
+        try {
+            millis = chronology.year().set(millis, y);
+            millis = chronology.monthOfYear().set(millis, m);
+            if (d >= 0) { // let d == 0 fail (raise 'invalid date')
+                millis = chronology.dayOfMonth().set(millis, d);
+            }
+            else {
+                int last = chronology.dayOfMonth().getMaximumValue(millis);
+                millis = chronology.dayOfMonth().set(millis, last + d + 1); // d < 0 (d == -1 -> d == 31)
+            }
+            dt = defaultDateTime.withMillis(millis);
+        }
+        catch (IllegalArgumentException ex) {
+            throw context.runtime.newArgumentError("invalid date");
+        }
+        return new RubyDate(context.runtime, dt);
+    }
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true, required = 4)
+    public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        // IRubyObject year, IRubyObject month, IRubyObject mday, IRubyObject start
+
+        final int sg = val2sg(context, args[3]);
+        final int y = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
+        final int m = getMonth(args[1]);
+        final int d = args[2].convertToInteger().getIntValue();
+        if (d > 0) { // TODO: maybe isn't necessary and we shall let JODA always handle validity?
+            RubyDate date = civilImpl(context, y, m, d);
+            date.start = sg;
+            return date;
+        }
+
+        Long jd = DateUtils._valid_civil_p(y, m, d, sg);
+        if (jd == null) throw context.runtime.newArgumentError("invalid date");
+
+        final Ruby runtime = context.runtime;
+        RubyFloat ajd = RubyFloat.newFloat(runtime, jd_to_ajd(jd, 0, 0));
+
+        return new RubyDate(runtime).initialize(context, ajd, RubyFixnum.zero(runtime), args[3]);
+    }
+
+    // NOTE: no Bignum special care since JODA does not support 'huge' years anyway
+    private static int getYear(IRubyObject year) {
+        int y = year.convertToInteger().getIntValue();
+        return (y <= 0) ? --y : y; // due julian date calc -> see adjustJodaYear
+    }
+
+    private static int getMonth(IRubyObject month) {
+        int m = month.convertToInteger().getIntValue();
+        return (m < 0) ? m + 13 : m;
+    }
+
+    @JRubyMethod(name = "valid_civil?", alias = "valid_date?", meta = true, required = 3, optional = 1)
+    public static IRubyObject valid_civil_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        final Long jd = validCivilImpl(context, args);
+        return jd == null ? context.fals : context.tru;
+    }
+
+    private static Long validCivilImpl(ThreadContext context, IRubyObject[] args) {
+        final int sg = args.length > 3 ? val2sg(context, args[3]) : GREGORIAN;
+        final int y = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
+        final int m = getMonth(args[1]);
+        final int d = args[2].convertToInteger().getIntValue();
+
+        return DateUtils._valid_civil_p(y, m, d, sg);
+    }
+
+    @Deprecated // NOTE: should go away once no date.rb is using it
+    @JRubyMethod(name = "_valid_civil?", meta = true, required = 3, optional = 1, visibility = Visibility.PRIVATE)
+    public static IRubyObject _valid_civil_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        final Long jd = validCivilImpl(context, args);
+        return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
+    }
+
+    @Deprecated // NOTE: should go away once no date.rb is using it
+    @JRubyMethod(name = "_valid_civil?", required = 3, optional = 1, visibility = Visibility.PRIVATE)
+    public IRubyObject _valid_civil_p(ThreadContext context, IRubyObject[] args) {
+        final Long jd = validCivilImpl(context, args);
+        return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
     }
 
     public DateTime getDateTime() { return dt; }
@@ -799,6 +932,10 @@ public class RubyDate extends RubyObject {
     // MRI: #define val2sg(vsg,dsg)
     private static int val2sg(ThreadContext context, IRubyObject sg) {
         return getValidStart(context, sg.convertToFloat().getDoubleValue(), ITALY);
+    }
+
+    static int valid_sg(ThreadContext context, IRubyObject sg) {
+        return getValidStart(context, sg.convertToFloat().getDoubleValue(), 0);
     }
 
     // MRI: #define valid_sg(sg)

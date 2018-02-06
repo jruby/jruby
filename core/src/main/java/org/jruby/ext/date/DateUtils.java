@@ -5,6 +5,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.ext.date.RubyDate.*;
+import static org.jruby.util.Numeric.*;
 
 abstract class DateUtils {
 
@@ -18,7 +19,7 @@ abstract class DateUtils {
      * @param sg specifies the Day of Calendar Reform
      * @return the corresponding Julian Day Number
      */
-    static int civil_to_jd(int y, int m, int d, double sg) { // MRI: c_civil_to_jd
+    static long civil_to_jd(int y, int m, int d, double sg) { // MRI: c_civil_to_jd
         double a, b, jd;
 
         if (m <= 2) {
@@ -32,7 +33,7 @@ abstract class DateUtils {
             jd -= b;
         }
 
-        return (int) jd;
+        return (long) jd;
     }
 
     /**
@@ -42,7 +43,7 @@ abstract class DateUtils {
      * @param sg specifies the Day of Calendar Reform
      * @return the corresponding [year, month, day_of_month] as a three-element array.
      */
-    static int[] jd_to_civil(int jd, double sg) { // MRI: c_jd_to_civil
+    static int[] jd_to_civil(long jd, double sg) { // MRI: c_jd_to_civil
         double x, a, b, c, d, e, y, m, dom;
 
         if (jd < sg)
@@ -78,18 +79,18 @@ abstract class DateUtils {
                 (h == 24 && (min > 0 || s > 0)));
     }
 
-    private static boolean safe_mul_p(IRubyObject x, long m) {
-        if (!(x instanceof RubyFixnum)) return false;
-
-        long ix = ((RubyFixnum) x).getLongValue();
-        if (ix < 0) {
-            if (ix <= (RubyFixnum.MIN / m)) return false;
-        }
-        else {
-            if (ix >= (RubyFixnum.MAX / m)) return false;
-        }
-        return true;
-    }
+    //private static boolean safe_mul_p(IRubyObject x, long m) {
+    //    if (!(x instanceof RubyFixnum)) return false;
+    //
+    //    long ix = ((RubyFixnum) x).getLongValue();
+    //    if (ix < 0) {
+    //        if (ix <= (RubyFixnum.MIN / m)) return false;
+    //    }
+    //    else {
+    //        if (ix >= (RubyFixnum.MAX / m)) return false;
+    //    }
+    //    return true;
+    //}
 
     static IRubyObject day_to_sec(ThreadContext context, IRubyObject d) {
         //if (safe_mul_p(d, DAY_IN_SECONDS)) {
@@ -117,7 +118,7 @@ abstract class DateUtils {
                 return (int) n;
             case STRING:
                 vs = date_zone_to_diff(context, (RubyString) of);
-                
+
                 if (!(vs instanceof RubyFixnum)) return INVALID_OFFSET;
                 n = ((RubyFixnum) vs).getLongValue();
                 if (n < -DAY_IN_SECONDS || n > DAY_IN_SECONDS) return INVALID_OFFSET;
@@ -156,5 +157,82 @@ abstract class DateUtils {
         }
         return INVALID_OFFSET; // 0
     }
+
+    static Long find_ldom(int y, int m, final int sg) {
+        Long j = null;
+        for (int d = 31; d > 0; d--) {
+            j = _valid_civil_p(y, m, d, sg);
+            if (j != null) break;
+        }
+        return j;
+    }
+
+    static Long _valid_civil_p(int y, int m, int d, final int sg) {
+        if (d < 0) {
+            Long j = find_ldom(y, m, sg);
+            if (j == null) return null;
+            int[] ny_nm_nd = jd_to_civil(j + d + 1, sg);
+            if (y != ny_nm_nd[0] || m != ny_nm_nd[1]) return null;
+            d = ny_nm_nd[2];
+        }
+        long jd = civil_to_jd(y, m, d, sg);
+        int[] y_m_d = jd_to_civil(jd, sg);
+        if (y != y_m_d[0] || m != y_m_d[1] || d != y_m_d[2]) return null;
+        return jd;
+    }
+
+    // static void decode_year(VALUE y, double style, VALUE *nth, int *ry)
+    static int decode_year(ThreadContext context, IRubyObject y, final int style, RubyInteger[] nth) {
+        final int period = style < 0 ? CM_PERIOD_GCY : CM_PERIOD_JCY;
+        if (y instanceof RubyFixnum) {
+            long iy, it, inth;
+            iy = ((RubyFixnum) y).getLongValue();
+            if (iy < RubyFixnum.MAX - 4712) {
+                it = iy + 4712; /* shift */
+                inth = (it / ((long) period));
+                if (inth != 0) {
+                    it = (it % ((long) period));
+                }
+
+                nth[0] = RubyFixnum.newFixnum(context.runtime, inth);
+                return (int) it - 4712; /* unshift */
+            }
+        }
+        // big:
+        IRubyObject t;
+        t = f_add(context, y, RubyFixnum.newFixnum(context.runtime, 4712)); /* shift */
+        nth[0] = (RubyInteger) f_idiv(context, t, RubyFixnum.newFixnum(context.runtime, period));
+        if (!f_zero_p(context, nth[0])) { // f_nonzero_p(*nth)
+            t = f_mod(context, t, RubyFixnum.newFixnum(context.runtime, period));
+        }
+        return t.convertToInteger().getIntValue() - 4712; /* unshift */
+    }
+
+    static int guess_style(ThreadContext context, IRubyObject y, double sg) { /* -/+oo or zero */
+        int style = 0;
+
+        if (sg == Double.POSITIVE_INFINITY) { // Double.isInfinite
+            style = JULIAN;
+        } else if (sg == Double.NEGATIVE_INFINITY) { // Double.isInfinite
+            style = GREGORIAN;
+        } else if (!(y instanceof RubyFixnum)) {
+            style = ((RubyNumeric) y).isPositive(context).isTrue() ? GREGORIAN : JULIAN;
+        } else {
+            long iy = y.convertToInteger().getLongValue();
+
+            if (iy < REFORM_BEGIN_YEAR)
+                style = JULIAN; // Double.POSITIVE_INFINITY;
+            else if (iy > REFORM_END_YEAR)
+                style = GREGORIAN; // Double.NEGATIVE_INFINITY;
+        }
+        return style;
+    }
+
+    private static final int JC_PERIOD0 = 1461;		/* 365.25 * 4 */
+    private static final int GC_PERIOD0 = 146097; /* 365.2425 * 400 */
+    private static final int CM_PERIOD0 = 71149239;	/* (lcm 7 1461 146097) */
+    private static final int CM_PERIOD = (0xfffffff / CM_PERIOD0 * CM_PERIOD0);
+    private static final int CM_PERIOD_JCY = (CM_PERIOD / JC_PERIOD0 * 4);
+    private static final int CM_PERIOD_GCY = (CM_PERIOD / GC_PERIOD0 * 400);
 
 }
