@@ -62,6 +62,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.internal.runtime.NativeThread;
@@ -1094,6 +1095,37 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         synchronized (this) {
             return finalResult;
         }
+    }
+
+    @JRubyMethod
+    public synchronized IRubyObject fetch(ThreadContext context, IRubyObject key, Block block) {
+        IRubyObject value;
+
+        if ((value = getFiberLocals().get(getSymbolKey(key))) != null) {
+            return value;
+        }
+
+        if (block.isGiven()) return block.yield(context, key);
+
+        throw getRuntime().newKeyError("key not found: " + key.inspect(), this, key);
+    }
+
+    @JRubyMethod
+    public synchronized IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
+        IRubyObject value;
+        boolean blockGiven = block.isGiven();
+
+        if (blockGiven) getRuntime().getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
+
+        value = getFiberLocals().get(getSymbolKey(key));
+
+        if (value == null) {
+            if (blockGiven) return block.yield(context, key);
+
+            return _default;
+        }
+
+        return value;
     }
 
     @JRubyMethod
