@@ -1224,12 +1224,21 @@ public class RubyRational extends RubyNumeric {
         return str;
     }
 
+    @Override
+    public IRubyObject inspect() {
+        return inspectImpl(getRuntime());
+    }
+
     /** nurat_inspect
      * 
      */
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
-        RubyString str = RubyString.newString(context.runtime, new ByteList(12), USASCIIEncoding.INSTANCE);
+        return inspectImpl(context.runtime);
+    }
+
+    private RubyString inspectImpl(Ruby runtime) {
+        RubyString str = RubyString.newString(runtime, new ByteList(12), USASCIIEncoding.INSTANCE);
         str.cat((byte)'(');
         str.append(num.inspect());
         str.cat((byte)'/');
