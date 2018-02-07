@@ -1114,8 +1114,8 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = "now", meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv) {
-        IRubyObject obj = ((RubyClass) recv).allocate();
+    public static RubyTime newInstance(ThreadContext context, IRubyObject recv) {
+        RubyTime obj = (RubyTime) ((RubyClass) recv).allocate();
         obj.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, obj);
         return obj;
     }
@@ -1236,44 +1236,48 @@ public class RubyTime extends RubyObject {
         return createTime(context, (RubyClass) recv, args, false, false);
     }
 
+    @Deprecated
     public static RubyTime new_local(IRubyObject recv, IRubyObject[] args) {
         return createTime(recv.getRuntime().getCurrentContext(), (RubyClass) recv, args, false, false);
     }
 
     @JRubyMethod(name = "new", optional = 7, meta = true)
-    public static IRubyObject new19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static RubyTime newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) return newInstance(context, recv);
 
         if (args.length == 7) {
-          Ruby runtime = context.runtime;
+            Ruby runtime = context.runtime;
 
-          // 7th argument can be the symbol :dst instead of an offset, so needs to be special cased
-          final RubySymbol dstSymbol = RubySymbol.newSymbol(runtime, "dst");
-          boolean receivedDstSymbolAsArgument = (args[6].op_equal(context, dstSymbol)).isTrue();
+            // 7th argument can be the symbol :dst instead of an offset, so needs to be special cased
+            boolean dst = (args[6] instanceof RubySymbol) && ((RubySymbol) args[6]).asJavaString().equals("dst");
 
-          final RubyBoolean isDst = RubyBoolean.newBoolean(runtime, receivedDstSymbolAsArgument);
-
-          // Convert the 7-argument form of Time.new into the 10-argument form of Time.local:
-          args = new IRubyObject[] { args[5],          // seconds
-                                     args[4],          // minutes
-                                     args[3],          // hours
-                                     args[2],          // day
-                                     args[1],          // month
-                                     args[0],          // year
-                                     runtime.getNil(), // weekday
-                                     runtime.getNil(), // day of year
-                                     isDst,            // is DST?
-                                     args[6] };        // UTC offset
+            // Convert the 7-argument form of Time.new into the 10-argument form of Time.local:
+            args = new IRubyObject[] {
+                    args[5],          // seconds
+                    args[4],          // minutes
+                    args[3],          // hours
+                    args[2],          // day
+                    args[1],          // month
+                    args[0],          // year
+                    context.nil,      // weekday
+                    context.nil,      // day of year
+                    RubyBoolean.newBoolean(runtime, dst), // is DST?
+                    args[6] };        // UTC offset
         }
         return createTime(context, (RubyClass) recv, args, false, true);
     }
 
+    @Deprecated
+    public static IRubyObject new19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return newInstance(context, recv, args);
+    }
 
     @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, meta = true)
     public static RubyTime utc(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return createTime(context, (RubyClass) recv, args, true, false);
     }
 
+    @Deprecated
     public static RubyTime new_utc(IRubyObject recv, IRubyObject[] args) {
         return createTime(recv.getRuntime().getCurrentContext(), (RubyClass) recv, args, true, false);
     }
