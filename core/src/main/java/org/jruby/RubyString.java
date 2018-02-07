@@ -1280,7 +1280,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return (other instanceof RubyString) && equals((RubyString) other);
     }
 
-    private boolean equals(RubyString other) {
+    final boolean equals(RubyString other) {
         return ((RubyString) other).value.equal(value);
     }
 

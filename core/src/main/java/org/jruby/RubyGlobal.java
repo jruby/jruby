@@ -536,7 +536,7 @@ public class RubyGlobal {
                 final RubyArray keys = super.keys();
                 for (int i = 0; i < keys.size(); i++) {
                     RubyString candidateKey = keys.eltInternal(i).convertToString();
-                    if (Numeric.f_zero_p(context, candidateKey.casecmp(context, key))) {
+                    if (equalIgnoreCase(context, candidateKey, key)) {
                         actualKey = candidateKey;
                         break;
                     }
@@ -545,17 +545,20 @@ public class RubyGlobal {
             return actualKey;
         }
 
+        private static final ByteList PATH_BYTES = new ByteList(new byte[] {'P','A','T','H'}, USASCIIEncoding.INSTANCE, false);
+
         private static RubyString normalizeEnvString(ThreadContext context, RubyString key, RubyString value) {
             final Ruby runtime = context.runtime;
 
-            final RubyString valueStr;
+            RubyString valueStr;
 
             // Ensure PATH is encoded like filesystem
             if (Platform.IS_WINDOWS ?
-                    key.toString().equalsIgnoreCase("PATH") :
-                    key.toString().equals("PATH")) {
+                    equalIgnoreCase(context, key, RubyString.newString(context.runtime, PATH_BYTES)) :
+                        key.getByteList().equal(PATH_BYTES)) {
                 Encoding enc = runtime.getEncodingService().getFileSystemEncoding();
                 valueStr = EncodingUtils.strConvEnc(context, value, value.getEncoding(), enc);
+                if (value == valueStr) valueStr = (RubyString) value.dup();
             } else {
                 valueStr = RubyString.newString(runtime, value.toString(), runtime.getEncodingService().getLocaleEncoding());
             }
@@ -563,6 +566,11 @@ public class RubyGlobal {
             valueStr.setFrozen(true);
             return valueStr;
         }
+
+        private static boolean equalIgnoreCase(ThreadContext context, final RubyString str1, final RubyString str2) {
+            return ((RubyFixnum) str1.casecmp(context, str2)).isZero();
+        }
+
     }
 
     private static class ReadOnlySystemPropertiesHash extends StringOnlyRubyHash {
