@@ -174,7 +174,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         bytes.append((byte) '=');
 
-        return newSymbol(getRuntime(), bytes);
+        return newIDSymbol(getRuntime(), bytes);
     }
 
     /**
@@ -246,6 +246,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static RubySymbol newHardSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name, true);
+    }
+
+    public static RubySymbol newIDSymbol(Ruby runtime, ByteList bytes) {
+        return newHardSymbol(runtime, bytes);
     }
 
     public static RubySymbol newSymbol(Ruby runtime, String name, Encoding encoding) {

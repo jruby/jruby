@@ -819,7 +819,7 @@ public class ParserSupport {
     }
 
     public RubySymbol symbolID(ByteList identifierValue) {
-        return getConfiguration().getRuntime().newSymbol(identifierValue);
+        return RubySymbol.newIDSymbol(getConfiguration().getRuntime(), identifierValue);
     }
 
     // FIXME: bytelist_love: Move to common helper location

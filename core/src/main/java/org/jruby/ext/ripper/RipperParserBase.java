@@ -119,7 +119,7 @@ public class RipperParserBase {
 
     public IRubyObject assignableIdentifier(IRubyObject value) {
         String ident = lexer.getIdent().intern();
-        getCurrentScope().assign(lexer.getPosition(), context.runtime.newSymbol(ident), null);
+        getCurrentScope().assign(lexer.getPosition(), context.runtime.newSymbol(lexer.getIdent()), null);
         return value;
     }
 
