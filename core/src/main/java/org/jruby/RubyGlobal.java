@@ -40,6 +40,7 @@ import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.GlobalVariables;
@@ -53,7 +54,9 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
+import org.jruby.util.Numeric;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
@@ -408,34 +411,30 @@ public class RubyGlobal {
             super(runtime, valueMap, defaultValue, updateRealENV);
         }
 
+        protected final boolean isCaseSensitive() { return false; }
+
         @Override
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            return asTainted(case_aware_op_aref(context, key, false));
+            IRubyObject val = super.op_aref(context, key);
+            val.setTaint(true);
+            return val;
         }
 
-        @Override
-        public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
-            return case_aware_op_aset(context, key, value, false);
-        }
+        private static final ByteList ENV = new ByteList(new byte[] {'E','N','V'}, USASCIIEncoding.INSTANCE, false);
 
         @JRubyMethod(name = "to_s")
-        public IRubyObject to_s(ThreadContext context) {
-            return context.runtime.newString("ENV");
+        public RubyString to_s(ThreadContext context) {
+            return RubyString.newStringShared(context.runtime, ENV);
         }
 
         @Override
         public IRubyObject to_s() {
-            return getRuntime().newString("ENV");
+            return RubyString.newStringShared(getRuntime(), ENV);
         }
 
         @JRubyMethod
         public RubyHash to_h(){
-          return to_hash();
-        }
-
-        private IRubyObject asTainted(IRubyObject obj) {
-            obj.setTaint(true);
-            return obj;
+            return to_hash();
         }
 
     }
@@ -457,13 +456,10 @@ public class RubyGlobal {
             this.updateRealENV = updateRealENV;
         }
 
+        protected boolean isCaseSensitive() { return true; }
+
         public StringOnlyRubyHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue) {
             this(runtime, valueMap, defaultValue, false);
-        }
-
-        @Override
-        public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            return case_aware_op_aref(context, key, true);
         }
 
         @Override
@@ -475,8 +471,19 @@ public class RubyGlobal {
         }
 
         @Override
+        protected RubyHashEntry internalGetEntry(IRubyObject key) {
+            if (size == 0) return NO_ENTRY;
+
+            if (!isCaseSensitive()) {
+                key = getCorrectKey(key.convertToString());
+            }
+
+            return super.internalGetEntry(key);
+        }
+
+        @Override
         public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
-            return case_aware_op_aset(context, key, value, true);
+            return case_aware_op_aset(context, key, value);
         }
 
         @Override
@@ -485,60 +492,51 @@ public class RubyGlobal {
             return op_aset(context, key, value);
         }
 
-        protected IRubyObject case_aware_op_aref(ThreadContext context, IRubyObject key, boolean caseSensitive) {
-            if (! caseSensitive) {
-                key = getCorrectKey(key, context);
+        private IRubyObject case_aware_op_aset(ThreadContext context, IRubyObject key, final IRubyObject value) {
+            if (!isStringLike(key)) {
+                throw context.runtime.newTypeError("can't convert " + key.getMetaClass() + " into String");
             }
-            return super.op_aref(context, key);
-        }
+            RubyString keyAsStr = key.convertToString();
+            if (!isCaseSensitive()) key = keyAsStr = getCorrectKey(keyAsStr);
 
-        protected IRubyObject case_aware_op_aset(ThreadContext context,
-            IRubyObject key, final IRubyObject value, boolean caseSensitive) {
-            if (!key.respondsTo("to_str")) {
-                throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
-            }
-            if (!value.respondsTo("to_str") && !value.isNil()) {
-                throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
-            }
-
-            if (!caseSensitive) {
-                key = getCorrectKey(key, context);
-            }
-
-            if (value.isNil()) {
+            if (value == context.nil) {
                 return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
             }
+            if (!isStringLike(value)) {
+                throw context.runtime.newTypeError("can't convert " + value.getMetaClass() + " into String");
+            }
 
-            IRubyObject keyAsStr = normalizeEnvString(context, key, Helpers.invoke(context, key, "to_str"));
-            IRubyObject valueAsStr = value.isNil() ? context.nil :
-                    normalizeEnvString(context, key, Helpers.invoke(context, value, "to_str"));
+            RubyString valueAsStr = normalizeEnvString(context, keyAsStr, value.convertToString());
 
             if (updateRealENV) {
-                POSIX posix = context.runtime.getPosix();
-                String keyAsJava = keyAsStr.asJavaString();
+                final POSIX posix = context.runtime.getPosix();
+                final String keyAsJava = keyAsStr.asJavaString();
                 // libc (un)setenv is not reentrant, so we need to synchronize across the entire JVM (JRUBY-5933)
                 if (valueAsStr == context.nil) {
                     synchronized (Object.class) { posix.unsetenv(keyAsJava); }
                 } else {
-                    synchronized (Object.class) { posix.setenv(keyAsJava, valueAsStr.asJavaString(), 1); }
+                    final String valueAsJava = valueAsStr.asJavaString();
+                    synchronized (Object.class) { posix.setenv(keyAsJava, valueAsJava, 1); }
                 }
             }
 
             return super.op_aset(context, keyAsStr, valueAsStr);
-
         }
 
-        private RubyString getCorrectKey(IRubyObject key, ThreadContext context) {
-            RubyString originalKey = key.convertToString();
-            RubyString actualKey = originalKey;
-            Ruby runtime = context.runtime;
+        private static boolean isStringLike(final IRubyObject obj) {
+            return obj instanceof RubyString || obj.respondsTo("to_str");
+        }
+
+        private RubyString getCorrectKey(final RubyString key) {
+            RubyString actualKey = key;
             if (Platform.IS_WINDOWS) {
                 // this is a rather ugly hack, but similar to MRI. See hash.c:ruby_setenv and similar in MRI
                 // we search all keys for a case-insensitive match, and use that
-                RubyArray keys = super.keys();
+                final ThreadContext context = getRuntime().getCurrentContext();
+                final RubyArray keys = super.keys();
                 for (int i = 0; i < keys.size(); i++) {
                     RubyString candidateKey = keys.eltInternal(i).convertToString();
-                    if (candidateKey.casecmp(context, originalKey).op_equal(context, RubyFixnum.zero(runtime)).isTrue()) {
+                    if (Numeric.f_zero_p(context, candidateKey.casecmp(context, key))) {
                         actualKey = candidateKey;
                         break;
                     }
@@ -547,26 +545,23 @@ public class RubyGlobal {
             return actualKey;
         }
 
-        private IRubyObject normalizeEnvString(ThreadContext context, IRubyObject key, IRubyObject value) {
-            if (value instanceof RubyString) {
-                Ruby runtime = context.runtime;
-                RubyString valueStr = (RubyString) value;
+        private static RubyString normalizeEnvString(ThreadContext context, RubyString key, RubyString value) {
+            final Ruby runtime = context.runtime;
 
-                // Ensure PATH is encoded like filesystem
-                if (Platform.IS_WINDOWS ?
-                        key.toString().equalsIgnoreCase("PATH") :
-                        key.toString().equals("PATH")) {
-                    Encoding enc = runtime.getEncodingService().getFileSystemEncoding();
-                    valueStr = EncodingUtils.strConvEnc(context, valueStr, valueStr.getEncoding(), enc);
-                } else {
-                    valueStr = RubyString.newString(runtime, valueStr.toString(), runtime.getEncodingService().getLocaleEncoding());
-                }
+            final RubyString valueStr;
 
-                valueStr.setFrozen(true);
-
-                return valueStr;
+            // Ensure PATH is encoded like filesystem
+            if (Platform.IS_WINDOWS ?
+                    key.toString().equalsIgnoreCase("PATH") :
+                    key.toString().equals("PATH")) {
+                Encoding enc = runtime.getEncodingService().getFileSystemEncoding();
+                valueStr = EncodingUtils.strConvEnc(context, value, value.getEncoding(), enc);
+            } else {
+                valueStr = RubyString.newString(runtime, value.toString(), runtime.getEncodingService().getLocaleEncoding());
             }
-            return value;
+
+            valueStr.setFrozen(true);
+            return valueStr;
         }
     }
 
