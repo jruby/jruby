@@ -361,7 +361,7 @@ public class RubyTime extends RubyObject {
         this.dt = dt;
     }
 
-    private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             DateTimeZone dtz = getLocalTimeZone(runtime);
@@ -520,7 +520,11 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
     public RubyBoolean gmt() {
-        return getRuntime().newBoolean(dt.getZone().getID().equals("UTC"));
+        return getRuntime().newBoolean(isUTC());
+    }
+
+    public boolean isUTC() {
+        return dt.getZone().getID().equals("UTC");
     }
 
     @JRubyMethod(name = {"getgm", "getutc"})
@@ -961,31 +965,50 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-    	// modified to match how hash is calculated in 1.8.2
-        return getRuntime().newFixnum((int) (((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1);
+        return RubyFixnum.newFixnum(getRuntime(), hashCode());
     }
 
-    @JRubyMethod(name = "_dump", optional = 1)
+    @Override
+    public int hashCode() {
+        // modified to match how hash is calculated in 1.8.2
+        return (int) (((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1;
+    }
+
+    @JRubyMethod(name = "_dump")
+    public RubyString dump(final ThreadContext context) {
+        RubyString str = mdump(context.runtime);
+        str.syncVariables(this);
+        return str;
+    }
+
+    @JRubyMethod(name = "_dump")
+    public RubyString dump(final ThreadContext context, final IRubyObject arg) {
+        return dump(context);
+    }
+
+    @Deprecated
     public RubyString dump(IRubyObject[] args, Block unusedBlock) {
         RubyString str = (RubyString) mdump();
         str.syncVariables(this);
         return str;
     }
 
+    @Deprecated
     public RubyObject mdump() {
-        Ruby runtime = getRuntime();
-        RubyTime obj = this;
-        DateTime dateTime = obj.dt.toDateTime(DateTimeZone.UTC);
+        return mdump(getRuntime());
+    }
+
+    private RubyString mdump(final Ruby runtime) {
+        DateTime dateTime = dt.toDateTime(DateTimeZone.UTC);
         byte dumpValue[] = new byte[8];
-        long nanos = this.nsec;
         long usec = this.nsec / 1000;
         long nanosec = this.nsec % 1000;
 
         int pe =
             0x1                                 << 31 |
-            ((obj.gmt().isTrue())? 0x1 : 0x0)   << 30 |
-            (dateTime.getYear()-1900)           << 14 |
-            (dateTime.getMonthOfYear()-1)       << 10 |
+            (isUTC() ? 0x1 : 0x0)               << 30 |
+            (dateTime.getYear() - 1900)         << 14 |
+            (dateTime.getMonthOfYear() - 1)     << 10 |
             dateTime.getDayOfMonth()            << 5  |
             dateTime.getHourOfDay();
         int se =
@@ -1002,7 +1025,7 @@ public class RubyTime extends RubyObject {
             se >>>= 8;
         }
 
-        RubyString string = RubyString.newString(obj.getRuntime(), new ByteList(dumpValue));
+        RubyString string = RubyString.newString(runtime, new ByteList(dumpValue));
 
         // 1.9 includes more nsecs
         copyInstanceVariablesInto(string);
@@ -1025,13 +1048,14 @@ public class RubyTime extends RubyObject {
         string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
 
         // time zone
-        if (dt.getZone() != DateTimeZone.UTC) {
-            long offset = dt.getZone().getOffset(dt.getMillis());
+        final DateTimeZone zone = dt.getZone();
+        if (zone != DateTimeZone.UTC) {
+            long offset = zone.getOffset(dt.getMillis());
             string.setInternalVariable("offset", runtime.newFixnum(offset / 1000));
 
-            String zone = dt.getZone().getShortName(dt.getMillis());
-            if (!TIME_OFFSET_PATTERN.matcher(zone).matches()) {
-                string.setInternalVariable("zone", runtime.newString(zone));
+            String zoneName = zone.getShortName(dt.getMillis());
+            if (!TIME_OFFSET_PATTERN.matcher(zoneName).matches()) {
+                string.setInternalVariable("zone", runtime.newString(zoneName));
             }
         }
 
@@ -1061,8 +1085,12 @@ public class RubyTime extends RubyObject {
         return newTime(context.runtime, _dt, rounded % 1000000);
     }
 
-   /* Time class methods */
+    /* Time class methods */
 
+    /**
+     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject)}
+     */
+    @Deprecated
     public static IRubyObject s_new(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(getLocalTimeZone(runtime)));
@@ -1078,6 +1106,9 @@ public class RubyTime extends RubyObject {
         return newInstance(context, recv);
     }
 
+    /**
+     * @see #newInstance(ThreadContext, IRubyObject, IRubyObject[])
+     */
     @JRubyMethod(name = "now", meta = true)
     public static RubyTime newInstance(ThreadContext context, IRubyObject recv) {
         RubyTime obj = (RubyTime) ((RubyClass) recv).allocate();
@@ -1087,7 +1118,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         final RubyTime time;
 
         if (arg instanceof RubyTime) {
@@ -1104,37 +1135,33 @@ public class RubyTime extends RubyObject {
             // the first argument after a decimal point (i.e., "floor").
             // However in the case of a single argument, any portion after
             // the decimal point is honored.
-            if (arg instanceof RubyFloat || arg instanceof RubyRational) {
-                long nano;
+            if (arg instanceof RubyFloat) {
+                // use integral and decimal forms to calculate nanos
+                long seconds = RubyNumeric.float2long((RubyFloat) arg);
+                double dbl = ((RubyFloat) arg).getDoubleValue();
 
-                if (arg instanceof RubyFloat) {
-                    // use integral and decimal forms to calculate nanos
-                    long seconds = RubyNumeric.num2long(arg);
-                    double dbl = RubyNumeric.num2dbl(arg);
+                long nano = (long)((dbl - seconds) * 1000000000);
 
-                    nano = (long)((dbl - seconds) * 1000000000);
-
-                    if (dbl < 0 && nano != 0) {
-                        nano += 1000000000;
-                    }
-
-                    millisecs = seconds * 1000 + nano / 1000000;
-                    nanosecs = nano % 1000000;
-                } else {
-                    // use Rational numerator and denominator to calculate nanos
-                    RubyRational rational = (RubyRational) arg;
-
-                    // These could have rounding errors if numerator or denominator are not integral and < long. Can they be?
-                    long numerator = rational.getNumerator().convertToInteger().getLongValue();
-                    long denominator = rational.getDenominator().convertToInteger().getLongValue();
-
-                    BigDecimal nanosBD = BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), 50, BigDecimal.ROUND_HALF_UP).multiply(ONE_BILLION_BD);
-                    BigInteger millis = nanosBD.divide(ONE_MILLION_BD).toBigInteger();
-                    BigInteger nanos = nanosBD.remainder(ONE_MILLION_BD).toBigInteger();
-
-                    millisecs = millis.longValue();
-                    nanosecs = nanos.longValue();
+                if (dbl < 0 && nano != 0) {
+                    nano += 1000000000;
                 }
+
+                millisecs = seconds * 1000 + nano / 1000000;
+                nanosecs = nano % 1000000;
+            } else if (arg instanceof RubyRational) {
+                // use Rational numerator and denominator to calculate nanos
+                RubyRational rational = (RubyRational) arg;
+
+                // These could have rounding errors if numerator or denominator are not integral and < long. Can they be?
+                long numerator = rational.getNumerator().getLongValue();
+                long denominator = rational.getDenominator().getLongValue();
+
+                BigDecimal nanosBD = BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), 50, BigDecimal.ROUND_HALF_UP).multiply(ONE_BILLION_BD);
+                BigInteger millis = nanosBD.divide(ONE_MILLION_BD).toBigInteger();
+                BigInteger nanos = nanosBD.remainder(ONE_MILLION_BD).toBigInteger();
+
+                millisecs = millis.longValue();
+                nanosecs = nanos.longValue();
             } else {
                 nanosecs = 0;
                 millisecs = RubyNumeric.num2long(arg) * 1000;
@@ -1259,24 +1286,22 @@ public class RubyTime extends RubyObject {
 
     @Override
     public Object toJava(Class target) {
-        if (target.equals(Date.class)) {
+        if (target == Date.class) {
             return getJavaDate();
         }
-        if (target.equals(Calendar.class)) {
-            Calendar cal = GregorianCalendar.getInstance();
-            cal.setTime(getJavaDate());
-            return cal;
+        if (target == Calendar.class || target == GregorianCalendar.class) {
+            return dt.toGregorianCalendar();
         }
-        if (target.equals(DateTime.class)) {
+        if (target == DateTime.class) {
             return this.dt;
         }
-        if (target.equals(java.sql.Date.class)) {
+        if (target == java.sql.Date.class) {
             return new java.sql.Date(dt.getMillis());
         }
-        if (target.equals(java.sql.Time.class)) {
+        if (target == java.sql.Time.class) {
             return new java.sql.Time(dt.getMillis());
         }
-        if (target.equals(java.sql.Timestamp.class)) {
+        if (target == java.sql.Timestamp.class) {
             return new java.sql.Timestamp(dt.getMillis());
         }
         if (target.isAssignableFrom(Date.class)) {
