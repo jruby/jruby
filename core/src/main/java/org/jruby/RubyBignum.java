@@ -43,6 +43,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -1138,19 +1139,21 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject isNegative(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sites(context).basic_op_lt.retrieveCache(metaClass).method.isBuiltin()) {
+        CachingCallSite op_lt_site = sites(context).basic_op_lt;
+        if (op_lt_site.retrieveCache(metaClass).method.isBuiltin()) {
             return runtime.newBoolean(value.signum() < 0);
         }
-        return sites(context).basic_op_lt.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_lt_site.call(context, this, this, RubyFixnum.zero(runtime));
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sites(context).basic_op_gt.retrieveCache(metaClass).method.isBuiltin()) {
+        CachingCallSite op_gt_site = sites(context).basic_op_gt;
+        if (op_gt_site.retrieveCache(metaClass).method.isBuiltin()) {
             return runtime.newBoolean(value.signum() > 0);
         }
-        return sites(context).basic_op_gt.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_gt_site.call(context, this, this, RubyFixnum.zero(runtime));
     }
 
     @Override
