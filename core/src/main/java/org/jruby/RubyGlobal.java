@@ -533,7 +533,7 @@ public class RubyGlobal {
                 // this is a rather ugly hack, but similar to MRI. See hash.c:ruby_setenv and similar in MRI
                 // we search all keys for a case-insensitive match, and use that
                 final ThreadContext context = getRuntime().getCurrentContext();
-                final RubyArray keys = super.keys();
+                final RubyArray keys = super.keys(context);
                 for (int i = 0; i < keys.size(); i++) {
                     RubyString candidateKey = keys.eltInternal(i).convertToString();
                     if (equalIgnoreCase(context, candidateKey, key)) {
