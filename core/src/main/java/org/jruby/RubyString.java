@@ -1247,12 +1247,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      * @return
      */
     public int strHashCode(Ruby runtime) {
+        final ByteList value = this.value;
+        final Encoding enc = value.getEncoding();
         long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(runtime.getHashSeedK0(),
                 runtime.getHashSeedK1(), value.getUnsafeBytes(), value.getBegin(),
                 value.getRealSize()) : PerlHash.hash(runtime.getHashSeedK0(),
                 value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
-        hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
-                : value.getEncoding().getIndex());
+        hash ^= (enc.isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : enc.getIndex());
         return (int) hash;
     }
 
@@ -1263,11 +1264,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      * @return
      */
     public int unseededStrHashCode(Ruby runtime) {
+        final ByteList value = this.value;
+        final Encoding enc = value.getEncoding();
         long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(0, 0, value.getUnsafeBytes(),
                 value.getBegin(), value.getRealSize()) : PerlHash.hash(0, value.getUnsafeBytes(),
                 value.getBegin(), value.getRealSize());
-        hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
-                : value.getEncoding().getIndex());
+        hash ^= (enc.isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : enc.getIndex());
         return (int) hash;
     }
 
