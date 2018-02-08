@@ -472,7 +472,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /*
      * MRI: rb_int_round
      */
-    protected IRubyObject roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
+    private RubyNumeric roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
         Ruby runtime = context.runtime;
 
         RubyNumeric f, h, n, r;
@@ -582,20 +582,16 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "odd?")
     public RubyBoolean odd_p(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (sites(context).op_mod.call(context, this, this, RubyFixnum.two(runtime)) != RubyFixnum.zero(runtime)) {
-            return runtime.getTrue();
-        }
-        return runtime.getFalse();
+        return (op_mod_two(context, this) != 0) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "even?")
     public RubyBoolean even_p(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (sites(context).op_mod.call(context, this, this, RubyFixnum.two(runtime)) == RubyFixnum.zero(runtime)) {
-            return runtime.getTrue();
-        }
-        return runtime.getFalse();
+        return (op_mod_two(context, this) == 0) ? context.tru : context.fals;
+    }
+
+    private static long op_mod_two(ThreadContext context, RubyInteger self) {
+        return ((RubyInteger) sites(context).op_mod.call(context, self, self, RubyFixnum.two(context.runtime))).getLongValue();
     }
 
     @JRubyMethod(name = "pred")
@@ -615,9 +611,9 @@ public abstract class RubyInteger extends RubyNumeric {
     @Override
     public IRubyObject fdiv(ThreadContext context, IRubyObject y) {
         RubyInteger x = this;
-        if (y instanceof RubyInteger && !((RubyInteger) y).zero_p(context).isTrue()) {
+        if (y instanceof RubyInteger && !((RubyInteger) y).isZero()) {
             IRubyObject gcd = gcd(context, y);
-            if (!((RubyInteger) gcd).zero_p(context).isTrue()) {
+            if (!((RubyInteger) gcd).isZero()) {
                 x = (RubyInteger) div(context, gcd);
                 y = ((RubyInteger) y).div(context, gcd);
             }
