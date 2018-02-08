@@ -113,16 +113,6 @@ public class RubyTime extends RubyObject {
 
     private boolean isTzRelative = false; // true if and only if #new is called with a numeric offset (e.g., "+03:00")
 
-    /* JRUBY-3560
-     * joda-time disallows use of three-letter time zone IDs.
-     * Since MRI accepts these values, we need to translate them.
-     */
-    private static final Map<String, String> LONG_TZNAME = Helpers.map(
-        "MET", "CET", // JRUBY-2759
-        "ROC", "Asia/Taipei", // Republic of China
-        "WET", "Europe/Lisbon" // Western European Time
-    );
-
     /* Some TZ values need to be overriden for Time#zone
      */
     private static final Map<String, String> SHORT_STD_TZNAME = Helpers.map(
@@ -175,8 +165,6 @@ public class RubyTime extends RubyObject {
     }
 
     private static DateTimeZone parseTZString(Ruby runtime, String zone) {
-        String upZone = zone.toUpperCase();
-
         Matcher tzMatcher = TZ_PATTERN.matcher(zone);
         if (tzMatcher.matches()) {
             String zoneName = tzMatcher.group(1);
@@ -185,30 +173,34 @@ public class RubyTime extends RubyObject {
             String minutes = tzMatcher.group(4);
             String seconds= tzMatcher.group(5);
 
-            if (zoneName == null) {
-                zoneName = "";
-            }
+            if (zoneName == null) zoneName = "";
 
             // Sign is reversed in legacy TZ notation
             return getTimeZoneFromHHMM(runtime, zoneName, sign.equals("-"), hours, minutes, seconds);
-        } else {
-            if (LONG_TZNAME.containsKey(upZone)) {
-                zone = LONG_TZNAME.get(upZone);
-            } else if (upZone.equals("UTC") || upZone.equals("GMT")) {
+        }
+
+        if (zone.length() == 3) {
+            switch (zone.toUpperCase()) {
+                // joda-time disallows use of three-letter time zone IDs.
+                // Since MRI accepts these values, we need to translate them.
+                case "MET": zone = "CET"; break;
+                case "ROC": zone = "Asia/Taipei"; break; // Republic of China
+                case "WET": zone = "Europe/Lisbon"; break; // Western European Time
                 // MRI behavior: With TZ equal to "GMT" or "UTC", Time.now
                 // is *NOT* considered as a proper GMT/UTC time:
                 //   ENV['TZ']="GMT"; Time.now.gmt? #=> false
                 //   ENV['TZ']="UTC"; Time.now.utc? #=> false
                 // Hence, we need to adjust for that.
-                zone = "Etc/" + upZone;
+                case "UTC": zone = "Etc/UTC"; break;
+                case "GMT": zone = "Etc/GMT"; break;
             }
+        }
 
-            try {
-                return DateTimeZone.forID(zone);
-            } catch (IllegalArgumentException e) {
-                runtime.getWarnings().warning("Unrecognized time zone: "+zone);
-                return DateTimeZone.UTC;
-            }
+        try {
+            return DateTimeZone.forID(zone);
+        } catch (IllegalArgumentException e) {
+            runtime.getWarnings().warning("Unrecognized time zone: " + zone);
+            return DateTimeZone.UTC;
         }
     }
 
@@ -694,7 +686,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) return opMinus(context.runtime, (RubyTime) other);
-        
+
         return opMinus(context.runtime, RubyNumeric.num2dbl(numExact(context, other)));
     }
 
