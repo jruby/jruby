@@ -292,7 +292,7 @@ public class JavaSites {
         public final CachingCallSite to_int = new FunctionalCachingCallSite("to_int");
         public final CachingCallSite to_i = new FunctionalCachingCallSite("to_i");
         public final CachingCallSite to_r = new FunctionalCachingCallSite("to_r");
-        public final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
+        public final CheckedSites checked_to_r = new CheckedSites("to_r");
     }
 
     public static class EnumerableSites {

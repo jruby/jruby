@@ -228,14 +228,15 @@ public class RubyTime extends RubyObject {
         return parseTZString(runtime, zone);
     }
 
-    public static DateTimeZone getTimeZoneFromUtcOffset(Ruby runtime, IRubyObject utcOffset) {
+    public static DateTimeZone getTimeZoneFromUtcOffset(ThreadContext context, IRubyObject utcOffset) {
+        final Ruby runtime = context.runtime;
         String strOffset = utcOffset.toString();
 
         DateTimeZone cachedZone = runtime.getTimezoneCache().get(strOffset);
         if (cachedZone != null) return cachedZone;
 
         DateTimeZone dtz;
-        if(utcOffset instanceof RubyString) {
+        if (utcOffset instanceof RubyString) {
             Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(strOffset);
             if (!offsetMatcher.matches()) {
                 throw runtime.newArgumentError("\"+HH:MM\" or \"-HH:MM\" expected for utc_offset");
@@ -246,8 +247,8 @@ public class RubyTime extends RubyObject {
             String seconds = offsetMatcher.group(4);
             dtz = getTimeZoneFromHHMM(runtime, "", !sign.equals("-"), hours, minutes, seconds);
         } else {
-            IRubyObject numericOffset = numExact(runtime, utcOffset);
-            int newOffset = (int)Math.round(numericOffset.convertToFloat().getDoubleValue() * 1000);
+            RubyNumeric numericOffset = numExact(context, utcOffset);
+            int newOffset = (int) Math.round(numericOffset.convertToFloat().getDoubleValue() * 1000);
             dtz = getTimeZoneWithOffset(runtime, "", newOffset);
         }
 
@@ -256,49 +257,43 @@ public class RubyTime extends RubyObject {
     }
 
     // mri: time.c num_exact
-    private static IRubyObject numExact(Ruby runtime, IRubyObject v) {
-        IRubyObject tmp;
+    private static RubyNumeric numExact(ThreadContext context, IRubyObject v) {
         boolean typeError = false;
 
         switch (v.getMetaClass().getClassIndex()) {
-            case INTEGER:
-                return v;
-
-            case RATIONAL:
-                break;
-
-            case STRING:
             case NIL:
-                typeError = true;
-                break;
+                throw context.runtime.newTypeError("can't convert nil into an exact number");
+
+            case INTEGER: return (RubyInteger) v;
+
+            case RATIONAL: break;
+
+            case STRING: typeError = true; break;
 
             default:
-                ThreadContext context = runtime.getCurrentContext();
-                if ((tmp = v.getMetaClass().finvokeChecked(context, v, "to_r")) != null) {
+                IRubyObject tmp;
+                if ((tmp = v.getMetaClass().finvokeChecked(context, v, sites(context).checked_to_r)) != null) {
                     /* test to_int method availability to reject non-Numeric
                      * objects such as String, Time, etc which have to_r method. */
-                    if (!v.respondsTo("to_int")) {
-                        typeError = true;
-                        break;
+                    if (!sites(context).respond_to_to_int.respondsTo(context, v, v)) {
+                        typeError = true; break;
                     }
-                    v = tmp;
-                    break;
+                    v = tmp; break;
                 }
                 if (!(tmp = TypeConverter.checkIntegerType(context, v)).isNil()) {
-                    v = tmp;
-                    break;
+                    v = tmp; // return tmp;
                 }
-                typeError = true;
-                break;
+                else {
+                    typeError = true;
+                }
         }
 
         switch (v.getMetaClass().getClassIndex()) {
-            case INTEGER:
-                return v;
+            case INTEGER: return (RubyInteger) v;
 
             case RATIONAL:
-                if (((RubyRational) v).getDenominator() == RubyFixnum.one(runtime)) {
-                    v = ((RubyRational) v).getNumerator();
+                if (((RubyRational) v).getDenominator().isOne()) {
+                    return ((RubyRational) v).getNumerator();
                 }
                 break;
 
@@ -308,16 +303,10 @@ public class RubyTime extends RubyObject {
         }
 
         if (typeError) {
-            if (v.isNil()) throw runtime.newTypeError("can't convert nil into an exact number");
-            throw runtime.newTypeError("can't convert " + v.getMetaClass() + " into an exact number");
+            throw context.runtime.newTypeError("can't convert " + v.getMetaClass() + " into an exact number");
         }
 
-        return v;
-    }
-
-    private static void exactTypeError(Ruby runtime, IRubyObject received) {
-        throw runtime.newTypeError(
-                String.format("Can't convert %s into an exact number", received.getMetaClass().getRealClass()));
+        return (RubyNumeric) v;
     }
 
     private static DateTimeZone getTimeZoneFromHHMM(Ruby runtime, String name, boolean positive, String hours, String minutes, String seconds) {
@@ -515,7 +504,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "localtime")
     public RubyTime localtime(ThreadContext context, IRubyObject arg) {
-        final DateTimeZone zone = getTimeZoneFromUtcOffset(context.runtime, arg);
+        final DateTimeZone zone = getTimeZoneFromUtcOffset(context, arg);
         return adjustTimeZone(context.runtime, zone);
     }
 
@@ -558,10 +547,10 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "getlocal")
     public RubyTime getlocal(ThreadContext context, IRubyObject arg) {
-        if (arg.isNil()) {
+        if (arg == context.nil) {
             return newTime(context.runtime, dt.withZone(getLocalTimeZone(context.runtime)), nsec);
         }
-        DateTimeZone dtz = getTimeZoneFromUtcOffset(context.runtime, arg);
+        DateTimeZone dtz = getTimeZoneFromUtcOffset(context, arg);
         return newTime(context.runtime, dt.withZone(dtz), nsec);
     }
 
@@ -660,13 +649,10 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            throw context.runtime.newTypeError("time + time ?");
+            throw context.runtime.newTypeError("time + time?");
         }
 
-        checkOpCoercion(context, other);
-        other = sites(context).to_r.call(context, other, other);
-
-        double adjustMillis = RubyNumeric.num2dbl(other) * 1000;
+        double adjustMillis = RubyNumeric.num2dbl(numExact(context, other)) * 1000;
         return opPlusMillis(context.runtime, adjustMillis);
     }
 
@@ -694,19 +680,6 @@ public class RubyTime extends RubyObject {
         return newTime;
     }
 
-    private static void checkOpCoercion(ThreadContext context, IRubyObject other) {
-        //if (other instanceof RubyNumeric) return; // TODO MRI does num_exact here!
-        if (other instanceof RubyString) {
-            throw context.runtime.newTypeError("no implicit conversion to rational from string");
-        }
-        if (other == context.nil) {
-            throw context.runtime.newTypeError("no implicit conversion to rational from nil");
-        }
-        if (!sites(context).respond_to_to_r.respondsTo(context, other, other)){
-            throw context.runtime.newTypeError("can't convert " + other.getMetaClass().getBaseName() + " into Rational");
-        }
-    }
-
     private RubyFloat opMinus(Ruby runtime, RubyTime other) {
         long timeInMillis = getTimeInMillis() - other.getTimeInMillis();
         double timeInSeconds = timeInMillis / 1000.0 + (getNSec() - other.getNSec()) / 1000000000.0;
@@ -721,11 +694,8 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) return opMinus(context.runtime, (RubyTime) other);
-
-        checkOpCoercion(context, other);
-        other = sites(context).to_r.call(context, other, other);
-
-        return opMinus(context.runtime, RubyNumeric.num2dbl(other));
+        
+        return opMinus(context.runtime, RubyNumeric.num2dbl(numExact(context, other)));
     }
 
     @Deprecated
@@ -1136,7 +1106,7 @@ public class RubyTime extends RubyObject {
             long nanosecs;
             long millisecs;
 
-            arg = numExact(runtime, arg);
+            arg = numExact(context, arg);
 
             // In the case of two arguments, MRI will discard the portion of
             // the first argument after a decimal point (i.e., "floor").
@@ -1201,8 +1171,8 @@ public class RubyTime extends RubyObject {
         long millisecs;
         long nanosecs = 0;
 
-        arg1 = numExact(runtime, arg1);
-        arg2 = numExact(runtime, arg2);
+        arg1 = numExact(context, arg1);
+        arg2 = numExact(context, arg2);
 
         if (arg1 instanceof RubyFloat || arg1 instanceof RubyRational) {
             double dbl = RubyNumeric.num2dbl(arg1);
@@ -1442,7 +1412,7 @@ public class RubyTime extends RubyObject {
             dtz = DateTimeZone.UTC;
         } else if (args.length == 10 && args[9] instanceof RubyString) {
             if (utcOffset) {
-                dtz = getTimeZoneFromUtcOffset(runtime, args[9]);
+                dtz = getTimeZoneFromUtcOffset(context, args[9]);
                 setTzRelative = true;
             } else {
                 dtz = getTimeZoneFromString(runtime, args[9].toString());

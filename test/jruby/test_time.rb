@@ -60,22 +60,23 @@ class TestTime < Test::Unit::TestCase
 end
 
 class TestTimeNilOps < Test::Unit::TestCase
+
   def test_minus
     begin
       Time.now - ()
-    rescue TypeError=>x
-      assert x
-      assert_equal "no implicit conversion to rational from nil", x.message
+    rescue TypeError => x
+      assert_equal "can't convert nil into an exact number", x.message
     end
   end
+
   def test_plus
     begin
       Time.now + ()
-    rescue TypeError=>x
-      assert x
-      assert_equal "no implicit conversion to rational from nil", x.message
+    rescue TypeError => x
+      assert_equal "can't convert nil into an exact number", x.message
     end
   end
+
   def test_times
     t = Time.now
     begin
@@ -86,6 +87,7 @@ class TestTimeNilOps < Test::Unit::TestCase
       assert_equal "undefined method `*' for #{t}:Time", x.message
     end
   end
+
   def test_div
     t = Time.now
     begin

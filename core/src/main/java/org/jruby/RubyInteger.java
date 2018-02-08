@@ -51,6 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
+import java.math.BigInteger;
 import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -775,6 +776,10 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "bit_length")
     public abstract IRubyObject bit_length(ThreadContext context);
+
+    boolean isOne() {
+        return getBigIntegerValue().equals(BigInteger.ONE);
+    }
 
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_gt(context, this, other);
