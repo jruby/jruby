@@ -1105,13 +1105,13 @@ public class RubyBignum extends RubyInteger {
 
         dx = getDoubleValue();
         if (y instanceof RubyFixnum) {
-            dy = (double)fix2long(y);
-            if (Double.isInfinite(dx))
-                return fdivInt(context, RubyBignum.newBignum(context.runtime, fix2long(y)));
+            long ly = ((RubyFixnum) y).getLongValue();
+            if (Double.isInfinite(dx)) {
+                return fdivInt(context.runtime, BigDecimal.valueOf(ly));
+            }
+            dy = (double) ly;
         } else if (y instanceof RubyBignum) {
-            dy = RubyBignum.big2dbl((RubyBignum) y);
-            if (Double.isInfinite(dx) || Double.isInfinite(dy))
-                return fdivInt(context, (RubyBignum) y);
+            return fdivDouble(context, (RubyBignum) y);
         } else if (y instanceof RubyFloat) {
             dy = ((RubyFloat) y).getDoubleValue();
             if (Double.isNaN(dy)) {
@@ -1126,9 +1126,23 @@ public class RubyBignum extends RubyInteger {
         return context.runtime.newFloat(dx / dy);
     }
 
+    final RubyFloat fdivDouble(ThreadContext context, RubyBignum y) {
+        double dx = getDoubleValue();
+        double dy = RubyBignum.big2dbl(y);
+        if (Double.isInfinite(dx) || Double.isInfinite(dy)) {
+            return (RubyFloat) fdivInt(context, y);
+        }
+
+        return context.runtime.newFloat(dx / dy);
+    }
+
     // MRI: big_fdiv_int and big_fdiv
     public IRubyObject fdivInt(ThreadContext context, RubyBignum y) {
-        return context.runtime.newFloat(new BigDecimal(value).divide(new BigDecimal(y.getValue())).doubleValue());
+        return fdivInt(context.runtime, new BigDecimal(y.value));
+    }
+
+    private RubyFloat fdivInt(final Ruby runtime, BigDecimal y) {
+        return runtime.newFloat(new BigDecimal(value).divide(y).doubleValue());
     }
 
     // MRI: big_fdiv_float

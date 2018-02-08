@@ -1326,13 +1326,14 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject fdivDouble(ThreadContext context, IRubyObject y) {
         if (y instanceof RubyFixnum) {
             return context.runtime.newFloat(((double) value) / ((double) fix2long(y)));
-        } else if (y instanceof RubyBignum) {
-            return RubyBignum.newBignum(context.runtime, value).fdivDouble(context, y);
-        } else if (y instanceof RubyFloat) {
-            return context.runtime.newFloat(((double) value) / ((RubyFloat) y).getDoubleValue());
-        } else {
-            return coerceBin(context, sites(context).fdiv, y);
         }
+        if (y instanceof RubyBignum) {
+            return RubyBignum.newBignum(context.runtime, value).fdivDouble(context, (RubyBignum) y);
+        }
+        if (y instanceof RubyFloat) {
+            return context.runtime.newFloat(((double) value) / ((RubyFloat) y).getDoubleValue());
+        }
+        return coerceBin(context, sites(context).fdiv, y);
     }
 
     @Override
