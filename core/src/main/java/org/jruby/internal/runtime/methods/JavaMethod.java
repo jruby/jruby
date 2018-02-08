@@ -276,11 +276,12 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     // promise to implement N with block
     public static abstract class JavaMethodNBlock extends JavaMethod {
-        public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility) {
-            super(implementationClass, visibility);
-        }
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
+        }
+        @Deprecated
+        public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility) {
+            super(implementationClass, visibility);
         }
         @Deprecated
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {

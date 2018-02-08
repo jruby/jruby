@@ -445,9 +445,9 @@ public class JavaProxy extends RubyObject {
 
     private MethodInvoker getMethodInvoker(Method method) {
         if (Modifier.isStatic(method.getModifiers())) {
-            return new StaticMethodInvoker(metaClass.getMetaClass(), method);
+            return new StaticMethodInvoker(metaClass.getMetaClass(), method, method.getName());
         } else {
-            return new InstanceMethodInvoker(metaClass, method);
+            return new InstanceMethodInvoker(metaClass, method, method.getName());
         }
     }
 
@@ -623,12 +623,12 @@ public class JavaProxy extends RubyObject {
             final MethodInvoker invoker;
 
             if ( Modifier.isStatic( method.getModifiers() ) ) {
-                invoker = new StaticMethodInvoker(proxyClass.getMetaClass(), method);
+                invoker = new StaticMethodInvoker(proxyClass.getMetaClass(), method, newNameStr);
                 // add alias to meta
                 proxyClass.getSingletonClass().addMethod(newNameStr, invoker);
             }
             else {
-                invoker = new InstanceMethodInvoker(proxyClass, method);
+                invoker = new InstanceMethodInvoker(proxyClass, method, newNameStr);
                 proxyClass.addMethod(newNameStr, invoker);
             }
 
@@ -646,11 +646,11 @@ public class JavaProxy extends RubyObject {
             final String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
 
             if ( Modifier.isStatic( method.getModifiers() ) ) {
-                MethodInvoker invoker = new StaticMethodInvoker(proxyClass, method);
+                MethodInvoker invoker = new StaticMethodInvoker(proxyClass, method, name);
                 return RubyMethod.newMethod(proxyClass, prettyName, proxyClass, name, invoker, clazz);
             }
 
-            MethodInvoker invoker = new InstanceMethodInvoker(proxyClass, method);
+            MethodInvoker invoker = new InstanceMethodInvoker(proxyClass, method, name);
             return RubyUnboundMethod.newUnboundMethod(proxyClass, prettyName, proxyClass, name, invoker);
         }
 

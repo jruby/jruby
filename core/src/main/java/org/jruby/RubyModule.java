@@ -1889,8 +1889,8 @@ public class RubyModule extends RubyObject {
 
     public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
         final CallSite site;
-        public RespondToMissingMethod(RubyModule implClass, Visibility vis, String methodName) {
-            super(implClass, vis);
+        public RespondToMissingMethod(RubyModule implClass, Visibility visibility, String methodName) {
+            super(implClass, visibility, methodName);
 
             setParameterList(REST);
             site = new FunctionalCachingCallSite(methodName);

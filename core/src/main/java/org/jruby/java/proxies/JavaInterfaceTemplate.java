@@ -78,7 +78,7 @@ public class JavaInterfaceTemplate {
     private static class DummyMethodImpl extends org.jruby.internal.runtime.methods.JavaMethod {
 
         DummyMethodImpl(RubyModule targetModule) {
-            super(targetModule, Visibility.PUBLIC);
+            super(targetModule, Visibility.PUBLIC, ""); // NOTE: maybe dummy method should not be shared
         }
 
         @Override
