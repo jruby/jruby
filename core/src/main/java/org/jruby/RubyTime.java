@@ -53,7 +53,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.TimeSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -66,11 +65,9 @@ import org.jruby.util.TypeConverter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -136,23 +133,32 @@ public class RubyTime extends RubyObject {
         return ClassIndex.TIME;
     }
 
-    private static IRubyObject getEnvTimeZone(Ruby runtime) {
-        RubyString tzVar = (RubyString) runtime.getTime().getInternalVariable("tz_string");
-        if (tzVar == null) {
-            tzVar = runtime.newString(TZ_STRING);
-            tzVar.setFrozen(true);
-            runtime.getTime().setInternalVariable("tz_string", tzVar);
+    private static transient Object[] tzValue; // (RubyString, String) - assuming single runtime or same ENV['TZ']
+
+    public static String getEnvTimeZone(Ruby runtime) {
+        RubyString tz = runtime.tzVar;
+        if (tz == null) {
+            tz = runtime.newString(TZ_STRING);
+            tz.setFrozen(true);
+            runtime.tzVar = tz;
         }
-        return runtime.getENV().op_aref(runtime.getCurrentContext(), tzVar);
+        
+        RubyHash.RubyHashEntry entry = runtime.getENV().getEntry(tz);
+        if (entry.key == null || entry.key == NEVER) return null; // NO_ENTRY
+
+        if (entry.key != tz) runtime.tzVar = (RubyString) entry.key;
+
+        Object[] tzVal = tzValue;
+        if (tzVal != null && tzVal[0] == entry.value) return (String) tzVal[1]; // cache RubyString -> String
+
+        final String val = (entry.value instanceof RubyString) ? ((RubyString) entry.value).asJavaString() : null;
+        tzValue = new Object[] { entry.value, val };
+        return val;
     }
 
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
-        IRubyObject tz = getEnvTimeZone(runtime);
-
-        if (tz == null || ! (tz instanceof RubyString)) {
-            return DateTimeZone.getDefault();
-        }
-        return getTimeZoneFromTZString(runtime, tz.toString());
+        final String tz = getEnvTimeZone(runtime);
+        return tz == null ? DateTimeZone.getDefault() : getTimeZoneFromTZString(runtime, tz);
     }
 
     public static DateTimeZone getTimeZoneFromTZString(Ruby runtime, String zone) {
@@ -918,7 +924,8 @@ public class RubyTime extends RubyObject {
     }
 
 	public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
-        return RubyTime.getRubyTimeZoneName(getEnvTimeZone(runtime).toString(), dt);
+        final String tz = getEnvTimeZone(runtime);
+        return RubyTime.getRubyTimeZoneName(tz == null ? "" : tz, dt);
 	}
 
 	public static String getRubyTimeZoneName(String envTZ, DateTime dt) {
