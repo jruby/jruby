@@ -693,7 +693,7 @@ class TC_Set < Test::Unit::TestCase
     set << 4
     assert_same orig, set.freeze
     assert_equal true, set.frozen?
-    assert_raise(RuntimeError) {
+    assert_raise(FrozenError) {
       set << 5
     }
     assert_equal 4, set.size
@@ -716,7 +716,7 @@ class TC_Set < Test::Unit::TestCase
     set2 = set1.clone
 
     assert_predicate set2, :frozen?
-    assert_raise(RuntimeError) {
+    assert_raise(FrozenError) {
       set2.add 5
     }
   end
@@ -831,6 +831,34 @@ class TC_SortedSet < Test::Unit::TestCase
     assert_equal(6, e.size)
     set << 42
     assert_equal(7, e.size)
+  end
+
+  def test_freeze
+    orig = set = SortedSet[3,2,1]
+    assert_equal false, set.frozen?
+    set << 4
+    assert_same orig, set.freeze
+    assert_equal true, set.frozen?
+    assert_raise(FrozenError) {
+      set << 5
+    }
+    assert_equal 4, set.size
+
+    # https://bugs.ruby-lang.org/issues/12091
+    assert_nothing_raised {
+      assert_equal [1,2,3,4], set.to_a
+    }
+  end
+
+  def test_freeze_clone
+    set1 = SortedSet[1,2,3]
+    set1.freeze
+    set2 = set1.clone
+
+    assert_predicate set2, :frozen?
+    assert_raise(FrozenError) {
+      set2.add 5
+    }
   end
 end
 

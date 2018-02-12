@@ -1543,6 +1543,7 @@ public final class Ruby implements Constantizable {
     private void initExceptions() {
         standardError = defineClassIfAllowed("StandardError", exceptionClass);
         runtimeError = defineClassIfAllowed("RuntimeError", standardError);
+        frozenError = defineClassIfAllowed("FrozenError", runtimeError);
         ioError = defineClassIfAllowed("IOError", standardError);
         scriptError = defineClassIfAllowed("ScriptError", exceptionClass);
         rangeError = defineClassIfAllowed("RangeError", standardError);
@@ -2447,6 +2448,10 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getRuntimeError() {
         return runtimeError;
+    }
+
+    public RubyClass getFrozenError() {
+        return frozenError;
     }
 
     public RubyClass getIOError() {
@@ -4045,8 +4050,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newFrozenError(String objectType, boolean runtimeError) {
-        // TODO: Should frozen error have its own distinct class?  If not should more share?
-        return newRaiseException(getRuntimeError(), "can't modify frozen " + objectType);
+        return newRaiseException(getFrozenError(), "can't modify frozen " + objectType);
     }
 
     public RaiseException newSystemStackError(String message) {
@@ -4906,7 +4910,7 @@ public final class Ruby implements Constantizable {
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
             fileClass, fileStatClass, ioClass, threadClass, threadGroupClass,
             continuationClass, structClass, tmsStruct, passwdStruct,
-            groupStruct, procStatusClass, exceptionClass, runtimeError, ioError,
+            groupStruct, procStatusClass, exceptionClass, runtimeError, frozenError, ioError,
             scriptError, nameError, nameErrorMessage, noMethodError, signalException,
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
             systemCallError, fatal, interrupt, typeError, argumentError, uncaughtThrowError, indexError, stopIteration,
