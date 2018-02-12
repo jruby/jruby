@@ -40,8 +40,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -249,9 +247,9 @@ public class AnnotationBinder extends AbstractProcessor {
             // write out a static initializer for frame names, so it only fires once
             out.println("    static {");
 
-            populateMethodIndex(readGroups,
+            AnnotationHelper.populateMethodIndex(readGroups,
                     (bits, names) -> emitIndexCode(bits, names, "        MethodIndex.addMethodReadFieldsPacked(%d, \"%s\");"));
-            populateMethodIndex(writeGroups,
+            AnnotationHelper.populateMethodIndex(writeGroups,
                     (bits, names) -> emitIndexCode(bits, names, "        MethodIndex.addMethodWriteFieldsPacked(%d, \"%s\");"));
 
             out.println("    }");
@@ -273,20 +271,6 @@ public class AnnotationBinder extends AbstractProcessor {
 
     public void emitIndexCode(int bits, String names, String format) {
         out.println(String.format(format, bits, names));
-    }
-
-    public static void populateMethodIndex(Map<Set<FrameField>, List<String>> accessGroups, BiConsumer<Integer, String> action) {
-        if (!accessGroups.isEmpty()) {
-            for (Map.Entry<Set<FrameField>, List<String>> accessEntry : accessGroups.entrySet()) {
-                Set<FrameField> reads = accessEntry.getKey();
-                List<String> names = accessEntry.getValue();
-
-                int bits = FrameField.pack(reads.stream().toArray(n -> new FrameField[n]));
-                String namesJoined = names.stream().collect(Collectors.joining(";"));
-
-                action.accept(bits, namesJoined);
-            }
-        }
     }
 
     private static StringBuilder join(final Iterable<String> names) {

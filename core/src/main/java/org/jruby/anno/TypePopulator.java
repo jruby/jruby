@@ -92,8 +92,8 @@ public abstract class TypePopulator {
             // fallback on non-pregenerated logic
 
             // populate method index; this is done statically in generated code
-            AnnotationBinder.populateMethodIndex(clumper.readGroups, MethodIndex::addMethodReadFieldsPacked);
-            AnnotationBinder.populateMethodIndex(clumper.writeGroups, MethodIndex::addMethodWriteFieldsPacked);
+            AnnotationHelper.populateMethodIndex(clumper.readGroups, MethodIndex::addMethodReadFieldsPacked);
+            AnnotationHelper.populateMethodIndex(clumper.writeGroups, MethodIndex::addMethodWriteFieldsPacked);
 
             final Ruby runtime = target.getRuntime();
             final MethodFactory methodFactory = MethodFactory.createFactory(runtime.getJRubyClassLoader());

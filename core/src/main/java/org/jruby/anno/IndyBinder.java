@@ -274,8 +274,8 @@ public class IndyBinder extends AbstractProcessor {
 
             mv.start();
 
-            AnnotationBinder.populateMethodIndex(readGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodReadFieldsPacked"));
-            AnnotationBinder.populateMethodIndex(writeGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodWriteFieldsPacked"));
+            AnnotationHelper.populateMethodIndex(readGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodReadFieldsPacked"));
+            AnnotationHelper.populateMethodIndex(writeGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodWriteFieldsPacked"));
 
             mv.voidreturn();
             mv.end();
