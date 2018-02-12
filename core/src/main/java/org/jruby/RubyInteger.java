@@ -381,6 +381,11 @@ public abstract class RubyInteger extends RubyNumeric {
         return chrCommon(context, i, enc);
     }
 
+    @Deprecated
+    public RubyString chr19(ThreadContext context, IRubyObject arg) {
+        return chr(context, arg);
+    }
+
     private RubyString chrCommon(ThreadContext context, long value, Encoding enc) {
         if (value > 0xFFFFFFFFL) {
             throw context.runtime.newRangeError(this + " out of char range");
@@ -388,11 +393,6 @@ public abstract class RubyInteger extends RubyNumeric {
         int c = (int) value;
         if (enc == null) enc = ASCIIEncoding.INSTANCE;
         return EncodingUtils.encUintChr(context, c, enc);
-    }
-
-    @Deprecated
-    public final RubyString chr19(ThreadContext context, IRubyObject arg) {
-        return chr(context, arg);
     }
 
     /** int_ord

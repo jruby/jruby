@@ -1120,12 +1120,12 @@ public class Java implements Library {
             return this;
         }
 
-        final ConcreteMethod getConcreteMethod() { return new ConcreteMethod(); }
+        final ConcreteMethod getConcreteMethod(String name) { return new ConcreteMethod(name); }
 
         final class ConcreteMethod extends org.jruby.internal.runtime.methods.JavaMethod {
 
-            ConcreteMethod() {
-                super(ProcToInterface.this.implementationClass, Visibility.PUBLIC);
+            ConcreteMethod(String name) {
+                super(ProcToInterface.this.implementationClass, Visibility.PUBLIC, name);
             }
 
             @Override

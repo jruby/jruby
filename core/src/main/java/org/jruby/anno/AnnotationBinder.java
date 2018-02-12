@@ -328,7 +328,8 @@ public class AnnotationBinder extends AbstractProcessor {
                     anno.frame());
             String implClass = anno.meta() ? "singletonClass" : "cls";
 
-            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
+            String baseName = getBaseName(anno.name(), method);
+            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ", \"" + baseName + "\");");
             out.println("        populateMethod(javaMethod, " +
                     +AnnotationHelper.getArityValue(anno, actualRequired) + ", \""
                     + method.getSimpleName() + "\", "
@@ -374,7 +375,8 @@ public class AnnotationBinder extends AbstractProcessor {
                     anno.frame());
             String implClass = anno.meta() ? "singletonClass" : "cls";
 
-            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
+            String baseName = getBaseName(anno.name(), method);
+            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ", \"" + baseName + "\");");
             out.println("        populateMethod(javaMethod, " +
                     "-1, \"" +
                     method.getSimpleName() + "\", " +
@@ -508,12 +510,10 @@ public class AnnotationBinder extends AbstractProcessor {
 
     private void defineMethodOnClass(String methodVar, String classVar, final String[] names, final String[] aliases,
         ExecutableElement md) {
-        CharSequence baseName;
+        CharSequence baseName = getBaseName(names, md);
         if (names.length == 0) {
-            baseName = md.getSimpleName();
             out.println("        " + classVar + ".addMethodAtBootTimeOnly(\"" + baseName + "\", " + methodVar + ");");
         } else {
-            baseName = names[0];
             for (String name : names) {
                 out.println("        " + classVar + ".addMethodAtBootTimeOnly(\"" + name + "\", " + methodVar + ");");
             }
@@ -537,6 +537,14 @@ public class AnnotationBinder extends AbstractProcessor {
                 comma = true;
             }
             System.err.print("\n");
+        }
+    }
+
+    private String getBaseName(String[] names, ExecutableElement md) {
+        if (names.length == 0) {
+            return md.getSimpleName().toString();
+        } else {
+            return names[0];
         }
     }
 }

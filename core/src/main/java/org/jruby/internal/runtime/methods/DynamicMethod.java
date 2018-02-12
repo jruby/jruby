@@ -30,6 +30,10 @@
 
 package org.jruby.internal.runtime.methods;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.jruby.MetaClass;
@@ -72,6 +76,11 @@ public abstract class DynamicMethod {
     private static final int BUILTIN_FLAG = 0x1;
     private static final int NOTIMPL_FLAG = 0x2;
 
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Version {
+        int version = 0;
+    }
+
     /**
      * Base constructor for dynamic method handles with names.
      *
@@ -82,7 +91,9 @@ public abstract class DynamicMethod {
      */
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, String name) {
         assert implementationClass != null;
-        assert name != null;
+        if (name == null) {
+            name = "null";
+        }
         this.name = name;
         init(implementationClass, visibility);
     }
@@ -93,10 +104,10 @@ public abstract class DynamicMethod {
      */
     protected DynamicMethod(String name) {
         this.visibility = (byte) Visibility.PUBLIC.ordinal();
+        if (name == null) {
+            name = "null";
+        }
         this.name = name;
-//        assert (this instanceof UndefinedMethod ||
-//                this instanceof CompiledMethod ||
-//                this instanceof );
     }
 
     protected void init(RubyModule implementationClass, Visibility visibility) {

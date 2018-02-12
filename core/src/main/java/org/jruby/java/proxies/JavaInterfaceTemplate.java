@@ -376,8 +376,8 @@ public class JavaInterfaceTemplate {
 
         final Class<?> ifaceClass = JavaClass.getJavaClass(context, ((RubyModule) self));
         if ( methodNames == null ) {
-            final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod();
             for ( Method method : ifaceClass.getMethods() ) {
+                BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(method.getName());
                 if ( method.isBridge() || method.isSynthetic() ) continue;
                 if ( Modifier.isStatic( method.getModifiers() ) ) continue;
                 // override default methods (by default) - users should pass down method names or impl(false) { ... }
@@ -386,10 +386,10 @@ public class JavaInterfaceTemplate {
             }
         }
         else {
-            final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod();
             final Method[] decMethods = ifaceClass.getDeclaredMethods();
             loop: for ( IRubyObject methodName : methodNames ) {
                 final String name = methodName.toString();
+                final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(name);
                 for ( int i = 0; i < decMethods.length; i++ ) {
                     final Method method = decMethods[i];
                     if ( method.isBridge() || method.isSynthetic() ) continue;
@@ -414,7 +414,7 @@ public class JavaInterfaceTemplate {
         private final Block implBlock;
 
         BlockInterfaceImpl(final RubyClass implClass, final Block implBlock, final IRubyObject[] methodNames) {
-            super(implClass, Visibility.PUBLIC);
+            super(implClass, Visibility.PUBLIC, "method_missing");
             this.implBlock = implBlock; this.methodNames = methodNames;
         }
 
@@ -460,12 +460,12 @@ public class JavaInterfaceTemplate {
 
         public DynamicMethod dup() { return this; }
 
-        final ConcreteMethod getConcreteMethod() { return new ConcreteMethod(); }
+        final ConcreteMethod getConcreteMethod(String name) { return new ConcreteMethod(name); }
 
         private final class ConcreteMethod extends JavaMethod {
 
-            ConcreteMethod() {
-                super(BlockInterfaceImpl.this.implementationClass, Visibility.PUBLIC);
+            ConcreteMethod(String name) {
+                super(BlockInterfaceImpl.this.implementationClass, Visibility.PUBLIC, name);
             }
 
             @Override

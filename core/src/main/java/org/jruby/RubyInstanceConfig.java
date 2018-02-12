@@ -1887,8 +1887,6 @@ public class RubyInstanceConfig {
             case "1.6" :
             case "1.7" : throw new UnsupportedClassVersionError("JRuby requires Java 8 or higher");
             case "1.8" : case "8" : return Opcodes.V1_8; // 52
-
-            case "1.9" : case "9" : return Opcodes.V1_8 + 1; // 53
             default :
                 int version = Integer.parseInt(specVersion);
                 if (version >= 9) {
