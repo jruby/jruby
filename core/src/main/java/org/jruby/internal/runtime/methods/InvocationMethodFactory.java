@@ -46,6 +46,7 @@ import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -122,7 +123,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
     /** The super constructor signature for Java-based method handles. */
-    private final static String JAVA_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class));
+    private final static String JAVA_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class, String.class));
 
     /** The lvar index of "this" */
     public static final int THIS_INDEX = 0;
@@ -187,7 +188,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     //    return signature.isFixed() && signature.required() <= 3;
     //}
 
-    private static final Class[] RubyModule_and_Visibility = new Class[]{ RubyModule.class, Visibility.class };
+    private static final Class[] RubyModule_and_Visibility_and_Name = new Class[]{ RubyModule.class, Visibility.class, String.class };
 
     /**
      * Use code generation to provide a method handle based on an annotated Java
@@ -195,7 +196,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      *
      * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
-    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs, String name) {
         JavaMethodDescriptor desc1 = descs.get(0);
         final JRubyMethod anno = desc1.anno;
         final String javaMethodName = desc1.name;
@@ -208,7 +209,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             DescriptorInfo info = new DescriptorInfo(descs);
             if (DEBUG) LOG.debug(" min: " + info.getMin() + ", max: " + info.getMax());
 
-            JavaMethod ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, anno.visibility());
+            JavaMethod ic = constructJavaMethod(implementationClass, desc1, name, c);
 
             TypePopulator.populateMethod(
                     ic,
@@ -318,13 +319,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      *
      * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
-    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc, String name) {
         String javaMethodName = desc.name;
 
         try {
             Class c = getAnnotatedMethodClass(Collections.singletonList(desc));
-
-            JavaMethod ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, desc.anno.visibility());
+            JavaMethod ic = constructJavaMethod(implementationClass, desc, name, c);
 
             TypePopulator.populateMethod(
                     ic,
@@ -341,6 +341,27 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             LOG.error(e);
             throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
+    }
+
+    public JavaMethod constructJavaMethod(RubyModule implementationClass, JavaMethodDescriptor desc, String name, Class c) throws InstantiationException, IllegalAccessException, java.lang.reflect.InvocationTargetException, NoSuchMethodException {
+        // In order to support older versions of generated JavaMethod invokers, we check for the Version
+        // annotation to be present and > 0. If absent, we use a thread local to allow the deprecated constructor
+        // to still provide a final method name.
+        DynamicMethod.Version version = (DynamicMethod.Version) c.getAnnotation(DynamicMethod.Version.class);
+        JavaMethod ic;
+        if (version == null) {
+            // Old constructor with no name, use thread-local to pass it.
+            JavaMethod.NAME_PASSER.set(name);
+            try {
+                ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, desc.anno.visibility());
+            } finally {
+                JavaMethod.NAME_PASSER.remove();
+            }
+        } else {
+            // New constructor with name.
+            ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility_and_Name).newInstance(implementationClass, desc.anno.visibility(), name);
+        }
+        return ic;
     }
 
     /**
@@ -417,9 +438,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String sourceFile = namePath.substring(namePath.lastIndexOf('/') + 1) + ".gen";
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
         cw.visitSource(sourceFile, null);
+
+        AnnotationVisitor av = cw.visitAnnotation(ci(DynamicMethod.Version.class), true);
+        av.visit("version", 0);
+        av.visitEnd();
+
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null);
         mv.start();
-        mv.aloadMany(0, 1, 2);
+        mv.aloadMany(0, 1, 2, 3);
         mv.invokespecial(sup, "<init>", JAVA_SUPER_SIG);
         mv.aload(0);
         mv.ldc(parameterDesc);
@@ -818,4 +844,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         method.aload(4); // invokedName
         method.invokevirtual(p(JavaMethod.class), "returnTrace", sig(void.class, ThreadContext.class, boolean.class, String.class));
     }
+
+    @Deprecated
+    private static final Class[] RubyModule_and_Visibility = new Class[]{ RubyModule.class, Visibility.class };
 }

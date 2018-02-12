@@ -1067,7 +1067,7 @@ public class RubyModule extends RubyObject {
             return defineAnnotatedMethod(name, desc, methodFactory);
         }
 
-        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods, name);
         define(this, desc, name, dynamicMethod);
 
         return true;
@@ -1079,7 +1079,7 @@ public class RubyModule extends RubyObject {
         if (jrubyMethod == null) return false;
 
         JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
-        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc, method.getName());
         define(this, desc, method.getName(), dynamicMethod);
 
         return true;
@@ -1090,7 +1090,7 @@ public class RubyModule extends RubyObject {
 
         if (jrubyMethod == null) return false;
 
-        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc, name);
         define(this, desc, name, dynamicMethod);
 
         return true;
