@@ -62,12 +62,12 @@ class TestString < Test::Unit::TestCase
   def test_initialize
     str = S("").freeze
     assert_equal("", str.__send__(:initialize))
-    assert_raise(RuntimeError){ str.__send__(:initialize, 'abc') }
-    assert_raise(RuntimeError){ str.__send__(:initialize, capacity: 1000) }
-    assert_raise(RuntimeError){ str.__send__(:initialize, 'abc', capacity: 1000) }
-    assert_raise(RuntimeError){ str.__send__(:initialize, encoding: 'euc-jp') }
-    assert_raise(RuntimeError){ str.__send__(:initialize, 'abc', encoding: 'euc-jp') }
-    assert_raise(RuntimeError){ str.__send__(:initialize, 'abc', capacity: 1000, encoding: 'euc-jp') }
+    assert_raise(FrozenError){ str.__send__(:initialize, 'abc') }
+    assert_raise(FrozenError){ str.__send__(:initialize, capacity: 1000) }
+    assert_raise(FrozenError){ str.__send__(:initialize, 'abc', capacity: 1000) }
+    assert_raise(FrozenError){ str.__send__(:initialize, encoding: 'euc-jp') }
+    assert_raise(FrozenError){ str.__send__(:initialize, 'abc', encoding: 'euc-jp') }
+    assert_raise(FrozenError){ str.__send__(:initialize, 'abc', capacity: 1000, encoding: 'euc-jp') }
   end
 
   def test_initialize_nonstring
@@ -441,6 +441,65 @@ CODE
     assert_equal("foo\r", s)
 
     assert_equal(S("a").hash, S("a\u0101").chomp!(S("\u0101")).hash, '[ruby-core:22414]')
+
+    s = S("").freeze
+    assert_raise_with_message(FrozenError, /frozen/) {s.chomp!}
+
+    s = S("ax")
+    o = Struct.new(:s).new(s)
+    def o.to_str
+      s.freeze
+      "x"
+    end
+    assert_raise_with_message(FrozenError, /frozen/) {s.chomp!(o)}
+
+    s = S("hello")
+    assert_equal("hel", s.chomp!('lo'))
+    assert_equal("hel", s)
+
+    s = S("hello")
+    assert_equal(nil, s.chomp!('he'))
+    assert_equal("hello", s)
+
+    s = S("\u{3053 3093 306b 3061 306f}")
+    assert_equal("\u{3053 3093 306b}", s.chomp!("\u{3061 306f}"))
+    assert_equal("\u{3053 3093 306b}", s)
+
+    s = S("\u{3053 3093 306b 3061 306f}")
+    assert_equal(nil, s.chomp!('lo'))
+    assert_equal("\u{3053 3093 306b 3061 306f}", s)
+
+    s = S("hello")
+    assert_equal(nil, s.chomp!("\u{3061 306f}"))
+    assert_equal("hello", s)
+
+    # skip if argument is a broken string
+    s = S("\xe3\x81\x82")
+    assert_equal(nil, s.chomp!("\x82"))
+    assert_equal("\xe3\x81\x82", s)
+
+    s = S("\x95\x5c").force_encoding("Shift_JIS")
+    assert_equal(nil, s.chomp!("\x5c"))
+    assert_equal("\x95\x5c".force_encoding("Shift_JIS"), s)
+
+    # clear coderange
+    s = S("hello\u{3053 3093}")
+    assert_not_predicate(s, :ascii_only?)
+    assert_predicate(s.chomp!("\u{3053 3093}"), :ascii_only?)
+
+    # argument should be converted to String
+    klass = Class.new { def to_str; 'a'; end }
+    s = S("abba")
+    assert_equal("abb", s.chomp!(klass.new))
+    assert_equal("abb", s)
+
+    # chomp removes any of "\n", "\r\n", "\r" when "\n" is specified
+    s = "foo\n"
+    assert_equal("foo", s.chomp!("\n"))
+    s = "foo\r\n"
+    assert_equal("foo", s.chomp!("\n"))
+    s = "foo\r"
+    assert_equal("foo", s.chomp!("\n"))
   ensure
     $/ = save
   end
@@ -510,7 +569,7 @@ CODE
     expected = S("\u0300".encode(Encoding::UTF_16LE))
     assert_equal(expected, result, bug7090)
     assert_raise(TypeError) { 'foo' << :foo }
-    assert_raise(RuntimeError) { 'foo'.freeze.concat('bar') }
+    assert_raise(FrozenError) { 'foo'.freeze.concat('bar') }
   end
 
   def test_count
@@ -1166,10 +1225,10 @@ CODE
     assert_equal(s2, s)
 
     fs = "".freeze
-    assert_raise(RuntimeError) { fs.replace("a") }
-    assert_raise(RuntimeError) { fs.replace(fs) }
+    assert_raise(FrozenError) { fs.replace("a") }
+    assert_raise(FrozenError) { fs.replace(fs) }
     assert_raise(ArgumentError) { fs.replace() }
-    assert_raise(RuntimeError) { fs.replace(42) }
+    assert_raise(FrozenError) { fs.replace(42) }
   end
 
   def test_reverse
@@ -2045,7 +2104,7 @@ CODE
   end
 
   def test_frozen_check
-    assert_raise(RuntimeError) {
+    assert_raise(FrozenError) {
       s = ""
       s.sub!(/\A/) { s.freeze; "zzz" }
     }
@@ -2469,7 +2528,7 @@ CODE
     assert_equal("bba", s)
 
     s = S("ax").freeze
-    assert_raise_with_message(RuntimeError, /frozen/) {s.delete_prefix!("a")}
+    assert_raise_with_message(FrozenError, /frozen/) {s.delete_prefix!("a")}
 
     s = S("ax")
     o = Struct.new(:s).new(s)
@@ -2477,7 +2536,7 @@ CODE
       s.freeze
       "a"
     end
-    assert_raise_with_message(RuntimeError, /frozen/) {s.delete_prefix!(o)}
+    assert_raise_with_message(FrozenError, /frozen/) {s.delete_prefix!(o)}
   end
 
 =begin

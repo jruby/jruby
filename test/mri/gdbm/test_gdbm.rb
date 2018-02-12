@@ -721,7 +721,7 @@ if defined? GDBM
     def test_freeze
       GDBM.open("#{@tmproot}/a.dbm") {|d|
         d.freeze
-        assert_raise(RuntimeError) { d["k"] = "v" }
+        assert_raise(FrozenError) { d["k"] = "v" }
       }
     end
   end

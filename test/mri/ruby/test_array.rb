@@ -571,7 +571,7 @@ class TestArray < Test::Unit::TestCase
     assert_equal([4, 5, 4, 5, 4, 5], b)
 
     assert_raise(TypeError) { [0].concat(:foo) }
-    assert_raise(RuntimeError) { [0].freeze.concat(:foo) }
+    assert_raise(FrozenError) { [0].freeze.concat(:foo) }
   end
 
   def test_count
@@ -1260,10 +1260,10 @@ class TestArray < Test::Unit::TestCase
 
     fa = a.dup.freeze
     assert_nothing_raised(RuntimeError) { a.replace(a) }
-    assert_raise(RuntimeError) { fa.replace(fa) }
+    assert_raise(FrozenError) { fa.replace(fa) }
     assert_raise(ArgumentError) { fa.replace() }
     assert_raise(TypeError) { a.replace(42) }
-    assert_raise(RuntimeError) { fa.replace(42) }
+    assert_raise(FrozenError) { fa.replace(42) }
   end
 
   def test_reverse
@@ -1491,7 +1491,7 @@ class TestArray < Test::Unit::TestCase
     o2 = o1.clone
     ary << o1 << o2
     orig = ary.dup
-    assert_raise(RuntimeError, "frozen during comparison") {ary.sort!}
+    assert_raise(FrozenError, "frozen during comparison") {ary.sort!}
     assert_equal(orig, ary, "must not be modified once frozen")
   end
 
@@ -1723,7 +1723,7 @@ class TestArray < Test::Unit::TestCase
     f = a.dup.freeze
     assert_raise(ArgumentError) { a.uniq!(1) }
     assert_raise(ArgumentError) { f.uniq!(1) }
-    assert_raise(RuntimeError) { f.uniq! }
+    assert_raise(FrozenError) { f.uniq! }
 
     assert_nothing_raised do
       a = [ {c: "b"}, {c: "r"}, {c: "w"}, {c: "g"}, {c: "g"} ]
@@ -1769,7 +1769,7 @@ class TestArray < Test::Unit::TestCase
   def test_uniq_bang_with_freeze
     ary = [1,2]
     orig = ary.dup
-    assert_raise(RuntimeError, "frozen during comparison") {
+    assert_raise(FrozenError, "frozen during comparison") {
       ary.uniq! {|v| ary.freeze; 1}
     }
     assert_equal(orig, ary, "must not be modified once frozen")
@@ -2019,7 +2019,7 @@ class TestArray < Test::Unit::TestCase
     assert_raise(ArgumentError) { [0][0, 0, 0] = 0 }
     assert_raise(ArgumentError) { [0].freeze[0, 0, 0] = 0 }
     assert_raise(TypeError) { [0][:foo] = 0 }
-    assert_raise(RuntimeError) { [0].freeze[:foo] = 0 }
+    assert_raise(FrozenError) { [0].freeze[:foo] = 0 }
   end
 
   def test_first2
@@ -2044,8 +2044,8 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_unshift_error
-    assert_raise(RuntimeError) { [].freeze.unshift('cat') }
-    assert_raise(RuntimeError) { [].freeze.unshift() }
+    assert_raise(FrozenError) { [].freeze.unshift('cat') }
+    assert_raise(FrozenError) { [].freeze.unshift() }
   end
 
   def test_aref
@@ -2104,7 +2104,7 @@ class TestArray < Test::Unit::TestCase
     assert_raise(ArgumentError) { a.insert }
     assert_equal([0, 1, 2], a.insert(-1, 2))
     assert_equal([0, 1, 3, 2], a.insert(-2, 3))
-    assert_raise(RuntimeError) { [0].freeze.insert(0)}
+    assert_raise(FrozenError) { [0].freeze.insert(0)}
     assert_raise(ArgumentError) { [0].freeze.insert }
   end
 
@@ -2285,8 +2285,8 @@ class TestArray < Test::Unit::TestCase
     assert_raise(ArgumentError) { a.flatten!(1, 2) }
     assert_raise(TypeError) { a.flatten!(:foo) }
     assert_raise(ArgumentError) { f.flatten!(1, 2) }
-    assert_raise(RuntimeError) { f.flatten! }
-    assert_raise(RuntimeError) { f.flatten!(:foo) }
+    assert_raise(FrozenError) { f.flatten! }
+    assert_raise(FrozenError) { f.flatten!(:foo) }
   end
 
   def test_shuffle
@@ -2621,7 +2621,7 @@ class TestArray < Test::Unit::TestCase
     assert_equal([], a.rotate!(13))
     assert_equal([], a.rotate!(-13))
     a = [].freeze
-    assert_raise_with_message(RuntimeError, /can\'t modify frozen/) {a.rotate!}
+    assert_raise_with_message(FrozenError, /can\'t modify frozen/) {a.rotate!}
     a = [1,2,3]
     assert_raise(ArgumentError) { a.rotate!(1, 1) }
   end
