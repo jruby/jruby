@@ -100,9 +100,9 @@ public class RubyDate extends RubyObject {
         super(runtime, klass);
     }
 
-    private DateTime dt;
-    private int off; // @of
-    private int start = ITALY; // @sg
+    DateTime dt;
+    int off; // @of
+    int start = ITALY; // @sg
     private float subMillis; // @sub_millis
 
     static RubyClass createDateClass(Ruby runtime) {
@@ -396,6 +396,23 @@ public class RubyDate extends RubyObject {
         final int d = args[2].convertToInteger().getIntValue();
 
         return DateUtils._valid_civil_p(y, m, d, sg);
+    }
+
+    /**
+     # Create a new Date object representing today.
+     #
+     # +sg+ specifies the Day of Calendar Reform.
+     **/
+
+    @JRubyMethod(meta = true)
+    public static RubyDate today(ThreadContext context, IRubyObject self) { // sg=ITALY
+        return new RubyDate(context.runtime, new DateTime(CHRONO_ITALY_UTC).withTimeAtStartOfDay());
+    }
+
+    @JRubyMethod(meta = true)
+    public static RubyDate today(ThreadContext context, IRubyObject self, IRubyObject sg) {
+        final int start = val2sg(context, sg);
+        return new RubyDate(context.runtime, new DateTime(getChronology(start, 0)).withTimeAtStartOfDay(), 0, start, 0);
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
@@ -908,7 +925,7 @@ public class RubyDate extends RubyObject {
     // def jd_to_ajd(jd, fr, of=0) jd + fr - of - Rational(1, 2) end
     private static double jd_to_ajd(long jd, int fr, int of) { return jd + fr - of - 0.5; }
 
-    private static Chronology getChronology(final int sg, final int off) {
+    static Chronology getChronology(final int sg, final int off) {
         final DateTimeZone zone;
         if (off == 0) {
             if (sg == ITALY) return CHRONO_ITALY_UTC;
@@ -932,7 +949,7 @@ public class RubyDate extends RubyObject {
     }
 
     // MRI: #define val2sg(vsg,dsg)
-    private static int val2sg(ThreadContext context, IRubyObject sg) {
+    static int val2sg(ThreadContext context, IRubyObject sg) {
         return getValidStart(context, sg.convertToFloat().getDoubleValue(), ITALY);
     }
 
