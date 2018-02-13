@@ -808,7 +808,7 @@ public class ShellLauncher {
             }
 
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
-            LaunchConfig lc = new LaunchConfig(runtime, strings, false);
+            LaunchConfig lc = new LaunchConfig(runtime, strings, true);
             boolean useShell = Platform.IS_WINDOWS ? lc.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
 
@@ -1147,11 +1147,11 @@ public class ShellLauncher {
             // if the executable exists, start it directly with no shell
             if (executableFile != null) {
                 log(runtime, "Got it: " + executableFile);
-                // TODO: special processing for BAT/CMD files needed at all?
-                // if (isBatch(executableFile)) {
-                //    log(runtime, "This is a BAT/CMD file, will start in shell");
-                //    return true;
-                // }
+                // Windows will not launch bat/cmd files directly, so use subshell
+                if (isBatch(executableFile)) {
+                    log(runtime, "This is a BAT/CMD file, will start in shell");
+                    return true;
+                }
                 return false;
             } else {
                 log(runtime, "Didn't find executable: " + executable);
