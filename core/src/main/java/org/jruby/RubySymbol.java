@@ -59,6 +59,7 @@ import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
+import org.jruby.util.ByteListHelper;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
 import org.jruby.util.StringSupport;
@@ -66,6 +67,7 @@ import org.jruby.util.StringSupport;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.jruby.util.RubyStringBuilder.buildString;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
@@ -194,6 +196,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return other == this;
     }
 
+    // FIXME: bytelist_love: Symbol should get this set so we do not need to calculate it.
+    /**
+     * Is the string this constant represents a valid constant identifier name.
+     */
+    public boolean validConstantName() {
+        return ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
+            index == 0 && encoding.isUpper(codepoint) || index != 0 && (encoding.isAlnum(codepoint) || codepoint == '_'));
+    }
+
     @Override
     public boolean isImmediate() {
     	return true;
@@ -248,8 +259,41 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return runtime.getSymbolTable().getSymbol(name, true);
     }
 
+    /**
+     * Generic identifier symbol creation (or retrieval) method.
+     *
+     * @param runtime of this Ruby instance.
+     * @param bytes to be made into a symbol (or to help retreive existing symbol)
+     * @return a new or existing symbol
+     */
     public static RubySymbol newIDSymbol(Ruby runtime, ByteList bytes) {
         return newHardSymbol(runtime, bytes);
+    }
+
+    /**
+     * Create a symbol whose intention is to be used as a constant.  This will not
+     * only guarantee a symbol entry in the table but it will also verify the symbol
+     * conforms as a valid constant identifier.
+     *
+     * @param runtime of this Ruby instance.
+     * @param fqn if this constant symbol is part of a broader chain this is used for full name error reporting.
+     * @param bytes to be made into a symbol (or to help retreive existing symbol)
+     * @return a new or existing symbol
+     */
+    public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
+        if (bytes.length() == 0) {
+            // FIXME: bytelist_love: change NameError to accept symbol as name.
+            throw runtime.newNameError(buildString(runtime, "wrong constant name ", fqn), "");
+        }
+
+        RubySymbol symbol = runtime.newSymbol(bytes);
+
+        if (!symbol.validConstantName()) {
+            // FIXME: bytelist_love: change NameError to accept symbol as name.
+            throw runtime.newNameError(buildString(runtime, "wrong constant name ", fqn), symbol.asJavaString());
+        }
+
+        return symbol;
     }
 
     public static RubySymbol newSymbol(Ruby runtime, String name, Encoding encoding) {

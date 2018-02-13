@@ -9,6 +9,7 @@ public class CommonByteLists {
     public static final ByteList ASET_METHOD = new ByteList(new byte[] {'[', ']', '='});
     public static final ByteList BACKTRACE_IN = new ByteList(new byte[] {':', 'i', 'n', ' ', '`'});
     public static final ByteList COLON = new ByteList(new byte[] {':'});
+    public static final ByteList COLON_COLON = new ByteList(new byte[] {':', ':'});
     public static final ByteList CONSTANTS = new ByteList(new byte[] {'c', 'o', 'n', 's', 't', 'a', 'n', 't', 's'});
     public static final ByteList DEFINE_METHOD_METHOD = new ByteList(new byte[] {'d', 'e', 'f', 'i', 'n', 'e', '_', 'm', 'e', 't', 'h', 'o', 'd'});
     public static final ByteList DOLLAR_SLASH = new ByteList(new byte[] {'$', '/'});

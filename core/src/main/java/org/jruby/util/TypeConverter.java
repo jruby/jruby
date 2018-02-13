@@ -49,6 +49,8 @@ import org.jruby.runtime.JavaSites.TypeConverterSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.util.RubyStringBuilder.buildString;
+
 public class TypeConverter {
 
     /**
@@ -155,14 +157,15 @@ public class TypeConverter {
     public static IRubyObject checkData(IRubyObject obj) {
         if (obj instanceof org.jruby.runtime.marshal.DataType) return obj;
 
-        throw obj.getRuntime().newTypeError("wrong argument type " + typeAsString(obj) + " (expected Data)");
+        Ruby runtime = obj.getRuntime();
+        throw runtime.newTypeError(buildString(runtime, "wrong argument type ", typeAsString(obj), " (expected Data)"));
     }
 
-    private static String typeAsString(IRubyObject obj) {
-        if (obj.isNil()) return "nil";
-        if (obj instanceof RubyBoolean) return obj.isTrue() ? "true" : "false";
+    private static RubyString typeAsString(IRubyObject obj) {
+        if (obj.isNil()) return obj.getRuntime().newString("nil");
+        if (obj instanceof RubyBoolean) return obj.getRuntime().newString(obj.isTrue() ? "true" : "false");
 
-        return obj.getMetaClass().getRealClass().getName();
+        return obj.getMetaClass().getRealClass().rubyName();
     }
 
     /**
@@ -361,7 +364,7 @@ public class TypeConverter {
     }
 
     public static IRubyObject handleUncoercibleObject(Ruby runtime, IRubyObject obj, RubyClass target, boolean raise) {
-        if (raise) throw runtime.newTypeError("no implicit conversion of " + typeAsString(obj) + " into " + target);
+        if (raise) throw runtime.newTypeError(buildString(runtime, "no implicit conversion of ", typeAsString(obj), " into " , target));
         return runtime.getNil();
     }
 

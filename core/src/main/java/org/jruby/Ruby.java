@@ -206,6 +206,7 @@ import static java.lang.invoke.MethodHandles.explicitCastArguments;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
+import static org.jruby.util.RubyStringBuilder.buildString;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -1041,10 +1042,10 @@ public final class Ruby implements Constantizable {
         IRubyObject classObj = parent.getConstantAt(name);
 
         if (classObj != null) {
-            if (!(classObj instanceof RubyClass)) throw newTypeError(name + " is not a class");
+            if (!(classObj instanceof RubyClass)) throw newTypeError(buildString(this, newSymbol(name), " is not a class"));
             RubyClass klazz = (RubyClass)classObj;
             if (klazz.getSuperClass().getRealClass() != superClass) {
-                throw newNameError(name + " is already defined", name);
+                throw newNameError(buildString(this, newSymbol(name), " is already defined"), name);
             }
             // If we define a class in Ruby, but later want to allow it to be defined in Java,
             // the allocator needs to be updated
@@ -1057,8 +1058,8 @@ public final class Ruby implements Constantizable {
         boolean parentIsObject = parent == objectClass;
 
         if (superClass == null) {
-            String className = parentIsObject ? name : parent.getName() + "::" + name;
-            warnings.warn(ID.NO_SUPER_CLASS, "no super class for `" + className + "', Object assumed");
+            IRubyObject className = parentIsObject ? newSymbol(name) : parent.rubyName().append(newString("::")).append(newSymbol(name));
+            warnings.warn(ID.NO_SUPER_CLASS, buildString(this, "no super class for `", className, "', Object assumed"));
 
             superClass = objectClass;
         }
@@ -1097,9 +1098,9 @@ public final class Ruby implements Constantizable {
             if (moduleObj.isModule()) return (RubyModule)moduleObj;
 
             if (parentIsObject) {
-                throw newTypeError(moduleObj.getMetaClass().getName() + " is not a module");
+                throw newTypeError(buildString(this, moduleObj.getMetaClass().rubyName(), " is not a module"));
             } else {
-                throw newTypeError(parent.getName() + "::" + moduleObj.getMetaClass().getName() + " is not a module");
+                throw newTypeError(buildString(this, parent.rubyName(), "::", moduleObj.getMetaClass().rubyName(), " is not a module"));
             }
         }
 
@@ -1118,7 +1119,7 @@ public final class Ruby implements Constantizable {
         if (module == null) {
             module = defineModule(name);
         } else if (!module.isModule()) {
-            throw newTypeError(name + " is not a Module");
+            throw newTypeError(buildString(this, newSymbol(name), " is not a Module"));
         }
 
         return (RubyModule) module;
@@ -2862,7 +2863,7 @@ public final class Ruby implements Constantizable {
 
     public RubyModule getClassFromPath(final String path) {
         if (path.length() == 0 || path.charAt(0) == '#') {
-            throw newTypeError("can't retrieve anonymous class " + path);
+            throw newTypeError(buildString(this, "can't retrieve anonymous class ", newSymbol(path)));
         }
 
         RubyModule c = getObject();
@@ -2874,14 +2875,14 @@ public final class Ruby implements Constantizable {
 
             if ( p < l && path.charAt(p) == ':' ) {
                 if ( ++p < l && path.charAt(p) != ':' ) {
-                    throw newTypeError("undefined class/module " + str);
+                    throw newTypeError(buildString(this, "undefined class/module ", newSymbol(str)));
                 }
                 pbeg = ++p;
             }
 
             IRubyObject cc = c.getConstant(str);
             if ( ! ( cc instanceof RubyModule ) ) {
-                throw newTypeError(path + " does not refer to class/module");
+                throw newTypeError(buildString(this, newSymbol(path), " does not refer to class/module"));
             }
             c = (RubyModule) cc;
         }
@@ -3580,7 +3581,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newArgumentError(String name, int got, int expected) {
-        return newRaiseException(getArgumentError(), "wrong number of arguments calling `" + name + "` (" + got + " for " + expected + ")");
+        return newRaiseException(getArgumentError(), buildString(this, "wrong number of arguments calling `", newSymbol(name),  ("` (" + got + " for " + expected + ")")));
     }
 
     public RaiseException newErrnoEBADFError() {
@@ -4084,7 +4085,7 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newFrozenError(String objectType, boolean runtimeError) {
         // TODO: Should frozen error have its own distinct class?  If not should more share?
-        return newRaiseException(getRuntimeError(), "can't modify frozen " + objectType);
+        return newRaiseException(getRuntimeError(), buildString(this, "can't modify frozen ", newSymbol(objectType)));
     }
 
     public RaiseException newSystemStackError(String message) {
@@ -4132,8 +4133,9 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newTypeError(IRubyObject receivedObject, String expectedType) {
-        return newRaiseException(getTypeError(), "wrong argument type " +
-                receivedObject.getMetaClass().getRealClass() + " (expected " + expectedType + ")");
+        return newRaiseException(getTypeError(),
+                buildString(this, "wrong argument type ", receivedObject.getMetaClass().getRealClass().rubyName(),
+                        " (expected ", newSymbol(expectedType), ")"));
     }
 
     public RaiseException newEOFError() {

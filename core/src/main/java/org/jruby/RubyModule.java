@@ -108,7 +108,9 @@ import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
 import org.jruby.util.ByteList;
+import org.jruby.util.ByteListHelper;
 import org.jruby.util.ClassProvider;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.IdUtil;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
@@ -1864,7 +1866,7 @@ public class RubyModule extends RubyObject {
         IRubyObject moduleObj = getConstantAtSpecial(name);
         RubyModule module;
         if (moduleObj != null) {
-            if (!moduleObj.isModule()) throw runtime.newTypeError(name + " is not a module");
+            if (!moduleObj.isModule()) throw runtime.newTypeError(buildString(runtime, runtime.newSymbol(name), " is not a module"));
             module = (RubyModule)moduleObj;
         } else if ((module = searchProvidersForModule(name)) != null) {
             // reopen a java module
@@ -3343,49 +3345,45 @@ public class RubyModule extends RubyObject {
         return const_defined_p19(context, new IRubyObject[]{symbol});
     }
 
+    private RubyBoolean constantDefined(Ruby runtime, RubySymbol symbol, boolean inherit) {
+        if (symbol.validConstantName()) {
+            return runtime.newBoolean(getConstantSkipAutoload(symbol.getRawString(), inherit, inherit) != null);
+        }
+
+        // FIXME: bytelist_love: nameError should use symbol and not Java String.
+        throw runtime.newNameError(buildString(runtime, "wrong constant name", symbol), symbol.asJavaString());
+    }
+
     @JRubyMethod(name = "const_defined?", required = 1, optional = 1)
     public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = context.runtime;
-        boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
+        Ruby runtime = context.runtime;
+        boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
-        final IRubyObject symbol = args[0];
-        final String fullName = symbol.asJavaString();
-        String name = fullName;
+        if (args[0] instanceof RubySymbol) return constantDefined(runtime, ((RubySymbol) args[0]), inherit);
 
-        int sep = name.indexOf("::");
-        // symbol form does not allow ::
-        if (symbol instanceof RubySymbol && sep != -1) throw runtime.newNameError("wrong constant name", name);
+        RubyString fullName = args[0].convertToString();
 
-        RubyModule mod = this;
-
-        if (sep == 0) { // ::Foo::Bar
-            mod = runtime.getObject();
-            name = name.substring(2);
-        }
-
-        // Bare ::
-        if (name.length() == 0) {
-            throw runtime.newNameError("wrong constant name ", fullName);
-        }
-
-        IRubyObject obj;
-        while ( ( sep = name.indexOf("::") ) != -1 ) {
-            final String segment = name.substring(0, sep);
-            if (segment.length() == 0) {
-                throw runtime.newNameError("wrong constant name " + fullName, name);
+        IRubyObject value = ByteListHelper.split(fullName.getByteList(), CommonByteLists.COLON_COLON, (index, segment, module) -> {
+            if (index == 0) {
+                if (segment.realSize() == 0) return runtime.getObject();  // '::Foo...'
+                module = this;
             }
-            obj = mod.getConstantNoConstMissing(validateConstant(segment, symbol), inherit, inherit);
-            if (obj == null) return runtime.getFalse();
-            if (obj instanceof RubyModule) {
-                mod = (RubyModule) obj;
-            } else {
-                throw runtime.newTypeError(segment + " does not refer to class/module");
-            }
-            name = name.substring(sep + 2);
-        }
 
-        obj = mod.getConstantSkipAutoload(validateConstant(name, symbol), inherit, inherit);
-        return runtime.newBoolean(obj != null);
+            String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).getRawString();
+            IRubyObject obj = ((RubyModule) module).getConstantNoConstMissing(id, inherit, inherit);
+
+            if (obj == null) return null;
+            if (!(obj instanceof RubyModule)) throw runtime.newTypeError(segment + " does not refer to class/module");
+
+            return obj;
+        }, (index, segment, module) -> {
+            if (module == null) module = this; // Bare 'Foo'
+
+            String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).getRawString();
+            return ((RubyModule) module).getConstantSkipAutoload(id, inherit, inherit);
+        });
+
+        return runtime.newBoolean(value != null);
     }
 
     /** rb_mod_const_get
@@ -3444,8 +3442,22 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "const_set", required = 2)
-    public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        return setConstant(validateConstant(symbol).intern(), value);
+    public IRubyObject const_set(IRubyObject name, IRubyObject value) {
+        RubySymbol symbol;
+
+        if (name instanceof RubySymbol) {
+            symbol = (RubySymbol) name;
+        } else {
+            symbol = RubySymbol.newHardSymbol(getRuntime(), name.convertToString().getByteList());
+        }
+
+        if (!symbol.validConstantName()) {
+            // FIXME: bytelist_love: nameError should use symbol and not Java String.
+            throw getRuntime().newNameError(buildString(getRuntime(), "wrong constant name ", name), symbol.asJavaString());
+
+        }
+
+        return setConstant(symbol.getRawString(), value);
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)

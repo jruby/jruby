@@ -49,6 +49,8 @@ import org.jruby.util.IOChannel;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
+
+import static org.jruby.util.RubyStringBuilder.buildString;
 import static org.jruby.util.io.EncodingUtils.vmodeVperm;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
@@ -883,10 +885,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         RubyClass klass = (RubyClass)recv;
 
         if (block.isGiven()) {
-            String className = klass.getName();
+            IRubyObject className = klass.rubyName();
             context.runtime.getWarnings().warn(
                     ID.BLOCK_NOT_ACCEPTED,
-                    className + "::new() does not take block; use " + className + "::open() instead");
+                    buildString(context.runtime, className, "::new() does not take block; use ", className, "::open() instead"));
         }
 
         return klass.newInstance(context, args, block);
