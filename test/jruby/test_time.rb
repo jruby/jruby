@@ -57,6 +57,21 @@ class TestTime < Test::Unit::TestCase
     t2 = now + 90000000000
     assert_false t1 == t2
   end
+
+  def test_to_java
+    assert dat = Time.now.to_java(java.util.Date)
+    assert dat.is_a?(java.util.Date)
+
+    assert cal = Time.now.to_java('java.util.Calendar')
+    assert cal.is_a?(java.util.Calendar)
+
+    assert cal = Time.new.to_java('java.util.GregorianCalendar')
+    assert cal.is_a?(java.util.GregorianCalendar)
+
+    assert dat = Time.new.to_java(java.sql.Date)
+    assert dat.is_a?(java.sql.Date)
+  end
+
 end
 
 class TestTimeNilOps < Test::Unit::TestCase
