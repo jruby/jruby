@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.date;
 
+import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 
 import org.jruby.Ruby;
@@ -35,6 +36,8 @@ import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * JRuby's <code>DateTime</code> implementation - 'native' parts.
@@ -46,6 +49,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name = "DateTime")
 public class RubyDateTime extends RubyDate {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RubyDateTime.class);
 
     static RubyClass createDateTimeClass(Ruby runtime, RubyClass Date) {
         RubyClass DateTime = runtime.defineClass("DateTime", Date, ALLOCATOR);
@@ -71,6 +76,17 @@ public class RubyDateTime extends RubyDate {
 
     public RubyDateTime(Ruby runtime, DateTime dt) {
         super(runtime, getDateTime(runtime), dt);
+    }
+
+    public RubyDateTime(Ruby runtime, long millis, Chronology chronology) {
+        super(runtime, getDateTime(runtime), new DateTime(millis, chronology));
+    }
+
+    RubyDateTime(Ruby runtime, DateTime dt, int off, int start) {
+        super(runtime, getDateTime(runtime));
+
+        this.dt = dt;
+        this.off = off; this.start = start;
     }
 
 }

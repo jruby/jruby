@@ -1043,6 +1043,11 @@ public class RubyDate extends RubyObject {
         return (RubyString) RubyKernel.sprintf(context, this, args);
     }
 
+    @JRubyMethod
+    public RubyDateTime to_datetime(ThreadContext context) {
+        return new RubyDateTime(context.runtime, dt.withTimeAtStartOfDay(), off, start);
+    }
+
     // date/format.rb
 
     @JRubyMethod // def strftime(fmt='%F')
