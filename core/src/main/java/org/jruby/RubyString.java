@@ -1341,6 +1341,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return ptr_cr_ret[0];
     }
 
+    public final RubyString catString(String str) {
+        cat19(encodeBytelist(str, getEncoding()), CR_UNKNOWN);
+        return this;
+    }
+
     public final RubyString cat(RubyString str) {
         return cat(str.getByteList());
     }
@@ -5216,6 +5221,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private RubySymbol to_sym() {
         RubySymbol specialCaseIntern = checkSpecialCasesIntern(value);
         if (specialCaseIntern != null) return specialCaseIntern;
+
+        if (scanForCodeRange() == CR_BROKEN) {
+            throw getRuntime().newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
+        }
 
         RubySymbol symbol = getRuntime().getSymbolTable().getSymbol(value);
         if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;

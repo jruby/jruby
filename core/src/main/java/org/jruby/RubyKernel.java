@@ -105,8 +105,8 @@ public class RubyKernel {
         private final Visibility visibility;
         private final CallType callType;
 
-        public MethodMissingMethod(RubyModule implementationClass, Visibility visibility, CallType callType) {
-            super(implementationClass, Visibility.PRIVATE);
+        MethodMissingMethod(RubyModule implementationClass, Visibility visibility, CallType callType) {
+            super(implementationClass, Visibility.PRIVATE, "method_missing");
 
             this.callType = callType;
             this.visibility = visibility;

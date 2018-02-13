@@ -646,6 +646,8 @@ public class RubySocket extends RubyBasicSocket {
                     throw runtime.newErrnoEACCESError("Address already in use - " + caller + " for " + formatAddress(addr));
                 case "Address already in use" :
                     throw runtime.newErrnoEADDRINUSEError(caller + " for " + formatAddress(addr));
+                case "Protocol family unavailable" :
+                    throw runtime.newErrnoEADDRNOTAVAILError(caller + " for " + formatAddress(addr));
             }
 
             // This is ugly, but what can we do, Java provides the same exception type

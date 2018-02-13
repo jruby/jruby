@@ -145,7 +145,7 @@ public final class StringSupport {
 
     // rb_enc_precise_mbclen
     public static int preciseLength(Encoding enc, byte[]bytes, int p, int end) {
-        if (p >= end) return -1 - (1);
+        if (p >= end) return MBCLEN_NEEDMORE(1);
         int n = enc.length(bytes, p, end);
         if (n > end - p) return MBCLEN_NEEDMORE(n - (end - p));
         return n;

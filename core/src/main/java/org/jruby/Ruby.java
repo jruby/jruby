@@ -63,7 +63,6 @@ import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
-import org.jruby.runtime.opto.ConstantInvalidator;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.io.EncodingUtils;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -172,8 +171,6 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
-import java.net.PortUnreachableException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -1341,7 +1338,7 @@ public final class Ruby implements Constantizable {
 
         // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
         if (config.getKernelGsubDefined()) {
-            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE) {
+            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, "gsub") {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -4580,14 +4577,19 @@ public final class Ruby implements Constantizable {
         RubyString deduped;
 
         if (dedupedRef == null || (deduped = dedupedRef.get()) == null) {
+            // Never use incoming value as key
             deduped = string.strDup(this);
             deduped.setFrozen(true);
-            dedupMap.put(string, new WeakReference<RubyString>(deduped));
+
+            // NOTE: This still races because Map.put/computeIfAbsent API is Java 8+.
+            dedupMap.put(deduped, new WeakReference<>(deduped));
         } else if (deduped.getEncoding() != string.getEncoding()) {
             // if encodings don't match, new string loses; can't dedup
+            // FIXME: This may never happen, if we are properly considering encoding in RubyString.hashCode
             deduped = string.strDup(this);
             deduped.setFrozen(true);
         }
+
         return deduped;
     }
 

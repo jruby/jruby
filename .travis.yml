@@ -117,8 +117,10 @@ notifications:
 
 services:
   - redis-server
+  - haveged
 
 addons:
   apt:
     packages:
       - oracle-java9-installer
+      - haveged

@@ -107,6 +107,7 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.opto.ConstantInvalidator;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
@@ -1066,7 +1067,7 @@ public class RubyModule extends RubyObject {
             return defineAnnotatedMethod(name, desc, methodFactory);
         }
 
-        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods, name);
         define(this, desc, name, dynamicMethod);
 
         return true;
@@ -1078,7 +1079,7 @@ public class RubyModule extends RubyObject {
         if (jrubyMethod == null) return false;
 
         JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
-        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc, method.getName());
         define(this, desc, method.getName(), dynamicMethod);
 
         return true;
@@ -1089,7 +1090,7 @@ public class RubyModule extends RubyObject {
 
         if (jrubyMethod == null) return false;
 
-        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
+        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc, name);
         define(this, desc, name, dynamicMethod);
 
         return true;
@@ -1356,12 +1357,17 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    private void invalidateConstantCacheForModuleInclusion(RubyModule module)
-    {
+    private void invalidateConstantCacheForModuleInclusion(RubyModule module) {
+        Map<String, Invalidator> invalidators = null;
         for (RubyModule mod : gatherModules(module)) {
-            for (String key : mod.getConstantMap().keySet()) {
-                invalidateConstantCache(key);
+            for (String name : mod.getConstantMap().keySet()) {
+                if (invalidators == null) invalidators = new HashMap<>();
+                invalidators.put(name, getRuntime().getConstantInvalidator(name));
             }
+        }
+        if (invalidators != null) {
+            List<Invalidator> values = new ArrayList(invalidators.values());
+            values.get(0).invalidateAll(values);
         }
     }
 
@@ -1557,6 +1563,19 @@ public class RubyModule extends RubyObject {
 
     protected void invalidateConstantCache(String constantName) {
         getRuntime().getConstantInvalidator(constantName).invalidate();
+    }
+
+    protected void invalidateConstantCaches(Set<String> constantNames) {
+        if (constantNames.size() > 0) {
+            Ruby runtime = getRuntime();
+
+            List<Invalidator> constantInvalidators = new ArrayList<>(constantNames.size());
+            for (String name : constantNames) {
+                constantInvalidators.add(runtime.getConstantInvalidator(name));
+            }
+
+            constantInvalidators.get(0).invalidateAll(constantInvalidators);
+        }
     }
 
     /**
@@ -1851,8 +1870,8 @@ public class RubyModule extends RubyObject {
 
     public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
         final CallSite site;
-        public RespondToMissingMethod(RubyModule implClass, Visibility vis, String methodName) {
-            super(implClass, vis);
+        public RespondToMissingMethod(RubyModule implClass, Visibility visibility, String methodName) {
+            super(implClass, visibility, methodName);
 
             setParameterList(REST);
             site = new FunctionalCachingCallSite(methodName);
@@ -2024,7 +2043,7 @@ public class RubyModule extends RubyObject {
         // a method definition.
         block.getBody().getStaticScope().makeArgumentScope();
 
-        return new ProcMethod(this, proc, visibility);
+        return new ProcMethod(this, proc, visibility, name);
     }
 
     public IRubyObject name() {
@@ -2583,6 +2602,9 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "extend_object", required = 1, visibility = PRIVATE)
     public IRubyObject extend_object(IRubyObject obj) {
+        if (!isModule()) {
+            throw getRuntime().newTypeError(this, getRuntime().getModule());
+        }
         obj.getSingletonClass().includeModule(this);
         return obj;
     }

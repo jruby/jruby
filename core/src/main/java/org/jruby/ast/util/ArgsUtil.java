@@ -96,6 +96,7 @@ public final class ArgsUtil {
     }
 
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject arg) {
+        if (arg == null) return runtime.getNil();
         return TypeConverter.checkHashType(runtime, arg);
     }
 

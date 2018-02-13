@@ -365,10 +365,6 @@ public class RubyRational extends RubyNumeric {
             a1 = f_to_r(context, a1);
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
-        } else {
-            if (a1 instanceof RubyObject && responds_to_to_r(context, a1)) {
-                a1 = f_to_r(context, a1);
-            }
         }
         
         if (a2 instanceof RubyFloat) {
@@ -382,7 +378,9 @@ public class RubyRational extends RubyNumeric {
         }
 
         if (a2.isNil()) {
-            if (a1 instanceof RubyNumeric && !f_integer_p(context, a1).isTrue()) return a1;
+            if (!(a1 instanceof RubyNumeric && f_integer_p(context, a1).isTrue())) {
+                return TypeConverter.convertToType(a1, context.getRuntime().getRational(), "to_r");
+            }
             return newInstance(context, recv, a1);
         } else {
             if (a1 instanceof RubyNumeric && a2 instanceof RubyNumeric &&
@@ -674,7 +672,7 @@ public class RubyRational extends RubyNumeric {
             }
             return f_cmp(context, f_sub(context, num1, num2), RubyFixnum.zero(context.runtime));
         }
-        return coerceBin(context, sites(context).op_cmp, other);
+        return coerceCmp(context, sites(context).op_cmp, other);
     }
 
     /** nurat_equal_p
@@ -712,6 +710,13 @@ public class RubyRational extends RubyNumeric {
             return runtime.newArray(other, f_to_f(context, this));
         } else if (other instanceof RubyRational) {
             return runtime.newArray(other, this);
+        } else if (other instanceof RubyComplex) {
+            RubyComplex otherComplex = (RubyComplex)other;
+            if (k_exact_p(otherComplex.getImage()) && f_zero_p(context, otherComplex.getImage())) {
+                return runtime.newArray(RubyRational.newRationalBang(context, getMetaClass(), otherComplex.getReal()), this);
+            } else {
+                return runtime.newArray(other, RubyComplex.newComplexCanonicalize(context, this));
+            }
         }
         throw runtime.newTypeError(other.getMetaClass() + " can't be coerced into " + getMetaClass());
     }
@@ -723,7 +728,6 @@ public class RubyRational extends RubyNumeric {
         return op_idiv19(context, other);
     }
 
-    @JRubyMethod(name = "div")
     public IRubyObject op_idiv19(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
 
@@ -737,7 +741,6 @@ public class RubyRational extends RubyNumeric {
         return op_mod19(context, other);
     }
 
-    @JRubyMethod(name = {"modulo", "%"})
     public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) throw context.runtime.newZeroDivisionError();
 

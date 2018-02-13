@@ -52,6 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.checkInteger;
@@ -298,61 +299,79 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     static final ByteList[] SINGLE_CHAR_BYTELISTS;
+    @Deprecated
     public static final ByteList[] SINGLE_CHAR_BYTELISTS19;
     static {
         SINGLE_CHAR_BYTELISTS = new ByteList[256];
-        SINGLE_CHAR_BYTELISTS19 = new ByteList[256];
         for (int i = 0; i < 256; i++) {
-            ByteList usascii = new ByteList(new byte[]{(byte)i}, false);
-            SINGLE_CHAR_BYTELISTS[i] = usascii;
-            SINGLE_CHAR_BYTELISTS19[i] = i < 0x80 ?
-                new ByteList(new byte[]{(byte)i}, USASCIIEncoding.INSTANCE)
-                :
-                new ByteList(
-                    new byte[]{(byte)i},
-                    ASCIIEncoding.INSTANCE);
+            ByteList bytes = new ByteList(new byte[] { (byte) i }, false);
+            SINGLE_CHAR_BYTELISTS[i] = bytes;
+            bytes.setEncoding(i < 0x80 ? USASCIIEncoding.INSTANCE : ASCIIEncoding.INSTANCE);
         }
+        SINGLE_CHAR_BYTELISTS19 = SINGLE_CHAR_BYTELISTS;
+    }
+
+    static ByteList singleCharByteList(final byte index) {
+        return SINGLE_CHAR_BYTELISTS[index & 0xFF];
     }
 
     /** int_chr
      *
      */
+    @JRubyMethod(name = "chr")
     public RubyString chr(ThreadContext context) {
-        return chr19(context);
-    }
-
-    @JRubyMethod(name = "chr")
-    public RubyString chr19(ThreadContext context) {
         Ruby runtime = context.runtime;
-        int value = (int)getLongValue();
-        if (value >= 0 && value <= 0xFF) {
-            ByteList bytes = SINGLE_CHAR_BYTELISTS19[value];
-            return RubyString.newStringShared(runtime, bytes, bytes.getEncoding());
-        } else {
-            Encoding enc = runtime.getDefaultInternalEncoding();
-            if (value > 0xFF && (enc == null || enc == ASCIIEncoding.INSTANCE)) {
-                throw runtime.newRangeError(this.toString() + " out of char range");
-            } else {
-                if (enc == null) enc = USASCIIEncoding.INSTANCE;
-                return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, value), enc, 0);
+
+        // rb_num_to_uint
+        long i = getLongValue() & 0xFFFFFFFFL;
+        int c = (int) i;
+
+        Encoding enc;
+
+        if (0xff < i) {
+            enc = runtime.getDefaultInternalEncoding();
+            if (enc == null) {
+                throw runtime.newRangeError(toString() + " out of char range");
             }
+            return chrCommon(context, c, enc);
         }
+
+        return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[c]);
+    }
+
+    @Deprecated
+    public RubyString chr19(ThreadContext context) {
+        return chr(context);
     }
 
     @JRubyMethod(name = "chr")
-    public RubyString chr19(ThreadContext context, IRubyObject arg) {
+    public RubyString chr(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        long value = getLongValue();
+
+        // rb_num_to_uint
+        long i = getLongValue() & 0xFFFFFFFFL;
+
         Encoding enc;
         if (arg instanceof RubyEncoding) {
             enc = ((RubyEncoding)arg).getEncoding();
         } else {
             enc =  arg.convertToString().toEncoding(runtime);
         }
-        if (enc == ASCIIEncoding.INSTANCE && value >= 0x80) {
-            return chr19(context);
+        return chrCommon(context, i, enc);
+    }
+
+    @Deprecated
+    public RubyString chr19(ThreadContext context, IRubyObject arg) {
+        return chr(context, arg);
+    }
+
+    private RubyString chrCommon(ThreadContext context, long value, Encoding enc) {
+        if (value > 0xFFFFFFFFL) {
+            throw context.runtime.newRangeError(this + " out of char range");
         }
-        return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, value), enc, 0);
+        int c = (int) value;
+        if (enc == null) enc = ASCIIEncoding.INSTANCE;
+        return EncodingUtils.encUintChr(context, c, enc);
     }
 
     private ByteList fromEncodedBytes(Ruby runtime, Encoding enc, long value) {

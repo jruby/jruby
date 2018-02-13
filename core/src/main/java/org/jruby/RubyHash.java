@@ -502,8 +502,6 @@ public class RubyHash extends RubyObject implements Map {
             throw getRuntime().newRuntimeError("can't add a new key into hash during iteration");
         }
     }
-    // ------------------------------
-    public static long collisions = 0;
 
     // put implementation
 
@@ -512,26 +510,32 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final void internalPutSmall(final IRubyObject key, final IRubyObject value) {
-        internalPutSmall(key, value, true);
+        internalPutNoResize(key, value, true);
     }
 
     protected void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         checkResize();
 
-        internalPutSmall(key, value, checkForExisting);
+        internalPutNoResize(key, value, checkForExisting);
     }
 
-    protected void internalPutSmall(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
+    protected final IRubyObject internalJavaPut(final IRubyObject key, final IRubyObject value) {
+        checkResize();
+
+        return internalPutNoResize(key, value, true);
+    }
+
+    protected IRubyObject internalPutNoResize(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         final int hash = hashValue(key);
         final int i = bucketIndex(hash, table.length);
-
-        // if (table[i] != null) collisions++;
 
         if (checkForExisting) {
             for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
                 if (internalKeyExist(entry, hash, key)) {
+                    IRubyObject existing = entry.value;
                     entry.value = value;
-                    return;
+
+                    return existing;
                 }
             }
         }
@@ -540,6 +544,9 @@ public class RubyHash extends RubyObject implements Map {
 
         table[i] = new RubyHashEntry(hash, key, value, table[i], head);
         size++;
+
+        // no existing entry
+        return null;
     }
 
     // get implementation
@@ -1003,7 +1010,7 @@ public class RubyHash extends RubyObject implements Map {
         } else {
             checkIterating();
             if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
-            internalPutSmall(key, value, false);
+            internalPutNoResize(key, value, false);
         }
     }
 
@@ -2049,8 +2056,9 @@ public class RubyHash extends RubyObject implements Map {
 
     @Override
     public Object put(Object key, Object value) {
-        internalPut(JavaUtil.convertJavaToUsableRubyObject(getRuntime(), key), JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value));
-        return value;
+        Ruby runtime = getRuntime();
+        IRubyObject existing = internalJavaPut(JavaUtil.convertJavaToUsableRubyObject(runtime, key), JavaUtil.convertJavaToUsableRubyObject(runtime, value));
+        return existing == null ? null : existing.toJava(Object.class);
     }
 
     @Override
@@ -2489,5 +2497,10 @@ public class RubyHash extends RubyObject implements Map {
             default:
                 throw context.runtime.newArgumentError(args.length, 1);
         }
+    }
+
+    @Deprecated
+    protected void internalPutSmall(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
+        internalPutNoResize(key, value, checkForExisting);
     }
 }
