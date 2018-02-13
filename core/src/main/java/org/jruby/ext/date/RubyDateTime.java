@@ -33,8 +33,11 @@ import org.joda.time.DateTime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -87,6 +90,29 @@ public class RubyDateTime extends RubyDate {
 
         this.dt = dt;
         this.off = off; this.start = start;
+    }
+    
+
+    /**
+     # Create a new DateTime object representing the current time.
+     #
+     # +sg+ specifies the Day of Calendar Reform.
+     **/
+
+    @JRubyMethod(meta = true)
+    public static RubyDateTime now(ThreadContext context, IRubyObject self) { // sg=ITALY
+        return new RubyDateTime(context.runtime, new DateTime(CHRONO_ITALY_UTC));
+    }
+
+    @JRubyMethod(meta = true)
+    public static RubyDateTime now(ThreadContext context, IRubyObject self, IRubyObject sg) {
+        final int start = val2sg(context, sg);
+        return new RubyDateTime(context.runtime, new DateTime(getChronology(start, 0)), 0, start);
+    }
+
+    @JRubyMethod // Date.civil(year, mon, mday, @sg)
+    public RubyDate to_date(ThreadContext context) {
+        return new RubyDate(context.runtime, dt.withTimeAtStartOfDay(), 0, start, 0);
     }
 
 }

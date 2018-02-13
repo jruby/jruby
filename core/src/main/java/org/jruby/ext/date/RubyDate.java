@@ -77,7 +77,7 @@ public class RubyDate extends RubyObject {
 
     //private static final GJChronology CHRONO_ITALY_DEFAULT_DTZ = GJChronology.getInstance(DEFAULT_DTZ);
 
-    private static final GJChronology CHRONO_ITALY_UTC = GJChronology.getInstance(DateTimeZone.UTC);
+    static final GJChronology CHRONO_ITALY_UTC = GJChronology.getInstance(DateTimeZone.UTC);
 
     // The Julian Day Number of the Day of Calendar Reform for Italy
     // and the Catholic countries.
