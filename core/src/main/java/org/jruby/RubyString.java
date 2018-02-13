@@ -4282,6 +4282,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "chomp!")
     public IRubyObject chomp_bang19(ThreadContext context) {
+        modifyCheck();
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
 
