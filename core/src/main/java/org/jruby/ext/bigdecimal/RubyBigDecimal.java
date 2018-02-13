@@ -592,7 +592,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if ( exp != -1 ) {
             if (exp == e || (exp + 1 == e && (str[exp + 1] == '-' || str[exp + 1] == '+'))) {
-                str = concat(str, s, e, '0'); // 4. MRI allows 1E, 1E-, 1E+
+                throw context.runtime.newArgumentError("invalid value for BigDecimal(): \"" + arg + "\"");
             }
             else if (isExponentOutOfRange(str, exp + 1, e)) {
                 // Handle infinity (Integer.MIN_VALUE + 1) < expValue < Integer.MAX_VALUE
@@ -628,16 +628,6 @@ public class RubyBigDecimal extends RubyNumeric {
             return true;
         }
         return false;
-    }
-
-    private static char[] concat(char[] str, final int s, final int e, final char val) {
-        if (e >= str.length - 1) {
-            final char[] str2 = new char[str.length + 1];
-            System.arraycopy(str, s, str2, s, e - s + 1);
-            str = str2;
-        }
-        str[e + 1] = val;
-        return str;
     }
 
     private static boolean isExponentOutOfRange(final char[] str, final int off, final int end) {
