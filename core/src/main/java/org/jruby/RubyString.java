@@ -168,6 +168,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @Override
     public void setEncoding(Encoding encoding) {
+        modify();
         value.setEncoding(encoding);
     }
 
@@ -385,8 +386,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc, int cr) {
         this(runtime, rubyClass, value);
-        value.setEncoding(enc);
         flags |= cr;
+        value.setEncoding(enc);
     }
 
     protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc) {
