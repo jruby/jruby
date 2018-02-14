@@ -104,10 +104,10 @@ abstract class DateUtils {
     static int offset_to_sec(ThreadContext context, IRubyObject of) {
         long n; IRubyObject vs;
         switch (of.getMetaClass().getClassIndex()) {
-            case FIXNUM:
-                int i = ((RubyFixnum) of).getIntValue();
+            case INTEGER:
+                long i = ((RubyInteger) of).getLongValue();
                 if (i != -1 && i != 0 && i != 1) return INVALID_OFFSET;
-	            return i * DAY_IN_SECONDS;
+	            return (int) i * DAY_IN_SECONDS;
             case FLOAT:
                 double d = ((RubyFloat) of).getDoubleValue();
 
