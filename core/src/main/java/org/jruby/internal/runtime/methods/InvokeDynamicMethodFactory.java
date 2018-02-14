@@ -83,7 +83,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             return super.getAnnotatedMethod(implementationClass, descs, name);
         }
 
-        if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
+        if (!Modifier.isPublic(desc1.declaringClass.getModifiers())) {
             LOG.warn("warning: binding non-public class {}; reflected handles won't work", desc1.declaringClassName);
         }
 
@@ -198,8 +198,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         targetBinder = SmartBinder.from(baseSignature);
 
         // unused by Java-based methods
-        targetBinder = targetBinder
-                .exclude("class", "name");
+        targetBinder = targetBinder.exclude("class", "name");
 
         if (isStatic) {
             if (hasContext) {

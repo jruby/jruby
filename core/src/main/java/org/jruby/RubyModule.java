@@ -977,8 +977,8 @@ public class RubyModule extends RubyObject {
         public Map<Set<FrameField>, List<String>> writeGroups = Collections.EMPTY_MAP;
 
         @SuppressWarnings("deprecation")
-        public void clump(final Class cls) {
-            Method[] declaredMethods = Initializer.DECLARED_METHODS.get(cls);
+        public void clump(final Class klass) {
+            Method[] declaredMethods = Initializer.DECLARED_METHODS.get(klass);
             for (Method method: declaredMethods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
 
@@ -991,7 +991,8 @@ public class RubyModule extends RubyObject {
 
                 JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
 
-                String name = anno.name().length == 0 ? method.getName() : anno.name()[0];
+                final String[] names = anno.name();
+                String name = names.length == 0 ? method.getName() : names[0];
 
                 Map<String, List<JavaMethodDescriptor>> methodsHash;
                 if (desc.isStatic) {
@@ -1006,7 +1007,7 @@ public class RubyModule extends RubyObject {
 
                 List<JavaMethodDescriptor> methodDescs = methodsHash.get(name);
                 if (methodDescs == null) {
-                    methodsHash.put(name, methodDescs = new ArrayList(4));
+                    methodsHash.put(name, methodDescs = new ArrayList<>(4));
                 }
 
                 methodDescs.add(desc);
@@ -1015,7 +1016,7 @@ public class RubyModule extends RubyObject {
                 if (anno.reads().length > 0 && readGroups == Collections.EMPTY_MAP) readGroups = new HashMap<>();
                 if (anno.writes().length > 0 && writeGroups == Collections.EMPTY_MAP) writeGroups = new HashMap<>();
 
-                AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getName().toString());
+                AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getName());
             }
         }
 
