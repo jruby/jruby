@@ -934,7 +934,10 @@ public class RubyDate extends RubyObject {
         else {
             zone = DateTimeZone.forOffsetMillis(off * 1000); // off in seconds
         }
+        return getChronology(sg, zone);
+    }
 
+    static Chronology getChronology(final int sg, final DateTimeZone zone) {
         switch (sg) {
             case ITALY:
                 return GJChronology.getInstance(zone);

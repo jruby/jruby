@@ -30,6 +30,8 @@ package org.jruby.ext.date;
 
 import org.joda.time.Chronology;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.chrono.GJChronology;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -101,13 +103,18 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod(meta = true)
     public static RubyDateTime now(ThreadContext context, IRubyObject self) { // sg=ITALY
-        return new RubyDateTime(context.runtime, new DateTime(CHRONO_ITALY_UTC));
+        final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
+        if (zone == DateTimeZone.UTC) {
+            return new RubyDateTime(context.runtime, new DateTime(CHRONO_ITALY_UTC));
+        }
+        return new RubyDateTime(context.runtime, new DateTime(GJChronology.getInstance(zone)));
     }
 
     @JRubyMethod(meta = true)
     public static RubyDateTime now(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final int start = val2sg(context, sg);
-        return new RubyDateTime(context.runtime, new DateTime(getChronology(start, 0)), 0, start);
+        final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
+        return new RubyDateTime(context.runtime, new DateTime(getChronology(start, zone)), 0, start);
     }
 
     @JRubyMethod // Date.civil(year, mon, mday, @sg)

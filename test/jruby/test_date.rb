@@ -256,4 +256,23 @@ class TestDate < Test::Unit::TestCase
     assert_equal 1, date.day
   end
 
+  def test_now_zone
+    begin
+      old_tz, ENV['TZ'] = ENV['TZ'], 'UTC+9:45'
+      time = DateTime.now
+      strf = time.strftime('%FT%T%z')
+      assert strf.end_with?('-0945'), "invalid zone for: #{strf} (expected '-0945')"
+      date = Time.now.strftime('%F')
+      assert strf.start_with?(date), "DateTime '#{strf}' does not start with: '#{date}'"
+    ensure
+      ENV['TZ'] = old_tz
+    end
+  end
+
+  def test_now_local
+    time = DateTime.now
+    zone = Time.new.strftime('%:z')
+    assert time.to_s.end_with?(zone), "invalid zone for: #{time.to_s} (expected '#{zone}')"
+  end
+
 end
