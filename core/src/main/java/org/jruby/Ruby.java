@@ -1381,6 +1381,7 @@ public final class Ruby implements Constantizable {
     private void initCore() {
         if (profile.allowClass("Data")) {
             defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+            getObject().deprecateConstant(this, "Data");
         }
 
         RubyComparable.createComparable(this);
