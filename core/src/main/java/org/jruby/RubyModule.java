@@ -1934,7 +1934,7 @@ public class RubyModule extends RubyObject {
         return newMethod;
     }
 
-    @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "define_method", reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
         Visibility visibility = getCurrentVisibilityForDefineMethod(context);
 
@@ -1985,7 +1985,7 @@ public class RubyModule extends RubyObject {
         return nameSym;
     }
 
-    @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "define_method", reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Visibility visibility = getCurrentVisibilityForDefineMethod(context);
 
@@ -2837,7 +2837,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "alias_method", required = 2, visibility = PRIVATE)
+    @JRubyMethod(name = "alias_method", required = 2)
     public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
         String newName = newId.asJavaString();
         defineAlias(newName, oldId.asJavaString());
@@ -2850,7 +2850,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "undef_method", rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "undef_method", rest = true)
     public RubyModule undef_method(ThreadContext context, IRubyObject[] args) {
         for (int i=0; i<args.length; i++) {
             undef(context, args[i].asJavaString());
@@ -2909,7 +2909,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "remove_method", rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "remove_method", rest = true)
     public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
             removeMethod(context, TypeConverter.checkID(args[i]).toString());
