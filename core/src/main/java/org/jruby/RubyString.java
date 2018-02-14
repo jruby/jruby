@@ -167,6 +167,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @Override
     public void setEncoding(Encoding encoding) {
+        modify();
         value.setEncoding(encoding);
     }
 
@@ -384,8 +385,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc, int cr) {
         this(runtime, rubyClass, value);
-        value.setEncoding(enc);
         flags |= cr;
+        value.setEncoding(enc);
     }
 
     protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc) {
@@ -3275,9 +3276,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             byte e = end.value.getUnsafeBytes()[end.value.getBegin()];
             if (c > e || (excl && c == e)) return this;
             while (true) {
-                RubyString s = new RubyString(runtime, runtime.getString(), RubyInteger.SINGLE_CHAR_BYTELISTS[c & 0xff],
-                                                                            enc, CR_7BIT);
-                s.shareLevel = SHARE_LEVEL_BYTELIST;
+                RubyString s = newStringShared(runtime, RubyInteger.SINGLE_CHAR_BYTELISTS[c & 0xff], CR_7BIT);
+                if (!s.getEncoding().equals(enc)) s.setEncoding(enc);
                 block.yield(context, asSymbol ? runtime.newSymbol(s.toString()) : s);
 
                 if (!excl && c == e) break;
