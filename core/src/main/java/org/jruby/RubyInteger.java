@@ -724,6 +724,10 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = {"%", "modulo"})
     public abstract IRubyObject op_mod(ThreadContext context, IRubyObject other);
 
+    public IRubyObject op_mod(ThreadContext context, long other) {
+        return op_mod(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = "**")
     public abstract IRubyObject op_pow(ThreadContext context, IRubyObject other);
 

@@ -734,6 +734,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return coerceBin(context, sites(context).op_mod, other);
     }
 
+    @Override
     public IRubyObject op_mod(ThreadContext context, long other) {
         return moduloFixnum(context, other);
     }
