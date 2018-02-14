@@ -2842,7 +2842,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // MRI: rb_strseq_index
     private int strseqIndex(final RubyString sub, int offset, boolean inBytes) {
-        byte[] sBytes = value.unsafeBytes();
         int s, sptr, e;
         int pos, len, slen;
         boolean single_byte = singleByteOptimizable();
@@ -2859,6 +2858,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
         if (len - offset < slen) return -1;
 
+        byte[] sBytes = value.unsafeBytes();
         s = value.begin();
         e = s + value.realSize();
         if (offset != 0) {
@@ -3909,7 +3909,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         mustnotBroken(context);
         if (!block.isGiven()) {
             RubyArray ary = null;
-            while (!(result = scanOnce(context, str, pat, startp)).isNil()) {
+            while ((result = scanOnce(context, str, pat, startp)) != context.nil) {
                 last = prev;
                 prev = startp[0];
                 if (ary == null) ary = context.runtime.newArray(4);
@@ -3922,7 +3922,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final byte[] pBytes = value.unsafeBytes();
         final int len = value.realSize();
 
-        while (!(result = scanOnce(context, str, pat, startp)).isNil()) {
+        while ((result = scanOnce(context, str, pat, startp)) != context.nil) {
             last = prev;
             prev = startp[0];
             block.yieldSpecific(context, result);
@@ -4374,6 +4374,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "chomp!")
     public IRubyObject chomp_bang19(ThreadContext context) {
+        modifyCheck();
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return context.nil;
 
