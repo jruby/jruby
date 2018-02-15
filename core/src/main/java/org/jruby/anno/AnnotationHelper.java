@@ -1,6 +1,5 @@
 package org.jruby.anno;
 
-import javax.lang.model.element.ExecutableElement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;

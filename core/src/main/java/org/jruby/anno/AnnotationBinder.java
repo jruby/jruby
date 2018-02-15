@@ -34,12 +34,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -63,7 +58,7 @@ public class AnnotationBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
     public static final String SRC_GEN_DIR = "target/generated-sources/org/jruby/gen/";
-    private final List<CharSequence> classNames = new ArrayList<CharSequence>();
+    private final List<CharSequence> classNames = new ArrayList<>();
     private PrintStream out;
     private static final boolean DEBUG = false;
 
@@ -114,7 +109,7 @@ public class AnnotationBinder extends AbstractProcessor {
             // start a new populator
             out.println("/* THIS FILE IS GENERATED. DO NOT EDIT */");
             out.println("package org.jruby.gen;");
-
+            out.println("");
             out.println("import org.jruby.Ruby;");
             out.println("import org.jruby.RubyModule;");
             out.println("import org.jruby.RubyClass;");
@@ -127,7 +122,7 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("import java.util.Arrays;");
             out.println("import java.util.List;");
             out.println("import javax.annotation.Generated;");
-
+            out.println("");
             out.println("@Generated(\"org.jruby.anno.AnnotationBinder\")");
             out.println("public class " + qualifiedName + POPULATOR_SUFFIX + " extends TypePopulator {");
             out.println("    public void populate(RubyModule cls, Class clazz) {");
@@ -194,10 +189,7 @@ public class AnnotationBinder extends AbstractProcessor {
                 AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getSimpleName().toString());
             }
 
-            if (methodCount == 0) {
-                // no annotated methods found, skip
-                return;
-            }
+            if (methodCount == 0) return; // no annotated methods found, skip
 
             classNames.add(getActualQualifiedName(cd));
 
@@ -219,7 +211,7 @@ public class AnnotationBinder extends AbstractProcessor {
                 }
 
                 List<ExecutableElement> complex = complexNames.get(rubyName);
-                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<>(8));
                 complex.add(decl);
             }
 
@@ -238,9 +230,11 @@ public class AnnotationBinder extends AbstractProcessor {
                 }
 
                 List<ExecutableElement> complex = complexNames.get(rubyName);
-                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<>(8));
                 complex.add(decl);
             }
+
+            out.println("");
 
             addCoreMethodMapping(cd, complexNames);
 
@@ -258,7 +252,7 @@ public class AnnotationBinder extends AbstractProcessor {
 
             out.println("    }");
 
-            out.println("}");
+            out.println("}"); // class
             out.close();
             out = null;
 
@@ -275,15 +269,6 @@ public class AnnotationBinder extends AbstractProcessor {
 
     public void emitIndexCode(int bits, String names, String format) {
         out.println(String.format(format, bits, names));
-    }
-
-    private static StringBuilder join(final Iterable<String> names) {
-        final StringBuilder str = new StringBuilder();
-        for (String name : names) {
-            if (str.length() > 0) str.append(';');
-            str.append(name);
-        }
-        return str;
     }
 
     public void processMethodDeclarations(Map<CharSequence, List<ExecutableElement>> declarations) {
@@ -314,10 +299,10 @@ public class AnnotationBinder extends AbstractProcessor {
             for (VariableElement parameter : method.getParameters()) {
                 if (!first) buffer.append(", ");
                 first = false;
-                buffer.append(parameter.asType().toString());
-                buffer.append(".class");
-                hasContext |= parameter.asType().toString().equals("org.jruby.runtime.ThreadContext");
-                hasBlock |= parameter.asType().toString().equals("org.jruby.runtime.Block");
+                String name = parameter.asType().toString();
+                buffer.append(name).append(".class");
+                hasContext |= name.equals("org.jruby.runtime.ThreadContext");
+                hasBlock |= name.equals("org.jruby.runtime.Block");
             }
 
             int actualRequired = calculateActualRequired(method, method.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
@@ -335,14 +320,15 @@ public class AnnotationBinder extends AbstractProcessor {
             String baseName = getBaseName(anno.name(), method);
             out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ", \"" + baseName + "\");");
             out.println("        populateMethod(javaMethod, " +
-                    +AnnotationHelper.getArityValue(anno, actualRequired) + ", \""
-                    + method.getSimpleName() + "\", "
-                    + isStatic + ", "
-                    + anno.notImplemented() + ", "
-                    + ((TypeElement)method.getEnclosingElement()).getQualifiedName() + ".class, "
-                    + "\"" + method.getSimpleName() + "\", "
-                    + method.getReturnType().toString() + ".class, "
-                    + "new Class[] {" + buffer.toString() + "});");
+                    join(AnnotationHelper.getArityValue(anno, actualRequired),
+                            quote(method.getSimpleName()),
+                            isStatic,
+                            anno.notImplemented(),
+                            ((TypeElement) method.getEnclosingElement()).getQualifiedName() + ".class",
+                            quote(method.getSimpleName()),
+                            method.getReturnType() + ".class",
+                            "new Class[] {" + buffer + "}"
+                    ) + ");");
             generateMethodAddCalls(method, anno);
         }
     }
@@ -361,10 +347,10 @@ public class AnnotationBinder extends AbstractProcessor {
             for (VariableElement parameter : method.getParameters()) {
                 if (!first) buffer.append(", ");
                 first = false;
-                buffer.append(parameter.asType().toString());
-                buffer.append(".class");
-                hasContext |= parameter.asType().toString().equals("org.jruby.runtime.ThreadContext");
-                hasBlock |= parameter.asType().toString().equals("org.jruby.runtime.Block");
+                String name = parameter.asType().toString();
+                buffer.append(name).append(".class");
+                hasContext |= name.equals("org.jruby.runtime.ThreadContext");
+                hasBlock |= name.equals("org.jruby.runtime.Block");
             }
 
             int actualRequired = calculateActualRequired(method, method.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
@@ -382,115 +368,104 @@ public class AnnotationBinder extends AbstractProcessor {
             String baseName = getBaseName(anno.name(), method);
             out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ", \"" + baseName + "\");");
             out.println("        populateMethod(javaMethod, " +
-                    "-1, \"" +
-                    method.getSimpleName() + "\", " +
-                    isStatic + ", " +
-                    anno.notImplemented() + ", "
-                    + ((TypeElement)method.getEnclosingElement()).getQualifiedName() + ".class, "
-                    + "\"" + method.getSimpleName() + "\", "
-                    + method.getReturnType().toString() + ".class, "
-                    + "new Class[] {" + buffer.toString() + "});");
+                        join(-1,
+                                quote(method.getSimpleName()),
+                                isStatic,
+                                anno.notImplemented(),
+                                ((TypeElement) method.getEnclosingElement()).getQualifiedName() + ".class",
+                                quote(method.getSimpleName()),
+                                method.getReturnType() + ".class",
+                                "new Class[] {" + buffer + "}"
+                        ) + ");");
             generateMethodAddCalls(method, anno);
         }
     }
 
-    private void addCoreMethodMapping(TypeElement cls, Map<CharSequence, List<ExecutableElement>> complexNames) {
+    private void addCoreMethodMapping(TypeElement type, Map<CharSequence, List<ExecutableElement>> complexNames) {
         StringBuilder encoded = new StringBuilder();
 
         for (Map.Entry<CharSequence, List<ExecutableElement>> entry : complexNames.entrySet()) {
 
             for (Iterator<ExecutableElement> iterator = entry.getValue().iterator(); iterator.hasNext(); ) {
-                if (encoded.length() > 0) encoded.append(";");
+                if (encoded.length() > 0) encoded.append(';');
 
                 ExecutableElement elt = iterator.next();
                 encoded
                         .append(elt.getSimpleName())
-                        .append(";")
+                        .append(';')
                         .append(entry.getKey());
             }
         }
 
         if (encoded.length() == 0) return;
 
-        out.println(new StringBuilder(50)
-                .append("        runtime.addBoundMethodsPacked(")
-                .append('"').append(cls.getQualifiedName()).append('"')
-                .append(',')
-                .append('"').append(encoded).append('"')
-                .append(");").toString());
+        final Name name = type.getQualifiedName();
+        out.println("        runtime.addBoundMethodsPacked(" + join(quote(name), quote(encoded)) + ");");
     }
 
-    private void addSimpleMethodMappings(TypeElement cls, List<ExecutableElement> simpleNames) {
+    private void addSimpleMethodMappings(TypeElement type, List<ExecutableElement> simpleNames) {
         StringBuilder encoded = new StringBuilder();
+
         for (ExecutableElement elt : simpleNames) {
-            if (encoded.length() > 0) encoded.append(";");
+            if (encoded.length() > 0) encoded.append(';');
             encoded.append(elt.getSimpleName());
         }
 
         if (encoded.length() == 0) return;
 
-        out.println(new StringBuilder(50)
-                .append("        runtime.addSimpleBoundMethodsPacked(")
-                .append('"').append(cls.getQualifiedName()).append('"')
-                .append(',')
-                .append('"').append(encoded).append('"')
-                .append(");").toString());
+        final Name name = type.getQualifiedName();
+        out.println("        runtime.addSimpleBoundMethodsPacked(" + join(quote(name), quote(encoded)) + ");");
     }
 
-    private CharSequence getActualQualifiedName(TypeElement td) {
-        if (td.getNestingKind() == NestingKind.MEMBER) {
-            return getActualQualifiedName((TypeElement)td.getEnclosingElement()) + "$" + td.getSimpleName();
+    private static CharSequence getActualQualifiedName(TypeElement elem) {
+        if (elem.getNestingKind() == NestingKind.MEMBER) {
+            return getActualQualifiedName((TypeElement) elem.getEnclosingElement()) + "$" + elem.getSimpleName();
         }
-        return td.getQualifiedName().toString();
+        return elem.getQualifiedName().toString();
     }
 
-    private int calculateActualRequired(ExecutableElement md, int paramsLength, int optional, boolean rest, boolean isStatic, boolean hasContext, boolean hasBlock) {
-        int actualRequired;
+    private static StringBuilder join(final Object... vals) {
+        return join(", ", Arrays.asList(vals));
+    }
+
+    private static StringBuilder join(final String sep, final Iterable<?> names) {
+        final StringBuilder str = new StringBuilder();
+        for (Object name : names) {
+            if (str.length() > 0) str.append(sep);
+            str.append(name);
+        }
+        return str;
+    }
+
+    private static CharSequence quote(final Object name) {
+        return new StringBuilder().append('"').append(name).append('"');
+    }
+
+    private static int calculateActualRequired(ExecutableElement method, int paramsLength, int optional,
+                                               boolean rest, boolean isStatic, boolean hasContext, boolean hasBlock) {
+        int args = paramsLength;
+        if (args == 0) return 0;
+
+        if (isStatic) args--;
+        if (hasContext) args--;
+        if (hasBlock) args--;
+
         if (optional == 0 && !rest) {
-            int args = paramsLength;
-            if (args == 0) {
-                actualRequired = 0;
-            } else {
-                if (isStatic) {
-                    args--;
-                }
-                if (hasContext) {
-                    args--;
-                }
-                if (hasBlock) {
-                    args--;                        // TODO: confirm expected args are IRubyObject (or similar)
-                }
-                actualRequired = args;
-            }
+            // TODO: confirm expected args are IRubyObject (or similar)
+            return args;
         } else {
             // optional args, so we have IRubyObject[]
-            // TODO: confirm
-            int args = paramsLength;
-            if (args == 0) {
-                actualRequired = 0;
-            } else {
-                if (isStatic) {
-                    args--;
-                }
-                if (hasContext) {
-                    args--;
-                }
-                if (hasBlock) {
-                    args--;                        // minus one more for IRubyObject[]
-                }
-                args--;
 
-                // TODO: confirm expected args are IRubyObject (or similar)
-                actualRequired = args;
-            }
+            args--; // minus one more for IRubyObject[]
 
-            if (actualRequired != 0) {
+            // TODO: confirm expected args are IRubyObject (or similar)
+
+            if (args != 0) {
                 throw new RuntimeException("Combining specific args with IRubyObject[] is not yet supported: "
-                        + ((TypeElement)md.getEnclosingElement()).getQualifiedName() + "." + md.toString());
+                        + ((TypeElement) method.getEnclosingElement()).getQualifiedName() + "." + method);
             }
+            return args;
         }
-
-        return actualRequired;
     }
 
     // @Deprecated // internal API
@@ -509,7 +484,6 @@ public class AnnotationBinder extends AbstractProcessor {
                 defineMethodOnClass("moduleMethod", "singletonClass", names, aliases, md);
             }
         }
-        //                }
     }
 
     private void defineMethodOnClass(String methodVar, String classVar, final String[] names, final String[] aliases,
@@ -530,25 +504,29 @@ public class AnnotationBinder extends AbstractProcessor {
         }
     }
 
-    public static void checkForThrows(TypeElement cd, ExecutableElement method) {
-        // warn if the method raises any exceptions (JRUBY-4494)
-        if (method.getThrownTypes().size() != 0) {
-            System.err.print("Method " + cd.toString() + "." + method.toString() + " should not throw exceptions: ");
-            boolean comma = false;
-            for (TypeMirror thrownType : method.getThrownTypes()) {
-                if (comma) System.err.print(", ");
-                System.err.print(thrownType);
-                comma = true;
+    public static void checkForThrows(TypeElement type, ExecutableElement method) {
+        // warn if the method raises any exceptions (except for RaiseException)
+        List<String> exNames = new ArrayList<>();
+        for (TypeMirror ex : method.getThrownTypes()) {
+            final String name = ex.toString();
+            if (!name.equals("org.jruby.exceptions.RaiseException")) {
+                exNames.add(name);
             }
-            System.err.print("\n");
+        }
+        if (exNames.size() > 0) {
+            warn("method " + type + "." + method + " should not throw exceptions: " + join(", ", exNames));
         }
     }
 
-    private String getBaseName(String[] names, ExecutableElement md) {
+    private static String getBaseName(String[] names, ExecutableElement md) {
         if (names.length == 0) {
             return md.getSimpleName().toString();
-        } else {
-            return names[0];
         }
+        return names[0];
     }
+
+    private static void warn(CharSequence msg) {
+        System.err.println(msg);
+    }
+
 }
