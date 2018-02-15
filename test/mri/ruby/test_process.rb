@@ -2312,4 +2312,9 @@ EOS
       end
     end
   end
+
+  def test_last_status
+    Process.wait spawn(RUBY, "-e", "exit 13")
+    assert_same(Process.last_status, $?)
+  end
 end
