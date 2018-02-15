@@ -1,7 +1,6 @@
 exclude :test___dir__, "needs investigation"
 exclude :test_body, "fails due RubyVM constant"
 exclude :test_callee, "needs investigation"
-exclude :test_define_method_visibility, "needs investigation"
 exclude :test_gced_bmethod, "often 'Timeout::Error: execution of assert_normal_exit expired' on CI"
 exclude :test_inspect, "fails since an alias-ed method does not distinguish owner and implementor module"
 exclude :test_hash, "won't pass since Array#map is not a Array#collect alias as in MRI"

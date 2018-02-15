@@ -10,7 +10,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -25,24 +25,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-public enum Visibility {
-    PUBLIC, PROTECTED, PRIVATE;
-
-    private static final Visibility[] VALUES = values();
-
-    public boolean isPublic() {
-        return this == PUBLIC;
-    }
-    
-    public boolean isProtected() {
-        return this == PROTECTED;
-    }
-
-    public boolean isPrivate() {
-        return this == PRIVATE;
-    }
-
-    public static Visibility[] getValues() {
-        return VALUES;
-    }
+public enum FrameVisibility {
+    PUBLIC, PROTECTED, PRIVATE, MODULE_FUNCTION;
 }
