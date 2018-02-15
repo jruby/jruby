@@ -2362,7 +2362,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr
      *
      */
-    @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr", rest = true, reads = VISIBILITY)
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
@@ -2388,7 +2388,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_reader
      *
      */
-    @JRubyMethod(name = "attr_reader", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr_reader", rest = true, reads = VISIBILITY)
     public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
@@ -2403,7 +2403,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_writer
      *
      */
-    @JRubyMethod(name = "attr_writer", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr_writer", rest = true, reads = VISIBILITY)
     public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
@@ -2425,7 +2425,7 @@ public class RubyModule extends RubyObject {
      *  Note: this method should not be called from Java in most cases, since
      *  it depends on Ruby frame state for visibility. Use add[Read/Write]Attribute instead.
      */
-    @JRubyMethod(name = "attr_accessor", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr_accessor", rest = true, reads = VISIBILITY)
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
