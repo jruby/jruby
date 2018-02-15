@@ -603,6 +603,11 @@ public class RubyProcess {
         return ary;
     }
 
+    @JRubyMethod(name = "last_status", module = true, visibility = PRIVATE)
+    public static IRubyObject last_status(ThreadContext context, IRubyObject recv) {
+        return context.getLastExitStatus();
+    }
+
     @JRubyMethod(name = "setrlimit", module = true, visibility = PRIVATE)
     public static IRubyObject setrlimit(ThreadContext context, IRubyObject recv, IRubyObject resource, IRubyObject rlimCur) {
         return setrlimit(context, recv, resource, rlimCur, context.nil);
