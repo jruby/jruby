@@ -104,10 +104,6 @@ public class RubyYielder extends RubyObject {
 
     @JRubyMethod(name = "<<", rest = true)
     public IRubyObject op_lshift(ThreadContext context, IRubyObject[]args) {
-        if (args.length == 1 &&
-                args[0] instanceof RubyArray &&
-                ((RubyArray) args[0]).getLength() == 1)
-            args[0] = RubyArray.newArray(context.runtime, args[0]);
         yield(context, args);
         return this;
     }
