@@ -1725,8 +1725,6 @@ public final class Ruby implements Constantizable {
         addLazyBuiltin("pathname.jar", "pathname", "org.jruby.ext.pathname.PathnameLibrary");
         addLazyBuiltin("set.rb", "set", "org.jruby.ext.set.SetLibrary");
 
-        addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
-        addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
         addLazyBuiltin("ripper.jar", "ripper", "org.jruby.ext.ripper.RipperLibrary");
         addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
 
