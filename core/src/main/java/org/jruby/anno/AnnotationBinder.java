@@ -289,23 +289,11 @@ public class AnnotationBinder extends AbstractProcessor {
         JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
         if (anno != null && out != null) {
             boolean isStatic = method.getModifiers().contains(Modifier.STATIC);
-            CharSequence qualifiedName = getActualQualifiedName((TypeElement)method.getEnclosingElement());
+            CharSequence qualifiedName = getActualQualifiedName((TypeElement) method.getEnclosingElement());
 
-            boolean hasContext = false;
-            boolean hasBlock = false;
+            ParametersInfo info = identifyParameters(method.getParameters());
 
-            StringBuilder buffer = new StringBuilder();
-            boolean first = true;
-            for (VariableElement parameter : method.getParameters()) {
-                if (!first) buffer.append(", ");
-                first = false;
-                String name = parameter.asType().toString();
-                buffer.append(name).append(".class");
-                hasContext |= name.equals("org.jruby.runtime.ThreadContext");
-                hasBlock |= name.equals("org.jruby.runtime.Block");
-            }
-
-            int actualRequired = calculateActualRequired(method, method.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
+            int actualRequired = calculateActualRequired(method, method.getParameters().size(), anno.optional(), anno.rest(), isStatic, info.hasContext, info.hasBlock);
 
             String annotatedBindingName = CodegenUtils.getAnnotatedBindingClassName(
                     method.getSimpleName(),
@@ -327,7 +315,7 @@ public class AnnotationBinder extends AbstractProcessor {
                             ((TypeElement) method.getEnclosingElement()).getQualifiedName() + ".class",
                             quote(method.getSimpleName()),
                             method.getReturnType() + ".class",
-                            "new Class[] {" + buffer + "}"
+                            info.typeDecl
                     ) + ");");
             generateMethodAddCalls(method, anno);
         }
@@ -339,21 +327,9 @@ public class AnnotationBinder extends AbstractProcessor {
             boolean isStatic = method.getModifiers().contains(Modifier.STATIC);
             CharSequence qualifiedName = getActualQualifiedName((TypeElement)method.getEnclosingElement());
 
-            boolean hasContext = false;
-            boolean hasBlock = false;
+            ParametersInfo info = identifyParameters(method.getParameters());
 
-            StringBuilder buffer = new StringBuilder();
-            boolean first = true;
-            for (VariableElement parameter : method.getParameters()) {
-                if (!first) buffer.append(", ");
-                first = false;
-                String name = parameter.asType().toString();
-                buffer.append(name).append(".class");
-                hasContext |= name.equals("org.jruby.runtime.ThreadContext");
-                hasBlock |= name.equals("org.jruby.runtime.Block");
-            }
-
-            int actualRequired = calculateActualRequired(method, method.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
+            int actualRequired = calculateActualRequired(method, method.getParameters().size(), anno.optional(), anno.rest(), isStatic, info.hasContext, info.hasBlock);
 
             String annotatedBindingName = CodegenUtils.getAnnotatedBindingClassName(
                     method.getSimpleName(),
@@ -375,10 +351,67 @@ public class AnnotationBinder extends AbstractProcessor {
                                 ((TypeElement) method.getEnclosingElement()).getQualifiedName() + ".class",
                                 quote(method.getSimpleName()),
                                 method.getReturnType() + ".class",
-                                "new Class[] {" + buffer + "}"
+                                info.typeDecl
                         ) + ");");
             generateMethodAddCalls(method, anno);
         }
+    }
+
+    private static ParametersInfo identifyParameters(List<? extends VariableElement> parameters) {
+        boolean hasContext = false; boolean hasBlock = false;
+
+        int s = 0; int l = parameters.size();
+
+        if (l > 0 && parameters.get(0).asType().toString().equals("org.jruby.runtime.ThreadContext")) {
+            hasContext = true; s++;
+        }
+        if (l > 0 && parameters.get(l - 1).asType().toString().equals("org.jruby.runtime.Block")) {
+            hasBlock = true; l--;
+        }
+
+        boolean allIRubyObject = true; boolean aryIRubyObject = false;
+        final TypeMirror[] types = new TypeMirror[l - s];
+        for (int i = 0; i < types.length; i++) {
+            types[i] = parameters.get(s + i).asType();
+
+            if (!types[i].toString().startsWith("org.jruby.runtime.builtin.IRubyObject")) {
+                allIRubyObject = false;
+                break;
+            } else if (types[i].toString().endsWith("[]")) { // IRubyObject[]
+                aryIRubyObject = true;
+            }
+        }
+
+        if (allIRubyObject) {
+            StringJoiner constant = new StringJoiner("_");
+            // e.g. constant CONTEXT_ARG1_BLOCK (from super -> TypePopulator)
+            if (hasContext) constant.add("CONTEXT");
+            constant.add("ARG" + (aryIRubyObject ? types.length - 1 : types.length));
+            if (aryIRubyObject) constant.add("ARY");
+            if (hasBlock) constant.add("BLOCK");
+            return new ParametersInfo(constant.toString(), hasContext, hasBlock);
+        }
+
+        // fallback to old behavior -> generating a new Class[] { ... }
+        StringJoiner joiner = new StringJoiner(", ");
+        for (VariableElement parameter : parameters) {
+            joiner.add(parameter.asType() + ".class");
+        }
+        return new ParametersInfo("new Class[] { " + joiner + " }", hasContext, hasBlock);
+    }
+
+    private static class ParametersInfo {
+
+        final String typeDecl;
+        final boolean hasContext;
+        final boolean hasBlock;
+
+        ParametersInfo(String name, boolean hasContext, boolean hasBlock) {
+            this.typeDecl = name;
+            this.hasContext = hasContext;
+            this.hasBlock = hasBlock;
+        }
+
     }
 
     private void addCoreMethodMapping(TypeElement type, Map<CharSequence, List<ExecutableElement>> complexNames) {
