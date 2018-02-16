@@ -108,7 +108,7 @@ public class AnnotationHelper {
                 List<String> names = accessEntry.getValue();
 
                 int bits = FrameField.pack(reads.stream().toArray(n -> new FrameField[n]));
-                String namesJoined = names.stream().collect(Collectors.joining(";"));
+                String namesJoined = names.stream().distinct().collect(Collectors.joining(";"));
 
                 action.accept(bits, namesJoined);
             }
