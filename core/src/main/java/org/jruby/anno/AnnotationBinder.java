@@ -236,9 +236,12 @@ public class AnnotationBinder extends AbstractProcessor {
 
             out.println("");
 
-            addCoreMethodMapping(cd, complexNames);
-
-            addSimpleMethodMappings(cd, simpleNames);
+            List<String> args = new ArrayList<>();
+            args.add( cd.getQualifiedName().toString() ); // first arg -> className
+            args.addAll(getMethodMappings(cd, complexNames));
+            args.addAll(getSimpleMethodMappings(cd, simpleNames));
+            // addBoundMethods(String className, String... tuples)
+            out.println("        runtime.addBoundMethods(" + join(args.stream().map((str) -> quote(str)).toArray()) + ");");
 
             out.println("    }");
 
@@ -414,40 +417,31 @@ public class AnnotationBinder extends AbstractProcessor {
 
     }
 
-    private void addCoreMethodMapping(TypeElement type, Map<CharSequence, List<ExecutableElement>> complexNames) {
-        StringBuilder encoded = new StringBuilder();
+    private List<String> getMethodMappings(TypeElement type, Map<CharSequence, List<ExecutableElement>> complexNames) {
+        List<String> mappings = new ArrayList<>();
 
         for (Map.Entry<CharSequence, List<ExecutableElement>> entry : complexNames.entrySet()) {
 
             for (Iterator<ExecutableElement> iterator = entry.getValue().iterator(); iterator.hasNext(); ) {
-                if (encoded.length() > 0) encoded.append(';');
-
                 ExecutableElement elt = iterator.next();
-                encoded
-                        .append(elt.getSimpleName())
-                        .append(';')
-                        .append(entry.getKey());
+                mappings.add(elt.getSimpleName().toString());
+                mappings.add(entry.getKey().toString());
             }
         }
 
-        if (encoded.length() == 0) return;
-
-        final Name name = type.getQualifiedName();
-        out.println("        runtime.addBoundMethodsPacked(" + join(quote(name), quote(encoded)) + ");");
+        return mappings;
     }
 
-    private void addSimpleMethodMappings(TypeElement type, List<ExecutableElement> simpleNames) {
-        StringBuilder encoded = new StringBuilder();
+    private List<String> getSimpleMethodMappings(TypeElement type, List<ExecutableElement> simpleNames) {
+        List<String> mappings = new ArrayList<>();
 
         for (ExecutableElement elt : simpleNames) {
-            if (encoded.length() > 0) encoded.append(';');
-            encoded.append(elt.getSimpleName());
+            final String name = elt.getSimpleName().toString();
+            mappings.add(name);
+            mappings.add(name);
         }
 
-        if (encoded.length() == 0) return;
-
-        final Name name = type.getQualifiedName();
-        out.println("        runtime.addSimpleBoundMethodsPacked(" + join(quote(name), quote(encoded)) + ");");
+        return mappings;
     }
 
     private static CharSequence getActualQualifiedName(TypeElement elem) {

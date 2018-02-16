@@ -3027,6 +3027,15 @@ public final class Ruby implements Constantizable {
         javaToRuby.put(methodName, rubyName);
     }
 
+    public void addBoundMethods(String className, String... tuples) {
+        Map<String, String> javaToRuby = boundMethods.get(className);
+        if (javaToRuby == null) boundMethods.put(className, javaToRuby = new HashMap<>(tuples.length / 2 + 1, 1));
+        for (int i = 0; i < tuples.length; i += 2) {
+            javaToRuby.put(tuples[i], tuples[i+1]);
+        }
+    }
+
+    @Deprecated // no longer used -> except for IndyBinder
     public void addBoundMethodsPacked(String className, String packedTuples) {
         List<String> names = StringSupport.split(packedTuples, ';');
         for (int i = 0; i < names.size(); i += 2) {
@@ -3034,6 +3043,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
+    @Deprecated // no longer used -> except for IndyBinder
     public void addSimpleBoundMethodsPacked(String className, String packedNames) {
         List<String> names = StringSupport.split(packedNames, ';');
         for (String name : names) {
