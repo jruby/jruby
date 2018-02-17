@@ -42,7 +42,6 @@ STDLIB_FILES = %w[
   profile.rb
   profiler.rb
   pstore.rb
-  rbconfig
   resolv-replace.rb
   resolv.rb
   rexml
