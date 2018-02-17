@@ -46,7 +46,7 @@ class Sync
   end
 
   def sync_stdlib
-    load File.dirname(__FILE__) + "/globals_#{@named_version}.rb"
+    load File.dirname(__FILE__) + "/sync_ruby_files.rb"
 
     for file in STDLIB_FILES
       cp_r "#{@source}/lib/#{file}", "#{@target}/lib/ruby/stdlib", :verbose => true
