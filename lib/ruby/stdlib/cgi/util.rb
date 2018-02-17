@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 
 # We do this here to work around jruby/jruby#4531
 begin
@@ -21,7 +21,7 @@ module CGI::Util
   #      # => "%27Stop%21%27+said+Fred"
   def escape(string)
     encoding = string.encoding
-    string.b.gsub(/([^ a-zA-Z0-9_.-]+)/) do |m|
+    string.b.gsub(/([^ a-zA-Z0-9_.\-~]+)/) do |m|
       '%' + m.unpack('H2' * m.bytesize).join('%').upcase
     end.tr(' ', '+').force_encoding(encoding)
   end

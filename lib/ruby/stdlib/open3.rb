@@ -271,7 +271,11 @@ real_open3 && module Open3
       out_reader = Thread.new { o.read }
       err_reader = Thread.new { e.read }
       begin
-        i.write stdin_data
+        if stdin_data.respond_to? :readpartial
+          IO.copy_stream(stdin_data, i)
+        else
+          i.write stdin_data
+        end
       rescue Errno::EPIPE
       end
       i.close
@@ -318,7 +322,11 @@ real_open3 && module Open3
       out_reader = Thread.new { o.read }
       if stdin_data
         begin
-          i.write stdin_data
+          if stdin_data.respond_to? :readpartial
+            IO.copy_stream(stdin_data, i)
+          else
+            i.write stdin_data
+          end
         rescue Errno::EPIPE
         end
       end
@@ -353,7 +361,11 @@ real_open3 && module Open3
       outerr_reader = Thread.new { oe.read }
       if stdin_data
         begin
-          i.write stdin_data
+          if stdin_data.respond_to? :readpartial
+            IO.copy_stream(stdin_data, i)
+          else
+            i.write stdin_data
+          end
         rescue Errno::EPIPE
         end
       end

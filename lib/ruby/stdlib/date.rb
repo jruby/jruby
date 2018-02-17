@@ -824,7 +824,7 @@ class Date
   #
   # +sg+ specifies the Day of Calendar Reform.
   def self.civil(y=-4712, m=1, d=1, sg=ITALY)
-    if Integer === y and Integer === m and Integer === d and d > 0
+    if Fixnum === y and Fixnum === m and Fixnum === d and d > 0
       m += 13 if m < 0
       y -= 1 if y <= 0 and sg > 0 # TODO
       begin
@@ -1139,7 +1139,7 @@ class Date
     else
       # cannot use JODA::DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
       millis, @sub_millis = ((dt_or_ajd - UNIX_EPOCH_IN_AJD) * 86400000).divmod(1)
-      raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" if millis > java.lang.Long::MAX_VALUE
+      raise ArgumentError, "Date out of range: millis=#{millis} (#{millis.class})" unless Fixnum === millis
       @dt = JODA::DateTime.new(millis, chronology(sg, of))
     end
 
@@ -1700,9 +1700,9 @@ class DateTime < Date
       of = Rational(zone_to_diff(of) || 0, 86400)
     end
 
-    if Integer === y and Integer === m and Integer === d and
-        Integer === h and Integer === min and
-        (Integer === s or (Rational === s and 1000 % s.denominator == 0)) and
+    if Fixnum === y and Fixnum === m and Fixnum === d and
+        Fixnum === h and Fixnum === min and
+        (Fixnum === s or (Rational === s and 1000 % s.denominator == 0)) and
         m > 0 and d > 0 and h >= 0 and h < 24 and min >= 0 and s >= 0
       y -= 1 if y <= 0 and sg > 0 # TODO
       ms = 0
@@ -1875,21 +1875,20 @@ end
 class Time
 
   def to_time
-    self
+    getlocal
   end
 
   def to_date
-    jd = Date.__send__(:civil_to_jd, year, mon, mday, Date::GREGORIAN)
-    Date.new!(Date.__send__(:jd_to_ajd, jd, 0, 0), 0, Date::ITALY)
+    Date.civil(year, mon, mday, Date::GREGORIAN)
   end
 
-  def to_datetime
-    jd = DateTime.__send__(:civil_to_jd, year, mon, mday, DateTime::ITALY)
-    fr = DateTime.__send__(:time_to_day_fraction, hour, min, [sec, 59].min) +
-      Rational(subsec, 86400)
+  def to_datetime(sg = Date::ITALY, klass = DateTime)
     of = Rational(utc_offset, 86400)
-    DateTime.new!(DateTime.__send__(:jd_to_ajd, jd, fr, of),
-		  of, DateTime::ITALY)
+    s = [sec, 59].min
+    ms, sub_millis = nsec.divmod(1_000_000) # expects ns precision for Time
+    sub_millis = Rational(sub_millis, 1_000_000) if sub_millis != 0
+    dt = Date::JODA::DateTime.new(1000 * to_i + ms, Date.send(:chronology, sg, of))
+    klass.new!(dt, of, sg, sub_millis)
   end
 
 end
@@ -1935,7 +1934,7 @@ end
 class DateTime < Date
 
   def to_time
-    Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400.0))
+    Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400).to_i).getlocal
   end
 
   def to_date
@@ -1949,6 +1948,4 @@ class DateTime < Date
   private_class_method :today
   public_class_method  :now
 
-  # Adds native implemented methods...
-  org.jruby.ext.date.DateLibrary.new.load JRuby.runtime, false
 end

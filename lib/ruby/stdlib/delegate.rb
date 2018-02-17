@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 # = delegate -- Support for the Delegation Pattern
 #
 # Documentation by James Edward Gray II and Gavin Sinclair
@@ -40,7 +40,7 @@ class Delegator < BasicObject
   kernel = ::Kernel.dup
   kernel.class_eval do
     alias __raise__ raise
-    [:to_s, :inspect, :=~, :!~, :===, :<=>, :eql?, :hash].each do |m|
+    [:to_s, :inspect, :=~, :!~, :===, :<=>, :hash].each do |m|
       undef_method m
     end
     private_instance_methods.each do |m|
@@ -97,7 +97,7 @@ class Delegator < BasicObject
     target = self.__getobj__ {r = false}
     r &&= target.respond_to?(m, include_private)
     if r && include_private && !target.respond_to?(m, false)
-      warn "#{caller(3)[0]}: delegator does not forward private method \##{m}"
+      warn "delegator does not forward private method \##{m}", uplevel: 3
       return false
     end
     r
@@ -143,6 +143,14 @@ class Delegator < BasicObject
   def !=(obj)
     return false if obj.equal?(self)
     __getobj__ != obj
+  end
+
+  #
+  # Returns true if two objects are considered of equal value.
+  #
+  def eql?(obj)
+    return true if obj.equal?(self)
+    obj.eql?(__getobj__)
   end
 
   #

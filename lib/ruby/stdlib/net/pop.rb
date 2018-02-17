@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 # = net/pop.rb
 #
 # Copyright (c) 1999-2007 Yukihiro Matsumoto.
@@ -168,8 +168,8 @@ module Net
   #     require 'net/pop'
   #
   #     # Use APOP authentication if $isapop == true
-  #     pop = Net::POP3.APOP($is_apop).new('apop.example.com', 110)
-  #     pop.start(YourAccount', 'YourPassword') do |pop|
+  #     pop = Net::POP3.APOP($isapop).new('apop.example.com', 110)
+  #     pop.start('YourAccount', 'YourPassword') do |pop|
   #       # Rest of the code is the same.
   #     end
   #
@@ -550,7 +550,7 @@ module Net
         context.set_params(@ssl_params)
         s = OpenSSL::SSL::SSLSocket.new(s, context)
         s.sync_close = true
-        s.connect
+        ssl_socket_connect(s, @open_timeout)
         if context.verify_mode != OpenSSL::SSL::VERIFY_NONE
           s.post_connection_check(@address)
         end
@@ -771,7 +771,7 @@ module Net
     # === Example without block
     #
     #     POP3.start('pop.example.com', 110,
-    #                'YourAccount, 'YourPassword') do |pop|
+    #                'YourAccount', 'YourPassword') do |pop|
     #       n = 1
     #       pop.mails.each do |popmail|
     #         File.open("inbox/#{n}", 'w') do |f|
@@ -785,7 +785,7 @@ module Net
     # === Example with block
     #
     #     POP3.start('pop.example.com', 110,
-    #                'YourAccount, 'YourPassword') do |pop|
+    #                'YourAccount', 'YourPassword') do |pop|
     #       n = 1
     #       pop.mails.each do |popmail|
     #         File.open("inbox/#{n}", 'w') do |f|
@@ -844,7 +844,7 @@ module Net
     # === Example
     #
     #     POP3.start('pop.example.com', 110,
-    #                'YourAccount, 'YourPassword') do |pop|
+    #                'YourAccount', 'YourPassword') do |pop|
     #       n = 1
     #       pop.mails.each do |popmail|
     #         File.open("inbox/#{n}", 'w') do |f|

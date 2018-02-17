@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 #
 # = fileutils.rb
 #
@@ -86,6 +86,8 @@
 #
 
 module FileUtils
+
+  VERSION = "1.0.2"
 
   def self.private_module_function(name)   #:nodoc:
     module_function name
@@ -202,6 +204,7 @@ module FileUtils
         stack.push path
         path = File.dirname(path)
       end
+      stack.pop                 # root directory should exist
       stack.reverse_each do |dir|
         begin
           fu_mkdir dir, mode
@@ -244,15 +247,15 @@ module FileUtils
     fu_output_message "rmdir #{parents ? '-p ' : ''}#{list.join ' '}" if verbose
     return if noop
     list.each do |dir|
-      begin
-        Dir.rmdir(dir = remove_trailing_slash(dir))
-        if parents
+      Dir.rmdir(dir = remove_trailing_slash(dir))
+      if parents
+        begin
           until (parent = File.dirname(dir)) == '.' or parent == dir
             dir = parent
             Dir.rmdir(dir)
           end
+        rescue Errno::ENOTEMPTY, Errno::EEXIST, Errno::ENOENT
         end
-      rescue Errno::ENOTEMPTY, Errno::EEXIST, Errno::ENOENT
       end
     end
   end
@@ -411,7 +414,7 @@ module FileUtils
   def copy_entry(src, dest, preserve = false, dereference_root = false, remove_destination = false)
     Entry_.new(src, nil, dereference_root).wrap_traverse(proc do |ent|
       destent = Entry_.new(dest, ent.rel, false)
-      File.unlink destent.path if remove_destination && File.file?(destent.path)
+      File.unlink destent.path if remove_destination && (File.file?(destent.path) || File.symlink?(destent.path))
       ent.copy destent.path
     end, proc do |ent|
       destent = Entry_.new(dest, ent.rel, false)
@@ -726,10 +729,10 @@ module FileUtils
   module_function :remove_dir
 
   #
-  # Returns true if the contents of a file A and a file B are identical.
+  # Returns true if the contents of a file +a+ and a file +b+ are identical.
   #
-  #   FileUtils.compare_file('somefile', 'somefile')  #=> true
-  #   FileUtils.compare_file('/bin/cp', '/bin/mv')    #=> maybe false
+  #   FileUtils.compare_file('somefile', 'somefile')       #=> true
+  #   FileUtils.compare_file('/dev/null', '/dev/urandom')  #=> false
   #
   def compare_file(a, b)
     return false unless File.size(a) == File.size(b)
@@ -751,8 +754,8 @@ module FileUtils
   #
   def compare_stream(a, b)
     bsize = fu_stream_blksize(a, b)
-    sa = ""
-    sb = ""
+    sa = String.new(capacity: bsize)
+    sb = String.new(capacity: bsize)
     begin
       a.read(bsize, sa)
       b.read(bsize, sb)
@@ -1448,9 +1451,9 @@ module FileUtils
     end
 
     if File::ALT_SEPARATOR
-      DIRECTORY_TERM = "(?=[/#{Regexp.quote(File::ALT_SEPARATOR)}]|\\z)".freeze
+      DIRECTORY_TERM = "(?=[/#{Regexp.quote(File::ALT_SEPARATOR)}]|\\z)"
     else
-      DIRECTORY_TERM = "(?=/|\\z)".freeze
+      DIRECTORY_TERM = "(?=/|\\z)"
     end
     SYSCASE = File::FNM_SYSCASE.nonzero? ? "-i" : ""
 

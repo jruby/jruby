@@ -14,11 +14,15 @@ module Net::HTTPHeader
     @header = {}
     return unless initheader
     initheader.each do |key, value|
-      warn "net/http: warning: duplicated HTTP header: #{key}" if key?(key) and $VERBOSE
+      warn "net/http: duplicated HTTP header: #{key}", uplevel: 1 if key?(key) and $VERBOSE
       if value.nil?
-        warn "net/http: warning: nil HTTP header: #{key}" if $VERBOSE
+        warn "net/http: nil HTTP header: #{key}", uplevel: 1 if $VERBOSE
       else
-        @header[key.downcase] = [value.strip]
+        value = value.strip # raise error for invalid byte sequences
+        if value.count("\r\n") > 0
+          raise ArgumentError, 'header field value cannot include CR/LF'
+        end
+        @header[key.downcase] = [value]
       end
     end
   end
@@ -42,7 +46,7 @@ module Net::HTTPHeader
       @header.delete key.downcase
       return val
     end
-    @header[key.downcase] = [val]
+    set_field(key, val)
   end
 
   # [Ruby 1.8.3]
@@ -62,9 +66,37 @@ module Net::HTTPHeader
   #
   def add_field(key, val)
     if @header.key?(key.downcase)
-      @header[key.downcase].push val
+      append_field_value(@header[key.downcase], val)
     else
+      set_field(key, val)
+    end
+  end
+
+  private def set_field(key, val)
+    case val
+    when Enumerable
+      ary = []
+      append_field_value(ary, val)
+      @header[key.downcase] = ary
+    else
+      val = val.to_s # for compatibility use to_s instead of to_str
+      if val.b.count("\r\n") > 0
+        raise ArgumentError, 'header field value cannot include CR/LF'
+      end
       @header[key.downcase] = [val]
+    end
+  end
+
+  private def append_field_value(ary, val)
+    case val
+    when Enumerable
+      val.each{|x| append_field_value(ary, x)}
+    else
+      val = val.to_s
+      if /[\r\n]/n.match?(val.b)
+        raise ArgumentError, 'header field value cannot include CR/LF'
+      end
+      ary.push val
     end
   end
 

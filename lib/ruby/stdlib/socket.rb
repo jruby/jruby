@@ -303,9 +303,9 @@ class BasicSocket < IO
   #   # use 3-element array.
   #   ancdata = [:SOCKET, :RIGHTS, [io.fileno].pack("i!")]
   #   sock.sendmsg("\0", 0, nil, ancdata)
-  def sendmsg(mesg, flags = 0, dest_sockaddr = nil, *controls)
-    __sendmsg(mesg, flags, dest_sockaddr, controls)
-  end
+  #def sendmsg(mesg, flags = 0, dest_sockaddr = nil, *controls)
+  #  __sendmsg(mesg, flags, dest_sockaddr, controls)
+  #end
 
   # call-seq:
   #    basicsocket.sendmsg_nonblock(mesg, flags=0, dest_sockaddr=nil, *controls, opts={}) => numbytes_sent
@@ -319,10 +319,10 @@ class BasicSocket < IO
   # By specifying a keyword argument _exception_ to +false+, you can indicate
   # that sendmsg_nonblock should not raise an IO::WaitWritable exception, but
   # return the symbol +:wait_writable+ instead.
-  def sendmsg_nonblock(mesg, flags = 0, dest_sockaddr = nil, *controls,
-                       exception: true)
-    __sendmsg_nonblock(mesg, flags, dest_sockaddr, controls, exception)
-  end
+  #def sendmsg_nonblock(mesg, flags = 0, dest_sockaddr = nil, *controls,
+  #                     exception: true)
+  #  __sendmsg_nonblock(mesg, flags, dest_sockaddr, controls, exception)
+  #end
 
   # call-seq:
   # 	basicsocket.recv_nonblock(maxlen [, flags [, buf [, options ]]]) => mesg
@@ -339,6 +339,7 @@ class BasicSocket < IO
   # === Parameters
   # * +maxlen+ - the number of bytes to receive from the socket
   # * +flags+ - zero or more of the +MSG_+ options
+  # * +buf+ - destination String buffer
   # * +options+ - keyword hash, supporting `exception: false`
   #
   # === Example
@@ -370,9 +371,9 @@ class BasicSocket < IO
   #
   # === See
   # * Socket#recvfrom
-  def recv_nonblock(len, flag = 0, str = nil, exception: true)
-    __recv_nonblock(len, flag, str, exception)
-  end
+  #def recv_nonblock(len, flag = 0, str = nil, exception: true)
+  #  __recv_nonblock(len, flag, str, exception)
+  #end
 
   # call-seq:
   #    basicsocket.recvmsg(maxmesglen=nil, flags=0, maxcontrollen=nil, opts={}) => [mesg, sender_addrinfo, rflags, *controls]
@@ -425,9 +426,9 @@ class BasicSocket < IO
   #       return ancdata.unix_rights[0]
   #     end
   #   }
-  def recvmsg(dlen = nil, flags = 0, clen = nil, scm_rights: false)
-    __recvmsg(dlen, flags, clen, scm_rights)
-  end
+  #def recvmsg(dlen = nil, flags = 0, clen = nil, scm_rights: false)
+  #  __recvmsg(dlen, flags, clen, scm_rights)
+  #end
 
   # call-seq:
   #    basicsocket.recvmsg_nonblock(maxdatalen=nil, flags=0, maxcontrollen=nil, opts={}) => [data, sender_addrinfo, rflags, *controls]
@@ -441,12 +442,23 @@ class BasicSocket < IO
   # By specifying a keyword argument _exception_ to +false+, you can indicate
   # that recvmsg_nonblock should not raise an IO::WaitReadable exception, but
   # return the symbol +:wait_readable+ instead.
-  def recvmsg_nonblock(dlen = nil, flags = 0, clen = nil,
-                       scm_rights: false, exception: true)
-    __recvmsg_nonblock(dlen, flags, clen, scm_rights, exception)
-  end
+  #def recvmsg_nonblock(dlen = nil, flags = 0, clen = nil,
+  #                     scm_rights: false, exception: true)
+  #  __recvmsg_nonblock(dlen, flags, clen, scm_rights, exception)
+  #end
 
-  end # unless RUBY_ENGINE == 'jruby'
+  # Linux-specific optimizations to avoid fcntl for IO#read_nonblock
+  # and IO#write_nonblock using MSG_DONTWAIT
+  # Do other platforms support MSG_DONTWAIT reliably?
+  #if RUBY_PLATFORM =~ /linux/ && Socket.const_defined?(:MSG_DONTWAIT)
+  #  def read_nonblock(len, str = nil, exception: true) # :nodoc:
+  #    __read_nonblock(len, str, exception)
+  #  end
+  #
+  #  def write_nonblock(buf, exception: true) # :nodoc:
+  #    __write_nonblock(buf, exception)
+  #  end
+  #end
 end
 
 class Socket < BasicSocket
@@ -526,9 +538,9 @@ class Socket < BasicSocket
   #
   # === See
   # * Socket#recvfrom
-  def recvfrom_nonblock(len, flag = 0, str = nil, exception: true)
-    __recvfrom_nonblock(len, flag, str, exception)
-  end
+  #def recvfrom_nonblock(len, flag = 0, str = nil, exception: true)
+  #  __recvfrom_nonblock(len, flag, str, exception)
+  #end
 
   # call-seq:
   #   socket.accept_nonblock([options]) => [client_socket, client_addrinfo]
@@ -583,9 +595,9 @@ class Socket < BasicSocket
   #
   # === See
   # * Socket#accept
-  def accept_nonblock(exception: true)
-    __accept_nonblock(exception)
-  end
+  #def accept_nonblock(exception: true)
+  #  __accept_nonblock(exception)
+  #end
 
   end # unless RUBY_ENGINE == 'jruby'
 
@@ -907,6 +919,7 @@ class Socket < BasicSocket
         ip_list << ai
       end
     }
+    ip_list.uniq!(&:to_sockaddr)
 
     if port == 0
       sockets = ip_sockets_port0(ip_list, false)
