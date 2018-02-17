@@ -62,7 +62,6 @@ STDLIB_FILES = %w[
   tsort.rb
   un.rb
   unicode_normalize
-  unicode_normalize.rb
   uri
   uri.rb
   webrick
