@@ -27,7 +27,6 @@
 package org.jruby.test;
 
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
@@ -99,25 +98,5 @@ public class TestMethodFactories extends TestRubyBase {
         RubyMethod rubyMethod = (RubyMethod)mod.method(runtime.newSymbol("a_module_method"));
 
         assertEquals(mod.getSingletonClass(), rubyMethod.owner(runtime.getCurrentContext()));
-    }
-
-    public static class VersionedMethods {
-        @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_8)
-        public static IRubyObject method18(IRubyObject self) {
-            return self;
-        }
-        @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_9)
-        public static IRubyObject method19(IRubyObject self) {
-            return self;
-        }
-    }
-
-    // #1194: ClassFormatError with Nokogiri 1.6.0
-    public void testVersionedMethods() {
-        RubyModule mod = runtime.defineModule("GH1194");
-
-        mod.defineAnnotatedMethods(VersionedMethods.class);
-
-        assertNotNull(mod.searchMethod("method"));
     }
 }

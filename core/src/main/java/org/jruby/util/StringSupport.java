@@ -34,7 +34,6 @@ import org.jcodings.constants.CharacterType;
 import org.jcodings.exception.EncodingError;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
@@ -652,11 +651,6 @@ public final class StringSupport {
                 throw runtime.newSecurityError("string contains null byte");
             }
         }
-    }
-
-    public static boolean isUnicode(Encoding enc) {
-        byte[] name = enc.getName();
-        return name.length > 4 && name[0] == 'U' && name[1] == 'T' && name[2] == 'F' && name[4] != '7';
     }
 
     public static String escapedCharFormat(int c, boolean isUnicode) {
@@ -2369,9 +2363,15 @@ public final class StringSupport {
         return -1;
     }
 
-    private static int rb_memsearch_qs_utf8_hash(byte[] xBytes, int x) {
-        int mix = 8353;
-        int h = xBytes[x] & 0xFF;
+    private static int rb_memsearch_qs_utf8_hash(byte[] xBytes, final int x) {
+        final int mix = 8353;
+        int h;
+        if (x != xBytes.length) {
+            h = xBytes[x] & 0xFF;
+        }
+        else {
+            h = '\0'; // (C) ary end - due y+m at rb_memsearch_qs_utf8
+        }
         if (h < 0xC0) {
             return h + 256;
         }
@@ -2409,7 +2409,7 @@ public final class StringSupport {
         for (; x < xe; ++x) {
             qstable[rb_memsearch_qs_utf8_hash(xsBytes, x)] = xe - x;
         }
-        /* Searching */
+        /* Searching */ // due y+m <= ... (y+m) might == ary.length
         for (; y + m <= ys + n; y += qstable[rb_memsearch_qs_utf8_hash(ysBytes, y+m)]) {
             if (xsBytes[xs] == ysBytes[y] && ByteList.memcmp(xsBytes, xs, ysBytes, y, m) == 0)
                 return y - ys;
@@ -2498,7 +2498,6 @@ public final class StringSupport {
         return (cr ^ (cr >> 1)) & CR_7BIT;
     }
 
-
     /**
      * This is a far from perfect method in that it will totally choke on anything not UTF-8.
      * However virtually nothing which was represented internally as a String would work with
@@ -2539,5 +2538,10 @@ public final class StringSupport {
         } catch (UnsupportedCharsetException e) {}
 
         return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+    }
+
+    @Deprecated
+    public static boolean isUnicode(Encoding enc) {
+        return enc.isUnicode();
     }
 }

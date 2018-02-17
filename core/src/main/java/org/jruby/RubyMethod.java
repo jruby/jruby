@@ -37,6 +37,7 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -162,6 +163,10 @@ public class RubyMethod extends AbstractRubyMethod {
         if (method instanceof ProcMethod) {
             return ((ProcMethod) method).isSame(((RubyMethod) other).getMethod());
         }
+        if (getMetaClass() != ((RubyBasicObject) other).getMetaClass()) {
+            return false;
+        }
+
         RubyMethod otherMethod = (RubyMethod)other;
         return receiver == otherMethod.receiver && originModule == otherMethod.originModule &&
             ( isSerialMatch(otherMethod.method) || isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) );
@@ -193,7 +198,9 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = "clone")
     @Override
     public RubyMethod rbClone() {
-        return newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        newMethod.setMetaClass(getMetaClass());
+        return newMethod;
     }
 
     /** Create a Proc object.
@@ -234,40 +241,63 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
     public IRubyObject inspect() {
-        StringBuilder str = new StringBuilder(24).append("#<");
-        char sharp = '#';
-        
-        str.append(getMetaClass().getRealClass().getName()).append(": ");
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
 
-        if (implementationModule.isSingleton()) {
-            IRubyObject attached = ((MetaClass) implementationModule).getAttached();
+        RubyString str = RubyString.newString(runtime, "#<");
+        String sharp = "#";
+        
+        str.catString(getType().getName()).catString(": ");
+
+        RubyModule definedClass;
+        RubyModule mklass = originModule;
+
+        if (method instanceof AliasMethod || method instanceof WrapperMethod) {
+            definedClass = method.getRealMethod().getDefinedClass();
+        }
+        else {
+            definedClass = method.getDefinedClass();
+        }
+
+        if (definedClass.isIncluded()) {
+            definedClass = definedClass.getMetaClass();
+        }
+
+        if (mklass.isSingleton()) {
+            IRubyObject attached = ((MetaClass) mklass).getAttached();
             if (receiver == null) {
-                str.append(implementationModule.inspect().toString());
+                str.cat19(inspect(context, mklass).convertToString());
             } else if (receiver == attached) {
-                str.append(attached.inspect().toString());
-                sharp = '.';
+                str.cat19(inspect(context, attached).convertToString());
+                sharp = ".";
             } else {
-                str.append(receiver.inspect().toString());
-                str.append('(').append(attached.inspect().toString()).append(')');
-                sharp = '.';
+                str.cat19(inspect(context, receiver).convertToString());
+                str.catString("(");
+                str.cat19(inspect(context, attached).convertToString());
+                str.catString(")");
+                sharp = ".";
             }
         } else {
-            str.append(originModule.getName());
-            if (implementationModule != originModule) {
-                str.append('(').append(implementationModule.getName()).append(')');
+            str.catString(mklass.getName());
+            if (definedClass != mklass) {
+                str.catString("(");
+                str.catString(definedClass.getName());
+                str.catString(")");
             }
         }
-
-        str.append(sharp).append(methodName); // (real-name) if alias
-        final String realName= method.getRealMethod().getName();
-        if ( realName != null && ! methodName.equals(realName) ) {
-            str.append('(').append(realName).append(')');
+        str.catString(sharp);
+        str.catString(this.methodName);
+        if (!methodName.equals(method.getName())) {
+            str.catString("(");
+            str.catString(method.getName());
+            str.catString(")");
         }
-        str.append('>');
-        
-        RubyString res = RubyString.newString(getRuntime(), str);
-        res.setTaint(isTaint());
-        return res;
+        if (method.isNotImplemented()) {
+            str.catString(" (not-implemented)");
+        }
+        str.catString(">");
+
+        return str;
     }
 
     @JRubyMethod

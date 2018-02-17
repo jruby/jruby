@@ -47,6 +47,7 @@ public class UndefinedMethod extends DynamicMethod {
      * Constructor for the one UndefinedMethod instance.
      */
     private UndefinedMethod() {
+        super("(undefined)");
     }
 
     /**

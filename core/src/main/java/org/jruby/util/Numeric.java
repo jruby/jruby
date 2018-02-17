@@ -31,6 +31,7 @@ import org.joni.Regex;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
+import org.jruby.RubyComplex;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
@@ -53,23 +54,40 @@ public class Numeric {
         return sites(context).op_plus.call(context, x, x, y);
     }
 
+    public static RubyInteger f_add(ThreadContext context, RubyInteger x, RubyInteger y) {
+        return (RubyInteger) x.op_plus(context, y);
+    }
+
     /** f_cmp
      * 
      */
     public static IRubyObject f_cmp(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            long c = ((RubyFixnum) x).getLongValue() - ((RubyFixnum) y).getLongValue();
-            if (c > 0) return RubyFixnum.one(context.runtime); // x > y
-            if (c < 0) return RubyFixnum.minus_one(context.runtime); // x < y
-            return RubyFixnum.zero(context.runtime);
-        }
-        if (x instanceof RubyInteger && y instanceof RubyInteger) { // RubyBignum || RubyFixnum
-            BigInteger c = ((RubyInteger) x).getBigIntegerValue().subtract( ((RubyInteger) y).getBigIntegerValue() );
-            if (c.signum() > 0) return RubyFixnum.one(context.runtime); // x > y
-            if (c.signum() < 0) return RubyFixnum.minus_one(context.runtime); // x < y
-            return RubyFixnum.zero(context.runtime);
+        if (x instanceof RubyInteger && y instanceof RubyInteger) {
+            return f_cmp(context, (RubyInteger) x, (RubyInteger) y);
         }
         return sites(context).op_cmp.call(context, x, x, y);
+    }
+
+    public static RubyFixnum f_cmp(ThreadContext context, RubyInteger x, RubyInteger y) {
+        final int cmp;
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
+            cmp = Long.compare(((RubyFixnum) x).getLongValue(), ((RubyFixnum) y).getLongValue());
+        }
+        else { // RubyBignum || RubyFixnum
+            cmp = x.getBigIntegerValue().compareTo(y.getBigIntegerValue());
+        }
+        return RubyFixnum.newFixnum(context.runtime, cmp);
+    }
+
+    public static RubyFixnum f_cmp(ThreadContext context, RubyInteger x, long y) {
+        final int cmp;
+        if (x instanceof RubyFixnum) {
+            cmp = Long.compare(((RubyFixnum) x).getLongValue(), y);
+        }
+        else { // RubyBignum
+            cmp = x.getBigIntegerValue().compareTo(BigInteger.valueOf(y));
+        }
+        return RubyFixnum.newFixnum(context.runtime, cmp);
     }
 
     /** f_div
@@ -83,23 +101,37 @@ public class Numeric {
     /** f_gt_p 
      * 
      */
-    public static IRubyObject f_gt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static boolean f_gt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue() ? context.runtime.getTrue() : context.runtime.getFalse();
+            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue();
         }
-        return sites(context).op_gt.call(context, x, x, y);
+        return sites(context).op_gt.call(context, x, x, y).isTrue();
+    }
+
+    public static boolean f_gt_p(ThreadContext context, RubyInteger x, RubyInteger y) {
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
+            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue();
+        }
+        return x.getBigIntegerValue().compareTo(y.getBigIntegerValue()) > 0;
     }
 
     /** f_lt_p 
      * 
      */
-    public static IRubyObject f_lt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static boolean f_lt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue() ? context.runtime.getTrue() : context.runtime.getFalse();
+            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue();
         }
-        return sites(context).op_lt.call(context, x, x, y);
+        return sites(context).op_lt.call(context, x, x, y).isTrue();
     }
-    
+
+    public static boolean f_lt_p(ThreadContext context, RubyInteger x, RubyInteger y) {
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
+            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue();
+        }
+        return x.getBigIntegerValue().compareTo(y.getBigIntegerValue()) < 0;
+    }
+
     /** f_mod
      * 
      */
@@ -115,17 +147,23 @@ public class Numeric {
         if (y instanceof RubyFixnum) {
             long iy = ((RubyFixnum) y).getLongValue();
             if (iy == 1) return x;
-            if (iy == 0 && x instanceof RubyInteger) {
-                return RubyFixnum.zero(runtime);
+            if (x instanceof RubyInteger) {
+                if (iy == 0) return RubyFixnum.zero(runtime);
+                return f_mul(context, (RubyInteger) x, (RubyFixnum) y);
             }
         } else if (x instanceof RubyFixnum) {
             long ix = ((RubyFixnum) x).getLongValue();
             if (ix == 1) return y;
-            if (ix == 0 && y instanceof RubyInteger) {
-                return RubyFixnum.zero(runtime);
+            if (y instanceof RubyInteger) {
+                if (ix == 0) return RubyFixnum.zero(runtime);
+                return f_mul(context, (RubyFixnum) x, (RubyInteger) y);
             }
         }
         return sites(context).op_times.call(context, x, x, y);
+    }
+
+    public static RubyInteger f_mul(ThreadContext context, RubyInteger x, RubyInteger y) {
+        return (RubyInteger) x.op_mul(context, y);
     }
 
     // MRI: safe_mul
@@ -149,11 +187,19 @@ public class Numeric {
         return sites(context).op_minus.call(context, x, x, y);
     }
 
+    public static RubyInteger f_sub(ThreadContext context, RubyInteger x, RubyInteger y) {
+        return (RubyInteger) x.op_minus(context, y);
+    }
+
     /** f_xor
      * 
      */
-    public  static IRubyObject f_xor(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static IRubyObject f_xor(ThreadContext context, IRubyObject x, IRubyObject y) {
         return sites(context).op_xor.call(context, x, x, y);
+    }
+
+    public static IRubyObject f_xor(ThreadContext context, RubyInteger x, RubyInteger y) {
+        return x.op_xor(context, y);
     }
 
     /** f_abs
@@ -161,6 +207,14 @@ public class Numeric {
      */
     public static IRubyObject f_abs(ThreadContext context, IRubyObject x) {
         return sites(context).abs.call(context, x, x);
+    }
+
+    public static RubyInteger f_abs(ThreadContext context, RubyInteger x) {
+        return (RubyInteger) x.abs(context);
+    }
+
+    public static RubyFloat f_abs(ThreadContext context, RubyFloat x) {
+        return (RubyFloat) x.abs(context);
     }
 
     /** f_abs2
@@ -193,9 +247,9 @@ public class Numeric {
 
     /** f_exact_p
      * 
-     */
-    public static IRubyObject f_exact_p(ThreadContext context, IRubyObject x) {
-        return sites(context).exact.call(context, x, x);
+     */ // NOTE: not (really) used
+    public static boolean f_exact_p(ThreadContext context, IRubyObject x) {
+        return sites(context).exact.call(context, x, x).isTrue();
     }
 
     /** f_numerator
@@ -215,15 +269,40 @@ public class Numeric {
     /** f_real_p
      * 
      */
-    public static IRubyObject f_real_p(ThreadContext context, IRubyObject x) {
-        return sites(context).real.call(context, x, x);
+    public static boolean f_real_p(ThreadContext context, IRubyObject x) {
+        // NOTE: can not use instanceof RubyNumeric + ((RubyNumeric) x).isReal()
+        // since Numeric is not a terminal type -> might get sub-classed by user
+        switch (x.getMetaClass().getClassIndex()) {
+            case FLOAT:
+            case FIXNUM:
+            case BIGNUM:
+            case RATIONAL:
+                return ((RubyNumeric) x).isReal(); // true
+            case COMPLEX:
+                return ((RubyComplex) x).isReal(); // false
+
+        }
+        return sites(context).real.call(context, x, x).isTrue();
     }
 
     /** f_integer_p
      * 
      */
-    public static IRubyObject f_integer_p(ThreadContext context, IRubyObject x) {
-        return sites(context).integer.call(context, x, x);
+    public static boolean f_integer_p(ThreadContext context, IRubyObject x) {
+        return sites(context).integer.call(context, x, x).isTrue();
+    }
+
+    public static boolean f_integer_p(ThreadContext context, RubyNumeric x) {
+        switch (x.getMetaClass().getClassIndex()) {
+            case FIXNUM:
+            case BIGNUM:
+                return true;
+            case FLOAT:
+            case RATIONAL:
+            case COMPLEX:
+                return false;
+        }
+        return sites(context).integer.call(context, x, x).isTrue();
     }
 
     /** f_divmod
@@ -231,6 +310,10 @@ public class Numeric {
      */
     public static IRubyObject f_divmod(ThreadContext context, IRubyObject x, IRubyObject y) {
         return sites(context).divmod.call(context, x, x, y);
+    }
+
+    public static IRubyObject f_divmod(ThreadContext context, RubyInteger x, IRubyObject y) {
+        return x.divmod(context, y);
     }
 
     /** f_floor
@@ -253,7 +336,11 @@ public class Numeric {
     public static IRubyObject f_negate(ThreadContext context, IRubyObject x) {
         return sites(context).op_uminus.call(context, x, x);
     }
-    
+
+    public static RubyInteger f_negate(ThreadContext context, RubyInteger x) {
+        return x.negate();
+    }
+
     /** f_to_f
      * 
      */
@@ -274,7 +361,11 @@ public class Numeric {
     public static IRubyObject f_to_r(ThreadContext context, IRubyObject x) {
         return sites(context).to_r.call(context, x, x);
     }
-    
+
+    public static RubyNumeric f_to_r(ThreadContext context, RubyInteger x) {
+        return (RubyNumeric) x.to_r(context);
+    }
+
     /** f_to_s
      * 
      */
@@ -303,25 +394,41 @@ public class Numeric {
         return sites(context).op_equals.call(context, x, x, y);
     }
 
+    public static IRubyObject f_equal(ThreadContext context, RubyInteger x, RubyInteger y) {
+        return x.op_equal(context, y);
+    }
+
     /** f_expt
      * 
      */
     public static IRubyObject f_expt(ThreadContext context, IRubyObject x, IRubyObject y) {
         return sites(context).op_exp.call(context, x, x, y);
     }
-    
+
+    public static RubyNumeric f_expt(ThreadContext context, RubyInteger x, RubyInteger y) {
+        return (RubyNumeric) x.op_pow(context, y);
+    }
+
     /** f_idiv
      * 
      */
     public static IRubyObject f_idiv(ThreadContext context, IRubyObject x, IRubyObject y) {
         return sites(context).div.call(context, x, x, y);
     }
-    
+
+    public static RubyInteger f_idiv(ThreadContext context, RubyInteger x, RubyInteger y) {
+        return (RubyInteger) x.idiv(context, y);
+    }
+
     /** f_quo
      * 
      */
     public static IRubyObject f_quo(ThreadContext context, IRubyObject x, IRubyObject y) {
         return sites(context).quo.call(context, x, x, y);
+    }
+
+    public static IRubyObject f_quo(ThreadContext context, RubyFloat x, RubyFloat y) {
+        return x.quo(context, y);
     }
 
     /** f_rshift
@@ -345,14 +452,26 @@ public class Numeric {
         if (x instanceof RubyInteger) return ((RubyInteger) x).signum() == -1;
         return sites(context).op_lt.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
     }
-    
+
+    public static boolean f_negative_p(ThreadContext context, RubyInteger x) {
+        return x.signum() == -1;
+    }
+
+    public static boolean f_negative_p(ThreadContext context, RubyFloat x) {
+        return x.signum() == -1;
+    }
+
     /** f_zero_p
      * 
      */
     public static boolean f_zero_p(ThreadContext context, IRubyObject x) {
-        if (x instanceof RubyInteger) return ((RubyInteger) x).signum() == 0;
+        if (x instanceof RubyInteger) return ((RubyInteger) x).isZero();
         if (x instanceof RubyFloat) return ((RubyFloat) x).signum() == 0;
         return sites(context).op_equals.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
+    }
+
+    public static boolean f_zero_p(ThreadContext context, RubyInteger x) {
+        return x.isZero();
     }
     
     /** f_one_p
@@ -430,7 +549,21 @@ public class Numeric {
             y = z;
         }
     }
-    
+
+    // 'fast' gcd version
+    public static RubyInteger f_gcd(ThreadContext context, RubyInteger x, RubyInteger y) {
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
+            return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
+        }
+
+        BigInteger gcd = x.getBigIntegerValue().gcd(y.getBigIntegerValue());
+
+        if (gcd.compareTo(RubyBignum.LONG_MAX) <= 0) { // gcd always positive
+            return RubyFixnum.newFixnum(context.runtime, gcd.longValue());
+        }
+        return RubyBignum.newBignum(context.runtime, gcd);
+    }
+
     /** f_lcm
      * 
      */
@@ -490,7 +623,7 @@ public class Numeric {
         return n < SQRT_LONG_MAX && n >= -SQRT_LONG_MAX;
     }
 
-    public static IRubyObject int_pow(ThreadContext context, long x, long y) {
+    public static RubyNumeric int_pow(ThreadContext context, long x, long y) {
         boolean neg = x < 0;
         long z = 1;
         if (neg) x = -x;
@@ -506,18 +639,18 @@ public class Numeric {
         do {
             while (y % 2 == 0) {
                 if (!fitSqrtLong(x)) {
-                    IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, RubyFixnum.newFixnum(runtime, y));
+                    IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, y);
                     if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
-                    return v;
+                    return (RubyNumeric) v;
                 }
                 x *= x;
                 y >>= 1;
             }
             
             if (multiplyOverflows(x, z)) {
-                IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, RubyFixnum.newFixnum(runtime, y));
+                IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, y);
                 if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
-                return v;
+                return (RubyNumeric) v;
             }
             z = x * z;
         } while(--y != 0);
@@ -640,10 +773,8 @@ public class Numeric {
         This rational number is already in lowest terms because
         p[i]*q[i-1]-p[i-1]*q[i] = (-1)^i.
     */
-    public static IRubyObject[] nurat_rationalize_internal(ThreadContext context, IRubyObject[] ary) {
-        IRubyObject a, b, p, q;
-        a = ary[0];
-        b = ary[1];
+    public static IRubyObject[] nurat_rationalize_internal(ThreadContext context, IRubyObject a, IRubyObject b) {
+        IRubyObject p, q;
         IRubyObject c, k, t, p0, p1, p2, q0, q1, q2;
 
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
@@ -654,7 +785,7 @@ public class Numeric {
 
         while (true) {
             c = sites(context).ceil.call(context, a, a);
-            if (f_lt_p(context, c, b).isTrue()) {
+            if (f_lt_p(context, c, b)) {
                 break;
             }
             k = f_sub(context, c, one);
@@ -671,8 +802,12 @@ public class Numeric {
         p = f_add(context, f_mul(context, c, p1), p0);
         q = f_add(context, f_mul(context, c, q1), q0);
 
-        return new IRubyObject[]{ p, q };
+        return new IRubyObject[] { p, q };
 
+    }
+
+    public static IRubyObject[] nurat_rationalize_internal(ThreadContext context, IRubyObject[] ary) {
+        return nurat_rationalize_internal(context, ary[0], ary[1]);
     }
 
     public static void checkInteger(ThreadContext context, IRubyObject obj) {

@@ -41,6 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 
 import static org.jruby.javasupport.JavaUtil.CAN_SET_ACCESSIBLE;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
@@ -226,8 +227,8 @@ public abstract class JavaUtil {
         @JRubyMethod
         public static IRubyObject dup(final ThreadContext context, final IRubyObject self) {
             java.util.Collection coll = unwrapIfJavaObject(self);
-            final JavaProxy dup = (JavaProxy) self.dup();
-            if ( coll == dup.getObject() ) { // not Cloneable
+            final JavaProxy dup = (JavaProxy) ((RubyBasicObject) self).dup();
+            if ( coll == dup.getObject() && ! (coll instanceof Cloneable) ) {
                 dup.setObject( tryNewEqualInstance(coll) );
             }
             return dup;
@@ -236,8 +237,8 @@ public abstract class JavaUtil {
         @JRubyMethod
         public static IRubyObject clone(final ThreadContext context, final IRubyObject self) {
             java.util.Collection coll = unwrapIfJavaObject(self);
-            final JavaProxy dup = (JavaProxy) self.rbClone();
-            if ( coll == dup.getObject() ) { // not Cloneable
+            final JavaProxy dup = (JavaProxy) ((RubyBasicObject) self).rbClone();
+            if ( coll == dup.getObject() && ! (coll instanceof Cloneable) ) {
                 dup.setObject( tryNewEqualInstance(coll) );
             }
             return dup;
@@ -608,8 +609,10 @@ public abstract class JavaUtil {
                     }
                 }
             }
-            if ( CAN_SET_ACCESSIBLE ) best.setAccessible(true);
-            return (java.util.Collection) best.newInstance(coll);
+            if ( best != null ) {
+                if ( CAN_SET_ACCESSIBLE ) best.setAccessible(true);
+                return (java.util.Collection) best.newInstance(coll);
+            }
         }
         catch (IllegalAccessException e) {
             // fallback on getConstructor();
@@ -621,18 +624,25 @@ public abstract class JavaUtil {
             Helpers.throwException(e.getTargetException()); return null;
         }
 
+        final java.util.Collection clone;
         try {
-            java.util.Collection clone = klass.newInstance();
-            clone.addAll(coll);
-            return clone;
+            clone = klass.newInstance();
         }
         catch (IllegalAccessException e) {
             // can not clone - most of Collections. returned types (e.g. EMPTY_LIST)
             return coll;
         }
         catch (InstantiationException e) {
-            return coll;
+            Helpers.throwException(e); return null;
         }
+
+        //try {
+            clone.addAll(coll);
+        //}
+        //catch (UnsupportedOperationException|IllegalStateException e) {
+            // NOTE: maybe its better not mapping into a Ruby TypeError ?!
+        //}
+        return clone;
     }
 
 }

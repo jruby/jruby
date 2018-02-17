@@ -148,16 +148,14 @@ public class HeredocTerm extends StrTerm {
             ByteList tok = new ByteList();
             tok.setEncoding(lexer.getEncoding());
             if (c == '#') {
-                switch (c = lexer.nextc()) {
-                    case '$':
-                    case '@':
-                        lexer.pushback(c);
-                        return RubyParser.tSTRING_DVAR;
-                    case '{':
-                        lexer.commandStart = true;
-                        return RubyParser.tSTRING_DBEG;
+                int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
+
+                if (token != 0) {
+                    return token;
+                } else {
+                    tok.append(c);
+                    c = lexer.nextc();
                 }
-                tok.append('#');
             }
 
             // MRI has extra pointer which makes our code look a little bit more strange in comparison
@@ -188,8 +186,7 @@ public class HeredocTerm extends StrTerm {
             str = tok;
         }
 
-        lexer.heredoc_restore(this);
-        lexer.setStrTerm(new StringTerm(-1, '\0', '\0', lexer.getRubySourceline()));
+        lexer.pushback(c);
         lexer.setValue(lexer.createStr(str, 0));
         return RubyParser.tSTRING_CONTENT;
     }

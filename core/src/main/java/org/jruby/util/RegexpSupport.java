@@ -224,7 +224,7 @@ public class RegexpSupport {
         if (!needEscape) {
             to.append(bytes, start, len);
         } else {
-            boolean isUnicode = StringSupport.isUnicode(enc);
+            boolean isUnicode = enc.isUnicode();
             p = start;
             while (p < end) {
                 final int c;
@@ -469,7 +469,7 @@ public class RegexpSupport {
      * @param mode error mode
      */
     private static void appendUtf8(Ruby runtime, ByteList to, int code, Encoding[] enc, ByteList str, ErrorMode mode) {
-        checkUnicodeRange(runtime, code, str, mode);
+        checkUnicodeRange(runtime, code, str, ErrorMode.PREPROCESS);
 
         if (code < 0x80) {
             if (to != null) Sprintf.sprintf(runtime, to, "\\x%02X", code);

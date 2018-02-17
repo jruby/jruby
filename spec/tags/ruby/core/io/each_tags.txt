@@ -1,3 +1,4 @@
-fails:IO#each with limit when limit is 0 raises an ArgumentError
+critical:IO#each with limit when limit is 0 raises an ArgumentError
 windows:IO#each with no separator yields each line starting from the current position
 windows:IO#each when passed nil as a separator yields self's content starting from the current position when the passed separator is nil
+fails:IO#each with both separator and limit when no block is given returns an Enumerator

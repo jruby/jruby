@@ -313,8 +313,8 @@ describe "CApiObject" do
 
     it "does not rescue exceptions raised by #to_ary" do
       obj = mock("to_ary")
-      obj.should_receive(:to_ary).and_raise(RuntimeError)
-      lambda { @o.rb_check_array_type obj }.should raise_error(RuntimeError)
+      obj.should_receive(:to_ary).and_raise(frozen_error_class)
+      lambda { @o.rb_check_array_type obj }.should raise_error(frozen_error_class)
     end
   end
 
@@ -401,6 +401,31 @@ describe "CApiObject" do
       obj.should_receive(:to_integer).and_return("string")
 
       @o.rb_check_to_integer(obj, "to_integer").should be_nil
+    end
+  end
+
+  describe "FL_ABLE" do
+    it "returns correct boolean for type" do
+      @o.FL_ABLE(Object.new).should be_true
+      @o.FL_ABLE(true).should be_false
+      @o.FL_ABLE(nil).should be_false
+      @o.FL_ABLE(1).should be_false
+    end
+  end
+
+  describe "FL_TEST" do
+    it "returns correct status for FL_TAINT" do
+      obj = Object.new
+      @o.FL_TEST(obj, "FL_TAINT").should == 0
+      obj.taint
+      @o.FL_TEST(obj, "FL_TAINT").should_not == 0
+    end
+
+    it "returns correct status for FL_FREEZE" do
+      obj = Object.new
+      @o.FL_TEST(obj, "FL_FREEZE").should == 0
+      obj.freeze
+      @o.FL_TEST(obj, "FL_FREEZE").should_not == 0
     end
   end
 
@@ -641,14 +666,14 @@ describe "CApiObject" do
       obj.tainted?.should == true
     end
 
-    it "raises a RuntimeError if the object passed is frozen" do
-      lambda { @o.rb_obj_taint("".freeze) }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class} if the object passed is frozen" do
+      lambda { @o.rb_obj_taint("".freeze) }.should raise_error(frozen_error_class)
     end
   end
 
   describe "rb_check_frozen" do
-    it "raises a RuntimeError if the obj is frozen" do
-      lambda { @o.rb_check_frozen("".freeze) }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class} if the obj is frozen" do
+      lambda { @o.rb_check_frozen("".freeze) }.should raise_error(frozen_error_class)
     end
 
     it "does nothing when object isn't frozen" do

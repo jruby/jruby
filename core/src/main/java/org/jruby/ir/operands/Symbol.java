@@ -11,7 +11,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
-public class Symbol extends ImmutableLiteral {
+public class Symbol extends ImmutableLiteral implements Stringable {
     public static final Symbol KW_REST_ARG_DUMMY = new Symbol("", ASCIIEncoding.INSTANCE);
 
     private final ByteList bytes;

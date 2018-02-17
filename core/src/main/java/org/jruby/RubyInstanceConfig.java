@@ -608,15 +608,6 @@ public class RubyInstanceConfig {
         return input;
     }
 
-    @Deprecated
-    public CompatVersion getCompatVersion() {
-        return CompatVersion.RUBY2_1;
-    }
-
-    @Deprecated
-    public void setCompatVersion(CompatVersion compatVersion) {
-    }
-
     public void setOutput(PrintStream newOutput) {
         output = newOutput;
     }
@@ -1893,14 +1884,16 @@ public class RubyInstanceConfig {
     private static int initGlobalJavaVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
-            case "1.6" : return Opcodes.V1_6; // 50
-            case "1.7" : return Opcodes.V1_7; // 51
+            case "1.6" :
+            case "1.7" : throw new UnsupportedClassVersionError("JRuby requires Java 8 or higher");
             case "1.8" : case "8" : return Opcodes.V1_8; // 52
-            // NOTE: JDK 9 now returns "9" instead of "1.9"
-            case "1.9" : case "9" : return Opcodes.V1_8 + 1; // 53
             default :
-                System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.7");
-                return Opcodes.V1_7;
+                int version = Integer.parseInt(specVersion);
+                if (version >= 9) {
+                    return Opcodes.V9;
+                } else {
+                    throw new UnsupportedClassVersionError("JRuby requires Java 8 or higher");
+                }
         }
     }
 
@@ -2033,5 +2026,14 @@ public class RubyInstanceConfig {
     @Deprecated
     public boolean getIPv4Preferred() {
         return Options.PREFER_IPV4.load();
+    }
+
+    @Deprecated
+    public CompatVersion getCompatVersion() {
+        return CompatVersion.RUBY2_1;
+    }
+
+    @Deprecated
+    public void setCompatVersion(CompatVersion compatVersion) {
     }
 }

@@ -143,9 +143,12 @@ public abstract class RealClassGenerator {
         Map<String, List<Method>> simpleToAll = buildSimpleToAllMap(interfaces, superTypeNames, rubyClass);
 
         Class newClass = defineRealImplClass(ruby, name, superClass, superTypeNames, simpleToAll);
-        if (!newClass.isAssignableFrom(interfaces[0])) {
-            new RuntimeException(newClass.getInterfaces()[0].getClassLoader() + " " + interfaces[0].getClassLoader());
+
+        // Confirm all interfaces got implemented
+        for (Class ifc : interfaces) {
+            assert ifc.isAssignableFrom(newClass);
         }
+
         return newClass;
     }
 

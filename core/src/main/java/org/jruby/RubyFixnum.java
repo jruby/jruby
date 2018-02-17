@@ -51,6 +51,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
@@ -186,7 +187,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyInteger negate() {
-        return RubyFixnum.newFixnum(getRuntime(), -value);
+        return negate(getRuntime(), value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
@@ -244,25 +245,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public final int hashCode() {
         return (int) (value ^ value >>> 32);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-
-        if (other instanceof RubyFixnum) {
-            RubyFixnum num = (RubyFixnum)other;
-
-            if (num.value == value) {
-                return true;
-            }
-        } else if (other instanceof RubyFloat) {
-            return (double)value == ((RubyFloat) other).getDoubleValue();
-        }
-
-        return false;
     }
 
     /*  ================
@@ -446,10 +428,14 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
+        return negate(context.runtime, value);
+    }
+
+    private static RubyInteger negate(final Ruby runtime, final long value) {
         if (value == MIN) { // a gotcha
-            return RubyBignum.newBignum(getRuntime(), BigInteger.valueOf(value).negate());
+            return RubyBignum.newBignum(runtime, BigInteger.valueOf(value).negate());
         }
-        return RubyFixnum.newFixnum(getRuntime(), -value);
+        return RubyFixnum.newFixnum(runtime, -value);
     }
 
     /** fix_plus
@@ -463,6 +449,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return addOther(context, other);
     }
 
+    @Override
     public IRubyObject op_plus(ThreadContext context, long otherValue) {
         long result = value + otherValue;
         if (Helpers.additionOverflowed(value, otherValue, result)) {
@@ -488,17 +475,17 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return newFixnum(context.runtime, result);
     }
 
-    private IRubyObject addFixnum(ThreadContext context, RubyFixnum other) {
+    private RubyInteger addFixnum(ThreadContext context, RubyFixnum other) {
         long otherValue = other.value;
         long result = value + otherValue;
         if (Helpers.additionOverflowed(value, otherValue, result)) {
-            return addAsBignum(context, other);
+            return (RubyInteger) addAsBignum(context, other);
         }
         return newFixnum(context.runtime, result);
     }
 
     private IRubyObject addAsBignum(ThreadContext context, RubyFixnum other) {
-        return RubyBignum.newBignum(context.runtime, value).op_plus(context, other);
+        return RubyBignum.newBignum(context.runtime, value).op_plus(context, other.value);
     }
 
     private IRubyObject addAsBignum(ThreadContext context, long other) {
@@ -507,7 +494,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     private IRubyObject addOther(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) {
-            return ((RubyBignum) other).op_plus(context, this);
+            return ((RubyBignum) other).op_plus(context, this.value);
         }
         if (other instanceof RubyFloat) {
             return context.runtime.newFloat((double) value + ((RubyFloat) other).getDoubleValue());
@@ -526,6 +513,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return subtractOther(context, other);
     }
 
+    @Override
     public IRubyObject op_minus(ThreadContext context, long otherValue) {
         long result = value - otherValue;
         if (Helpers.subtractionOverflowed(value, otherValue, result)) {
@@ -584,21 +572,21 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return op_mul(context, ((RubyFixnum) other).value);
-        } else {
-            return multiplyOther(context, other);
         }
+        return multiplyOther(context, other);
     }
 
     private IRubyObject multiplyOther(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
         if (other instanceof RubyBignum) {
-            return ((RubyBignum) other).op_mul(context, this);
+            return ((RubyBignum) other).op_mul(context, this.value);
         } else if (other instanceof RubyFloat) {
             return runtime.newFloat((double) value * ((RubyFloat) other).getDoubleValue());
         }
         return coerceBin(context, sites(context).op_times, other);
     }
 
+    @Override
     public IRubyObject op_mul(ThreadContext context, long otherValue) {
         // See JRUBY-6612 for reasons for these different cases.
         // The problem is that these Java long calculations overflow:
@@ -650,12 +638,17 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     @Override
+    public IRubyObject idiv(ThreadContext context, long other) {
+        return idivLong(context, value, other);
+    }
+
+    @Override
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
         return idiv(context, other, sites(context).op_quo);
     }
 
     public IRubyObject op_div(ThreadContext context, long other) {
-        return idiv(context, other, "/");
+        return idivLong(context, value, other);
     }
 
     @Override
@@ -693,13 +686,14 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return coerceBin(context, site, other);
     }
 
+    @Deprecated
     public IRubyObject idiv(ThreadContext context, long y, String method) {
         long x = value;
 
         return idivLong(context, x, y);
     }
 
-    private IRubyObject idivLong(ThreadContext context, long x, long y) {
+    private RubyInteger idivLong(ThreadContext context, long x, long y) {
         final Ruby runtime = context.runtime;
         if (y == 0) {
             throw runtime.newZeroDivisionError();
@@ -814,15 +808,14 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
                 return numFuncall(context, complex, sites(context).op_exp_complex, other);
             }
             if (other instanceof RubyFixnum) {
-                return powerFixnum(context, other);
+                return powerFixnum(context, (RubyFixnum) other);
             }
         }
         return powerOther(context, other);
     }
 
     public IRubyObject op_pow(ThreadContext context, long other) {
-        // FIXME this needs to do the right thing for 1.9 mode before we can use it
-        throw context.runtime.newRuntimeError("bug: using direct op_pow(long) in 1.8 mode");
+        return powerFixnum(context, RubyFixnum.newFixnum(context.runtime, other));
     }
 
     @Deprecated
@@ -853,10 +846,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return coerceBin(context, sites(context).op_exp, other);
     }
 
-    private IRubyObject powerFixnum(ThreadContext context, IRubyObject other) {
+    private IRubyObject powerFixnum(ThreadContext context, RubyFixnum other) {
         Ruby runtime = context.runtime;
         long a = value;
-        long b = ((RubyFixnum) other).value;
+        long b = other.value;
         if (b < 0) {
             RubyRational rational = RubyRational.newRationalRaw(runtime, this);
             return numFuncall(context, rational, sites(context).op_exp_rational, other);
@@ -920,7 +913,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return value == other;
     }
 
-    public boolean fastEqual(RubyFixnum other) {
+    public final boolean fastEqual(RubyFixnum other) {
         return value == other.value;
     }
 
@@ -933,6 +926,15 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return RubyBoolean.newBoolean(context.runtime, (double) value == ((RubyFloat) other).getDoubleValue());
         }
         return super.op_num_equal(context, other);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (other instanceof RubyFixnum) {
+            return value == ((RubyFixnum) other).value;
+        }
+        return false;
     }
 
     @Override
@@ -1247,6 +1249,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return newFixnum((long) ((BIT_SIZE + 7) / 8));
     }
 
+    @Deprecated
     public IRubyObject zero_p() {
         return zero_p(getRuntime().getCurrentContext());
     }
@@ -1256,7 +1259,17 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(getRuntime(), value == 0);
+        return RubyBoolean.newBoolean(context.runtime, value == 0);
+    }
+
+    @Override
+    public final boolean isZero() {
+        return value == 0;
+    }
+
+    @Override
+    final boolean isOne() {
+        return value == 1;
     }
 
     @Override
@@ -1314,31 +1327,34 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject fdivDouble(ThreadContext context, IRubyObject y) {
         if (y instanceof RubyFixnum) {
             return context.runtime.newFloat(((double) value) / ((double) fix2long(y)));
-        } else if (y instanceof RubyBignum) {
-            return RubyBignum.newBignum(context.runtime, value).fdivDouble(context, y);
-        } else if (y instanceof RubyFloat) {
-            return context.runtime.newFloat(((double) value) / ((RubyFloat) y).getDoubleValue());
-        } else {
-            return coerceBin(context, sites(context).fdiv, y);
         }
+        if (y instanceof RubyBignum) {
+            return RubyBignum.newBignum(context.runtime, value).fdivDouble(context, (RubyBignum) y);
+        }
+        if (y instanceof RubyFloat) {
+            return context.runtime.newFloat(((double) value) / ((RubyFloat) y).getDoubleValue());
+        }
+        return coerceBin(context, sites(context).fdiv, y);
     }
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sites(context).basic_op_lt.retrieveCache(metaClass).method.isBuiltin()) {
+        CachingCallSite op_lt_site = sites(context).basic_op_lt;
+        if (op_lt_site.retrieveCache(metaClass).method.isBuiltin()) {
             return runtime.newBoolean(value < 0);
         }
-        return sites(context).basic_op_lt.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_lt_site.call(context, this, this, RubyFixnum.zero(runtime));
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sites(context).basic_op_gt.retrieveCache(metaClass).method.isBuiltin()) {
+        CachingCallSite op_gt_site = sites(context).basic_op_gt;
+        if (op_gt_site.retrieveCache(metaClass).method.isBuiltin()) {
             return runtime.newBoolean(value > 0);
         }
-        return sites(context).basic_op_gt.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_gt_site.call(context, this, this, RubyFixnum.zero(runtime));
     }
 
     @Override

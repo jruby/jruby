@@ -63,7 +63,7 @@ verify that JRuby is still fully functional.
 
 ### Hacking the Build System
 
-for a general overview of the different directories and maven artifacts see [JRuby Build)](https://github.com/jruby/jruby/wiki/JRuby-Build----Some-Inside-Info)
+for a general overview of the different directories and maven artifacts see [JRuby Build](https://github.com/jruby/jruby/wiki/JRuby-Build----Some-Inside-Info)
 
 For this only  the ***pom.rb*** needs to edited. using mvn-3.3.x or the maven wrapper `./mvnw` will generate the pom.xml file where needed. For the jar files of the build those pom.xml will be generated for some use-cases, i.e. some IDEs need them.
 
@@ -123,19 +123,21 @@ from MRI's tests (under test/mri), use one of the following commands:
 The MRI suite (under `test/mri`) has a runner script in `test/mri/runner.rb` that sets up
 an appropriate test environment. Many of the MRI tests will need to be run via this script.
 ```
-jruby -r ./test/mri_test_env.rb test/mri/runner.rb test/mri/<path to test>
+jruby test/mri/runner.rb test/mri/<path to test>
 ```
 
-You can pass `-v` to the runner for verbose output or `-n test_method_name` to only run a single test method.  If you are interested in all failures you can exlude the -r option (of mri_test_env.rb).  Some excluded tests are inherent limitations of JRuby and some are just problems we have not gotten to yet.
+You can pass `-v` to the runner for verbose output or `-n test_method_name` to only run a single test method.
 
 #### Run a test file with known-failing tests excluded
 
-The runner script provides a mechanism for "excluding" known failing tests. Ruby scripts under `test/mri/exclude`, named based on the name of the test case's class, exclude with comment tests known to fail.
+The runner script provides a mechanism for "excluding" known failing tests. These are usually features that JRuby has not yet implemented or can't implement on the JVM.
 
-To run a given test with these excludes enabled, you can use the EXCLUDES environment variable:
+Excludes are in the form of Ruby scripts under `test/mri/exclude`, named based on the name of the test case's class, exclude with comment tests known to fail.
+
+To run a given test with these excludes enabled, you can use the --excludes flag:
 
 ```
-EXCLUDES=test/mri/excludes bin/jruby test/mri/runner.rb <test file>
+bin/jruby test/mri/runner.rb --excludes=test/mri/excludes <test file>
 ```
 
 #### Run a single Ruby spec

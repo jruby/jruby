@@ -45,6 +45,7 @@ import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
+import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.IRException;
@@ -63,6 +64,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IRRuntimeHelpersSites;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -609,6 +611,25 @@ public class IRRuntimeHelpers {
             keywordArgs.visitAll(context, visitor, scope);
             visitor.raiseIfError(context);
         }
+    }
+
+    @JIT
+    public static DynamicScope prepareScriptScope(ThreadContext context, StaticScope scope) {
+        IRScope irScope = scope.getIRScope();
+
+        if (irScope.isScriptScope()) {
+            DynamicScope tlbScope = ((IRScriptBody) irScope).getScriptDynamicScope();
+            if (tlbScope != null) {
+                context.preScopedBody(tlbScope);
+                tlbScope.growIfNeeded();
+                return tlbScope;
+            }
+        }
+
+        DynamicScope dynScope = DynamicScope.newDynamicScope(scope);
+        context.pushScope(dynScope);
+
+        return dynScope;
     }
 
     private static class InvalidKeyException extends RuntimeException {}
@@ -2018,6 +2039,16 @@ public class IRRuntimeHelpers {
     public static RubyString getFileNameStringFromScope(ThreadContext context, StaticScope currScope) {
         // FIXME: Not very efficient to do all this every time
         return context.runtime.newString(currScope.getIRScope().getFileName());
+    }
+
+    @JIT
+    public static void callTrace(ThreadContext context, RubyEvent event, String name, String filename, int line) {
+        if (context.runtime.hasEventHooks()) {
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = line == -1 ? context.getLine()+1 : line;
+
+            context.trace(event, name, context.getFrameKlazz(), filename, linenumber);
+        }
     }
 
     private static IRRuntimeHelpersSites sites(ThreadContext context) {

@@ -28,7 +28,6 @@
 package org.jruby.ext.thread;
 
 import java.util.concurrent.locks.ReentrantLock;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;

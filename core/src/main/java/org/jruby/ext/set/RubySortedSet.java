@@ -30,7 +30,8 @@ package org.jruby.ext.set;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.*;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.*;
@@ -72,6 +73,18 @@ public class RubySortedSet extends RubySet implements SortedSet {
         protected ThreadContext context() {
             return runtime.getCurrentContext();
         }
+
+        // NOTE: need a custom impl so that we use special care when compare returns 0
+        // this is required since/if we're using a TreeSet which assumes 0 -> eql == true
+
+        public int compare(IRubyObject obj1, IRubyObject obj2) {
+            final int cmp = super.compare(obj1, obj2);
+            if (cmp == 0) {
+                return equalInternal(context(), obj1, obj2) ? 0 : 1;
+            }
+            return cmp;
+        }
+
     }
 
     private final TreeSet<IRubyObject> order;
@@ -141,6 +154,20 @@ public class RubySortedSet extends RubySet implements SortedSet {
     @Override
     public RubyArray to_a(final ThreadContext context) {
         return sort(context); // instead of this.hash.keys();
+    }
+
+    @Override
+    public IRubyObject initialize_dup(ThreadContext context, IRubyObject orig) {
+        super.initialize_dup(context, orig);
+        if (this != orig) order.addAll(((RubySortedSet) orig).order);
+        return this;
+    }
+
+    @Override
+    public IRubyObject initialize_clone(ThreadContext context, IRubyObject orig) {
+        super.initialize_clone(context, orig);
+        if (this != orig) order.addAll(((RubySortedSet) orig).order);
+        return this;
     }
 
     // NOTE: weirdly Set/SortedSet in Ruby do not have sort!

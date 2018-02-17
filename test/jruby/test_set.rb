@@ -103,6 +103,17 @@ class TestSet < Test::Unit::TestCase
     assert_equal 2, dup.size
   end
 
+  def test_dup_to_a
+    set = Set[1, 2]
+    assert_equal set.to_a, set.dup.to_a
+    assert_equal set.to_a, set.clone.dup.to_a
+
+    set = SortedSet[2, 1, 3]
+    dup = set.dup
+    assert_equal set.to_a, dup.to_a
+    assert_equal [1, 2, 3], dup.clone.to_a
+  end
+
   def test_to_java
     assert set = Set.new.to_java
     assert set.toString.start_with?('#<Set:0x')
@@ -117,5 +128,67 @@ class TestSet < Test::Unit::TestCase
     assert set.is_a?(java.util.SortedSet)
     assert_equal java.util.TreeSet.new([1, 2]), set
   end if defined? JRUBY_VERSION
+
+  def test_cmp_0_but_not_eql
+    set = Set[1, 2]
+    assert_equal set.to_a, set.dup.to_a
+    assert_equal set.to_a, set.clone.dup.to_a
+
+    set = SortedSet.new
+    set << cmp1 = CmpObj1.new(Time.at(0))
+    set << cmp2 = CmpObj1.new(Time.at(1))
+    set << cmp3 = CmpObj1.new(Time.at(0))
+    assert_equal 3, set.size
+    assert_equal 3, set.to_a.size
+    assert_equal SortedSet[cmp1, cmp3, cmp2], set
+    assert_equal [cmp1, cmp3, cmp2], set.to_a
+  end
+
+  class CmpObj1
+    attr_reader :time
+
+    def initialize(time); @time = time end
+
+    def <=>(other)
+      time <=> other.time
+    end
+
+    def ==(other)
+      object_id == other.object_id
+    end
+  end
+
+
+  def test_cmp_0_but_not_eql2
+    set = Set[1, 2]
+    assert_equal set.to_a, set.dup.to_a
+    assert_equal set.to_a, set.clone.dup.to_a
+
+    set = SortedSet.new
+    set << cmp1 = CmpObj2.new(Time.at(0))
+    set << cmp2 = CmpObj2.new(Time.at(2))
+    set << cmp3 = CmpObj2.new(Time.at(0))
+    set << cmp4 = CmpObj2.new(Time.at(0))
+    set << cmp5 = CmpObj2.new(Time.at(1))
+    set << cmp6 = CmpObj2.new(Time.at(0))
+    assert_equal 6, set.size
+    assert_equal 6, set.to_a.size
+    assert_equal [cmp1, cmp3, cmp4, cmp6, cmp5, cmp2], set.to_a
+    assert_equal SortedSet[cmp6, cmp5, cmp4, cmp3, cmp2, cmp1], set
+  end
+
+  class CmpObj2
+    attr_reader :time
+
+    def initialize(time); @time = time end
+
+    def <=>(other)
+      time <=> other.time
+    end
+
+    def eql?(other)
+      object_id == other.object_id
+    end
+  end
 
 end

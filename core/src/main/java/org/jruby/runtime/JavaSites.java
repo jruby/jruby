@@ -40,6 +40,8 @@ public class JavaSites {
     public final WarningSites Warning = new WarningSites();
     public final ZlibSites Zlib = new ZlibSites();
     public final TimeoutSites Timeout = new TimeoutSites();
+    public final ArgfSites Argf = new ArgfSites();
+    public final TracePointSites TracePoint = new TracePointSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -285,6 +287,12 @@ public class JavaSites {
                 return cmp.call(context, other, other, recv);
             }
         };
+
+        public final RespondToCallSite respond_to_to_int = new RespondToCallSite("to_int");
+        public final CachingCallSite to_int = new FunctionalCachingCallSite("to_int");
+        public final CachingCallSite to_i = new FunctionalCachingCallSite("to_i");
+        public final CachingCallSite to_r = new FunctionalCachingCallSite("to_r");
+        public final CheckedSites checked_to_r = new CheckedSites("to_r");
     }
 
     public static class EnumerableSites {
@@ -309,7 +317,6 @@ public class JavaSites {
         public final CallSite read = new FunctionalCachingCallSite("read");
         public final CallSite to_f = new FunctionalCachingCallSite("to_f");
         public final CallSite new_ = new FunctionalCachingCallSite("new");
-        public final RespondToCallSite respond_to_to_int = new RespondToCallSite("to_int");
         public final RespondToCallSite respond_to_to_io = new RespondToCallSite("to_io");
         public final RespondToCallSite respond_to_to_hash = new RespondToCallSite("to_hash");
     }
@@ -367,6 +374,7 @@ public class JavaSites {
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite finite = new FunctionalCachingCallSite("finite?");
         public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
+        public final CheckedSites to_c_checked = new CheckedSites("to_c");
     }
 
     public static class RationalSites {
@@ -407,6 +415,14 @@ public class JavaSites {
 
     public static class TimeoutSites {
         public final CallSite timeout = new FunctionalCachingCallSite("timeout");
+    }
+
+    public static class ArgfSites {
+        public final CallSite each_codepoint = new FunctionalCachingCallSite("each_codepoint");
+    }
+
+    public static class TracePointSites {
+        public final CheckedSites to_sym = new CheckedSites("to_sym");
     }
 
     public static class CheckedSites {

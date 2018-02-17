@@ -59,7 +59,11 @@ import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.util.Numeric.*;
+import static org.jruby.util.Numeric.f_abs;
+import static org.jruby.util.Numeric.f_arg;
+import static org.jruby.util.Numeric.f_mul;
+import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.f_to_r;
 
 /**
  * Base class for all numerical types in ruby.
@@ -225,14 +229,13 @@ public class RubyNumeric extends RubyObject {
         return arg.convertToInteger().getLongValue();
     }
 
-    private static long float2long(RubyFloat flt) {
+    public static long float2long(RubyFloat flt) {
         double aFloat = flt.getDoubleValue();
         if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
             return (long) aFloat;
-        } else {
-            // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
-            throw flt.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
         }
+        // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
+        throw flt.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
     }
 
     /**
@@ -245,9 +248,21 @@ public class RubyNumeric extends RubyObject {
     /**
      * MRI: macro DBL2IVAL
      */
-    public static IRubyObject dbl2ival(Ruby runtime, double val) {
-        if (fixable(runtime, val)) {
-            return RubyFixnum.newFixnum(runtime, (long) val);
+    public static RubyInteger dbl2ival(Ruby runtime, double val) {
+        // MRI: macro FIXABLE, RB_FIXABLE (inlined + adjusted) :
+        if (Double.isNaN(val) || Double.isInfinite(val))  {
+            throw runtime.newFloatDomainError(Double.toString(val));
+        }
+
+        final long fix = (long) val;
+        if (fix == RubyFixnum.MIN || fix == RubyFixnum.MAX) {
+            BigInteger big = BigDecimal.valueOf(val).toBigInteger();
+            if (posFixable(big) && negFixable(big)) {
+                return RubyFixnum.newFixnum(runtime, fix);
+            }
+        }
+        else if (posFixable(val) && negFixable(val)) {
+            return RubyFixnum.newFixnum(runtime, fix);
         }
         return RubyBignum.newBignorm(runtime, val);
     }
@@ -555,6 +570,8 @@ public class RubyNumeric extends RubyObject {
     /** rb_num_coerce_cmp
      *  coercion used for comparisons
      */
+
+    @Deprecated // no longer used
     protected final IRubyObject coerceCmp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
@@ -575,6 +592,8 @@ public class RubyNumeric extends RubyObject {
     /** rb_num_coerce_relop
      *  coercion used for relative operators
      */
+
+    @Deprecated // no longer used
     protected final IRubyObject coerceRelOp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
@@ -595,7 +614,7 @@ public class RubyNumeric extends RubyObject {
 
     private IRubyObject unwrapCoerced(ThreadContext context, String method, IRubyObject other, RubyArray ary) {
         IRubyObject result = (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
-        if (result.isNil()) {
+        if (result == context.nil) {
             return RubyComparable.cmperr(this, other);
         }
         return result;
@@ -604,7 +623,7 @@ public class RubyNumeric extends RubyObject {
     private IRubyObject unwrapCoerced(ThreadContext context, CallSite site, IRubyObject other, RubyArray ary) {
         IRubyObject car = ary.eltInternal(0);
         IRubyObject result = site.call(context, car, car, ary.eltInternal(1));
-        if (result.isNil()) {
+        if (result == context.nil) {
             return RubyComparable.cmperr(this, other);
         }
         return result;
@@ -624,7 +643,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "singleton_method_added")
     public static IRubyObject sadded(IRubyObject self, IRubyObject name) {
-        throw self.getRuntime().newTypeError("can't define singleton method " + name + " for " + self.getType().getName());
+        throw self.getRuntime().newTypeError("can't define singleton method \"" + name + "\" for " + self.getType().getName());
     }
 
     /** num_init_copy
@@ -720,8 +739,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "div")
     public IRubyObject div(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyNumeric) {
-            RubyNumeric numeric = (RubyNumeric) other;
-            if (numeric.zero_p(context).isTrue()) {
+            if (((RubyNumeric) other).isZero()) {
                 throw context.runtime.newZeroDivisionError();
             }
         }
@@ -734,6 +752,10 @@ public class RubyNumeric extends RubyObject {
      */
     public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         return div(context, other);
+    }
+
+    public IRubyObject idiv(ThreadContext context, long other) {
+        return idiv(context, RubyFixnum.newFixnum(context.runtime, other));
     }
 
     /** num_divmod
@@ -754,7 +776,7 @@ public class RubyNumeric extends RubyObject {
     /** num_modulo
      *
      */
-    @JRubyMethod(name = "modulo")
+    @JRubyMethod(name = {"modulo", "%"})
     public IRubyObject modulo(ThreadContext context, IRubyObject other) {
         IRubyObject div = numFuncall(context, this, sites(context).div, other);
         IRubyObject product = sites(context).op_times.call(context, other, other, div);
@@ -810,8 +832,15 @@ public class RubyNumeric extends RubyObject {
     *
     */
     @JRubyMethod(name = "real?")
+    public IRubyObject real_p(ThreadContext context) {
+        return context.runtime.newBoolean(isReal());
+    }
+
+    public boolean isReal() { return true; } // only RubyComplex isn't real
+
+    @Deprecated
     public IRubyObject scalar_p() {
-        return getRuntime().getTrue();
+        return getRuntime().newBoolean(isReal());
     }
 
     /** num_int_p
@@ -829,6 +858,10 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject zero_p(ThreadContext context) {
         final Ruby runtime = context.runtime;
         return equalInternal(context, this, RubyFixnum.zero(runtime)) ? runtime.getTrue() : runtime.getFalse();
+    }
+
+    public boolean isZero() {
+        return zero_p(getRuntime().getCurrentContext()).isTrue();
     }
 
     /** num_nonzero_p
@@ -1172,21 +1205,21 @@ public class RubyNumeric extends RubyObject {
         return numFuncall(context, other, sites(context).op_equals, this);
     }
 
-    /** num_numerator
+    /** numeric_numerator
      *
      */
     @JRubyMethod(name = "numerator")
     public IRubyObject numerator(ThreadContext context) {
-        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        IRubyObject rational = f_to_r(context, this);
         return sites(context).numerator.call(context, rational, rational);
     }
 
-    /** num_denominator
+    /** numeric_denominator
      *
      */
     @JRubyMethod(name = "denominator")
     public IRubyObject denominator(ThreadContext context) {
-        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        IRubyObject rational = f_to_r(context, this);
         return sites(context).denominator.call(context, rational, rational);
     }
 
@@ -1362,13 +1395,11 @@ public class RubyNumeric extends RubyObject {
             throw runtime.newFloatDomainError(Double.toString(f));
         }
         long l = (long) f;
-        if (l == RubyFixnum.MIN ||
-                l == RubyFixnum.MAX){
+        if (l == RubyFixnum.MIN || l == RubyFixnum.MAX) {
             BigInteger bigint = BigDecimal.valueOf(f).toBigInteger();
             return posFixable(bigint) && negFixable(bigint);
-        } else {
-            return posFixable(f) && negFixable(f);
         }
+        return posFixable(f) && negFixable(f);
     }
 
     // MRI: macro POSFIXABLE, RB_POSFIXABLE

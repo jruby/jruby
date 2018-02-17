@@ -45,6 +45,8 @@ import org.jruby.util.ByteList;
  *
  */
 public class RipperParserBase {
+    private IRubyObject currentArg;
+
     public RipperParserBase(ThreadContext context, IRubyObject ripper, LexerSource source) {
         this.context = context;
         this.ripper = ripper;
@@ -106,44 +108,21 @@ public class RipperParserBase {
                 
         return identifier;
     }
-    
-    public IRubyObject assignable(IRubyObject name) {
-        // MRI calls get_id(name), but we differ quite a bit and we only need to worry about strings
-        // for anything we care about.  Possibly this should return nil and not original value?
-        if (!(name instanceof RubyString)) return name;
-        
-        String javaName = name.asJavaString();
-        
-        if (javaName.equals("self")) {
-            yyerror("Can't change the value of self");
-        } else if (javaName.equals("nil")) {
-            yyerror("Can't assign to nil");
-        } else if (javaName.equals("true")) {
-            yyerror("Can't assign to true");
-        } else if (javaName.equals("false")) {
-            yyerror("Can't assign to false");
-        } else if (javaName.equals("__FILE__")) {
-            yyerror("Can't assign to __FILE__");
-        } else if (javaName.equals("__LINE__")) {
-            yyerror("Can't assign to __LINE__");
-        } else if (Character.isUpperCase(javaName.charAt(0))) { // MRI: ID_CONST
-            if (isInDef() || isInSingle()) dispatch("on_assign_error", name);
-            return name;
-        } else if (javaName.charAt(0) == '@') { // MRI: ID_CLASS & ID_INSTANCE
-            if (javaName.charAt(1) == '@') {
-                return name;
-            } else {
-                return name;
-            }
-        } else if (javaName.charAt(0) == '$') { // MRI: ID_GLOBAL
-            return name;
-        }
 
-        currentScope.assign(lexer.getPosition(), javaName.intern(), null);
-        
-        return name;
+    public IRubyObject assignableConstant(IRubyObject value) {
+        if (isInDef() || isInSingle()) {
+            value = dispatch("on_assign_error", value);
+            error();
+        }
+        return value;
     }
-    
+
+    public IRubyObject assignableIdentifier(IRubyObject value) {
+        String ident = lexer.getIdent().intern();
+        getCurrentScope().assign(lexer.getPosition(), ident, null);
+        return value;
+    }
+
     public IRubyObject dispatch(String method_name) {
         return Helpers.invoke(context, ripper, method_name);
     }
@@ -184,14 +163,10 @@ public class RipperParserBase {
         throw new SyntaxException("identifier " + identifier + " is not valid", identifier);
     }    
     
-    // FIXME: Consider removing identifier.
-    public boolean is_id_var(IRubyObject identifier) {
+    public boolean is_id_var() {
         String ident = lexer.getIdent().intern();
-        char c = ident.charAt(0);
-        
-        if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return true;
 
-        return getCurrentScope().getLocalScope().isDefined(ident) >= 0;
+        return getCurrentScope().isDefined(ident) >= 0;
     }
     
     public boolean is_local_id(String identifier) {
@@ -267,6 +242,7 @@ public class RipperParserBase {
     
     public void pushLocalScope() {
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
+        getCmdArgumentState().reset();
     }
 
     public int getHeredocIndent() {
@@ -420,6 +396,14 @@ public class RipperParserBase {
     
     public Encoding encoding() {
         return lexer.getEncoding();
+    }
+
+    public IRubyObject getCurrentArg() {
+        return currentArg;
+    }
+
+    public void setCurrentArg(IRubyObject arg) {
+        this.currentArg = arg;
     }
     
     public boolean getYYDebug() {

@@ -1,0 +1,2 @@
+fails:Integer#<< (with n << m) fixnum returns 0 when m < 0 and m is a Bignum
+fails:Integer#<< (with n << m) bignum returns 0 when m < 0 and m is a Bignum

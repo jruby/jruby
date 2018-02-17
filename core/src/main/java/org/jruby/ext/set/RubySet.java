@@ -359,7 +359,7 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod
     public RubyArray to_a(final ThreadContext context) {
         // except MRI relies on Hash order so we do as well
-        return this.hash.keys();
+        return this.hash.keys(context);
     }
 
     // Returns self if no arguments are given.

@@ -30,6 +30,10 @@
 
 package org.jruby.internal.runtime.methods;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.jruby.MetaClass;
@@ -65,24 +69,16 @@ public abstract class DynamicMethod {
     /** Flags for builtin, notimpl, etc */
     protected byte flags;
     /** The simple, base name this method was defined under. May be null.*/
-    protected String name;
+    protected final String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
 
     private static final int BUILTIN_FLAG = 0x1;
     private static final int NOTIMPL_FLAG = 0x2;
 
-    /**
-     * Base constructor for dynamic method handles.
-     *
-     * @param implementationClass The class to which this method will be
-     * immediately bound
-     * @param visibility The visibility assigned to this method
-     * pre/post invocation logic.
-     */
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
-        assert implementationClass != null;
-        init(implementationClass, visibility);
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Version {
+        int version = 0;
     }
 
     /**
@@ -94,18 +90,24 @@ public abstract class DynamicMethod {
      * @param name The simple name of this method
      */
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, String name) {
-        this(implementationClass, visibility);
+        assert implementationClass != null;
+        if (name == null) {
+            name = "null";
+        }
         this.name = name;
+        init(implementationClass, visibility);
     }
 
     /**
      * A no-arg constructor used only by the UndefinedMethod subclass and
      * CompiledMethod handles. instanceof assertions make sure this is so.
      */
-    protected DynamicMethod() {
-//        assert (this instanceof UndefinedMethod ||
-//                this instanceof CompiledMethod ||
-//                this instanceof );
+    protected DynamicMethod(String name) {
+        this.visibility = (byte) Visibility.PUBLIC.ordinal();
+        if (name == null) {
+            name = "null";
+        }
+        this.name = name;
     }
 
     protected void init(RubyModule implementationClass, Visibility visibility) {
@@ -408,6 +410,7 @@ public abstract class DynamicMethod {
         private final Class[] nativeSignature;
         private final boolean statik;
         private final boolean java;
+        private Method reflected;
 
         public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
             this(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
@@ -460,8 +463,10 @@ public abstract class DynamicMethod {
          * @return the reflected method corresponding to this NativeCall
          */
         public Method getMethod() {
+            Method reflected = this.reflected;
+            if (reflected != null) return reflected;
             try {
-                return nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
+                return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -489,15 +494,6 @@ public abstract class DynamicMethod {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Set the base name for this method.
-     *
-     * @param name the name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 
     /**
@@ -567,5 +563,13 @@ public abstract class DynamicMethod {
 
     @Deprecated
     public void setCallConfig(CallConfiguration callConfig) {
+    }
+
+    /**
+     * @deprecated Use {@link DynamicMethod#DynamicMethod(RubyModule, Visibility, String)}
+     */
+    @Deprecated
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
+        this(implementationClass, visibility, "(anonymous)");
     }
 }

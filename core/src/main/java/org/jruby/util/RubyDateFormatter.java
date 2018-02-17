@@ -332,13 +332,13 @@ public class RubyDateFormatter {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new AssertionError(e); // IOException never happens
         }
 
         return compiledPattern;
     }
 
-    static enum FieldType {
+    enum FieldType {
         NUMERIC('0', 0),
         NUMERIC2('0', 2),
         NUMERIC2BLANK(' ', 2),
@@ -517,7 +517,7 @@ public class RubyDateFormatter {
                         } else { // Date, DateTime
                             int prec = width - 3;
                             final ThreadContext context = runtime.getCurrentContext(); // TODO really need the dynamic nature here?
-                            IRubyObject power = runtime.newFixnum(10).callMethod(context, "**", runtime.newFixnum(prec));
+                            IRubyObject power = runtime.newFixnum(10).op_pow(context, prec);
                             IRubyObject truncated = sub_millis.callMethod(context, "numerator").callMethod(context, "*", power);
                             truncated = truncated.callMethod(context, "/", sub_millis.callMethod(context, "denominator"));
                             long decimals = truncated.convertToInteger().getLongValue();

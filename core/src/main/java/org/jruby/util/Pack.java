@@ -1320,7 +1320,7 @@ public class Pack {
                     }
 
                     long ul = 0;
-                    long ulmask = (0xfe << 56) & 0xffffffff;
+                    long ulmask = (0xfeL << 56) & 0xffffffff;
                     RubyBignum big128 = RubyBignum.newBignum(runtime, 128);
                     int pos = encode.position();
 

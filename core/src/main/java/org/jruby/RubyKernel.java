@@ -53,6 +53,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -102,8 +103,8 @@ public class RubyKernel {
         private final Visibility visibility;
         private final CallType callType;
 
-        public MethodMissingMethod(RubyModule implementationClass, Visibility visibility, CallType callType) {
-            super(implementationClass, Visibility.PRIVATE);
+        MethodMissingMethod(RubyModule implementationClass, Visibility visibility, CallType callType) {
+            super(implementationClass, Visibility.PRIVATE, "method_missing");
 
             this.callType = callType;
             this.visibility = visibility;
@@ -762,7 +763,7 @@ public class RubyKernel {
         return local_variables19(context, recv);
     }
 
-    @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE, reads = SCOPE)
     public static RubyArray local_variables19(ThreadContext context, IRubyObject recv) {
         final Ruby runtime = context.runtime;
         HashSet<String> encounteredLocalVariables = new HashSet<String>();
@@ -787,8 +788,8 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "binding", module = true, visibility = PRIVATE,
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public static RubyBinding binding19(ThreadContext context, IRubyObject recv, Block block) {
         return RubyBinding.newBinding(context.runtime, context.currentBinding());
     }
@@ -1001,8 +1002,8 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "eval", required = 1, optional = 3, module = true, visibility = PRIVATE,
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public static IRubyObject eval19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return evalCommon(context, recv, args, evalBinding19);
     }
@@ -1055,40 +1056,63 @@ public class RubyKernel {
         }
     };
 
-    public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return caller20(context, recv, args, block);
+    @JRubyMethod(name = "caller", module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller(ThreadContext context, IRubyObject recv) {
+        return callerInternal(context, recv, null, null);
     }
 
-    public static IRubyObject caller19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return caller20(context, recv, args, block);
+    @JRubyMethod(name = "caller", module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject level) {
+        return callerInternal(context, recv, level, null);
     }
 
-    @JRubyMethod(name = "caller", optional = 2, module = true, visibility = PRIVATE, omit = true)
-    public static IRubyObject caller20(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "caller", module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
+        return callerInternal(context, recv, level, length);
+    }
+
+    private static IRubyObject callerInternal(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
         Ruby runtime = context.runtime;
-        Integer[] ll = levelAndLengthFromArgs(runtime, args, 1);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = levelAndLengthFromArgs(runtime, level, length, 1);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return context.createCallerBacktrace(level, length, Thread.currentThread().getStackTrace());
+        return context.createCallerBacktrace(levelInt, lengthInt, Thread.currentThread().getStackTrace());
     }
 
-    @JRubyMethod(optional = 2, module = true, visibility = PRIVATE, omit = true)
-    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv) {
+        return callerLocationsInternal(context, null, null);
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject level) {
+        return callerLocationsInternal(context, level, null);
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
+        return callerLocationsInternal(context, level, length);
+    }
+
+    private static IRubyObject callerLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         Ruby runtime = context.runtime;
-        Integer[] ll = levelAndLengthFromArgs(runtime, args, 1);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = levelAndLengthFromArgs(runtime, level, length, 1);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return context.createCallerLocations(level, length, Thread.currentThread().getStackTrace());
+        return context.createCallerLocations(levelInt, lengthInt, Thread.currentThread().getStackTrace());
     }
 
-    static Integer[] levelAndLengthFromArgs(Ruby runtime, IRubyObject[] args, int defaultLevel) {
+    /**
+     * Retrieve the level and length from given args, if non-null.
+     */
+    static Integer[] levelAndLengthFromArgs(Ruby runtime, IRubyObject _level, IRubyObject _length, int defaultLevel) {
         int level;
         Integer length = null;
-        if (args.length > 1) {
-            level = RubyNumeric.fix2int(args[0]);
-            length = RubyNumeric.fix2int(args[1]);
-        } else if (args.length > 0 && args[0] instanceof RubyRange) {
-            RubyRange range = (RubyRange) args[0];
+        if (_length != null) {
+            level = RubyNumeric.fix2int(_level);
+            length = RubyNumeric.fix2int(_length);
+        } else if (_level != null && _level instanceof RubyRange) {
+            RubyRange range = (RubyRange) _level;
             ThreadContext context = runtime.getCurrentContext();
             level = RubyNumeric.fix2int(range.first(context));
             length = RubyNumeric.fix2int(range.last(context)) - level;
@@ -1096,8 +1120,8 @@ public class RubyKernel {
                 length++;
             }
             length = length < 0 ? 0 : length;
-        } else if (args.length > 0) {
-            level = RubyNumeric.fix2int(args[0]);
+        } else if (_level != null) {
+            level = RubyNumeric.fix2int(_level);
         } else {
             level = defaultLevel;
         }
@@ -1878,22 +1902,34 @@ public class RubyKernel {
         return sites(context).initialize_copy.call(context, self, self, original);
     }
 
+    @Deprecated
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname) {
         return ((RubyBasicObject) self).respond_to_p(mname);
     }
 
-    @JRubyMethod(name = "respond_to?")
+    @Deprecated
     public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname) {
         return ((RubyBasicObject) self).respond_to_p19(mname);
     }
 
+    @Deprecated
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
         return ((RubyBasicObject) self).respond_to_p(mname, includePrivate);
     }
 
-    @JRubyMethod(name = "respond_to?")
+    @Deprecated
     public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
         return ((RubyBasicObject) self).respond_to_p19(mname, includePrivate);
+    }
+
+    @JRubyMethod(name = "respond_to?")
+    public static IRubyObject respond_to_p(ThreadContext context, IRubyObject self, IRubyObject name) {
+        return ((RubyBasicObject) self).respond_to_p(context, name, false);
+    }
+
+    @JRubyMethod(name = "respond_to?")
+    public static IRubyObject respond_to_p(ThreadContext context, IRubyObject self, IRubyObject name, IRubyObject includePrivate) {
+        return ((RubyBasicObject) self).respond_to_p(context, name, includePrivate.isTrue());
     }
 
     @JRubyMethod
@@ -2032,8 +2068,13 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "method", required = 1)
-    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
+    public static IRubyObject method(IRubyObject self, IRubyObject symbol) {
         return ((RubyBasicObject)self).method(symbol);
+    }
+
+    @Deprecated
+    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
+        return method(self, symbol);
     }
 
     @JRubyMethod(name = "to_s")
@@ -2046,21 +2087,38 @@ public class RubyKernel {
         return ((RubyBasicObject)self).extend(args);
     }
 
-    @JRubyMethod(name = {"send"}, omit = true)
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
+    @JRubyMethod(name = "send", omit = true)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, block);
     }
-    @JRubyMethod(name = {"send"}, omit = true)
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
+    @JRubyMethod(name = "send", omit = true)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"send"}, omit = true)
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+    @JRubyMethod(name = "send", omit = true)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"send"}, required = 1, rest = true, omit = true)
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "send", required = 1, rest = true, omit = true)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return ((RubyBasicObject)self).send(context, args, block);
+    }
+
+    @Deprecated
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
+        return send(context, self, arg0, block);
+    }
+    @Deprecated
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return send(context, self, arg0, arg1, block);
+    }
+    @Deprecated
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return send(context, self, arg0, arg1, arg2, block);
+    }
+    @Deprecated
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return send(context, self, args, block);
     }
 
     @JRubyMethod(name = "nil?")
@@ -2068,13 +2126,14 @@ public class RubyKernel {
         return ((RubyBasicObject)self).nil_p(context);
     }
 
+    @JRubyMethod(name = "=~", required = 1, writes = FrameField.BACKREF)
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return op_match19(context, self, arg);
+        return ((RubyBasicObject)self).op_match19(context, arg);
     }
 
-    @JRubyMethod(name = "=~", required = 1, writes = FrameField.BACKREF)
+    @Deprecated
     public static IRubyObject op_match19(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return ((RubyBasicObject)self).op_match19(context, arg);
+        return op_match(context, self, arg);
     }
 
     @JRubyMethod(name = "!~", required = 1, writes = FrameField.BACKREF)
@@ -2178,4 +2237,43 @@ public class RubyKernel {
         return methodMissing(context, recv, name, lastVis, lastCallType, args);
     }
 
+    @Deprecated
+    public static IRubyObject caller20(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return caller(context, recv, args, block);
+    }
+
+    @Deprecated
+    public static IRubyObject caller19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return caller(context, recv, args, block);
+    }
+
+    @Deprecated
+    private static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0:
+                return caller(context, recv);
+            case 1:
+                return caller(context, recv, args[0]);
+            case 2:
+                return caller(context, recv, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return caller_locations(context, recv);
+            case 1:
+                return caller_locations(context, recv, args[0]);
+            case 2:
+                return caller_locations(context, recv, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
+        }
+    }
 }

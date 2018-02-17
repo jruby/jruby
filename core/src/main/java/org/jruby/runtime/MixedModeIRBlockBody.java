@@ -3,6 +3,7 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
@@ -160,23 +161,25 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
         if (callCount >= 0) {
-            // ensure we've got code ready for JIT
-            ensureInstrsReady();
-            closure.getNearestTopLocalVariableScope().prepareForCompilation();
-
-            // if we don't have an explicit protocol, disable JIT
-            if (!closure.hasExplicitCallProtocol()) {
-                if (Options.JIT_LOGGING.load()) {
-                    LOG.info("JIT failed; no protocol found in block: " + closure);
-                }
-                setCallCount(-1);
-                return;
-            }
-
             synchronized (this) {
-                int callCount = this.callCount;
-                if (callCount >= 0 && callCount++ >= Options.JIT_THRESHOLD.load()) {
-                    this.callCount = callCount;
+                // check call count again
+                if (callCount < 0) return;
+
+                if (callCount++ >= Options.JIT_THRESHOLD.load()) {
+                    callCount = -1;
+
+                    // ensure we've got code ready for JIT
+                    ensureInstrsReady();
+                    closure.getNearestTopLocalVariableScope().prepareForCompilation();
+
+                    // if we don't have an explicit protocol, disable JIT
+                    if (!closure.hasExplicitCallProtocol()) {
+                        if (Options.JIT_LOGGING.load()) {
+                            LOG.info("JIT failed; no protocol found in block: " + closure);
+                        }
+                        return;
+                    }
+
                     context.runtime.getJITCompiler().buildThresholdReached(context, this);
                 }
             }

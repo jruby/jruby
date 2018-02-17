@@ -33,7 +33,6 @@ import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
 import static org.jruby.lexer.LexingCommon.*;
@@ -80,7 +79,7 @@ public class StringTerm extends StrTerm {
             }
 
             if ((flags & STR_FUNC_REGEXP) != 0) {
-                RegexpOptions options = parseRegexpFlags(lexer);
+                RegexpOptions options = lexer.parseRegexpFlags();
                 ByteList regexpBytelist = ByteList.create("");
 
                 lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
@@ -91,83 +90,10 @@ public class StringTerm extends StrTerm {
             return RubyParser.tSTRING_END;
     }
 
-    // Return of 0 means failed to find anything.  Non-zero means return that from lexer.
-    private int parsePeekVariableName(RubyLexer lexer) throws IOException {
-        int c = lexer.nextc(); // byte right after #
-        int significant = -1;
-        switch (c) {
-            case '$': {  // we unread back to before the $ so next lex can read $foo
-                int c2 = lexer.nextc();
-
-                if (c2 == '-') {
-                    int c3 = lexer.nextc();
-
-                    if (c3 == EOF) {
-                        lexer.pushback(c3); lexer.pushback(c2);
-                        return 0;
-                    }
-
-                    significant = c3;                              // $-0 potentially
-                    lexer.pushback(c3); lexer.pushback(c2);
-                    break;
-                } else if (lexer.isGlobalCharPunct(c2)) {          // $_ potentially
-                    lexer.setValue("#" + (char) c2);
-
-                    lexer.pushback(c2); lexer.pushback(c);
-                    return RubyParser.tSTRING_DVAR;
-                }
-
-                significant = c2;                                  // $FOO potentially
-                lexer.pushback(c2);
-                break;
-            }
-            case '@': {  // we unread back to before the @ so next lex can read @foo
-                int c2 = lexer.nextc();
-
-                if (c2 == '@') {
-                    int c3 = lexer.nextc();
-
-                    if (c3 == EOF) {
-                        lexer.pushback(c3); lexer.pushback(c2);
-                        return 0;
-                    }
-
-                    significant = c3;                                // #@@foo potentially
-                    lexer.pushback(c3); lexer.pushback(c2);
-                    break;
-                }
-
-                significant = c2;                                    // #@foo potentially
-                lexer.pushback(c2);
-                break;
-            }
-            case '{':
-                //lexer.setBraceNest(lexer.getBraceNest() + 1);
-                lexer.setValue("#" + (char) c);
-                lexer.commandStart = true;
-                return RubyParser.tSTRING_DBEG;
-            default:
-                // We did not find significant char after # so push it back to
-                // be processed as an ordinary string.
-                lexer.pushback(c);
-                return 0;
-        }
-
-        if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
-            lexer.pushback(c);
-            lexer.setValue("#" + significant);
-            return RubyParser.tSTRING_DVAR;
-        }
-
-        return 0;
-    }
-
     public int parseString(RubyLexer lexer) throws IOException {
         boolean spaceSeen = false;
         int c;
 
-        // FIXME: How much more obtuse can this be?
-        // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
             lexer.setValue("" + end);
             return RubyParser.tSTRING_END;
@@ -190,11 +116,16 @@ public class StringTerm extends StrTerm {
         ByteList buffer = createByteList(lexer);
         lexer.newtok(true);
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
-            int token = parsePeekVariableName(lexer);
+            int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
 
-            if (token != 0) return token;
+            if (token != 0) {
+                return token;
+            } else {
+                buffer.append(c);
+            }
+        } else {
+            lexer.pushback(c);
         }
-        lexer.pushback(c);
 
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
@@ -206,55 +137,6 @@ public class StringTerm extends StrTerm {
 
         lexer.setValue(lexer.createStr(buffer, flags));
         return RubyParser.tSTRING_CONTENT;
-    }
-
-    private RegexpOptions parseRegexpFlags(RubyLexer lexer) throws IOException {
-        RegexpOptions options = new RegexpOptions();
-        int c;
-        StringBuilder unknownFlags = new StringBuilder(10);
-
-        lexer.newtok(true);
-        for (c = lexer.nextc(); c != EOF
-                && Character.isLetter(c); c = lexer.nextc()) {
-            switch (c) {
-            case 'i':
-                options.setIgnorecase(true);
-                break;
-            case 'x':
-                options.setExtended(true);
-                break;
-            case 'm':
-                options.setMultiline(true);
-                break;
-            case 'o':
-                options.setOnce(true);
-                break;
-            case 'n':
-                options.setExplicitKCode(KCode.NONE);
-                break;
-            case 'e':
-                options.setExplicitKCode(KCode.EUC);
-                break;
-            case 's':
-                options.setExplicitKCode(KCode.SJIS);
-                break;
-            case 'u':
-                options.setExplicitKCode(KCode.UTF8);
-                break;
-            case 'j':
-                options.setJava(true);
-                break;
-            default:
-                unknownFlags.append((char) c);
-                break;
-            }
-        }
-        lexer.pushback(c);
-        if (unknownFlags.length() != 0) {
-            lexer.compile_error(PID.REGEXP_UNKNOWN_OPTION, "unknown regexp option" +
-                    (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags);
-        }
-        return options;
     }
 
     private void mixedEscape(RubyLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {

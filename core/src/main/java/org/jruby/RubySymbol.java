@@ -256,27 +256,22 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     final RubyString inspect(final Ruby runtime) {
-        ByteList result = new ByteList(symbolBytes.getRealSize() + 1);
-        result.setEncoding(symbolBytes.getEncoding());
-        result.append((byte)':');
-        result.append(symbolBytes);
-
         // TODO: 1.9 rb_enc_symname_p
         Encoding resenc = runtime.getDefaultInternalEncoding();
         if (resenc == null) resenc = runtime.getDefaultExternalEncoding();
 
-        RubyString str = RubyString.newString(runtime, result);
+        RubyString str = RubyString.newString(runtime, symbolBytes);
 
-        if (isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol)) {
-            return str;
+        if (!(isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol))) {
+            str = str.inspect(runtime);
         }
 
-        str = str.inspect(runtime);
-        ByteList bytes = str.getByteList();
-        bytes.set(0, ':');
-        bytes.set(1, '"');
+        ByteList result = new ByteList(str.getByteList().getRealSize() + 1);
+        result.setEncoding(str.getEncoding());
+        result.append((byte)':');
+        result.append(str.getBytes());
 
-        return str;
+        return RubyString.newString(runtime, result);
     }
 
     @Deprecated
@@ -390,7 +385,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
 
-        return !(other instanceof RubySymbol) ? runtime.getNil() :
+        return !(other instanceof RubySymbol) ? context.nil :
                 newShared(runtime).op_cmp(context, ((RubySymbol)other).newShared(runtime));
     }
 
@@ -398,22 +393,22 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
 
-        return !(other instanceof RubySymbol) ? runtime.getNil() :
-                newShared(runtime).casecmp19(context, ((RubySymbol) other).newShared(runtime));
+        return !(other instanceof RubySymbol) ? context.nil :
+                newShared(runtime).casecmp(context, ((RubySymbol) other).newShared(runtime));
     }
 
     @JRubyMethod(name = "casecmp?")
     public IRubyObject casecmp_p(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
 
-        return !(other instanceof RubySymbol) ? runtime.getNil() :
+        return !(other instanceof RubySymbol) ? context.nil :
             newShared(runtime).casecmp_p(context, ((RubySymbol) other).newShared(runtime));
     }
 
     @JRubyMethod(name = "=~")
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
-        return newShared(context.runtime).op_match19(context, other);
+        return newShared(context.runtime).op_match(context, other);
     }
 
     @JRubyMethod(name = "match")
@@ -472,7 +467,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public IRubyObject downcase(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        return newSymbol(runtime, newShared(runtime).downcase19(context).getByteList());
+        return newSymbol(runtime, newShared(runtime).downcase(context).getByteList());
     }
 
     @JRubyMethod

@@ -37,6 +37,7 @@ import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
@@ -98,8 +99,15 @@ public class RipperLexer extends LexingCommon {
     public boolean ignoreNextScanEvent = false;
 
     protected void ambiguousOperator(String op, String syn) {
-        warn("`" + op + "' after local variable or literal is interpreted as binary operator");
-        warn("even though it seems like " + syn);
+        parser.dispatch("on_operator_ambiguous", getRuntime().newSymbol(op), getRuntime().newString(syn));
+    }
+
+    protected boolean onMagicComment(String name, ByteList value) {
+        boolean found = super.onMagicComment(name, value);
+
+        parser.dispatch("on_magic_comment", getRuntime().newString(name), getRuntime().newString(value));
+
+        return found;
     }
 
     private int getFloatToken(String number, int suffix) {
@@ -338,7 +346,7 @@ public class RipperLexer extends LexingCommon {
         String value = createTokenString();
 
         if (!isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parser.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END|EXPR_LABEL);
+            setState(EXPR_END);
         }
 
         identValue = value.intern();
@@ -396,6 +404,23 @@ public class RipperLexer extends LexingCommon {
             warning("`%s' is ignored after any tokens", name);
             return;
         }
+    }
+
+    @Override
+    protected RegexpOptions parseRegexpFlags() throws IOException {
+        StringBuilder unknownFlags = new StringBuilder(10);
+        RegexpOptions options = parseRegexpFlags(unknownFlags);
+        if (unknownFlags.length() != 0) {
+            compile_error("unknown regexp option" +
+                    (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags);
+        }
+        return options;
+    }
+
+    @Override
+    protected void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding) {
+        compile_error("regexp encoding option '" + optionsEncodingChar(optionEncoding) +
+                "' differs from source encoding '" + encoding + "'");
     }
 
     @Override
@@ -487,14 +512,6 @@ public class RipperLexer extends LexingCommon {
             begin = '\0';
         }
 
-        // consume spaces here to record them as part of token
-        int w = nextc();
-        while (Character.isWhitespace(w)) {
-            value = value + (char) w;
-            w = nextc();
-        }
-        pushback(w);
-        
         switch (c) {
         case 'Q':
             lex_strterm = new StringTerm(str_dquote, begin ,end);
@@ -1194,10 +1211,9 @@ public class RipperLexer extends LexingCommon {
     }
 
     private int identifierToken(int last_state, int result, String value) {
-
-        if (result == RipperParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT) &&
+        if (result == RipperParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
                 parser.getCurrentScope().isDefined(value) >= 0) {
-            setState(EXPR_END);
+            setState(EXPR_END|EXPR_LABEL);
         }
 
         identValue = value.intern();
@@ -1575,8 +1591,8 @@ public class RipperLexer extends LexingCommon {
         
         int result = 0;
 
-        String tempVal;
         last_state = lex_state;
+        String tempVal;
         if (lastBangOrPredicate) {
             result = RipperParser.tFID;
             tempVal = createTokenString();
@@ -1598,6 +1614,7 @@ public class RipperLexer extends LexingCommon {
                 }
             }
             tempVal = createTokenString();
+
             if (result == 0 && Character.isUpperCase(tempVal.charAt(0))) {
                 result = RipperParser.tCONSTANT;
             } else {
@@ -2346,18 +2363,7 @@ public class RipperLexer extends LexingCommon {
     // This is different than MRI in that we return a boolean since we only care whether it was added
     // or not.  The MRI version returns the byte supplied which is never used as a value.
     public boolean tokenAddMBC(int first_byte, ByteList buffer) {
-        int length = precise_mbclen();
-
-        if (length <= 0) {
-            compile_error("invalid multibyte char (" + getEncoding().getName() + ")");
-            return false;
-        }
-
-        tokAdd(first_byte, buffer);                  // add first byte since we have it.
-        lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
-        if (length > 1) tokCopy(length - 1, buffer); // copy next n bytes over.
-
-        return true;
+        return tokadd_mbchar(first_byte, buffer);
     }
 
     // MRI: parser_tokadd_utf8 sans regexp literal parsing

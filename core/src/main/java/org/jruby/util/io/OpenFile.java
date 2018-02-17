@@ -1,6 +1,7 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
+import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
@@ -19,6 +20,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -844,6 +846,10 @@ public class OpenFile implements Finalizable {
     }
 
     public void finalize(ThreadContext context, boolean noraise) {
+        finalizeFlush(context, noraise);
+    }
+
+    public void finalizeFlush(ThreadContext context, boolean noraise) {
         IRubyObject err = runtime.getNil();
         ChannelFD fd = this.fd();
         Closeable stdio_file = this.stdio_file;
@@ -1585,7 +1591,7 @@ public class OpenFile implements Finalizable {
                     if (e != -1) {
                         pending = (int) (e - p + 1);
                         if (chomp) {
-                            chomplen = ((pending > 1 &&  pBytes[e - 1] == '\r')?1:0) + 1;
+                            chomplen = ((pending > 1 && pBytes[e - 1] == '\r')?1:0) + 1;
                         }
                     }
                     if (str == null) {
@@ -2590,9 +2596,30 @@ public class OpenFile implements Finalizable {
 //            #endif
             if (ret == -1) return -1;
         }
-        // TODO?
-//        rb_maygvl_fd_fix_cloexec(ret);
+        fdFixCloexec(posix, ret);
         return ret;
+    }
+
+    // MRI: rb_maygvl_fd_fix_cloexec, without compiler conditions
+    public static void fdFixCloexec(PosixShim posix, int fd) {
+        if (fd >= 0 && fd < FilenoUtil.FIRST_FAKE_FD) {
+            int flags, flags2, ret;
+            flags = posix.fcntlGetFD(fd); /* should not fail except EBADF. */
+            if (flags == -1) {
+                throw new RuntimeException(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_GETFD) failed: %s", fd, posix.errno.description()));
+            }
+            if (fd <= 2)
+                flags2 = flags & ~FcntlLibrary.FD_CLOEXEC; /* Clear CLOEXEC for standard file descriptors: 0, 1, 2. */
+            else
+                flags2 = flags | FcntlLibrary.FD_CLOEXEC; /* Set CLOEXEC for non-standard file descriptors: 3, 4, 5, ... */
+            if (flags != flags2) {
+                ret = posix.fcntlSetFD(fd, flags2);
+                if (ret == -1) {
+                    throw new RuntimeException(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_SETFD) failed: %s", fd, flags2, posix.errno.description()));
+                }
+            }
+        }
+        // otherwise JVM sets cloexec
     }
 
     /**

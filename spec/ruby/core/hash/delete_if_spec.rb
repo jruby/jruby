@@ -34,11 +34,11 @@ describe "Hash#delete_if" do
     each_pairs.should == delete_pairs
   end
 
-  it "raises a RuntimeError if called on a frozen instance" do
-    lambda { HashSpecs.frozen_hash.delete_if { false } }.should raise_error(RuntimeError)
-    lambda { HashSpecs.empty_frozen_hash.delete_if { true } }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} if called on a frozen instance" do
+    lambda { HashSpecs.frozen_hash.delete_if { false } }.should raise_error(frozen_error_class)
+    lambda { HashSpecs.empty_frozen_hash.delete_if { true } }.should raise_error(frozen_error_class)
   end
 
-  it_behaves_like(:hash_iteration_no_block, :delete_if)
-  it_behaves_like(:enumeratorized_with_origin_size, :delete_if, { 1 => 2, 3 => 4, 5 => 6 })
+  it_behaves_like :hash_iteration_no_block, :delete_if
+  it_behaves_like :enumeratorized_with_origin_size, :delete_if, { 1 => 2, 3 => 4, 5 => 6 }
 end

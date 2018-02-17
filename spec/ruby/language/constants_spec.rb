@@ -381,7 +381,9 @@ describe "Constant resolution within methods" do
       module ConstantSpecs
         OpAssignTrue = true
       end
-      ConstantSpecs::OpAssignTrue &&= 1
+      suppress_warning do
+        ConstantSpecs::OpAssignTrue &&= 1
+      end
       ConstantSpecs::OpAssignTrue.should == 1
       ConstantSpecs.send :remove_const, :OpAssignTrue
     end
@@ -420,6 +422,28 @@ describe "Constant resolution within a singleton class (class << obj)" do
       b = ConstantSpecs::CS_SINGLETON4_CLASSES[1].new
       [a.foo, b.foo].should == [1, 2]
     end
+  end
+end
+
+describe "top-level constant lookup" do
+  context "on a class" do
+    ruby_version_is "" ... "2.5" do
+      it "searches Object successfully after searching other scopes" do
+        ->() {
+          String::Hash.should == Hash
+        }.should complain(/toplevel constant Hash referenced by/)
+      end
+    end
+
+    ruby_version_is "2.5" do
+      it "does not search Object after searching other scopes" do
+        ->() { String::Hash }.should raise_error(NameError)
+      end
+    end
+  end
+
+  it "searches Object unsuccessfully when searches on a module" do
+    ->() { Enumerable::Hash }.should raise_error(NameError)
   end
 end
 

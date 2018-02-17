@@ -43,6 +43,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -96,10 +97,14 @@ public class RubyBignum extends RubyInteger {
      */
     public static RubyBignum newBignum(Ruby runtime, double value) {
         try {
-            return newBignum(runtime, new BigDecimal(value).toBigInteger());
+            return newBignum(runtime, toBigInteger(value));
         } catch (NumberFormatException nfe) {
             throw runtime.newFloatDomainError(Double.toString(value));
         }
+    }
+
+    public static BigInteger toBigInteger(double value) {
+        return new BigDecimal(value).toBigInteger();
     }
 
     /**
@@ -109,7 +114,7 @@ public class RubyBignum extends RubyInteger {
      */
     public static RubyInteger newBignorm(Ruby runtime, double value) {
         try {
-            return bignorm(runtime, new BigDecimal(value).toBigInteger());
+            return bignorm(runtime, toBigInteger(value));
         } catch (NumberFormatException nfe) {
             throw runtime.newFloatDomainError(Double.toString(value));
         }
@@ -160,7 +165,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public RubyInteger negate() {
-        return RubyBignum.newBignum(getRuntime(), value.negate());
+        return bignorm(getRuntime(), value.negate());
     }
 
     /*  ================
@@ -414,7 +419,7 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
-        return bignorm(getRuntime(), value.negate());
+        return bignorm(context.runtime, value.negate());
     }
 
     /** rb_big_plus
@@ -434,6 +439,7 @@ public class RubyBignum extends RubyInteger {
         return addOther(context, other);
     }
 
+    @Override
     public final IRubyObject op_plus(ThreadContext context, long other) {
         BigInteger result = value.add(BigInteger.valueOf(other));
         if (other > 0 && value.signum() > 0) return new RubyBignum(context.runtime, result);
@@ -471,6 +477,7 @@ public class RubyBignum extends RubyInteger {
         return subtractOther(context, other);
     }
 
+    @Override
     public final IRubyObject op_minus(ThreadContext context, long other) {
         BigInteger result = value.subtract(BigInteger.valueOf(other));
         if (value.signum() < 0 && other > 0) return new RubyBignum(context.runtime, result);
@@ -513,6 +520,7 @@ public class RubyBignum extends RubyInteger {
         return op_mul(context, other);
     }
 
+    @Override
     public final IRubyObject op_mul(ThreadContext context, long other) {
         return bignorm(context.runtime, value.multiply(long2big(other)));
     }
@@ -542,6 +550,10 @@ public class RubyBignum extends RubyInteger {
             return coerceBin(context, slash ? sites(context).op_quo : sites(context).div, other);
         }
 
+        return divideImpl(runtime, otherValue);
+    }
+
+    private RubyInteger divideImpl(Ruby runtime, BigInteger otherValue) {
         if (otherValue.signum() == 0) throw runtime.newZeroDivisionError();
 
         final BigInteger result;
@@ -562,6 +574,10 @@ public class RubyBignum extends RubyInteger {
         return op_divide(context, other, true);
     }
 
+    public IRubyObject op_div(ThreadContext context, long other) {
+        return divideImpl(context.runtime, long2big(other));
+    }
+
     /** rb_big_idiv
      *
      */
@@ -570,18 +586,17 @@ public class RubyBignum extends RubyInteger {
         return op_divide(context, other, false);
     }
 
+    @Override
+    public IRubyObject idiv(ThreadContext context, long other) {
+        return divideImpl(context.runtime, long2big(other));
+    }
+
     /** rb_big_divmod
      *
      */
+    @Override
     @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        if (!other.isNil() && other instanceof RubyFloat
-                && ((RubyFloat)other).getDoubleValue() == 0) {
-            throw context.runtime.newZeroDivisionError();
-        }
-
-        Ruby runtime = context.runtime;
-
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
             otherValue = fix2big((RubyFixnum) other);
@@ -589,18 +604,20 @@ public class RubyBignum extends RubyInteger {
             otherValue = ((RubyBignum) other).value;
         } else {
             if (other instanceof RubyFloat && ((RubyFloat)other).getDoubleValue() == 0) {
-                throw runtime.newZeroDivisionError();
+                throw context.runtime.newZeroDivisionError();
             }
             return coerceBin(context, sites(context).divmod, other);
         }
 
-        if (otherValue.signum() == 0) throw runtime.newZeroDivisionError();
+        if (otherValue.signum() == 0) throw context.runtime.newZeroDivisionError();
 
         BigInteger[] results = value.divideAndRemainder(otherValue);
         if ((value.signum() * otherValue.signum()) == -1 && results[1].signum() != 0) {
             results[0] = results[0].subtract(BigInteger.ONE);
             results[1] = otherValue.add(results[1]);
         }
+
+        Ruby runtime = context.runtime;
         return RubyArray.newArray(runtime, bignorm(runtime, results[0]), bignorm(runtime, results[1]));
     }
 
@@ -712,30 +729,35 @@ public class RubyBignum extends RubyInteger {
             d = ((RubyBignum) other).getDoubleValue();
             context.runtime.getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
         } else if (other instanceof RubyFixnum) {
-            long yy = other.convertToInteger().getLongValue();
-            if (yy < 0)
-                return RubyRational.newRationalRaw(runtime, this).op_expt(context, other);
-            else {
-                int xbits = value.bitLength();
-                int BIGLEN_LIMIT = 32*1024*1024;
-
-                if ((xbits > BIGLEN_LIMIT) ||
-                        (xbits * yy > BIGLEN_LIMIT)) {
-                    runtime.getWarnings().warn("in a**b, b may be too big");
-                    d = (double)yy;
-                }
-                else {
-                    return newBignum(runtime, value.pow((int)yy));
-                }
-            }
+            return op_pow(context, other.convertToInteger().getLongValue());
         } else {
             return coerceBin(context, sites(context).op_exp, other);
         }
+        return pow(runtime, d);
+    }
+
+    private RubyNumeric pow(final Ruby runtime, final double d) {
         double pow = Math.pow(big2dbl(this), d);
         if (Double.isInfinite(pow)) {
             return RubyFloat.newFloat(runtime, pow);
         }
         return RubyNumeric.dbl2ival(runtime, pow);
+    }
+
+    private static final int BIGLEN_LIMIT = 32 * 1024 * 1024;
+
+    public final IRubyObject op_pow(final ThreadContext context, final long other) {
+        if (other < 0) {
+            return RubyRational.newRationalRaw(context.runtime, this).op_expt(context, other);
+        }
+        final int xbits = value.bitLength();
+        if ((xbits > BIGLEN_LIMIT) || (xbits * other > BIGLEN_LIMIT)) {
+            context.runtime.getWarnings().warn("in a**b, b may be too big");
+            return pow(context.runtime, (double) other);
+        }
+        else {
+            return newBignum(context.runtime, value.pow((int) other));
+        }
     }
 
     private void warnIfPowExponentTooBig(final ThreadContext context, final long other) {
@@ -904,6 +926,15 @@ public class RubyBignum extends RubyInteger {
         return (int)coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (other instanceof RubyBignum) {
+            return value.compareTo(((RubyBignum) other).value) == 0;
+        }
+        return false;
+    }
+
     /** rb_big_cmp
      *
      */
@@ -973,6 +1004,11 @@ public class RubyBignum extends RubyInteger {
         return getRuntime().newFixnum(value.hashCode());
     }
 
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
+
     /** rb_big_to_f
      *
      */
@@ -1003,7 +1039,12 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return context.runtime.newBoolean(value.equals(BigInteger.ZERO));
+        return context.runtime.newBoolean(isZero());
+    }
+
+    @Override
+    public final boolean isZero() {
+        return value.equals(BigInteger.ZERO);
     }
 
     public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
@@ -1060,13 +1101,13 @@ public class RubyBignum extends RubyInteger {
 
         dx = getDoubleValue();
         if (y instanceof RubyFixnum) {
-            dy = (double)fix2long(y);
-            if (Double.isInfinite(dx))
-                return fdivInt(context, RubyBignum.newBignum(context.runtime, fix2long(y)));
+            long ly = ((RubyFixnum) y).getLongValue();
+            if (Double.isInfinite(dx)) {
+                return fdivInt(context.runtime, BigDecimal.valueOf(ly));
+            }
+            dy = (double) ly;
         } else if (y instanceof RubyBignum) {
-            dy = RubyBignum.big2dbl((RubyBignum) y);
-            if (Double.isInfinite(dx) || Double.isInfinite(dy))
-                return fdivInt(context, (RubyBignum) y);
+            return fdivDouble(context, (RubyBignum) y);
         } else if (y instanceof RubyFloat) {
             dy = ((RubyFloat) y).getDoubleValue();
             if (Double.isNaN(dy)) {
@@ -1081,9 +1122,23 @@ public class RubyBignum extends RubyInteger {
         return context.runtime.newFloat(dx / dy);
     }
 
+    final RubyFloat fdivDouble(ThreadContext context, RubyBignum y) {
+        double dx = getDoubleValue();
+        double dy = RubyBignum.big2dbl(y);
+        if (Double.isInfinite(dx) || Double.isInfinite(dy)) {
+            return (RubyFloat) fdivInt(context, y);
+        }
+
+        return context.runtime.newFloat(dx / dy);
+    }
+
     // MRI: big_fdiv_int and big_fdiv
     public IRubyObject fdivInt(ThreadContext context, RubyBignum y) {
-        return context.runtime.newFloat(new BigDecimal(value).divide(new BigDecimal(y.getValue())).doubleValue());
+        return fdivInt(context.runtime, new BigDecimal(y.value));
+    }
+
+    private RubyFloat fdivInt(final Ruby runtime, BigDecimal y) {
+        return runtime.newFloat(new BigDecimal(value).divide(y).doubleValue());
     }
 
     // MRI: big_fdiv_float
@@ -1094,19 +1149,21 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject isNegative(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sites(context).basic_op_lt.retrieveCache(metaClass).method.isBuiltin()) {
+        CachingCallSite op_lt_site = sites(context).basic_op_lt;
+        if (op_lt_site.retrieveCache(metaClass).method.isBuiltin()) {
             return runtime.newBoolean(value.signum() < 0);
         }
-        return sites(context).basic_op_lt.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_lt_site.call(context, this, this, RubyFixnum.zero(runtime));
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sites(context).basic_op_gt.retrieveCache(metaClass).method.isBuiltin()) {
+        CachingCallSite op_gt_site = sites(context).basic_op_gt;
+        if (op_gt_site.retrieveCache(metaClass).method.isBuiltin()) {
             return runtime.newBoolean(value.signum() > 0);
         }
-        return sites(context).basic_op_gt.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_gt_site.call(context, this, this, RubyFixnum.zero(runtime));
     }
 
     @Override
@@ -1118,19 +1175,6 @@ public class RubyBignum extends RubyInteger {
     @Override
     public boolean isImmediate() {
         return true;
-    }
-
-    @Deprecated
-    public final IRubyObject op_pow(final ThreadContext context, final long other) {
-        if (other >= 0) {
-            if (other <= Integer.MAX_VALUE) { // only have BigInteger#pow(int)
-                return bignorm(context.runtime, value.pow((int) other)); // num2int is also implemented
-            }
-            warnIfPowExponentTooBig(context, other);
-            return RubyFloat.newFloat(context.runtime, Math.pow(big2dbl(this), (double) other));
-        }
-        // (other < 0)
-        return RubyRational.newRationalRaw(context.runtime, this).op_expt(context, other);
     }
 
     private static JavaSites.BignumSites sites(ThreadContext context) {

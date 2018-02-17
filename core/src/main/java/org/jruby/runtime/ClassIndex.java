@@ -70,6 +70,7 @@ public enum ClassIndex {
     UNBOUNDMETHOD,
     CONTINUATION,
     BASICOBJECT,
+    BIGDECIMAL,
     // insert new values here
     MAX_CLASSES;
 }

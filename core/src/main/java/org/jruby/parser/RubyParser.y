@@ -881,11 +881,11 @@ fname          : tIDENTIFIER {
 
 // LiteralNode:fsym
 fsym           : fname {
-                    $$ = new LiteralNode(lexer.getPosition(), $1);
-                }
-                | symbol {
-                    $$ = new LiteralNode(lexer.getPosition(), $1);
-                }
+                   $$ = new LiteralNode(lexer.getPosition(), $1);
+               }
+               | symbol {
+                   $$ = new LiteralNode(lexer.getPosition(), $1);
+               }
 
 // Node:fitem
 fitem           : fsym {
@@ -1320,7 +1320,7 @@ paren_args      : tLPAREN2 opt_call_args rparen {
 
 opt_paren_args  : none | paren_args
 
-opt_call_args   : none 
+opt_call_args   : none
                 | call_args
                 | args ',' {
                     $$ = $1;
@@ -1575,7 +1575,7 @@ primary         : literal
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($5);
 
-                    $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3);
+                    $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3, lexer.getRubySourceline());
                     support.popCurrentScope();
                 }
                 | keyword_class tLSHFT expr {
@@ -1588,7 +1588,7 @@ primary         : literal
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($7);
 
-                    $$ = new SClassNode($1, $3, support.getCurrentScope(), body);
+                    $$ = new SClassNode($1, $3, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
                     support.setInDef($<Boolean>4.booleanValue());
                     support.setInSingle($<Integer>6.intValue());
@@ -1601,7 +1601,7 @@ primary         : literal
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($4);
 
-                    $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body);
+                    $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
                 }
                 | keyword_def fname {
@@ -1957,7 +1957,7 @@ opt_rescue      : keyword_rescue exc_list exc_var then compstmt opt_rescue {
                     Node body = support.makeNullNil(node);
                     $$ = new RescueBodyNode($1, $2, body, $6);
                 }
-                | { 
+                | {
                     $$ = null; 
                 }
 
@@ -2121,7 +2121,7 @@ xstring_contents: /* none */ {
                     $$ = support.literal_concat(support.getPosition($1), $1, $<Node>2);
                 }
 
-regexp_contents :  /* none */ {
+regexp_contents: /* none */ {
                     $$ = null;
                 }
                 | regexp_contents string_content {
@@ -2216,7 +2216,7 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      }
                 }
 
- numeric        : simple_numeric {
+numeric         : simple_numeric {
                     $$ = $1;  
                 }
                 | tUMINUS_NUM simple_numeric %prec tLOWEST {

@@ -122,7 +122,7 @@ describe :io_each, shared: true do
         enum.should be_an_instance_of(Enumerator)
 
         enum.each { |l| ScratchPad << l }
-        ScratchPad.recorded.should == IOSpecs.lines
+        ScratchPad.recorded.should == [IOSpecs.lines.join]
       end
 
       describe "returned Enumerator" do

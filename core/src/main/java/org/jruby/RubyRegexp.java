@@ -226,15 +226,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     };
 
-    public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
+    public static int matcherSearch(ThreadContext context, Matcher matcher, int start, int range, int option) {
         try {
-            ThreadContext context = runtime.getCurrentContext();
             RubyThread thread = context.getThread();
             SearchMatchTask task = new SearchMatchTask(thread, start, range, option, false);
             return thread.executeTask(context, matcher, task);
         } catch (InterruptedException e) {
-            throw runtime.newInterruptedRegexpError("Regexp Interrupted");
+            throw context.runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
+    }
+
+    @Deprecated // not-used
+    public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
+        return matcherSearch(runtime.getCurrentContext(), matcher, start, range, option);
     }
 
     @Deprecated // not-used
@@ -644,6 +648,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     c = bytes[p] & 0xff;
                 } else {
                     cl = StringSupport.preciseLength(enc, bytes, p, end);
+                    if (cl < 0) {
+                        p += StringSupport.length(enc, bytes, p, end);
+                        continue;
+                    }
                     c = enc.mbcToCode(bytes, p, end);
                 }
 
@@ -916,8 +924,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
-            if ((kcodeBytes.getRealSize() > 0 && kcodeBytes.getUnsafeBytes()[kcodeBytes.getBegin()] == 'n') ||
-                (kcodeBytes.getRealSize() > 1 && kcodeBytes.getUnsafeBytes()[kcodeBytes.getBegin() + 1] == 'N')) {
+            if (kcodeBytes.getRealSize() > 0 && (kcodeBytes.get(0) == 'n' || kcodeBytes.get(0) == 'N')) {
+                newOptions.setEncodingNone(true);
                 return regexpInitialize(arg0.convertToString().getByteList(), ASCIIEncoding.INSTANCE, newOptions);
             } else {
                 getRuntime().getWarnings().warn("encoding option is ignored - " + kcodeBytes);
@@ -1201,8 +1209,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         int result = -1;
         IRubyObject match;
 //        Region regs = null;
-        ByteList strBL = str.getByteList();
-        int range = strBL.begin();
+        final ByteList strBL = str.getByteList();
+        final int beg = strBL.begin();
+        int range = beg;
         boolean tmpreg;
 
         if (pos > str.size() || pos < 0) {
@@ -1229,10 +1238,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!reverse) {
             range += str.size();
         }
-        Matcher matcher = reg.matcher(strBL.unsafeBytes(), strBL.begin(), strBL.begin() + strBL.realSize());
+        Matcher matcher = reg.matcher(strBL.unsafeBytes(), beg, beg + strBL.realSize());
         JOniException exception = null;
         try {
-            result = matcherSearch(runtime, matcher, strBL.begin() + pos, range, RE_OPTION_NONE);
+            result = matcherSearch(context, matcher, beg + pos, range, RE_OPTION_NONE);
         } catch (JOniException je) {
             exception = je;
         }
@@ -1253,15 +1262,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (result < 0) {
             if (result == -1) {
                 setBackRefInternal(context, holder, context.nil);
-                return result;
+                return -1;
             }
-            else {
-                throw runtime.newRegexpError(exception == null ? "FIXME: missing message" : exception.getMessage());
-            }
+            throw context.runtime.newRegexpError(exception == null ? "FIXME: missing message" : exception.getMessage());
         }
 
         final RubyMatchData matchData;
-        if (match.isNil()) {
+        if (match == context.nil) {
             matchData = createMatchData(context, str, matcher, reg);
         }
         else {
@@ -1601,7 +1608,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     // rb_reg_regsub
-    static RubyString regsub19(ThreadContext context, RubyString str, RubyString src, Matcher matcher, Regex pattern) {
+    static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Matcher matcher, Regex pattern) {
         Ruby runtime = context.runtime;
 
         RubyString val = null;

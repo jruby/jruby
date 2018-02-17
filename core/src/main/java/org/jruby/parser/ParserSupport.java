@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.*;
@@ -1451,16 +1452,6 @@ public class ParserSupport {
         return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
-    // MRI: reg_fragment_check
-    public void regexpFragmentCheck(RegexpNode end, ByteList value) {
-        setRegexpEncoding(end, value);
-        try {
-            RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
-        } catch (RaiseException re) {
-            compile_error(re.getMessage());
-        }
-    }        // 1.9 mode overrides to do extra checking...
-
     private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
         RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
@@ -1487,20 +1478,6 @@ public class ParserSupport {
         return locals;
     }
 
-    private boolean is7BitASCII(ByteList value) {
-        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
-    }
-
-    // TODO: Put somewhere more consolidated (similiar
-    private char optionsEncodingChar(Encoding optionEncoding) {
-        if (optionEncoding == USASCII_ENCODING) return 'n';
-        if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
-        if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
-        if (optionEncoding == UTF8_ENCODING) return 'u';
-
-        return ' ';
-    }
-
     public void compile_error(String message) { // mri: rb_compile_error_with_enc
         String line = lexer.getCurrentLine();
         ISourcePosition position = lexer.getPosition();
@@ -1515,52 +1492,8 @@ public class ParserSupport {
         throw getConfiguration().getRuntime().newSyntaxError(errorMessage + message);
     }
 
-    protected void compileError(Encoding optionEncoding, Encoding encoding) {
-        lexer.compile_error(PID.REGEXP_ENCODING_MISMATCH, "regexp encoding option '" + optionsEncodingChar(optionEncoding) +
-                "' differs from source encoding '" + encoding + "'");
-    }
-    
-    // MRI: reg_fragment_setenc_gen
-    public void setRegexpEncoding(RegexpNode end, ByteList value) {
-        RegexpOptions options = end.getOptions();
-        Encoding optionsEncoding = options.setup(configuration.getRuntime()) ;
-
-        // Change encoding to one specified by regexp options as long as the string is compatible.
-        if (optionsEncoding != null) {
-            if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
-                compileError(optionsEncoding, value.getEncoding());
-            }
-
-            value.setEncoding(optionsEncoding);
-        } else if (options.isEncodingNone()) {
-            if (value.getEncoding() == ASCII8BIT_ENCODING && !is7BitASCII(value)) {
-                compileError(optionsEncoding, value.getEncoding());
-            }
-            value.setEncoding(ASCII8BIT_ENCODING);
-        } else if (lexer.getEncoding() == USASCII_ENCODING) {
-            if (!is7BitASCII(value)) {
-                value.setEncoding(USASCII_ENCODING); // This will raise later
-            } else {
-                value.setEncoding(ASCII8BIT_ENCODING);
-            }
-        }
-    }    
-
-    protected void checkRegexpSyntax(ByteList value, RegexpOptions options) {
-        final String stringValue = value.toString();
-        // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
-        if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
-            return;
-
-        try {
-            // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
-            RubyRegexp.newRegexpParser(getConfiguration().getRuntime(), value, (RegexpOptions)options.clone());
-        } catch (RaiseException re) {
-            compile_error(re.getMessage());
-        }
-    }
-
     public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
+        Ruby runtime = configuration.getRuntime();
         RegexpOptions options = end.getOptions();
         Encoding encoding = lexer.getEncoding();
 
@@ -1570,12 +1503,12 @@ public class ParserSupport {
                 newValue.setEncoding(encoding);
             }
 
-            regexpFragmentCheck(end, newValue);
+            lexer.checkRegexpFragment(runtime, newValue, options);
             return new RegexpNode(position, newValue, options.withoutOnce());
         } else if (contents instanceof StrNode) {
             ByteList meat = (ByteList) ((StrNode) contents).getValue().clone();
-            regexpFragmentCheck(end, meat);
-            checkRegexpSyntax(meat, options.withoutOnce());
+            lexer.checkRegexpFragment(runtime, meat, options);
+            lexer.checkRegexpSyntax(runtime, meat, options.withoutOnce());
             return new RegexpNode(contents.getPosition(), meat, options.withoutOnce());
         } else if (contents instanceof DStrNode) {
             DStrNode dStrNode = (DStrNode) contents;
@@ -1584,7 +1517,7 @@ public class ParserSupport {
                 Node fragment = dStrNode.get(i);
                 if (fragment instanceof StrNode) {
                     ByteList frag = ((StrNode) fragment).getValue();
-                    regexpFragmentCheck(end, frag);
+                    lexer.checkRegexpFragment(runtime, frag, options);
 //                    if (!lexer.isOneEight()) encoding = frag.getEncoding();
                 }
             }
@@ -1597,7 +1530,7 @@ public class ParserSupport {
 
         // EvStrNode: #{val}: no fragment check, but at least set encoding
         ByteList master = createMaster(options);
-        regexpFragmentCheck(end, master);
+        lexer.checkRegexpFragment(runtime, master, options);
         encoding = master.getEncoding();
         DRegexpNode node = new DRegexpNode(position, options, encoding);
         node.add(new StrNode(contents.getPosition(), master));

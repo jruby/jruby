@@ -70,6 +70,7 @@ import org.jruby.internal.runtime.ThreadLike;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -1566,51 +1567,66 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
     }
 
+    @JRubyMethod(name = "backtrace")
     public IRubyObject backtrace(ThreadContext context) {
-        return backtrace20(context, NULL_ARRAY);
+        return backtraceInternal(context, null, null);
     }
 
-    @JRubyMethod(name = "backtrace", optional = 2)
-    public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "backtrace")
+    public IRubyObject backtrace(ThreadContext context, IRubyObject level) {
+        return backtraceInternal(context, level, null);
+    }
+
+    @JRubyMethod(name = "backtrace")
+    public IRubyObject backtrace(ThreadContext context, IRubyObject level, IRubyObject length) {
+        return backtraceInternal(context, level, length);
+    }
+
+    private IRubyObject backtraceInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         ThreadContext myContext = getContext();
+        Thread nativeThread = getNativeThread();
 
         // context can be nil if we have not started or GC has claimed our context
-        if (myContext == null) return context.nil;
-
-        Thread nativeThread = getNativeThread();
-
         // nativeThread can be null if the thread has terminated and GC has claimed it
-        if (nativeThread == null) return context.nil;
-
         // nativeThread may have finished
-        if (!nativeThread.isAlive()) return context.nil;
+        if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         Ruby runtime = context.runtime;
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return myContext.createCallerBacktrace(level, length, getNativeThread().getStackTrace());
+        return myContext.createCallerBacktrace(levelInt, lengthInt, getNativeThread().getStackTrace());
     }
 
-    @JRubyMethod(optional = 2)
-    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject backtrace_locations(ThreadContext context) {
+        return backtraceLocationsInternal(context, null, null);
+    }
+
+    @JRubyMethod
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level) {
+        return backtraceLocationsInternal(context, level, null);
+    }
+
+    @JRubyMethod
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level, IRubyObject length) {
+        return backtraceLocationsInternal(context, level, length);
+    }
+
+    private IRubyObject backtraceLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         ThreadContext myContext = getContext();
-
-        if (myContext == null) return context.nil;
-
         Thread nativeThread = getNativeThread();
 
+        // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
-        if (nativeThread == null) return context.nil;
-
         // nativeThread may have finished
-        if (!nativeThread.isAlive()) return context.nil;
+        if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         Ruby runtime = context.runtime;
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return myContext.createCallerLocations(level, length, getNativeThread().getStackTrace());
+        return myContext.createCallerLocations(levelInt, lengthInt, getNativeThread().getStackTrace());
     }
 
     @JRubyMethod(name = "report_on_exception=")
@@ -1811,72 +1827,86 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (channel instanceof SelectableChannel && fd != null) {
             SelectableChannel selectable = (SelectableChannel)channel;
 
-            synchronized (selectable.blockingLock()) {
-                boolean oldBlocking = selectable.isBlocking();
+            // ensure we have fptr locked, but release it to avoid deadlock
+            boolean locked = false;
+            if (fptr != null) {
+                locked = fptr.lock();
+                fptr.unlock();
+            }
+            try {
+                synchronized (selectable.blockingLock()) {
+                    boolean oldBlocking = selectable.isBlocking();
 
-                SelectionKey key;
-                try {
-                    selectable.configureBlocking(false);
-
-                    if (fptr != null) fptr.addBlockingThread(this);
-                    currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
-
-                    key = selectable.register(currentSelector, ops);
-
-                    beforeBlockingCall();
-                    int result;
-                    if (timeout < 0) {
-                        result = currentSelector.select();
-                    } else if (timeout == 0) {
-                        result = currentSelector.selectNow();
-                    } else {
-                        result = currentSelector.select(timeout);
-                    }
-
-                    // check for thread events, in case we've been woken up to die
-                    pollThreadEvents();
-
-                    if (result == 1) {
-                        Set<SelectionKey> keySet = currentSelector.selectedKeys();
-
-                        if (keySet.iterator().next() == key) {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                } catch (IOException ioe) {
-                    throw getRuntime().newIOErrorFromException(ioe);
-                } finally {
-                    // Note: I don't like ignoring these exceptions, but it's
-                    // unclear how likely they are to happen or what damage we
-                    // might do by ignoring them. Note that the pieces are separate
-                    // so that we can ensure one failing does not affect the others
-                    // running.
-
-                    // shut down and null out the selector
+                    SelectionKey key;
                     try {
-                        if (currentSelector != null) {
-                            getRuntime().getSelectorPool().put(currentSelector);
+                        selectable.configureBlocking(false);
+
+                        if (fptr != null) fptr.addBlockingThread(this);
+                        currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
+
+                        key = selectable.register(currentSelector, ops);
+
+                        beforeBlockingCall();
+                        int result;
+
+                        if (timeout < 0) {
+                            result = currentSelector.select();
+                        } else if (timeout == 0) {
+                            result = currentSelector.selectNow();
+                        } else {
+                            result = currentSelector.select(timeout);
                         }
-                    } catch (Exception e) {
-                        // ignore
+
+                        // check for thread events, in case we've been woken up to die
+                        pollThreadEvents();
+
+                        if (result == 1) {
+                            Set<SelectionKey> keySet = currentSelector.selectedKeys();
+
+                            if (keySet.iterator().next() == key) {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    } catch (IOException ioe) {
+                        throw getRuntime().newIOErrorFromException(ioe);
                     } finally {
-                        currentSelector = null;
+                        // Note: I don't like ignoring these exceptions, but it's
+                        // unclear how likely they are to happen or what damage we
+                        // might do by ignoring them. Note that the pieces are separate
+                        // so that we can ensure one failing does not affect the others
+                        // running.
+
+                        // shut down and null out the selector
+                        try {
+                            if (currentSelector != null) {
+                                getRuntime().getSelectorPool().put(currentSelector);
+                            }
+                        } catch (Exception e) {
+                            // ignore
+                        } finally {
+                            currentSelector = null;
+                        }
+
+                        // remove this thread as a blocker against the given IO
+                        if (fptr != null) fptr.removeBlockingThread(this);
+
+                        // go back to previous blocking state on the selectable
+                        try {
+                            selectable.configureBlocking(oldBlocking);
+                        } catch (Exception e) {
+                            // ignore
+                        }
+
+                        // clear thread state from blocking call
+                        afterBlockingCall();
                     }
-
-                    // remove this thread as a blocker against the given IO
-                    if (fptr != null) fptr.removeBlockingThread(this);
-
-                    // go back to previous blocking state on the selectable
-                    try {
-                        selectable.configureBlocking(oldBlocking);
-                    } catch (Exception e) {
-                        // ignore
-                    }
-
-                    // clear thread state from blocking call
-                    afterBlockingCall();
+                }
+            } finally {
+                if (fptr != null) {
+                    fptr.lock();
+                    if (locked) fptr.unlock();
                 }
             }
         } else {
@@ -2113,6 +2143,41 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return block.yieldSpecific(context);
         } finally {
             ts.setCritical(critical);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
+        return backtrace(context);
+    }
+
+    @Deprecated
+    public IRubyObject backtrace(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return backtrace(context);
+            case 1:
+                return backtrace(context, args[0]);
+            case 2:
+                return backtrace(context, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return backtrace_locations(context);
+            case 1:
+                return backtrace_locations(context, args[0]);
+            case 2:
+                return backtrace_locations(context, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
         }
     }
 }

@@ -117,7 +117,9 @@ end
 # indicates the native launcher is installed and will override
 # env-shebang and possibly other options.
 begin
-  require 'rubygems/defaults/jruby_native'
+  if File.exist?(File.join(File.dirname(__FILE__), "jruby_native.rb"))
+    require 'rubygems/defaults/jruby_native'
+  end
 rescue LoadError
 end
 

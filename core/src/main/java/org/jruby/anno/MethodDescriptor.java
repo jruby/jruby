@@ -145,4 +145,26 @@ public abstract class MethodDescriptor<T> {
         int arityRequired = Math.max(required, actualRequired);
         arity = (optional > 0 || rest) ? -(arityRequired + 1) : arityRequired;
     }
+
+    public final static int MAX_REQUIRED_UNBOXED_ARITY = 3;
+
+    /**
+     * Returns a value useful for number of arguments we need for arity when generating call methods used by
+     * invokers and the JIT.  Note: MAX_REQUIRED_UNBOXED_ARITY looks like some tweakable setting but it is merely
+     * for documentation.  All our non-generated internal code is also locked to the same specific arities so we
+     * cannot just change this value and be happy.
+     *
+     * @return arity value of specific required arity which can be used as an unboxed call or -1 for all other cases.
+     */
+    public int calculateSpecificCallArity() {
+        if (optional == 0 && !rest) {
+            if (required == 0) {
+                if (actualRequired <= MAX_REQUIRED_UNBOXED_ARITY) return actualRequired;
+            } else if (required >= 0 && required <= MAX_REQUIRED_UNBOXED_ARITY) {
+                return required;
+            }
+        }
+
+        return -1;
+    }
 }

@@ -292,6 +292,11 @@ public class RubyRange extends RubyObject {
         return context.nil;
     }
 
+    @Override
+    public RubyFixnum hash() {
+        return hash(getRuntime().getCurrentContext());
+    }
+
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         Ruby runtime = context.runtime;

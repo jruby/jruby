@@ -84,18 +84,20 @@ describe "Module#refine" do
     end
   end
 
-  ruby_version_is "2.4" do
-    it "accepts a module as argument" do
-      inner_self = nil
-      Module.new do
-        refine(Enumerable) do
-          def blah
+  quarantine! do # https://bugs.ruby-lang.org/issues/14070
+    ruby_version_is "2.4" do
+      it "accepts a module as argument" do
+        inner_self = nil
+        Module.new do
+          refine(Enumerable) do
+            def blah
+            end
+            inner_self = self
           end
-          inner_self = self
         end
-      end
 
-      inner_self.public_instance_methods.should include(:blah)
+        inner_self.public_instance_methods.should include(:blah)
+      end
     end
   end
 
@@ -318,7 +320,7 @@ describe "Module#refine" do
     result.should == "foo from subclass"
   end
 
-  context "for methods accesses indirectly" do
+  context "for methods accessed indirectly" do
     ruby_version_is "" ... "2.4" do
       it "is not honored by Kernel#send" do
         refinement = Module.new do
@@ -420,6 +422,46 @@ describe "Module#refine" do
         end
 
         result.should == ["(1)", "(2)", "(3)"]
+      end
+    end
+
+    ruby_version_is "" ... "2.5" do
+      it "is not honored by string interpolation" do
+        refinement = Module.new do
+          refine Integer do
+            def to_s
+              "foo"
+            end
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+          result = "#{1}"
+        end
+
+        result.should == "1"
+      end
+    end
+
+    ruby_version_is "2.5" do
+      it "is honored by string interpolation" do
+        refinement = Module.new do
+          refine Integer do
+            def to_s
+              "foo"
+            end
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+          result = "#{1}"
+        end
+
+        result.should == "foo"
       end
     end
 
@@ -613,4 +655,3 @@ describe "Module#refine" do
     end
   end
 end
-

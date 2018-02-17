@@ -64,6 +64,7 @@ STDLIB_FILES = %w[
   unicode_normalize
   uri
   uri.rb
+  weakref.rb
   webrick
   webrick.rb
   yaml

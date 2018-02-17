@@ -13,6 +13,10 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * Represents a defined?(yield) check, which works like a call to block_given? without
+ * requiring special access to the caller's frame.
+ */
 public class BlockGivenInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     public BlockGivenInstr(Variable result, Operand block) {
         super(Operation.BLOCK_GIVEN, result, block);

@@ -1744,33 +1744,33 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     @JRubyMethod(name = "instance_eval",
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval19(ThreadContext context, Block block) {
         return specificEval(context, getInstanceEvalClass(), block, EvalType.INSTANCE_EVAL);
     }
     @JRubyMethod(name = "instance_eval",
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, block, EvalType.INSTANCE_EVAL);
     }
     @JRubyMethod(name = "instance_eval",
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, block, EvalType.INSTANCE_EVAL);
     }
     @JRubyMethod(name = "instance_eval",
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
     }
 
     @JRubyMethod(name = "instance_exec", optional = 3, rest = true,
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_exec19(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
             throw context.runtime.newLocalJumpErrorNoBlock();
@@ -2107,31 +2107,34 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * in both the compiler and the interpreter, the performance
      * benefit is important for this method.
      */
+    @Deprecated // NOTE: does not match Ruby 2.x rules (does method bound check only)
     public final RubyBoolean respond_to_p(IRubyObject mname) {
         return getRuntime().newBoolean(getMetaClass().respondsToMethod(mname.asJavaString(), true));
     }
 
+    @Deprecated
     public final RubyBoolean respond_to_p19(IRubyObject mname) {
-        return respond_to_p19(mname, false);
+        return respond_to_p(getRuntime().getCurrentContext(), mname, false);
     }
 
+    @Deprecated // NOTE: does not match Ruby 2.x rules (does method bound check only)
     public final RubyBoolean respond_to_p(IRubyObject mname, IRubyObject includePrivate) {
         String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
     }
 
+    @Deprecated
     public final RubyBoolean respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
-        return respond_to_p19(mname, includePrivate.isTrue());
+        return respond_to_p(getRuntime().getCurrentContext(), mname, includePrivate.isTrue());
     }
 
-    private RubyBoolean respond_to_p19(IRubyObject mname, final boolean includePrivate) {
-        final Ruby runtime = getRuntime();
-        final String name = mname.asJavaString();
+    final RubyBoolean respond_to_p(ThreadContext context, IRubyObject methodName, final boolean includePrivate) {
+        final Ruby runtime = context.runtime;
+        final String name = methodName.asJavaString();
         if (getMetaClass().respondsToMethod(name, !includePrivate)) return runtime.getTrue();
         // MRI (1.9) always passes down a symbol when calling respond_to_missing?
-        if ( ! (mname instanceof RubySymbol) ) mname = runtime.newSymbol(name);
-        ThreadContext context = runtime.getCurrentContext();
-        IRubyObject respond = sites(context).respond_to_missing.call(context, this, this, mname, runtime.newBoolean(includePrivate));
+        if ( ! (methodName instanceof RubySymbol) ) methodName = runtime.newSymbol(name);
+        IRubyObject respond = sites(context).respond_to_missing.call(context, this, this, methodName, runtime.newBoolean(includePrivate));
         return runtime.newBoolean( respond.isTrue() );
     }
 
@@ -2160,6 +2163,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * The deprecated version of type, that emits a deprecation
      * warning.
      */
+    @Deprecated
     public RubyClass type_deprecated() {
         getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#type is deprecated; use Object#class");
         return type();

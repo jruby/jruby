@@ -1,10 +1,8 @@
 package org.jruby.test;
 
 import junit.framework.TestCase;
-import org.jruby.CompatVersion;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 
 public class TestRecursiveCheck extends TestCase {
     private Ruby runtime;

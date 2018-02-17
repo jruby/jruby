@@ -175,7 +175,7 @@ public class RubyFloat extends RubyNumeric {
 
     @Override
     public BigInteger getBigIntegerValue() {
-        return BigInteger.valueOf((long)value);
+        return RubyBignum.toBigInteger(value);
     }
 
     @Override
@@ -183,8 +183,28 @@ public class RubyFloat extends RubyNumeric {
     	return this;
     }
 
+    @Override
+    public RubyInteger convertToInteger() {
+        return toInteger(getRuntime());
+    }
+
+    private RubyInteger toInteger(final Ruby runtime) {
+        if (value > 0.0) return dbl2ival(runtime, Math.floor(value));
+        return dbl2ival(runtime, Math.ceil(value));
+    }
+
     public int signum() {
         return (int) Math.signum(value); // NOTE: (int) NaN ?
+    }
+
+    @Override
+    public IRubyObject isNegative(ThreadContext context) {
+        return context.runtime.newBoolean(signum() < 0);
+    }
+
+    @Override
+    public IRubyObject isPositive(ThreadContext context) {
+        return context.runtime.newBoolean(signum() > 0);
     }
 
     public static RubyFloat newFloat(Ruby runtime, double value) {
@@ -677,14 +697,18 @@ public class RubyFloat extends RubyNumeric {
         return RubyBoolean.newBoolean(context.runtime, value == 0.0);
     }
 
+    @Override
+    public final boolean isZero() {
+        return value == 0.0;
+    }
+
     /**
      * MRI: flo_truncate
      */
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     @Override
     public IRubyObject truncate(ThreadContext context) {
-        if (value > 0.0) return floor(context);
-        return ceil(context);
+        return toInteger(context.runtime);
     }
 
     /**
@@ -722,7 +746,7 @@ public class RubyFloat extends RubyNumeric {
      *
      */
     static final int DBL_MANT_DIG = 53;
-    static final int FLT_RADIX = 2;
+
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         long[] exp = new long[1];
@@ -732,9 +756,9 @@ public class RubyFloat extends RubyNumeric {
 
         Ruby runtime = context.runtime;
 
-        IRubyObject rf = RubyNumeric.dbl2ival(runtime, f);
-        IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
-        return f_mul(context, rf, f_expt(context, RubyFixnum.newFixnum(runtime, FLT_RADIX), rn));
+        RubyInteger rf = RubyNumeric.dbl2ival(runtime, f);
+        RubyFixnum rn = RubyFixnum.newFixnum(runtime, n);
+        return f_mul(context, rf, f_expt(context, RubyFixnum.two(runtime), rn));
     }
 
     /** float_rationalize
@@ -747,7 +771,6 @@ public class RubyFloat extends RubyNumeric {
         }
 
         final Ruby runtime = context.runtime;
-        RubyFixnum one = RubyFixnum.one(runtime);
 
         IRubyObject eps, a, b;
         if (args.length != 0) {
@@ -755,8 +778,6 @@ public class RubyFloat extends RubyNumeric {
             a = f_sub(context, this, eps);
             b = f_add(context, this, eps);
         } else {
-            IRubyObject flt;
-            IRubyObject p, q;
             long[] exp = new long[1];
 
             // float_decode_internal
@@ -767,26 +788,23 @@ public class RubyFloat extends RubyNumeric {
             RubyInteger rf = RubyBignum.newBignorm(runtime, f);
             RubyFixnum rn = RubyFixnum.newFixnum(runtime, n);
 
-            if (rf.zero_p(context).isTrue() || fix2int(rn) >= 0) {
+            if (rf.isZero() || fix2int(rn) >= 0) {
                 return RubyRational.newRationalRaw(runtime, rf.op_lshift(context, rn));
             }
 
-            RubyInteger two_times_f, den;
+            final RubyFixnum one = RubyFixnum.one(runtime);
+            RubyInteger den;
 
-            RubyFixnum two = RubyFixnum.two(runtime);
-            two_times_f = (RubyInteger) two.op_mul(context, rf);
-            den = (RubyInteger) RubyFixnum.one(runtime).op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
-
-            a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, RubyFixnum.one(runtime)), den);
-            b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, RubyFixnum.one(runtime)), den);
+            RubyInteger two_times_f = (RubyInteger) rf.op_mul(context, 2);
+            den = (RubyInteger) one.op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
+            
+            a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, 1), den);
+            b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, 1), den);
         }
 
         if (sites(context).op_equal.call(context, a, a, b).isTrue()) return f_to_r(context, this);
 
-        IRubyObject[] ary = new IRubyObject[2];
-        ary[0] = a;
-        ary[1] = b;
-        IRubyObject[] ans = nurat_rationalize_internal(context, ary);
+        IRubyObject[] ans = nurat_rationalize_internal(context, a, b);
 
         return RubyRational.newRationalRaw(runtime, ans[0], ans[1]);
     }
@@ -806,7 +824,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context, IRubyObject digits) {
         double number, f;
-        int ndigits =  num2int(digits);
+        int ndigits = num2int(digits);
 
         if (ndigits < 0) {
             return ((RubyInteger) truncate(context)).floor(context, digits);
