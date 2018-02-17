@@ -483,6 +483,17 @@ public class RubyModule extends RubyObject {
     // note that addMethod now does its own put, so any change made to
     // functionality here should be made there as well
     private void putMethod(String name, DynamicMethod method) {
+        putMethod(getRuntime(), name, method);
+    }
+
+    /**
+     * @note Internal API - only public as its used by generated code!
+     * @param runtime
+     * @param name
+     * @param method
+     * @return method
+     */ // NOTE: used by AnnotationBinder
+    public final DynamicMethod putMethod(final Ruby runtime, String name, DynamicMethod method) {
         if (hasPrepends()) {
             method = method.dup();
             method.setImplementationClass(methodLocation);
@@ -490,7 +501,8 @@ public class RubyModule extends RubyObject {
 
         methodLocation.getMethodsForWrite().put(name, method);
 
-        getRuntime().addProfiledMethod(name, method);
+        runtime.addProfiledMethod(name, method);
+        return method;
     }
 
     /**
@@ -1196,7 +1208,7 @@ public class RubyModule extends RubyObject {
 
     public final void addMethodInternal(String name, DynamicMethod method) {
         synchronized(methodLocation.getMethodsForWrite()) {
-            addMethodAtBootTimeOnly(name, method);
+            putMethod(name, method);
             invalidateCoreClasses();
             invalidateCacheDescendants();
         }
@@ -1209,16 +1221,10 @@ public class RubyModule extends RubyObject {
      *
      * @param name The name to which to bind the method
      * @param method The method to bind
+     * @deprecated No longer used, internal API!
      */
     public final void addMethodAtBootTimeOnly(String name, DynamicMethod method) {
-        if (hasPrepends()) {
-            method = method.dup();
-            method.setImplementationClass(methodLocation);
-        }
-
-        methodLocation.getMethodsForWrite().put(name, method);
-
-        getRuntime().addProfiledMethod(name, method);
+        putMethod(getRuntime(), name, method);
     }
 
     public void removeMethod(ThreadContext context, String name) {
@@ -1620,24 +1626,31 @@ public class RubyModule extends RubyObject {
      */
     public synchronized void defineAlias(String name, String oldName) {
         testFrozen("module");
-        if (oldName.equals(name)) return;
 
-        DynamicMethod method = searchForAliasMethod(getRuntime(), oldName);
-
-        putMethod(name, new AliasMethod(this, method, oldName));
+        putAlias(name, searchForAliasMethod(getRuntime(), oldName), oldName);
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
     }
 
+    /**
+     * @note Internal API - only public as its used by generated code!
+     * @param name
+     * @param method
+     * @param oldName
+     */ // NOTE: used by AnnotationBinder
+    public final void putAlias(String name, DynamicMethod method, String oldName) {
+        if (name.equals(oldName)) return;
+        putMethod(name, new AliasMethod(this, method, oldName));
+    }
+
     public synchronized void defineAliases(List<String> aliases, String oldName) {
         testFrozen("module");
+
         DynamicMethod method = searchForAliasMethod(getRuntime(), oldName);
 
         for (String name: aliases) {
-            if (oldName.equals(name)) continue;
-
-            putMethod(name, new AliasMethod(this, method, oldName));
+            putAlias(name, new AliasMethod(this, method, oldName), oldName);
         }
 
         methodLocation.invalidateCoreClasses();

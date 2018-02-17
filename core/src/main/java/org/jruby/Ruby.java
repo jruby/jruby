@@ -4509,8 +4509,7 @@ public final class Ruby implements Constantizable {
      * @param method
      */
     void addProfiledMethod(final String name, final DynamicMethod method) {
-        if (!config.isProfiling()) return;
-        if (method.isUndefined()) return;
+        if (!config.isProfiling() || method.isUndefined()) return;
 
         getProfilingService().addProfiledMethod( name, method );
     }
@@ -5014,7 +5013,7 @@ public final class Ruby implements Constantizable {
 
     private final long startTime = System.currentTimeMillis();
 
-    private final RubyInstanceConfig config;
+    final RubyInstanceConfig config;
 
     private InputStream in;
     private PrintStream out;

@@ -147,7 +147,7 @@ public class AnnotationBinder extends AbstractProcessor {
             if (!hasAnno) return;
 
             out.println("        JavaMethod javaMethod;");
-            out.println("        DynamicMethod moduleMethod;");
+            out.println("        DynamicMethod moduleMethod, aliasedMethod;");
             if (hasMeta || hasModule) out.println("        RubyClass singletonClass = cls.getSingletonClass();");
             out.println("        Ruby runtime = cls.getRuntime();");
 
@@ -516,17 +516,20 @@ public class AnnotationBinder extends AbstractProcessor {
     private void defineMethodOnClass(String methodVar, String classVar, final String[] names, final String[] aliases,
         ExecutableElement md) {
         CharSequence baseName = getBaseName(names, md);
-        if (names.length == 0) {
-            out.println("        " + classVar + ".addMethodAtBootTimeOnly(\"" + baseName + "\", " + methodVar + ");");
-        } else {
+        // aliasedMethod = type.putMethod(runtime, baseName, method);
+        out.println("        aliasedMethod = " + classVar + ".putMethod(runtime, \"" + baseName + "\", " + methodVar + ");");
+        if (names.length > 0) {
             for (String name : names) {
-                out.println("        " + classVar + ".addMethodAtBootTimeOnly(\"" + name + "\", " + methodVar + ");");
+                if (!name.contentEquals(baseName)) {
+                    out.println("        " + classVar + ".putMethod(runtime, \"" + name + "\", " + methodVar + ");");
+                }
             }
         }
 
         if (aliases.length > 0) {
             for (String alias : aliases) {
-                out.println("        " + classVar + ".defineAlias(\"" + alias + "\", \"" + baseName + "\");");
+                // type.putAlias(alias, aliasedMethod, baseName); /* baseName == method.getName() */
+                out.println("        " + classVar + ".putAlias(\"" + alias + "\", aliasedMethod, \"" + baseName + "\");");
             }
         }
     }
