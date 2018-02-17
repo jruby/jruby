@@ -24,7 +24,6 @@ STDLIB_FILES = %w[
   irb
   irb.rb
   logger.rb
-  mathn.rb
   matrix
   matrix.rb
   monitor.rb
