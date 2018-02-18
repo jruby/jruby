@@ -32,7 +32,6 @@ import org.jruby.common.RubyWarnings;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
