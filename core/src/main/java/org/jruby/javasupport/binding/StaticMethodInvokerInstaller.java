@@ -14,7 +14,7 @@ public class StaticMethodInvokerInstaller extends MethodInstaller {
     @Override void install(final RubyModule proxy) {
         if ( hasLocalMethod() ) {
             final RubyClass singletonClass = proxy.getSingletonClass();
-            defineMethods(singletonClass, new StaticMethodInvoker(singletonClass, methods), false);
+            defineMethods(singletonClass, new StaticMethodInvoker(singletonClass, methods, name), false);
         }
     }
 }

@@ -1558,18 +1558,22 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_keys
      *
      */
-    @JRubyMethod(name = "keys")
-    public RubyArray keys() {
-        Ruby runtime = getRuntime();
-        try {
-            RubyArray keys = RubyArray.newBlankArray(runtime, size);
 
-            visitAll(runtime.getCurrentContext(), StoreKeyVisitor, keys);
+    @JRubyMethod(name = "keys")
+    public RubyArray keys(final ThreadContext context) {
+        try {
+            RubyArray keys = RubyArray.newBlankArray(context.runtime, size);
+
+            visitAll(context, StoreKeyVisitor, keys);
 
             return keys;
         } catch (NegativeArraySizeException nase) {
             throw concurrentModification();
         }
+    }
+
+    public final RubyArray keys() {
+        return keys(getRuntime().getCurrentContext());
     }
 
     private static final VisitorWithState<RubyArray> StoreKeyVisitor = new VisitorWithState<RubyArray>() {
@@ -1582,18 +1586,22 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_values
      *
      */
-    @JRubyMethod(name = "values")
-    public RubyArray rb_values() {
-        Ruby runtime = getRuntime();
-        try {
-            RubyArray values = RubyArray.newBlankArray(runtime, size);
 
-            visitAll(runtime.getCurrentContext(), StoreValueVisitor, values);
+    @JRubyMethod(name = "values")
+    public RubyArray values(final ThreadContext context) {
+        try {
+            RubyArray values = RubyArray.newBlankArray(context.runtime, size);
+
+            visitAll(context, StoreValueVisitor, values);
 
             return values;
         } catch (NegativeArraySizeException nase) {
             throw concurrentModification();
         }
+    }
+
+    public final RubyArray rb_values() {
+        return values(getRuntime().getCurrentContext());
     }
 
     public static final VisitorWithState<RubyArray> StoreValueVisitor = new VisitorWithState<RubyArray>() {

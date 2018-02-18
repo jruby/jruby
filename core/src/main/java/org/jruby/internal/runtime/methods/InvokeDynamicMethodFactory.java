@@ -72,7 +72,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
     }
 
     @Override
-    public DynamicMethod getAnnotatedMethod(final RubyModule implementationClass, final List<JavaMethodDescriptor> descs) {
+    public DynamicMethod getAnnotatedMethod(final RubyModule implementationClass, final List<JavaMethodDescriptor> descs, String name) {
         JavaMethodDescriptor desc1 = descs.get(0);
         DescriptorInfo info = new DescriptorInfo(desc1);
 
@@ -80,7 +80,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
             // super logic does not work yet because we need to take impl class
             // and method name from the DynamicMethod#call call, so punt to
             // generated class for now
-            return super.getAnnotatedMethod(implementationClass, descs);
+            return super.getAnnotatedMethod(implementationClass, descs, name);
         }
 
         if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
@@ -315,8 +315,8 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
      * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     @Override
-    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
-        return getAnnotatedMethod(implementationClass, Collections.singletonList(desc));
+    public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc, String name) {
+        return getAnnotatedMethod(implementationClass, Collections.singletonList(desc), name);
     }
 
     public static final Signature VARIABLE_ARITY_SIGNATURE = Signature

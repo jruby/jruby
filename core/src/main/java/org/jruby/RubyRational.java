@@ -1224,12 +1224,21 @@ public class RubyRational extends RubyNumeric {
         return str;
     }
 
+    @Override
+    public IRubyObject inspect() {
+        return inspectImpl(getRuntime());
+    }
+
     /** nurat_inspect
      * 
      */
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
-        RubyString str = RubyString.newString(context.runtime, new ByteList(12), USASCIIEncoding.INSTANCE);
+        return inspectImpl(context.runtime);
+    }
+
+    private RubyString inspectImpl(Ruby runtime) {
+        RubyString str = RubyString.newString(runtime, new ByteList(12), USASCIIEncoding.INSTANCE);
         str.cat((byte)'(');
         str.append(num.inspect());
         str.cat((byte)'/');
@@ -1316,11 +1325,11 @@ public class RubyRational extends RubyNumeric {
             IRubyObject de = match.at(3);
             IRubyObject re = match.post_match(context);
             
-            RubyArray a = nu.split19(RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), context, false).convertToArray();
+            RubyArray a = nu.split(RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), context, false);
             RubyString ifp = (RubyString)a.eltInternal(0);
             IRubyObject exp = a.size() != 2 ? nil : a.eltInternal(1);
             
-            a = ifp.split19(RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat), context, false).convertToArray();
+            a = ifp.split(RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat), context, false);
             IRubyObject ip = a.eltInternal(0);
             IRubyObject fp = a.size() != 2 ? nil : a.eltInternal(1);
             

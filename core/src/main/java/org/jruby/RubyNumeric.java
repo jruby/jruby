@@ -230,14 +230,13 @@ public class RubyNumeric extends RubyObject {
         return arg.convertToInteger().getLongValue();
     }
 
-    private static long float2long(RubyFloat flt) {
+    public static long float2long(RubyFloat flt) {
         double aFloat = flt.getDoubleValue();
         if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
             return (long) aFloat;
-        } else {
-            // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
-            throw flt.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
         }
+        // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
+        throw flt.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
     }
 
     /**

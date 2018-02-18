@@ -1247,12 +1247,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      * @return
      */
     public int strHashCode(Ruby runtime) {
+        final ByteList value = this.value;
+        final Encoding enc = value.getEncoding();
         long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(runtime.getHashSeedK0(),
                 runtime.getHashSeedK1(), value.getUnsafeBytes(), value.getBegin(),
                 value.getRealSize()) : PerlHash.hash(runtime.getHashSeedK0(),
                 value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
-        hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
-                : value.getEncoding().getIndex());
+        hash ^= (enc.isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : enc.getIndex());
         return (int) hash;
     }
 
@@ -1263,11 +1264,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      * @return
      */
     public int unseededStrHashCode(Ruby runtime) {
+        final ByteList value = this.value;
+        final Encoding enc = value.getEncoding();
         long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(0, 0, value.getUnsafeBytes(),
                 value.getBegin(), value.getRealSize()) : PerlHash.hash(0, value.getUnsafeBytes(),
                 value.getBegin(), value.getRealSize());
-        hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
-                : value.getEncoding().getIndex());
+        hash ^= (enc.isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : enc.getIndex());
         return (int) hash;
     }
 
@@ -1278,7 +1280,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return (other instanceof RubyString) && equals((RubyString) other);
     }
 
-    private boolean equals(RubyString other) {
+    final boolean equals(RubyString other) {
         return ((RubyString) other).value.equal(value);
     }
 
@@ -2840,7 +2842,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // MRI: rb_strseq_index
     private int strseqIndex(final RubyString sub, int offset, boolean inBytes) {
-        byte[] sBytes = value.unsafeBytes();
         int s, sptr, e;
         int pos, len, slen;
         boolean single_byte = singleByteOptimizable();
@@ -2857,6 +2858,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
         if (len - offset < slen) return -1;
 
+        byte[] sBytes = value.unsafeBytes();
         s = value.begin();
         e = s + value.realSize();
         if (offset != 0) {
@@ -3601,17 +3603,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_split_m
      *
      */
-    public RubyArray split(ThreadContext context) {
-        return split19(context);
-    }
 
-    public RubyArray split(ThreadContext context, IRubyObject arg0) {
-        return split19(context, arg0);
-    }
+    @Deprecated
+    public RubyArray split19(ThreadContext context) { return split(context); }
 
-    public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return split19(context, arg0, arg1);
-    }
+    @Deprecated
+    public RubyArray split19(ThreadContext context, IRubyObject arg0) { return split(context, arg0); }
+
+    @Deprecated
+    public RubyArray split19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) { return split(context, arg0, arg1); }
 
     private void populateCapturesForSplit(Ruby runtime, RubyArray result, RubyMatchData match) {
         for (int i = 1; i < match.numRegs(); i++) {
@@ -3622,35 +3622,40 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @JRubyMethod(name = "split", writes = BACKREF)
-    public RubyArray split19(ThreadContext context) {
-        return split19(context, context.runtime.getNil());
+    public RubyArray split(ThreadContext context) {
+        return split(context, context.nil);
     }
 
     @JRubyMethod(name = "split", writes = BACKREF)
-    public RubyArray split19(ThreadContext context, IRubyObject arg0) {
-        return splitCommon19(arg0, false, 0, 0, context, true);
+    public RubyArray split(ThreadContext context, IRubyObject arg0) {
+        return splitCommon(context, arg0, false, 0, 0, true);
     }
 
     @JRubyMethod(name = "split", writes = BACKREF)
-    public RubyArray split19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+    public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         final int lim = RubyNumeric.num2int(arg1);
         if (lim <= 0) {
-            return splitCommon19(arg0, false, lim, 1, context, true);
+            return splitCommon(context, arg0, false, lim, 1, true);
         } else {
             if (lim == 1) return value.getRealSize() == 0 ? context.runtime.newArray() : context.runtime.newArray(this);
-            return splitCommon19(arg0, true, lim, 1, context, true);
+            return splitCommon(context, arg0, true, lim, 1, true);
         }
     }
 
+    @Deprecated
     public RubyArray split19(IRubyObject spat, ThreadContext context, boolean useBackref) {
-        return splitCommon19(spat, false, value.realSize(), 0, context, useBackref);
+        return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
+    }
+
+    final RubyArray split(IRubyObject spat, ThreadContext context, boolean useBackref) {
+        return splitCommon(context, spat, false, value.realSize(), 0, useBackref);
     }
 
     // MRI: rb_str_split_m, overall structure
-    private RubyArray splitCommon19(IRubyObject spat, final boolean limit, final int lim, final int i, ThreadContext context, boolean useBackref) {
+    private RubyArray splitCommon(ThreadContext context, IRubyObject spat, final boolean limit, final int lim, final int i, boolean useBackref) {
         final RubyArray result;
-        if (spat.isNil() && (spat = context.runtime.getGlobalVariables().get("$;")).isNil()) {
-            result = awkSplit19(limit, lim, i);
+        if (spat == context.nil && (spat = context.runtime.getGlobalVariables().get("$;")) == context.nil) {
+            result = awkSplit(context.runtime, limit, lim, i);
         } else {
             spat = getPatternQuoted(context, spat, false);
             if (spat instanceof RubyString) {
@@ -3661,7 +3666,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 if (len == 0) {
                     // headius FIXME: MRI has a single-entry global cache here to reduce this cost in a loop
                     RubyRegexp pattern = RubyRegexp.newRegexpFromStr(context.runtime, (RubyString) spat, 0);
-                    result = regexSplit19(context, pattern, limit, lim, i, useBackref);
+                    result = regexSplit(context, pattern, limit, lim, i, useBackref);
                 } else {
                     final int c;
                     byte[]bytes = spatValue.getUnsafeBytes();
@@ -3671,10 +3676,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     } else {
                         c = len == StringSupport.preciseLength(spatEnc, bytes, p, p + len) ? spatEnc.mbcToCode(bytes, p, p + len) : -1;
                     }
-                    result = c == ' ' ? awkSplit19(limit, lim, i) : stringSplit19(context, (RubyString)spat, limit, lim, i);
+                    result = c == ' ' ? awkSplit(context.runtime, limit, lim, i) : stringSplit(context, (RubyString)spat, limit, lim, i);
                 }
             } else {
-                result = regexSplit19(context, (RubyRegexp)spat, limit, lim, i, useBackref);
+                result = regexSplit(context, (RubyRegexp) spat, limit, lim, i, useBackref);
             }
         }
 
@@ -3688,7 +3693,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     // MRI: rb_str_split_m, when split_type = regexp
-    private RubyArray regexSplit19(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i, boolean useBackref) {
+    private RubyArray regexSplit(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i, boolean useBackref) {
         Ruby runtime = context.runtime;
 
         int ptr = value.getBegin();
@@ -3739,13 +3744,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             holder[0] = context.nil;
         }
 
-        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared19(runtime, beg, len - beg));
+        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
         return result;
     }
 
     // MRI: rb_str_split_m, when split_type = awk
-    private RubyArray awkSplit19(boolean limit, int lim, int i) {
-        Ruby runtime = getRuntime();
+    private RubyArray awkSplit(final Ruby runtime, boolean limit, int lim, int i) {
         RubyArray result = runtime.newArray();
 
         byte[]bytes = value.getUnsafeBytes();
@@ -3792,7 +3796,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     // MRI: rb_str_split_m, when split_type = string
-    private RubyArray stringSplit19(ThreadContext context, RubyString spat, boolean limit, int lim, int i) {
+    private RubyArray stringSplit(ThreadContext context, RubyString spat, boolean limit, int lim, int i) {
         Ruby runtime = context.runtime;
         mustnotBroken(context);
 
@@ -3889,12 +3893,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_scan
      *
      */
-    public IRubyObject scan(ThreadContext context, IRubyObject arg, Block block) {
-        return scan19(context, arg, block);
-    }
+
+    @Deprecated
+    public IRubyObject scan19(ThreadContext context, IRubyObject arg, Block block) { return scan(context, arg, block); }
 
     @JRubyMethod(name = "scan", reads = BACKREF, writes = BACKREF)
-    public IRubyObject scan19(ThreadContext context, IRubyObject pat, Block block) {
+    public IRubyObject scan(ThreadContext context, IRubyObject pat, Block block) {
         final RubyString str = this;
 
         IRubyObject result;
@@ -3905,7 +3909,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         mustnotBroken(context);
         if (!block.isGiven()) {
             RubyArray ary = null;
-            while (!(result = scanOnce(context, str, pat, startp)).isNil()) {
+            while ((result = scanOnce(context, str, pat, startp)) != context.nil) {
                 last = prev;
                 prev = startp[0];
                 if (ary == null) ary = context.runtime.newArray(4);
@@ -3918,7 +3922,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final byte[] pBytes = value.unsafeBytes();
         final int len = value.realSize();
 
-        while (!(result = scanOnce(context, str, pat, startp)).isNil()) {
+        while ((result = scanOnce(context, str, pat, startp)) != context.nil) {
             last = prev;
             prev = startp[0];
             block.yieldSpecific(context, result);
@@ -4008,20 +4012,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context, IRubyObject arg) {
-        return start_with_pCommon(arg) ? context.runtime.getTrue() : context.runtime.getFalse();
+        return start_with_pCommon(arg) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "start_with?", rest = true)
     public IRubyObject start_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
-            if (start_with_pCommon(args[i])) return context.runtime.getTrue();
+            if (start_with_pCommon(args[i])) return context.tru;
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     private boolean start_with_pCommon(IRubyObject arg) {
@@ -4084,7 +4088,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private static final ByteList SPACE_BYTELIST = RubyInteger.singleCharByteList((byte) ' ');
 
-    private IRubyObject justify19(Ruby runtime, IRubyObject arg0, int jflag) {
+    private IRubyObject justify(Ruby runtime, IRubyObject arg0, int jflag) {
         RubyString result = justifyCommon(runtime, SPACE_BYTELIST,
                 1,
                 true, EncodingUtils.STR_ENC_GET(this), RubyFixnum.num2int(arg0), jflag);
@@ -4092,7 +4096,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result;
     }
 
-    private IRubyObject justify19(IRubyObject arg0, IRubyObject arg1, int jflag) {
+    private IRubyObject justify(IRubyObject arg0, IRubyObject arg1, int jflag) {
         Ruby runtime = getRuntime();
         RubyString padStr = arg1.convertToString();
         ByteList pad = padStr.value;
@@ -4175,64 +4179,61 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_ljust
      *
      */
+
+    @Deprecated
+    public IRubyObject ljust19(IRubyObject arg0) { return ljust(arg0); }
+
+    @Deprecated
+    public IRubyObject ljust19(IRubyObject arg0, IRubyObject arg1) { return ljust(arg0, arg1); }
+
+    @JRubyMethod(name = "ljust")
     public IRubyObject ljust(IRubyObject arg0) {
-        return ljust19(arg0);
+        return justify(getRuntime(), arg0, 'l');
     }
 
+    @JRubyMethod(name = "ljust")
     public IRubyObject ljust(IRubyObject arg0, IRubyObject arg1) {
-        return ljust19(arg0, arg1);
-    }
-
-    @JRubyMethod(name = "ljust")
-    public IRubyObject ljust19(IRubyObject arg0) {
-        return justify19(getRuntime(), arg0, 'l');
-    }
-
-    @JRubyMethod(name = "ljust")
-    public IRubyObject ljust19(IRubyObject arg0, IRubyObject arg1) {
-        return justify19(arg0, arg1, 'l');
+        return justify(arg0, arg1, 'l');
     }
 
     /** rb_str_rjust
      *
      */
+
+    @Deprecated
+    public IRubyObject rjust19(IRubyObject arg0) { return rjust(arg0); }
+
+    @Deprecated
+    public IRubyObject rjust19(IRubyObject arg0, IRubyObject arg1) { return rjust(arg0, arg1); }
+
+    @JRubyMethod(name = "rjust")
     public IRubyObject rjust(IRubyObject arg0) {
-        return rjust19(arg0);
+        return justify(getRuntime(), arg0, 'r');
     }
 
+    @JRubyMethod(name = "rjust")
     public IRubyObject rjust(IRubyObject arg0, IRubyObject arg1) {
-        return rjust19(arg0, arg1);
-    }
-
-    @JRubyMethod(name = "rjust")
-    public IRubyObject rjust19(IRubyObject arg0) {
-        return justify19(getRuntime(), arg0, 'r');
-    }
-
-    @JRubyMethod(name = "rjust")
-    public IRubyObject rjust19(IRubyObject arg0, IRubyObject arg1) {
-        return justify19(arg0, arg1, 'r');
+        return justify(arg0, arg1, 'r');
     }
 
     /** rb_str_center
      *
      */
+
+    @Deprecated
+    public IRubyObject center19(IRubyObject arg0) { return center(arg0); }
+
+    @Deprecated
+    public IRubyObject center19(IRubyObject arg0, IRubyObject arg1) { return center(arg0, arg1); }
+
+    @JRubyMethod(name = "center")
     public IRubyObject center(IRubyObject arg0) {
-        return center19(arg0);
+        return justify(getRuntime(), arg0, 'c');
     }
 
+    @JRubyMethod(name = "center")
     public IRubyObject center(IRubyObject arg0, IRubyObject arg1) {
-        return center19(arg0, arg1);
-    }
-
-    @JRubyMethod(name = "center")
-    public IRubyObject center19(IRubyObject arg0) {
-        return justify19(getRuntime(), arg0, 'c');
-    }
-
-    @JRubyMethod(name = "center")
-    public IRubyObject center19(IRubyObject arg0, IRubyObject arg1) {
-        return justify19(arg0, arg1, 'c');
+        return justify(arg0, arg1, 'c');
     }
 
     @JRubyMethod(reads = BACKREF, writes = BACKREF)
@@ -4266,9 +4267,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 makeShared(runtime, pos + sep.value.getRealSize(), value.getRealSize() - pos - sep.value.getRealSize())});
     }
 
-    private IRubyObject partitionMismatch(Ruby runtime) {
+    private RubyArray partitionMismatch(Ruby runtime) {
         final Encoding enc = getEncoding();
-        return RubyArray.newArray(runtime, new IRubyObject[]{this, newEmptyString(runtime, enc), newEmptyString(runtime, enc)});
+        return RubyArray.newArrayMayCopy(runtime, this, newEmptyString(runtime, enc), newEmptyString(runtime, enc));
     }
 
     @JRubyMethod(name = "rpartition", reads = BACKREF, writes = BACKREF)
@@ -4303,23 +4304,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_chop / rb_str_chop_bang
      *
      */
-    public IRubyObject chop(ThreadContext context) {
-        return chop19(context);
-    }
 
-    public IRubyObject chop_bang(ThreadContext context) {
-        return chop_bang19(context);
-    }
+    @Deprecated
+    public IRubyObject chop19(ThreadContext context) { return chop(context); }
+
+    @Deprecated
+    public IRubyObject chop_bang19(ThreadContext context) { return chop_bang(context); }
 
     @JRubyMethod(name = "chop")
-    public IRubyObject chop19(ThreadContext context) {
+    public IRubyObject chop(ThreadContext context) {
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return newEmptyString(runtime, getMetaClass(), value.getEncoding()).infectBy(this);
-        return makeShared19(runtime, 0, StringSupport.choppedLength(this));
+        return makeShared(runtime, 0, StringSupport.choppedLength(this));
     }
 
     @JRubyMethod(name = "chop!")
-    public IRubyObject chop_bang19(ThreadContext context) {
+    public IRubyObject chop_bang(ThreadContext context) {
         modifyAndKeepCodeRange();
         if (size() > 0) {
             int len = StringSupport.choppedLength(this);
@@ -4374,24 +4374,24 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "chomp!")
     public IRubyObject chomp_bang19(ThreadContext context) {
+        modifyCheck();
         Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return runtime.getNil();
+        if (value.getRealSize() == 0) return context.nil;
 
         IRubyObject rsObj = runtime.getGlobalVariables().get("$/");
 
-        if (rsObj == runtime.getGlobalVariables().getDefaultSeparator()) return smartChopBangCommon19(runtime);
-        return chompBangCommon19(runtime, rsObj);
+        if (rsObj == runtime.getGlobalVariables().getDefaultSeparator()) return smartChopBangCommon(runtime);
+        return chompBangCommon(runtime, rsObj);
     }
 
     @JRubyMethod(name = "chomp!")
     public IRubyObject chomp_bang19(ThreadContext context, IRubyObject arg0) {
         modifyCheck();
-        Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return runtime.getNil();
-        return chompBangCommon19(runtime, arg0);
+        if (value.getRealSize() == 0) return context.nil;
+        return chompBangCommon(context.runtime, arg0);
     }
 
-    private IRubyObject chompBangCommon19(Ruby runtime, IRubyObject rsObj) {
+    private IRubyObject chompBangCommon(Ruby runtime, IRubyObject rsObj) {
         if (rsObj.isNil()) return rsObj;
 
         RubyString rs = rsObj.convertToString();
@@ -4416,7 +4416,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (rslen > len) return runtime.getNil();
         byte newline = rs.value.getUnsafeBytes()[rslen - 1];
-        if (rslen == 1 && newline == (byte)'\n') return smartChopBangCommon19(runtime);
+        if (rslen == 1 && newline == (byte)'\n') return smartChopBangCommon(runtime);
 
         Encoding enc = checkEncoding(rs);
         if (rs.scanForCodeRange() == CR_BROKEN) return runtime.getNil();
@@ -4431,7 +4431,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return runtime.getNil();
     }
 
-    private IRubyObject smartChopBangCommon19(Ruby runtime) {
+    private IRubyObject smartChopBangCommon(Ruby runtime) {
         final int p = value.getBegin();
         int len = value.getRealSize();
         int end = p + len;
@@ -4473,23 +4473,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_lstrip / rb_str_lstrip_bang
      *
      */
-    public IRubyObject lstrip(ThreadContext context) {
-        return lstrip19(context);
-    }
 
-    public IRubyObject lstrip_bang(ThreadContext context) {
-        return lstrip_bang19(context);
-    }
+    @Deprecated
+    public IRubyObject lstrip19(ThreadContext context) { return lstrip(context); }
+
+    @Deprecated
+    public IRubyObject lstrip_bang19(ThreadContext context) { return lstrip_bang(context); }
 
     @JRubyMethod(name = "lstrip")
-    public IRubyObject lstrip19(ThreadContext context) {
+    public IRubyObject lstrip(ThreadContext context) {
         RubyString str = strDup(context.runtime);
-        str.lstrip_bang19(context);
+        str.lstrip_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "lstrip!")
-    public IRubyObject lstrip_bang19(ThreadContext context) {
+    public IRubyObject lstrip_bang(ThreadContext context) {
         modifyCheck();
         final ByteList value = this.value;
         if (value.getRealSize() == 0) return context.nil;
@@ -4500,25 +4499,26 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Encoding enc = EncodingUtils.STR_ENC_GET(this);
         final IRubyObject result;
         if (singleByteOptimizable(enc)) {
-            result = singleByteLStrip(context.runtime, bytes, s, end);
+            result = singleByteLStrip(context, bytes, s, end);
         } else {
-            result = multiByteLStrip(context.runtime, enc, bytes, s, end);
+            result = multiByteLStrip(context, enc, bytes, s, end);
         }
         keepCodeRange();
         return result;
     }
 
-    private IRubyObject singleByteLStrip(Ruby runtime, byte[]bytes, int s, int end) {
+    private IRubyObject singleByteLStrip(ThreadContext context, byte[] bytes, int s, int end) {
         int p = s;
         while (p < end && ASCII.isSpace(bytes[p] & 0xff)) p++;
         if (p > s) {
             view(p - s, end - p);
             return this;
         }
-        return runtime.getNil();
+        return context.nil;
     }
 
-    private IRubyObject multiByteLStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+    private IRubyObject multiByteLStrip(ThreadContext context, Encoding enc, byte[]bytes, int s, int end) {
+        final Ruby runtime = context.runtime;
         int p = s;
 
         while (p < end) {
@@ -4532,46 +4532,43 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return this;
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     /** rb_str_rstrip / rb_str_rstrip_bang
      *
      */
-    public IRubyObject rstrip(ThreadContext context) {
-        return rstrip19(context);
-    }
 
-    public IRubyObject rstrip_bang(ThreadContext context) {
-        return rstrip_bang19(context);
-    }
+    @Deprecated
+    public IRubyObject rstrip19(ThreadContext context) { return rstrip(context); }
+
+    @Deprecated
+    public IRubyObject rstrip_bang19(ThreadContext context) { return rstrip_bang(context); }
 
     @JRubyMethod(name = "rstrip")
-    public IRubyObject rstrip19(ThreadContext context) {
+    public IRubyObject rstrip(ThreadContext context) {
         RubyString str = strDup(context.runtime);
-        str.rstrip_bang19(context);
+        str.rstrip_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "rstrip!")
-    public IRubyObject rstrip_bang19(ThreadContext context) {
+    public IRubyObject rstrip_bang(ThreadContext context) {
         modifyCheck();
-        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
-            return runtime.getNil();
+            return context.nil;
         }
 
         checkDummyEncoding();
         Encoding enc = EncodingUtils.STR_ENC_GET(this);
-        IRubyObject result = singleByteOptimizable(enc) ?
-            singleByteRStrip19(runtime) : multiByteRStrip19(runtime, context);
+        IRubyObject result = singleByteOptimizable(enc) ? singleByteRStrip(context) : multiByteRStrip(context);
 
         keepCodeRange();
         return result;
     }
 
     // In 1.9 we strip any combination of \0 and \s
-    private IRubyObject singleByteRStrip19(Ruby runtime) {
+    private IRubyObject singleByteRStrip(ThreadContext context) {
         byte[] bytes = value.getUnsafeBytes();
         int start = value.getBegin();
         int end = start + value.getRealSize();
@@ -4584,11 +4581,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return this;
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     // In 1.9 we strip any combination of \0 and \s
-    private IRubyObject multiByteRStrip19(Ruby runtime, ThreadContext context) {
+    private IRubyObject multiByteRStrip(ThreadContext context) {
+        final Ruby runtime = context.runtime;
         byte[] bytes = value.getUnsafeBytes();
         int start = value.getBegin();
         int end = start + value.getRealSize();
@@ -4605,57 +4603,53 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             view(0, endp - start);
             return this;
         }
-        return runtime.getNil();
+        return context.nil;
     }
 
     /** rb_str_strip / rb_str_strip_bang
      *
      */
-    public IRubyObject strip(ThreadContext context) {
-        return strip19(context);
-    }
 
-    public IRubyObject strip_bang(ThreadContext context) {
-        return strip_bang19(context);
-    }
+    @Deprecated
+    public IRubyObject strip19(ThreadContext context) { return strip(context); }
+
+    @Deprecated
+    public IRubyObject strip_bang19(ThreadContext context) { return strip_bang(context); }
 
     @JRubyMethod(name = "strip")
-    public IRubyObject strip19(ThreadContext context) {
+    public IRubyObject strip(ThreadContext context) {
         RubyString str = strDup(context.runtime);
-        str.strip_bang19(context);
+        str.strip_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "strip!")
-    public IRubyObject strip_bang19(ThreadContext context) {
+    public IRubyObject strip_bang(ThreadContext context) {
         modifyCheck();
 
         IRubyObject left = lstrip_bang19(context);
         IRubyObject right = rstrip_bang19(context);
 
-        return left.isNil() && right.isNil() ? context.runtime.getNil() : this;
+        return left == context.nil && right == context.nil ? context.nil : this;
     }
 
-    public IRubyObject count(ThreadContext context) {
-        return count19(context);
-    }
+    @Deprecated
+    public IRubyObject count19(ThreadContext context) { return count(context); }
 
-    public IRubyObject count(ThreadContext context, IRubyObject arg) {
-        return count19(context, arg);
-    }
+    @Deprecated
+    public IRubyObject count19(ThreadContext context, IRubyObject arg) { return count(context, arg); }
 
-    public IRubyObject count(ThreadContext context, IRubyObject[] args) {
-        return count19(context, args);
-    }
+    @Deprecated
+    public IRubyObject count19(ThreadContext context, IRubyObject[] args) { return count(context, args); }
 
     @JRubyMethod(name = "count")
-    public IRubyObject count19(ThreadContext context) {
+    public IRubyObject count(ThreadContext context) {
         throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
     // MRI: rb_str_count, first half
     @JRubyMethod(name = "count")
-    public IRubyObject count19(ThreadContext context, IRubyObject arg) {
+    public IRubyObject count(ThreadContext context, IRubyObject arg) {
         final Ruby runtime = context.runtime;
 
         final RubyString countStr = arg.convertToString();
@@ -4689,7 +4683,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // MRI: rb_str_count for arity > 1, first half
     @JRubyMethod(name = "count", required = 1, rest = true)
-    public IRubyObject count19(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject count(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
 
         if ( value.length() == 0 ) return RubyFixnum.zero(runtime);
@@ -4761,16 +4755,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "delete!")
     public IRubyObject delete_bang19(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return runtime.getNil();
+        if (value.getRealSize() == 0) return context.nil;
 
+        final Ruby runtime = context.runtime;
         RubyString otherStr = arg.convertToString();
         Encoding enc = checkEncoding(otherStr);
-        final boolean[]squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
+        final boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
 
         if (StringSupport.delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
-            return runtime.getNil();
+            return context.nil;
         }
 
         return this;
@@ -4778,9 +4772,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "delete!", required = 1, rest = true)
     public IRubyObject delete_bang19(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return runtime.getNil();
+        if (value.getRealSize() == 0) return context.nil;
 
+        final Ruby runtime = context.runtime;
         RubyString otherStr;
         Encoding enc = null;
         boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
@@ -4861,11 +4855,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         modifyAndKeepCodeRange();
         if (singleByteOptimizable()) {
             if (! StringSupport.singleByteSqueeze(value, squeeze)) {
-                return runtime.getNil();
+                return context.nil;
             }
         } else {
             if (! StringSupport.multiByteSqueeze(runtime, value, squeeze, null, value.getEncoding(), false)) {
-                return runtime.getNil();
+                return context.nil;
             }
         }
 
@@ -4883,11 +4877,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         modifyAndKeepCodeRange();
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
             if (! StringSupport.singleByteSqueeze(value, squeeze)) {
-                return runtime.getNil();
+                return context.nil;
             }
         } else {
             if (! StringSupport.multiByteSqueeze(runtime, value, squeeze, tables, value.getEncoding(), true)) {
-                return runtime.getNil();
+                return context.nil;
             }
         }
 
@@ -4918,11 +4912,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         modifyAndKeepCodeRange();
         if (singleByte) {
             if (! StringSupport.singleByteSqueeze(value, squeeze)) {
-                return runtime.getNil();
+                return context.nil;
             }
         } else {
             if (! StringSupport.multiByteSqueeze(runtime, value, squeeze, tables, enc, true)) {
-                return runtime.getNil();
+                return context.nil;
             }
         }
 
@@ -4953,22 +4947,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject trTrans19(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
-        Ruby runtime = context.runtime;
-
         RubyString replStr = repl.convertToString();
         ByteList replList = replStr.value;
         RubyString srcStr = src.convertToString();
 
-        if (value.getRealSize() == 0) return runtime.getNil();
+        if (value.getRealSize() == 0) return context.nil;
         if (replList.getRealSize() == 0) return delete_bang19(context, src);
 
-        CodeRangeable ret = StringSupport.trTransHelper(runtime, this, srcStr, replStr, sflag);
-
-        if (ret == null) {
-            return runtime.getNil();
-        }
-
-        return (IRubyObject) ret;
+        CodeRangeable ret = StringSupport.trTransHelper(context.runtime, this, srcStr, replStr, sflag);
+        return (ret == null) ? context.nil : (IRubyObject) ret;
     }
 
     /** rb_str_tr_s / rb_str_tr_s_bang
@@ -5013,12 +5000,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public IRubyObject each_lineCommon(ThreadContext context, IRubyObject sep, Block block) {
-        Ruby runtime = context.runtime;
-        if (sep.isNil()) {
+        if (sep == context.nil) {
             block.yield(context, this);
             return this;
         }
 
+        final Ruby runtime = context.runtime;
         RubyString sepStr = sep.convertToString();
         ByteList sepValue = sepStr.value;
         int rslen = sepValue.getRealSize();
@@ -5160,7 +5147,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
                     runtime.getWarnings().warn("given block not used");
-                    ary = RubyArray.newArray(runtime, str.length().getLongValue());
+                    ary = RubyArray.newArray(runtime, str.strLength());
                 } else {
                     runtime.getWarnings().warning("passing a block to String#chars is deprecated");
                     wantarray = false;
@@ -5169,7 +5156,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
         else {
             if (wantarray)
-                ary = RubyArray.newArray(runtime, str.length().getLongValue());
+                ary = RubyArray.newArray(runtime, str.strLength());
             else
                 return enumeratorizeWithSize(context, this, name, eachCharSizeFn());
         }
@@ -5951,7 +5938,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @Deprecated
     public RubyArray split19(ThreadContext context, IRubyObject arg0, boolean useBackref) {
-        return splitCommon19(arg0, useBackref, flags, flags, context, useBackref);
+        return splitCommon(context, arg0, useBackref, flags, flags, useBackref);
     }
 
     @Deprecated

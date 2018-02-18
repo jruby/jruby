@@ -4,7 +4,6 @@ require 'bigdecimal'
 class TestBigDecimal < Test::Unit::TestCase
 
   def test_bad_to_s_format_strings
-    bd = BigDecimal.new("1")
     assert_equal("0.23", BigDecimal.new("0.23").to_s("F"))
   end
 
@@ -15,14 +14,14 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_can_instantiate_big_decimal
-    assert_nothing_raised {BigDecimal.new("4")}
-    assert_nothing_raised {BigDecimal.new("3.14159")}
+    assert_nothing_raised { BigDecimal.new("4") }
+    assert_nothing_raised { BigDecimal.new("3.14159") }
+    BigDecimal.new("1")
   end
 
   def test_can_implicitly_instantiate_big_decimal
-    # JRUBY-153 issues
-    assert_nothing_raised {BigDecimal("4")}
-    assert_nothing_raised {BigDecimal("3.14159")}
+    assert_nothing_raised { BigDecimal("4") }
+    assert_nothing_raised { BigDecimal("3.14159") }
   end
 
   class X
@@ -290,6 +289,7 @@ class TestBigDecimal < Test::Unit::TestCase
     pos_inf = BigDecimal.new("5E69999999").to_f
     assert pos_inf.infinite?
     assert pos_inf > 0
+    assert_equal nil, BigDecimal.new("0E69999999").infinite?
     assert BigDecimal.new("0E69999999").to_f < Float::EPSILON
     neg_inf = BigDecimal.new("-5E69999999").to_f
     assert neg_inf.infinite?
@@ -300,48 +300,71 @@ class TestBigDecimal < Test::Unit::TestCase
   def test_infinity
     assert_equal true, BigDecimal.new("0.0000000001").finite?
 
-    #if RUBY_VERSION > '1.9'
-    #  assert_raises(FloatDomainError) { BigDecimal("Infinity") }
-    #  assert_raises(FloatDomainError) { BigDecimal("+Infinity") }
-    #  assert_raises(FloatDomainError) { BigDecimal("-Infinity") }
-    #else
-      assert_equal 1, BigDecimal("Infinity").infinite?
-      assert_equal false, BigDecimal("-Infinity").finite?
-      assert_equal false, BigDecimal("+Infinity").finite?
-    #end
+    assert_equal 1, BigDecimal("Infinity").infinite?
+    assert_equal false, BigDecimal("-Infinity").finite?
+    assert_equal false, BigDecimal("+Infinity").finite?
 
     assert_raises(TypeError) { BigDecimal(:"+Infinity") }
   end
 
-  #JRUBY-5190
   def test_large_precisions
     a = BigDecimal("1").div(BigDecimal("3"), 307)
     b = BigDecimal("1").div(BigDecimal("3"), 308)
     assert_equal a.to_f, b.to_f
   end
 
-  # GH-644, GH-648
-  def test_div_by_float_precision_gh644
+  def test_div_by_float_precision
+    # GH-644
     a = BigDecimal.new(11023) / 2.2046
     assert_equal 5_000, a.to_f
-  end
 
-  def test_div_by_float_precision_gh648
+    # GH-648
     b = BigDecimal.new(1.05, 10) / 1.48
     assert (b.to_f - 0.7094594594594595) < Float::EPSILON
   end
 
-  def test_GH_2650
+  def test_to_f # GH_2650
     assert_equal(BigDecimal.new("10.91231", 1).to_f, 10.91231)
     assert_equal(BigDecimal.new("10.9", 2).to_f, 10.9)
   end
 
-  # GH-3527
-  def test_tail_junk
+  def test_new_
+    num = BigDecimal.new("666666.22E4444")
+
+    assert_equal num, BigDecimal.new("666_666.22E4444")
+    assert_equal num, BigDecimal.new("666_666.22_E4_4_4_4")
+    assert_equal num, BigDecimal.new("6_6_6__666_.2__2___E_444__4_")
+  end
+
+  def test_tail_junk # GH-3527
     b = BigDecimal.new("5-6")
     assert_equal BigDecimal('5'), b
     b = BigDecimal.new("100+42")
     assert_equal 100, b.to_i
+  end
+
+  def test_tail_junk2
+    b = BigDecimal.new("+55555x6")
+    assert_equal 55555, b
+    b = BigDecimal.new("-10000.5,9")
+    assert_equal -10000.5, b
+
+    b = BigDecimal.new("+55555d-66E")
+    assert_equal BigDecimal('55555e-66'), b
+  end
+
+  def test_tail_junk_invalid
+    begin
+      BigDecimal.new("42E")
+      fail 'expected-to-raise'
+    rescue ArgumentError => ex
+      assert_equal 'invalid value for BigDecimal(): "42E"', ex.message
+    end
+
+    assert_raise(ArgumentError) { BigDecimal.new("2E+") }
+    assert_raise(ArgumentError) { BigDecimal.new("1E-") }
+    assert_raise(ArgumentError) { BigDecimal("1E+") }
+    assert_raise(ArgumentError) { BigDecimal("0E") }
   end
 
 end

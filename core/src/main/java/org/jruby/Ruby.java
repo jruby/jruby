@@ -1353,7 +1353,7 @@ public final class Ruby implements Constantizable {
 
         // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
         if (config.getKernelGsubDefined()) {
-            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE) {
+            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, "gsub") {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {

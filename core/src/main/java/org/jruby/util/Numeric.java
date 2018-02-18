@@ -623,7 +623,7 @@ public class Numeric {
         return n < SQRT_LONG_MAX && n >= -SQRT_LONG_MAX;
     }
 
-    public static IRubyObject int_pow(ThreadContext context, long x, long y) {
+    public static RubyNumeric int_pow(ThreadContext context, long x, long y) {
         boolean neg = x < 0;
         long z = 1;
         if (neg) x = -x;
@@ -641,7 +641,7 @@ public class Numeric {
                 if (!fitSqrtLong(x)) {
                     IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, y);
                     if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
-                    return v;
+                    return (RubyNumeric) v;
                 }
                 x *= x;
                 y >>= 1;
@@ -650,7 +650,7 @@ public class Numeric {
             if (multiplyOverflows(x, z)) {
                 IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, y);
                 if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
-                return v;
+                return (RubyNumeric) v;
             }
             z = x * z;
         } while(--y != 0);

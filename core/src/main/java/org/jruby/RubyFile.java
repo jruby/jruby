@@ -35,6 +35,23 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.constants.platform.OpenFlags;
+import jnr.posix.POSIX;
+import jnr.posix.util.Platform;
+import org.jcodings.Encoding;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.*;
+import org.jruby.runtime.JavaSites.FileSites;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.util.*;
+import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.IOEncodable;
+import org.jruby.util.io.OpenFile;
+import org.jruby.util.io.PosixShim;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,32 +75,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import jnr.constants.platform.OpenFlags;
-import jnr.posix.POSIX;
-import jnr.posix.util.Platform;
-import org.jcodings.Encoding;
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.JavaSites.FileSites;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.util.ByteList;
-import org.jruby.util.FileResource;
-import org.jruby.util.JRubyFile;
-import org.jruby.util.StringSupport;
-import org.jruby.util.TypeConverter;
-import org.jruby.util.io.EncodingUtils;
-import org.jruby.util.io.IOEncodable;
-import org.jruby.util.io.OpenFile;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.util.io.PosixShim;
-
+import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.io.EncodingUtils.vmode;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
@@ -1150,12 +1142,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, rest = true, meta = true)
     public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        long[] atimeval = null;
-        long[] mtimeval = null;
+        long[] atimespec = null;
+        long[] mtimespec = null;
 
         if (args[0] != context.nil || args[1] != context.nil) {
-            atimeval = extractTimeval(context, args[0]);
-            mtimeval = extractTimeval(context, args[1]);
+            atimespec = extractTimespec(context, args[0]);
+            mtimespec = extractTimespec(context, args[1]);
         }
 
         for (int i = 2, j = args.length; i < j; i++) {
@@ -1167,7 +1159,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
 
-            int result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
+            int result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
             if (result == -1) {
                 throw runtime.newErrnoFromInt(runtime.getPosix().errno());
             }
@@ -1552,19 +1544,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     /**
-     * Extract a timeval (an array of 2 longs: seconds and microseconds from epoch) from
+     * Extract a timespec (an array of 2 longs: seconds and nanoseconds from epoch) from
      * an IRubyObject.
      */
-    private static long[] extractTimeval(ThreadContext context, IRubyObject value) {
-        long[] timeval = new long[2];
+    private static long[] extractTimespec(ThreadContext context, IRubyObject value) {
+        long[] timespec = new long[2];
 
         if (value instanceof RubyFloat) {
-            timeval[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : RubyNumeric.num2long(value);
+            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : RubyNumeric.num2long(value);
             double fraction = ((RubyFloat) value).getDoubleValue() % 1.0;
-            timeval[1] = (long)(fraction * 1e6 + 0.5);
+            timespec[1] = (long)(fraction * 1e9 + 0.5);
         } else if (value instanceof RubyNumeric) {
-            timeval[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : RubyNumeric.num2long(value);
-            timeval[1] = 0;
+            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : RubyNumeric.num2long(value);
+            timespec[1] = 0;
         } else {
             RubyTime time;
             if (value instanceof RubyTime) {
@@ -1572,11 +1564,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             } else {
                 time = (RubyTime) TypeConverter.convertToType(context, value, context.runtime.getTime(), sites(context).to_time_checked, true);
             }
-            timeval[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.to_i()) : RubyNumeric.num2long(time.to_i());
-            timeval[1] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.usec()) : RubyNumeric.num2long(time.usec());
+            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.to_i()) : RubyNumeric.num2long(time.to_i());
+            timespec[1] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.nsec()) : RubyNumeric.num2long(time.nsec());
         }
 
-        return timeval;
+        return timespec;
     }
 
     private void checkClosed(ThreadContext context) {

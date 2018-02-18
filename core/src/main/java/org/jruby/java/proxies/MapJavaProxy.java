@@ -147,15 +147,15 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyArray keys() {
+        public RubyArray keys(ThreadContext context) {
             syncSize();
-            return super.keys();
+            return super.keys(context);
         }
 
         @Override
-        public RubyArray rb_values() {
+        public RubyArray values(ThreadContext context) {
             syncSize();
-            return super.rb_values();
+            return super.values(context);
         }
 
         @Override
@@ -636,8 +636,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      *
      */
     @JRubyMethod(name = "keys")
-    public RubyArray keys() {
-        return getOrCreateRubyHashMap().keys();
+    public RubyArray keys(ThreadContext context) {
+        return getOrCreateRubyHashMap().keys(context);
     }
 
     /** rb_hash_values

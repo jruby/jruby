@@ -40,8 +40,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -249,9 +247,9 @@ public class AnnotationBinder extends AbstractProcessor {
             // write out a static initializer for frame names, so it only fires once
             out.println("    static {");
 
-            populateMethodIndex(readGroups,
+            AnnotationHelper.populateMethodIndex(readGroups,
                     (bits, names) -> emitIndexCode(bits, names, "        MethodIndex.addMethodReadFieldsPacked(%d, \"%s\");"));
-            populateMethodIndex(writeGroups,
+            AnnotationHelper.populateMethodIndex(writeGroups,
                     (bits, names) -> emitIndexCode(bits, names, "        MethodIndex.addMethodWriteFieldsPacked(%d, \"%s\");"));
 
             out.println("    }");
@@ -273,20 +271,6 @@ public class AnnotationBinder extends AbstractProcessor {
 
     public void emitIndexCode(int bits, String names, String format) {
         out.println(String.format(format, bits, names));
-    }
-
-    public static void populateMethodIndex(Map<Set<FrameField>, List<String>> accessGroups, BiConsumer<Integer, String> action) {
-        if (!accessGroups.isEmpty()) {
-            for (Map.Entry<Set<FrameField>, List<String>> accessEntry : accessGroups.entrySet()) {
-                Set<FrameField> reads = accessEntry.getKey();
-                List<String> names = accessEntry.getValue();
-
-                int bits = FrameField.pack(reads.stream().toArray(n -> new FrameField[n]));
-                String namesJoined = names.stream().collect(Collectors.joining(";"));
-
-                action.accept(bits, namesJoined);
-            }
-        }
     }
 
     private static StringBuilder join(final Iterable<String> names) {
@@ -344,7 +328,8 @@ public class AnnotationBinder extends AbstractProcessor {
                     anno.frame());
             String implClass = anno.meta() ? "singletonClass" : "cls";
 
-            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
+            String baseName = getBaseName(anno.name(), method);
+            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ", \"" + baseName + "\");");
             out.println("        populateMethod(javaMethod, " +
                     +AnnotationHelper.getArityValue(anno, actualRequired) + ", \""
                     + method.getSimpleName() + "\", "
@@ -390,7 +375,8 @@ public class AnnotationBinder extends AbstractProcessor {
                     anno.frame());
             String implClass = anno.meta() ? "singletonClass" : "cls";
 
-            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
+            String baseName = getBaseName(anno.name(), method);
+            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ", \"" + baseName + "\");");
             out.println("        populateMethod(javaMethod, " +
                     "-1, \"" +
                     method.getSimpleName() + "\", " +
@@ -524,12 +510,10 @@ public class AnnotationBinder extends AbstractProcessor {
 
     private void defineMethodOnClass(String methodVar, String classVar, final String[] names, final String[] aliases,
         ExecutableElement md) {
-        CharSequence baseName;
+        CharSequence baseName = getBaseName(names, md);
         if (names.length == 0) {
-            baseName = md.getSimpleName();
             out.println("        " + classVar + ".addMethodAtBootTimeOnly(\"" + baseName + "\", " + methodVar + ");");
         } else {
-            baseName = names[0];
             for (String name : names) {
                 out.println("        " + classVar + ".addMethodAtBootTimeOnly(\"" + name + "\", " + methodVar + ");");
             }
@@ -553,6 +537,14 @@ public class AnnotationBinder extends AbstractProcessor {
                 comma = true;
             }
             System.err.print("\n");
+        }
+    }
+
+    private String getBaseName(String[] names, ExecutableElement md) {
+        if (names.length == 0) {
+            return md.getSimpleName().toString();
+        } else {
+            return names[0];
         }
     }
 }

@@ -77,7 +77,7 @@ public abstract class MethodFactory {
      * will be bound.
      * @return A method handle for the target object.
      */
-    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> desc);
+    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> desc, String name);
 
     /**
      * Based on an annotated Java method object, generate a method handle using
@@ -90,5 +90,5 @@ public abstract class MethodFactory {
      * @param desc A JavaMethodDescriptor describing the target method
      * @return A method handle for the target object.
      */
-    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc);
+    public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc, String name);
 }

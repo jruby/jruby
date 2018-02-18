@@ -51,6 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
+import java.math.BigInteger;
 import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -380,6 +381,11 @@ public abstract class RubyInteger extends RubyNumeric {
         return chrCommon(context, i, enc);
     }
 
+    @Deprecated
+    public RubyString chr19(ThreadContext context, IRubyObject arg) {
+        return chr(context, arg);
+    }
+
     private RubyString chrCommon(ThreadContext context, long value, Encoding enc) {
         if (value > 0xFFFFFFFFL) {
             throw context.runtime.newRangeError(this + " out of char range");
@@ -387,11 +393,6 @@ public abstract class RubyInteger extends RubyNumeric {
         int c = (int) value;
         if (enc == null) enc = ASCIIEncoding.INSTANCE;
         return EncodingUtils.encUintChr(context, c, enc);
-    }
-
-    @Deprecated
-    public final RubyString chr19(ThreadContext context, IRubyObject arg) {
-        return chr(context, arg);
     }
 
     /** int_ord
@@ -472,7 +473,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /*
      * MRI: rb_int_round
      */
-    protected IRubyObject roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
+    private RubyNumeric roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
         Ruby runtime = context.runtime;
 
         RubyNumeric f, h, n, r;
@@ -582,20 +583,16 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "odd?")
     public RubyBoolean odd_p(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (sites(context).op_mod.call(context, this, this, RubyFixnum.two(runtime)) != RubyFixnum.zero(runtime)) {
-            return runtime.getTrue();
-        }
-        return runtime.getFalse();
+        return (op_mod_two(context, this) != 0) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "even?")
     public RubyBoolean even_p(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (sites(context).op_mod.call(context, this, this, RubyFixnum.two(runtime)) == RubyFixnum.zero(runtime)) {
-            return runtime.getTrue();
-        }
-        return runtime.getFalse();
+        return (op_mod_two(context, this) == 0) ? context.tru : context.fals;
+    }
+
+    private static long op_mod_two(ThreadContext context, RubyInteger self) {
+        return ((RubyInteger) sites(context).op_mod.call(context, self, self, RubyFixnum.two(context.runtime))).getLongValue();
     }
 
     @JRubyMethod(name = "pred")
@@ -615,9 +612,9 @@ public abstract class RubyInteger extends RubyNumeric {
     @Override
     public IRubyObject fdiv(ThreadContext context, IRubyObject y) {
         RubyInteger x = this;
-        if (y instanceof RubyInteger && !((RubyInteger) y).zero_p(context).isTrue()) {
+        if (y instanceof RubyInteger && !((RubyInteger) y).isZero()) {
             IRubyObject gcd = gcd(context, y);
-            if (!((RubyInteger) gcd).zero_p(context).isTrue()) {
+            if (!((RubyInteger) gcd).isZero()) {
                 x = (RubyInteger) div(context, gcd);
                 y = ((RubyInteger) y).div(context, gcd);
             }
@@ -727,6 +724,10 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = {"%", "modulo"})
     public abstract IRubyObject op_mod(ThreadContext context, IRubyObject other);
 
+    public IRubyObject op_mod(ThreadContext context, long other) {
+        return op_mod(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = "**")
     public abstract IRubyObject op_pow(ThreadContext context, IRubyObject other);
 
@@ -779,6 +780,10 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "bit_length")
     public abstract IRubyObject bit_length(ThreadContext context);
+
+    boolean isOne() {
+        return getBigIntegerValue().equals(BigInteger.ONE);
+    }
 
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_gt(context, this, other);

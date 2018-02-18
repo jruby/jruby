@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * Utility methods for generating bindings at build time. Used by AnnotationBinder.
@@ -96,6 +98,20 @@ public class AnnotationHelper {
                 nameList.add(simpleName);
             } else {
                 nameList.addAll(Arrays.asList(anno.name()));
+            }
+        }
+    }
+
+    public static void populateMethodIndex(Map<Set<FrameField>, List<String>> accessGroups, BiConsumer<Integer, String> action) {
+        if (!accessGroups.isEmpty()) {
+            for (Map.Entry<Set<FrameField>, List<String>> accessEntry : accessGroups.entrySet()) {
+                Set<FrameField> reads = accessEntry.getKey();
+                List<String> names = accessEntry.getValue();
+
+                int bits = FrameField.pack(reads.stream().toArray(n -> new FrameField[n]));
+                String namesJoined = names.stream().collect(Collectors.joining(";"));
+
+                action.accept(bits, namesJoined);
             }
         }
     }

@@ -74,6 +74,6 @@ check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.tar.gz 20 jruby-$ja
 # extended from 15 to 20 to accommodate temporary copy of stdlib 2.2.2
 check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 20 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 45 jruby-$jar_version
-check core/target/jruby-core-$jar_version.jar 9
+check core/target/jruby-core-$jar_version.jar 10
 
 exit "${failed[0]}"
