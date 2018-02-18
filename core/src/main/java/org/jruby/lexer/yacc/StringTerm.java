@@ -147,12 +147,10 @@ public class StringTerm extends StrTerm {
                 lexer.commandStart = true;
                 return Tokens.tSTRING_DBEG;
             default:
-                // We did not find significant char after # so push it back to
-                // be processed as an ordinary string.
-                lexer.pushback(c);
                 return 0;
         }
 
+        // We found #@, #$, #@@ but we don't know what at this point (check for valid chars).
         if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
             lexer.pushback(c);
             lexer.setValue("#" + significant);
@@ -191,8 +189,10 @@ public class StringTerm extends StrTerm {
             int token = parsePeekVariableName(lexer);
 
             if (token != 0) return token;
+
+            buffer.append('#');  // not an expansion to variable so it is just a literal.
         }
-        lexer.pushback(c);
+        lexer.pushback(c); // pushback API is deceptive here...we are just pushing index back one and not pushing c back necessarily.
 
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
