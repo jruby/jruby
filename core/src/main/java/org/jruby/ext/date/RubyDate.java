@@ -71,7 +71,7 @@ import static org.jruby.util.Numeric.*;
 @JRubyClass(name = "Date")
 public class RubyDate extends RubyObject {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RubyDate.class);
+    static final Logger LOG = LoggerFactory.getLogger(RubyDate.class);
 
     //private static final DateTimeZone DEFAULT_DTZ = DateTimeZone.getDefault();
 
@@ -81,7 +81,7 @@ public class RubyDate extends RubyObject {
 
     // The Julian Day Number of the Day of Calendar Reform for Italy
     // and the Catholic countries.
-    private static final int ITALY = 2299161; // 1582-10-15
+    static final int ITALY = 2299161; // 1582-10-15
 
     // The Julian Day Number of the Day of Calendar Reform for England
     // and her Colonies.
@@ -196,7 +196,7 @@ public class RubyDate extends RubyObject {
             this.dt = (DateTime) JavaUtil.unwrapJavaValue(arg);
             return;
         }
-        this.dt = new DateTime(initMillis(context, arg), getChronology(start, off));
+        this.dt = new DateTime(initMillis(context, arg), getChronology(context, start, off));
     }
 
     static final int DAY_IN_SECONDS = 86_400; // 24 * 60 * 60
@@ -281,6 +281,21 @@ public class RubyDate extends RubyObject {
         return new RubyDate(context.runtime).initialize(context, ajd, of, sg);
     }
 
+    /**
+     # Create a new Date object for the Civil Date specified by
+     # year +y+, month +m+, and day-of-month +d+.
+     #
+     # +m+ and +d+ can be negative, in which case they count
+     # backwards from the end of the year and the end of the
+     # month respectively.  No wraparound is performed, however,
+     # and invalid values cause an ArgumentError to be raised.
+     # can be negative
+     #
+     # +y+ defaults to -4712, +m+ to 1, and +d+ to 1; this is
+     # Julian Day Number day 0.
+     #
+     # +sg+ specifies the Day of Calendar Reform.
+     **/
     // Date.civil([year=-4712[, month=1[, mday=1[, start=Date::ITALY]]]])
     // Date.new([year=-4712[, month=1[, mday=1[, start=Date::ITALY]]]])
 
@@ -291,6 +306,10 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject year) {
+        return new RubyDate(context.runtime, civilImpl(context, year));
+    }
+
+    static DateTime civilImpl(ThreadContext context, IRubyObject year) {
         int y = getYear(year);
         final DateTime dt;
         try {
@@ -299,11 +318,15 @@ public class RubyDate extends RubyObject {
         catch (IllegalArgumentException ex) {
             throw context.runtime.newArgumentError("invalid date");
         }
-        return new RubyDate(context.runtime, dt);
+        return dt;
     }
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month) {
+        return new RubyDate(context.runtime, civilImpl(context, year, month));
+    }
+
+    static DateTime civilImpl(ThreadContext context, IRubyObject year, IRubyObject month) {
         int y = getYear(year);
         int m = getMonth(month);
         final DateTime dt;
@@ -317,49 +340,35 @@ public class RubyDate extends RubyObject {
         catch (IllegalArgumentException ex) {
             throw context.runtime.newArgumentError("invalid date");
         }
-        return new RubyDate(context.runtime, dt);
+        return dt;
     }
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month, IRubyObject mday) {
         // return civil(context, self, new IRubyObject[] { year, month, mday, RubyFixnum.newFixnum(context.runtime, ITALY) });
+        return new RubyDate(context.runtime, civilImpl(context, year, month, mday));
+    }
+
+    static DateTime civilImpl(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject mday) {
         final int y = getYear(year);
         final int m = getMonth(month);
         final int d = mday.convertToInteger().getIntValue();
-        return civilImpl(context, y, m ,d, defaultDateTime.getChronology());
+        return civilDate(context, y, m ,d, defaultDateTime.getChronology());
     }
 
-    private static RubyDate civilImpl(ThreadContext context, final int y, final int m, final int d, final Chronology chronology) {
-        DateTime dt;
-        try {
-            if (d >= 0) { // let d == 0 fail (raise 'invalid date')
-                dt = new DateTime(y, m, d, 0, 0, chronology);
-            }
-            else {
-                dt = new DateTime(y, m, 1, 0, 0, chronology);
-                long millis = dt.getMillis();
-                int last = chronology.dayOfMonth().getMaximumValue(millis);
-                millis = chronology.dayOfMonth().set(millis, last + d + 1); // d < 0 (d == -1 -> d == 31)
-                dt = dt.withMillis(millis);
-            }
-        }
-        catch (IllegalArgumentException ex) {
-            if (context.runtime.isDebug() || LOG.isDebugEnabled()) LOG.info(ex);
-            throw context.runtime.newArgumentError("invalid date");
-        }
-        return new RubyDate(context.runtime, dt);
-    }
-
-    @JRubyMethod(name = "civil", alias = "new", meta = true, required = 4)
+    @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 4) // 4 args case
     public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // IRubyObject year, IRubyObject month, IRubyObject mday, IRubyObject start
+
+        // TODO interpreter needs a ThreeOperandArgNoBlockCallInstr otherwise routes 3 args here
+        if (args.length == 3) return civil(context, self, args[0], args[1], args[2]);
 
         final int sg = val2sg(context, args[3]);
         final int y = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
         final int m = getMonth(args[1]);
         final int d = args[2].convertToInteger().getIntValue();
 
-        RubyDate date = civilImpl(context, y, m, d, getChronology(sg, 0));
+        RubyDate date = new RubyDate(context.runtime, civilDate(context, y, m, d, getChronology(context, sg, 0)));
         date.start = sg;
         return date;
 
@@ -372,14 +381,35 @@ public class RubyDate extends RubyObject {
         //return new RubyDate(runtime).initialize(context, ajd, RubyFixnum.zero(runtime), args[3]);
     }
 
+    static DateTime civilDate(ThreadContext context, final int y, final int m, final int d, final Chronology chronology) {
+        DateTime dt;
+        try {
+            if (d >= 0) { // let d == 0 fail (raise 'invalid date')
+                dt = new DateTime(y, m, d, 0, 0, chronology);
+            }
+            else {
+                dt = new DateTime(y, m, 1, 0, 0, chronology);
+                long ms = dt.getMillis();
+                int last = chronology.dayOfMonth().getMaximumValue(ms);
+                ms = chronology.dayOfMonth().set(ms, last + d + 1); // d < 0 (d == -1 -> d == 31)
+                dt = dt.withMillis(ms);
+            }
+        }
+        catch (IllegalArgumentException ex) {
+            debug(context, "invalid date", ex);
+            throw context.runtime.newArgumentError("invalid date");
+        }
+        return dt;
+    }
+
     // NOTE: no Bignum special care since JODA does not support 'huge' years anyway
-    private static int getYear(IRubyObject year) {
-        int y = year.convertToInteger().getIntValue();
+    static int getYear(IRubyObject year) {
+        int y = year.convertToInteger().getIntValue(); // handles Rational(x, y)
         return (y <= 0) ? --y : y; // due julian date calc -> see adjustJodaYear
     }
 
-    private static int getMonth(IRubyObject month) {
-        int m = month.convertToInteger().getIntValue();
+    static int getMonth(IRubyObject month) {
+        int m = month.convertToInteger().getIntValue(); // handles Rational(x, y)
         return (m < 0) ? m + 13 : m;
     }
 
@@ -412,7 +442,7 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final int start = val2sg(context, sg);
-        return new RubyDate(context.runtime, new DateTime(getChronology(start, 0)).withTimeAtStartOfDay(), 0, start, 0);
+        return new RubyDate(context.runtime, new DateTime(getChronology(context, start, 0)).withTimeAtStartOfDay(), 0, start, 0);
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
@@ -445,7 +475,7 @@ public class RubyDate extends RubyObject {
 
     @Override
     @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject eql_p(IRubyObject other) {
+    public IRubyObject eql_p(IRubyObject other) throws RuntimeException {
         if (other instanceof RubyDate) {
             return getRuntime().newBoolean( equals((RubyDate) other) );
         }
@@ -454,7 +484,7 @@ public class RubyDate extends RubyObject {
 
     @Override
     @JRubyMethod(name = "<=>", required = 1)
-    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) throws RaiseException {
         if (other instanceof RubyDate) {
             return context.runtime.newFixnum(cmp((RubyDate) other));
         }
@@ -689,7 +719,7 @@ public class RubyDate extends RubyObject {
         IRubyObject of = args.length > 0 ? args[0] : RubyFixnum.zero(context.runtime);
 
         final int off = val2off(context, of);
-        DateTime dt = this.dt.withChronology(getChronology(start, off));
+        DateTime dt = this.dt.withChronology(getChronology(context, start, off));
         return new RubyDate(context.runtime, dt, off, start, subMillis);
     }
 
@@ -705,7 +735,7 @@ public class RubyDate extends RubyObject {
     }
 
     private RubyDate newStart(ThreadContext context, final int start) {
-        DateTime dt = this.dt.withChronology(getChronology(start, off));
+        DateTime dt = this.dt.withChronology(getChronology(context, start, off));
         return new RubyDate(context.runtime, dt, off, start, subMillis);
     }
 
@@ -925,19 +955,25 @@ public class RubyDate extends RubyObject {
     // def jd_to_ajd(jd, fr, of=0) jd + fr - of - Rational(1, 2) end
     private static double jd_to_ajd(long jd, int fr, int of) { return jd + fr - of - 0.5; }
 
-    static Chronology getChronology(final int sg, final int off) {
+    static Chronology getChronology(ThreadContext context, final int sg, final int off) {
         final DateTimeZone zone;
         if (off == 0) {
             if (sg == ITALY) return CHRONO_ITALY_UTC;
             zone = DateTimeZone.UTC;
         }
         else {
-            zone = DateTimeZone.forOffsetMillis(off * 1000); // off in seconds
+            try {
+                zone = DateTimeZone.forOffsetMillis(off * 1000); // off in seconds
+            } // NOTE: JODA only allows 'valid': -23:59:59.999 to +23:59:59.999
+            catch (IllegalArgumentException ex) { // while MRI handles 25/24 fine
+                debug(context, "invalid offset", ex);
+                throw context.runtime.newArgumentError("invalid offset: " + off);
+            }
         }
-        return getChronology(sg, zone);
+        return getChronology(context, sg, zone);
     }
 
-    static Chronology getChronology(final int sg, final DateTimeZone zone) {
+    static Chronology getChronology(ThreadContext context, final int sg, final DateTimeZone zone) {
         switch (sg) {
             case ITALY:
                 return GJChronology.getInstance(zone);
@@ -946,9 +982,14 @@ public class RubyDate extends RubyObject {
             case GREGORIAN:
                 return GregorianChronology.getInstance(zone);
         }
-
         Instant cutover = new Instant(DateTimeUtils.fromJulianDay(jd_to_ajd(sg, 0, 0)));
-        return GJChronology.getInstance(zone, cutover);
+        try {
+            return GJChronology.getInstance(zone, cutover);
+        } // java.lang.IllegalArgumentException: Cutover too early. Must be on or after 0001-01-01.
+        catch (IllegalArgumentException ex) {
+            debug(context, "invalid date", ex);
+            throw context.runtime.newArgumentError("invalid date");
+        }
     }
 
     // MRI: #define val2sg(vsg,dsg)
@@ -979,7 +1020,7 @@ public class RubyDate extends RubyObject {
     private static final int REFORM_END_JD = 2426355; /* os 1930-12-31 */
 
     // MRI: #define val2off(vof,iof)
-    private static int val2off(ThreadContext context, IRubyObject of) {
+    static int val2off(ThreadContext context, IRubyObject of) {
         final int off = offset_to_sec(context, of);
         if (off == INVALID_OFFSET) {
             RubyKernel.warn(context, null, RubyString.newString(context.runtime, "invalid offset is ignored"));
@@ -1092,4 +1133,10 @@ public class RubyDate extends RubyObject {
                 throw context.runtime.newArgumentError(args.length, 1);
         }
     }
+
+    static void debug(ThreadContext context, final String msg, Exception ex) {
+        if (LOG.isDebugEnabled()) LOG.debug(msg, ex);
+        else if (context.runtime.isDebug()) LOG.info(msg, ex);
+    }
+
 }

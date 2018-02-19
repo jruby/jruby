@@ -35,14 +35,15 @@ import org.joda.time.chrono.GJChronology;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
+import org.jruby.RubyRational;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 /**
  * JRuby's <code>DateTime</code> implementation - 'native' parts.
@@ -54,8 +55,6 @@ import org.jruby.util.log.LoggerFactory;
  */
 @JRubyClass(name = "DateTime")
 public class RubyDateTime extends RubyDate {
-
-    private static final Logger LOG = LoggerFactory.getLogger(RubyDateTime.class);
 
     static RubyClass createDateTimeClass(Ruby runtime, RubyClass Date) {
         RubyClass DateTime = runtime.defineClass("DateTime", Date, ALLOCATOR);
@@ -93,7 +92,115 @@ public class RubyDateTime extends RubyDate {
         this.dt = dt;
         this.off = off; this.start = start;
     }
-    
+
+    /**
+     # Create a new DateTime object corresponding to the specified
+     # Civil Date and hour +h+, minute +min+, second +s+.
+     #
+     # The 24-hour clock is used.  Negative values of +h+, +min+, and
+     # +sec+ are treating as counting backwards from the end of the
+     # next larger unit (e.g. a +min+ of -2 is treated as 58).  No
+     # wraparound is performed.  If an invalid time portion is specified,
+     # an ArgumentError is raised.
+     #
+     # +of+ is the offset from UTC as a fraction of a day (defaults to 0).
+     # +sg+ specifies the Day of Calendar Reform.
+     #
+     # +y+ defaults to -4712, +m+ to 1, and +d+ to 1; this is Julian Day
+     # Number day 0.  The time values default to 0.
+     **/
+    // DateTime.civil([year=-4712[, month=1[, mday=1[, hour=0[, minute=0[, second=0[, offset=0[, start=Date::ITALY]]]]]]]])
+    // DateTime.new([year=-4712[, month=1[, mday=1[, hour=0[, minute=0[, second=0[, offset=0[, start=Date::ITALY]]]]]]]])
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true)
+    public static RubyDateTime civil(ThreadContext context, IRubyObject self) {
+        return new RubyDateTime(context.runtime, defaultDateTime);
+    }
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true)
+    public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject year) {
+        return new RubyDateTime(context.runtime, civilImpl(context, year));
+    }
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true)
+    public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month) {
+        return new RubyDateTime(context.runtime, civilImpl(context, year, month));
+    }
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true)
+    public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month, IRubyObject mday) {
+        return new RubyDateTime(context.runtime, civilImpl(context, year, month, mday));
+    }
+
+    @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 8)
+    public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        // year=-4712, month=1, mday=1,
+        //  hour=0, minute=0, second=0, offset=0, start=Date::ITALY
+
+        int hour = 0, minute = 0, second = 0; long millis = 0; int off = 0, sg = ITALY;
+
+        switch (args.length) {
+            case 8: sg = val2sg(context, args[7]);
+            case 7: off = val2off(context, args[6]);
+            case 6:
+                long sec = args[5].convertToInteger().getLongValue();
+                if (args[5] instanceof RubyRational) {
+                    millis = secMillis(context, (RubyRational) args[5]);
+                }
+                second = (int) (sec < 0 ? sec + 60 : sec); // JODA will handle invalid value
+            case 5: minute = getMinute(context, args[4]);
+            case 4: hour = getHour(context, args[3]);
+                break;
+
+            // TODO interpreter needs a ThreeOperandArgNoBlockCallInstr otherwise routes 3 args via []
+            case 3: return civil(context, self, args[0], args[1], args[2]);
+        }
+
+        final int year = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
+        final int month = getMonth(args[1]);
+        final int day = args[2].convertToInteger().getIntValue();
+
+        final Chronology chronology = getChronology(context, sg, off);
+        DateTime dt = civilDate(context, year, month, day, chronology); // hour: 0, minute: 0, second: 0
+        try {
+            long ms = dt.getMillis();
+            ms = chronology.hourOfDay().set(ms, hour);
+            ms = chronology.minuteOfHour().set(ms, minute);
+            ms = chronology.secondOfMinute().set(ms, second);
+            dt = dt.withMillis(ms + millis);
+        }
+        catch (IllegalArgumentException ex) {
+            debug(context, "invalid date", ex);
+            throw context.runtime.newArgumentError("invalid date");
+        }
+
+        return new RubyDateTime(context.runtime, dt, off, sg);
+    }
+
+    private static long secMillis(ThreadContext context, RubyRational sec) {
+        RubyInteger val = (RubyInteger) sec.getNumerator().op_mul(context, 1000);
+        val = (RubyInteger) val.idiv(context, sec.getDenominator());
+        return ((RubyInteger) val.op_mod(context, 1000)).getLongValue();
+    }
+
+    private static int getHour(ThreadContext context, IRubyObject hour) {
+        long h = hour.convertToInteger().getLongValue();
+        assertValidFraction(context, hour, h);
+        return (int) (h < 0 ? h + 24 : h); // JODA will handle invalid value
+    }
+
+    private static int getMinute(ThreadContext context, IRubyObject min) {
+        long m = min.convertToInteger().getLongValue();
+        assertValidFraction(context, min, m);
+        return (int) (m < 0 ? m + 60 : m); // JODA will handle invalid value
+    }
+
+    private static void assertValidFraction(ThreadContext context, IRubyObject val, long ival) {
+        if (val instanceof RubyRational) {
+            IRubyObject eql = ((RubyRational) val).op_equal(context, RubyFixnum.newFixnum(context.runtime, ival));
+            if (eql != context.tru) throw context.runtime.newArgumentError("invalid fraction");
+        }
+    }
 
     /**
      # Create a new DateTime object representing the current time.
@@ -114,7 +221,7 @@ public class RubyDateTime extends RubyDate {
     public static RubyDateTime now(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final int start = val2sg(context, sg);
         final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
-        return new RubyDateTime(context.runtime, new DateTime(getChronology(start, zone)), 0, start);
+        return new RubyDateTime(context.runtime, new DateTime(getChronology(context, start, zone)), 0, start);
     }
 
     @JRubyMethod // Date.civil(year, mon, mday, @sg)
