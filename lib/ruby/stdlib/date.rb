@@ -594,33 +594,6 @@ class Date
       jd
     end
 
-    # Do year +y+, month +m+, and day-of-month +d+ make a
-    # valid Civil Date?  Returns the corresponding Julian
-    # Day Number if they do, nil if they don't.
-    #
-    # +m+ and +d+ can be negative, in which case they count
-    # backwards from the end of the year and the end of the
-    # month respectively.  No wraparound is performed, however,
-    # and invalid values cause an ArgumentError to be raised.
-    # A date falling in the period skipped in the Day of Calendar
-    # Reform adjustment is not valid.
-    #
-    # +sg+ specifies the Day of Calendar Reform.
-    def _valid_civil? (y, m, d, sg=GREGORIAN) # :nodoc:
-      if m < 0
-        m += 13
-      end
-      if d < 0
-        return unless j = find_ldom(y, m, sg)
-        ny, nm, nd = jd_to_civil(j + d + 1, sg)
-        return unless [ny, nm] == [y, m]
-        d = nd
-      end
-      jd = civil_to_jd(y, m, d, sg)
-      return unless [y, m, d] == jd_to_civil(jd, sg)
-      jd
-    end
-
     # Do year +y+, week-of-year +w+, and day-of-week +d+ make a
     # valid Commercial Date?  Returns the corresponding Julian
     # Day Number if they do, nil if they don't.
@@ -704,33 +677,6 @@ class Date
       time_to_day_fraction(h, min, s)
     end
 
-    def chronology(sg, of=0)
-      tz = if JODA::DateTimeZone === of
-        of
-      elsif of == 0
-        return CHRONO_ITALY_UTC if sg == ITALY
-        JODA::DateTimeZone::UTC
-      else
-        raise ArgumentError, "Invalid offset: #{of}" if of <= -1 or of >= 1
-        JODA::DateTimeZone.forOffsetMillis((of * 86_400_000).round)
-      end
-
-      chrono = if sg == ITALY
-        JODA.chrono::GJChronology
-      elsif sg == JULIAN
-        JODA.chrono::JulianChronology
-      elsif sg == GREGORIAN
-        JODA.chrono::GregorianChronology
-      end
-
-      if chrono
-        chrono.getInstance(tz)
-      else
-        constructor = JODA::Instant.java_class.constructor(Java::long)
-        cutover = constructor.new_instance JODA::DateTimeUtils.fromJulianDay(jd_to_ajd(sg, 0))
-        JODA.chrono::GJChronology.getInstance(tz, cutover)
-      end
-    end
   end
 
   extend  t
@@ -743,11 +689,6 @@ class Date
   def self.valid_ordinal? (y, d, sg=ITALY)
     !!_valid_ordinal?(y, d, sg)
   end
-
-  def self.valid_civil? (y, m, d, sg=ITALY)
-    !!_valid_civil?(y, m, d, sg)
-  end
-  class << self; alias_method :valid_date?, :valid_civil? end
 
   def self.valid_commercial? (y, w, d, sg=ITALY)
     !!_valid_commercial?(y, w, d, sg)
@@ -794,38 +735,6 @@ class Date
     end
     new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
-
-  # Create a new Date object for the Civil Date specified by
-  # year +y+, month +m+, and day-of-month +d+.
-  #
-  # +m+ and +d+ can be negative, in which case they count
-  # backwards from the end of the year and the end of the
-  # month respectively.  No wraparound is performed, however,
-  # and invalid values cause an ArgumentError to be raised.
-  # can be negative
-  #
-  # +y+ defaults to -4712, +m+ to 1, and +d+ to 1; this is
-  # Julian Day Number day 0.
-  #
-  # +sg+ specifies the Day of Calendar Reform.
-  def self.civil(y=-4712, m=1, d=1, sg=ITALY)
-    if Integer === y and Integer === m and Integer === d and d > 0
-      m += 13 if m < 0
-      y -= 1 if y <= 0 and sg > 0 # TODO
-      begin
-        dt = JODA::DateTime.new(y, m, d, 0, 0, 0, chronology(sg))
-      rescue JODA::IllegalFieldValueException, Java::JavaLang::IllegalArgumentException
-        raise ArgumentError, 'invalid date'
-      end
-      new!(dt, 0, sg)
-    else
-      unless jd = _valid_civil?(y, m, d, sg)
-        raise ArgumentError, 'invalid date'
-      end
-      new!(jd_to_ajd(jd, 0, 0), 0, sg)
-    end
-  end
-  class << self; alias_method :new, :civil end
 
   # Create a new Date object for the Commercial Date specified by
   # year +y+, week-of-year +w+, and day-of-week +d+.
@@ -1363,35 +1272,35 @@ class DateTime < Date
   #
   # +y+ defaults to -4712, +m+ to 1, and +d+ to 1; this is Julian Day
   # Number day 0.  The time values default to 0.
-  def self.civil(y=-4712, m=1, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
-    if String === of
-      of = Rational(zone_to_diff(of) || 0, 86400)
-    end
-
-    if Integer === y and Integer === m and Integer === d and
-        Integer === h and Integer === min and
-        (Integer === s or (Rational === s and 1000 % s.denominator == 0)) and
-        m > 0 and d > 0 and h >= 0 and h < 24 and min >= 0 and s >= 0
-      y -= 1 if y <= 0 and sg > 0 # TODO
-      ms = 0
-      if Rational === s
-        s, ms = (s.numerator * 1000 / s.denominator).divmod(1000)
-      end
-      begin
-        dt = JODA::DateTime.new(y, m, d, h, min, s, ms, chronology(sg, of))
-      rescue JODA::IllegalFieldValueException, Java::JavaLang::IllegalArgumentException
-        raise ArgumentError, 'invalid date'
-      end
-      new!(dt, of, sg)
-    else
-      unless (jd = _valid_civil?(y, m, d, sg)) &&
-             (fr = _valid_time?(h, min, s))
-        raise ArgumentError, 'invalid date'
-      end
-      new!(jd_to_ajd(jd, fr, of), of, sg)
-    end
-  end
-  class << self; alias_method :new, :civil end
+  # def self.civil(y=-4712, m=1, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
+  #   if String === of
+  #     of = Rational(zone_to_diff(of) || 0, 86400)
+  #   end
+  # 
+  #   if Integer === y and Integer === m and Integer === d and
+  #       Integer === h and Integer === min and
+  #       (Integer === s or (Rational === s and 1000 % s.denominator == 0)) and
+  #       m > 0 and d > 0 and h >= 0 and h < 24 and min >= 0 and s >= 0
+  #     y -= 1 if y <= 0 and sg > 0 # TODO
+  #     ms = 0
+  #     if Rational === s
+  #       s, ms = (s.numerator * 1000 / s.denominator).divmod(1000)
+  #     end
+  #     begin
+  #       dt = JODA::DateTime.new(y, m, d, h, min, s, ms, chronology(sg, of))
+  #     rescue JODA::IllegalFieldValueException, Java::JavaLang::IllegalArgumentException
+  #       raise ArgumentError, 'invalid date'
+  #     end
+  #     new!(dt, of, sg)
+  #   else
+  #     unless (jd = _valid_civil?(y, m, d, sg)) &&
+  #            (fr = _valid_time?(h, min, s))
+  #       raise ArgumentError, 'invalid date'
+  #     end
+  #     new!(jd_to_ajd(jd, fr, of), of, sg)
+  #   end
+  # end
+  # class << self; alias_method :new, :civil end
 
   # Create a new DateTime object corresponding to the specified
   # Commercial Date and hour +h+, minute +min+, second +s+.
@@ -1550,11 +1459,9 @@ class Time
 
   def to_datetime
     jd = DateTime.__send__(:civil_to_jd, year, mon, mday, DateTime::ITALY)
-    fr = DateTime.__send__(:time_to_day_fraction, hour, min, [sec, 59].min) +
-      Rational(subsec, 86400)
+    fr = DateTime.__send__(:time_to_day_fraction, hour, min, [sec, 59].min) + Rational(subsec, 86400)
     of = Rational(utc_offset, 86400)
-    DateTime.new!(DateTime.__send__(:jd_to_ajd, jd, fr, of),
-		  of, DateTime::ITALY)
+    DateTime.new!(DateTime.__send__(:jd_to_ajd, jd, fr, of), of, DateTime::ITALY)
   end
 
 end
