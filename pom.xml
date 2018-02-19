@@ -271,6 +271,9 @@ DO NOT MODIFIY - GENERATED CODE
                   <requireMavenVersion>
                     <version>[3.3.0,)</version>
                   </requireMavenVersion>
+                  <requireReleaseDeps>
+                    <message>No Snapshots Allowed!</message>
+                  </requireReleaseDeps>
                 </rules>
               </configuration>
             </execution>
