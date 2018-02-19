@@ -1449,37 +1449,6 @@ class Date
     self
   end
 
-  def to_datetime
-    DateTime.new!(@dt.withTimeAtStartOfDay, @of, @sg)
-  end
-
-  # Create a new Date object representing today.
-  #
-  # +sg+ specifies the Day of Calendar Reform.
-  def self.today(sg=ITALY)
-    t = Time.now
-    civil(t.year, t.mon, t.mday, sg)
-  end
-
-  DEFAULT_TZ = ENV['TZ']
-  DEFAULT_DTZ = JODA::DateTimeZone.getDefault
-  CHRONO_ITALY_DEFAULT_DTZ = chronology(ITALY, DEFAULT_DTZ)
-  CHRONO_ITALY_UTC = JODA.chrono::GJChronology.getInstance(JODA::DateTimeZone::UTC)
-
-  # Create a new DateTime object representing the current time.
-  #
-  # +sg+ specifies the Day of Calendar Reform.
-  def self.now(sg=ITALY)
-    dtz = (ENV['TZ'] == DEFAULT_TZ) ? DEFAULT_DTZ : org.jruby::RubyTime.getLocalTimeZone(JRuby.runtime)
-
-    if dtz == DEFAULT_DTZ and sg == ITALY
-      new!(JODA::DateTime.new(CHRONO_ITALY_DEFAULT_DTZ), nil, sg)
-    else
-      new!(JODA::DateTime.new(chronology(sg, dtz)), nil, sg)
-    end
-  end
-  private_class_method :now
-
 end
 
 class DateTime < Date
@@ -1499,6 +1468,4 @@ class DateTime < Date
     self
   end
 
-  private_class_method :today
-  public_class_method  :now
 end
