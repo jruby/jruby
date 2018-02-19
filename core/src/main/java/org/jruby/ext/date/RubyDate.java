@@ -154,7 +154,7 @@ public class RubyDate extends RubyObject {
         this.dt = new DateTime(millis, chronology);
     }
 
-    private RubyDate(ThreadContext context, IRubyObject ajd, Chronology chronology, int off) {
+    RubyDate(ThreadContext context, IRubyObject ajd, Chronology chronology, int off) {
         this(context, ajd, chronology, off, 0);
     }
 
@@ -426,6 +426,38 @@ public class RubyDate extends RubyObject {
         final int d = args[2].convertToInteger().getIntValue();
 
         return DateUtils._valid_civil_p(y, m, d, sg);
+    }
+
+    // Do hour +h+, minute +min+, and second +s+ constitute a valid time?
+    // If they do, returns their value as a fraction of a day.  If not, returns nil.
+    @JRubyMethod(name = "_valid_time?", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject _valid_time_p(ThreadContext context, IRubyObject self,
+                                            IRubyObject h, IRubyObject m, IRubyObject s) {
+
+        long hour = normIntValue(context, h, 24);
+        long min = normIntValue(context, m, 60);
+        long sec = normIntValue(context, s, 60);
+
+        if (valid_time_p(hour, min, sec)) {
+            return timeToDayFraction(context, (int) hour, (int) min, (int) sec);
+        }
+        return context.nil;
+    }
+
+    private static long normIntValue(ThreadContext context, IRubyObject val, final int negOffset) {
+        long v;
+        if (val instanceof RubyFixnum) {
+            v = ((RubyFixnum) val).getLongValue();
+        }
+        else {
+            v = val.convertToInteger().getLongValue();
+        }
+        return (v < 0) ? v + negOffset : v;
+    }
+
+    // Rational(h * 3600 + min * 60 + s, 86400)
+    static RubyNumeric timeToDayFraction(ThreadContext context, int hour, int min, int sec) {
+        return (RubyNumeric) RubyRational.newRationalCanonicalize(context, hour * 3600 + min * 60 + sec, DAY_IN_SECONDS);
     }
 
     /**

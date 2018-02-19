@@ -655,28 +655,6 @@ class Date
       jd
     end
 
-    # Do hour +h+, minute +min+, and second +s+ constitute a valid time?
-    #
-    # If they do, returns their value as a fraction of a day.  If not,
-    # returns nil.
-    #
-    # The 24-hour clock is used.  Negative values of +h+, +min+, and
-    # +sec+ are treating as counting backwards from the end of the
-    # next larger unit (e.g. a +min+ of -2 is treated as 58).  No
-    # wraparound is performed.
-    def _valid_time? (h, min, s) # :nodoc:
-      h   += 24 if h   < 0
-      min += 60 if min < 0
-      s   += 60 if s   < 0
-      return unless ((0...24) === h &&
-                     (0...60) === min &&
-                     (0...60) === s) ||
-                     (24 == h &&
-                       0 == min &&
-                       0 == s)
-      time_to_day_fraction(h, min, s)
-    end
-
   end
 
   extend  t
@@ -703,11 +681,6 @@ class Date
     !!_valid_nth_kday?(y, m, n, k, sg)
   end
   private_class_method :valid_nth_kday?
-
-  def self.valid_time? (h, min, s) # :nodoc:
-    !!_valid_time?(h, min, s)
-  end
-  private_class_method :valid_time?
 
   # Create a new Date object from a Julian Day Number.
   #
