@@ -148,7 +148,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private static Regex makeRegexp(Ruby runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
         try {
             int p = bytes.getBegin();
-            return new Regex(bytes.getUnsafeBytes(), p, p + bytes.getRealSize(), options.toJoniOptions(), enc, Syntax.DEFAULT, runtime.getWarnings());
+            return new Regex(bytes.getUnsafeBytes(), p, p + bytes.getRealSize(), options.toJoniOptions(), enc, Syntax.DEFAULT, runtime.getRegexpWarnings());
         } catch (Exception e) {
             RegexpSupport.raiseRegexpError19(runtime, bytes, enc, options, e.getMessage());
             return null; // not reached

@@ -80,6 +80,7 @@ import jnr.posix.POSIXFactory;
 
 import org.jcodings.Encoding;
 import org.joda.time.DateTimeZone;
+import org.joni.WarnCallback;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
@@ -2839,6 +2840,10 @@ public final class Ruby implements Constantizable {
         return warnings;
     }
 
+    WarnCallback getRegexpWarnings() {
+        return regexpWarnings;
+    }
+
     public PrintStream getErrorStream() {
         // FIXME: We can't guarantee this will always be a RubyIO...so the old code here is not safe
         /*java.io.OutputStream os = ((RubyIO) getGlobalVariables().getService("$stderr")).getOutStream();
@@ -5050,6 +5055,12 @@ public final class Ruby implements Constantizable {
 
     private GlobalVariables globalVariables = new GlobalVariables(this);
     private final RubyWarnings warnings = new RubyWarnings(this);
+    private final WarnCallback regexpWarnings = new WarnCallback() {
+        @Override
+        public void warn(String message) {
+            getWarnings().warning(message);
+        }
+    };
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
