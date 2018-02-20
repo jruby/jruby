@@ -168,30 +168,6 @@
 # However, methods of the Date class when used by a
 # DateTime instance will use the time zone offset of this
 # instance.
-#
-# == Examples of use
-#
-# === Print out the date of every Sunday between two dates.
-#
-#     def print_sundays(d1, d2)
-#         d1 +=1 while (d1.wday != 0)
-#         d1.step(d2, 7) do |date|
-#             puts "#{Date::MONTHNAMES[date.mon]} #{date.day}"
-#         end
-#     end
-#
-#     print_sundays(Date::civil(2003, 4, 8), Date::civil(2003, 5, 23))
-#
-# === Calculate how many seconds to go till midnight on New Year's Day.
-#
-#     def secs_to_new_year(now = DateTime::now())
-#         new_year = DateTime.new(now.year + 1, 1, 1)
-#         dif = new_year - now
-#         hours, mins, secs, ignore_fractions = Date::day_fraction_to_time(dif)
-#         return hours * 60 * 60 + mins * 60 + secs
-#     end
-#
-#     puts secs_to_new_year()
 
 org.jruby.ext.date.DateLibrary.load JRuby.runtime
 
@@ -492,16 +468,12 @@ class Date
     end
 
     def jd_to_nth_kday(jd, sg=GREGORIAN) # :nodoc:
-      y, m, d = jd_to_civil(jd, sg)
+      y, m, _ = jd_to_civil(jd, sg)
       j = find_fdom(y, m, sg)
-      return y, m, ((jd - j) / 7).floor + 1, jd_to_wday(jd)
+      # Sunday is day-of-week 0; Saturday is day-of-week 6.
+      jd_to_wday = (jd + 1) % 7
+      return y, m, ((jd - j) / 7).floor + 1, jd_to_wday
     end
-
-    # Convert a Julian Day Number to the day of the week.
-    #
-    # Sunday is day-of-week 0; Saturday is day-of-week 6.
-    def jd_to_wday(jd) (jd + 1) % 7 end # :nodoc:
-    private :jd_to_wday # ONLY USED IN ONE PLACE
 
     # Convert an Astronomical Julian Day Number to a (civil) Julian
     # Day Number.
@@ -526,18 +498,15 @@ class Date
 
     # Convert a fractional day +fr+ to [hours, minutes, seconds,
     # fraction_of_a_second]
-    def day_fraction_to_time(fr) # :nodoc:
-      ss,  fr = fr.divmod(SECONDS_IN_DAY) # 4p
-      h,   ss = ss.divmod(3600)
-      min, s  = ss.divmod(60)
-      return h, min, s, fr * 86400
-    end
+    # def day_fraction_to_time(fr) # :nodoc:
+    #   ss,  fr = fr.divmod(SECONDS_IN_DAY) # 4p
+    #   h,   ss = ss.divmod(3600)
+    #   min, s  = ss.divmod(60)
+    #   return h, min, s, fr * 86400
+    # end
 
-    # Convert an +h+ hour, +min+ minutes, +s+ seconds period
-    # to a fractional day.
-    def time_to_day_fraction(h, min, s)
-      Rational(h * 3600 + min * 60 + s, 86400) # 4p
-    end
+    # Convert an +h+ hour, +min+ minutes, +s+ seconds period to a fractional day.
+    def time_to_day_fraction(h, min, s) Rational(h * 3600 + min * 60 + s, 86400) end
 
     # Convert an Astronomical Modified Julian Day Number to an
     # Astronomical Julian Day Number.
@@ -562,12 +531,6 @@ class Date
     # Convert a Julian Day Number to the number of days since
     # the adoption of the Gregorian Calendar (in Italy).
     # def jd_to_ld(jd) jd -  LD_EPOCH_IN_CJD end # :nodoc:
-
-    # Is +jd+ a valid Julian Day Number?
-    #
-    # If it is, returns it.  In fact, any value is treated as a valid
-    # Julian Day Number.
-    def _valid_jd? (jd, sg=GREGORIAN) jd end # :nodoc:
 
     # Do the year +y+ and day-of-year +d+ make a valid Ordinal Date?
     # Returns the corresponding Julian Day Number if they do, or

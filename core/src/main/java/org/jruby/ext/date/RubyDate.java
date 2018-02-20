@@ -460,6 +460,14 @@ public class RubyDate extends RubyObject {
         return (RubyNumeric) RubyRational.newRationalCanonicalize(context, hour * 3600 + min * 60 + sec, DAY_IN_SECONDS);
     }
 
+    @JRubyMethod(name = "_valid_jd?", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject _valid_jd_p(IRubyObject self, IRubyObject jd, IRubyObject sg) {
+        // Is +jd+ a valid Julian Day Number?
+        //
+        // If it is, returns it.  In fact, any value is treated as a valid Julian Day Number.
+        return jd;
+    }
+
     /**
      # Create a new Date object representing today.
      #
