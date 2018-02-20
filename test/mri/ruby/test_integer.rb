@@ -249,6 +249,9 @@ class TestInteger < Test::Unit::TestCase
 
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1110, 1111_1111_1111_1111_1111_1111_1111_1111.round(-1))
     assert_int_equal(-1111_1111_1111_1111_1111_1111_1111_1110, (-1111_1111_1111_1111_1111_1111_1111_1111).round(-1))
+
+    assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1111, 1111_1111_1111_1111_1111_1111_1111_1111.round(1))
+    assert_int_equal(10**400, (10**400).round(1))
   end
 
   def test_floor
@@ -274,6 +277,9 @@ class TestInteger < Test::Unit::TestCase
 
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1110, 1111_1111_1111_1111_1111_1111_1111_1111.floor(-1))
     assert_int_equal(-1111_1111_1111_1111_1111_1111_1111_1120, (-1111_1111_1111_1111_1111_1111_1111_1111).floor(-1))
+
+    assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1111, 1111_1111_1111_1111_1111_1111_1111_1111.floor(1))
+    assert_int_equal(10**400, (10**400).floor(1))
   end
 
   def test_ceil
@@ -327,6 +333,7 @@ class TestInteger < Test::Unit::TestCase
 
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1110, 1111_1111_1111_1111_1111_1111_1111_1111.truncate(-1))
     assert_int_equal(-1111_1111_1111_1111_1111_1111_1111_1110, (-1111_1111_1111_1111_1111_1111_1111_1111).truncate(-1))
+
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1111, 1111_1111_1111_1111_1111_1111_1111_1111.truncate(1))
     assert_int_equal(10**400, (10**400).truncate(1))
   end
@@ -502,5 +509,20 @@ class TestInteger < Test::Unit::TestCase
       failures << n  unless root*root <= n && (root+1)*(root+1) > n
     end
     assert_empty(failures, bug13440)
+  end
+
+  def test_fdiv
+    assert_equal(1.0, 1.fdiv(1))
+    assert_equal(0.5, 1.fdiv(2))
+  end
+
+  def test_obj_fdiv
+    o = Object.new
+    def o.coerce(x); [x, 0.5]; end
+    assert_equal(2.0, 1.fdiv(o))
+    o = Object.new
+    def o.coerce(x); [self, x]; end
+    def o.fdiv(x); 1; end
+    assert_equal(1.0, 1.fdiv(o))
   end
 end

@@ -184,6 +184,41 @@ class TestDir < Test::Unit::TestCase
     end
   end
 
+  if Process.const_defined?(:RLIMIT_NOFILE)
+    def test_glob_too_may_open_files
+      assert_separately([], "#{<<-"begin;"}\n#{<<-'end;'}", chdir: @root)
+      begin;
+        n = 16
+        Process.setrlimit(Process::RLIMIT_NOFILE, n)
+        files = []
+        begin
+          n.times {files << File.open('b')}
+        rescue Errno::EMFILE, Errno::ENFILE => e
+        end
+        assert_raise(e.class) {
+          Dir.glob('*')
+        }
+      end;
+    end
+  end
+
+  def test_glob_base
+    files = %w[a/foo.c c/bar.c]
+    files.each {|n| File.write(File.join(@root, n), "")}
+    assert_equal(files, Dir.glob("*/*.c", base: @root).sort)
+    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: ".").sort})
+    assert_equal(%w[foo.c], Dir.chdir(@root) {Dir.glob("*.c", base: "a").sort})
+    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: "").sort})
+    assert_equal(files, Dir.chdir(@root) {Dir.glob("*/*.c", base: nil).sort})
+  end
+
+  def test_glob_base_dir
+    files = %w[a/foo.c c/bar.c]
+    files.each {|n| File.write(File.join(@root, n), "")}
+    assert_equal(files, Dir.open(@root) {|d| Dir.glob("*/*.c", base: d)}.sort)
+    assert_equal(%w[foo.c], Dir.chdir(@root) {Dir.open("a") {|d| Dir.glob("*", base: d)}})
+  end
+
   def assert_entries(entries, children_only = false)
     entries.sort!
     expected = ("a".."z").to_a

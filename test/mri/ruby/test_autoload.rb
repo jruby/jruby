@@ -1,7 +1,6 @@
 # frozen_string_literal: false
 require 'test/unit'
 require 'tempfile'
-require 'thread'
 
 class TestAutoload < Test::Unit::TestCase
   def test_autoload_so
@@ -239,6 +238,11 @@ p Foo::Bar
         end
       end
     end
+  end
+
+  def test_bug_13526
+    script = File.join(__dir__, 'bug-13526.rb')
+    assert_ruby_status([script], '', '[ruby-core:81016] [Bug #13526]')
   end
 
   def add_autoload(path)

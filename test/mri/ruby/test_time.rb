@@ -236,6 +236,17 @@ class TestTime < Test::Unit::TestCase
     assert_equal(1, Time.at(0, 0.001).nsec)
   end
 
+  def test_at_with_unit
+    assert_equal(123456789, Time.at(0, 123456789, :nanosecond).nsec)
+    assert_equal(123456789, Time.at(0, 123456789, :nsec).nsec)
+    assert_equal(123456000, Time.at(0, 123456, :microsecond).nsec)
+    assert_equal(123456000, Time.at(0, 123456, :usec).nsec)
+    assert_equal(123000000, Time.at(0, 123, :millisecond).nsec)
+    assert_raise(ArgumentError){ Time.at(0, 1, 2) }
+    assert_raise(ArgumentError){ Time.at(0, 1, :invalid) }
+    assert_raise(ArgumentError){ Time.at(0, 1, nil) }
+  end
+
   def test_at_rational
     assert_equal(1, Time.at(Rational(1,1) / 1000000000).nsec)
     assert_equal(1, Time.at(1167609600 + Rational(1,1) / 1000000000).nsec)
@@ -308,7 +319,9 @@ class TestTime < Test::Unit::TestCase
     in_timezone('JST-9') do
       t = Time.local(2013, 2, 24)
       assert_equal('JST', Time.local(2013, 2, 24).zone)
-      assert_equal('JST', Marshal.load(Marshal.dump(t)).zone)
+      t = Marshal.load(Marshal.dump(t))
+      assert_equal('JST', t.zone)
+      assert_equal('JST', (t+1).zone, '[ruby-core:81892] [Bug #13710]')
     end
   end
 
@@ -1090,6 +1103,17 @@ class TestTime < Test::Unit::TestCase
     assert_equal("366", t.strftime("%j"))
   end
 
+  def test_strftime_no_hidden_garbage
+    fmt = %w(Y m d).map { |x| "%#{x}" }.join('-') # defeats optimization
+    t = Time.at(0).getutc
+    ObjectSpace.count_objects(res = {}) # creates strings on first call
+    before = ObjectSpace.count_objects(res)[:T_STRING]
+    val = t.strftime(fmt)
+    after = ObjectSpace.count_objects(res)[:T_STRING]
+    assert_equal before + 1, after, 'only new string is the created one'
+    assert_equal '1970-01-01', val
+  end
+
   def test_num_exact_error
     bad = EnvUtil.labeled_class("BadValue").new
     x = EnvUtil.labeled_class("Inexact") do
@@ -1098,5 +1122,22 @@ class TestTime < Test::Unit::TestCase
       define_method(:to_r) {bad}
     end.new
     assert_raise_with_message(TypeError, /Inexact/) {Time.at(x)}
+  end
+
+  def test_memsize
+    # Time objects are common in some code, try to keep them small
+    skip "Time object size test" if /^(?:i.?86|x86_64)-linux/ !~ RUBY_PLATFORM
+    require 'objspace'
+    t = Time.at(0)
+    size = GC::INTERNAL_CONSTANTS[:RVALUE_SIZE]
+    case size
+    when 20 then expect = 50
+    when 40 then expect = 86
+    else
+      flunk "Unsupported RVALUE_SIZE=#{size}, update test_memsize"
+    end
+    assert_equal expect, ObjectSpace.memsize_of(t)
+  rescue LoadError => e
+    skip "failed to load objspace: #{e.message}"
   end
 end

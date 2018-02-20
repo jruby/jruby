@@ -11,6 +11,13 @@ class TestVector < Test::Unit::TestCase
     @w1 = Vector[2,3,4]
   end
 
+  def test_zero
+    assert_equal Vector[0, 0, 0, 0], Vector.zero(4)
+    assert_equal Vector[], Vector.zero(0)
+    assert_raise(ArgumentError) { Vector.zero(-1) }
+    assert Vector[0, 0, 0, 0].zero?
+  end
+
   def test_basis
     assert_equal(Vector[1, 0, 0], Vector.basis(size: 3, index: 0))
     assert_raise(ArgumentError) { Vector.basis(size: -1, index: 2) }
@@ -168,6 +175,10 @@ class TestVector < Test::Unit::TestCase
 
   def test_to_s
     assert_equal("Vector[1, 2, 3]", @v1.to_s)
+  end
+
+  def test_to_matrix
+    assert_equal Matrix[[1], [2], [3]], @v1.to_matrix
   end
 
   def test_inspect

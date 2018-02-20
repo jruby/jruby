@@ -203,7 +203,7 @@ CODE
 
     assert_raise(ArgumentError) { "foo"[1, 2, 3] = "" }
 
-    #assert_raise(IndexError) {"foo"[RbConfig::Limits["LONG_MIN"]] = "l"}
+    assert_raise(IndexError) {"foo"[RbConfig::LIMITS["LONG_MIN"]] = "l"}
   end
 
   def test_CMP # '<=>'
@@ -383,6 +383,54 @@ CODE
     $/ = save
 
     assert_equal(S("a").hash, S("a\u0101").chomp(S("\u0101")).hash, '[ruby-core:22414]')
+
+    s = S("hello")
+    assert_equal("hel", s.chomp('lo'))
+    assert_equal("hello", s)
+
+    s = S("hello")
+    assert_equal("hello", s.chomp('he'))
+    assert_equal("hello", s)
+
+    s = S("\u{3053 3093 306b 3061 306f}")
+    assert_equal("\u{3053 3093 306b}", s.chomp("\u{3061 306f}"))
+    assert_equal("\u{3053 3093 306b 3061 306f}", s)
+
+    s = S("\u{3053 3093 306b 3061 306f}")
+    assert_equal("\u{3053 3093 306b 3061 306f}", s.chomp('lo'))
+    assert_equal("\u{3053 3093 306b 3061 306f}", s)
+
+    s = S("hello")
+    assert_equal("hello", s.chomp("\u{3061 306f}"))
+    assert_equal("hello", s)
+
+    # skip if argument is a broken string
+    s = S("\xe3\x81\x82")
+    assert_equal("\xe3\x81\x82", s.chomp("\x82"))
+    assert_equal("\xe3\x81\x82", s)
+
+    s = S("\x95\x5c").force_encoding("Shift_JIS")
+    assert_equal("\x95\x5c".force_encoding("Shift_JIS"), s.chomp("\x5c"))
+    assert_equal("\x95\x5c".force_encoding("Shift_JIS"), s)
+
+    # clear coderange
+    s = S("hello\u{3053 3093}")
+    assert_not_predicate(s, :ascii_only?)
+    assert_predicate(s.chomp("\u{3053 3093}"), :ascii_only?)
+
+    # argument should be converted to String
+    klass = Class.new { def to_str; 'a'; end }
+    s = S("abba")
+    assert_equal("abb", s.chomp(klass.new))
+    assert_equal("abba", s)
+
+    # chomp removes any of "\n", "\r\n", "\r" when "\n" is specified
+    s = "foo\n"
+    assert_equal("foo", s.chomp("\n"))
+    s = "foo\r\n"
+    assert_equal("foo", s.chomp("\n"))
+    s = "foo\r"
+    assert_equal("foo", s.chomp("\n"))
   ensure
     $/ = save
   end
@@ -572,6 +620,11 @@ CODE
     assert_raise(FrozenError) { 'foo'.freeze.concat('bar') }
   end
 
+  def test_concat_literals
+    s="." * 50
+    assert_equal(Encoding::UTF_8, "#{s}x".encoding)
+  end
+
   def test_count
     a = S("hello world")
     assert_equal(5, a.count(S("lo")))
@@ -605,6 +658,10 @@ CODE
       assert_raise(ArgumentError) {S("mypassword").crypt(S("aa".encode(enc)))}
       assert_raise(ArgumentError) {S("mypassword".encode(enc)).crypt(S("aa"))}
     end
+
+    @cls == String and assert_no_memory_leak([], 's = ""', <<~'end;') # do
+      1000.times { s.crypt(-"..").clear  }
+    end;
   end
 
   def test_delete
@@ -616,7 +673,7 @@ CODE
     assert_equal("a".hash, "a\u0101".delete("\u0101").hash, '[ruby-talk:329267]')
     assert_equal(true, "a\u0101".delete("\u0101").ascii_only?)
     assert_equal(true, "a\u3041".delete("\u3041").ascii_only?)
-    assert_equal(false, "a\u3041\u3042".tr("\u3041", "a").ascii_only?)
+    assert_equal(false, "a\u3041\u3042".delete("\u3041").ascii_only?)
 
     assert_equal("a", "abc\u{3042 3044 3046}".delete("^a"))
     assert_equal("bc\u{3042 3044 3046}", "abc\u{3042 3044 3046}".delete("a"))
@@ -696,6 +753,67 @@ CODE
     assert_equal(S('"\\u{10ABCD}"'), b.dump)
   end
 
+  def test_undump
+    a = S("Test") << 1 << 2 << 3 << 9 << 13 << 10
+    assert_equal(a, S('"Test\\x01\\x02\\x03\\t\\r\\n"').undump)
+    assert_equal(S("\\ca"), S('"\\ca"').undump)
+    assert_equal(S("\u{7F}"), S('"\\x7F"').undump)
+    assert_equal(S("\u{7F}A"), S('"\\x7FA"').undump)
+    assert_equal(S("\u{AB}"), S('"\\u00AB"').undump)
+    assert_equal(S("\u{ABC}"), S('"\\u0ABC"').undump)
+    assert_equal(S("\uABCD"), S('"\\uABCD"').undump)
+    assert_equal(S("\uABCD"), S('"\\uABCD"').undump)
+    assert_equal(S("\u{ABCDE}"), S('"\\u{ABCDE}"').undump)
+    assert_equal(S("\u{10ABCD}"), S('"\\u{10ABCD}"').undump)
+    assert_equal(S("\u{ABCDE 10ABCD}"), S('"\\u{ABCDE 10ABCD}"').undump)
+    assert_equal(S(""), S('"\\u{}"').undump)
+    assert_equal(S(""), S('"\\u{  }"').undump)
+
+    assert_equal(S("\u3042".encode("sjis")), S('"\x82\xA0"'.force_encoding("sjis")).undump)
+    assert_equal(S("\u8868".encode("sjis")), S("\"\\x95\\\\\"".force_encoding("sjis")).undump)
+
+    assert_equal(S("äöü"), S('"\u00E4\u00F6\u00FC"').undump)
+    assert_equal(S("äöü"), S('"\xC3\xA4\xC3\xB6\xC3\xBC"').undump)
+
+    assert_equal(Encoding::UTF_8, S('"\\u3042"').encode(Encoding::EUC_JP).undump.encoding)
+
+    assert_equal("abc".encode(Encoding::UTF_16LE),
+                 '"a\x00b\x00c\x00".force_encoding("UTF-16LE")'.undump)
+
+    assert_equal('\#', '"\\\\#"'.undump)
+    assert_equal('\#{', '"\\\\\#{"'.undump)
+
+    assert_raise(RuntimeError) { S('\u3042').undump }
+    assert_raise(RuntimeError) { S('"\x82\xA0\u3042"'.force_encoding("SJIS")).undump }
+    assert_raise(RuntimeError) { S('"\u3042\x82\xA0"'.force_encoding("SJIS")).undump }
+    assert_raise(RuntimeError) { S('"".force_encoding()').undump }
+    assert_raise(RuntimeError) { S('"".force_encoding("').undump }
+    assert_raise(RuntimeError) { S('"".force_encoding("UNKNOWN")').undump }
+    assert_raise(RuntimeError) { S('"\u3042".force_encoding("UTF-16LE")').undump }
+    assert_raise(RuntimeError) { S('"\x00\x00".force_encoding("UTF-16LE")"').undump }
+    assert_raise(RuntimeError) { S('"\x00\x00".force_encoding("'+("a"*9999999)+'")"').undump }
+    assert_raise(RuntimeError) { S(%("\u00E4")).undump }
+    assert_raise(RuntimeError) { S('"').undump }
+    assert_raise(RuntimeError) { S('"""').undump }
+    assert_raise(RuntimeError) { S('""""').undump }
+
+    assert_raise(RuntimeError) { S('"a').undump }
+    assert_raise(RuntimeError) { S('"\u"').undump }
+    assert_raise(RuntimeError) { S('"\u{"').undump }
+    assert_raise(RuntimeError) { S('"\u304"').undump }
+    assert_raise(RuntimeError) { S('"\u304Z"').undump }
+    assert_raise(RuntimeError) { S('"\udfff"').undump }
+    assert_raise(RuntimeError) { S('"\u{dfff}"').undump }
+    assert_raise(RuntimeError) { S('"\u{3042"').undump }
+    assert_raise(RuntimeError) { S('"\u{3042 "').undump }
+    assert_raise(RuntimeError) { S('"\u{110000}"').undump }
+    assert_raise(RuntimeError) { S('"\u{1234567}"').undump }
+    assert_raise(RuntimeError) { S('"\x"').undump }
+    assert_raise(RuntimeError) { S('"\xA"').undump }
+    assert_raise(RuntimeError) { S('"\\"').undump }
+    assert_raise(RuntimeError) { S(%("\0")).undump }
+  end
+
   def test_dup
     for taint in [ false, true ]
       for frozen in [ false, true ]
@@ -722,8 +840,8 @@ CODE
 
     res=[]
     S("hello\n\n\nworld").lines(S('')).each {|x| res << x}
-    assert_equal(S("hello\n\n\n"), res[0])
-    assert_equal(S("world"),       res[1])
+    assert_equal(S("hello\n\n"), res[0])
+    assert_equal(S("world"),     res[1])
 
     $/ = "!"
     res=[]
@@ -755,12 +873,19 @@ CODE
         assert_equal [65, 66, 67], s.bytes {}
       }
     else
-      assert_warning(/deprecated/) {
+      warning = /passing a block to String#bytes is deprecated/
+      assert_warning(warning) {
         res = []
         assert_equal s.object_id, s.bytes {|x| res << x }.object_id
         assert_equal(65, res[0])
         assert_equal(66, res[1])
         assert_equal(67, res[2])
+      }
+      assert_warning(warning) {
+        s = S("ABC")
+        res = []
+        assert_same s, s.bytes {|x| res << x }
+        assert_equal [65, 66, 67], res
       }
     end
   end
@@ -792,12 +917,19 @@ CODE
         assert_equal [0x3042, 0x3044, 0x3046], s.codepoints {}
       }
     else
-      assert_warning(/deprecated/) {
+      warning = /passing a block to String#codepoints is deprecated/
+      assert_warning(warning) {
         res = []
         assert_equal s.object_id, s.codepoints {|x| res << x }.object_id
         assert_equal(0x3042, res[0])
         assert_equal(0x3044, res[1])
         assert_equal(0x3046, res[2])
+      }
+      assert_warning(warning) {
+        s = S("ABC")
+        res = []
+        assert_same s, s.codepoints {|x| res << x }
+        assert_equal [65, 66, 67], res
       }
     end
   end
@@ -823,9 +955,70 @@ CODE
         assert_equal ["A", "B", "C"], s.chars {}
       }
     else
-      assert_warning(/deprecated/) {
+      warning = /passing a block to String#chars is deprecated/
+      assert_warning(warning) {
         res = []
         assert_equal s.object_id, s.chars {|x| res << x }.object_id
+        assert_equal("A", res[0])
+        assert_equal("B", res[1])
+        assert_equal("C", res[2])
+      }
+    end
+  end
+
+  def test_each_grapheme_cluster
+    [
+      "\u{20 200d}",
+      "\u{600 600}",
+      "\u{600 20}",
+      "\u{261d 1F3FB}",
+      "\u{1f600}",
+      "\u{20 308}",
+      "\u{1F477 1F3FF 200D 2640 FE0F}",
+      "\u{1F468 200D 1F393}",
+      "\u{1F46F 200D 2642 FE0F}",
+      "\u{1f469 200d 2764 fe0f 200d 1f469}",
+    ].each do |g|
+      assert_equal [g], g.each_grapheme_cluster.to_a
+    end
+
+    assert_equal ["\u000A", "\u0308"], "\u{a 308}".each_grapheme_cluster.to_a
+    assert_equal ["\u000D", "\u0308"], "\u{d 308}".each_grapheme_cluster.to_a
+    assert_equal ["a", "b", "c"], "abc".b.each_grapheme_cluster.to_a
+    s = ("x"+"\u{10ABCD}"*250000)
+    assert_empty(s.each_grapheme_cluster {s.clear})
+  end
+
+  def test_grapheme_clusters
+    [
+      "\u{20 200d}",
+      "\u{600 600}",
+      "\u{600 20}",
+      "\u{261d 1F3FB}",
+      "\u{1f600}",
+      "\u{20 308}",
+      "\u{1F477 1F3FF 200D 2640 FE0F}",
+      "\u{1F468 200D 1F393}",
+      "\u{1F46F 200D 2642 FE0F}",
+      "\u{1f469 200d 2764 fe0f 200d 1f469}",
+    ].each do |g|
+      assert_equal [g], g.grapheme_clusters
+    end
+
+    assert_equal ["\u000A", "\u0308"], "\u{a 308}".grapheme_clusters
+    assert_equal ["\u000D", "\u0308"], "\u{d 308}".grapheme_clusters
+    assert_equal ["a", "b", "c"], "abc".b.grapheme_clusters
+
+    if ENUMERATOR_WANTARRAY
+      assert_warn(/block not used/) {
+        assert_equal ["A", "B", "C"], "ABC".grapheme_clusters {}
+      }
+    else
+      warning = /passing a block to String#grapheme_clusters is deprecated/
+      assert_warning(warning) {
+        s = "ABC".b
+        res = []
+        assert_same s, s.grapheme_clusters {|x| res << x }
         assert_equal("A", res[0])
         assert_equal("B", res[1])
         assert_equal("C", res[2])
@@ -843,8 +1036,13 @@ CODE
 
     res=[]
     S("hello\n\n\nworld").each_line(S('')) {|x| res << x}
-    assert_equal(S("hello\n\n\n"), res[0])
-    assert_equal(S("world"),       res[1])
+    assert_equal(S("hello\n\n"), res[0])
+    assert_equal(S("world"),     res[1])
+
+    res=[]
+    S("hello\r\n\r\nworld").each_line(S('')) {|x| res << x}
+    assert_equal(S("hello\r\n\r\n"), res[0])
+    assert_equal(S("world"),         res[1])
 
     $/ = "!"
 
@@ -885,7 +1083,12 @@ CODE
 
     res = []
     S("hello\n\n\nworld").each_line(S(''), chomp: true) {|x| res << x}
-    assert_equal(S("hello\n\n"), res[0])
+    assert_equal(S("hello\n"), res[0])
+    assert_equal(S("world"),   res[1])
+
+    res = []
+    S("hello\r\n\r\nworld").each_line(S(''), chomp: true) {|x| res << x}
+    assert_equal(S("hello\r\n"), res[0])
     assert_equal(S("world"),     res[1])
 
     res = []
@@ -928,7 +1131,7 @@ CODE
         assert_equal ["hello\n", "world"], s.lines {}
       }
     else
-      assert_warning(/deprecated/) {
+      assert_warning(/passing a block to String#lines is deprecated/) {
         res = []
         assert_equal s.object_id, s.lines {|x| res << x }.object_id
         assert_equal(S("hello\n"), res[0])
@@ -1500,6 +1703,17 @@ CODE
     assert_raise_with_message(TypeError, /\$;/) {
       $; = []
     }
+
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    bug = '[ruby-core:79582] $; must not be GCed'
+    begin;
+      $; = " "
+      $a = nil
+      alias $; $a
+      alias $-F $a
+      GC.start
+      assert_equal([], "".split, bug)
+    end;
   end
 
   def test_split_encoding
@@ -1538,6 +1752,11 @@ CODE
     }
   end
 
+  def test_split_dupped
+    s = "abc"
+    s.split("b", 1).map(&:upcase!)
+    assert_equal("abc", s)
+  end
   def test_squeeze
     assert_equal(S("abc"), S("aaabbbbccc").squeeze)
     assert_equal(S("aa bb cc"), S("aa   bb      cc").squeeze(S(" ")))
@@ -1724,6 +1943,11 @@ CODE
 
     assert_equal("!", " ".succ)
     assert_equal("", "".succ)
+
+    bug = '[ruby-core:83062] [Bug #13952]'
+    s = "\xff".b
+    assert_not_predicate(s, :ascii_only?)
+    assert_predicate(s.succ, :ascii_only?, bug)
   end
 
   def test_succ!
@@ -1915,8 +2139,13 @@ CODE
     assert_equal(false, "\u3041\u3042".tr("\u3041", "a").ascii_only?)
 
     bug6156 = '[ruby-core:43335]'
+    bug13950 = '[ruby-core:83056] [Bug #13950]'
     str, range, star = %w[b a-z *].map{|s|s.encode("utf-16le")}
-    assert_equal(star, str.tr(range, star), bug6156)
+    result = str.tr(range, star)
+    assert_equal(star, result, bug6156)
+    assert_not_predicate(str, :ascii_only?)
+    assert_not_predicate(star, :ascii_only?)
+    assert_not_predicate(result, :ascii_only?, bug13950)
   end
 
   def test_tr!
@@ -2277,7 +2506,12 @@ CODE
     end
 
     assert_equal(["\u30E6\u30FC\u30B6", "@", "\u30C9\u30E1.\u30A4\u30F3"],
-      "\u30E6\u30FC\u30B6@\u30C9\u30E1.\u30A4\u30F3".partition(/[@.]/))
+                 "\u30E6\u30FC\u30B6@\u30C9\u30E1.\u30A4\u30F3".partition(/[@.]/))
+
+    bug = '[ruby-core:82911]'
+    hello = "hello"
+    hello.partition("hi").map(&:upcase!)
+    assert_equal("hello", hello, bug)
   end
 
   def test_rpartition
@@ -2297,6 +2531,11 @@ CODE
     bug8138 = '[ruby-dev:47183]'
     assert_equal(["\u30E6\u30FC\u30B6@\u30C9\u30E1", ".", "\u30A4\u30F3"],
       "\u30E6\u30FC\u30B6@\u30C9\u30E1.\u30A4\u30F3".rpartition(/[@.]/), bug8138)
+
+    bug = '[ruby-core:82911]'
+    hello = "hello"
+    hello.rpartition("hi").map(&:upcase!)
+    assert_equal("hello", hello, bug)
   end
 
   def test_setter
@@ -2360,17 +2599,17 @@ CODE
 =end
 
   def test_casecmp
-     assert_equal(0, "FoO".casecmp("fOO"))
-     assert_equal(1, "FoO".casecmp("BaR"))
-     assert_equal(-1, "baR".casecmp("FoO"))
-     assert_equal(1, "\u3042B".casecmp("\u3042a"))
+    assert_equal(0, "FoO".casecmp("fOO"))
+    assert_equal(1, "FoO".casecmp("BaR"))
+    assert_equal(-1, "baR".casecmp("FoO"))
+    assert_equal(1, "\u3042B".casecmp("\u3042a"))
 
-     assert_nil("foo".casecmp(:foo))
-     assert_nil("foo".casecmp(Object.new))
+    assert_nil("foo".casecmp(:foo))
+    assert_nil("foo".casecmp(Object.new))
 
-     o = Object.new
-     def o.to_str; "fOO"; end
-     assert_equal(0, "FoO".casecmp(o))
+    o = Object.new
+    def o.to_str; "fOO"; end
+    assert_equal(0, "FoO".casecmp(o))
   end
 
   def test_casecmp?
@@ -2474,13 +2713,17 @@ CODE
     assert_equal("\xe3\x81\x82", s.delete_prefix("\xe3"))
     assert_equal("\xe3\x81\x82", s)
 
+    s = S("\x95\x5c").force_encoding("Shift_JIS")
+    assert_equal("\x95\x5c".force_encoding("Shift_JIS"), s.delete_prefix("\x95"))
+    assert_equal("\x95\x5c".force_encoding("Shift_JIS"), s)
+
     # clear coderange
     s = S("\u{3053 3093}hello")
     assert_not_predicate(s, :ascii_only?)
     assert_predicate(s.delete_prefix("\u{3053 3093}"), :ascii_only?)
 
     # argument should be converted to String
-    klass = Class.new {|klass| def to_str; 'a'; end }
+    klass = Class.new { def to_str; 'a'; end }
     s = S("abba")
     assert_equal("bba", s.delete_prefix(klass.new))
     assert_equal("abba", s)
@@ -2522,7 +2765,7 @@ CODE
     assert_predicate(s.delete_prefix!("\u{3053 3093}"), :ascii_only?)
 
     # argument should be converted to String
-    klass = Class.new {|klass| def to_str; 'a'; end }
+    klass = Class.new { def to_str; 'a'; end }
     s = S("abba")
     assert_equal("bba", s.delete_prefix!(klass.new))
     assert_equal("bba", s)
@@ -2537,6 +2780,123 @@ CODE
       "a"
     end
     assert_raise_with_message(FrozenError, /frozen/) {s.delete_prefix!(o)}
+  end
+
+  def test_delete_suffix
+    assert_raise(TypeError) { 'hello'.delete_suffix(nil) }
+    assert_raise(TypeError) { 'hello'.delete_suffix(1) }
+    assert_raise(TypeError) { 'hello'.delete_suffix(/hel/) }
+
+    s = S("hello")
+    assert_equal("hel", s.delete_suffix('lo'))
+    assert_equal("hello", s)
+
+    s = S("hello")
+    assert_equal("hello", s.delete_suffix('he'))
+    assert_equal("hello", s)
+
+    s = S("\u{3053 3093 306b 3061 306f}")
+    assert_equal("\u{3053 3093 306b}", s.delete_suffix("\u{3061 306f}"))
+    assert_equal("\u{3053 3093 306b 3061 306f}", s)
+
+    s = S("\u{3053 3093 306b 3061 306f}")
+    assert_equal("\u{3053 3093 306b 3061 306f}", s.delete_suffix('lo'))
+    assert_equal("\u{3053 3093 306b 3061 306f}", s)
+
+    s = S("hello")
+    assert_equal("hello", s.delete_suffix("\u{3061 306f}"))
+    assert_equal("hello", s)
+
+    # skip if argument is a broken string
+    s = S("\xe3\x81\x82")
+    assert_equal("\xe3\x81\x82", s.delete_suffix("\x82"))
+    assert_equal("\xe3\x81\x82", s)
+
+    # clear coderange
+    s = S("hello\u{3053 3093}")
+    assert_not_predicate(s, :ascii_only?)
+    assert_predicate(s.delete_suffix("\u{3053 3093}"), :ascii_only?)
+
+    # argument should be converted to String
+    klass = Class.new { def to_str; 'a'; end }
+    s = S("abba")
+    assert_equal("abb", s.delete_suffix(klass.new))
+    assert_equal("abba", s)
+
+    # chomp removes any of "\n", "\r\n", "\r" when "\n" is specified,
+    # but delete_suffix does not
+    s = "foo\n"
+    assert_equal("foo", s.delete_suffix("\n"))
+    s = "foo\r\n"
+    assert_equal("foo\r", s.delete_suffix("\n"))
+    s = "foo\r"
+    assert_equal("foo\r", s.delete_suffix("\n"))
+  end
+
+  def test_delete_suffix_bang
+    assert_raise(TypeError) { 'hello'.delete_suffix!(nil) }
+    assert_raise(TypeError) { 'hello'.delete_suffix!(1) }
+    assert_raise(TypeError) { 'hello'.delete_suffix!(/hel/) }
+
+    s = S("hello").freeze
+    assert_raise_with_message(FrozenError, /frozen/) {s.delete_suffix!('lo')}
+
+    s = S("ax")
+    o = Struct.new(:s).new(s)
+    def o.to_str
+      s.freeze
+      "x"
+    end
+    assert_raise_with_message(FrozenError, /frozen/) {s.delete_suffix!(o)}
+
+    s = S("hello")
+    assert_equal("hel", s.delete_suffix!('lo'))
+    assert_equal("hel", s)
+
+    s = S("hello")
+    assert_equal(nil, s.delete_suffix!('he'))
+    assert_equal("hello", s)
+
+    s = S("\u{3053 3093 306b 3061 306f}")
+    assert_equal("\u{3053 3093 306b}", s.delete_suffix!("\u{3061 306f}"))
+    assert_equal("\u{3053 3093 306b}", s)
+
+    s = S("\u{3053 3093 306b 3061 306f}")
+    assert_equal(nil, s.delete_suffix!('lo'))
+    assert_equal("\u{3053 3093 306b 3061 306f}", s)
+
+    s = S("hello")
+    assert_equal(nil, s.delete_suffix!("\u{3061 306f}"))
+    assert_equal("hello", s)
+
+    # skip if argument is a broken string
+    s = S("\xe3\x81\x82")
+    assert_equal(nil, s.delete_suffix!("\x82"))
+    assert_equal("\xe3\x81\x82", s)
+
+    s = S("\x95\x5c").force_encoding("Shift_JIS")
+    assert_equal(nil, s.delete_suffix!("\x5c"))
+    assert_equal("\x95\x5c".force_encoding("Shift_JIS"), s)
+
+    # clear coderange
+    s = S("hello\u{3053 3093}")
+    assert_not_predicate(s, :ascii_only?)
+    assert_predicate(s.delete_suffix!("\u{3053 3093}"), :ascii_only?)
+
+    # argument should be converted to String
+    klass = Class.new { def to_str; 'a'; end }
+    s = S("abba")
+    assert_equal("abb", s.delete_suffix!(klass.new))
+    assert_equal("abb", s)
+
+    # chomp removes any of "\n", "\r\n", "\r" when "\n" is specified,
+    # but delete_suffix does not
+    s = "foo\n"
+    assert_equal("foo", s.delete_suffix!("\n"))
+    s = "foo\r\n"
+    assert_equal("foo\r", s.delete_suffix!("\n"))
+    s = "foo\r"
+    assert_equal(nil, s.delete_suffix!("\n"))
   end
 
 =begin
@@ -2691,20 +3051,21 @@ CODE
 
   def test_uplus_minus
     str = "foo"
-    assert_equal(false, str.frozen?)
-    assert_equal(false, (+str).frozen?)
-    assert_equal(true,  (-str).frozen?)
+    assert_not_predicate(str, :frozen?)
+    assert_not_predicate(+str, :frozen?)
+    assert_predicate(-str, :frozen?)
 
-    assert_equal(str.object_id, (+str).object_id)
-    assert_not_equal(str.object_id, (-str).object_id)
+    assert_same(str, +str)
+    assert_not_same(str, -str)
 
     str = "bar".freeze
-    assert_equal(true,  str.frozen?)
-    assert_equal(false, (+str).frozen?)
-    assert_equal(true,  (-str).frozen?)
+    assert_predicate(str, :frozen?)
+    assert_not_predicate(+str, :frozen?)
+    assert_predicate(-str, :frozen?)
 
-    assert_not_equal(str.object_id, (+str).object_id)
-    assert_equal(str.object_id, (-str).object_id)
+    assert_not_same(str, +str)
+    assert_same(str, -str)
+
     bar = %w(b a r).join('')
     assert_same(str, -bar, "uminus deduplicates [Feature #13077]")
   end

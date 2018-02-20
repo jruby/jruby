@@ -68,6 +68,16 @@ class TestOpenURI < Test::Unit::TestCase
     @proxies.each_with_index {|k, i| ENV[k] = @old_proxies[i] }
   end
 
+  def test_200_uri_open
+    with_http {|srv, dr, url|
+      srv.mount_proc("/urifoo200", lambda { |req, res| res.body = "urifoo200" } )
+      URI.open("#{url}/urifoo200") {|f|
+        assert_equal("200", f.status[0])
+        assert_equal("urifoo200", f.read)
+      }
+    }
+  end
+
   def test_200
     with_http {|srv, dr, url|
       srv.mount_proc("/foo200", lambda { |req, res| res.body = "foo200" } )
@@ -604,6 +614,24 @@ class TestOpenURI < Test::Unit::TestCase
         assert_equal(content_ej, f.read)
         assert_equal("text/plain", f.content_type)
         assert_equal("euc-jp", f.charset)
+        assert_equal(Encoding::EUC_JP, f.read.encoding)
+      }
+      open("#{url}/ej/", 'r:utf-8') {|f|
+        # override charset with encoding option
+        assert_equal(content_ej.dup.force_encoding('utf-8'), f.read)
+        assert_equal("text/plain", f.content_type)
+        assert_equal("euc-jp", f.charset)
+        assert_equal(Encoding::UTF_8, f.read.encoding)
+      }
+      open("#{url}/ej/", :encoding=>'utf-8') {|f|
+        # override charset with encoding option
+        assert_equal(content_ej.dup.force_encoding('utf-8'), f.read)
+        assert_equal("text/plain", f.content_type)
+        assert_equal("euc-jp", f.charset)
+        assert_equal(Encoding::UTF_8, f.read.encoding)
+      }
+      assert_raise(ArgumentError) {
+        open("#{url}/ej/", 'r:utf-8', :encoding=>'utf-8') {|f| }
       }
       open("#{url}/nc/") {|f|
         assert_equal("aa", f.read)

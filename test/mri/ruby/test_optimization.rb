@@ -4,7 +4,8 @@ require 'objspace'
 
 class TestRubyOptimization < Test::Unit::TestCase
   def assert_redefine_method(klass, method, code, msg = nil)
-    assert_separately([], <<-"end;")#    do
+    assert_separately([], "#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
       class #{klass}
         undef #{method}
         def #{method}(*args)
@@ -44,6 +45,26 @@ class TestRubyOptimization < Test::Unit::TestCase
     assert_redefine_method('Integer', '%', 'assert_equal 7, 8 % 7')
   end
 
+  def test_fixnum_lt
+    assert_equal true, 1 < 2
+    assert_redefine_method('Integer', '<', 'assert_equal 2, 1 < 2')
+  end
+
+  def test_fixnum_le
+    assert_equal true, 1 <= 2
+    assert_redefine_method('Integer', '<=', 'assert_equal 2, 1 <= 2')
+  end
+
+  def test_fixnum_gt
+    assert_equal false, 1 > 2
+    assert_redefine_method('Integer', '>', 'assert_equal 2, 1 > 2')
+  end
+
+  def test_fixnum_ge
+    assert_equal false, 1 >= 2
+    assert_redefine_method('Integer', '>=', 'assert_equal 2, 1 >= 2')
+  end
+
   def test_float_plus
     assert_equal 4.0, 2.0 + 2.0
     assert_redefine_method('Float', '+', 'assert_equal 2.0, 2.0 + 2.0')
@@ -62,6 +83,26 @@ class TestRubyOptimization < Test::Unit::TestCase
   def test_float_div
     assert_in_delta 0.63063063063063063, 4.2 / 6.66
     assert_redefine_method('Float', '/', 'assert_equal 6.66, 4.2 / 6.66', "[Bug #9238]")
+  end
+
+  def test_float_lt
+    assert_equal true, 1.1 < 2.2
+    assert_redefine_method('Float', '<', 'assert_equal 2.2, 1.1 < 2.2')
+  end
+
+  def test_float_le
+    assert_equal true, 1.1 <= 2.2
+    assert_redefine_method('Float', '<=', 'assert_equal 2.2, 1.1 <= 2.2')
+  end
+
+  def test_float_gt
+    assert_equal false, 1.1 > 2.2
+    assert_redefine_method('Float', '>', 'assert_equal 2.2, 1.1 > 2.2')
+  end
+
+  def test_float_ge
+    assert_equal false, 1.1 >= 2.2
+    assert_redefine_method('Float', '>=', 'assert_equal 2.2, 1.1 >= 2.2')
   end
 
   def test_string_length
@@ -102,6 +143,11 @@ class TestRubyOptimization < Test::Unit::TestCase
     assert_equal "foo", "foo".freeze
     assert_equal "foo".freeze.object_id, "foo".freeze.object_id
     assert_redefine_method('String', 'freeze', 'assert_nil "foo".freeze')
+  end
+
+  def test_string_uminus
+    assert_same "foo".freeze, -"foo"
+    assert_redefine_method('String', '-@', 'assert_nil(-"foo")')
   end
 
   def test_string_freeze_saves_memory
@@ -178,20 +224,22 @@ class TestRubyOptimization < Test::Unit::TestCase
   def test_hash_aref_with
     h = { "foo" => 1 }
     assert_equal 1, h["foo"]
-    assert_redefine_method('Hash', '[]', <<-end)
+    assert_redefine_method('Hash', '[]', "#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
       h = { "foo" => 1 }
       assert_equal "foo", h["foo"]
-    end
+    end;
   end
 
   def test_hash_aset_with
     h = {}
     assert_equal 1, h["foo"] = 1
-    assert_redefine_method('Hash', '[]=', <<-end)
+    assert_redefine_method('Hash', '[]=', "#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
       h = {}
       assert_equal 1, h["foo"] = 1, "assignment always returns value set"
       assert_nil h["foo"]
-    end
+    end;
   end
 
   class MyObj
@@ -230,7 +278,8 @@ class TestRubyOptimization < Test::Unit::TestCase
   def test_tailcall
     bug4082 = '[ruby-core:33289]'
 
-    tailcall(<<-EOF)
+    tailcall("#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
       def fact_helper(n, res)
         if n == 1
           res
@@ -241,14 +290,15 @@ class TestRubyOptimization < Test::Unit::TestCase
       def fact(n)
         fact_helper(n, 1)
       end
-    EOF
+    end;
     assert_equal(9131, fact(3000).to_s.size, message(bug4082) {disasm(:fact_helper)})
   end
 
   def test_tailcall_with_block
     bug6901 = '[ruby-dev:46065]'
 
-    tailcall(<<-EOF)
+    tailcall("#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
       def identity(val)
         val
       end
@@ -258,7 +308,7 @@ class TestRubyOptimization < Test::Unit::TestCase
           identity(yield)
         }
       end
-    EOF
+    end;
     assert_equal(123, delay { 123 }.call, message(bug6901) {disasm(:delay)})
   end
 
@@ -267,11 +317,12 @@ class TestRubyOptimization < Test::Unit::TestCase
   end
 
   def test_tailcall_inhibited_by_block
-    tailcall(<<-EOF)
+    tailcall("#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
       def yield_result
         just_yield {:ok}
       end
-    EOF
+    end;
     assert_equal(:ok, yield_result, message {disasm(:yield_result)})
   end
 
@@ -286,7 +337,8 @@ class TestRubyOptimization < Test::Unit::TestCase
   def test_tailcall_inhibited_by_rescue
     bug12082 = '[ruby-core:73871] [Bug #12082]'
 
-    tailcall(<<-'end;')
+    tailcall("#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
       def to_be_rescued
         return do_raise
         1 + 2
@@ -303,7 +355,8 @@ class TestRubyOptimization < Test::Unit::TestCase
 
   def test_tailcall_symbol_block_arg
     bug12565 = '[ruby-core:46065]'
-    tailcall(<<-EOF)
+    tailcall("#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
       def apply_one_and_two(&block)
         yield(1, 2)
       end
@@ -311,29 +364,31 @@ class TestRubyOptimization < Test::Unit::TestCase
       def add_one_and_two
         apply_one_and_two(&:+)
       end
-    EOF
+    end;
     assert_equal(3, add_one_and_two,
                  message(bug12565) {disasm(:add_one_and_two)})
   end
 
   def test_tailcall_interrupted_by_sigint
     bug12576 = 'ruby-core:76327'
-    script = <<EOS
-RubyVM::InstructionSequence.compile_option = {
-  :tailcall_optimization => true,
-  :trace_instruction => false
-}
+    script = "#{<<-"begin;"}\n#{<<~'end;'}"
+    begin;
+      RubyVM::InstructionSequence.compile_option = {
+        :tailcall_optimization => true,
+        :trace_instruction => false
+      }
 
-eval <<EOF
-def foo
-  foo
-end
-puts("start")
-STDOUT.flush
-foo
-EOF
-EOS
-    status, err = EnvUtil.invoke_ruby([], "", true, true, {}) {
+      eval "#{<<~"begin;"}\n#{<<~'end;1'}"
+      begin;
+        def foo
+          foo
+        end
+        puts("start")
+        STDOUT.flush
+        foo
+      end;1
+    end;
+    status, _err = EnvUtil.invoke_ruby([], "", true, true, {}) {
       |in_p, out_p, err_p, pid|
       in_p.write(script)
       in_p.close
@@ -360,7 +415,7 @@ EOS
   def test_tailcall_condition_block
     bug = '[ruby-core:78015] [Bug #12905]'
 
-    src = "#{<<-"begin;"}\n#{<<-"end;"}"
+    src = "#{<<-"begin;"}\n#{<<~"end;"}"
     begin;
       def run(current, final)
         if current < final
@@ -409,7 +464,8 @@ EOS
   end
 
   def test_string_freeze_block
-    assert_separately([], <<-"end;")#    do
+    assert_separately([], "#{<<-"begin;"}\n#{<<~"end;"}")
+    begin;
       class String
         undef freeze
         def freeze
@@ -422,7 +478,8 @@ EOS
   end
 
   def test_opt_case_dispatch
-    code = <<-EOF
+    code = "#{<<-"begin;"}\n#{<<~"end;"}"
+    begin;
       case foo
       when "foo" then :foo
       when true then true
@@ -435,7 +492,7 @@ EOS
       else
         :nomatch
       end
-    EOF
+    end;
     check = {
       'foo' => :foo,
       true => true,
@@ -454,7 +511,8 @@ EOS
     assert_equal :nomatch, eval("foo = :blah\n#{code}")
     check.each do |foo, _|
       klass = foo.class.to_s
-      assert_separately([], <<-"end;") # do
+      assert_separately([], "#{<<~"begin;"}\n#{<<~"end;"}")
+      begin;
         class #{klass}
           undef ===
           def ===(*args)
@@ -489,5 +547,175 @@ EOS
   def test_nil_safe_conditional_assign
     bug11816 = '[ruby-core:74993] [Bug #11816]'
     assert_ruby_status([], 'nil&.foo &&= false', bug11816)
+  end
+
+  def test_peephole_string_literal_range
+    code = "#{<<~"begin;"}\n#{<<~"end;"}"
+    begin;
+      case ver
+      when "2.0.0".."2.3.2" then :foo
+      when "1.8.0"..."1.8.8" then :bar
+      end
+    end;
+    iseq = RubyVM::InstructionSequence.compile(code)
+    insn = iseq.disasm
+    assert_match %r{putobject\s+#{Regexp.quote('"1.8.0"..."1.8.8"')}}, insn
+    assert_match %r{putobject\s+#{Regexp.quote('"2.0.0".."2.3.2"')}}, insn
+    assert_no_match(/putstring/, insn)
+    assert_no_match(/newrange/, insn)
+  end
+
+  def test_branch_condition_backquote
+    bug = '[ruby-core:80740] [Bug #13444] redefined backquote should be called'
+    class << self
+      def `(s)
+        @q = s
+        @r
+      end
+    end
+
+    @q = nil
+    @r = nil
+    assert_equal("bar", ("bar" unless `foo`), bug)
+    assert_equal("foo", @q, bug)
+
+    @q = nil
+    @r = true
+    assert_equal("bar", ("bar" if `foo`), bug)
+    assert_equal("foo", @q, bug)
+
+    @q = nil
+    @r = "z"
+    assert_equal("bar", ("bar" if `foo#{@r}`))
+    assert_equal("fooz", @q, bug)
+  end
+
+  def test_branch_condition_def
+    bug = '[ruby-core:80740] [Bug #13444] method should be defined'
+    c = Class.new do
+      raise "bug" unless def t;:ok;end
+    end
+    assert_nothing_raised(NoMethodError, bug) do
+      assert_equal(:ok, c.new.t)
+    end
+  end
+
+  def test_branch_condition_defs
+    bug = '[ruby-core:80740] [Bug #13444] singleton method should be defined'
+    raise "bug" unless def self.t;:ok;end
+    assert_nothing_raised(NameError, bug) do
+      assert_equal(:ok, t)
+    end
+  end
+
+  def test_retry_label_in_unreachable_chunk
+    bug = '[ruby-core:81272] [Bug #13578]'
+    assert_valid_syntax("#{<<-"begin;"}\n#{<<-"end;"}", bug)
+    begin;
+      def t; if false; case 42; when s {}; end; end; end
+    end;
+  end
+
+  def bptest_yield &b
+    yield
+  end
+
+  def bptest_yield_pass &b
+    bptest_yield(&b)
+  end
+
+  def bptest_bp_value &b
+    b
+  end
+
+  def bptest_bp_pass_bp_value &b
+    bptest_bp_value(&b)
+  end
+
+  def bptest_binding &b
+    binding
+  end
+
+  def bptest_set &b
+    b = Proc.new{2}
+  end
+
+  def test_block_parameter
+    assert_equal(1, bptest_yield{1})
+    assert_equal(1, bptest_yield_pass{1})
+    assert_equal(1, send(:bptest_yield){1})
+
+    assert_equal(Proc, bptest_bp_value{}.class)
+    assert_equal nil, bptest_bp_value
+    assert_equal(Proc, bptest_bp_pass_bp_value{}.class)
+    assert_equal nil, bptest_bp_pass_bp_value
+
+    assert_equal Proc, bptest_binding{}.local_variable_get(:b).class
+
+    assert_equal 2, bptest_set{1}.call
+  end
+
+  def test_block_parameter_should_not_create_objects
+    assert_separately [], <<-END
+      #
+      def foo &b
+      end
+      h1 = {}; h2 = {}
+      ObjectSpace.count_objects(h1) # reharsal
+      ObjectSpace.count_objects(h1)
+      foo{}
+      ObjectSpace.count_objects(h2)
+
+      assert_equal 0, h2[:TOTAL] - h1[:TOTAL]
+    END
+  end
+
+  def test_block_parameter_should_restore_safe_level
+    assert_separately [], <<-END
+      #
+      def foo &b
+        $SAFE = 1
+        b.call
+      end
+      assert_equal 0, foo{$SAFE}
+    END
+  end
+
+  def test_peephole_optimization_without_trace
+    assert_separately [], <<-END
+      RubyVM::InstructionSequence.compile_option = {trace_instruction: false}
+      eval "def foo; 1.times{|(a), &b| nil && a}; end"
+    END
+  end
+
+  def test_clear_unreachable_keyword_args
+    assert_separately [], <<-END
+      script =  <<-EOS
+        if true
+        else
+          foo(k1:1)
+        end
+      EOS
+      GC.stress = true
+      30.times{
+        RubyVM::InstructionSequence.compile(script)
+      }
+    END
+  end
+
+  def test_side_effect_in_popped_splat
+    bug = '[ruby-core:84340] [Bug #14201]'
+    eval("{**(bug = nil; {})};42")
+    assert_nil(bug)
+  end
+
+  def test_overwritten_blockparam
+    obj = Object.new
+    def obj.a(&block)
+      block = 1
+      return :ok if block
+      :ng
+    end
+    assert_equal(:ok, obj.a())
   end
 end

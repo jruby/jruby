@@ -71,6 +71,10 @@ class TestObject < Test::Unit::TestCase
     assert_raise(ArgumentError) {true.clone(freeze: false)}
     assert_raise(ArgumentError) {nil.clone(freeze: false)}
     assert_raise(ArgumentError) {false.clone(freeze: false)}
+    x = EnvUtil.labeled_class("\u{1f4a9}").new
+    assert_raise_with_message(ArgumentError, /\u{1f4a9}/) do
+      Object.new.clone(freeze: x)
+    end
   end
 
   def test_init_dupclone
@@ -919,6 +923,7 @@ class TestObject < Test::Unit::TestCase
     _issue = "Bug #7539"
     assert_raise_with_message(TypeError, "can't convert Array into Integer") {Integer([42])}
     assert_raise_with_message(TypeError, 'no implicit conversion of Array into Integer') {[].first([42])}
+    assert_raise_with_message(TypeError, "can't convert Array into Rational") {Rational([42])}
   end
 
   def test_copied_ivar_memory_leak
@@ -929,5 +934,15 @@ class TestObject < Test::Unit::TestCase
     end;
       num.times {a.clone.set}
     end;
+  end
+
+  def test_clone_object_should_not_be_old
+    assert_normal_exit <<-EOS, '[Bug #13775]'
+      b = proc { }
+      10.times do |i|
+        b.clone
+        GC.start
+      end
+    EOS
   end
 end
