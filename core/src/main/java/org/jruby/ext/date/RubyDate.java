@@ -51,6 +51,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
+import org.jruby.util.Numeric;
 import org.jruby.util.RubyDateParser;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
@@ -63,7 +64,7 @@ import static org.jruby.util.Numeric.*;
  * JRuby's <code>Date</code> implementation - 'native' parts.
  * In MRI, since 2.x, all of date.rb has been moved to native (C) code.
  *
- * NOTE: there's still (date).rb parts, class is bootstrapped from .rb
+ * NOTE: There's still date.rb, where this gets bootstrapped from.
  *
  * @author enebo
  * @author kares
@@ -103,7 +104,7 @@ public class RubyDate extends RubyObject {
     DateTime dt;
     int off; // @of
     int start = ITALY; // @sg
-    private float subMillis; // @sub_millis
+    int subMillisNum = 0, subMillisDen = 1; // @sub_millis
 
     static RubyClass createDateClass(Ruby runtime) {
         RubyClass Date = runtime.defineClass("Date", runtime.getObject(), ALLOCATOR);
@@ -141,11 +142,19 @@ public class RubyDate extends RubyObject {
         this(runtime, getDate(runtime), dt);
     }
 
-    RubyDate(Ruby runtime, DateTime dt, int off, int start, float subMillis) {
+    RubyDate(Ruby runtime, DateTime dt, int off, int start) {
         super(runtime, getDate(runtime));
 
         this.dt = dt;
-        this.off = off; this.start = start; this.subMillis = subMillis;
+        this.off = off; this.start = start;
+    }
+
+    private RubyDate(Ruby runtime, DateTime dt, int off, int start, int subMillisNum, int subMillisDen) {
+        super(runtime, getDate(runtime));
+
+        this.dt = dt;
+        this.off = off; this.start = start;
+        this.subMillisNum = subMillisNum; this.subMillisDen = subMillisDen;
     }
 
     public RubyDate(Ruby runtime, long millis, Chronology chronology) {
@@ -233,7 +242,8 @@ public class RubyDate extends RubyObject {
         }
 
         IRubyObject subMillis = ((RubyArray) val).eltInternal(1);
-        this.subMillis = (float) subMillis.convertToFloat().getDoubleValue(); // TODO keep Rational num/del
+        this.subMillisNum = ((RubyNumeric) subMillis).numerator(context).convertToInteger().getIntValue();
+        this.subMillisDen = ((RubyNumeric) subMillis).denominator(context).convertToInteger().getIntValue();
 
         return ((RubyFixnum) millis).getLongValue();
     }
@@ -497,7 +507,7 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final int start = val2sg(context, sg);
-        return new RubyDate(context.runtime, new DateTime(getChronology(context, start, 0)).withTimeAtStartOfDay(), 0, start, 0);
+        return new RubyDate(context.runtime, new DateTime(getChronology(context, start, 0)).withTimeAtStartOfDay(), 0, start);
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
@@ -525,7 +535,8 @@ public class RubyDate extends RubyObject {
     }
 
     public final boolean equals(RubyDate that) {
-        return this.start == that.start && this.dt.equals(that.dt) && this.subMillis == that.subMillis;
+        return this.start == that.start && this.dt.equals(that.dt) &&
+               this.subMillisNum == that.subMillisNum && this.subMillisDen == that.subMillisDen;
     }
 
     @Override
@@ -565,11 +576,21 @@ public class RubyDate extends RubyObject {
         int cmp = this.dt.compareTo(that.dt); // 0, +1, -1
 
         if (cmp == 0) {
-            int diff = (int) (this.subMillis - that.subMillis);
-            return diff < 0 ? 1 : ( diff == 0 ? 0 : -1 );
+            if (this.subMillisDen == 1 && that.subMillisDen == 1) {
+                int diff = this.subMillisNum - that.subMillisNum;
+                return diff < 0 ? 1 : ( diff == 0 ? 0 : -1 );
+            }
+            return cmpSubMillis(that);
         }
 
         return cmp;
+    }
+
+    private int cmpSubMillis(final RubyDate that) {
+        ThreadContext context = getRuntime().getCurrentContext();
+        RubyNumeric diff = subMillisDiff(context, that);
+        if (diff.isZero()) return 0;
+        return Numeric.f_negative_p(context, diff) ? 1 : -1;
     }
 
     private IRubyObject fallback_cmp(ThreadContext context, IRubyObject other) {
@@ -637,10 +658,15 @@ public class RubyDate extends RubyObject {
     public IRubyObject ajd(ThreadContext context) {
         final Ruby runtime = context.runtime;
 
-        long num = 210_866_760_000_000l;
-        num += this.dt.getMillis() + subMillis;
+        long num = 210_866_760_000_000l + dt.getMillis();
+        // + subMillis :
+        if (subMillisDen == 1) {
+            num += subMillisNum;
+            return RubyRational.newInstance(context, RubyFixnum.newFixnum(runtime, num), DAY_MS(context));
+        }
 
-        return RubyRational.newInstance(context, RubyFixnum.newFixnum(runtime, num), RubyFixnum.newFixnum(runtime, DAY_MS));
+        RubyNumeric val = (RubyNumeric) RubyFixnum.newFixnum(runtime, num).op_plus(context, subMillis(runtime));
+        return RubyRational.newRationalConvert(context, val, DAY_MS(context));
     }
 
     // Get the date as an Astronomical Modified Julian Day Number.
@@ -695,9 +721,14 @@ public class RubyDate extends RubyObject {
 
     // Get any fractional day part of the date.
     @JRubyMethod(name = "day_fraction")
-    public IRubyObject day_fraction(ThreadContext context) {
-        long ms = dt.getSecondOfDay() * 1000 + dt.getMillisOfSecond() + (long) subMillis;
-        return RubyRational.newRationalCanonicalize(context, ms, DAY_MS);
+    public IRubyObject day_fraction(ThreadContext context) { // Rational(millis, 86_400_000)
+        long ms = dt.getSecondOfDay() * 1000 + dt.getMillisOfSecond();
+        if (subMillisDen == 1) {
+            return RubyRational.newRationalCanonicalize(context, ms + subMillisNum, DAY_MS);
+        }
+        final Ruby runtime = context.runtime;
+        RubyNumeric sum = RubyRational.newRational(runtime, ms, 1).op_add(context, subMillis(runtime));
+        return sum.convertToRational().op_div(context, RubyFixnum.newFixnum(runtime, DAY_MS));
     }
 
     @JRubyMethod(name = "hour", visibility = Visibility.PRIVATE)
@@ -716,8 +747,14 @@ public class RubyDate extends RubyObject {
     }
 
     @JRubyMethod(name = "sec_fraction", alias = "second_fraction", visibility = Visibility.PRIVATE)
-    public IRubyObject sec_fraction(ThreadContext context) {
-        return RubyRational.newRationalCanonicalize(context, dt.getMillisOfSecond() + (long) subMillis, 1000);
+    public IRubyObject sec_fraction(ThreadContext context) { // Rational(@dt.getMillisOfSecond + @sub_millis, 1000)
+        long ms = dt.getMillisOfSecond();
+        if (subMillisDen == 1) {
+            return RubyRational.newRationalCanonicalize(context, ms + subMillisNum, 1000);
+        }
+        final Ruby runtime = context.runtime;
+        RubyNumeric sum = RubyRational.newRational(runtime, ms, 1).op_add(context, subMillis(runtime));
+        return sum.convertToRational().op_div(context, RubyFixnum.newFixnum(runtime, 1000));
     }
 
     @JRubyMethod
@@ -775,7 +812,7 @@ public class RubyDate extends RubyObject {
 
         final int off = val2off(context, of);
         DateTime dt = this.dt.withChronology(getChronology(context, start, off));
-        return new RubyDate(context.runtime, dt, off, start, subMillis);
+        return new RubyDate(context.runtime, dt, off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
@@ -791,7 +828,7 @@ public class RubyDate extends RubyObject {
 
     private RubyDate newStart(ThreadContext context, final int start) {
         DateTime dt = this.dt.withChronology(getChronology(context, start, off));
-        return new RubyDate(context.runtime, dt, off, start, subMillis);
+        return new RubyDate(context.runtime, dt, off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
@@ -841,7 +878,7 @@ public class RubyDate extends RubyObject {
     public IRubyObject op_plus(ThreadContext context, IRubyObject n) {
         if (n instanceof RubyFixnum) {
             int days = n.convertToInteger().getIntValue();
-            return new RubyDate(context.runtime, dt.plusDays(+days), off, start, subMillis);
+            return new RubyDate(context.runtime, dt.plusDays(+days), off, start, subMillisNum, subMillisDen);
         }
         if (n instanceof RubyNumeric) {
             return op_plus_numeric(context, (RubyNumeric) n);
@@ -863,19 +900,21 @@ public class RubyDate extends RubyObject {
         RubyArray res = (RubyArray) ((RubyNumeric) val).divmod(context, RubyFixnum.one(context.runtime));
         long ms = ((RubyInteger) res.eltInternal(0)).getLongValue();
         RubyNumeric sub = (RubyNumeric) res.eltInternal(1);
-        if ( sub.zero_p(context).isTrue() ) sub = RubyFixnum.zero(runtime); // avoid Rational(0, 1)
-        double sub_millis = subMillis + sub.getDoubleValue();
-        if (sub_millis >= 1) {
-            sub_millis -= 1; ms += 1;
+        //if ( sub.isZero() ) sub = RubyFixnum.zero(runtime); // avoid Rational(0, 1)
+        RubyNumeric sub_millis = (RubyNumeric) subMillis(context.runtime).op_add(context, sub);
+        int subNum = sub_millis.numerator(context).convertToInteger().getIntValue();
+        int subDen = sub_millis.denominator(context).convertToInteger().getIntValue();
+        if (subNum / subDen >= 1) { // sub_millis >= 1
+            subNum -= subDen; ms += 1; // sub_millis -= 1
         }
-        return new RubyDate(runtime, dt.plus(ms), off, start, (float) sub_millis);
+        return new RubyDate(runtime, dt.plus(ms), off, start, subNum, subDen);
     }
 
     @JRubyMethod(name = "-")
     public IRubyObject op_minus(ThreadContext context, IRubyObject n) {
         if (n instanceof RubyFixnum) {
             int days = n.convertToInteger().getIntValue();
-            return new RubyDate(context.runtime, dt.plusDays(-days), off, start, subMillis);
+            return new RubyDate(context.runtime, dt.plusDays(-days), off, start, subMillisNum, subMillisDen);
         }
         if (n instanceof RubyNumeric) {
             return op_plus_numeric(context, (RubyNumeric) ((RubyNumeric) n).op_uminus(context));
@@ -886,11 +925,28 @@ public class RubyDate extends RubyObject {
         throw context.runtime.newTypeError("expected numeric or date");
     }
 
-    private IRubyObject op_minus_date(ThreadContext context, final RubyDate that) {
+    private RubyNumeric op_minus_date(ThreadContext context, final RubyDate that) {
         long diff = this.dt.getMillis() - that.dt.getMillis();
-        float diff_sub = this.subMillis - that.subMillis;
-        if (diff_sub != 0) diff += diff_sub;
-        return RubyRational.newRationalCanonicalize(context, diff, DAY_MS);
+        RubyNumeric diffMillis = (RubyNumeric) RubyRational.newRationalCanonicalize(context, diff, DAY_MS);
+
+        RubyNumeric subDiff = subMillisDiff(context, that);
+        if ( ! subDiff.isZero() ) { // diff += diff_sub;
+            return (RubyNumeric) Numeric.f_add(context, diffMillis, subDiff);
+        }
+        return diffMillis;
+    }
+
+    private RubyNumeric subMillisDiff(final ThreadContext context, final RubyDate that) {
+        final Ruby runtime = context.runtime;
+        if (this.subMillisDen == 1 && that.subMillisDen == 1) {
+            return RubyFixnum.newFixnum(runtime, this.subMillisNum - that.subMillisNum);
+        }
+        // this.subMillis - that.subMillis
+        return this.subMillis(runtime).op_minus(context, that.subMillis(runtime));
+    }
+
+    final RubyRational subMillis(final Ruby runtime) {
+        return RubyRational.newRational(runtime, subMillisNum, subMillisDen);
     }
 
     // Return a new Date one day after this one.
@@ -901,46 +957,46 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject next_day(ThreadContext context) {
-        return new RubyDate(context.runtime, dt.plusDays(+1), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusDays(+1), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject next_day(ThreadContext context, IRubyObject n) {
         int days = n.convertToInteger().getIntValue();
-        return new RubyDate(context.runtime, dt.plusDays(+days), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusDays(+days), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject prev_day(ThreadContext context) {
-        return new RubyDate(context.runtime, dt.plusDays(-1), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusDays(-1), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject prev_day(ThreadContext context, IRubyObject n) {
         int days = n.convertToInteger().getIntValue();
-        return new RubyDate(context.runtime, dt.plusDays(-days), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusDays(-days), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject next_month(ThreadContext context) {
-        return new RubyDate(context.runtime, dt.plusMonths(+1), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusMonths(+1), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject next_month(ThreadContext context, IRubyObject n) {
         int months = n.convertToInteger().getIntValue();
-        return new RubyDate(context.runtime, dt.plusMonths(+months), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusMonths(+months), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject prev_month(ThreadContext context) {
-        return new RubyDate(context.runtime, dt.plusMonths(-1), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusMonths(-1), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject prev_month(ThreadContext context, IRubyObject n) {
         int months = n.convertToInteger().getIntValue();
-        return new RubyDate(context.runtime, dt.plusMonths(-months), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusMonths(-months), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod(name = ">>")
@@ -955,24 +1011,24 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject next_year(ThreadContext context) {
-        return new RubyDate(context.runtime, dt.plusYears(+1), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusYears(+1), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject next_year(ThreadContext context, IRubyObject n) {
         int years = n.convertToInteger().getIntValue();
-        return new RubyDate(context.runtime, dt.plusYears(+years), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusYears(+years), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject prev_year(ThreadContext context) {
-        return new RubyDate(context.runtime, dt.plusYears(-1), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusYears(-1), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod
     public IRubyObject prev_year(ThreadContext context, IRubyObject n) {
         int years = n.convertToInteger().getIntValue();
-        return new RubyDate(context.runtime, dt.plusYears(-years), off, start, subMillis);
+        return new RubyDate(context.runtime, dt.plusYears(-years), off, start, subMillisNum, subMillisDen);
     }
 
     @JRubyMethod // [ ajd, @of, @sg ]
@@ -1093,8 +1149,7 @@ public class RubyDate extends RubyObject {
     public RubyString inspect(ThreadContext context) {
         long off = this.off * 86_400;
         long s = (dt.getHourOfDay() * 60 + dt.getMinuteOfHour()) * 60 + dt.getSecondOfMinute() - off;
-        long ns = (long) ((dt.getMillisOfSecond() + subMillis) * 1_000_000);
-        // TODO ns = ns.to_i if Rational === ns and ns.denominator == 1
+        long ns = (dt.getMillisOfSecond() * 1_000_000) + (subMillisNum * 1_000_000) / subMillisDen;
         ByteList str = new ByteList(54); // e.g. #<Date: 2018-01-15 ((2458134j,0s,0n),+0s,2299161j)>
         str.append('#').append('<');
         str.append(((RubyString) getMetaClass().to_s()).getByteList());
@@ -1156,7 +1211,8 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod // alias_method :format, :strftime
     public RubyString strftime(ThreadContext context, IRubyObject fmt) {
-        IRubyObject subMillis = this.subMillis == 0 ? context.nil : RubyFloat.newFloat(context.runtime, this.subMillis);
+        IRubyObject subMillis = this.subMillisNum == 0 ? context.nil :
+                RubyRational.newRational(context.runtime, this.subMillisNum, this.subMillisDen);
         RubyString format = context.getRubyDateFormatter().compileAndFormat(
                 fmt.convertToString(), true, this.dt, 0, subMillis
         );

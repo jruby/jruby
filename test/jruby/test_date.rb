@@ -174,6 +174,80 @@ class TestDate < Test::Unit::TestCase
     assert_equal 0, new_date.send(:sec)
   end
 
+  def test_new_with_rational
+    date = Date.new(y = Rational(2005/2), m = -Rational(5/2), d = Rational(31/3))
+    assert_equal '1002-11-10', date.to_s
+
+    date = DateTime.new(y, m, d = Rational(31/2), Rational(42, 2), -17, -35)
+    assert_equal '1002-11-15T21:43:25+00:00', date.to_s
+
+    d = DateTime.new(2001, 2, Rational(7, 2))
+    assert_equal [ 2001, 2, 3, 12, 0, 0, 0 ], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset ]
+
+    assert_equal '2001-02-03', d.to_date.to_s
+    date = Date.new(2001, 2, 3 + 1.to_r / 2)
+    assert_equal '2001-02-03', date.to_s
+    d = date.to_datetime
+    assert_equal [ 2001, 2, 3, 0, 0, 0, 0 ], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset ]
+
+    d = DateTime.new(2001, 2, 3 + 2.to_r / 3)
+    assert_equal [ 2001, 2, 3, 16, 0, 0, 0 ], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset ]
+
+    d = DateTime.new(2001, 2, 3 + 11.to_r / 13)
+    assert_equal [ 2001, 2, 3, 20, 18, 27, 0 ], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset ]
+
+    d = DateTime.new(2001, 2, 3, 4, 5, 6 + 1.to_r / 2)
+    assert_equal [2001, 2, 3, 4, 5, 6, 0], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset ]
+    assert_equal Rational(1, 2), d.sec_fraction
+
+    d = DateTime.civil(1, 2, 3, Rational(9, 2))
+    assert_equal [ 1, 2, 3, 4, 30, 0, 0 ], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset ]
+
+    args = [ 2020, 12, 23 + (1.to_r / 3), 5 ]
+    if defined? JRUBY_VERSION
+      d = DateTime.new(*args)
+      assert_equal [ 2020, 12, 23, 8 + 5, 0, 0, 0 ], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.sec_fraction ]
+    else
+      assert_raise(ArgumentError) { DateTime.new(*args) }
+    end
+
+    args = [ 2018, 10, 7.to_r / 3, 5, 0, Rational(10, 3) ]
+    if defined? JRUBY_VERSION
+      d = DateTime.new(*args)
+      assert_equal [ 2018, 10, 2, 13, 0, 3, 1.to_r / 3 ], [ d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.sec_fraction ]
+    else
+      # MRI raises ArgumentError
+    end
+  end
+
+  def test_new_invalid
+    y = Rational(2005/2); m = -Rational(5/2); d = Rational(31/3);
+
+    #assert_raise(ArgumentError) { DateTime.new(y, m, d, Rational(43, 2), -17, -35) }
+    assert_raise(ArgumentError) { DateTime.new(y, m, d, 10, -17, -80) }
+    assert_raise(ArgumentError) { DateTime.new(y, m, d, 10, 67) }
+    begin
+      DateTime.new(y, m, d, 25); fail 'expected to raise!'
+    rescue ArgumentError => ex
+      assert_equal 'invalid date', ex.message
+    end
+
+    assert_raise(ArgumentError) { DateTime.new(2001, 2, 11.to_r / 13, Rational(10, 3), Rational(200, 21)) }
+  end
+
+  def test_sec_fraction
+    d = DateTime.new(2018, 2, 20, 12, 58, Rational(10, 3))
+    if defined? JRUBY_VERSION # confirm its set the same as before 9.2
+      assert_equal 1519131483333, d.to_java.getDateTime.millis
+    end
+    assert_equal Rational(1, 3), d.sec_fraction
+  end
+
+  def test_jd
+    assert Date.jd.is_a?(Date)
+    assert DateTime.jd.is_a?(DateTime)
+  end
+
   def test_julian
     date = Date.new(2000, 1, 1)
     assert_equal true, date.gregorian?
@@ -184,7 +258,7 @@ class TestDate < Test::Unit::TestCase
   end
 
   def test_to_s_strftime
-    date = Date.new(2000, 1, 1)
+    date = Date.civil(2000, 1, 1)
     assert_equal '2000-01-01', date.to_s
     assert_equal '2000-01-01', date.strftime
 
@@ -240,8 +314,24 @@ class TestDate < Test::Unit::TestCase
     date = DateTime.new(2000, 1, 10)
     assert date.day_fraction.eql? Rational(0, 1)
 
-    date = DateTime.new(2000, 10, 10, 12, 24, 36, 48)
+    date = DateTime.new(2000, 10, 10, 12, 24, 36)
     assert_equal Rational(1241, 2400), date.day_fraction
+    assert_equal '2000-10-10T12:24:36+00:00', date.to_s
+
+    date = DateTime.new(2000, 10, 10, 12, 24, 36, Rational(11, 24))
+    assert_equal Rational(1241, 2400), date.day_fraction
+    assert_equal '2000-10-10T12:24:36+11:00', date.to_s
+  end
+
+  def test_civil_invalid_offset
+    if defined? JRUBY_VERSION # non-compatibility - this is how all JRubies (< 9.2) worked
+      assert_raise(ArgumentError) do
+        DateTime.new(2000, 10, 10, 12, 24, 36, Rational(25, 24))
+      end
+    else # MRI handles 'invalid' offsets just fine
+      date = DateTime.new(2000, 10, 10, 12, 24, 36, Rational(25, 24))
+      assert_equal '2000-10-10T12:24:36+25:00', date.to_s
+    end
   end
 
   def test_civil_invalid_sg
