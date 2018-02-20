@@ -123,12 +123,12 @@ public class RubyDate extends RubyObject {
         }
     };
 
-    private static RubyClass getDate(final Ruby runtime) {
+    static RubyClass getDate(final Ruby runtime) {
         return (RubyClass) runtime.getObject().getConstantAt("Date");
     }
 
-    private RubyDate(Ruby runtime) {
-        super(runtime, getDate(runtime));
+    static RubyClass getDateTime(final Ruby runtime) {
+        return (RubyClass) runtime.getObject().getConstantAt("DateTime");
     }
 
     public RubyDate(Ruby runtime, RubyClass klass, DateTime dt) {
@@ -251,6 +251,9 @@ public class RubyDate extends RubyObject {
      */
     @JRubyMethod(name = "new!", meta = true)
     public static RubyDate new_(ThreadContext context, IRubyObject self) {
+        if (self == getDateTime(context.runtime)) {
+            return new RubyDateTime(context.runtime, 0, CHRONO_ITALY_UTC);
+        }
         return new RubyDate(context.runtime, 0, CHRONO_ITALY_UTC);
     }
 
@@ -260,7 +263,13 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "new!", meta = true)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd) {
         if (ajd instanceof JavaProxy) { // backwards - compatibility with JRuby's date.rb
+            if (self == getDateTime(context.runtime)) {
+                return new RubyDateTime(context.runtime, (DateTime) JavaUtil.unwrapJavaValue(ajd));
+            }
             return new RubyDate(context.runtime, (DateTime) JavaUtil.unwrapJavaValue(ajd));
+        }
+        if (self == getDateTime(context.runtime)) {
+            return new RubyDateTime(context, ajd, CHRONO_ITALY_UTC, ITALY);
         }
         return new RubyDate(context, ajd, CHRONO_ITALY_UTC, ITALY);
     }
@@ -270,7 +279,10 @@ public class RubyDate extends RubyObject {
      */
     @JRubyMethod(name = "new!", meta = true)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of) {
-        return new RubyDate(context.runtime).initialize(context, ajd, of);
+        if (self == getDateTime(context.runtime)) {
+            return new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of);
+        }
+        return new RubyDate(context.runtime, (RubyClass) self).initialize(context, ajd, of);
     }
 
     /**
@@ -278,7 +290,10 @@ public class RubyDate extends RubyObject {
      */
     @JRubyMethod(name = "new!", meta = true)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of, IRubyObject sg) {
-        return new RubyDate(context.runtime).initialize(context, ajd, of, sg);
+        if (self == getDateTime(context.runtime)) {
+            return new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of, sg);
+        }
+        return new RubyDate(context.runtime, (RubyClass) self).initialize(context, ajd, of, sg);
     }
 
     /**

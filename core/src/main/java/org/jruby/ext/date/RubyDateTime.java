@@ -70,8 +70,8 @@ public class RubyDateTime extends RubyDate {
         }
     };
 
-    private static RubyClass getDateTime(final Ruby runtime) {
-        return (RubyClass) runtime.getObject().getConstantAt("DateTime");
+    protected RubyDateTime(Ruby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
 
     public RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt) {
@@ -91,6 +91,10 @@ public class RubyDateTime extends RubyDate {
 
         this.dt = dt;
         this.off = off; this.start = start;
+    }
+
+    RubyDateTime(ThreadContext context, IRubyObject ajd, Chronology chronology, int off) {
+        super(context, ajd, chronology, off);
     }
 
     /**
