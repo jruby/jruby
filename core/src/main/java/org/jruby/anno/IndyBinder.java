@@ -110,6 +110,7 @@ public class IndyBinder extends AbstractProcessor {
         return SourceVersion.latest();
     }
 
+    @SuppressWarnings("deprecation")
     public void processType(TypeElement cd) {
         // process inner classes
         for (TypeElement innerType : ElementFilter.typesIn(cd.getEnclosedElements())) {
@@ -187,6 +188,8 @@ public class IndyBinder extends AbstractProcessor {
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
                 if (anno == null) continue;
+
+                if (anno.compat() == org.jruby.CompatVersion.RUBY1_8) continue;
 
                 methodCount++;
 
