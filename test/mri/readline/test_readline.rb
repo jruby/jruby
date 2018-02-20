@@ -45,14 +45,14 @@ class TestReadline < Test::Unit::TestCase
         assert_equal("> ", stdout.read(2))
         assert_equal(1, Readline::HISTORY.length)
         assert_equal("hello", Readline::HISTORY[0])
-        assert_raise(SecurityError) do
-          Thread.start {
-            $SAFE = 1
+        Thread.start {
+          $SAFE = 1
+          assert_raise(SecurityError) do
             replace_stdio(stdin.path, stdout.path) do
               Readline.readline("> ".taint)
             end
-          }.join
-        end
+          end
+        }.join
       end
     end
 
@@ -83,7 +83,7 @@ class TestReadline < Test::Unit::TestCase
         stdin.write("first second\t")
         stdin.flush
         Readline.completion_append_character = " "
-        line = replace_stdio(stdin.path, stdout.path) {
+        replace_stdio(stdin.path, stdout.path) {
           Readline.readline("> ", false)
         }
         assert_equal("second", actual_text)
@@ -100,7 +100,7 @@ class TestReadline < Test::Unit::TestCase
         stdin.write("first second\t")
         stdin.flush
         Readline.completion_append_character = nil
-        line = replace_stdio(stdin.path, stdout.path) {
+        replace_stdio(stdin.path, stdout.path) {
           Readline.readline("> ", false)
         }
         assert_equal("second", actual_text)

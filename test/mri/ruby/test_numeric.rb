@@ -74,12 +74,18 @@ class TestNumeric < Test::Unit::TestCase
 
   def test_dup
     a = Numeric.new
-    assert_raise(TypeError) { a.dup }
+    assert_same a, a.dup
+  end
 
-    c = Module.new do
-      break eval("class C\u{3042} < Numeric; self; end")
+  def test_clone
+    a = Numeric.new
+    assert_same a, a.clone
+    assert_raise(ArgumentError) {a.clone(freeze: false)}
+
+    c = EnvUtil.labeled_class("\u{1f4a9}", Numeric)
+    assert_raise_with_message(ArgumentError, /\u{1f4a9}/) do
+      c.new.clone(freeze: false)
     end
-    assert_raise_with_message(TypeError, /C\u3042/) {c.new.dup}
   end
 
   def test_quo
@@ -250,9 +256,7 @@ class TestNumeric < Test::Unit::TestCase
   end
 
   def test_step
-    # RbConfig::LIMITS is something new in MRI 2.5.0, we don't have it yet
-    # bignum = RbConfig::LIMITS['FIXNUM_MAX'] + 1
-    bignum = Integer::FIXNUM_MAX + 1
+    bignum = RbConfig::LIMITS['FIXNUM_MAX'] + 1
     assert_raise(ArgumentError) { 1.step(10, 1, 0) { } }
     assert_raise(ArgumentError) { 1.step(10, 1, 0).size }
     assert_raise(ArgumentError) { 1.step(10, 0) { } }
@@ -380,4 +384,22 @@ class TestNumeric < Test::Unit::TestCase
       end
     end
   end
+
+  def test_pow
+    assert_equal(2**3, 2.pow(3))
+    assert_equal(2**-1, 2.pow(-1))
+    assert_equal(2**0.5, 2.pow(0.5))
+    assert_equal((-1)**0.5, -1.pow(0.5))
+    assert_equal(3**3 % 8, 3.pow(3, 8))
+    assert_equal(3**3 % -8, 3.pow(3,-8))
+    assert_equal(3**2 % -2, 3.pow(2,-2))
+    assert_equal((-3)**3 % 8, -3.pow(3,8))
+    assert_equal((-3)**3 % -8, -3.pow(3,-8))
+    assert_equal(5**2 % -8, 5.pow(2,-8))
+    assert_equal(4481650795473624846969600733813414725093,
+                 2120078484650058507891187874713297895455.
+                    pow(5478118174010360425845660566650432540723,
+                        5263488859030795548286226023720904036518))
+  end
+
 end

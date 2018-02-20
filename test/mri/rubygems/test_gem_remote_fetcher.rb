@@ -241,6 +241,21 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
     dns.verify
   end
 
+  def test_api_endpoint_ignores_trans_domain_values_that_end_with_original_in_path
+    uri = URI.parse "http://example.com/foo"
+    target = MiniTest::Mock.new
+    target.expect :target, "evil.com/a.example.com"
+
+    dns = MiniTest::Mock.new
+    dns.expect :getresource, target, [String, Object]
+
+    fetch = Gem::RemoteFetcher.new nil, dns
+    assert_equal URI.parse("http://example.com/foo"), fetch.api_endpoint(uri)
+
+    target.verify
+    dns.verify
+  end
+
   def test_api_endpoint_timeout_warning
     uri = URI.parse "http://gems.example.com/foo"
 
@@ -540,7 +555,7 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
       nil
     end
 
-    assert_equal nil, fetcher.fetch_path(@uri + 'foo.gz', Time.at(0))
+    assert_nil fetcher.fetch_path(@uri + 'foo.gz', Time.at(0))
   end
 
   def test_fetch_path_io_error
@@ -606,7 +621,7 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
       nil
     end
 
-    assert_equal nil, fetcher.fetch_path(URI.parse(@gem_repo), Time.at(0))
+    assert_nil fetcher.fetch_path(URI.parse(@gem_repo), Time.at(0))
   end
 
   def test_implicit_no_proxy

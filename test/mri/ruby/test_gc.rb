@@ -290,7 +290,10 @@ class TestGc < Test::Unit::TestCase
     base_length = GC.stat[:heap_eden_pages]
     (base_length * 500).times{ 'a' }
     GC.start
-    assert_in_delta base_length, (v = GC.stat[:heap_eden_pages]), 2,
+    base_length = GC.stat[:heap_eden_pages]
+    (base_length * 500).times{ 'a' }
+    GC.start
+    assert_in_epsilon base_length, (v = GC.stat[:heap_eden_pages]), 1/8r,
            "invalid heap expanding (base_length: #{base_length}, GC.stat[:heap_eden_pages]: #{v})"
 
     a = []
@@ -396,5 +399,51 @@ class TestGc < Test::Unit::TestCase
       ObjectSpace.each_object{|o| o.singleton_class rescue 0}
       ObjectSpace.each_object{|o| case o when Module then o.instance_methods end}
     end
+  end
+
+  def test_exception_in_finalizer_procs
+    result = []
+    c1 = proc do
+      result << :c1
+      raise
+    end
+    c2 = proc do
+      result << :c2
+      raise
+    end
+    tap {
+      tap {
+        obj = Object.new
+        ObjectSpace.define_finalizer(obj, c1)
+        ObjectSpace.define_finalizer(obj, c2)
+        obj = nil
+      }
+    }
+    GC.start
+    skip "finalizers did not get run" if result.empty?
+    assert_equal([:c1, :c2], result)
+  end
+
+  def test_exception_in_finalizer_method
+    @result = []
+    def self.c1(x)
+      @result << :c1
+      raise
+    end
+    def self.c2(x)
+      @result << :c2
+      raise
+    end
+    tap {
+      tap {
+        obj = Object.new
+        ObjectSpace.define_finalizer(obj, method(:c1))
+        ObjectSpace.define_finalizer(obj, method(:c2))
+        obj = nil
+      }
+    }
+    GC.start
+    skip "finalizers did not get run" if @result.empty?
+    assert_equal([:c1, :c2], @result)
   end
 end

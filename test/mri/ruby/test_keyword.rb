@@ -503,6 +503,29 @@ class TestKeywordArguments < Test::Unit::TestCase
     assert_equal([1, 9], m1(1, o, &->(a, k: 0) {break [a, k]}), bug10016)
   end
 
+  def test_splat_hash
+    m = Object.new
+    def m.f() :ok; end
+    def m.f2(a = nil) a; end
+    o = {a: 1}
+    assert_raise_with_message(ArgumentError, /unknown keyword: a/) {
+      m.f(**o)
+    }
+    o = {}
+    assert_equal(:ok, m.f(**o), '[ruby-core:68124] [Bug #10856]')
+    a = []
+    assert_equal(:ok, m.f(*a, **o), '[ruby-core:83638] [Bug #10856]')
+
+    o = {a: 42}
+    assert_equal({a: 42}, m.f2(**o), '[ruby-core:82280] [Bug #13791]')
+
+    assert_equal({a: 42}, m.f2("a".to_sym => 42), '[ruby-core:82291] [Bug #13793]')
+
+    o = {}
+    a = [:ok]
+    assert_equal(:ok, m.f2(*a, **o), '[ruby-core:83638] [Bug #10856]')
+  end
+
   def test_gced_object_in_stack
     bug8964 = '[ruby-dev:47729] [Bug #8964]'
     assert_normal_exit %q{
@@ -640,5 +663,18 @@ class TestKeywordArguments < Test::Unit::TestCase
     result = obj.t(x)
     assert_equal(x, result)
     assert_kind_of(klass, result, bug12884)
+  end
+
+  def test_arity_error_message
+    obj = Object.new
+    def obj.t(x:) end
+    assert_raise_with_message(ArgumentError, /required keyword: x\)/) do
+      obj.t(42)
+    end
+    obj = Object.new
+    def obj.t(x:, y:, z: nil) end
+    assert_raise_with_message(ArgumentError, /required keywords: x, y\)/) do
+      obj.t(42)
+    end
   end
 end

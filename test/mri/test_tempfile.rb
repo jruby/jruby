@@ -1,7 +1,6 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'test/unit'
 require 'tempfile'
-require 'thread'
 
 class TestTempfile < Test::Unit::TestCase
   def initialize(*)
@@ -341,6 +340,13 @@ puts Tempfile.new('foo').path
     Tempfile.create("tempfile-create") {|f|
       path = f.path
       assert_file.exist?(path)
+    }
+    assert_file.not_exist?(path)
+
+    Tempfile.create("tempfile-create") {|f|
+      path = f.path
+      f.close
+      File.unlink(f.path)
     }
     assert_file.not_exist?(path)
   end

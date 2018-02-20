@@ -224,6 +224,13 @@ class TestArray < Test::Unit::TestCase
     assert_equal(@cls[],     @cls[ 1, 2, 3 ]    & @cls[ 4, 5, 6 ])
   end
 
+  def test_AND_big_array # '&'
+    assert_equal(@cls[1, 3], @cls[ 1, 1, 3, 5 ]*64 & @cls[ 1, 2, 3 ]*64)
+    assert_equal(@cls[],     @cls[ 1, 1, 3, 5 ]*64 & @cls[ ])
+    assert_equal(@cls[],     @cls[  ]           & @cls[ 1, 2, 3 ]*64)
+    assert_equal(@cls[],     @cls[ 1, 2, 3 ]*64 & @cls[ 4, 5, 6 ]*64)
+  end
+
   def test_MUL # '*'
     assert_equal(@cls[], @cls[]*3)
     assert_equal(@cls[1, 1, 1], @cls[1]*3)
@@ -258,6 +265,18 @@ class TestArray < Test::Unit::TestCase
     #assert_equal(@cls[1],  @cls[1, 2, 1] - @cls[2])
     assert_equal(@cls[1, 1],  @cls[1, 2, 1] - @cls[2])
     assert_equal(@cls[1, 2, 3], @cls[1, 2, 3] - @cls[4, 5, 6])
+  end
+
+  def test_MINUS_big_array # '-'
+    assert_equal(@cls[1]*64, @cls[1, 2, 3, 4, 5]*64 - @cls[2, 3, 4, 5]*64)
+    # Ruby 1.8 feature change
+    #assert_equal(@cls[1], @cls[1, 2, 1, 3, 1, 4, 1, 5]*64 - @cls[2, 3, 4, 5]*64)
+    assert_equal(@cls[1, 1, 1, 1]*64, @cls[1, 2, 1, 3, 1, 4, 1, 5]*64 - @cls[2, 3, 4, 5]*64)
+    a = @cls[]
+    1000.times { a << 1 }
+    assert_equal(1000, a.length)
+    #assert_equal(@cls[1], a - @cls[2])
+   assert_equal(@cls[1] * 1000, a - @cls[2])
   end
 
   def test_LSHIFT # '<<'
@@ -441,6 +460,17 @@ class TestArray < Test::Unit::TestCase
     a = @cls[1]
     a[1,1] = [2]
     assert_equal([1, 2], a)
+  end
+
+  def test_append
+    a = @cls[1, 2, 3]
+    assert_equal(@cls[1, 2, 3, 4, 5], a.append(4, 5))
+    assert_equal(@cls[1, 2, 3, 4, 5, nil], a.append(nil))
+
+    a.append
+    assert_equal @cls[1, 2, 3, 4, 5, nil], a
+    a.append 6, 7
+    assert_equal @cls[1, 2, 3, 4, 5, nil, 6, 7], a
   end
 
   def test_assoc
@@ -1074,6 +1104,7 @@ class TestArray < Test::Unit::TestCase
     assert_equal(Encoding::US_ASCII, [1, [u]].join.encoding)
     assert_equal(Encoding::UTF_8, [u, [e]].join.encoding)
     assert_equal(Encoding::UTF_8, [u, [1]].join.encoding)
+    assert_equal(Encoding::UTF_8, [Struct.new(:to_str).new(u)].join.encoding)
     bug5379 = '[ruby-core:39776]'
     assert_equal(Encoding::US_ASCII, [[], u, nil].join.encoding, bug5379)
     assert_equal(Encoding::UTF_8, [[], "\u3042", nil].join.encoding, bug5379)
@@ -1202,6 +1233,14 @@ class TestArray < Test::Unit::TestCase
     assert_equal(@cls[], a)
     assert_nil(a.pop)
     assert_equal(@cls[], a)
+  end
+
+  def test_prepend
+    a = @cls[]
+    assert_equal(@cls['cat'], a.prepend('cat'))
+    assert_equal(@cls['dog', 'cat'], a.prepend('dog'))
+    assert_equal(@cls[nil, 'dog', 'cat'], a.prepend(nil))
+    assert_equal(@cls[@cls[1,2], nil, 'dog', 'cat'], a.prepend(@cls[1, 2]))
   end
 
   def test_push
@@ -1817,13 +1856,48 @@ class TestArray < Test::Unit::TestCase
     assert_equal([obj1], [obj1]|[obj2])
   end
 
+  def test_OR_big_in_order
+    obj1, obj2 = Class.new do
+      attr_reader :name
+      def initialize(name) @name = name; end
+      def inspect; "test_OR_in_order(#{@name})"; end
+      def hash; 0; end
+      def eql?(a) true; end
+      break [new("1"), new("2")]
+    end
+    assert_equal([obj1], [obj1]*64|[obj2]*64)
+  end
+
+  def test_OR_big_array # '|'
+    assert_equal(@cls[1,2], @cls[1]*64 | @cls[2]*64)
+    assert_equal(@cls[1,2], @cls[1, 2]*64 | @cls[1, 2]*64)
+
+    a = (1..64).to_a
+    b = (1..128).to_a
+    c = a | b
+    assert_equal(c, b)
+    assert_not_same(c, b)
+    assert_equal((1..64).to_a, a)
+    assert_equal((1..128).to_a, b)
+  end
+
   def test_combination
-    assert_equal(@cls[[]], @cls[1,2,3,4].combination(0).to_a)
-    assert_equal(@cls[[1],[2],[3],[4]], @cls[1,2,3,4].combination(1).to_a)
-    assert_equal(@cls[[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]], @cls[1,2,3,4].combination(2).to_a)
-    assert_equal(@cls[[1,2,3],[1,2,4],[1,3,4],[2,3,4]], @cls[1,2,3,4].combination(3).to_a)
-    assert_equal(@cls[[1,2,3,4]], @cls[1,2,3,4].combination(4).to_a)
-    assert_equal(@cls[], @cls[1,2,3,4].combination(5).to_a)
+    a = @cls[]
+    assert_equal(1, a.combination(0).size)
+    assert_equal(0, a.combination(1).size)
+    a = @cls[1,2,3,4]
+    assert_equal(1, a.combination(0).size)
+    assert_equal(4, a.combination(1).size)
+    assert_equal(6, a.combination(2).size)
+    assert_equal(4, a.combination(3).size)
+    assert_equal(1, a.combination(4).size)
+    assert_equal(0, a.combination(5).size)
+    assert_equal(@cls[[]], a.combination(0).to_a)
+    assert_equal(@cls[[1],[2],[3],[4]], a.combination(1).to_a)
+    assert_equal(@cls[[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]], a.combination(2).to_a)
+    assert_equal(@cls[[1,2,3],[1,2,4],[1,3,4],[2,3,4]], a.combination(3).to_a)
+    assert_equal(@cls[[1,2,3,4]], a.combination(4).to_a)
+    assert_equal(@cls[], a.combination(5).to_a)
   end
 
   def test_product
@@ -1855,7 +1929,16 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_permutation
+    a = @cls[]
+    assert_equal(1, a.permutation(0).size)
+    assert_equal(0, a.permutation(1).size)
     a = @cls[1,2,3]
+    assert_equal(1, a.permutation(0).size)
+    assert_equal(3, a.permutation(1).size)
+    assert_equal(6, a.permutation(2).size)
+    assert_equal(6, a.permutation(3).size)
+    assert_equal(0, a.permutation(4).size)
+    assert_equal(6, a.permutation.size)
     assert_equal(@cls[[]], a.permutation(0).to_a)
     assert_equal(@cls[[1],[2],[3]], a.permutation(1).to_a.sort)
     assert_equal(@cls[[1,2],[1,3],[2,1],[2,3],[3,1],[3,2]],
@@ -1880,15 +1963,24 @@ class TestArray < Test::Unit::TestCase
 
   def test_permutation_stack_error
     bug9932 = '[ruby-core:63103] [Bug #9932]'
-    assert_separately([], <<-"end;", timeout: 30) #    do
-      assert_nothing_raised(SystemStackError, "#{bug9932}") do
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}", timeout: 30)
+    bug = "#{bug9932}"
+    begin;
+      assert_nothing_raised(SystemStackError, bug) do
         assert_equal(:ok, Array.new(100_000, nil).permutation {break :ok})
       end
     end;
   end
 
   def test_repeated_permutation
+    a = @cls[]
+    assert_equal(1, a.repeated_permutation(0).size)
+    assert_equal(0, a.repeated_permutation(1).size)
     a = @cls[1,2]
+    assert_equal(1, a.repeated_permutation(0).size)
+    assert_equal(2, a.repeated_permutation(1).size)
+    assert_equal(4, a.repeated_permutation(2).size)
+    assert_equal(8, a.repeated_permutation(3).size)
     assert_equal(@cls[[]], a.repeated_permutation(0).to_a)
     assert_equal(@cls[[1],[2]], a.repeated_permutation(1).to_a.sort)
     assert_equal(@cls[[1,1],[1,2],[2,1],[2,2]],
@@ -1913,7 +2005,8 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_permutation_stack_error
-    assert_separately([], <<-"end;", timeout: 30) #    do
+    assert_separately([], "#{<<-"begin;"}\n#{<<~'end;'}", timeout: 30)
+    begin;
       assert_nothing_raised(SystemStackError) do
         assert_equal(:ok, Array.new(100_000, nil).repeated_permutation(500_000) {break :ok})
       end
@@ -1921,7 +2014,15 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_combination
+    a = @cls[]
+    assert_equal(1, a.repeated_combination(0).size)
+    assert_equal(0, a.repeated_combination(1).size)
     a = @cls[1,2,3]
+    assert_equal(1, a.repeated_combination(0).size)
+    assert_equal(3, a.repeated_combination(1).size)
+    assert_equal(6, a.repeated_combination(2).size)
+    assert_equal(10, a.repeated_combination(3).size)
+    assert_equal(15, a.repeated_combination(4).size)
     assert_equal(@cls[[]], a.repeated_combination(0).to_a)
     assert_equal(@cls[[1],[2],[3]], a.repeated_combination(1).to_a.sort)
     assert_equal(@cls[[1,1],[1,2],[1,3],[2,2],[2,3],[3,3]],
@@ -1950,7 +2051,8 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_repeated_combination_stack_error
-    assert_separately([], <<-"end;", timeout: 20) #    do
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}", timeout: 20)
+    begin;
       assert_nothing_raised(SystemStackError) do
         assert_equal(:ok, Array.new(100_000, nil).repeated_combination(500_000) {break :ok})
       end
@@ -2102,8 +2204,10 @@ class TestArray < Test::Unit::TestCase
     assert_equal([0], a.insert(1))
     assert_equal([0, 1], a.insert(1, 1))
     assert_raise(ArgumentError) { a.insert }
+    assert_raise(TypeError) { a.insert(Object.new) }
     assert_equal([0, 1, 2], a.insert(-1, 2))
     assert_equal([0, 1, 3, 2], a.insert(-2, 3))
+    assert_raise_with_message(IndexError, /-6/) { a.insert(-6, 4) }
     assert_raise(FrozenError) { [0].freeze.insert(0)}
     assert_raise(ArgumentError) { [0].freeze.insert }
   end
@@ -2469,6 +2573,9 @@ class TestArray < Test::Unit::TestCase
     a = []
     [0, 1, 2].cycle(3) {|i| a << i }
     assert_equal([0, 1, 2, 0, 1, 2, 0, 1, 2], a)
+
+    assert_equal(Float::INFINITY, a.cycle.size)
+    assert_equal(27, a.cycle(3).size)
   end
 
   def test_reverse_each2
@@ -2517,8 +2624,8 @@ class TestArray < Test::Unit::TestCase
 
   def test_array_subclass
     assert_equal(Array2, Array2[1,2,3].uniq.class, "[ruby-dev:34581]")
-    assert_equal(Array2, Array2[1,2][0,1].class) # embeded
-    assert_equal(Array2, Array2[*(1..100)][1..99].class) #not embeded
+    assert_equal(Array2, Array2[1,2][0,1].class) # embedded
+    assert_equal(Array2, Array2[*(1..100)][1..99].class) #not embedded
   end
 
   def test_inspect
@@ -2731,21 +2838,24 @@ class TestArray < Test::Unit::TestCase
     Bug11235 = '[ruby-dev:49043] [Bug #11235]'
 
     def test_push_over_ary_max
-      assert_separately(['-', ARY_MAX.to_s, Bug11235], <<-"end;", timeout: 30)
+      assert_separately(['-', ARY_MAX.to_s, Bug11235], "#{<<~"begin;"}\n#{<<~'end;'}", timeout: 30)
+      begin;
         a = Array.new(ARGV[0].to_i)
         assert_raise(IndexError, ARGV[1]) {0x1000.times {a.push(1)}}
       end;
     end
 
     def test_unshift_over_ary_max
-      assert_separately(['-', ARY_MAX.to_s, Bug11235], <<-"end;")
+      assert_separately(['-', ARY_MAX.to_s, Bug11235], "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
         a = Array.new(ARGV[0].to_i)
         assert_raise(IndexError, ARGV[1]) {0x1000.times {a.unshift(1)}}
       end;
     end
 
     def test_splice_over_ary_max
-      assert_separately(['-', ARY_MAX.to_s, Bug11235], <<-"end;")
+      assert_separately(['-', ARY_MAX.to_s, Bug11235], "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
         a = Array.new(ARGV[0].to_i)
         assert_raise(IndexError, ARGV[1]) {a[0, 0] = Array.new(0x1000)}
       end;
@@ -2759,8 +2869,8 @@ class TestArray < Test::Unit::TestCase
     assert_raise(TypeError) {h.dig(1, 0)}
   end
 
-  FIXNUM_MIN = -(1 << (8 * RbConfig::SIZEOF['long'] - 2))
-  FIXNUM_MAX = (1 << (8 * RbConfig::SIZEOF['long'] - 2)) - 1
+  FIXNUM_MIN = RbConfig::LIMITS['FIXNUM_MIN']
+  FIXNUM_MAX = RbConfig::LIMITS['FIXNUM_MAX']
 
   def assert_typed_equal(e, v, cls, msg=nil)
     assert_kind_of(cls, v, msg)
@@ -2838,9 +2948,8 @@ class TestArray < Test::Unit::TestCase
     assert_equal("abc", ["a", "b", "c"].sum(""))
     assert_equal([1, [2], 3], [[1], [[2]], [3]].sum([]))
 
-    assert_separately(%w[-rmathn], <<-EOS, ignore_stderr: true)
-      assert_equal(6, [1r, 2, 3r].sum)
-    EOS
+    assert_raise(TypeError) {[0].sum("")}
+    assert_raise(TypeError) {[1].sum("")}
   end
 
   private

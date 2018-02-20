@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 begin
   require_relative 'helper'
 rescue LoadError
@@ -9,8 +9,6 @@ module Fiddle
     def dlwrap arg
       Fiddle.dlwrap arg
     end
-
-    include Test::Unit::Assertions
 
     def test_cptr_to_int
       null = Fiddle::NULL
