@@ -1186,6 +1186,21 @@ public class RubyBignum extends RubyInteger {
         return true;
     }
 
+    @Override
+    public IRubyObject numerator(ThreadContext context) {
+        return this;
+    }
+
+    @Override
+    public IRubyObject denominator(ThreadContext context) {
+        return RubyFixnum.one(context.runtime);
+    }
+
+    public RubyRational convertToRational() {
+        final Ruby runtime = getRuntime();
+        return RubyRational.newRationalRaw(runtime, this, RubyFixnum.one(runtime));
+    }
+
     private static JavaSites.BignumSites sites(ThreadContext context) {
         return context.sites.Bignum;
     }

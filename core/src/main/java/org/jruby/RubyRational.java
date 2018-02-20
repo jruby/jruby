@@ -449,6 +449,8 @@ public class RubyRational extends RubyNumeric {
         return den;
     }
 
+    public RubyRational convertToRational() { return this; }
+
     @Override
     public IRubyObject zero_p(ThreadContext context) {
         return context.runtime.newBoolean(isZero());
@@ -496,7 +498,7 @@ public class RubyRational extends RubyNumeric {
     /** f_addsub
      * 
      */
-    private static IRubyObject f_addsub(ThreadContext context, RubyClass metaClass,
+    private static RubyNumeric f_addsub(ThreadContext context, RubyClass metaClass,
                                         RubyInteger anum, RubyInteger aden, RubyInteger bnum, RubyInteger bden,
                                         final boolean plus) {
         RubyInteger newNum, newDen, g, a, b;
@@ -540,12 +542,15 @@ public class RubyRational extends RubyNumeric {
             return f_add(context, f_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
-            RubyRational otherRational = (RubyRational)other;
-            return f_addsub(context, getMetaClass(), num, den, otherRational.num, otherRational.den, true);
+            return op_add(context, (RubyRational) other);
         }            
         return coerceBin(context, sites(context).op_plus, other);
     }
-    
+
+    public final RubyNumeric op_add(ThreadContext context, RubyRational other) {
+        return f_addsub(context, getMetaClass(), num, den, other.num, other.den, true);
+    }
+
     /** nurat_sub
      * 
      */
@@ -558,12 +563,15 @@ public class RubyRational extends RubyNumeric {
             return f_sub(context, f_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
-            RubyRational otherRational = (RubyRational)other;
-            return f_addsub(context, getMetaClass(), num, den, otherRational.num, otherRational.den, false);
+            return op_sub(context, (RubyRational) other);
         }
         return coerceBin(context, sites(context).op_minus, other);
     }
-    
+
+    public final RubyNumeric op_sub(ThreadContext context, RubyRational other) {
+        return f_addsub(context, getMetaClass(), num, den, other.num, other.den, false);
+    }
+
     /** f_muldiv
      * 
      */
@@ -644,7 +652,7 @@ public class RubyRational extends RubyNumeric {
         return coerceBin(context, sites(context).op_quo, other);
     }
 
-    final IRubyObject op_div(ThreadContext context, RubyInteger other) {
+    public final RubyNumeric op_div(ThreadContext context, RubyInteger other) {
         if (other.isZero()) {
             throw context.runtime.newZeroDivisionError();
         }
@@ -670,13 +678,13 @@ public class RubyRational extends RubyNumeric {
 
         if (other instanceof RubyRational) {
             RubyRational otherRational = (RubyRational)other;
-            if (f_one_p(context, otherRational.den)) other = otherRational.num;
+            if (otherRational.den.isOne()) other = otherRational.num;
         }
 
         // Deal with special cases of 0**n and 1**n
         if (k_numeric_p(other) && k_exact_p(other)) {
-            if (f_one_p(context, den)) {
-                if (f_one_p(context, num)) {
+            if (den.isOne()) {
+                if (num.isOne()) {
                     return RubyRational.newRationalBang(context, getMetaClass(), 1);
                 }
                 if (f_minus_one_p(context, num) && k_integer_p(other)) {
@@ -707,8 +715,8 @@ public class RubyRational extends RubyNumeric {
         }
 
         // Deal with special cases of 0**n and 1**n
-        if (f_one_p(context, den)) {
-            if (f_one_p(context, num)) {
+        if (den.isOne()) {
+            if (num.isOne()) {
                 return RubyRational.newRationalBang(context, getMetaClass(), 1);
             }
             if (f_minus_one_p(context, num)) {
@@ -724,7 +732,7 @@ public class RubyRational extends RubyNumeric {
         return fix_expt(context, RubyFixnum.newFixnum(runtime, other), Long.signum(other));
     }
 
-    private IRubyObject fix_expt(ThreadContext context, RubyInteger other, final int sign) {
+    private RubyNumeric fix_expt(ThreadContext context, RubyInteger other, final int sign) {
         final RubyInteger tnum, tden;
         if (sign > 0) { // other > 0
             tnum = (RubyInteger) f_expt(context, num, other); // exp > 0
@@ -774,25 +782,34 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
-            RubyInteger that = (RubyInteger) other;
-            if (num.isZero() && that.isZero()) return runtime.getTrue();
-            if (!(den instanceof RubyFixnum) || den.getLongValue() != 1) return runtime.getFalse();
-            return f_equal(context, num, other);
+            return op_equal(context, (RubyInteger) other);
         }
         if (other instanceof RubyFloat) {
             return f_equal(context, f_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
-            RubyRational otherRational = (RubyRational)other;
-            if (num.isZero() && otherRational.num.isZero()) return runtime.getTrue();
-            return runtime.newBoolean(
-                    f_equal(context, num, otherRational.num).isTrue() &&
-                            f_equal(context, den, otherRational.den).isTrue());
-
+            return op_equal(context, (RubyRational) other);
         }
         return f_equal(context, other, this);
+    }
+
+    public final IRubyObject op_equal(ThreadContext context, RubyInteger other) {
+        if (num.isZero()) return context.runtime.newBoolean(other.isZero());
+        if (!(den instanceof RubyFixnum) || den.getLongValue() != 1) return context.fals;
+        return f_equal(context, num, other);
+    }
+
+    final RubyBoolean op_equal(ThreadContext context, RubyRational other) {
+        if (num.isZero()) return context.runtime.newBoolean(other.num.isZero());
+        return context.runtime.newBoolean(
+                f_equal(context, num, other.num).isTrue() && f_equal(context, den, other.den).isTrue());
+    }
+
+    @Override // "eql?"
+    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+        if (!(other instanceof RubyRational)) return context.fals;
+        return op_equal(context, (RubyRational) other);
     }
 
     /** nurat_coerce

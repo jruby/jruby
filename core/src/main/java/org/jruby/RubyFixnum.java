@@ -851,13 +851,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return coerceBin(context, sites(context).op_exp, other);
     }
 
-    private IRubyObject powerFixnum(ThreadContext context, RubyFixnum other) {
+    private RubyNumeric powerFixnum(ThreadContext context, RubyFixnum other) {
         Ruby runtime = context.runtime;
         long a = value;
         long b = other.value;
         if (b < 0) {
             RubyRational rational = RubyRational.newRationalRaw(runtime, this);
-            return numFuncall(context, rational, sites(context).op_exp_rational, other);
+            return (RubyNumeric) numFuncall(context, rational, sites(context).op_exp_rational, other);
         }
         if (b == 0) {
             return RubyFixnum.one(runtime);
@@ -1366,6 +1366,21 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
         long bytes = 8; // sizeof(long)
         return (-0.415241 * ndigits - 0.125 > bytes);
+    }
+
+    @Override
+    public IRubyObject numerator(ThreadContext context) {
+        return this;
+    }
+
+    @Override
+    public IRubyObject denominator(ThreadContext context) {
+        return one(context.runtime);
+    }
+
+    public RubyRational convertToRational() {
+        final Ruby runtime = getRuntime();
+        return RubyRational.newRationalRaw(runtime, this, one(runtime));
     }
 
     private static JavaSites.FixnumSites sites(ThreadContext context) {

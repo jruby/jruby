@@ -1255,6 +1255,11 @@ public class RubyNumeric extends RubyObject {
         return sites(context).denominator.call(context, rational, rational);
     }
 
+    public RubyRational convertToRational() {
+        final ThreadContext context = getRuntime().getCurrentContext();
+        return RubyRational.newRationalRaw(context.runtime, numerator(context), denominator(context));
+    }
+
     /** numeric_to_c
      *
      */
