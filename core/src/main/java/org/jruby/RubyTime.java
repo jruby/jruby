@@ -1184,6 +1184,12 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        RubySymbol ms = context.runtime.newSymbol("microsecond");
+        return at(context, recv, arg1, arg2, ms);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         Ruby runtime = context.runtime;
 
         RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(0L, getLocalTimeZone(runtime)));
@@ -1201,16 +1207,44 @@ public class RubyTime extends RubyObject {
             millisecs = RubyNumeric.num2long(arg1) * 1000;
         }
 
+        if (!(arg3 instanceof RubySymbol)) {
+            throw context.runtime.newArgumentError("unexpected unit " + arg3);
+        }
+
+        RubySymbol unit = (RubySymbol) arg3;
+
         if (arg2 instanceof RubyFloat || arg2 instanceof RubyRational) {
-            double micros = RubyNumeric.num2dbl(arg2);
-            double nanos = micros * 1000;
-            millisecs += (long) (nanos / 1000000);
-            nanosecs += (long) (nanos % 1000000);
+            if (runtime.newSymbol("microsecond").eql(unit) || runtime.newSymbol("usec").eql(unit)) {
+                double micros = RubyNumeric.num2dbl(arg2);
+                double nanos = micros * 1000;
+                millisecs += (long) (nanos / 1000000);
+                nanosecs += (long) (nanos % 1000000);
+            } else if (runtime.newSymbol("millisecond").eql(unit)) {
+                double millis = RubyNumeric.num2dbl(arg2);
+                double nanos = millis * 1000000;
+                millisecs += (long) (nanos / 1000000);
+                nanosecs += (long) (nanos % 1000000);
+            } else if (runtime.newSymbol("nanosecond").eql(unit) || runtime.newSymbol("nsec").eql(unit)) {
+                nanosecs += RubyNumeric.num2long(arg2);
+            } else {
+                throw context.runtime.newArgumentError("unexpected unit " + arg3);
+            }
         } else {
-            long micros = RubyNumeric.num2long(arg2);
-            long nanos = micros * 1000;
-            millisecs += nanos / 1000000;
-            nanosecs += nanos % 1000000;
+            if (runtime.newSymbol("microsecond").eql(unit) || runtime.newSymbol("usec").eql(unit)) {
+                long micros = RubyNumeric.num2long(arg2);
+                long nanos = micros * 1000;
+                millisecs += nanos / 1000000;
+                nanosecs += nanos % 1000000;
+            } else if (runtime.newSymbol("millisecond").eql(unit)) {
+                double millis = RubyNumeric.num2long(arg2);
+                double nanos = millis * 1000000;
+                millisecs += nanos / 1000000;
+                nanosecs += nanos % 1000000;
+            } else if (runtime.newSymbol("nanosecond").eql(unit) || runtime.newSymbol("nsec").eql(unit)) {
+                nanosecs += RubyNumeric.num2long(arg2);
+            } else {
+                throw context.runtime.newArgumentError("unexpected unit " + arg3);
+            }
         }
 
         long nanosecOverflow = (nanosecs / 1000000);
