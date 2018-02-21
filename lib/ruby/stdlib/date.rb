@@ -313,30 +313,6 @@ class Date
 
     private
 
-    def find_fdoy(y, sg) # :nodoc:
-      j = nil
-      1.upto(31) do |d|
-        break if j = _valid_civil?(y, 1, d, sg)
-      end
-      j
-    end
-
-    def find_fdom(y, m, sg) # :nodoc:
-      j = nil
-      1.upto(31) do |d|
-        break if j = _valid_civil?(y, m, d, sg)
-      end
-      j
-    end
-
-    def find_ldom(y, m, sg) # :nodoc:
-      j = nil
-      31.downto(1) do |d|
-        break if j = _valid_civil?(y, m, d, sg)
-      end
-      j
-    end
-
     # Convert a Civil Date to a Julian Day Number.
     # +y+, +m+, and +d+ are the year, month, and day of the
     # month.  +sg+ specifies the Day of Calendar Reform.
@@ -384,35 +360,6 @@ class Date
         y = c - 4715
       end
       return y, m, dom
-    end
-
-    def weeknum_to_jd(y, w, d, f=0, sg=GREGORIAN) # :nodoc:
-      a = find_fdoy(y, sg) + 6
-      (a - ((a - f) + 1) % 7 - 7) + 7 * w + d
-    end
-
-    def jd_to_weeknum(jd, f=0, sg=GREGORIAN) # :nodoc:
-      y, m, d = jd_to_civil(jd, sg)
-      a = find_fdoy(y, sg) + 6
-      w, d = (jd - (a - ((a - f) + 1) % 7) + 7).divmod(7)
-      return y, w, d
-    end
-
-    def nth_kday_to_jd(y, m, n, k, sg=GREGORIAN) # :nodoc:
-      j = if n > 0
-            find_fdom(y, m, sg) - 1
-          else
-            find_ldom(y, m, sg) + 7
-          end
-      (j - (((j - k) + 1) % 7)) + 7 * n
-    end
-
-    def jd_to_nth_kday(jd, sg=GREGORIAN) # :nodoc:
-      y, m, _ = jd_to_civil(jd, sg)
-      j = find_fdom(y, m, sg)
-      # Sunday is day-of-week 0; Saturday is day-of-week 6.
-      jd_to_wday = (jd + 1) % 7
-      return y, m, ((jd - j) / 7).floor + 1, jd_to_wday
     end
 
     # Convert an Astronomical Julian Day Number to a (civil) Julian
@@ -472,38 +419,6 @@ class Date
     # the adoption of the Gregorian Calendar (in Italy).
     # def jd_to_ld(jd) jd -  LD_EPOCH_IN_CJD end # :nodoc:
 
-    def _valid_weeknum? (y, w, d, f, sg=GREGORIAN) # :nodoc:
-      if d < 0
-        d += 7
-      end
-      if w < 0
-        ny, nw, nd, nf =
-          jd_to_weeknum(weeknum_to_jd(y + 1, 1, f, f, sg) + w * 7, f, sg)
-        return unless ny == y
-        w = nw
-      end
-      jd = weeknum_to_jd(y, w, d, f, sg)
-      return unless [y, w, d] == jd_to_weeknum(jd, f, sg)
-      jd
-    end
-
-    def _valid_nth_kday? (y, m, n, k, sg=GREGORIAN) # :nodoc:
-      if k < 0
-        k += 7
-      end
-      if n < 0
-        ny, nm = (y * 12 + m).divmod(12)
-        nm,    = (nm + 1)    .divmod(1)
-        ny, nm, nn, nk =
-          jd_to_nth_kday(nth_kday_to_jd(ny, nm, 1, k, sg) + n * 7, sg)
-        return unless [ny, nm] == [y, m]
-        n = nn
-      end
-      jd = nth_kday_to_jd(y, m, n, k, sg)
-      return unless [y, m, n, k] == jd_to_nth_kday(jd, sg)
-      jd
-    end
-
   end
 
   extend  t
@@ -512,16 +427,6 @@ class Date
   def self.valid_jd? (jd, sg=ITALY)
     !!_valid_jd?(jd, sg)
   end
-
-  def self.valid_weeknum? (y, w, d, f, sg=ITALY) # :nodoc:
-    !!_valid_weeknum?(y, w, d, f, sg)
-  end
-  private_class_method :valid_weeknum?
-
-  def self.valid_nth_kday? (y, m, n, k, sg=ITALY) # :nodoc:
-    !!_valid_nth_kday?(y, m, n, k, sg)
-  end
-  private_class_method :valid_nth_kday?
 
   # Create a new Date object from a Julian Day Number.
   #
@@ -532,22 +437,6 @@ class Date
     jd = _valid_jd?(jd, sg)
     new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
-
-  def self.weeknum(y=-4712, w=0, d=1, f=0, sg=ITALY)
-    unless jd = _valid_weeknum?(y, w, d, f, sg)
-      raise ArgumentError, 'invalid date'
-    end
-    new!(jd_to_ajd(jd, 0, 0), 0, sg)
-  end
-  private_class_method :weeknum
-
-  def self.nth_kday(y=-4712, m=1, n=1, k=1, sg=ITALY)
-    unless jd = _valid_nth_kday?(y, m, n, k, sg)
-      raise ArgumentError, 'invalid date'
-    end
-    new!(jd_to_ajd(jd, 0, 0), 0, sg)
-  end
-  private_class_method :nth_kday
 
   def self.rewrite_frags(elem) # :nodoc:
     elem ||= {}
@@ -1103,30 +992,6 @@ class DateTime < Date
     end
     new!(jd_to_ajd(jd, fr, of), of, sg)
   end
-
-  def self.weeknum(y=-4712, w=0, d=1, f=0, h=0, min=0, s=0, of=0, sg=ITALY) # :nodoc:
-    unless (jd = _valid_weeknum?(y, w, d, f, sg)) &&
-           (fr = _valid_time?(h, min, s))
-      raise ArgumentError, 'invalid date'
-    end
-    if String === of
-      of = Rational(zone_to_diff(of) || 0, 86400)
-    end
-    new!(jd_to_ajd(jd, fr, of), of, sg)
-  end
-  private_class_method :weeknum
-
-  def self.nth_kday(y=-4712, m=1, n=1, k=1, h=0, min=0, s=0, of=0, sg=ITALY) # :nodoc:
-    unless (jd = _valid_nth_kday?(y, m, n, k, sg)) &&
-           (fr = _valid_time?(h, min, s))
-      raise ArgumentError, 'invalid date'
-    end
-    if String === of
-      of = Rational(zone_to_diff(of) || 0, 86400)
-    end
-    new!(jd_to_ajd(jd, fr, of), of, sg)
-  end
-  private_class_method :nth_kday
 
   def self.new_by_frags(elem, sg) # :nodoc:
     elem = rewrite_frags(elem)

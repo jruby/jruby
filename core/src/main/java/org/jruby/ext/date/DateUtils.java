@@ -144,6 +144,44 @@ abstract class DateUtils {
         return new int[] { y, w, d };
     }
 
+    private static long weeknum_to_jd(int y, int w, int d, int f, final int sg) {
+        long a = find_fdoy(y, sg) + 6;
+        return (a - ((a - f) + 1) % 7 - 7) + 7 * w + d;
+    }
+
+    private static int[] jd_to_weeknum(long jd, int f, final int sg) {
+        final int y = jd_to_civil(jd, sg)[0];
+        long a = find_fdoy(y, sg) + 6;
+
+        long val = (jd - (a - ((a - f) + 1) % 7) + 7);
+        int w = (int) (val / 7), d = (int) (val % 7);
+
+        return new int[] { y, w, d };
+    }
+
+    private static long nth_kday_to_jd(int y, int m, int n, int k, final int sg) {
+        final long j;
+        if (n > 0) {
+            j = find_fdom(y, m, sg) - 1;
+        }
+        else {
+            j = find_ldom(y, m, sg) + 7;
+        }
+        return (j - (((j - k) + 1) % 7)) + 7 * n;
+    }
+
+    private static int[] jd_to_nth_kday(long jd, final int sg) {
+        final int[] y_m_d = jd_to_civil(jd, sg);
+        final int y = y_m_d[0];
+        final int m = y_m_d[1];
+
+        long j = find_fdom(y, m, sg);
+        // Sunday is day-of-week 0; Saturday is day-of-week 6.
+        int jd_to_wday = (int) ((jd + 1) % 7);
+
+        return new int[] { y, m, (int) (((jd - j) / 7) + 1), jd_to_wday };
+    }
+
     static boolean valid_time_p(long h, long min, long s) { // MRI: c_valid_time_p
         if (h < 0) h += 24;
         if (min < 0) min += 60;
@@ -242,6 +280,15 @@ abstract class DateUtils {
         return j;
     }
 
+    static Long find_fdom(int y, int m, final int sg) {
+        Long j = null;
+        for (int d = 1; d <= 31; d++) {
+            j = _valid_civil_p(y, m, d, sg);
+            if (j != null) break;
+        }
+        return j;
+    }
+
     static Long find_fdoy(int y, final int sg) {
         Long j = null;
         for (int d = 1; d <= 31; d++) {
@@ -269,8 +316,10 @@ abstract class DateUtils {
             d = ny_nm_nd[2];
         }
         long jd = civil_to_jd(y, m, d, sg);
+
         int[] y_m_d = jd_to_civil(jd, sg);
         if (y != y_m_d[0] || m != y_m_d[1] || d != y_m_d[2]) return null;
+
         return jd;
     }
 
@@ -284,8 +333,10 @@ abstract class DateUtils {
         }
 
         long jd = ordinal_to_jd(y, d, sg);
+
         int[] y_d = jd_to_ordinal(jd, sg);
         if (y != y_d[0] || d != y_d[1]) return null;
+
         return jd;
     }
 
@@ -298,8 +349,46 @@ abstract class DateUtils {
             w = ny_nw_nd[1];
         }
         long jd = commercial_to_jd(y, w, d, sg);
+
         int[] ny_nw_nd = jd_to_commercial(jd, sg);
         if (y != ny_nw_nd[0] || w != ny_nw_nd[1] || d != ny_nw_nd[2]) return null;
+
+        return jd;
+    }
+
+    static Long _valid_weeknum_p(int y, int w, int d, int f, final int sg) {
+        if (d < 0) d += 7;
+
+        if (w < 0) {
+            int[] ny_nw_nd = jd_to_weeknum(weeknum_to_jd(y + 1, 1, f, f, sg) + w * 7, f, sg);
+            if (y != ny_nw_nd[0]) return null;
+            w = ny_nw_nd[1];
+        }
+
+        long jd = weeknum_to_jd(y, w, d, f, sg);
+
+        int[] ny_nw_nd = jd_to_weeknum(jd, f, sg);
+        if (y != ny_nw_nd[0] || w != ny_nw_nd[1] || d != ny_nw_nd[2]) return null;
+
+        return jd;
+    }
+
+    static Long _valid_nth_kday_p(int y, int m, int n, int k, final int sg) {
+        if (k < 0) k += 7;
+
+        if (n < 0) {
+            int val = (y * 12 + m);
+            int ny = val / 12, nm = val % 12;
+            nm = (nm + 1) / 1;
+            int [] ny_nm_nn_nk = jd_to_nth_kday(nth_kday_to_jd(ny, nm, 1, k, sg) + n * 7, sg);
+            if (y != ny_nm_nn_nk[0] || m != ny_nm_nn_nk[1]) return null;
+            n = ny_nm_nn_nk[2];
+        }
+
+        long jd = nth_kday_to_jd(y, m, n, k, sg);
+        int[] ny_nm_nn_nk = jd_to_nth_kday(jd, sg);
+        if (y != ny_nm_nn_nk[0] || m != ny_nm_nn_nk[1] || n != ny_nm_nn_nk[2] || k != ny_nm_nn_nk[3]) return null;
+
         return jd;
     }
 

@@ -581,6 +581,18 @@ public class RubyDate extends RubyObject {
         return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
     }
 
+    @Deprecated // NOTE: should go away once no date.rb is using it
+    @JRubyMethod(name = "_valid_weeknum?", meta = true, required = 4, optional = 1, visibility = Visibility.PRIVATE)
+    public static IRubyObject _valid_weeknum_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        final int sg = args.length > 4 ? val2sg(context, args[4]) : GREGORIAN;
+        final int y = args[0].convertToInteger().getIntValue();
+        final int w = args[1].convertToInteger().getIntValue();
+        final int d = args[2].convertToInteger().getIntValue();
+        final int f = args[3].convertToInteger().getIntValue();
+        final Long jd = DateUtils._valid_weeknum_p(y, w, d, f, sg);
+        return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
+    }
+
     /**
      # Create a new Date object representing today.
      #
