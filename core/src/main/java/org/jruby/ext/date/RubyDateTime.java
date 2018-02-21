@@ -37,6 +37,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyRational;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
@@ -90,6 +91,10 @@ public class RubyDateTime extends RubyDate {
 
     RubyDateTime(Ruby runtime, DateTime dt, int off, int start) {
         this(runtime, getDateTime(runtime), dt, off, start);
+    }
+
+    private RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, int start) {
+        super(context, klass, ajd, off, start);
     }
 
     private RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, int start) {
@@ -291,6 +296,54 @@ public class RubyDateTime extends RubyDate {
             IRubyObject eql = ((RubyRational) val).op_equal(context, RubyFixnum.newFixnum(context.runtime, ival));
             if (eql != context.tru) throw context.runtime.newArgumentError("invalid fraction");
         }
+    }
+
+    /**
+     # Create a new DateTime object corresponding to the specified
+     # Julian Day Number +jd+ and hour +h+, minute +min+, second +s+.
+     #
+     # The 24-hour clock is used.  Negative values of +h+, +min+, and
+     # +sec+ are treating as counting backwards from the end of the
+     # next larger unit (e.g. a +min+ of -2 is treated as 58).  No
+     # wraparound is performed.  If an invalid time portion is specified,
+     # an ArgumentError is raised.
+     #
+     # +of+ is the offset from UTC as a fraction of a day (defaults to 0).
+     # +sg+ specifies the Day of Calendar Reform.
+     #
+     # All day/time values default to 0.
+     */ // jd(jd=0, h=0, min=0, s=0, of=0, sg=ITALY)
+
+    @JRubyMethod(name = "jd", meta = true)
+    public static RubyDate jd(ThreadContext context, IRubyObject self) { // jd = 0
+        return new RubyDateTime(context.runtime, (RubyClass) self, defaultDateTime);
+    }
+
+    @JRubyMethod(name = "jd", meta = true, optional = 6)
+    public static RubyDate jd(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        final int len = args.length;
+        final RubyFixnum zero = RubyFixnum.zero(context.runtime);
+
+        final RubyInteger jd = args[0].convertToInteger();
+        final IRubyObject hour = (len > 1) ? args[1] : zero;
+        final IRubyObject min = (len > 2) ? args[2] : zero;
+        final IRubyObject sec = (len > 3) ? args[3] : zero;
+
+        final RubyNumeric fr;
+        if (hour != zero || min != zero || sec != zero) {
+            IRubyObject tmp = _valid_time_p(context, self, hour, min, sec);
+            if (tmp == context.nil) throw context.runtime.newArgumentError("invalid date");
+            fr = (RubyNumeric) tmp;
+        }
+        else {
+            fr = zero;
+        }
+
+        int off = 0, sg = ITALY;
+        if (len > 4) off = val2off(context, args[4]);
+        if (len > 5) sg = val2sg(context, args[5]);
+
+        return new RubyDateTime(context, (RubyClass) self, jd_to_ajd(context, jd, fr, off), off, sg);
     }
 
     /**

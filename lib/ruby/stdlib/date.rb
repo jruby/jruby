@@ -334,44 +334,6 @@ class Date
       jd
     end
 
-    # Convert a Julian Day Number to a Civil Date.  +jd+ is
-    # the Julian Day Number. +sg+ specifies the Day of
-    # Calendar Reform.
-    #
-    # Returns the corresponding [year, month, day_of_month]
-    # as a three-element array.
-    def jd_to_civil(jd, sg=GREGORIAN) # :nodoc:
-      if jd < sg
-        a = jd
-      else
-        x = ((jd - 1867216.25) / 36524.25).floor
-        a = jd + 1 + x - (x / 4.0).floor
-      end
-      b = a + 1524
-      c = ((b - 122.1) / 365.25).floor
-      d = (365.25 * c).floor
-      e = ((b - d) / 30.6001).floor
-      dom = b - d - (30.6001 * e).floor
-      if e <= 13
-        m = e - 1
-        y = c - 4716
-      else
-        m = e - 13
-        y = c - 4715
-      end
-      return y, m, dom
-    end
-
-    # Convert an Astronomical Julian Day Number to a (civil) Julian
-    # Day Number.
-    #
-    # +ajd+ is the Astronomical Julian Day Number to convert.
-    # +of+ is the offset from UTC as a fraction of a day (defaults to 0).
-    #
-    # Returns the (civil) Julian Day Number as [day_number,
-    # fraction] where +fraction+ is always 1/2.
-    def ajd_to_jd(ajd, of=0) (ajd + of + HALF_DAYS_IN_DAY).divmod(1) end # :nodoc:
-
     # Convert a (civil) Julian Day Number to an Astronomical Julian
     # Day Number.
     #
@@ -381,62 +343,15 @@ class Date
     #
     # Returns the Astronomical Julian Day Number as a single
     # numeric value.
-    def jd_to_ajd(jd, fr, of=0) jd + fr - of - HALF_DAYS_IN_DAY end # :nodoc:
-
-    # Convert a fractional day +fr+ to [hours, minutes, seconds,
-    # fraction_of_a_second]
-    # def day_fraction_to_time(fr) # :nodoc:
-    #   ss,  fr = fr.divmod(SECONDS_IN_DAY) # 4p
-    #   h,   ss = ss.divmod(3600)
-    #   min, s  = ss.divmod(60)
-    #   return h, min, s, fr * 86400
-    # end
+    def jd_to_ajd(jd, fr, of=0) jd + fr - of - HALF_DAYS_IN_DAY end # :nodoc: TODO to be removed after Time#to_date/date_time
 
     # Convert an +h+ hour, +min+ minutes, +s+ seconds period to a fractional day.
     def time_to_day_fraction(h, min, s) Rational(h * 3600 + min * 60 + s, 86400) end
-
-    # Convert an Astronomical Modified Julian Day Number to an
-    # Astronomical Julian Day Number.
-    def amjd_to_ajd(amjd) amjd + MJD_EPOCH_IN_AJD end # :nodoc:
-
-    # Convert an Astronomical Julian Day Number to an
-    # Astronomical Modified Julian Day Number.
-    # def ajd_to_amjd(ajd) ajd - MJD_EPOCH_IN_AJD end # :nodoc:
-
-    # Convert a Modified Julian Day Number to a Julian
-    # Day Number.
-    # def mjd_to_jd(mjd) mjd + MJD_EPOCH_IN_CJD end # :nodoc:
-
-    # Convert a Julian Day Number to a Modified Julian Day
-    # Number.
-    # def jd_to_mjd(jd) jd - MJD_EPOCH_IN_CJD end # :nodoc:
-
-    # Convert a count of the number of days since the adoption
-    # of the Gregorian Calendar (in Italy) to a Julian Day Number.
-    # def ld_to_jd(ld) ld +  LD_EPOCH_IN_CJD end # :nodoc:
-
-    # Convert a Julian Day Number to the number of days since
-    # the adoption of the Gregorian Calendar (in Italy).
-    # def jd_to_ld(jd) jd -  LD_EPOCH_IN_CJD end # :nodoc:
 
   end
 
   extend  t
   include t
-
-  def self.valid_jd? (jd, sg=ITALY)
-    !!_valid_jd?(jd, sg)
-  end
-
-  # Create a new Date object from a Julian Day Number.
-  #
-  # +jd+ is the Julian Day Number; if not specified, it defaults to
-  # 0.
-  # +sg+ specifies the Day of Calendar Reform.
-  def self.jd(jd=0, sg=ITALY)
-    jd = _valid_jd?(jd, sg)
-    new!(jd_to_ajd(jd, 0, 0), 0, sg)
-  end
 
   def self.rewrite_frags(elem) # :nodoc:
     elem ||= {}
@@ -873,30 +788,6 @@ end
 # UTC as a fraction of a day.
 #
 class DateTime < Date
-
-  # Create a new DateTime object corresponding to the specified
-  # Julian Day Number +jd+ and hour +h+, minute +min+, second +s+.
-  #
-  # The 24-hour clock is used.  Negative values of +h+, +min+, and
-  # +sec+ are treating as counting backwards from the end of the
-  # next larger unit (e.g. a +min+ of -2 is treated as 58).  No
-  # wraparound is performed.  If an invalid time portion is specified,
-  # an ArgumentError is raised.
-  #
-  # +of+ is the offset from UTC as a fraction of a day (defaults to 0).
-  # +sg+ specifies the Day of Calendar Reform.
-  #
-  # All day/time values default to 0.
-  def self.jd(jd=0, h=0, min=0, s=0, of=0, sg=ITALY)
-    unless (jd = _valid_jd?(jd, sg)) &&
-           (fr = _valid_time?(h, min, s))
-      raise ArgumentError, 'invalid date'
-    end
-    if String === of
-      of = Rational(zone_to_diff(of) || 0, 86400)
-    end
-    new!(jd_to_ajd(jd, fr, of), of, sg)
-  end
 
   # Create a new DateTime object corresponding to the specified
   # Ordinal Date and hour +h+, minute +min+, second +s+.

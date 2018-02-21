@@ -167,7 +167,7 @@ public class RubyDate extends RubyObject {
         this(context, klass, ajd, chronology, off, 0);
     }
 
-    private RubyDate(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, int start) {
+    RubyDate(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, int start) {
         this(context, klass, ajd, getChronology(context, start, off), off, start);
     }
 
@@ -330,12 +330,12 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDate civil(ThreadContext context, IRubyObject self) {
-        return new RubyDate(context.runtime, defaultDateTime);
+        return new RubyDate(context.runtime, (RubyClass) self, defaultDateTime);
     }
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject year) {
-        return new RubyDate(context.runtime, civilImpl(context, year));
+        return new RubyDate(context.runtime, (RubyClass) self, civilImpl(context, year));
     }
 
     static DateTime civilImpl(ThreadContext context, IRubyObject year) {
@@ -352,7 +352,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month) {
-        return new RubyDate(context.runtime, civilImpl(context, year, month));
+        return new RubyDate(context.runtime, (RubyClass) self, civilImpl(context, year, month));
     }
 
     static DateTime civilImpl(ThreadContext context, IRubyObject year, IRubyObject month) {
@@ -400,14 +400,6 @@ public class RubyDate extends RubyObject {
         RubyDate date = new RubyDate(context.runtime, civilDate(context, y, m, d, getChronology(context, sg, 0)));
         date.start = sg;
         return date;
-
-        //Long jd = DateUtils._valid_civil_p(y, m, d, sg);
-        //if (jd == null) throw context.runtime.newArgumentError("invalid date");
-        //
-        //final Ruby runtime = context.runtime;
-        //RubyFloat ajd = RubyFloat.newFloat(runtime, jd_to_ajd(jd, 0, 0));
-        //
-        //return new RubyDate(runtime).initialize(context, ajd, RubyFixnum.zero(runtime), args[3]);
     }
 
     static DateTime civilDate(ThreadContext context, final int y, final int m, final int d, final Chronology chronology) {
@@ -489,6 +481,40 @@ public class RubyDate extends RubyObject {
         return (RubyNumeric) RubyRational.newRationalCanonicalize(context, hour * 3600 + min * 60 + sec, DAY_IN_SECONDS);
     }
 
+    /**
+     * Create a new Date object from a Julian Day Number.
+     *
+     * +jd+ is the Julian Day Number; if not specified, it defaults to 0.
+     * +sg+ specifies the Day of Calendar Reform.
+     */
+
+    @JRubyMethod(name = "jd", meta = true)
+    public static RubyDate jd(ThreadContext context, IRubyObject self) { // jd = 0, sg = ITALY
+        return new RubyDate(context.runtime, (RubyClass) self, defaultDateTime);
+    }
+
+    @JRubyMethod(name = "jd", meta = true)
+    public static RubyDate jd(ThreadContext context, IRubyObject self, IRubyObject jd) { // sg = ITALY
+        RubyNumeric ajd = jd_to_ajd(context, jd.convertToInteger().getLongValue());
+        return new RubyDate(context, (RubyClass) self, ajd, 0, ITALY);
+    }
+
+    @JRubyMethod(name = "jd", meta = true)
+    public static RubyDate jd(ThreadContext context, IRubyObject self, IRubyObject jd, IRubyObject sg) {
+        RubyNumeric ajd = jd_to_ajd(context, jd.convertToInteger().getLongValue());
+        return new RubyDate(context, (RubyClass) self, ajd, 0, val2sg(context, sg));
+    }
+
+    @JRubyMethod(name = "valid_jd?", meta = true)
+    public static IRubyObject valid_jd_p(ThreadContext context, IRubyObject self, IRubyObject jd) {
+        return context.tru; // @see _valid_jd_p
+    }
+
+    @JRubyMethod(name = "valid_jd?", meta = true)
+    public static IRubyObject valid_jd_p(ThreadContext context, IRubyObject self, IRubyObject jd, IRubyObject sg) {
+        return context.tru; // @see _valid_jd_p
+    }
+
     @JRubyMethod(name = "_valid_jd?", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject _valid_jd_p(IRubyObject self, IRubyObject jd, IRubyObject sg) {
         // Is +jd+ a valid Julian Day Number?
@@ -511,7 +537,7 @@ public class RubyDate extends RubyObject {
         if (jd == null) {
             throw context.runtime.newArgumentError("invalid date");
         }
-        return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd, 0, 0), 0, sg);
+        return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd), 0, sg);
     }
 
     @JRubyMethod(name = "valid_ordinal?", meta = true, required = 2, optional = 1)
@@ -556,7 +582,7 @@ public class RubyDate extends RubyObject {
         if (jd == null) {
             throw context.runtime.newArgumentError("invalid date");
         }
-        return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd, 0, 0), 0, sg);
+        return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd), 0, sg);
     }
 
     @JRubyMethod(name = "valid_commercial?", meta = true, required = 3, optional = 1)
@@ -827,7 +853,7 @@ public class RubyDate extends RubyObject {
             return RubyRational.newRationalCanonicalize(context, ms + subMillisNum, DAY_MS);
         }
         final Ruby runtime = context.runtime;
-        RubyNumeric sum = RubyRational.newRational(runtime, ms, 1).op_add(context, subMillis(runtime));
+        RubyNumeric sum = RubyRational.newRational(runtime, ms, 1).op_plus(context, subMillis(runtime));
         return sum.convertToRational().op_div(context, RubyFixnum.newFixnum(runtime, DAY_MS));
     }
 
@@ -847,13 +873,13 @@ public class RubyDate extends RubyObject {
     }
 
     @JRubyMethod(name = "sec_fraction", alias = "second_fraction", visibility = Visibility.PRIVATE)
-    public IRubyObject sec_fraction(ThreadContext context) { // Rational(@dt.getMillisOfSecond + @sub_millis, 1000)
+    public IRubyObject sec_fraction(ThreadContext context) {
         long ms = dt.getMillisOfSecond();
         if (subMillisDen == 1) {
             return RubyRational.newRationalCanonicalize(context, ms + subMillisNum, 1000);
         }
         final Ruby runtime = context.runtime;
-        RubyNumeric sum = RubyRational.newRational(runtime, ms, 1).op_add(context, subMillis(runtime));
+        RubyNumeric sum = RubyRational.newRational(runtime, ms, 1).op_plus(context, subMillis(runtime));
         return sum.convertToRational().op_div(context, RubyFixnum.newFixnum(runtime, 1000));
     }
 
@@ -1149,11 +1175,18 @@ public class RubyDate extends RubyObject {
     }
 
     // def jd_to_ajd(jd, fr, of=0) jd + fr - of - Rational(1, 2) end
-    private static double jd_to_ajd(long jd, int fr, int of) { return jd + fr - of - 0.5; }
+    private static double jd_to_ajd(long jd) { return jd - 0.5; }
 
-    static RubyNumeric jd_to_ajd(ThreadContext context, long jd, int fr, int of) {
-        final long num = ((jd + fr - of) * 2) - 1;
-        return (RubyNumeric) RubyRational.newRationalCanonicalize(context, num, 2);
+    static RubyNumeric jd_to_ajd(ThreadContext context, long jd) {
+        return (RubyNumeric) RubyRational.newRationalCanonicalize(context, (jd * 2) - 1, 2);
+    }
+
+    static RubyNumeric jd_to_ajd(ThreadContext context, RubyInteger jd, RubyNumeric fr, int of_sec) {
+        RubyNumeric tmp = (RubyNumeric)
+                jd.op_minus(context, RubyRational.newRationalCanonicalize(context, of_sec, 86400));
+        final RubyRational MINUS_HALF = RubyRational.newRational(context.runtime, -1, 2);
+        // RubyInteger tmp = (RubyInteger) jd.op_minus(context, of);
+        return (RubyNumeric) ((RubyNumeric) tmp.op_plus(context, fr)).op_plus(context, MINUS_HALF);
     }
 
     static Chronology getChronology(ThreadContext context, final int sg, final int off) {
@@ -1183,7 +1216,7 @@ public class RubyDate extends RubyObject {
             case GREGORIAN:
                 return GregorianChronology.getInstance(zone);
         }
-        Instant cutover = new Instant(DateTimeUtils.fromJulianDay(jd_to_ajd(sg, 0, 0)));
+        Instant cutover = new Instant(DateTimeUtils.fromJulianDay(jd_to_ajd(sg)));
         try {
             return GJChronology.getInstance(zone, cutover);
         } // java.lang.IllegalArgumentException: Cutover too early. Must be on or after 0001-01-01.
