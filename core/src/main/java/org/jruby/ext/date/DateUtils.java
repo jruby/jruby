@@ -69,7 +69,46 @@ abstract class DateUtils {
         return new int[] { (int) y, (int) m, (int) dom };
     }
 
-    static boolean valid_time_p(int h, int min, int s) { // MRI: c_valid_time_p
+    /**
+     * Convert a (civil) Julian Day Number to an Astronomical Julian
+     * Day Number.
+     *
+     * +jd+ is the Julian Day Number to convert, and +fr+ is a fractional day.
+     * +of+ is the offset from UTC as a fraction of a day (defaults to 0).
+     *
+     * Returns the Astronomical Julian Day Number as a single numeric value.
+     */
+    // def jd_to_ajd(jd, fr, of=0) jd + fr - of - HALF_DAYS_IN_DAY (1/2) end
+
+
+    /**
+     * Convert an Ordinal Date to a Julian Day Number.
+     *
+     * +y+ and +d+ are the year and day-of-year to convert.
+     * +sg+ specifies the Day of Calendar Reform.
+     *
+     * Returns the corresponding Julian Day Number.
+     */
+    static long ordinal_to_jd(int y, int d, final int sg) {
+        return find_fdoy(y, sg) + d - 1;
+    }
+
+    /**
+     * Convert a Julian Day Number to an Ordinal Date.
+     *
+     * +jd+ is the Julian Day Number to convert.
+     * +sg+ specifies the Day of Calendar Reform.
+     *
+     * Returns the corresponding Ordinal Date as
+     * [year, day_of_year]
+     */
+    static int[] jd_to_ordinal(long jd, final double sg) {
+        int y = jd_to_civil(jd, sg)[0];
+        long j = find_fdoy(y, (int) sg);
+        return new int[] { y, (int) (jd - j + 1) }; // (y, doy)
+    }
+
+    static boolean valid_time_p(long h, long min, long s) { // MRI: c_valid_time_p
         if (h < 0) h += 24;
         if (min < 0) min += 60;
         if (s < 0) s += 60;
@@ -160,8 +199,26 @@ abstract class DateUtils {
 
     static Long find_ldom(int y, int m, final int sg) {
         Long j = null;
-        for (int d = 31; d > 0; d--) {
+        for (int d = 31; d >= 1; d--) {
             j = _valid_civil_p(y, m, d, sg);
+            if (j != null) break;
+        }
+        return j;
+    }
+
+    static Long find_fdoy(int y, final int sg) {
+        Long j = null;
+        for (int d = 1; d <= 31; d++) {
+            j = _valid_civil_p(y, 1, d, sg);
+            if (j != null) break;
+        }
+        return j;
+    }
+
+    static Long find_ldoy(int y, final int sg) {
+        Long j = null;
+        for (int d = 31; d >= 1; d--) {
+            j = _valid_civil_p(y, 12, d, sg);
             if (j != null) break;
         }
         return j;
@@ -178,6 +235,21 @@ abstract class DateUtils {
         long jd = civil_to_jd(y, m, d, sg);
         int[] y_m_d = jd_to_civil(jd, sg);
         if (y != y_m_d[0] || m != y_m_d[1] || d != y_m_d[2]) return null;
+        return jd;
+    }
+
+    static Long _valid_ordinal_p(int y, int d, final int sg) {
+        if (d < 0) {
+            Long j = find_ldoy(y, sg);
+            if (j == null) return null;
+            int[] ny_nd = jd_to_ordinal(j + d + 1, sg);
+            if (y != ny_nd[0]) return null;
+            d = ny_nd[1];
+        }
+
+        long jd = ordinal_to_jd(y, d, sg);
+        int[] y_d = jd_to_ordinal(jd, sg);
+        if (y != y_d[0] || d != y_d[1]) return null;
         return jd;
     }
 

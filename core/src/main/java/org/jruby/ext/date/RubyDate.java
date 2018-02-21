@@ -163,12 +163,16 @@ public class RubyDate extends RubyObject {
         this.dt = new DateTime(millis, chronology);
     }
 
-    RubyDate(ThreadContext context, IRubyObject ajd, Chronology chronology, int off) {
-        this(context, ajd, chronology, off, 0);
+    RubyDate(ThreadContext context, RubyClass klass, IRubyObject ajd, Chronology chronology, int off) {
+        this(context, klass, ajd, chronology, off, 0);
     }
 
-    private RubyDate(ThreadContext context, IRubyObject ajd, Chronology chronology, int off, int start) {
-        super(context.runtime, getDate(context.runtime));
+    private RubyDate(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, int start) {
+        this(context, klass, ajd, getChronology(context, start, off), off, start);
+    }
+
+    private RubyDate(ThreadContext context, RubyClass klass, IRubyObject ajd, Chronology chronology, int off, int start) {
+        super(context.runtime, klass);
 
         this.dt = new DateTime(initMillis(context, ajd), chronology);
         this.off = off; this.start = start;
@@ -274,14 +278,14 @@ public class RubyDate extends RubyObject {
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd) {
         if (ajd instanceof JavaProxy) { // backwards - compatibility with JRuby's date.rb
             if (self == getDateTime(context.runtime)) {
-                return new RubyDateTime(context.runtime, (DateTime) JavaUtil.unwrapJavaValue(ajd));
+                return new RubyDateTime(context.runtime, (RubyClass) self, (DateTime) JavaUtil.unwrapJavaValue(ajd));
             }
-            return new RubyDate(context.runtime, (DateTime) JavaUtil.unwrapJavaValue(ajd));
+            return new RubyDate(context.runtime, (RubyClass) self, (DateTime) JavaUtil.unwrapJavaValue(ajd));
         }
         if (self == getDateTime(context.runtime)) {
-            return new RubyDateTime(context, ajd, CHRONO_ITALY_UTC, ITALY);
+            return new RubyDateTime(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, ITALY);
         }
-        return new RubyDate(context, ajd, CHRONO_ITALY_UTC, ITALY);
+        return new RubyDate(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, ITALY);
     }
 
     /**
@@ -440,15 +444,15 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "valid_civil?", alias = "valid_date?", meta = true, required = 3, optional = 1)
     public static IRubyObject valid_civil_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final Long jd = validCivilImpl(context, args);
+        final int sg = args.length > 3 ? val2sg(context, args[3]) : ITALY;
+        final Long jd = validCivilImpl(args[0], args[1], args[2], sg);
         return jd == null ? context.fals : context.tru;
     }
 
-    private static Long validCivilImpl(ThreadContext context, IRubyObject[] args) {
-        final int sg = args.length > 3 ? val2sg(context, args[3]) : GREGORIAN;
-        final int y = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
-        final int m = getMonth(args[1]);
-        final int d = args[2].convertToInteger().getIntValue();
+    static Long validCivilImpl(IRubyObject year, IRubyObject month, IRubyObject day, final int sg) {
+        final int y = (sg > 0) ? getYear(year) : year.convertToInteger().getIntValue();
+        final int m = getMonth(month);
+        final int d = day.convertToInteger().getIntValue();
 
         return DateUtils._valid_civil_p(y, m, d, sg);
     }
@@ -459,9 +463,9 @@ public class RubyDate extends RubyObject {
     public static IRubyObject _valid_time_p(ThreadContext context, IRubyObject self,
                                             IRubyObject h, IRubyObject m, IRubyObject s) {
 
-        long hour = normIntValue(context, h, 24);
-        long min = normIntValue(context, m, 60);
-        long sec = normIntValue(context, s, 60);
+        long hour = normIntValue(h, 24);
+        long min = normIntValue(m, 60);
+        long sec = normIntValue(s, 60);
 
         if (valid_time_p(hour, min, sec)) {
             return timeToDayFraction(context, (int) hour, (int) min, (int) sec);
@@ -469,7 +473,7 @@ public class RubyDate extends RubyObject {
         return context.nil;
     }
 
-    private static long normIntValue(ThreadContext context, IRubyObject val, final int negOffset) {
+    private static long normIntValue(IRubyObject val, final int negOffset) {
         long v;
         if (val instanceof RubyFixnum) {
             v = ((RubyFixnum) val).getLongValue();
@@ -493,6 +497,50 @@ public class RubyDate extends RubyObject {
         return jd;
     }
 
+    @JRubyMethod(name = "ordinal", meta = true, optional = 3)
+    public static RubyDate ordinal(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        // ordinal(y=-4712, d=1, sg=ITALY)
+
+        final int len = args.length;
+
+        final int sg = len > 2 ? val2sg(context, args[2]) : ITALY;
+        IRubyObject year = (len > 0) ? args[0] : RubyFixnum.newFixnum(context.runtime, -4712);
+        IRubyObject day = (len > 1) ? args[1] : RubyFixnum.newFixnum(context.runtime, 1);
+
+        Long jd = validOrdinalImpl(year, day, sg);
+        if (jd == null) {
+            throw context.runtime.newArgumentError("invalid date");
+        }
+        return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd, 0, 0), 0, sg);
+    }
+
+    @JRubyMethod(name = "valid_ordinal?", meta = true, required = 2, optional = 1)
+    public static IRubyObject valid_ordinal_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        final int sg = args.length > 2 ? val2sg(context, args[2]) : ITALY;
+        final Long jd = validOrdinalImpl(args[0], args[1], sg);
+        return jd == null ? context.fals : context.tru;
+    }
+
+    static Long validOrdinalImpl(IRubyObject year, IRubyObject day, final int sg) {
+        final int y = year.convertToInteger().getIntValue();
+        int d = day.convertToInteger().getIntValue();
+        return DateUtils._valid_ordinal_p(y, d, sg);
+    }
+
+    @Deprecated // NOTE: should go away once no date.rb is using it
+    @JRubyMethod(name = "_valid_ordinal?", meta = true, required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    public static IRubyObject _valid_ordinal_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        final int sg = args.length > 2 ? val2sg(context, args[2]) : GREGORIAN;
+        final Long jd = validOrdinalImpl(args[0], args[1], sg);
+        return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
+    }
+
+    @Deprecated // NOTE: should go away once no date.rb is using it
+    @JRubyMethod(name = "_valid_ordinal?", required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    public IRubyObject _valid_ordinal_p(ThreadContext context, IRubyObject[] args) {
+        return RubyDate._valid_ordinal_p(context, null, args);
+    }
+
     /**
      # Create a new Date object representing today.
      #
@@ -513,15 +561,15 @@ public class RubyDate extends RubyObject {
     @Deprecated // NOTE: should go away once no date.rb is using it
     @JRubyMethod(name = "_valid_civil?", meta = true, required = 3, optional = 1, visibility = Visibility.PRIVATE)
     public static IRubyObject _valid_civil_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final Long jd = validCivilImpl(context, args);
+        final int sg = args.length > 3 ? val2sg(context, args[3]) : GREGORIAN;
+        final Long jd = validCivilImpl(args[0], args[1], args[2], sg);
         return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
     @JRubyMethod(name = "_valid_civil?", required = 3, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject _valid_civil_p(ThreadContext context, IRubyObject[] args) {
-        final Long jd = validCivilImpl(context, args);
-        return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
+        return RubyDate._valid_civil_p(context, null, args);
     }
 
     public DateTime getDateTime() { return dt; }
@@ -1041,13 +1089,6 @@ public class RubyDate extends RubyObject {
         });
     }
 
-    static IRubyObject day_to_sec(ThreadContext context, IRubyObject d) {
-        //if (safe_mul_p(d, DAY_IN_SECONDS)) {
-        //    return LONG2FIX(FIX2LONG(d) * DAY_IN_SECONDS);
-        //}
-        return RubyFixnum.newFixnum(context.runtime, DAY_IN_SECONDS).op_mul(context, d);
-    }
-
     private static final CachingCallSite zone_to_diff = new FunctionalCachingCallSite("zone_to_diff");
 
     static IRubyObject date_zone_to_diff(final ThreadContext context, RubyString str) {
@@ -1055,16 +1096,13 @@ public class RubyDate extends RubyObject {
         return zone_to_diff.call(context, klass, klass, str);
     }
 
-    private static IRubyObject fract_zone_to_diff(final ThreadContext context, RubyString str) {
-        // of = Rational(zone_to_diff(of) || 0, 86400)
-        final RubyClass klass = getDate(context.runtime);
-        IRubyObject offset = zone_to_diff.call(context, klass, klass, str);
-        if (offset == context.nil) offset = RubyFixnum.zero(context.runtime);
-        return RubyRational.newRationalCanonicalize(context, offset, RubyFixnum.newFixnum(context.runtime, DAY_IN_SECONDS));
-    }
-
     // def jd_to_ajd(jd, fr, of=0) jd + fr - of - Rational(1, 2) end
     private static double jd_to_ajd(long jd, int fr, int of) { return jd + fr - of - 0.5; }
+
+    static RubyNumeric jd_to_ajd(ThreadContext context, long jd, int fr, int of) {
+        final long num = ((jd + fr - of) * 2) - 1;
+        return (RubyNumeric) RubyRational.newRationalCanonicalize(context, num, 2);
+    }
 
     static Chronology getChronology(ThreadContext context, final int sg, final int off) {
         final DateTimeZone zone;

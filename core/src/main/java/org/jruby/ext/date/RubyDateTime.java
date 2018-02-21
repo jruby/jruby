@@ -99,8 +99,8 @@ public class RubyDateTime extends RubyDate {
         this.off = off; this.start = start;
     }
 
-    RubyDateTime(ThreadContext context, IRubyObject ajd, Chronology chronology, int off) {
-        super(context, ajd, chronology, off);
+    RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, Chronology chronology, int off) {
+        super(context, klass, ajd, chronology, off);
     }
 
     /**

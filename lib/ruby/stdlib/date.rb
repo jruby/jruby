@@ -321,14 +321,6 @@ class Date
       j
     end
 
-    def find_ldoy(y, sg) # :nodoc:
-      j = nil
-      31.downto(1) do |d|
-        break if j = _valid_civil?(y, 12, d, sg)
-      end
-      j
-    end
-
     def find_fdom(y, m, sg) # :nodoc:
       j = nil
       1.upto(31) do |d|
@@ -343,30 +335,6 @@ class Date
         break if j = _valid_civil?(y, m, d, sg)
       end
       j
-    end
-
-    # Convert an Ordinal Date to a Julian Day Number.
-    #
-    # +y+ and +d+ are the year and day-of-year to convert.
-    # +sg+ specifies the Day of Calendar Reform.
-    #
-    # Returns the corresponding Julian Day Number.
-    def ordinal_to_jd(y, d, sg=GREGORIAN) # :nodoc:
-      find_fdoy(y, sg) + d - 1
-    end
-
-    # Convert a Julian Day Number to an Ordinal Date.
-    #
-    # +jd+ is the Julian Day Number to convert.
-    # +sg+ specifies the Day of Calendar Reform.
-    #
-    # Returns the corresponding Ordinal Date as
-    # [year, day_of_year]
-    def jd_to_ordinal(jd, sg=GREGORIAN) # :nodoc:
-      y = jd_to_civil(jd, sg)[0]
-      j = find_fdoy(y, sg)
-      doy = jd - j + 1
-      return y, doy
     end
 
     # Convert a Civil Date to a Julian Day Number.
@@ -532,31 +500,6 @@ class Date
     # the adoption of the Gregorian Calendar (in Italy).
     # def jd_to_ld(jd) jd -  LD_EPOCH_IN_CJD end # :nodoc:
 
-    # Do the year +y+ and day-of-year +d+ make a valid Ordinal Date?
-    # Returns the corresponding Julian Day Number if they do, or
-    # nil if they don't.
-    #
-    # +d+ can be a negative number, in which case it counts backwards
-    # from the end of the year (-1 being the last day of the year).
-    # No year wraparound is performed, however, so valid values of
-    # +d+ are -365 .. -1, 1 .. 365 on a non-leap-year,
-    # -366 .. -1, 1 .. 366 on a leap year.
-    # A date falling in the period skipped in the Day of Calendar Reform
-    # adjustment is not valid.
-    #
-    # +sg+ specifies the Day of Calendar Reform.
-    def _valid_ordinal? (y, d, sg=GREGORIAN) # :nodoc:
-      if d < 0
-        return unless j = find_ldoy(y, sg)
-        ny, nd = jd_to_ordinal(j + d + 1, sg)
-        return unless ny == y
-        d = nd
-      end
-      jd = ordinal_to_jd(y, d, sg)
-      return unless [y, d] == jd_to_ordinal(jd, sg)
-      jd
-    end
-
     # Do year +y+, week-of-year +w+, and day-of-week +d+ make a
     # valid Commercial Date?  Returns the corresponding Julian
     # Day Number if they do, nil if they don't.
@@ -627,10 +570,6 @@ class Date
     !!_valid_jd?(jd, sg)
   end
 
-  def self.valid_ordinal? (y, d, sg=ITALY)
-    !!_valid_ordinal?(y, d, sg)
-  end
-
   def self.valid_commercial? (y, w, d, sg=ITALY)
     !!_valid_commercial?(y, w, d, sg)
   end
@@ -652,23 +591,6 @@ class Date
   # +sg+ specifies the Day of Calendar Reform.
   def self.jd(jd=0, sg=ITALY)
     jd = _valid_jd?(jd, sg)
-    new!(jd_to_ajd(jd, 0, 0), 0, sg)
-  end
-
-  # Create a new Date object from an Ordinal Date, specified
-  # by year +y+ and day-of-year +d+. +d+ can be negative,
-  # in which it counts backwards from the end of the year.
-  # No year wraparound is performed, however.  An invalid
-  # value for +d+ results in an ArgumentError being raised.
-  #
-  # +y+ defaults to -4712, and +d+ to 1; this is Julian Day
-  # Number day 0.
-  #
-  # +sg+ specifies the Day of Calendar Reform.
-  def self.ordinal(y=-4712, d=1, sg=ITALY)
-    unless jd = _valid_ordinal?(y, d, sg)
-      raise ArgumentError, 'invalid date'
-    end
     new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
 
