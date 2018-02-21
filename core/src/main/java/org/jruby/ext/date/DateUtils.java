@@ -108,6 +108,42 @@ abstract class DateUtils {
         return new int[] { y, (int) (jd - j + 1) }; // (y, doy)
     }
 
+    /**
+     # Convert a Commercial Date to a Julian Day Number.
+     #
+     # +y+, +w+, and +d+ are the (commercial) year, week of the year,
+     # and day of the week of the Commercial Date to convert.
+     # +sg+ specifies the Day of Calendar Reform.
+     */
+    static long commercial_to_jd(int y, int w, int d, final int sg) {
+        long j = find_fdoy(y, sg) + 3;
+        return (j - (((j - 1) + 1) % 7)) + 7 * (w - 1) + (d - 1);
+    }
+
+    /**
+     # Convert a Julian Day Number to a Commercial Date
+     #
+     # +jd+ is the Julian Day Number to convert.
+     # +sg+ specifies the Day of Calendar Reform.
+     #
+     # Returns the corresponding Commercial Date as
+     # [commercial_year, week_of_year, day_of_week]
+     */
+    static int[] jd_to_commercial(long jd, final int sg) {
+        int a = jd_to_civil(jd - 3, sg)[0];
+        final int y;
+        if (jd >= commercial_to_jd(a + 1, 1, 1, sg)) {
+            y = a + 1;
+        }
+        else {
+            y = a;
+        }
+        int w = 1 + (int) ((jd - commercial_to_jd(y, 1, 1, sg)) / 7);
+        int d = (int) ((jd + 1) % 7);
+        if (d == 0) d = 7;
+        return new int[] { y, w, d };
+    }
+
     static boolean valid_time_p(long h, long min, long s) { // MRI: c_valid_time_p
         if (h < 0) h += 24;
         if (min < 0) min += 60;
@@ -250,6 +286,20 @@ abstract class DateUtils {
         long jd = ordinal_to_jd(y, d, sg);
         int[] y_d = jd_to_ordinal(jd, sg);
         if (y != y_d[0] || d != y_d[1]) return null;
+        return jd;
+    }
+
+    static Long _valid_commercial_p(int y, int w, int d, final int sg) {
+        if (d < 0) d += 8;
+
+        if (w < 0) {
+            int[] ny_nw_nd = jd_to_commercial(commercial_to_jd(y + 1, 1, 1, sg) + w * 7, sg);
+            if (y != ny_nw_nd[0]) return null;
+            w = ny_nw_nd[1];
+        }
+        long jd = commercial_to_jd(y, w, d, sg);
+        int[] ny_nw_nd = jd_to_commercial(jd, sg);
+        if (y != ny_nw_nd[0] || w != ny_nw_nd[1] || d != ny_nw_nd[2]) return null;
         return jd;
     }
 

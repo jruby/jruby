@@ -386,34 +386,6 @@ class Date
       return y, m, dom
     end
 
-    # Convert a Commercial Date to a Julian Day Number.
-    #
-    # +y+, +w+, and +d+ are the (commercial) year, week of the year,
-    # and day of the week of the Commercial Date to convert.
-    # +sg+ specifies the Day of Calendar Reform.
-    def commercial_to_jd(y, w, d, sg=GREGORIAN) # :nodoc:
-      j = find_fdoy(y, sg) + 3
-      (j - (((j - 1) + 1) % 7)) +
-        7 * (w - 1) +
-        (d - 1)
-    end
-
-    # Convert a Julian Day Number to a Commercial Date
-    #
-    # +jd+ is the Julian Day Number to convert.
-    # +sg+ specifies the Day of Calendar Reform.
-    #
-    # Returns the corresponding Commercial Date as
-    # [commercial_year, week_of_year, day_of_week]
-    def jd_to_commercial(jd, sg=GREGORIAN) # :nodoc:
-      a = jd_to_civil(jd - 3, sg)[0]
-      y = if jd >= commercial_to_jd(a + 1, 1, 1, sg) then a + 1 else a end
-      w = 1 + ((jd - commercial_to_jd(y, 1, 1, sg)) / 7).floor
-      d = (jd + 1) % 7
-      d = 7 if d == 0
-      return y, w, d
-    end
-
     def weeknum_to_jd(y, w, d, f=0, sg=GREGORIAN) # :nodoc:
       a = find_fdoy(y, sg) + 6
       (a - ((a - f) + 1) % 7 - 7) + 7 * w + d
@@ -500,35 +472,6 @@ class Date
     # the adoption of the Gregorian Calendar (in Italy).
     # def jd_to_ld(jd) jd -  LD_EPOCH_IN_CJD end # :nodoc:
 
-    # Do year +y+, week-of-year +w+, and day-of-week +d+ make a
-    # valid Commercial Date?  Returns the corresponding Julian
-    # Day Number if they do, nil if they don't.
-    #
-    # Monday is day-of-week 1; Sunday is day-of-week 7.
-    #
-    # +w+ and +d+ can be negative, in which case they count
-    # backwards from the end of the year and the end of the
-    # week respectively.  No wraparound is performed, however,
-    # and invalid values cause an ArgumentError to be raised.
-    # A date falling in the period skipped in the Day of Calendar
-    # Reform adjustment is not valid.
-    #
-    # +sg+ specifies the Day of Calendar Reform.
-    def _valid_commercial? (y, w, d, sg=GREGORIAN) # :nodoc:
-      if d < 0
-        d += 8
-      end
-      if w < 0
-        ny, nw, nd =
-          jd_to_commercial(commercial_to_jd(y + 1, 1, 1, sg) + w * 7, sg)
-        return unless ny == y
-        w = nw
-      end
-      jd = commercial_to_jd(y, w, d, sg)
-      return unless [y, w, d] == jd_to_commercial(jd, sg)
-      jd
-    end
-
     def _valid_weeknum? (y, w, d, f, sg=GREGORIAN) # :nodoc:
       if d < 0
         d += 7
@@ -570,10 +513,6 @@ class Date
     !!_valid_jd?(jd, sg)
   end
 
-  def self.valid_commercial? (y, w, d, sg=ITALY)
-    !!_valid_commercial?(y, w, d, sg)
-  end
-
   def self.valid_weeknum? (y, w, d, f, sg=ITALY) # :nodoc:
     !!_valid_weeknum?(y, w, d, f, sg)
   end
@@ -591,27 +530,6 @@ class Date
   # +sg+ specifies the Day of Calendar Reform.
   def self.jd(jd=0, sg=ITALY)
     jd = _valid_jd?(jd, sg)
-    new!(jd_to_ajd(jd, 0, 0), 0, sg)
-  end
-
-  # Create a new Date object for the Commercial Date specified by
-  # year +y+, week-of-year +w+, and day-of-week +d+.
-  #
-  # Monday is day-of-week 1; Sunday is day-of-week 7.
-  #
-  # +w+ and +d+ can be negative, in which case they count
-  # backwards from the end of the year and the end of the
-  # week respectively.  No wraparound is performed, however,
-  # and invalid values cause an ArgumentError to be raised.
-  #
-  # +y+ defaults to -4712, +w+ to 1, and +d+ to 1; this is
-  # Julian Day Number day 0.
-  #
-  # +sg+ specifies the Day of Calendar Reform.
-  def self.commercial(y=-4712, w=1, d=1, sg=ITALY)
-    unless jd = _valid_commercial?(y, w, d, sg)
-      raise ArgumentError, 'invalid date'
-    end
     new!(jd_to_ajd(jd, 0, 0), 0, sg)
   end
 

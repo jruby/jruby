@@ -541,6 +541,46 @@ public class RubyDate extends RubyObject {
         return RubyDate._valid_ordinal_p(context, null, args);
     }
 
+    @JRubyMethod(name = "commercial", meta = true, optional = 4)
+    public static RubyDate commercial(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        // commercial(y=-4712, w=1, d=1, sg=ITALY)
+
+        final int len = args.length;
+
+        final int sg = len > 3 ? val2sg(context, args[3]) : ITALY;
+        IRubyObject year = (len > 0) ? args[0] : RubyFixnum.newFixnum(context.runtime, -4712);
+        IRubyObject week = (len > 1) ? args[1] : RubyFixnum.newFixnum(context.runtime, 1);
+        IRubyObject day = (len > 2) ? args[2] : RubyFixnum.newFixnum(context.runtime, 1);
+
+        Long jd = validCommercialImpl(year, week, day, sg);
+        if (jd == null) {
+            throw context.runtime.newArgumentError("invalid date");
+        }
+        return new RubyDate(context, (RubyClass) self, jd_to_ajd(context, jd, 0, 0), 0, sg);
+    }
+
+    @JRubyMethod(name = "valid_commercial?", meta = true, required = 3, optional = 1)
+    public static IRubyObject valid_commercial_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        final int sg = args.length > 3 ? val2sg(context, args[3]) : ITALY;
+        final Long jd = validCommercialImpl(args[0], args[1], args[2], sg);
+        return jd == null ? context.fals : context.tru;
+    }
+
+    static Long validCommercialImpl(IRubyObject year, IRubyObject week, IRubyObject day, final int sg) {
+        final int y = year.convertToInteger().getIntValue();
+        int w = week.convertToInteger().getIntValue();
+        int d = day.convertToInteger().getIntValue();
+        return DateUtils._valid_commercial_p(y, w, d, sg);
+    }
+
+    @Deprecated // NOTE: should go away once no date.rb is using it
+    @JRubyMethod(name = "_valid_commercial?", meta = true, required = 3, optional = 1, visibility = Visibility.PRIVATE)
+    public static IRubyObject _valid_commercial_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        final int sg = args.length > 3 ? val2sg(context, args[3]) : GREGORIAN;
+        final Long jd = validCommercialImpl(args[0], args[1], args[2], sg);
+        return jd == null ? context.nil : RubyFixnum.newFixnum(context.runtime, jd);
+    }
+
     /**
      # Create a new Date object representing today.
      #
