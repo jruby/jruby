@@ -201,7 +201,7 @@ public class RubyDate extends RubyObject {
     }
 
     private void initialize(final ThreadContext context, IRubyObject arg, IRubyObject of, final int start) {
-        final int off = of.convertToInteger().getIntValue();
+        final int off = val2off(context, of);
 
         this.off = off; this.start = start;
 
