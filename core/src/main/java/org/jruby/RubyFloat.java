@@ -283,6 +283,12 @@ public class RubyFloat extends RubyNumeric {
      *
      */
     @JRubyMethod(name = "-@")
+    @Override
+    public IRubyObject op_uminus(ThreadContext context) {
+        return RubyFloat.newFloat(context.runtime, -value);
+    }
+
+    @Deprecated
     public IRubyObject op_uminus() {
         return RubyFloat.newFloat(getRuntime(), -value);
     }
@@ -291,6 +297,7 @@ public class RubyFloat extends RubyNumeric {
      *
      */
     @JRubyMethod(name = "+", required = 1)
+    @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
