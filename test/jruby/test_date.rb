@@ -246,6 +246,101 @@ class TestDate < Test::Unit::TestCase
   def test_jd
     assert Date.jd.is_a?(Date)
     assert DateTime.jd.is_a?(DateTime)
+
+    d = DateTime.jd(0, 0,0,0, '+0900')
+    assert_equal([-4712, 1, 1, 0, 0, 0, 9.to_r/24], [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset])
+  end
+
+  def test_ordinal
+    d = Date.ordinal
+    dt = DateTime.ordinal
+    assert_equal [-4712, 1, 1], [ d.year, d.mon, d.mday ]
+    assert_equal [-4712, 1, 1], [ dt.year, dt.mon, dt.mday ]
+    assert_equal [0, 0, 0], [ dt.hour, dt.min, dt.sec ]
+    assert dt.is_a?(DateTime)
+
+    assert_equal Date.ordinal(-4712, 1), d
+    assert_equal DateTime.ordinal(-4712, 1), dt
+
+    d = Date.ordinal(2500, -10)
+    assert_equal [2500, 12, 22], [ d.year, d.mon, d.mday ]
+  end
+
+  def test__plus
+    d = Date.new(2000,2,29) + (-1)
+    assert_equal [2000, 2, 28], [d.year, d.mon, d.mday]
+    d = Date.new(2000,2,29) + 1.1
+    assert_equal [2000, 3, 1], [d.year, d.mon, d.mday]
+    d = Date.new(1999,12,31) + Rational(4, 3)
+    assert_equal [2000, 1, 1], [d.year, d.mon, d.mday]
+    d = Date.new(1999,12,31) + Rational(3, 4)
+    assert_equal [1999, 12, 31], [d.year, d.mon, d.mday]
+
+    d = DateTime.new(2000,2,29) + Rational(1, 2)
+    assert_equal DateTime, d.class
+    assert_equal [2000, 2, 29, 12, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+  end
+
+  def test_prev_next
+    d = DateTime.new(2000, 3, 1).prev_day(2)
+    assert_equal [2000, 2, 28, 00, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    #d = DateTime.new(2000,3,1).prev_day(1.to_r/2)
+    #assert_equal [2000, 2, 29, 12, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = Date.new(2000,3,1).prev_day(1.to_r/2)
+    assert_equal [2000, 2, 29], [d.year, d.mon, d.mday]
+
+    d = Date.new(2000,3,1).prev_day(Rational(8, 9))
+    assert_equal [2000, 2, 29], [d.year, d.mon, d.mday]
+
+    d = Date.new(2000,3,1).prev_day(Rational(1, 10))
+    assert_equal [2000, 2, 29], [d.year, d.mon, d.mday]
+
+    d = Date.new(2000,3,1).prev_day(Rational(1, 1))
+    assert_equal [2000, 2, 29], [d.year, d.mon, d.mday]
+
+    d = Date.new(2000,3,1).prev_day(Rational(0, 1))
+    assert_equal [2000, 3, 1], [d.year, d.mon, d.mday]
+
+    #d = DateTime.new(2000,3,1).next_day(0.5)
+    #assert_equal [2000, 3, 1, 12, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = Date.new(2000,3,1).next_day(0.7)
+    assert_equal [2000, 3, 1], [d.year, d.mon, d.mday]
+
+    d = Date.new(2000,3,1).next_day(1.7)
+    assert_equal [2000, 3, 2], [d.year, d.mon, d.mday]
+
+    d = DateTime.new(2000,3,1).next_month(1)
+    assert_equal [2000, 4, 1, 0, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = DateTime.new(2000,3,1).next_month(1.5)
+    assert_equal [2000, 4, 1, 0, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = Date.new(2000,3,1).prev_month(Rational(1, 4))
+    assert_equal [2000, 2, 1], [d.year, d.mon, d.mday]
+
+    d = Date.new(2000,3,1).next_month(1.9)
+    assert_equal [2000, 4, 1], [d.year, d.mon, d.mday]
+
+    d = DateTime.new(2000,3,1).prev_month(Rational(1, 3))
+    assert_equal [2000, 2, 1, 0, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = DateTime.new(2000,3,1).prev_month(Rational(4, 3))
+    assert_equal [2000, 1, 1, 0, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = Date.new(2000, 3, 1).next_year(-1)
+    assert_equal [1999, 3, 1], [d.year, d.mon, d.mday]
+
+    d = Date.new(2000, 3, 1).next_year(Rational(-1, 2))
+    assert_equal [1999, 9, 1], [d.year, d.mon, d.mday]
+
+    d = Date.new(2000, 3, 1).next_year(-1.9)
+    assert_equal [1998, 4, 1], [d.year, d.mon, d.mday]
+
+    d = Date.new(2000, 3, 1).prev_year(+1.5)
+    assert_equal [1998, 9, 1], [d.year, d.mon, d.mday]
   end
 
   def test_julian

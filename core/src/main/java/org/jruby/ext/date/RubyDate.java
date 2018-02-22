@@ -1097,8 +1097,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject next_day(ThreadContext context, IRubyObject n) {
-        int days = n.convertToInteger().getIntValue();
-        return newInstance(context, dt.plusDays(+days), off, start);
+        return newInstance(context, dt.plusDays(+simpleIntDiff(n)), off, start);
     }
 
     @JRubyMethod
@@ -1108,8 +1107,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject prev_day(ThreadContext context, IRubyObject n) {
-        int days = n.convertToInteger().getIntValue();
-        return newInstance(context, dt.plusDays(-days), off, start);
+        return newInstance(context, dt.plusDays(-simpleIntDiff(n)), off, start);
     }
 
     @JRubyMethod
@@ -1119,8 +1117,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject next_month(ThreadContext context, IRubyObject n) {
-        int months = n.convertToInteger().getIntValue();
-        return newInstance(context, dt.plusMonths(+months), off, start);
+        return newInstance(context, dt.plusMonths(+simpleIntDiff(n)), off, start);
     }
 
     @JRubyMethod
@@ -1130,8 +1127,17 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject prev_month(ThreadContext context, IRubyObject n) {
-        int months = n.convertToInteger().getIntValue();
-        return newInstance(context, dt.plusMonths(-months), off, start);
+        return newInstance(context, dt.plusMonths(-simpleIntDiff(n)), off, start);
+    }
+
+    private static int simpleIntDiff(IRubyObject n) {
+        final int days = n.convertToInteger().getIntValue();
+        if (n instanceof RubyRational) {
+            if (((RubyRational) n).getDenominator().getLongValue() != 1) {
+                return days + 1; // MRI rulez: 1/2 -> 1 (but 0.5 -> 0)
+            }
+        }
+        return days;
     }
 
     @JRubyMethod(name = ">>")
@@ -1151,8 +1157,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject next_year(ThreadContext context, IRubyObject n) {
-        int years = n.convertToInteger().getIntValue();
-        return newInstance(context, dt.plusYears(+years), off, start);
+        return newInstance(context, dt.plusMonths(+timesIntDiff(context, n, 12)), off, start);
     }
 
     @JRubyMethod
@@ -1162,8 +1167,12 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject prev_year(ThreadContext context, IRubyObject n) {
-        int years = n.convertToInteger().getIntValue();
-        return newInstance(context, dt.plusYears(-years), off, start);
+        return newInstance(context, dt.plusMonths(-timesIntDiff(context, n, 12)), off, start);
+    }
+
+    private static int timesIntDiff(final ThreadContext context, IRubyObject n, final int times) {
+        IRubyObject mul = RubyFixnum.newFixnum(context.runtime, times).op_mul(context, n);
+        return ((RubyNumeric) mul).round(context).convertToInteger().getIntValue();
     }
 
     @JRubyMethod // [ ajd, @of, @sg ]
