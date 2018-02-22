@@ -17,7 +17,7 @@ jruby/test_comparable
 jruby/test_core_arities
 jruby/test_custom_enumerable
 jruby/test_cvars_in_odd_scopes
-jruby/test_date_joda_time
+jruby/test_date
 jruby/test_defined
 jruby/test_default_constants
 jruby/test_delegated_array_equals
