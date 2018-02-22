@@ -1743,50 +1743,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().finvoke(context, this, name, args, block);
     }
 
-    @JRubyMethod(name = "instance_eval",
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
-    public IRubyObject instance_eval19(ThreadContext context, Block block) {
-        return specificEval(context, getInstanceEvalClass(), block, EvalType.INSTANCE_EVAL);
-    }
-    @JRubyMethod(name = "instance_eval",
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
-    public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, Block block) {
-        return specificEval(context, getInstanceEvalClass(), arg0, block, EvalType.INSTANCE_EVAL);
-    }
-    @JRubyMethod(name = "instance_eval",
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
-    public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return specificEval(context, getInstanceEvalClass(), arg0, arg1, block, EvalType.INSTANCE_EVAL);
-    }
-    @JRubyMethod(name = "instance_eval",
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
-    public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
-    }
-
-    @JRubyMethod(name = "instance_exec", optional = 3, rest = true,
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
-    public IRubyObject instance_exec19(ThreadContext context, IRubyObject[] args, Block block) {
-        if (!block.isGiven()) {
-            throw context.runtime.newLocalJumpErrorNoBlock();
-        }
-
-        RubyModule klazz;
-        if (isImmediate()) {
-            // Ruby uses Qnil here, we use "dummy" because we need a class
-            klazz = context.runtime.getDummy();
-        } else {
-            klazz = getSingletonClass();
-        }
-
-        return yieldUnder(context, klazz, args, block, EvalType.INSTANCE_EVAL);
-    }
-
     /**
      * Will yield to the specific block changing the self to be the
      * current object instead of the self that is part of the frame
@@ -2631,16 +2587,46 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k = Klass.new
      *     k.instance_eval { @secret }   #=> 99
      */
+
+    @JRubyMethod(name = "instance_eval",
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, Block block) {
         return specificEval(context, getInstanceEvalClass(), block, EvalType.INSTANCE_EVAL);
     }
+    @JRubyMethod(name = "instance_eval",
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, block, EvalType.INSTANCE_EVAL);
     }
+    @JRubyMethod(name = "instance_eval",
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, block, EvalType.INSTANCE_EVAL);
     }
+    @JRubyMethod(name = "instance_eval",
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
+    }
+
+    @Deprecated
+    public IRubyObject instance_eval19(ThreadContext context, Block block) {
+        return specificEval(context, getInstanceEvalClass(), block, EvalType.INSTANCE_EVAL);
+    }
+    @Deprecated
+    public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, Block block) {
+        return specificEval(context, getInstanceEvalClass(), arg0, block, EvalType.INSTANCE_EVAL);
+    }
+    @Deprecated
+    public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return specificEval(context, getInstanceEvalClass(), arg0, arg1, block, EvalType.INSTANCE_EVAL);
+    }
+    @Deprecated
+    public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
     }
 
@@ -2662,9 +2648,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k = Klass.new
      *     k.instance_exec(5) {|x| @secret+x }   #=> 104
      */
+    @JRubyMethod(name = "instance_exec", optional = 3, rest = true,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
-            throw context.runtime.newArgumentError("block not supplied");
+            throw context.runtime.newLocalJumpErrorNoBlock();
         }
 
         RubyModule klazz;
@@ -2676,6 +2665,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         return yieldUnder(context, klazz, args, block, EvalType.INSTANCE_EVAL);
+    }
+
+    @Deprecated
+    public IRubyObject instance_exec19(ThreadContext context, IRubyObject[] args, Block block) {
+        return instance_exec(context, args, block);
     }
 
     /** rb_obj_extend
