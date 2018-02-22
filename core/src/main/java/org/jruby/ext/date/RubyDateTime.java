@@ -104,8 +104,21 @@ public class RubyDateTime extends RubyDate {
         this.off = off; this.start = start;
     }
 
+    RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, int start, int subMillisNum, int subMillisDen) {
+        super(runtime, klass);
+
+        this.dt = dt;
+        this.off = off; this.start = start;
+        this.subMillisNum = subMillisNum; this.subMillisDen = subMillisDen;
+    }
+
     RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, Chronology chronology, int off) {
         super(context, klass, ajd, chronology, off);
+    }
+
+    @Override
+    RubyDate newInstance(final ThreadContext context, final DateTime dt, int off, int start, int subNum, int subDen) {
+        return new RubyDateTime(context.runtime, getMetaClass(), dt, off, start, subNum, subDen);
     }
 
     /**
