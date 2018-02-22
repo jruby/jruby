@@ -1383,6 +1383,22 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return RubyRational.newRationalRaw(runtime, this, one(runtime));
     }
 
+    @Override
+    public IRubyObject remainder(ThreadContext context, IRubyObject y) {
+        RubyFixnum x = this;
+        JavaSites.FixnumSites sites = sites(context);
+        IRubyObject z = sites.op_mod.call(context, this, this, y);
+
+        if ((!Helpers.rbEqual(context, z, RubyFixnum.zero(context.runtime), sites.op_equal).isTrue()) &&
+                ((x.isNegative() &&
+                        ((RubyInteger) y).isPositive()) ||
+                        (x.isPositive() &&
+                                ((RubyInteger) y).isNegative()))) {
+            return sites.op_minus.call(context, z, z, y);
+        }
+        return z;
+    }
+
     private static JavaSites.FixnumSites sites(ThreadContext context) {
         return context.sites.Fixnum;
     }

@@ -236,6 +236,7 @@ public class JavaSites {
         public final CheckedSites checked_op_and = new CheckedSites("&");
         public final CheckedSites checked_op_or = new CheckedSites("|");
         public final CheckedSites checked_op_xor = new CheckedSites("^");
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
     }
 
     public static class BignumSites {
@@ -339,6 +340,7 @@ public class JavaSites {
 
     public static class HelpersSites {
         public final CallSite hash = new FunctionalCachingCallSite("hash");
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
 
         public final ThreadContext.RecursiveFunctionEx<Ruby> recursive_hash = new ThreadContext.RecursiveFunctionEx<Ruby>() {
             public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
