@@ -530,11 +530,10 @@ public class RubyRational extends RubyNumeric {
         return RubyRational.newRationalNoReduce(context, metaClass, newNum, newDen);
     }
     
-    /** nurat_add
-     * 
-     */
+    /** nurat_add */
     @JRubyMethod(name = "+")
-    public IRubyObject op_add(ThreadContext context, IRubyObject other) {
+    @Override
+    public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyInteger) {
             return f_addsub(context, getMetaClass(), num, den, (RubyInteger) other, RubyFixnum.one(context.runtime), true);
         }
@@ -542,20 +541,21 @@ public class RubyRational extends RubyNumeric {
             return f_add(context, f_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
-            return op_add(context, (RubyRational) other);
-        }            
+            return op_plus(context, (RubyRational) other);
+        }
         return coerceBin(context, sites(context).op_plus, other);
     }
 
-    public final RubyNumeric op_add(ThreadContext context, RubyRational other) {
+    public final RubyNumeric op_plus(ThreadContext context, RubyRational other) {
         return f_addsub(context, getMetaClass(), num, den, other.num, other.den, true);
     }
 
-    /** nurat_sub
-     * 
-     */
+    @Deprecated
+    public IRubyObject op_add(ThreadContext context, IRubyObject other) { return op_plus(context, other); }
+
+    /** nurat_sub */
     @JRubyMethod(name = "-")
-    public IRubyObject op_sub(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyInteger) {
             return f_addsub(context, getMetaClass(), num, den, (RubyInteger) other, RubyFixnum.one(context.runtime), false);
         }
@@ -563,14 +563,17 @@ public class RubyRational extends RubyNumeric {
             return f_sub(context, f_to_f(context, this), other);
         }
         if (other instanceof RubyRational) {
-            return op_sub(context, (RubyRational) other);
+            return op_minus(context, (RubyRational) other);
         }
         return coerceBin(context, sites(context).op_minus, other);
     }
 
-    public final RubyNumeric op_sub(ThreadContext context, RubyRational other) {
+    public final RubyNumeric op_minus(ThreadContext context, RubyRational other) {
         return f_addsub(context, getMetaClass(), num, den, other.num, other.den, false);
     }
+
+    @Deprecated
+    public IRubyObject op_sub(ThreadContext context, IRubyObject other) { return op_minus(context, other); }
 
     /** f_muldiv
      * 
