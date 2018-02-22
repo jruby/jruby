@@ -30,7 +30,6 @@ package org.jruby.anno;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.util.CodegenUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -39,8 +38,10 @@ public class JavaMethodDescriptor extends MethodDescriptor<Method> {
     public final Class[] parameters;
     public final Class returnClass;
     public final Class declaringClass;
-    public final String signature;
-    public final Class[] argumentTypes;
+    @Deprecated // no longer used
+    public String signature;
+    @Deprecated // initialized on demand
+    public Class[] argumentTypes;
 
     public JavaMethodDescriptor(Method method) {
         super(method);
@@ -48,13 +49,17 @@ public class JavaMethodDescriptor extends MethodDescriptor<Method> {
         declaringClass = method.getDeclaringClass();
         parameters = method.getParameterTypes();
         returnClass = method.getReturnType();
+    }
 
-        int start = (hasContext ? 1 : 0) + (isStatic ? 1 : 0);
-        int end = parameters.length - (hasBlock ? 1 : 0);
-        argumentTypes = new Class[end - start];
-        System.arraycopy(parameters, start, argumentTypes, 0, end - start);
-
-        signature = CodegenUtils.sig(method.getReturnType(), method.getParameterTypes());
+    public final Class[] getArgumentTypes() {
+        if (argumentTypes == null) {
+            int start = (hasContext ? 1 : 0) + (isStatic ? 1 : 0);
+            int end = parameters.length - (hasBlock ? 1 : 0);
+            Class[] argumentTypes = new Class[end - start];
+            System.arraycopy(parameters, start, argumentTypes, 0, end - start);
+            return this.argumentTypes = argumentTypes;
+        }
+        return argumentTypes;
     }
 
     public Class getDeclaringClass() {

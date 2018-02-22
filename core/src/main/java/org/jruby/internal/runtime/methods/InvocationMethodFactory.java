@@ -198,7 +198,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs, String name) {
         JavaMethodDescriptor desc1 = descs.get(0);
-        final JRubyMethod anno = desc1.anno;
         final String javaMethodName = desc1.name;
 
         if (DEBUG) LOG.debug("Binding multiple: " + desc1.declaringClassName + '.' + javaMethodName);
@@ -217,10 +216,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     javaMethodName,
                     desc1.isStatic,
                     desc1.anno.notImplemented(),
-                    desc1.getDeclaringClass(),
+                    desc1.declaringClass,
                     desc1.name,
-                    desc1.getReturnClass(),
-                    desc1.getParameterClasses());
+                    desc1.returnClass,
+                    desc1.parameters);
             return ic;
         } catch(Exception e) {
             LOG.error(e);
@@ -237,7 +236,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public Class getAnnotatedMethodClass(List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
 
-        if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
+        if (!Modifier.isPublic(desc1.declaringClass.getModifiers())) {
             LOG.warn("binding non-public class {} reflected handles won't work", desc1.declaringClassName);
         }
 
@@ -262,11 +261,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         Class superclass = determineSuperclass(info);
 
-        Class c = tryClass(generatedClassName, desc1.getDeclaringClass(), superclass);
+        Class c = tryClass(generatedClassName, desc1.declaringClass, superclass);
         if (c == null) {
             synchronized (syncObject) {
                 // try again
-                c = tryClass(generatedClassName, desc1.getDeclaringClass(), superclass);
+                c = tryClass(generatedClassName, desc1.declaringClass, superclass);
                 if (c == null) {
                     if (DEBUG) LOG.debug("Generating " + generatedClassName + ", min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
 
@@ -332,10 +331,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     javaMethodName,
                     desc.isStatic,
                     desc.anno.notImplemented(),
-                    desc.getDeclaringClass(),
+                    desc.declaringClass,
                     desc.name,
-                    desc.getReturnClass(),
-                    desc.getParameterClasses());
+                    desc.returnClass,
+                    desc.parameters);
             return ic;
         } catch(Exception e) {
             LOG.error(e);
@@ -536,6 +535,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private static void loadArguments(SkinnyMethodAdapter mv, JavaMethodDescriptor desc, int specificArity) {
+        Class[] argumentTypes;
         switch (specificArity) {
         default:
         case -1:
@@ -545,16 +545,19 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // no args
             break;
         case 1:
-            loadArgumentWithCast(mv, 1, desc.argumentTypes[0]);
+            argumentTypes = desc.getArgumentTypes();
+            loadArgumentWithCast(mv, 1, argumentTypes[0]);
             break;
         case 2:
-            loadArgumentWithCast(mv, 1, desc.argumentTypes[0]);
-            loadArgumentWithCast(mv, 2, desc.argumentTypes[1]);
+            argumentTypes = desc.getArgumentTypes();
+            loadArgumentWithCast(mv, 1, argumentTypes[0]);
+            loadArgumentWithCast(mv, 2, argumentTypes[1]);
             break;
         case 3:
-            loadArgumentWithCast(mv, 1, desc.argumentTypes[0]);
-            loadArgumentWithCast(mv, 2, desc.argumentTypes[1]);
-            loadArgumentWithCast(mv, 3, desc.argumentTypes[2]);
+            argumentTypes = desc.getArgumentTypes();
+            loadArgumentWithCast(mv, 1, argumentTypes[0]);
+            loadArgumentWithCast(mv, 2, argumentTypes[1]);
+            loadArgumentWithCast(mv, 3, argumentTypes[2]);
             break;
         }
     }
@@ -765,14 +768,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             loadBlock(method, specificArity, block);
 
             if (Modifier.isStatic(desc.modifiers)) {
-                // static invocation
-                method.invokestatic(typePath, javaMethodName, desc.signature);
+                method.invokestatic(typePath, javaMethodName, sig(desc.returnClass, desc.parameters));
             } else {
-                // virtual invocation
-                method.invokevirtual(typePath, javaMethodName, desc.signature);
+                method.invokevirtual(typePath, javaMethodName, sig(desc.returnClass, desc.parameters));
             }
 
-            if (desc.getReturnClass() == void.class) {
+            if (desc.returnClass == void.class) {
                 // void return type, so we need to load a nil for returning below
                 method.aload(THREADCONTEXT_INDEX);
                 method.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
