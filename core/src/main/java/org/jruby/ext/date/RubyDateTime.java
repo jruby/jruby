@@ -89,15 +89,11 @@ public class RubyDateTime extends RubyDate {
         super(runtime, getDateTime(runtime), new DateTime(millis, chronology));
     }
 
-    RubyDateTime(Ruby runtime, DateTime dt, int off, int start) {
-        this(runtime, getDateTime(runtime), dt, off, start);
-    }
-
     private RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, int start) {
         super(context, klass, ajd, off, start);
     }
 
-    private RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, int start) {
+    RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, int start) {
         super(runtime, klass);
 
         this.dt = dt;
@@ -142,22 +138,22 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDateTime civil(ThreadContext context, IRubyObject self) {
-        return new RubyDateTime(context.runtime, defaultDateTime);
+        return new RubyDateTime(context.runtime, (RubyClass) self, defaultDateTime);
     }
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject year) {
-        return new RubyDateTime(context.runtime, civilImpl(context, year));
+        return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year));
     }
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month) {
-        return new RubyDateTime(context.runtime, civilImpl(context, year, month));
+        return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year, month));
     }
 
     //@JRubyMethod(name = "civil", alias = "new", meta = true)
     //public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month, IRubyObject mday) {
-    //    return new RubyDateTime(context.runtime, civilImpl(context, year, month, mday));
+    //    return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year, month, mday));
     //}
 
     @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 8)
@@ -352,9 +348,9 @@ public class RubyDateTime extends RubyDate {
     public static RubyDateTime now(ThreadContext context, IRubyObject self) { // sg=ITALY
         final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
         if (zone == DateTimeZone.UTC) {
-            return new RubyDateTime(context.runtime, new DateTime(CHRONO_ITALY_UTC));
+            return new RubyDateTime(context.runtime, (RubyClass) self, new DateTime(CHRONO_ITALY_UTC));
         }
-        return new RubyDateTime(context.runtime, new DateTime(GJChronology.getInstance(zone)));
+        return new RubyDateTime(context.runtime, (RubyClass) self, new DateTime(GJChronology.getInstance(zone)));
     }
 
     @JRubyMethod(meta = true)
@@ -381,9 +377,9 @@ public class RubyDateTime extends RubyDate {
         return newInstance(context, this.dt.plusDays(days).plusSeconds((int) (seconds % DAY_IN_SECONDS)), off, start);
     }
 
-    @JRubyMethod // Date.civil(year, mon, mday, @sg) TODO dble-check
+    @JRubyMethod // Date.civil(year, mon, mday, @sg)
     public RubyDate to_date(ThreadContext context) {
-        return new RubyDate(context.runtime, dt.withTimeAtStartOfDay(), 0, start);
+        return new RubyDate(context.runtime, getDate(context.runtime), dt.withTimeAtStartOfDay(), 0, start);
     }
 
     @JRubyMethod // Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400.0))

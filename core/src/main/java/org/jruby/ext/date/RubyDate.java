@@ -142,8 +142,8 @@ public class RubyDate extends RubyObject {
         this(runtime, getDate(runtime), dt);
     }
 
-    RubyDate(Ruby runtime, DateTime dt, int off, int start) {
-        super(runtime, getDate(runtime));
+    RubyDate(Ruby runtime, RubyClass klass, DateTime dt, int off, int start) {
+        super(runtime, klass);
 
         this.dt = dt;
         this.off = off; this.start = start;
@@ -384,7 +384,7 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month, IRubyObject mday) {
         // return civil(context, self, new IRubyObject[] { year, month, mday, RubyFixnum.newFixnum(context.runtime, ITALY) });
-        return new RubyDate(context.runtime, civilImpl(context, year, month, mday));
+        return new RubyDate(context.runtime, (RubyClass) self, civilImpl(context, year, month, mday));
     }
 
     static DateTime civilImpl(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject mday) {
@@ -406,7 +406,7 @@ public class RubyDate extends RubyObject {
         final int m = getMonth(args[1]);
         final int d = args[2].convertToInteger().getIntValue();
 
-        RubyDate date = new RubyDate(context.runtime, civilDate(context, y, m, d, getChronology(context, sg, 0)));
+        RubyDate date = new RubyDate(context.runtime, (RubyClass) self, civilDate(context, y, m, d, getChronology(context, sg, 0)));
         date.start = sg;
         return date;
     }
@@ -642,13 +642,13 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self) { // sg=ITALY
-        return new RubyDate(context.runtime, new DateTime(CHRONO_ITALY_UTC).withTimeAtStartOfDay());
+        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(CHRONO_ITALY_UTC).withTimeAtStartOfDay());
     }
 
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final int start = val2sg(context, sg);
-        return new RubyDate(context.runtime, new DateTime(getChronology(context, start, 0)).withTimeAtStartOfDay(), 0, start);
+        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(getChronology(context, start, 0)).withTimeAtStartOfDay(), 0, start);
     }
 
     @Deprecated // NOTE: should go away once no date.rb is using it
@@ -1353,7 +1353,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public RubyDateTime to_datetime(ThreadContext context) {
-        return new RubyDateTime(context.runtime, dt.withTimeAtStartOfDay(), off, start);
+        return new RubyDateTime(context.runtime, getDateTime(context.runtime), dt.withTimeAtStartOfDay(), off, start);
     }
 
     // date/format.rb
