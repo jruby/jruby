@@ -267,7 +267,7 @@ public class RubyParser {
 %type <ListNode> f_block_optarg
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
 %type <BlockArgNode> opt_f_block_arg f_block_arg
-%type <IterNode> brace_block do_block cmd_brace_block
+%type <IterNode> brace_block do_block cmd_brace_block brace_body do_body
    // ENEBO: missing mhls_entry
 %type <MultipleAsgnNode> mlhs mlhs_basic 
 %type <RescueBodyNode> opt_rescue
@@ -570,11 +570,8 @@ block_command   : block_call
                 }
 
 // :brace_block - [!null]
-cmd_brace_block : tLBRACE_ARG {
-                    support.pushBlockScope();
-                } opt_block_param compstmt tRCURLY {
-                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
-                    support.popCurrentScope();
+cmd_brace_block : tLBRACE_ARG brace_body tRCURLY {
+                    $$ = $2;
                 }
 
 fcall           : operation {
@@ -1865,11 +1862,8 @@ lambda_body     : tLAMBEG compstmt tRCURLY {
                     $$ = $2;
                 }
 
-do_block        : keyword_do_block {
-                    support.pushBlockScope();
-                } opt_block_param compstmt keyword_end {
-                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
-                    support.popCurrentScope();
+do_block        : keyword_do_block do_body keyword_end {
+                    $$ = $2;
                 }
 
   // JRUBY-2326 and GH #305 both end up hitting this production whereas in
@@ -1937,19 +1931,35 @@ method_call     : fcall paren_args {
                     }
                 }
 
-brace_block     : tLCURLY {
-                    support.pushBlockScope();
-                } opt_block_param compstmt tRCURLY {
-                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
-                    support.popCurrentScope();
+brace_block     : tLCURLY brace_body tRCURLY {
+                    $$ = $2;
                 }
-                | keyword_do {
-                    support.pushBlockScope();
-                } opt_block_param compstmt keyword_end {
-                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
-                    support.popCurrentScope();
+                | keyword_do do_body keyword_end {
+                    $$ = $2;
                 }
 
+brace_body      : {
+                    support.pushBlockScope();
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack()) >> 1;
+                    lexer.getCmdArgumentState().reset();
+                } opt_block_param compstmt {
+                    // FIXME: probably need to correct location here
+                    $$ = new IterNode(lexer.getPosition(), $2, $3, support.getCurrentScope());
+                     support.popCurrentScope();
+                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
+                }
+
+ do_body 	: {
+                    support.pushBlockScope();
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
+                    lexer.getCmdArgumentState().reset();
+                } opt_block_param bodystmt {
+                    // FIXME: probably need to correct location here
+                    $$ = new IterNode(lexer.getPosition(), $2, $3, support.getCurrentScope());
+                     support.popCurrentScope();
+                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
+                }
+ 
 case_body       : keyword_when args then compstmt cases {
                     $$ = support.newWhenNode($1, $2, $4, $5);
                 }
