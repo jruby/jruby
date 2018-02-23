@@ -123,13 +123,13 @@ public abstract class RubyInteger extends RubyNumeric {
         return context.runtime.newBoolean(signum() > 0);
     }
 
-    // @Override // NOTE: could be public + defined on Numeric
-    final boolean isNegative() {
+    @Override
+    public boolean isNegative() {
         return signum() < 0;
     }
 
-    // @Override // NOTE: could be public + defined on Numeric
-    final boolean isPositive() {
+    @Override
+    public boolean isPositive() {
         return signum() > 0;
     }
 

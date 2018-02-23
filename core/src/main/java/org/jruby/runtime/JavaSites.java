@@ -198,6 +198,7 @@ public class JavaSites {
         public final CallSite op_rshift = new FunctionalCachingCallSite(">>");
         public final CallSite size = new FunctionalCachingCallSite("size");
         public final CallSite ceil = new FunctionalCachingCallSite("ceil");
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
     }
 
     public static class IntegerSites {
@@ -236,7 +237,6 @@ public class JavaSites {
         public final CheckedSites checked_op_and = new CheckedSites("&");
         public final CheckedSites checked_op_or = new CheckedSites("|");
         public final CheckedSites checked_op_xor = new CheckedSites("^");
-        public final CallSite op_equal = new FunctionalCachingCallSite("==");
     }
 
     public static class BignumSites {

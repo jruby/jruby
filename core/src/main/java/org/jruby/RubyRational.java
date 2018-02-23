@@ -471,6 +471,16 @@ public class RubyRational extends RubyNumeric {
         return context.runtime.newBoolean(signum() > 0);
     }
 
+    @Override
+    public boolean isNegative() {
+        return signum() < 0;
+    }
+
+    @Override
+    public boolean isPositive() {
+        return signum() > 0;
+    }
+
     public final int signum() { return num.signum(); }
 
     /** f_imul
