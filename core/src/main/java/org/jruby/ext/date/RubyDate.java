@@ -1215,7 +1215,6 @@ public class RubyDate extends RubyObject {
         RubyNumeric tmp = (RubyNumeric)
                 jd.op_minus(context, RubyRational.newRationalCanonicalize(context, of_sec, 86400));
         final RubyRational MINUS_HALF = RubyRational.newRational(context.runtime, -1, 2);
-        // RubyInteger tmp = (RubyInteger) jd.op_minus(context, of);
         return (RubyNumeric) ((RubyNumeric) tmp.op_plus(context, fr)).op_plus(context, MINUS_HALF);
     }
 
@@ -1349,6 +1348,9 @@ public class RubyDate extends RubyObject {
         };
         return (RubyString) RubyKernel.sprintf(context, this, args);
     }
+
+    @JRubyMethod
+    public RubyDate to_date() { return this; }
 
     @JRubyMethod
     public RubyDateTime to_datetime(ThreadContext context) {

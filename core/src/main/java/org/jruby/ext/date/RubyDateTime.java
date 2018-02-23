@@ -382,6 +382,9 @@ public class RubyDateTime extends RubyDate {
         return new RubyDate(context.runtime, getDate(context.runtime), dt.withTimeAtStartOfDay(), 0, start);
     }
 
+    @JRubyMethod
+    public RubyDateTime to_datetime() { return this; }
+
     @JRubyMethod // Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400.0))
     public RubyTime to_time(ThreadContext context) {
         final Ruby runtime = context.runtime;

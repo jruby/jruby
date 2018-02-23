@@ -297,62 +297,6 @@ class Date
   # Gregorian calendar.
   GREGORIAN = -Infinity.new
 
-  HALF_DAYS_IN_DAY       = Rational(1, 2) # :nodoc:
-  HOURS_IN_DAY           = Rational(1, 24) # :nodoc:
-  SECONDS_IN_DAY         = Rational(1, 86400) # :nodoc:
-
-  MJD_EPOCH_IN_AJD       = Rational(4800001, 2) # 1858-11-17 # :nodoc:
-  #UNIX_EPOCH_IN_AJD      = Rational(4881175, 2) # 1970-01-01 # :nodoc:
-  #MJD_EPOCH_IN_CJD       = 2400001 # :nodoc:
-  #UNIX_EPOCH_IN_CJD      = 2440588 # :nodoc:
-  #LD_EPOCH_IN_CJD        = 2299160 # :nodoc:
-
-  JODA = org.joda.time
-
-  t = Module.new do
-
-    private
-
-    # Convert a Civil Date to a Julian Day Number.
-    # +y+, +m+, and +d+ are the year, month, and day of the
-    # month.  +sg+ specifies the Day of Calendar Reform.
-    #
-    # Returns the corresponding Julian Day Number.
-    def civil_to_jd(y, m, d, sg=GREGORIAN) # :nodoc:
-      if m <= 2
-        y -= 1
-        m += 12
-      end
-      a = (y / 100.0).floor
-      b = 2 - a + (a / 4.0).floor
-      jd = (365.25 * (y + 4716)).floor +
-        (30.6001 * (m + 1)).floor +
-        d + b - 1524
-      if jd < sg
-        jd -= b
-      end
-      jd
-    end
-
-    # Convert a (civil) Julian Day Number to an Astronomical Julian
-    # Day Number.
-    #
-    # +jd+ is the Julian Day Number to convert, and +fr+ is a
-    # fractional day.
-    # +of+ is the offset from UTC as a fraction of a day (defaults to 0).
-    #
-    # Returns the Astronomical Julian Day Number as a single
-    # numeric value.
-    def jd_to_ajd(jd, fr, of=0) jd + fr - of - HALF_DAYS_IN_DAY end # :nodoc: TODO to be removed after Time#to_date/date_time
-
-    # Convert an +h+ hour, +min+ minutes, +s+ seconds period to a fractional day.
-    def time_to_day_fraction(h, min, s) Rational(h * 3600 + min * 60 + s, 86400) end
-
-  end
-
-  extend  t
-  include t
-
   def self.rewrite_frags(elem) # :nodoc:
     elem ||= {}
     if seconds = elem[:seconds]
@@ -591,43 +535,6 @@ class Date
     define_method(n.downcase + '?') { wday == i }
   end
 
-  # Compare this date with another date.
-  #
-  # +other+ can also be a Numeric value, in which case it is
-  # interpreted as an Astronomical Julian Day Number.
-  #
-  # Comparison is by Astronomical Julian Day Number, including
-  # fractional days.  This means that both the time and the
-  # timezone offset are taken into account when comparing
-  # two DateTime instances.  When comparing a DateTime instance
-  # with a Date instance, the time of the latter will be
-  # considered as falling on midnight UTC.
-  # class org::joda::time::DateTime
-  #   java_alias :compareDT, :compareTo, [org.joda.time.ReadableInstant]
-  # end
-  # def <=> (other)
-  #   if other.kind_of?(Date)
-  #     # The method compareTo doesn't compare the sub milliseconds so after compare the two dates
-  #     # then we have to compare the sub milliseconds to make sure that both are exactly equal.
-  #     @dt.compareDT(other.dt).nonzero? || @sub_millis <=> other.sub_millis
-  #   else
-  #      __internal_cmp(other)
-  #   end
-  # end
-  #
-  # private def __internal_cmp(other)
-  #   if other.kind_of? Numeric
-  #     ajd <=> other
-  #   else
-  #     begin
-  #       l, r = other.coerce(self)
-  #       l <=> r
-  #     rescue NoMethodError
-  #       nil
-  #     end
-  #   end
-  # end
-
   # The relationship operator for Date.
   #
   # Compares dates by Julian Day Number.  When comparing
@@ -684,25 +591,13 @@ class Date
     step(min, -1, &block)
   end
 
-  # Is this Date equal to +other+?
-  #
-  # +other+ must both be a Date object, and represent the same date.
-  # def eql? (other) Date === other && self == other end
-
-  # Return internal object state as a programmer-readable string.
-  def inspect
-    s = (hour * 60 + min) * 60 + sec - (@of*86_400).to_i
-    ns = ((@dt.getMillisOfSecond + @sub_millis) * 1_000_000)
-    ns = ns.to_i if Rational === ns and ns.denominator == 1
-    of = "%+d" % (@of * 86_400)
-    sg = Date::Infinity === @sg ? @sg.to_s : "%.0f" % @sg
-    "#<#{self.class}: #{to_s} ((#{jd}j,#{s}s,#{ns.inspect}n),#{of}s,#{sg}j)>"
-  end
-
   # Return the date as a human-readable string.
   #
   # The format used is YYYY-MM-DD.
   def to_s() format('%.4d-%02d-%02d', year, mon, mday) end # 4p
+
+  HALF_DAYS_IN_DAY = Rational(1, 2) # :nodoc:
+  private_constant :HALF_DAYS_IN_DAY
 
   # Load from Marshal format.
   # @private
@@ -813,50 +708,6 @@ class DateTime < Date
     end
     new!(jd_to_ajd(jd, fr, of), of, sg)
   end
-
-  # Create a new DateTime object corresponding to the specified
-  # Civil Date and hour +h+, minute +min+, second +s+.
-  #
-  # The 24-hour clock is used.  Negative values of +h+, +min+, and
-  # +sec+ are treating as counting backwards from the end of the
-  # next larger unit (e.g. a +min+ of -2 is treated as 58).  No
-  # wraparound is performed.  If an invalid time portion is specified,
-  # an ArgumentError is raised.
-  #
-  # +of+ is the offset from UTC as a fraction of a day (defaults to 0).
-  # +sg+ specifies the Day of Calendar Reform.
-  #
-  # +y+ defaults to -4712, +m+ to 1, and +d+ to 1; this is Julian Day
-  # Number day 0.  The time values default to 0.
-  # def self.civil(y=-4712, m=1, d=1, h=0, min=0, s=0, of=0, sg=ITALY)
-  #   if String === of
-  #     of = Rational(zone_to_diff(of) || 0, 86400)
-  #   end
-  # 
-  #   if Integer === y and Integer === m and Integer === d and
-  #       Integer === h and Integer === min and
-  #       (Integer === s or (Rational === s and 1000 % s.denominator == 0)) and
-  #       m > 0 and d > 0 and h >= 0 and h < 24 and min >= 0 and s >= 0
-  #     y -= 1 if y <= 0 and sg > 0 # TODO
-  #     ms = 0
-  #     if Rational === s
-  #       s, ms = (s.numerator * 1000 / s.denominator).divmod(1000)
-  #     end
-  #     begin
-  #       dt = JODA::DateTime.new(y, m, d, h, min, s, ms, chronology(sg, of))
-  #     rescue JODA::IllegalFieldValueException, Java::JavaLang::IllegalArgumentException
-  #       raise ArgumentError, 'invalid date'
-  #     end
-  #     new!(dt, of, sg)
-  #   else
-  #     unless (jd = _valid_civil?(y, m, d, sg)) &&
-  #            (fr = _valid_time?(h, min, s))
-  #       raise ArgumentError, 'invalid date'
-  #     end
-  #     new!(jd_to_ajd(jd, fr, of), of, sg)
-  #   end
-  # end
-  # class << self; alias_method :new, :civil end
 
   # Create a new DateTime object corresponding to the specified
   # Commercial Date and hour +h+, minute +min+, second +s+.
@@ -978,34 +829,10 @@ class DateTime < Date
 
 end
 
-class Time
-
-  def to_time
-    self
-  end
-
-  def to_date
-    jd = Date.__send__(:civil_to_jd, year, mon, mday, Date::GREGORIAN)
-    Date.new!(Date.__send__(:jd_to_ajd, jd, 0, 0), 0, Date::ITALY)
-  end
-
-  def to_datetime
-    jd = DateTime.__send__(:civil_to_jd, year, mon, mday, DateTime::ITALY)
-    fr = DateTime.__send__(:time_to_day_fraction, hour, min, [sec, 59].min) + Rational(subsec, 86400)
-    of = Rational(utc_offset, 86400)
-    DateTime.new!(DateTime.__send__(:jd_to_ajd, jd, fr, of), of, DateTime::ITALY)
-  end
-
-end
-
 class Date
 
   def to_time
     Time.local(year, mon, mday)
-  end
-
-  def to_date
-    self
   end
 
 end
@@ -1015,16 +842,8 @@ class DateTime < Date
   public :hour, :min, :sec, :sec_fraction, :zone, :offset, :new_offset,
          :minute, :second, :second_fraction
 
-  def to_time
-    Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400.0))
-  end
-
-  def to_date
-    Date.civil(year, mon, mday, @sg)
-  end
-
-  def to_datetime
-    self
+  class << self
+    undef_method :today
   end
 
 end
