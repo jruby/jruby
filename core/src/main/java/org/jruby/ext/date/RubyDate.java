@@ -524,11 +524,17 @@ public class RubyDate extends RubyObject {
         return context.tru; // @see _valid_jd_p
     }
 
+    // Is +jd+ a valid Julian Day Number?
+    //
+    // If it is, returns it.  In fact, any value is treated as a valid Julian Day Number.
+
+    @JRubyMethod(name = "_valid_jd?", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject _valid_jd_p(IRubyObject self, IRubyObject jd) {
+        return jd;
+    }
+
     @JRubyMethod(name = "_valid_jd?", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject _valid_jd_p(IRubyObject self, IRubyObject jd, IRubyObject sg) {
-        // Is +jd+ a valid Julian Day Number?
-        //
-        // If it is, returns it.  In fact, any value is treated as a valid Julian Day Number.
         return jd;
     }
 
