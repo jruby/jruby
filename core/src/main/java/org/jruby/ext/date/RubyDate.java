@@ -1157,7 +1157,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject next_year(ThreadContext context, IRubyObject n) {
-        return newInstance(context, dt.plusMonths(+timesIntDiff(context, n, 12)), off, start);
+        return prevNextYear(context, n, false);
     }
 
     @JRubyMethod
@@ -1167,12 +1167,19 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject prev_year(ThreadContext context, IRubyObject n) {
-        return newInstance(context, dt.plusMonths(-timesIntDiff(context, n, 12)), off, start);
+        return prevNextYear(context, n, true);
     }
 
-    private static int timesIntDiff(final ThreadContext context, IRubyObject n, final int times) {
+    private RubyDate prevNextYear(ThreadContext context, IRubyObject n, final boolean negate) {
+        long months = timesIntDiff(context, n, 12);
+        if (negate) months = -months; // prev_year
+        final int years = RubyNumeric.checkInt(context.runtime, months / 12);
+        return newInstance(context, this.dt.plusYears(years).plusMonths((int) (months % 12)), off, start);
+    }
+
+    static long timesIntDiff(final ThreadContext context, IRubyObject n, final int times) {
         IRubyObject mul = RubyFixnum.newFixnum(context.runtime, times).op_mul(context, n);
-        return ((RubyNumeric) mul).round(context).convertToInteger().getIntValue();
+        return ((RubyNumeric) mul).round(context).convertToInteger().getLongValue();
     }
 
     @JRubyMethod // [ ajd, @of, @sg ]

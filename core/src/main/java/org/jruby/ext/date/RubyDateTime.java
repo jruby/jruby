@@ -268,23 +268,6 @@ public class RubyDateTime extends RubyDate {
         return getMinute(context, sec, rest);
     }
 
-    private long getMillisAndSetSubMillis(final int[] rest) {
-        long millis = 0;
-        final int r0 = rest[0], r1 = rest[1];
-        if (r0 != 0) {
-            millis = (1000 * r0) / r1;
-            this.subMillisNum = (int) ((1000 * r0) - (millis * r1));
-            this.subMillisDen = r1;
-        }
-        return millis;
-    }
-
-    private static long secMillis(ThreadContext context, RubyRational sec) { // (sec * 1000) % 100
-        RubyInteger val = (RubyInteger) sec.getNumerator().op_mul(context, 1000);
-        val = (RubyInteger) val.idiv(context, sec.getDenominator());
-        return ((RubyInteger) val.op_mod(context, 1000)).getLongValue();
-    }
-
     private static void addRationalModToRest(ThreadContext context, IRubyObject val, long ival, final int[] rest) {
         if (val instanceof RubyRational) {
             long num = ((RubyRational) val).getNumerator().getLongValue();
@@ -379,6 +362,23 @@ public class RubyDateTime extends RubyDate {
         final int start = val2sg(context, sg);
         final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
         return new RubyDateTime(context.runtime, (RubyClass) self, new DateTime(getChronology(context, start, zone)), 0, start);
+    }
+
+    @Override
+    public IRubyObject prev_day(ThreadContext context, IRubyObject n) {
+        return prevNextDay(context, n, true);
+    }
+
+    @Override
+    public IRubyObject next_day(ThreadContext context, IRubyObject n) {
+        return prevNextDay(context, n, false);
+    }
+
+    private RubyDate prevNextDay(ThreadContext context, IRubyObject n, final boolean negate) {
+        long seconds = timesIntDiff(context, n, DAY_IN_SECONDS);
+        if (negate) seconds = -seconds;
+        final int days = RubyNumeric.checkInt(context.runtime, seconds / DAY_IN_SECONDS);
+        return newInstance(context, this.dt.plusDays(days).plusSeconds((int) (seconds % DAY_IN_SECONDS)), off, start);
     }
 
     @JRubyMethod // Date.civil(year, mon, mday, @sg) TODO dble-check
