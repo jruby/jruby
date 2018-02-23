@@ -719,7 +719,7 @@ public class RubyDate extends RubyObject {
         if (cmp == 0) {
             if (this.subMillisDen == 1 && that.subMillisDen == 1) {
                 int diff = this.subMillisNum - that.subMillisNum;
-                return diff < 0 ? 1 : ( diff == 0 ? 0 : -1 );
+                return diff < 0 ? -1 : ( diff == 0 ? 0 : +1 );
             }
             return cmpSubMillis(that);
         }
@@ -730,8 +730,7 @@ public class RubyDate extends RubyObject {
     private int cmpSubMillis(final RubyDate that) {
         ThreadContext context = getRuntime().getCurrentContext();
         RubyNumeric diff = subMillisDiff(context, that);
-        if (diff.isZero()) return 0;
-        return Numeric.f_negative_p(context, diff) ? 1 : -1;
+        return diff.isZero() ? 0 : ( Numeric.f_negative_p(context, diff) ? -1 : +1 );
     }
 
     private IRubyObject fallback_cmp(ThreadContext context, IRubyObject other) {
