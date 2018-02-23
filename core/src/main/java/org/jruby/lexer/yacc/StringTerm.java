@@ -87,6 +87,7 @@ public class StringTerm extends StrTerm {
             }
 
             lexer.setValue("" + end);
+
             return RubyParser.tSTRING_END;
     }
 
@@ -118,14 +119,11 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
             int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
 
-            if (token != 0) {
-                return token;
-            } else {
-                buffer.append(c);
-            }
-        } else {
-            lexer.pushback(c);
+            if (token != 0) return token;
+
+            buffer.append('#');  // not an expansion to variable so it is just a literal.
         }
+        lexer.pushback(c); // pushback API is deceptive here...we are just pushing index back one and not pushing c back necessarily.
 
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();

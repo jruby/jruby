@@ -362,7 +362,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
         Encoding enc;
 
-        if (0xff < i) {
+        if (i > 0xff) {
             enc = runtime.getDefaultInternalEncoding();
             if (enc == null) {
                 throw runtime.newRangeError(toString() + " out of char range");

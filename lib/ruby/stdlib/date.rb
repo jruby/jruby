@@ -1948,5 +1948,4 @@ class DateTime < Date
 
   private_class_method :today
   public_class_method  :now
-
 end
