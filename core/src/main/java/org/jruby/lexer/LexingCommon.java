@@ -352,15 +352,12 @@ public abstract class LexingCommon {
                 commandStart = true;
                 return tSTRING_DBEG;
             default:
-                // We did not find significant char after # so push it back to
-                // be processed as an ordinary string.
-                pushback(c);
                 return 0;
         }
 
-        pushback(c);
-
+        // We found #@, #$, #@@ but we don't know what at this point (check for valid chars).
         if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
+            pushback(c);
             setValue("#" + significant);
             return tSTRING_DVAR;
         }
