@@ -1392,7 +1392,7 @@ public final class Ruby implements Constantizable {
 
     private void initCore() {
         if (profile.allowClass("Data")) {
-            defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+            dataClass = defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
             getObject().deprecateConstant(this, "Data");
         }
 
@@ -4793,6 +4793,10 @@ public final class Ruby implements Constantizable {
         return filenoUtil;
     }
 
+    public RubyClass getData() {
+        return dataClass;
+    }
+
     @Deprecated
     private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
         @Override
@@ -4992,7 +4996,7 @@ public final class Ruby implements Constantizable {
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError, fiberError, randomClass, keyError, locationClass, interruptedRegexpError;
+            invalidByteSequenceError, fiberError, randomClass, keyError, locationClass, interruptedRegexpError, dataClass;
 
     /**
      * All the core modules we keep direct references to, for quick access and
