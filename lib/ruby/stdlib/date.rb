@@ -194,6 +194,7 @@
 #     puts secs_to_new_year()
 
 require 'date/format'
+require 'date.jar'
 
 # Class representing a date.
 #
