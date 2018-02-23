@@ -1,3 +1,4 @@
+exclude :test_dup_warn, "temporarily disabled warning"
 exclude :test_initialize, "needs investigation"
 exclude :test_invalid_escape_error, "needs investigation"
 exclude :test_invalid_fragment, "needs investigation"
