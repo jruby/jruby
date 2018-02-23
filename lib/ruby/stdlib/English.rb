@@ -185,3 +185,4 @@ alias $POSTMATCH               $'
 # <tt>$+</tt> will be set to "t".  This variable is local to the
 # current scope. Read only.
 alias $LAST_PAREN_MATCH        $+
+=end
