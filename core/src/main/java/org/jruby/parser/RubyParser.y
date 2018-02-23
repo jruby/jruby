@@ -238,7 +238,7 @@ public class RubyParser {
 %type <Node> mrhs_arg
 %type <Node> compstmt bodystmt stmts stmt expr arg primary command 
 %type <Node> stmt_or_begin
-%type <Node> expr_value primary_value opt_else cases if_tail exc_var
+%type <Node> expr_value primary_value opt_else cases if_tail exc_var rel_expr
    // ENEBO: missing call_args2, open_args
 %type <Node> call_args opt_ensure paren_args superclass
 %type <Node> command_args var_ref opt_paren_args block_call block_command
@@ -284,14 +284,14 @@ public class RubyParser {
 %type <ByteList> bvar
    // ENEBO: end all new types
 
-%type <ByteList> reswords f_bad_arg
+%type <ByteList> reswords f_bad_arg relop
 %type <ByteList> rparen rbracket 
 %type <Node> top_compstmt top_stmts top_stmt
 %token <ByteList> tSYMBOLS_BEG
 %token <ByteList> tQSYMBOLS_BEG
 %token <ByteList> tDSTAR
 %token <ByteList> tSTRING_DEND
-%type <ByteList> kwrest_mark, f_kwrest, f_label
+%type <ByteList> kwrest_mark f_kwrest f_label 
 %type <ByteList> call_op call_op2
 %type <ArgumentNode> f_arg_asgn
 %type <FCallNode> fcall
@@ -1226,17 +1226,8 @@ arg             : lhs '=' arg_rhs {
                 | arg tCMP arg {
                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
                 }
-                | arg tGT arg {
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
-                }
-                | arg tGEQ arg {
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
-                }
-                | arg tLT arg {
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
-                }
-                | arg tLEQ arg {
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
+                | rel_expr   %prec tCMP {
+                    $$ = $1;
                 }
                 | arg tEQ arg {
                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
@@ -1287,7 +1278,28 @@ arg             : lhs '=' arg_rhs {
                 | primary {
                     $$ = $1;
                 }
+ 
+relop           : tGT {
+                    $$ = $1;
+                }
+                | tLT  {
+                    $$ = $1;
+                }
+                | tGEQ {
+                     $$ = $1;
+                }
+                | tLEQ {
+                     $$ = $1;
+                }
 
+rel_expr        : arg relop arg   %prec tGT {
+                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
+                }
+		| rel_expr relop arg   %prec tGT {
+                     support.warning(ID.MISCELLANEOUS, lexer.getPosition(), "comparison '" + $2 + "%s' after comparison");
+                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
+                }
+ 
 arg_value       : arg {
                     value_expr(lexer, $1);
                     $$ = support.makeNullNil($1);
