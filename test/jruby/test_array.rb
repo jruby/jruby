@@ -14,7 +14,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_initialize_on_frozen_array
-    assert_raises(RuntimeError) {
+    assert_raises(FrozenError) {
       [1, 2, 3].freeze.instance_eval { initialize }
     }
   end
