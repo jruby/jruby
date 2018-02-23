@@ -1879,7 +1879,22 @@ public class Helpers {
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b) {
         Ruby runtime = context.runtime;
         if (a == b) return runtime.getTrue();
-        IRubyObject res = invokedynamic(context, a, OP_EQUAL, b);
+        IRubyObject res = sites(context).op_equal.call(context, a, a, b);
+        return runtime.newBoolean(res.isTrue());
+    }
+
+    /**
+     * Equivalent to rb_equal in MRI
+     *
+     * @param context
+     * @param a
+     * @param b
+     * @return
+     */
+    public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b, CallSite equal) {
+        Ruby runtime = context.runtime;
+        if (a == b) return runtime.getTrue();
+        IRubyObject res = equal.call(context, a, a, b);
         return runtime.newBoolean(res.isTrue());
     }
 

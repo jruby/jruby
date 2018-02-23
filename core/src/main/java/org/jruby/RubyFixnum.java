@@ -730,6 +730,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return coerceBin(context, sites(context).op_mod, other);
     }
 
+    @Override
     public IRubyObject op_mod(ThreadContext context, long other) {
         return moduloFixnum(context, other);
     }
@@ -846,13 +847,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return coerceBin(context, sites(context).op_exp, other);
     }
 
-    private IRubyObject powerFixnum(ThreadContext context, RubyFixnum other) {
+    private RubyNumeric powerFixnum(ThreadContext context, RubyFixnum other) {
         Ruby runtime = context.runtime;
         long a = value;
         long b = other.value;
         if (b < 0) {
             RubyRational rational = RubyRational.newRationalRaw(runtime, this);
-            return numFuncall(context, rational, sites(context).op_exp_rational, other);
+            return (RubyNumeric) numFuncall(context, rational, sites(context).op_exp_rational, other);
         }
         if (b == 0) {
             return RubyFixnum.one(runtime);
@@ -1361,6 +1362,37 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
         long bytes = 8; // sizeof(long)
         return (-0.415241 * ndigits - 0.125 > bytes);
+    }
+
+    @Override
+    public IRubyObject numerator(ThreadContext context) {
+        return this;
+    }
+
+    @Override
+    public IRubyObject denominator(ThreadContext context) {
+        return one(context.runtime);
+    }
+
+    public RubyRational convertToRational() {
+        final Ruby runtime = getRuntime();
+        return RubyRational.newRationalRaw(runtime, this, one(runtime));
+    }
+
+    @Override
+    public IRubyObject remainder(ThreadContext context, IRubyObject y) {
+        RubyFixnum x = this;
+        JavaSites.FixnumSites sites = sites(context);
+        IRubyObject z = sites.op_mod.call(context, this, this, y);
+
+        if ((!Helpers.rbEqual(context, z, RubyFixnum.zero(context.runtime), sites.op_equal).isTrue()) &&
+                ((x.isNegative() &&
+                        ((RubyInteger) y).isPositive()) ||
+                        (x.isPositive() &&
+                                ((RubyInteger) y).isNegative()))) {
+            return sites.op_minus.call(context, z, z, y);
+        }
+        return z;
     }
 
     private static JavaSites.FixnumSites sites(ThreadContext context) {

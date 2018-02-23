@@ -80,6 +80,7 @@ import jnr.posix.POSIXFactory;
 
 import org.jcodings.Encoding;
 import org.joda.time.DateTimeZone;
+import org.joni.WarnCallback;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
@@ -2847,6 +2848,10 @@ public final class Ruby implements Constantizable {
         return warnings;
     }
 
+    WarnCallback getRegexpWarnings() {
+        return regexpWarnings;
+    }
+
     public PrintStream getErrorStream() {
         // FIXME: We can't guarantee this will always be a RubyIO...so the old code here is not safe
         /*java.io.OutputStream os = ((RubyIO) getGlobalVariables().getService("$stderr")).getOutStream();
@@ -3030,6 +3035,15 @@ public final class Ruby implements Constantizable {
         javaToRuby.put(methodName, rubyName);
     }
 
+    public void addBoundMethods(String className, String... tuples) {
+        Map<String, String> javaToRuby = boundMethods.get(className);
+        if (javaToRuby == null) boundMethods.put(className, javaToRuby = new HashMap<>(tuples.length / 2 + 1, 1));
+        for (int i = 0; i < tuples.length; i += 2) {
+            javaToRuby.put(tuples[i], tuples[i+1]);
+        }
+    }
+
+    @Deprecated // no longer used -> except for IndyBinder
     public void addBoundMethodsPacked(String className, String packedTuples) {
         List<String> names = StringSupport.split(packedTuples, ';');
         for (int i = 0; i < names.size(); i += 2) {
@@ -3037,6 +3051,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
+    @Deprecated // no longer used -> except for IndyBinder
     public void addSimpleBoundMethodsPacked(String className, String packedNames) {
         List<String> names = StringSupport.split(packedNames, ';');
         for (String name : names) {
@@ -4502,8 +4517,7 @@ public final class Ruby implements Constantizable {
      * @param method
      */
     void addProfiledMethod(final String name, final DynamicMethod method) {
-        if (!config.isProfiling()) return;
-        if (method.isUndefined()) return;
+        if (!config.isProfiling() || method.isUndefined()) return;
 
         getProfilingService().addProfiledMethod( name, method );
     }
@@ -5007,7 +5021,7 @@ public final class Ruby implements Constantizable {
 
     private final long startTime = System.currentTimeMillis();
 
-    private final RubyInstanceConfig config;
+    final RubyInstanceConfig config;
 
     private InputStream in;
     private PrintStream out;
@@ -5058,6 +5072,12 @@ public final class Ruby implements Constantizable {
 
     private GlobalVariables globalVariables = new GlobalVariables(this);
     private final RubyWarnings warnings = new RubyWarnings(this);
+    private final WarnCallback regexpWarnings = new WarnCallback() {
+        @Override
+        public void warn(String message) {
+            getWarnings().warning(message);
+        }
+    };
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.

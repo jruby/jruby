@@ -619,16 +619,9 @@ public abstract class RubyInteger extends RubyNumeric {
 
     // MRI: rb_int_fdiv_double and rb_int_fdiv in one
     @Override
+    @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject y) {
-        RubyInteger x = this;
-        if (y instanceof RubyInteger && !((RubyInteger) y).isZero()) {
-            IRubyObject gcd = gcd(context, y);
-            if (!((RubyInteger) gcd).isZero()) {
-                x = (RubyInteger) div(context, gcd);
-                y = ((RubyInteger) y).div(context, gcd);
-            }
-        }
-        return x.fdivDouble(context, y);
+        return fdivDouble(context, y);
     }
 
     public abstract IRubyObject fdivDouble(ThreadContext context, IRubyObject y);
@@ -687,8 +680,8 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyFixnum.one(context.runtime);
     }
 
-    @JRubyMethod(name = "to_s")
     @Override
+    @JRubyMethod(name = {"to_s", "inspect"})
     public abstract RubyString to_s();
 
     @JRubyMethod(name = "to_s")
@@ -733,6 +726,10 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = {"%", "modulo"})
     public abstract IRubyObject op_mod(ThreadContext context, IRubyObject other);
 
+    public IRubyObject op_mod(ThreadContext context, long other) {
+        return op_mod(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = "**")
     public abstract IRubyObject op_pow(ThreadContext context, IRubyObject other);
 
@@ -745,7 +742,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return abs(context);
     }
 
-    @JRubyMethod(name = "==")
+    @JRubyMethod(name = {"==", "==="})
     @Override
     public abstract IRubyObject op_equal(ThreadContext context, IRubyObject other);
 
@@ -790,20 +787,33 @@ public abstract class RubyInteger extends RubyNumeric {
         return getBigIntegerValue().equals(BigInteger.ONE);
     }
 
+    @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_gt(context, this, other);
     }
 
+    @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_lt(context, this, other);
     }
 
+    @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_ge(context, this, other);
     }
 
+    @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_le(context, this, other);
+    }
+    @JRubyMethod(name = "remainder")
+    public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
+        return context.nil;
+    }
+
+    @JRubyMethod(name = "divmod")
+    public IRubyObject divmod(ThreadContext context, IRubyObject other) {
+        return context.nil;
     }
 
     public IRubyObject op_uminus() {
