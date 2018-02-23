@@ -596,37 +596,10 @@ class Date
   # The format used is YYYY-MM-DD.
   def to_s() format('%.4d-%02d-%02d', year, mon, mday) end # 4p
 
-  HALF_DAYS_IN_DAY = Rational(1, 2) # :nodoc:
-  private_constant :HALF_DAYS_IN_DAY
-
-  # Load from Marshal format.
   # @private
-  # @note marshal_dump differs from MRI, implemented as [ ajd, @of, @sg ]
-  def marshal_load(a)
-    case a.size
-    when 2 # 1.6.x
-      ajd = a[0] - HALF_DAYS_IN_DAY
-      of = 0
-      sg = a[1]
-      sg = sg ? GREGORIAN : JULIAN unless Numeric === sg
-    when 3 # 1.8.x, 1.9.2
-      ajd, of, sg = a
-    when 6
-      _, jd, df, sf, of, sg = a
-      of = Rational(of, 86_400)
-      ajd = jd - HALF_DAYS_IN_DAY
-      ajd += Rational(df, 86_400) if df != 0
-      ajd += Rational(sf, 86_400_000_000_000) if sf != 0
-    else
-      raise TypeError, "invalid size"
-    end
-
-    initialize(ajd, of, sg)
-  end
-
   def self._load(str)
     ary = Marshal.load(str)
-    raise TypeError, "expected an array" unless Array === ary
+    raise TypeError, "expected an array" unless ary.is_a?(Array)
     obj = allocate
     obj.marshal_load(ary)
     obj

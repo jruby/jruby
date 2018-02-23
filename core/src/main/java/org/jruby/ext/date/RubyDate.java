@@ -1197,6 +1197,46 @@ public class RubyDate extends RubyObject {
         });
     }
 
+    @JRubyMethod
+    public IRubyObject marshal_load(ThreadContext context, IRubyObject a) {
+        final RubyArray ary = (RubyArray) a;
+        IRubyObject ajd, of, sg;
+        if (ary.size() == 3) { // ajd, of, sg = a
+            ajd = ary.eltInternal(0);
+            of = ary.eltInternal(1);
+            sg = ary.eltInternal(2);
+        }
+        else if (ary.size() == 6) { // _, jd, df, sf, of, sg = a
+            IRubyObject jd = ary.eltInternal(1);
+            IRubyObject df = ary.eltInternal(2);
+            IRubyObject sf = ary.eltInternal(3);
+            of = ary.eltInternal(4);
+            sg = ary.eltInternal(5);
+            of = newRationalConvert(context, of, DAY_IN_SECONDS);
+            ajd = marshal_load_6(context, jd, df, sf);
+        }
+        else {
+            throw context.runtime.newTypeError("invalid size: " + ary.size());
+        }
+
+        return initialize(context, ajd, of, sg);
+    }
+
+    private IRubyObject marshal_load_6(ThreadContext context, IRubyObject jd, IRubyObject df, IRubyObject sf) {
+        IRubyObject ajd = RubyRational.newRational(context.runtime, -1, 2).op_plus(context, jd);
+        if ( ! ( (RubyNumeric) df ).isZero() ) {
+            ajd = newRationalConvert(context, df, DAY_IN_SECONDS).op_plus(context, ajd);
+        }
+        if ( ! ( (RubyNumeric) sf ).isZero() ) {
+            ajd = newRationalConvert(context, sf, DAY_IN_SECONDS * 1_000_000_000).op_plus(context, ajd);
+        }
+        return ajd;
+    }
+
+    static RubyRational newRationalConvert(ThreadContext context, IRubyObject num, long den) {
+        return (RubyRational) RubyRational.newRationalConvert(context, num, context.runtime.newFixnum(den));
+    }
+
     private static final CachingCallSite zone_to_diff = new FunctionalCachingCallSite("zone_to_diff");
 
     static IRubyObject date_zone_to_diff(final ThreadContext context, RubyString str) {
@@ -1213,9 +1253,19 @@ public class RubyDate extends RubyObject {
 
     static RubyNumeric jd_to_ajd(ThreadContext context, RubyInteger jd, RubyNumeric fr, int of_sec) {
         RubyNumeric tmp = (RubyNumeric)
-                jd.op_minus(context, RubyRational.newRationalCanonicalize(context, of_sec, 86400));
+                jd.op_minus(context, RubyRational.newRationalCanonicalize(context, of_sec, DAY_IN_SECONDS));
         final RubyRational MINUS_HALF = RubyRational.newRational(context.runtime, -1, 2);
         return (RubyNumeric) ((RubyNumeric) tmp.op_plus(context, fr)).op_plus(context, MINUS_HALF);
+    }
+
+    @JRubyMethod(meta = true, required = 2, optional = 1, visibility = Visibility.PRIVATE)
+    public static IRubyObject jd_to_ajd(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        RubyNumeric jd = (RubyNumeric) args[0];
+        RubyNumeric of = args.length > 2 ? (RubyNumeric) args[2] : RubyFixnum.zero(context.runtime);
+
+        RubyNumeric tmp = (RubyNumeric) jd.op_plus(context, args[1]); // jd + fr
+        final RubyRational MINUS_HALF = RubyRational.newRational(context.runtime, -1, 2);
+        return ((RubyNumeric) tmp.op_plus(context, of.op_uminus(context))).op_plus(context, MINUS_HALF); // - of - 1/2
     }
 
     static Chronology getChronology(ThreadContext context, final int sg, final int off) {
