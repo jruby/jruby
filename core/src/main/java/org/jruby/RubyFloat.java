@@ -200,13 +200,23 @@ public class RubyFloat extends RubyNumeric {
     @Override
     @JRubyMethod(name = "negative?")
     public IRubyObject isNegative(ThreadContext context) {
-        return context.runtime.newBoolean(signum() < 0);
+        return context.runtime.newBoolean(isNegative());
     }
 
     @Override
     @JRubyMethod(name = "positive?")
     public IRubyObject isPositive(ThreadContext context) {
-        return context.runtime.newBoolean(signum() > 0);
+        return context.runtime.newBoolean(isPositive());
+    }
+
+    @Override
+    public boolean isNegative() {
+        return signum() < 0;
+    }
+
+    @Override
+    public boolean isPositive() {
+        return signum() > 0;
     }
 
     public static RubyFloat newFloat(Ruby runtime, double value) {

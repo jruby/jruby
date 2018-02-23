@@ -787,16 +787,20 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "remainder")
-    public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
-        IRubyObject z = numFuncall(context, this, sites(context).op_mod, dividend);
-        RubyFixnum zero = RubyFixnum.zero(context.runtime);
+    public IRubyObject remainder(ThreadContext context, IRubyObject y) {
+        RubyNumeric x = this;
+        JavaSites.NumericSites sites = sites(context);
+        IRubyObject z = sites.op_mod.call(context, this, this, y);
 
-        if (!equalInternal(context, z, zero) &&
-                ((isNegative(context).isTrue() &&
-                        positiveIntP(context, dividend).isTrue()) ||
-                (isPositive(context).isTrue() &&
-                        negativeIntP(context, dividend).isTrue()))) {
-            return sites(context).op_minus.call(context, z, z, dividend);
+        // non-numeric would error out in % call
+        RubyNumeric yNum = (RubyNumeric) y;
+
+        if ((!Helpers.rbEqual(context, z, RubyFixnum.zero(context.runtime), sites.op_equal).isTrue()) &&
+                ((x.isNegative() &&
+                        yNum.isPositive()) ||
+                        (x.isPositive() &&
+                                yNum.isNegative()))) {
+            return sites.op_minus.call(context, z, z, y);
         }
         return z;
     }
@@ -1342,8 +1346,8 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "negative?")
     public IRubyObject isNegative(ThreadContext context) {
         return compareWithZero(context, this, sites(context).op_lt_checked);
-
     }
+
     /** num_positive_p
      *
      */
@@ -1352,18 +1356,12 @@ public class RubyNumeric extends RubyObject {
         return compareWithZero(context, this, sites(context).op_gt_checked);
     }
 
-    protected static IRubyObject negativeIntP(ThreadContext context, IRubyObject obj) {
-        if (obj instanceof RubyNumeric) {
-            return ((RubyNumeric) obj).isNegative(context);
-        }
-        return compareWithZero(context, obj, sites(context).op_lt_checked);
+    public boolean isNegative() {
+        return isNegative(getRuntime().getCurrentContext()).isTrue();
     }
 
-    protected static IRubyObject positiveIntP(ThreadContext context, IRubyObject obj) {
-        if (obj instanceof RubyNumeric) {
-            return ((RubyNumeric) obj).isPositive(context);
-        }
-        return compareWithZero(context, obj, sites(context).op_gt_checked);
+    public boolean isPositive() {
+        return isPositive(getRuntime().getCurrentContext()).isTrue();
     }
 
     protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {
