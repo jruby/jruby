@@ -825,7 +825,7 @@ class Date
   #
   # +sg+ specifies the Day of Calendar Reform.
   def self.civil(y=-4712, m=1, d=1, sg=ITALY)
-    if Fixnum === y and Fixnum === m and Fixnum === d and d > 0
+    if Integer === y and Integer === m and Integer === d and d > 0
       m += 13 if m < 0
       y -= 1 if y <= 0 and sg > 0 # TODO
       begin
