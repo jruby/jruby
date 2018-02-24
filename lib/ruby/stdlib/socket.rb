@@ -271,9 +271,6 @@ class BasicSocket < IO
     addr
   end
 
-#  # JRuby does not do this dance to get around keyword arguments.
-#  unless RUBY_ENGINE == 'jruby'
-#
   # call-seq:
   #    basicsocket.sendmsg(mesg, flags=0, dest_sockaddr=nil, *controls) => numbytes_sent
   #

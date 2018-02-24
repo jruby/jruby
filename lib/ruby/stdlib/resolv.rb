@@ -771,7 +771,7 @@ class Resolv
           sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
           return nil if !sock
           service = [IPAddr.new(host), port]
-          id = DNS.allocate_request_id(service[0], service[1])
+          id = DNS.allocate_request_id(host, port)
           request = msg.encode
           request[0,2] = [id].pack('n')
           return @senders[[service, id]] =
