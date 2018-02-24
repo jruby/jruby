@@ -87,7 +87,6 @@ public class StringTerm extends StrTerm {
             }
 
             lexer.setValue("" + end);
-
             return RubyParser.tSTRING_END;
     }
 

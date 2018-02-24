@@ -245,7 +245,7 @@ public class Options {
 
     // Most (all?) OpenJDK default this to false. See jruby/jruby#4869
     @Deprecated
-    public static final Option<Boolean> PREFER_IPV4 = bool(MISCELLANEOUS, "net.preferIPv4", SafePropertyAccessor.getBoolean("java.net.preferIPv4Stack", false), "(DEPRECATED) Prefer IPv4 network stack");
+    public static final Option<Boolean> PREFER_IPV4 = bool(MISCELLANEOUS, "net.preferIPv4", false, "(DEPRECATED) Prefer IPv4 network stack");
 
     private static Option<String> string(Category category, String name, String[] options, String defval, String description) {
         Option<String> option = Option.string("jruby", name, category, options, defval, description);
