@@ -30,6 +30,7 @@
 package org.jruby.lexer.yacc;
 
 import org.jcodings.Encoding;
+import org.jruby.parser.RubyParser;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 
@@ -148,15 +149,10 @@ public class HeredocTerm extends StrTerm {
             ByteList tok = new ByteList();
             tok.setEncoding(lexer.getEncoding());
             if (c == '#') {
-                switch (c = lexer.nextc()) {
-                    case '$':
-                    case '@':
-                        lexer.pushback(c);
-                        return Tokens.tSTRING_DVAR;
-                    case '{':
-                        lexer.commandStart = true;
-                        return Tokens.tSTRING_DBEG;
-                }
+                int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
+
+                if (token != 0) return token;
+
                 tok.append('#');
             }
 
