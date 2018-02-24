@@ -50,7 +50,7 @@ public class Addrinfo extends RubyObject {
     public static void createAddrinfo(Ruby runtime) {
         RubyClass addrinfo = runtime.defineClass(
                 "Addrinfo",
-                runtime.getClass("Data"),
+                runtime.getData(),
                 new ObjectAllocator() {
                     public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                         return new Addrinfo(runtime, klazz);

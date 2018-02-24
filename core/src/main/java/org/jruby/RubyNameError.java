@@ -161,7 +161,7 @@ public class RubyNameError extends RubyException {
     }
 
     static RubyClass createNameErrorMessageClass(Ruby runtime, RubyClass NameError) {
-        RubyClass Message = NameError.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage.ALLOCATOR);
+        RubyClass Message = NameError.defineClassUnder("Message", runtime.getData(), RubyNameErrorMessage.ALLOCATOR);
         NameError.setConstantVisibility(runtime, "Message", true);
         Message.defineAnnotatedMethods(RubyNameErrorMessage.class);
         return Message;
