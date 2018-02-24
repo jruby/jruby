@@ -909,7 +909,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 if (obj != null && obj instanceof RubyArray) {
                     RubyArray info = (RubyArray) obj;
                     if (info.getLength() == 2) {
-                        throw getRuntime().newFrozenError("can't modify frozen String, created at " + info.eltInternal(0) + ":" + info.eltInternal(1));
+                        throw getRuntime().newRaiseException(getRuntime().getRuntimeError(),
+                                "can't modify frozen String, created at " + info.eltInternal(0) + ":" + info.eltInternal(1));
                     }
                 }
             }
