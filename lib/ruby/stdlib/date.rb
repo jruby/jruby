@@ -528,9 +528,6 @@ class Date
     new_by_frags(elem, sg)
   end
 
-  def zone() strftime('%:z') end
-  private :zone
-
   DAYNAMES.each_with_index do |n, i|
     define_method(n.downcase + '?') { wday == i }
   end
@@ -590,11 +587,6 @@ class Date
   def downto(min, &block) # :yield: date
     step(min, -1, &block)
   end
-
-  # Return the date as a human-readable string.
-  #
-  # The format used is YYYY-MM-DD.
-  def to_s() format('%.4d-%02d-%02d', year, mon, mday) end # 4p
 
 end
 
@@ -784,11 +776,6 @@ class DateTime < Date
   def self.jisx0301(str='-4712-01-01T00:00:00+00:00', sg=ITALY) # :nodoc:
     elem = _jisx0301(str)
     new_by_frags(elem, sg)
-  end
-
-  def to_s # 4p
-    format('%.4d-%02d-%02dT%02d:%02d:%02d%s',
-           year, mon, mday, hour, min, sec, zone)
   end
 
 end

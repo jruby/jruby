@@ -379,6 +379,22 @@ public class RubyDateTime extends RubyDate {
         return newInstance(context, this.dt.plusDays(days).plusSeconds((int) (seconds % DAY_IN_SECONDS)), off, start);
     }
 
+    private static final ByteList TO_S_FORMAT = new ByteList(ByteList.plain("%.4d-%02d-%02dT%02d:%02d:%02d%s"), false);
+
+    @JRubyMethod
+    public RubyString to_s(ThreadContext context) {
+        // format('%.4d-%02d-%02dT%02d:%02d:%02d%s', year, mon, mday, hour, min, sec, zone)
+        return format(context, TO_S_FORMAT,
+                year(context),
+                mon(context),
+                mday(context),
+                hour(context),
+                minute(context),
+                second(context),
+                zone(context)
+        );
+    }
+
     @JRubyMethod // Date.civil(year, mon, mday, @sg)
     public RubyDate to_date(ThreadContext context) {
         return new RubyDate(context.runtime, getDate(context.runtime), dt.withTimeAtStartOfDay(), 0, start);

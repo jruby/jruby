@@ -102,7 +102,7 @@ public class RubyDate extends RubyObject {
     }
 
     DateTime dt;
-    int off; // @of
+    int off; // @of (in seconds)
     int start = ITALY; // @sg
     int subMillisNum = 0, subMillisDen = 1; // @sub_millis
 
@@ -919,6 +919,65 @@ public class RubyDate extends RubyObject {
         return RubyFixnum.newFixnum(context.runtime, dt.getDayOfWeek() % 7);
     }
 
+    private static final ByteList UTC_ZONE = new ByteList(new byte[] { '+','0','0',':','0','0' }, false);
+
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public RubyString zone(ThreadContext context) {
+        // MRI: m_zone
+        if (this.off == 0) {
+            return RubyString.newUsAsciiStringShared(context.runtime, UTC_ZONE);
+        }
+        return RubyString.newUsAsciiStringNoCopy(context.runtime, of2str(this.off));
+    }
+
+    private static final int HOUR_IN_SECONDS = 60 * 60;
+    private static final int MINUTE_IN_SECONDS = 60;
+
+    private static ByteList of2str(final int of) {
+        // MRI: decode_offset
+        byte s = (byte) ((of < 0) ? '-' : '+');
+        int a = (of < 0) ? -of : of;
+        int h = a / HOUR_IN_SECONDS;
+        int m = a % HOUR_IN_SECONDS / MINUTE_IN_SECONDS;
+
+        // format "%c%02d:%02d", s, h, m
+        String digs;
+        ByteList str = new ByteList(6);
+        str.append(s);
+
+        digs = Integer.toString(h);
+        if (digs.length() == 1) {
+            str.append('0').append(digs.charAt(0));
+        }
+        else if (digs.length() == 2) {
+            str.append(digs.charAt(0)).append(digs.charAt(1));
+        }
+        else {
+            append(str, digs);
+        }
+
+        str.append(':');
+
+        digs = Integer.toString(m);
+        if (digs.length() == 1) {
+            str.append('0').append(digs.charAt(0));
+        }
+        else if (digs.length() == 2) {
+            str.append(digs.charAt(0)).append(digs.charAt(1));
+        }
+        else {
+            append(str, digs);
+        }
+
+        return str;
+    }
+
+    private static void append(final ByteList out, String val) {
+        for (int i=0; i<val.length(); i++) out.append(val.charAt(i));
+    }
+
+    // def zone() strftime('%:z') end
+
     //
 
     private static final int MJD_EPOCH_IN_CJD = 2400001;
@@ -1424,8 +1483,11 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public RubyString to_s(ThreadContext context) { // format('%.4d-%02d-%02d', year, mon, mday)
-        final RubyString str = RubyString.newStringLight(context.runtime, TO_S_FORMAT);
-        IRubyObject[] args = new IRubyObject[] { year(context), mon(context), mday(context) };
+        return format(context, TO_S_FORMAT, year(context), mon(context), mday(context));
+    }
+
+    static RubyString format(ThreadContext context, ByteList fmt, IRubyObject... args) {
+        final RubyString str = RubyString.newStringLight(context.runtime, fmt);
         return str.op_format(context, RubyArray.newArrayNoCopy(context.runtime, args));
     }
 
