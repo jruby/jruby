@@ -1197,33 +1197,57 @@ public class RubyDate extends RubyObject {
         });
     }
 
+    @JRubyMethod(meta = true)
+    public static RubyDate _load(ThreadContext context, IRubyObject klass, IRubyObject str) {
+        IRubyObject a = RubyMarshal.load(context, null, new IRubyObject[] { str }, null);
+        RubyDate obj = (RubyDate) ((RubyClass) klass).allocate();
+        return obj.marshal_load(context, a);
+    }
+
     @JRubyMethod
-    public IRubyObject marshal_load(ThreadContext context, IRubyObject a) {
+    public RubyDate marshal_load(ThreadContext context, IRubyObject a) {
+        checkFrozen();
+
+        if (!(a instanceof RubyArray)) {
+            throw context.runtime.newTypeError("expected an array");
+        }
+
         final RubyArray ary = (RubyArray) a;
+
         IRubyObject ajd, of, sg;
-        if (ary.size() == 3) { // ajd, of, sg = a
-            ajd = ary.eltInternal(0);
-            of = ary.eltInternal(1);
-            sg = ary.eltInternal(2);
-        }
-        else if (ary.size() == 6) { // _, jd, df, sf, of, sg = a
-            IRubyObject jd = ary.eltInternal(1);
-            IRubyObject df = ary.eltInternal(2);
-            IRubyObject sf = ary.eltInternal(3);
-            of = ary.eltInternal(4);
-            sg = ary.eltInternal(5);
-            of = newRationalConvert(context, of, DAY_IN_SECONDS);
-            ajd = marshal_load_6(context, jd, df, sf);
-        }
-        else {
-            throw context.runtime.newTypeError("invalid size: " + ary.size());
+
+        switch (ary.size()) {
+            case 2: /* 1.6.x */
+                ajd = valMinusOneHalf(context, ary.eltInternal(0));
+                of = RubyFixnum.zero(context.runtime);
+                sg = ary.eltInternal(1);
+                if (!k_numeric_p(sg)) {
+                    sg = RubyFloat.newFloat(context.runtime, sg.isTrue() ? GREGORIAN : JULIAN);
+                }
+                break;
+            case 3: /* 1.8.x, 1.9.2 */ // ajd, of, sg = a
+                ajd = ary.eltInternal(0);
+                of = ary.eltInternal(1);
+                sg = ary.eltInternal(2);
+                break;
+            case 6: // _, jd, df, sf, of, sg = a
+                IRubyObject jd = ary.eltInternal(1);
+                IRubyObject df = ary.eltInternal(2);
+                IRubyObject sf = ary.eltInternal(3);
+                of = ary.eltInternal(4);
+                sg = ary.eltInternal(5);
+                of = newRationalConvert(context, of, DAY_IN_SECONDS);
+                ajd = marshal_load_6(context, jd, df, sf);
+                break;
+            default:
+                throw context.runtime.newTypeError("invalid size: " + ary.size());
         }
 
         return initialize(context, ajd, of, sg);
     }
 
     private IRubyObject marshal_load_6(ThreadContext context, IRubyObject jd, IRubyObject df, IRubyObject sf) {
-        IRubyObject ajd = RubyRational.newRational(context.runtime, -1, 2).op_plus(context, jd);
+        IRubyObject ajd = valMinusOneHalf(context, jd);
         if ( ! ( (RubyNumeric) df ).isZero() ) {
             ajd = newRationalConvert(context, df, DAY_IN_SECONDS).op_plus(context, ajd);
         }
@@ -1231,6 +1255,10 @@ public class RubyDate extends RubyObject {
             ajd = newRationalConvert(context, sf, DAY_IN_SECONDS * 1_000_000_000).op_plus(context, ajd);
         }
         return ajd;
+    }
+
+    private static IRubyObject valMinusOneHalf(ThreadContext context, IRubyObject val) {
+        return RubyRational.newRational(context.runtime, -1, 2).op_plus(context, val);
     }
 
     static RubyRational newRationalConvert(ThreadContext context, IRubyObject num, long den) {

@@ -596,15 +596,6 @@ class Date
   # The format used is YYYY-MM-DD.
   def to_s() format('%.4d-%02d-%02d', year, mon, mday) end # 4p
 
-  # @private
-  def self._load(str)
-    ary = Marshal.load(str)
-    raise TypeError, "expected an array" unless ary.is_a?(Array)
-    obj = allocate
-    obj.marshal_load(ary)
-    obj
-  end
-
 end
 
 # Class representing a date and time.
