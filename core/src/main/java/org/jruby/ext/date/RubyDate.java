@@ -1342,6 +1342,11 @@ public class RubyDate extends RubyObject {
         return off;
     }
 
+    static void debug(ThreadContext context, final String msg, Exception ex) {
+        if (LOG.isDebugEnabled()) LOG.debug(msg, ex);
+        else if (context.runtime.isDebug()) LOG.info(msg, ex);
+    }
+
     @Override
     public final IRubyObject inspect() {
         return inspect(getRuntime().getCurrentContext());
@@ -1390,13 +1395,10 @@ public class RubyDate extends RubyObject {
     }
 
     @JRubyMethod
-    public RubyString to_s(ThreadContext context) {
-        // format('%.4d-%02d-%02d', year, mon, mday)
-        IRubyObject[] args = new IRubyObject[] {
-            RubyString.newStringLight(context.runtime, TO_S_FORMAT),
-            year(context), mon(context), mday(context)
-        };
-        return (RubyString) RubyKernel.sprintf(context, this, args);
+    public RubyString to_s(ThreadContext context) { // format('%.4d-%02d-%02d', year, mon, mday)
+        final RubyString str = RubyString.newStringLight(context.runtime, TO_S_FORMAT);
+        IRubyObject[] args = new IRubyObject[] { year(context), mon(context), mday(context) };
+        return str.op_format(context, RubyArray.newArrayNoCopy(context.runtime, args));
     }
 
     @JRubyMethod
@@ -1411,12 +1413,12 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod // def strftime(fmt='%F')
     public RubyString strftime(ThreadContext context) {
-        return strftime(context, RubyString.newStringLight(context.runtime, DEFAULT_FORMAT));
+        return strftime(context, RubyString.newStringLight(context.runtime, DEFAULT_FORMAT_BYTES));
     }
 
     @JRubyMethod // alias_method :format, :strftime
     public RubyString strftime(ThreadContext context, IRubyObject fmt) {
-        IRubyObject subMillis = this.subMillisNum == 0 ? context.nil :
+        RubyRational subMillis = this.subMillisNum == 0 ? null :
                 RubyRational.newRational(context.runtime, this.subMillisNum, this.subMillisDen);
         RubyString format = context.getRubyDateFormatter().compileAndFormat(
                 fmt.convertToString(), true, this.dt, 0, subMillis
@@ -1425,34 +1427,51 @@ public class RubyDate extends RubyObject {
         return format;
     }
 
-    private static final ByteList DEFAULT_FORMAT = new ByteList(new byte[] {'%', 'F'}, false);
+    private static final String DEFAULT_FORMAT = "%F";
+    private static final ByteList DEFAULT_FORMAT_BYTES = ByteList.create(DEFAULT_FORMAT);
 
-    public static IRubyObject _strptime(ThreadContext context, IRubyObject str) {
-        return _strptime(context, str, context.runtime.newString(DEFAULT_FORMAT));
+    @JRubyMethod(meta = true)
+    public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string) {
+        return parse(context, string, DEFAULT_FORMAT);
     }
 
-    public static IRubyObject _strptime(ThreadContext context, IRubyObject string, IRubyObject format) {
-        RubyString stringString = (RubyString) TypeConverter.checkStringType(context.runtime, string);
-        RubyString formatString = (RubyString) TypeConverter.checkStringType(context.runtime, format);
-
-        return new RubyDateParser().parse(context, formatString, stringString);
+    @JRubyMethod(meta = true)
+    public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string, IRubyObject format) {
+        format = TypeConverter.checkStringType(context.runtime, format);
+        return parse(context, string, ((RubyString) format).decodeString());
     }
 
-    @JRubyMethod(meta = true, required = 1, optional = 1)
+    static IRubyObject parse(ThreadContext context, IRubyObject string, String format) {
+        string = TypeConverter.checkStringType(context.runtime, string);
+
+        return new RubyDateParser().parse(context, format, (RubyString) string);
+    }
+
+    // @Deprecated
     public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        switch(args.length) {
+        switch (args.length) {
             case 1:
-                return _strptime(context, args[0]);
+                return _strptime(context, self, args[0]);
             case 2:
-                return _strptime(context, args[0], args[1]);
+                return _strptime(context, self, args[0], args[1]);
             default:
                 throw context.runtime.newArgumentError(args.length, 1);
         }
     }
 
-    static void debug(ThreadContext context, final String msg, Exception ex) {
-        if (LOG.isDebugEnabled()) LOG.debug(msg, ex);
-        else if (context.runtime.isDebug()) LOG.info(msg, ex);
+    @JRubyMethod(name = "i", meta = true, visibility = Visibility.PRIVATE)
+    public static RubyInteger _i(ThreadContext context, IRubyObject self, IRubyObject val) {
+        return (RubyInteger) TypeConverter.convertToInteger(context, val, 10); // Integer(str, 10)
+    }
+
+    @JRubyMethod(name = "comp_year69", meta = true, visibility = Visibility.PRIVATE)
+    public static RubyInteger _comp_year69(ThreadContext context, IRubyObject self, IRubyObject year) {
+        RubyInteger y = _i(context, self, year);
+        if (((RubyString) year).strLength() < 4) {
+            final long yi = y.getLongValue();
+            return RubyFixnum.newFixnum(context.runtime, yi >= 69 ? yi + 1900 : yi + 2000);
+        }
+        return y;
     }
 
 }

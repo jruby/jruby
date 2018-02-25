@@ -39,12 +39,14 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRational;
+import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * JRuby's <code>DateTime</code> implementation - 'native' parts.
@@ -392,6 +394,32 @@ public class RubyDateTime extends RubyDate {
         // sec_fraction: Rational(context, dt.getMillisOfSecond() + (long) subMillis, 1000);
         time.setUSec(0);
         return time;
+    }
+
+    // date/format.rb
+
+    private static final ByteList STRF_FORMAT_BYTES = ByteList.create("%FT%T%:z");
+
+    @JRubyMethod // def strftime(fmt='%FT%T%:z')
+    public RubyString strftime(ThreadContext context) {
+        return super.strftime(context, RubyString.newStringLight(context.runtime, STRF_FORMAT_BYTES));
+    }
+
+    @JRubyMethod // alias_method :format, :strftime
+    public RubyString strftime(ThreadContext context, IRubyObject fmt) {
+        return super.strftime(context, fmt);
+    }
+
+    private static final String DEFAULT_FORMAT = "%FT%T%z";
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string) {
+        return parse(context, string, DEFAULT_FORMAT);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string, IRubyObject format) {
+        return RubyDate._strptime(context, self, string, format);
     }
 
 }

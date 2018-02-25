@@ -43,6 +43,7 @@ import static org.jruby.util.StrptimeParser.FormatBag.has;
  * This class has {@code StrptimeParser} and provides methods that are calls from JRuby.
  */
 public class RubyDateParser {
+
     /**
      * Date._strptime method in JRuby 9.1.5.0's lib/ruby/stdlib/date/format.rb is replaced
      * with this method. This is Java implementation of date__strptime method in MRI 2.3.1's
@@ -53,7 +54,11 @@ public class RubyDateParser {
      */
 
     public IRubyObject parse(ThreadContext context, final RubyString format, final RubyString text) {
-        final List<StrptimeToken> compiledPattern = context.runtime.getCachedStrptimePattern(format.asJavaString());
+        return parse(context, format.asJavaString(), text);
+    }
+
+    public IRubyObject parse(ThreadContext context, final String format, final RubyString text) {
+        final List<StrptimeToken> compiledPattern = context.runtime.getCachedStrptimePattern(format);
         final StrptimeParser.FormatBag bag = new StrptimeParser().parse(compiledPattern, text.asJavaString());
 
         return bag == null ? context.nil :  convertFormatBagToHash(context, bag, text.isTaint());
