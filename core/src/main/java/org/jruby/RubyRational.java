@@ -25,39 +25,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import static org.jruby.util.Numeric.f_abs;
-import static org.jruby.util.Numeric.f_add;
-import static org.jruby.util.Numeric.f_cmp;
-import static org.jruby.util.Numeric.f_div;
-import static org.jruby.util.Numeric.f_equal;
-import static org.jruby.util.Numeric.f_expt;
-import static org.jruby.util.Numeric.f_floor;
-import static org.jruby.util.Numeric.f_gcd;
-import static org.jruby.util.Numeric.f_idiv;
-import static org.jruby.util.Numeric.f_integer_p;
-import static org.jruby.util.Numeric.f_minus_one_p;
-import static org.jruby.util.Numeric.f_mul;
-import static org.jruby.util.Numeric.f_negate;
-import static org.jruby.util.Numeric.f_negative_p;
-import static org.jruby.util.Numeric.f_odd_p;
-import static org.jruby.util.Numeric.f_one_p;
-import static org.jruby.util.Numeric.f_rshift;
-import static org.jruby.util.Numeric.f_sub;
-import static org.jruby.util.Numeric.f_to_f;
-import static org.jruby.util.Numeric.f_to_i;
-import static org.jruby.util.Numeric.f_to_r;
-import static org.jruby.util.Numeric.f_truncate;
-import static org.jruby.util.Numeric.f_xor;
-import static org.jruby.util.Numeric.f_zero_p;
-import static org.jruby.util.Numeric.i_gcd;
-import static org.jruby.util.Numeric.i_ilog2;
-import static org.jruby.util.Numeric.k_exact_p;
-import static org.jruby.util.Numeric.k_integer_p;
-import static org.jruby.util.Numeric.k_numeric_p;
-import static org.jruby.util.Numeric.ldexp;
-import static org.jruby.util.Numeric.nurat_rationalize_internal;
-
 import java.io.IOException;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 
 import org.jcodings.specific.ASCIIEncoding;
@@ -83,6 +52,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+import static org.jruby.util.Numeric.*;
 
 /**
  * rational.c (as of revision: 20011)
@@ -375,7 +345,7 @@ public class RubyRational extends RubyNumeric {
         return convertCommon(context, (RubyClass) recv, a1, a2);
     }
     
-    private static IRubyObject convertCommon(ThreadContext context, RubyClass clazz, IRubyObject a1, IRubyObject a2) {
+    private static RubyNumeric convertCommon(ThreadContext context, RubyClass clazz, IRubyObject a1, IRubyObject a2) {
         if (a1 instanceof RubyComplex) {
             RubyComplex a1c = (RubyComplex) a1;
             if (k_exact_p(a1c.getImage()) && f_zero_p(context, a1c.getImage())) a1 = a1c.getReal();
@@ -406,18 +376,18 @@ public class RubyRational extends RubyNumeric {
         }
 
         if (a1 instanceof RubyRational) {
-            if (a2 == context.nil || (k_exact_p(a2) && f_one_p(context, a2))) return a1;
+            if (a2 == context.nil || (k_exact_p(a2) && f_one_p(context, a2))) return (RubyRational) a1;
         }
 
         if (a2 == context.nil) {
             if (!(a1 instanceof RubyNumeric && f_integer_p(context, (RubyNumeric) a1))) {
-                return TypeConverter.convertToType(context, a1, context.runtime.getRational(), sites(context).to_r_checked);
+                return (RubyRational) TypeConverter.convertToType(context, a1, context.runtime.getRational(), sites(context).to_r_checked);
             }
             return newInstance(context, clazz, a1);
         } else {
             if ((a1 instanceof RubyNumeric && a2 instanceof RubyNumeric) &&
                 (!f_integer_p(context, (RubyNumeric) a1) || !f_integer_p(context, (RubyNumeric) a2))) {
-                return f_div(context, a1, a2);
+                return (RubyNumeric) f_div(context, a1, a2);
             }
             return newInstance(context, clazz, a1, a2);
         }
@@ -945,6 +915,16 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "to_i")
     public IRubyObject to_i(ThreadContext context) {
         return mriTruncate(context); // truncate(context);
+    }
+
+    @Override
+    public long getLongValue() {
+        return convertToInteger().getLongValue();
+    }
+
+    @Override
+    public BigInteger getBigIntegerValue() {
+        return convertToInteger().getBigIntegerValue();
     }
 
     /**
