@@ -58,7 +58,7 @@ public abstract class TimeExt {
     public static RubyDate to_date(ThreadContext context, IRubyObject self) {
         final DateTime dt = ((RubyTime) self).getDateTime();
         long jd = civil_to_jd(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(), GREGORIAN);
-        return new RubyDate(context, getDate(context.runtime), jd_to_ajd(context, jd), CHRONO_ITALY_UTC, ITALY);
+        return new RubyDate(context, getDate(context.runtime), jd_to_ajd(context, jd), CHRONO_ITALY_UTC, 0);
     }
 
     @JRubyMethod(name = "to_datetime")
@@ -77,7 +77,7 @@ public abstract class TimeExt {
 
         final int off = dt.getZone().getOffset(dt.getMillis()) / 1000;
         final Chronology chronology = getChronology(context, ITALY, off);
-        return new RubyDateTime(context, getDateTime(context.runtime), jd_to_ajd(context, jd, fr, off), chronology, ITALY);
+        return new RubyDateTime(context, getDateTime(context.runtime), jd_to_ajd(context, jd, fr, off), chronology, off);
     }
 
 }

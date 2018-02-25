@@ -285,8 +285,24 @@ class TestDate < Test::Unit::TestCase
     d = DateTime.new(2000, 3, 1).prev_day(2)
     assert_equal [2000, 2, 28, 00, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
 
-    #d = DateTime.new(2000,3,1).prev_day(1.to_r/2)
-    #assert_equal [2000, 2, 29, 12, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+    d = DateTime.new(2000,3,1).prev_day(1.to_r/2)
+    assert_equal [2000, 2, 29, 12, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = DateTime.new(2000,3,1).prev_day(3.to_r/5)
+    assert_equal [2000, 2, 29, 9, 36, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = DateTime.new(2000,3,1).next_day(0.5)
+    assert_equal [2000, 3, 1, 12, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = DateTime.new(2000,3,1).next_day(0.4444)
+    assert_equal [2000, 3, 1, 10, 39, 56], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = DateTime.new(2000,3,1).next_day(0.55555)
+    # NOTE: likely a (minor) rounding issue - JRuby gets time: 13:20:00
+    #assert_equal [2000, 3, 1, 13, 19, 59], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
+
+    d = DateTime.new(2000,3,1).next_day(-0.1)
+    assert_equal [2000, 2, 29, 21, 36, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
 
     d = Date.new(2000,3,1).prev_day(1.to_r/2)
     assert_equal [2000, 2, 29], [d.year, d.mon, d.mday]
@@ -302,9 +318,6 @@ class TestDate < Test::Unit::TestCase
 
     d = Date.new(2000,3,1).prev_day(Rational(0, 1))
     assert_equal [2000, 3, 1], [d.year, d.mon, d.mday]
-
-    #d = DateTime.new(2000,3,1).next_day(0.5)
-    #assert_equal [2000, 3, 1, 12, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec]
 
     d = Date.new(2000,3,1).next_day(0.7)
     assert_equal [2000, 3, 1], [d.year, d.mon, d.mday]
@@ -458,6 +471,36 @@ class TestDate < Test::Unit::TestCase
     time = DateTime.now
     zone = Time.new.strftime('%:z')
     assert time.to_s.end_with?(zone), "invalid zone for: #{time.to_s} (expected '#{zone}')"
+  end
+
+  def test_time_conv
+    today = Date.today
+    assert_equal today.to_s, Date.today.to_time.strftime('%F')
+    assert_equal today, Date.today.to_time.to_date
+
+    time = DateTime.now
+    #assert_equal nil, time.to_time.zone
+    assert_equal time.to_s, time.to_time.strftime('%FT%T%:z')
+    assert_equal time, time.to_time.to_datetime
+
+    time = Time.now
+    assert_equal time.nsec.to_r / 1_000_000_000, time.to_datetime.sec_fraction
+
+    time2 = time.to_time.to_datetime.to_time
+    assert_equal time.nsec, time2.nsec
+    assert_equal time.usec, time2.usec
+    assert_equal time, time2
+
+    time = Time.new(2018, 2, 25, 12, 21, 33 + Rational(999_999_999, 1_000_000_000), '+10:30')
+    assert_equal time.nsec.to_r / 1_000_000_000, time.to_datetime.sec_fraction
+
+    assert_equal '+10:30', time.to_datetime.zone
+    assert_equal time.to_s, time.to_datetime.strftime('%F %T %z')
+
+    time2 = time.to_time.to_datetime.to_time
+    assert_equal time.nsec, time2.nsec
+    assert_equal time.usec, time2.usec
+    assert_equal time, time2
   end
 
 end

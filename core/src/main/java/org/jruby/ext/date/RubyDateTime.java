@@ -352,14 +352,18 @@ public class RubyDateTime extends RubyDate {
         if (zone == DateTimeZone.UTC) {
             return new RubyDateTime(context.runtime, (RubyClass) self, new DateTime(CHRONO_ITALY_UTC));
         }
-        return new RubyDateTime(context.runtime, (RubyClass) self, new DateTime(GJChronology.getInstance(zone)));
+        final DateTime dt = new DateTime(GJChronology.getInstance(zone));
+        final int off = zone.getOffset(dt.getMillis()) / 1000;
+        return new RubyDateTime(context.runtime, (RubyClass) self, dt, off, ITALY);
     }
 
     @JRubyMethod(meta = true)
     public static RubyDateTime now(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final int start = val2sg(context, sg);
         final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
-        return new RubyDateTime(context.runtime, (RubyClass) self, new DateTime(getChronology(context, start, zone)), 0, start);
+        final DateTime dt = new DateTime(getChronology(context, start, zone));
+        final int off = zone.getOffset(dt.getMillis()) / 1000;
+        return new RubyDateTime(context.runtime, (RubyClass) self, dt, off, start);
     }
 
     @Override
@@ -407,8 +411,11 @@ public class RubyDateTime extends RubyDate {
     public RubyTime to_time(ThreadContext context) {
         final Ruby runtime = context.runtime;
         RubyTime time = new RubyTime(runtime, runtime.getTime(), dt);
-        // sec_fraction: Rational(context, dt.getMillisOfSecond() + (long) subMillis, 1000);
-        time.setUSec(0);
+        if (subMillisNum != 0) {
+            RubyNumeric usec = (RubyNumeric)
+                    subMillis(runtime).op_mul(context, RubyFixnum.newFixnum(runtime, 1_000_000));
+            time.setNSec(usec.getLongValue());
+        }
         return time;
     }
 
