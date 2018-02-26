@@ -1,14 +1,7 @@
-#
-# date.rb - date and time library
-#
-# Author: Tadayoshi Funaba 1998-2011
-#
-# Documentation: William Webber <william@williamwebber.com>
-#
-#--
-# $Id: date.rb,v 2.37 2008-01-17 20:16:31+09 tadf Exp $
-#++
-#
+# encoding: US-ASCII
+# frozen_string_literal: false
+# date.rb: Written by Tadayoshi Funaba 1998-2011
+
 # == Overview
 #
 # This file provides two classes for working with
