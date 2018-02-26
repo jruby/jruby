@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.date;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
@@ -1471,10 +1472,11 @@ public class RubyDate extends RubyObject {
         }
         str.append('j').append(')').append('>');
 
-        return RubyString.newStringLight(context.runtime, str);
+        return RubyString.newUsAsciiStringNoCopy(context.runtime, str);
     }
 
     private static final ByteList TO_S_FORMAT = new ByteList(ByteList.plain("%.4d-%02d-%02d"), false);
+    static { TO_S_FORMAT.setEncoding(USASCIIEncoding.INSTANCE); }
 
     @Override
     public final IRubyObject to_s() {
@@ -1519,6 +1521,7 @@ public class RubyDate extends RubyObject {
 
     private static final String DEFAULT_FORMAT = "%F";
     private static final ByteList DEFAULT_FORMAT_BYTES = ByteList.create(DEFAULT_FORMAT);
+    static { DEFAULT_FORMAT_BYTES.setEncoding(USASCIIEncoding.INSTANCE); }
 
     @JRubyMethod(meta = true)
     public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string) {

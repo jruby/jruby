@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.date;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -179,19 +180,13 @@ public class RubyDateTime extends RubyDate {
         final Chronology chronology = getChronology(context, sg, off);
         DateTime dt = civilDate(context, year, month, day, chronology); // hour: 0, minute: 0, second: 0
 
-        //System.out.println(" 1.day " + day + " rest = " + rest[0] + " / " + rest[1]);
-
         if (len >= 4 || rest[0] != 0) {
             hour = getHour(context, len >= 4 ? args[3] : RubyFixnum.zero(context.runtime), rest);
         }
 
-        //System.out.println(" 2.hour " + hour + " rest = " + rest[0] + " / " + rest[1]);
-
         if (len >= 5 || rest[0] != 0) {
             minute = getMinute(context, len >= 5 ? args[4] : RubyFixnum.zero(context.runtime), rest);
         }
-
-        //System.out.println(" 3.minu " + minute + " rest = " + rest[0] + " / " + rest[1]);
 
         if (len >= 6 || rest[0] != 0) {
             IRubyObject sec = len >= 6 ? args[5] : RubyFixnum.zero(context.runtime);
@@ -202,8 +197,6 @@ public class RubyDateTime extends RubyDate {
                 subMillisNum = (int) ((1000 * r0) - (millis * r1)); subMillisDen = r1;
             }
         }
-
-        //System.out.println(" 4.seco " + second + " rest = " + rest[0] + " / " + rest[1] + "\n  millis = " + millis);
 
         try {
             long ms = dt.getMillis();
@@ -384,6 +377,7 @@ public class RubyDateTime extends RubyDate {
     }
 
     private static final ByteList TO_S_FORMAT = new ByteList(ByteList.plain("%.4d-%02d-%02dT%02d:%02d:%02d%s"), false);
+    static { TO_S_FORMAT.setEncoding(USASCIIEncoding.INSTANCE); }
 
     @JRubyMethod
     public RubyString to_s(ThreadContext context) {
@@ -422,6 +416,7 @@ public class RubyDateTime extends RubyDate {
     // date/format.rb
 
     private static final ByteList STRF_FORMAT_BYTES = ByteList.create("%FT%T%:z");
+    static { STRF_FORMAT_BYTES.setEncoding(USASCIIEncoding.INSTANCE); }
 
     @JRubyMethod // def strftime(fmt='%FT%T%:z')
     public RubyString strftime(ThreadContext context) {
