@@ -771,8 +771,7 @@ public class RubyDate extends RubyObject {
     }
 
     private long getJulianDayNumber() {
-        double day = DateTimeUtils.toJulianDay(dt.getMillis()) + off;
-        return (long) Math.floor(day + 0.5);
+        return DateTimeUtils.toJulianDayNumber(dt.getMillis() + off * 1000);
     }
 
     @JRubyMethod(name = "julian?")
@@ -786,11 +785,6 @@ public class RubyDate extends RubyObject {
     }
 
     public final boolean isJulian() {
-        // JULIAN.<=>(numeric)     => +1
-        //if (start == JULIAN) return true;
-        // GREGORIAN.<=>(numeric)  => -1
-        //if (start == GREGORIAN) return false;
-
         return getJulianDayNumber() < start;
     }
 
