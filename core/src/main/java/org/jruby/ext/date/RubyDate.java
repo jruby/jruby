@@ -272,6 +272,16 @@ public class RubyDate extends RubyObject {
         return v;
     }
 
+    @Override
+    public IRubyObject initialize_copy(IRubyObject original) {
+        final RubyDate from = (RubyDate) original;
+
+        this.dt = from.dt; this.off = from.off; this.start = from.start;
+        this.subMillisNum = from.subMillisNum; this.subMillisDen = from.subMillisDen;
+
+        return this;
+    }
+
     // Date.new!(dt_or_ajd=0, of=0, sg=ITALY, sub_millis=0)
 
     /**
