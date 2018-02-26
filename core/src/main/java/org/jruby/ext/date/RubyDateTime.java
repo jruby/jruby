@@ -163,11 +163,6 @@ public class RubyDateTime extends RubyDate {
         return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year, month), 0);
     }
 
-    //@JRubyMethod(name = "civil", alias = "new", meta = true)
-    //public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month, IRubyObject mday) {
-    //    return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year, month, mday));
-    //}
-
     @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 8)
     public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // year=-4712, month=1, mday=1,
@@ -185,9 +180,6 @@ public class RubyDateTime extends RubyDate {
         final int month = getMonth(args[1]);
         final int[] rest = new int[] { 0, 1 };
         final int day = (int) getDay(context, args[2], rest);
-
-        final Chronology chronology = getChronology(context, sg, off);
-        DateTime dt = civilDate(context, year, month, day, chronology); // hour: 0, minute: 0, second: 0
 
         if (len >= 4 || rest[0] != 0) {
             hour = getHour(context, len >= 4 ? args[3] : RubyFixnum.zero(context.runtime), rest);
@@ -207,12 +199,20 @@ public class RubyDateTime extends RubyDate {
             }
         }
 
+        if (hour == 24 && (minute != 0 || second != 0 || millis != 0)) {
+            throw context.runtime.newArgumentError("invalid date");
+        }
+
+        final Chronology chronology = getChronology(context, sg, off);
+        DateTime dt = civilDate(context, year, month, day, chronology); // hour: 0, minute: 0, second: 0
+
         try {
             long ms = dt.getMillis();
-            ms = chronology.hourOfDay().set(ms, hour);
+            ms = chronology.hourOfDay().set(ms, hour == 24 ? 0 : hour);
             ms = chronology.minuteOfHour().set(ms, minute);
             ms = chronology.secondOfMinute().set(ms, second);
             dt = dt.withMillis(ms + millis);
+            if (hour == 24) dt = dt.plusDays(1);
         }
         catch (IllegalArgumentException ex) {
             debug(context, "invalid date", ex);
