@@ -1436,8 +1436,8 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
-        long off = this.off * 86_400;
-        long s = (dt.getHourOfDay() * 60 + dt.getMinuteOfHour()) * 60 + dt.getSecondOfMinute() - off;
+        int off = this.off;
+        int s = (dt.getHourOfDay() * 60 + dt.getMinuteOfHour()) * 60 + dt.getSecondOfMinute() - off;
         long ns = (dt.getMillisOfSecond() * 1_000_000) + (subMillisNum * 1_000_000) / subMillisDen;
         ByteList str = new ByteList(54); // e.g. #<Date: 2018-01-15 ((2458134j,0s,0n),+0s,2299161j)>
         str.append('#').append('<');
