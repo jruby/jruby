@@ -25,6 +25,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
@@ -61,10 +62,11 @@ public class RubyDateParser {
         final List<StrptimeToken> compiledPattern = context.runtime.getCachedStrptimePattern(format);
         final StrptimeParser.FormatBag bag = new StrptimeParser().parse(compiledPattern, text.asJavaString());
 
-        return bag == null ? context.nil :  convertFormatBagToHash(context, bag, text.isTaint());
+        return bag == null ? context.nil : convertFormatBagToHash(context, bag, text.getEncoding(), text.isTaint());
     }
 
-    private IRubyObject convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag, boolean tainted) {
+    static IRubyObject convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag,
+                                              Encoding encoding, boolean tainted) {
         Ruby runtime = context.runtime;
         RubyHash hash = RubyHash.newHash(runtime);
 
@@ -84,7 +86,7 @@ public class RubyDateParser {
         if (has(bag.getWNum1())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "wnum1"), runtime.newFixnum(bag.getWNum1()));
 
         if (bag.getZone() != null) {
-            final RubyString zone = RubyString.newString(runtime, bag.getZone());
+            final RubyString zone = RubyString.newString(runtime, bag.getZone(), encoding);
             if (tainted) zone.taint(context);
 
             hash.op_aset(context, RubySymbol.newSymbol(runtime, "zone"), zone);
@@ -115,7 +117,7 @@ public class RubyDateParser {
             hash.op_aset(context, RubySymbol.newSymbol(runtime, "_cent"), RubyBignum.newBignum(runtime, bag.getCent()));
         }
         if (bag.getLeftover() != null) {
-            final RubyString leftover = RubyString.newString(runtime, bag.getLeftover());
+            final RubyString leftover = RubyString.newString(runtime, bag.getLeftover(), encoding);
             if (tainted) leftover.taint(context);
 
             hash.op_aset(context, RubySymbol.newSymbol(runtime, "leftover"), leftover);
