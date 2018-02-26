@@ -72,7 +72,7 @@ public class RubyDateTime extends RubyDate {
     private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyDateTime(runtime, klass, defaultDateTime);
+            return new RubyDateTime(runtime, klass, defaultDateTime, 0);
         }
     };
 
@@ -82,10 +82,12 @@ public class RubyDateTime extends RubyDate {
 
     public RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt) {
         super(runtime, klass, dt);
+
+        this.off = dt.getZone().getOffset(dt.getMillis()) / 1000;
     }
 
     public RubyDateTime(Ruby runtime, DateTime dt) {
-        super(runtime, getDateTime(runtime), dt);
+        this(runtime, getDateTime(runtime), dt);
     }
 
     public RubyDateTime(Ruby runtime, long millis, Chronology chronology) {
@@ -94,6 +96,13 @@ public class RubyDateTime extends RubyDate {
 
     private RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, int start) {
         super(context, klass, ajd, off, start);
+    }
+
+    private RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off) {
+        super(runtime, klass);
+
+        this.dt = dt;
+        this.off = off;
     }
 
     RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, int start) {
@@ -141,17 +150,17 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDateTime civil(ThreadContext context, IRubyObject self) {
-        return new RubyDateTime(context.runtime, (RubyClass) self, defaultDateTime);
+        return new RubyDateTime(context.runtime, (RubyClass) self, defaultDateTime, 0);
     }
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject year) {
-        return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year));
+        return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year), 0);
     }
 
     @JRubyMethod(name = "civil", alias = "new", meta = true)
     public static RubyDateTime civil(ThreadContext context, IRubyObject self, IRubyObject year, IRubyObject month) {
-        return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year, month));
+        return new RubyDateTime(context.runtime, (RubyClass) self, civilImpl(context, year, month), 0);
     }
 
     //@JRubyMethod(name = "civil", alias = "new", meta = true)
@@ -210,9 +219,7 @@ public class RubyDateTime extends RubyDate {
             throw context.runtime.newArgumentError("invalid date");
         }
 
-        RubyDateTime dateTime = new RubyDateTime(context.runtime, (RubyClass) self, dt, off, sg);
-        dateTime.subMillisNum = subMillisNum; dateTime.subMillisDen = subMillisDen;
-        return dateTime;
+        return new RubyDateTime(context.runtime, (RubyClass) self, dt, off, sg, subMillisNum, subMillisDen);
     }
 
     private static int getDay(ThreadContext context, IRubyObject day, final int[] rest) {
@@ -303,7 +310,7 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod(name = "jd", meta = true)
     public static RubyDate jd(ThreadContext context, IRubyObject self) { // jd = 0
-        return new RubyDateTime(context.runtime, (RubyClass) self, defaultDateTime);
+        return new RubyDateTime(context.runtime, (RubyClass) self, defaultDateTime, 0);
     }
 
     @JRubyMethod(name = "jd", meta = true, optional = 6)
@@ -343,7 +350,7 @@ public class RubyDateTime extends RubyDate {
     public static RubyDateTime now(ThreadContext context, IRubyObject self) { // sg=ITALY
         final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
         if (zone == DateTimeZone.UTC) {
-            return new RubyDateTime(context.runtime, (RubyClass) self, new DateTime(CHRONO_ITALY_UTC));
+            return new RubyDateTime(context.runtime, (RubyClass) self, new DateTime(CHRONO_ITALY_UTC), 0);
         }
         final DateTime dt = new DateTime(GJChronology.getInstance(zone));
         final int off = zone.getOffset(dt.getMillis()) / 1000;
