@@ -184,7 +184,7 @@ public class RubyDateTime extends RubyDate {
         final int year = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
         final int month = getMonth(args[1]);
         final int[] rest = new int[] { 0, 1 };
-        final int day = getDay(context, args[2], rest);
+        final int day = (int) getDay(context, args[2], rest);
 
         final Chronology chronology = getChronology(context, sg, off);
         DateTime dt = civilDate(context, year, month, day, chronology); // hour: 0, minute: 0, second: 0
@@ -222,19 +222,20 @@ public class RubyDateTime extends RubyDate {
         return new RubyDateTime(context.runtime, (RubyClass) self, dt, off, sg, subMillisNum, subMillisDen);
     }
 
-    private static int getDay(ThreadContext context, IRubyObject day, final int[] rest) {
+    static long getDay(ThreadContext context, IRubyObject day, final int[] rest) {
         long d = day.convertToInteger().getLongValue();
 
-        if (day instanceof RubyRational) {
-            long num = ((RubyRational) day).getNumerator().getLongValue();
-            int den = ((RubyRational) day).getDenominator().getIntValue();
+        if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
+            RubyRational rat = ((RubyNumeric) day).convertToRational();
+            long num = rat.getNumerator().getLongValue();
+            int den = rat.getDenominator().getIntValue();
             rest[0] = (int) (num - d * den); rest[1] = den;
         }
 
-        return (int) d;
+        return d;
     }
 
-    private static int getHour(ThreadContext context, IRubyObject hour, final int[] rest) {
+    static int getHour(ThreadContext context, IRubyObject hour, final int[] rest) {
         long h = hour.convertToInteger().getLongValue();
         int i = 0;
         final int r0 = rest[0], r1 = rest[1];
@@ -248,7 +249,7 @@ public class RubyDateTime extends RubyDate {
         return (int) (h < 0 ? h + 24 : h); // JODA will handle invalid value
     }
 
-    private static int getMinute(ThreadContext context, IRubyObject val, final int[] rest) {
+    static int getMinute(ThreadContext context, IRubyObject val, final int[] rest) {
         long v = val.convertToInteger().getLongValue();
         int i = 0;
         final int r0 = rest[0], r1 = rest[1];
@@ -262,18 +263,19 @@ public class RubyDateTime extends RubyDate {
         return (int) (v < 0 ? v + 60 : v); // JODA will handle invalid value
     }
 
-    private static int getSecond(ThreadContext context, IRubyObject sec, final int[] rest) {
+    static int getSecond(ThreadContext context, IRubyObject sec, final int[] rest) {
         return getMinute(context, sec, rest);
     }
 
     private static void addRationalModToRest(ThreadContext context, IRubyObject val, long ival, final int[] rest) {
-        if (val instanceof RubyRational) {
-            long num = ((RubyRational) val).getNumerator().getLongValue();
-            int den = ((RubyRational) val).getDenominator().getIntValue();
+        if (!(val instanceof RubyInteger) && val instanceof RubyNumeric) { // Rational|Float
+            RubyRational rat = ((RubyNumeric) val).convertToRational();
+            long num = rat.getNumerator().getLongValue();
+            int den = rat.getDenominator().getIntValue();
             num -= ival * den;
             if (num != 0) {
                 IRubyObject res = RubyRational.newRational(context.runtime, rest[0], rest[1]).
-                        op_add(context, RubyRational.newRationalCanonicalize(context, num, den));
+                        op_plus(context, RubyRational.newRationalCanonicalize(context, num, den));
                 if (res instanceof RubyRational) {
                     rest[0] = ((RubyRational) res).getNumerator().getIntValue();
                     rest[1] = ((RubyRational) res).getDenominator().getIntValue();
@@ -309,16 +311,18 @@ public class RubyDateTime extends RubyDate {
      */ // jd(jd=0, h=0, min=0, s=0, of=0, sg=ITALY)
 
     @JRubyMethod(name = "jd", meta = true)
-    public static RubyDate jd(ThreadContext context, IRubyObject self) { // jd = 0
+    public static RubyDateTime jd(ThreadContext context, IRubyObject self) { // jd = 0
         return new RubyDateTime(context.runtime, (RubyClass) self, defaultDateTime, 0);
     }
 
     @JRubyMethod(name = "jd", meta = true, optional = 6)
-    public static RubyDate jd(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+    public static RubyDateTime jd(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         final int len = args.length;
         final RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
-        final RubyInteger jd = args[0].convertToInteger();
+        final int[] rest = new int[] { 0, 1 };
+        final long jd = getDay(context, args[0], rest);
+
         final IRubyObject hour = (len > 1) ? args[1] : zero;
         final IRubyObject min = (len > 2) ? args[2] : zero;
         final IRubyObject sec = (len > 3) ? args[3] : zero;
@@ -337,7 +341,9 @@ public class RubyDateTime extends RubyDate {
         if (len > 4) off = val2off(context, args[4]);
         if (len > 5) sg = val2sg(context, args[5]);
 
-        return new RubyDateTime(context, (RubyClass) self, jd_to_ajd(context, jd, fr, off), off, sg);
+        RubyDateTime dateTime = new RubyDateTime(context, (RubyClass) self, jd_to_ajd(context, jd, fr, off), off, sg);
+        if (rest[0] != 0) dateTime.dt = adjustWithDayFraction(context, dateTime.dt, rest);
+        return dateTime;
     }
 
     /**
@@ -411,6 +417,10 @@ public class RubyDateTime extends RubyDate {
     @JRubyMethod // Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400.0))
     public RubyTime to_time(ThreadContext context) {
         final Ruby runtime = context.runtime;
+        DateTime dt = this.dt;
+        dt = dt.withZoneRetainFields(RubyTime.getTimeZone(runtime, this.off));
+
+        //DateTime dt = new DateTime(this.dt.getMillis(), RubyTime.getTimeZone(runtime, this.off));
         RubyTime time = new RubyTime(runtime, runtime.getTime(), dt);
         if (subMillisNum != 0) {
             RubyNumeric usec = (RubyNumeric)

@@ -62,11 +62,11 @@ public abstract class TimeExt {
     }
 
     @JRubyMethod(name = "to_datetime")
-    public static RubyDateTime to_datetime(ThreadContext context, IRubyObject self) {
+    public static RubyDateTime to_datetime1(ThreadContext context, IRubyObject self) {
         final Ruby runtime = context.runtime;
 
         final DateTime dt = ((RubyTime) self).getDateTime();
-        RubyFixnum jd = RubyFixnum.newFixnum(runtime, civil_to_jd(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(), ITALY));
+        final long jd = civil_to_jd(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(), ITALY);
 
         final RubyFixnum DAY_IN_SECS = RubyFixnum.newFixnum(runtime, DAY_IN_SECONDS);
 
