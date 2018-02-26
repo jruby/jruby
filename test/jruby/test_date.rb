@@ -363,6 +363,28 @@ class TestDate < Test::Unit::TestCase
 
     date = Date.new(1000, 1, 1)
     assert_equal true, date.julian?
+
+    date = Date.new(1582, 10, 15)
+    assert_equal false, date.julian?
+    assert_equal true, (date - 1).julian?
+
+    date = DateTime.new(1582, 10, 15)
+    assert_equal false, date.julian?
+    assert_equal true, (date - 1).julian?
+
+    date = DateTime.new(1582, 10, 15, 0, 0, 0)
+    assert_equal '#<DateTime: 1582-10-15T00:00:00+00:00 ((2299161j,0s,0n),+0s,2299161j)>', date.inspect
+    assert_equal false, date.julian?
+    date = DateTime.new(1582, 10, 15, 1, 0, 0)
+    assert_equal false, date.julian?
+    # NOTE: MRI's crazy-bits - NOT IMPLEMENTED seems like a bug
+    #date = DateTime.new(1582, 10, 15, 0, 0, 0, '+01:00')
+    #assert_equal true, date.julian?
+    #date = DateTime.new(1582, 10, 15, 0, 59, 59, '+01:00')
+    #assert_equal true, date.julian?
+    date = DateTime.new(1582, 10, 15, 1, 0, 0, '+01:00')
+    assert_equal '#<DateTime: 1582-10-15T01:00:00+01:00 ((2299161j,0s,0n),+3600s,2299161j)>', date.inspect
+    assert_equal false, date.julian?
   end
 
   def test_to_s_strftime
@@ -432,7 +454,7 @@ class TestDate < Test::Unit::TestCase
   end
 
   def test_civil_invalid_offset
-    if defined? JRUBY_VERSION # non-compatibility - this is how all JRubies (< 9.2) worked
+    if defined? JRUBY_VERSION # this is how all JRubies (< 9.2) worked
       assert_raise(ArgumentError) do
         DateTime.new(2000, 10, 10, 12, 24, 36, Rational(25, 24))
       end
