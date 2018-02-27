@@ -112,7 +112,7 @@ public class RubyDateTime extends RubyDate {
         this.off = off; this.start = start;
     }
 
-    RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, long start, int subMillisNum, int subMillisDen) {
+    RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, long start, long subMillisNum, long subMillisDen) {
         super(runtime, klass);
 
         this.dt = dt;
@@ -125,7 +125,7 @@ public class RubyDateTime extends RubyDate {
     }
 
     @Override
-    RubyDate newInstance(final ThreadContext context, final DateTime dt, int off, long start, int subNum, int subDen) {
+    RubyDate newInstance(final ThreadContext context, final DateTime dt, int off, long start, long subNum, long subDen) {
         return new RubyDateTime(context.runtime, getMetaClass(), dt, off, start, subNum, subDen);
     }
 
@@ -341,7 +341,8 @@ public class RubyDateTime extends RubyDate {
         if (len > 4) off = val2off(context, args[4]);
         if (len > 5) sg = val2sg(context, args[5]);
 
-        RubyDateTime dateTime = new RubyDateTime(context, (RubyClass) self, jd_to_ajd(context, jd, fr, off), off, sg);
+        RubyNumeric ajd = jd_to_ajd(context, jd, fr, off);
+        RubyDateTime dateTime = new RubyDateTime(context, (RubyClass) self, ajd, off, sg);
         if (rest[0] != 0) dateTime.dt = adjustWithDayFraction(context, dateTime.dt, rest);
         return dateTime;
     }

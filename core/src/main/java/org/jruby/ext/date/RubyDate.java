@@ -107,7 +107,7 @@ public class RubyDate extends RubyObject {
     DateTime dt;
     int off; // @of (in seconds)
     long start = ITALY; // @sg
-    int subMillisNum = 0, subMillisDen = 1; // @sub_millis
+    long subMillisNum = 0, subMillisDen = 1; // @sub_millis
 
     static RubyClass createDateClass(Ruby runtime) {
         RubyClass Date = runtime.defineClass("Date", runtime.getObject(), ALLOCATOR);
@@ -152,7 +152,7 @@ public class RubyDate extends RubyObject {
         this.off = off; this.start = start;
     }
 
-    RubyDate(Ruby runtime, RubyClass klass, DateTime dt, int off, long start, int subMillisNum, int subMillisDen) {
+    RubyDate(Ruby runtime, RubyClass klass, DateTime dt, int off, long start, long subMillisNum, long subMillisDen) {
         super(runtime, klass);
 
         this.dt = dt;
@@ -186,7 +186,7 @@ public class RubyDate extends RubyObject {
     }
 
     // to be overriden by RubyDateTime
-    RubyDate newInstance(final ThreadContext context, final DateTime dt, int off, long start, int subNum, int subDen) {
+    RubyDate newInstance(final ThreadContext context, final DateTime dt, int off, long start, long subNum, long subDen) {
         return new RubyDate(context.runtime, getMetaClass(), dt, off, start, subNum, subDen);
     }
 
@@ -258,8 +258,8 @@ public class RubyDate extends RubyObject {
         }
 
         IRubyObject subMillis = ((RubyArray) val).eltInternal(1);
-        this.subMillisNum = ((RubyNumeric) subMillis).numerator(context).convertToInteger().getIntValue();
-        this.subMillisDen = ((RubyNumeric) subMillis).denominator(context).convertToInteger().getIntValue();
+        this.subMillisNum = ((RubyNumeric) subMillis).numerator(context).convertToInteger().getLongValue();
+        this.subMillisDen = ((RubyNumeric) subMillis).denominator(context).convertToInteger().getLongValue();
 
         return ((RubyFixnum) millis).getLongValue();
     }
@@ -762,7 +762,7 @@ public class RubyDate extends RubyObject {
 
         if (cmp == 0) {
             if (this.subMillisDen == 1 && that.subMillisDen == 1) {
-                int diff = this.subMillisNum - that.subMillisNum;
+                long diff = this.subMillisNum - that.subMillisNum;
                 return diff < 0 ? -1 : ( diff == 0 ? 0 : +1 );
             }
             return cmpSubMillis(that);
@@ -1381,7 +1381,11 @@ public class RubyDate extends RubyObject {
     }
 
     static RubyNumeric jd_to_ajd(ThreadContext context, long jd, RubyNumeric fr, int of_sec) {
-        RubyNumeric tmp = RubyFixnum.newFixnum(context.runtime, jd); // jd - of :
+        return jd_to_ajd(context, RubyFixnum.newFixnum(context.runtime, jd), fr, of_sec);
+    }
+
+    static RubyNumeric jd_to_ajd(ThreadContext context, RubyNumeric jd, RubyNumeric fr, int of_sec) {
+        RubyNumeric tmp = jd; // jd - of :
         if (of_sec != 0) {
             tmp = (RubyNumeric) tmp.op_plus(context, RubyRational.newRationalCanonicalize(context, -of_sec, DAY_IN_SECONDS));
         }
@@ -1390,13 +1394,15 @@ public class RubyDate extends RubyObject {
     }
 
     @JRubyMethod(meta = true, required = 2, optional = 1, visibility = Visibility.PRIVATE)
-    public static IRubyObject jd_to_ajd(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+    public static RubyNumeric jd_to_ajd(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         RubyNumeric jd = (RubyNumeric) args[0];
-        RubyNumeric of = args.length > 2 ? (RubyNumeric) args[2] : RubyFixnum.zero(context.runtime);
-
-        RubyNumeric tmp = (RubyNumeric) jd.op_plus(context, args[1]); // jd + fr
-        final RubyRational MINUS_HALF = RubyRational.newRational(context.runtime, -1, 2);
-        return ((RubyNumeric) tmp.op_plus(context, of.op_uminus(context))).op_plus(context, MINUS_HALF); // - of - 1/2
+        RubyNumeric fr = (RubyNumeric) args[1];
+        int of_sec = 0;
+        if (args.length > 2 && ! ((RubyNumeric) args[2]).isZero()) {
+            RubyNumeric of = (RubyNumeric) f_mul(context, args[2], RubyFixnum.newFixnum(context.runtime, DAY_IN_SECONDS));
+            of_sec = of.getIntValue();
+        }
+        return jd_to_ajd(context, jd, fr, of_sec);
     }
 
     static Chronology getChronology(ThreadContext context, final long sg, final int off) {
