@@ -378,13 +378,20 @@ class TestDate < Test::Unit::TestCase
     date = DateTime.new(1582, 10, 15, 1, 0, 0)
     assert_equal false, date.julian?
     # NOTE: MRI's crazy-bits - NOT IMPLEMENTED seems like a bug
-    #date = DateTime.new(1582, 10, 15, 0, 0, 0, '+01:00')
+    date = DateTime.new(1582, 10, 15, 0, 0, 0, '+01:00')
     #assert_equal true, date.julian?
-    #date = DateTime.new(1582, 10, 15, 0, 59, 59, '+01:00')
+    date = DateTime.new(1582, 10, 15, 0, 59, 59, '+01:00')
     #assert_equal true, date.julian?
     date = DateTime.new(1582, 10, 15, 1, 0, 0, '+01:00')
     assert_equal '#<DateTime: 1582-10-15T01:00:00+01:00 ((2299161j,0s,0n),+3600s,2299161j)>', date.inspect
     assert_equal false, date.julian?
+
+    d = DateTime.new(-123456789,2,3,4,5,6,0)
+    assert d.julian?
+    assert_equal [-123456789, 2, 3, 4, 5, 6, 1], [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.wday]
+    d2 = d.gregorian
+    assert d2.gregorian?
+    assert_equal [-123459325, 12, 27, 4, 5, 6, 1], [d2.year, d2.mon, d2.mday, d.hour, d.min, d.sec, d.wday]
   end
 
   def test_to_s_strftime
@@ -523,6 +530,51 @@ class TestDate < Test::Unit::TestCase
     assert_equal time.nsec, time2.nsec
     assert_equal time.usec, time2.usec
     assert_equal time, time2
+  end
+
+  def test_24_hours
+    d = DateTime.new(2025, 12, 31, 24)
+    assert_equal [2026, 1, 1, 0, 0, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset]
+
+    assert_raises(ArgumentError) { DateTime.new(2025, 12, 31, 24, 1) }
+    DateTime.new(1008, 12, 31, 24, 0)
+    assert_raises(ArgumentError) { DateTime.new(2025, 11, 30, 24, 0, 30) }
+    DateTime.new(2025, 11, 30, 24, 0, 0)
+  end
+
+  # from MRI's test @see test_switch_hitter.rb
+  def test_period2 # except big dates (years) - not supported
+    cm_period0 = 71149239
+    cm_period = 0xfffffff.div(cm_period0) * cm_period0
+    #period2_iter(-cm_period * (1 << 64) - 3, -cm_period * (1 << 64) + 3)
+    period2_iter(-cm_period - 3, -cm_period + 3)
+    period2_iter(0 - 3, 0 + 3)
+    period2_iter(+cm_period - 3, +cm_period + 3)
+    #period2_iter(+cm_period * (1 << 64) - 3, +cm_period * (1 << 64) + 3)
+  end
+
+  def period2_iter2(from, to, sg)
+    (from..to).each do |j|
+      d = Date.jd(j, sg)
+      d2 = Date.new(d.year, d.mon, d.mday, sg)
+      assert_equal(d2.jd, j)
+      assert_equal(d2.ajd, d.ajd)
+      assert_equal(d2.year, d.year)
+
+      d = DateTime.jd(j, 12,0,0, '+12:00', sg)
+      d2 = DateTime.new(d.year, d.mon, d.mday,
+                        d.hour, d.min, d.sec, d.offset, sg)
+      assert_equal(d2.jd, j)
+      assert_equal(d2.ajd, d.ajd)
+      assert_equal(d2.year, d.year)
+    end
+  end
+
+  def period2_iter(from, to)
+    period2_iter2(from, to, Date::GREGORIAN)
+    period2_iter2(from, to, Date::ITALY)
+    period2_iter2(from, to, Date::ENGLAND)
+    period2_iter2(from, to, Date::JULIAN)
   end
 
 end
