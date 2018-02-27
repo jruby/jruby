@@ -95,25 +95,27 @@ public class RubyTimeOutputFormatter {
         return sequence.toString();
     }
 
-    static String formatNumber(long value, int width, char padder) {
+    static CharSequence formatNumber(long value, int width, char padder) {
         if (value >= 0 || padder != '0') {
-            return padding(Long.toString(value), width, padder).toString();
+            return padding(Long.toString(value), width, padder);
         }
-        return "-" + padding(Long.toString(-value), width - 1, padder);
+        return padding(new StringBuilder().append('-'), Long.toString(-value), width - 1, padder);
     }
 
-    static CharSequence formatSignedNumber(long value, int width, char padder) {
+    static StringBuilder formatSignedNumber(long value, int width, char padder) {
+        StringBuilder out = new StringBuilder();
         if (padder == '0') {
             if (value >= 0) {
-                return "+" + padding(Long.toString(value), width - 1, padder);
+                return padding(out.append('+'), Long.toString(value), width - 1, padder);
             } else {
-                return "-" + padding(Long.toString(-value), width - 1, padder);
+                return padding(out.append('-'), Long.toString(-value), width - 1, padder);
             }
         } else {
             if (value >= 0) {
-                return padding('+' + Long.toString(value), width, padder);
+                final StringBuilder str = new StringBuilder().append('+').append(Long.toString(value));
+                return padding(out, str, width, padder);
             } else {
-                return padding(Long.toString(value), width, padder);
+                return padding(out, Long.toString(value), width, padder);
             }
         }
     }
@@ -121,15 +123,27 @@ public class RubyTimeOutputFormatter {
     private static final int SMALLBUF = 100;
 
     private static CharSequence padding(CharSequence sequence, int width, char padder) {
-        if (sequence.length() >= width) return sequence;
+        final int len = sequence.length();
+        if (len >= width) return sequence;
 
         if (width > SMALLBUF) throw new IndexOutOfBoundsException("padding width " + width + " too large");
 
-        StringBuilder buf = new StringBuilder(width + sequence.length());
-        for (int i = sequence.length(); i < width; i++) {
-            buf.append(padder);
-        }
-        buf.append(sequence);
-        return buf;
+        StringBuilder out = new StringBuilder(width + len);
+        for (int i = len; i < width; i++) out.append(padder);
+        out.append(sequence);
+        return out;
     }
+
+    private static StringBuilder padding(final StringBuilder out, CharSequence sequence,
+                                         final int width, final char padder) {
+        final int len = sequence.length();
+        if (len >= width) return out.append(sequence);
+
+        if (width > SMALLBUF) throw new IndexOutOfBoundsException("padding width " + width + " too large");
+
+        out.ensureCapacity(width + len);
+        for (int i = len; i < width; i++) out.append(padder);
+        return out.append(sequence);
+    }
+
 }
