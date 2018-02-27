@@ -1285,27 +1285,27 @@ public class RubyTime extends RubyObject {
     }
 
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target == Date.class) {
-            return getJavaDate();
+            return target.cast(getJavaDate());
         }
         if (target == Calendar.class || target == GregorianCalendar.class) {
-            return dt.toGregorianCalendar();
+            return target.cast(dt.toGregorianCalendar());
         }
         if (target == DateTime.class) {
-            return this.dt;
+            return target.cast(this.dt);
         }
         if (target == java.sql.Date.class) {
-            return new java.sql.Date(dt.getMillis());
+            return target.cast(new java.sql.Date(dt.getMillis()));
         }
         if (target == java.sql.Time.class) {
-            return new java.sql.Time(dt.getMillis());
+            return target.cast(new java.sql.Time(dt.getMillis()));
         }
         if (target == java.sql.Timestamp.class) {
-            return new java.sql.Timestamp(dt.getMillis());
+            return target.cast(new java.sql.Timestamp(dt.getMillis()));
         }
         if (target.isAssignableFrom(Date.class)) {
-            return getJavaDate();
+            return target.cast(getJavaDate());
         }
         return super.toJava(target);
     }

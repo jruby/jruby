@@ -4718,7 +4718,7 @@ public class RubyModule extends RubyObject {
     }
 
     @Override
-    public Object toJava(final Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target == Class.class) { // try java_class for proxy modules
             final ThreadContext context = getRuntime().getCurrentContext();
             IRubyObject javaClass = JavaClass.java_class(context, this);

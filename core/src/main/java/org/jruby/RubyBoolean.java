@@ -161,6 +161,19 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         public static RubyString false_to_s(IRubyObject f) {
             return RubyString.newStringShared(f.getRuntime(), FALSE_BYTES);
         }
+
+        /*
+        Because Boolean objects can't cast to boolean via Class.cast, and you can't return
+        a primitive from a generified method, this impl remains ungenerified.
+         */
+        @Override
+        public Object toJava(Class target) {
+            if (target.isAssignableFrom(Boolean.class) | target.equals(boolean.class)) {
+                return Boolean.FALSE;
+            } else {
+                return super.toJava(target);
+            }
+        }
     }
 
     static final ByteList TRUE_BYTES = new ByteList(new byte[] { 't','r','u','e' }, USASCIIEncoding.INSTANCE);
@@ -192,6 +205,19 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         public static RubyString true_to_s(IRubyObject t) {
             return RubyString.newStringShared(t.getRuntime(), TRUE_BYTES);
         }
+
+        /*
+        Because Boolean objects can't cast to boolean via Class.cast, and you can't return
+        a primitive from a generified method, this impl remains ungenerified.
+         */
+        @Override
+        public Object toJava(Class target) {
+            if (target.isAssignableFrom(Boolean.class) | target.equals(boolean.class)) {
+                return Boolean.TRUE;
+            } else {
+                return super.toJava(target);
+            }
+        }
     }
     
     @JRubyMethod(name = "hash")
@@ -220,17 +246,6 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write(isTrue() ? 'T' : 'F');
-    }
-
-    @Override
-    public Object toJava(Class target) {
-        if (target.isAssignableFrom(Boolean.class) || target.equals(boolean.class)) {
-            if (isFalse()) return Boolean.FALSE;
-
-            return Boolean.TRUE;
-        } else {
-            return super.toJava(target);
-        }
     }
 }
 

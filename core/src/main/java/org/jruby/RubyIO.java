@@ -4752,14 +4752,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target == java.io.InputStream.class) {
             getOpenFile().checkReadable(getRuntime().getCurrentContext());
-            return getInStream();
+            return target.cast(getInStream());
         }
         if (target == java.io.OutputStream.class) {
             getOpenFile().checkWritable(getRuntime().getCurrentContext());
-            return getOutStream();
+            return target.cast(getOutStream());
         }
         return super.toJava(target);
     }
