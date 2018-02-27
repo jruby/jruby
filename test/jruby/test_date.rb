@@ -532,6 +532,26 @@ class TestDate < Test::Unit::TestCase
     assert_equal time, time2
   end
 
+  def test_parse_strftime
+    d = DateTime.parse('2001-02-03T04:05:06+09:00')
+    assert_equal('Sat Feb  3 04:05:06 2001', d.strftime('%-100c'))
+    #assert_equal('Sat Feb  3 04:05:06 2001'.rjust(26), d.strftime('%26c'))
+    assert_equal('00000020010000000006', d.strftime('%10Y%10w'))
+
+    s = '2006-08-08T23:15:33.123456789'; f = '%FT%T.%N'
+
+    d = DateTime.parse(s)
+    assert_equal Rational(123456789, 1000000000), d.sec_fraction
+    assert_equal(s, d.strftime(f))
+    d = DateTime.strptime(s, f)
+    assert_equal(s, d.strftime(f))
+
+    d = DateTime.parse(s + '1234')
+    assert_equal Rational(617283945617, 5000000000000), d.sec_fraction
+    assert_equal(s, d.strftime(f))
+  end
+
+
   def test_24_hours
     d = DateTime.new(2025, 12, 31, 24)
     assert_equal [2026, 1, 1, 0, 0, 0, 0], [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset]
@@ -542,7 +562,7 @@ class TestDate < Test::Unit::TestCase
     DateTime.new(2025, 11, 30, 24, 0, 0)
   end
 
-  # from MRI's test @see test_switch_hitter.rb
+  # from MRI's test @see test/mri/date/test_switch_hitter.rb
   def test_period2 # except big dates (years) - not supported
     cm_period0 = 71149239
     cm_period = 0xfffffff.div(cm_period0) * cm_period0
@@ -575,6 +595,19 @@ class TestDate < Test::Unit::TestCase
     period2_iter2(from, to, Date::ITALY)
     period2_iter2(from, to, Date::ENGLAND)
     period2_iter2(from, to, Date::JULIAN)
+  end
+
+  # from MRI's test @see test/mri/date/test_date_strftime.rb
+  def test_strftime__offset
+    s = '2006-08-08T23:15:33'
+    (-23..23).collect { |x| '%+.2d' % x }.each do |hh| # (-24..24)
+      %w(00 30).each do |mm|
+        r = hh + mm
+        r = '+0000' if r[-4,4] == '2430'
+        d = DateTime.parse(s + hh + mm)
+        assert_equal(r, d.strftime('%z'))
+      end
+    end
   end
 
 end
