@@ -89,7 +89,7 @@ abstract class DateUtils {
      *
      * Returns the corresponding Julian Day Number.
      */
-    static long ordinal_to_jd(int y, int d, final int sg) {
+    static long ordinal_to_jd(int y, int d, final long sg) {
         return find_fdoy(y, sg) + d - 1;
     }
 
@@ -115,7 +115,7 @@ abstract class DateUtils {
      # and day of the week of the Commercial Date to convert.
      # +sg+ specifies the Day of Calendar Reform.
      */
-    static long commercial_to_jd(int y, int w, int d, final int sg) {
+    static long commercial_to_jd(int y, int w, int d, final long sg) {
         long j = find_fdoy(y, sg) + 3;
         return (j - (((j - 1) + 1) % 7)) + 7 * (w - 1) + (d - 1);
     }
@@ -129,7 +129,7 @@ abstract class DateUtils {
      # Returns the corresponding Commercial Date as
      # [commercial_year, week_of_year, day_of_week]
      */
-    static int[] jd_to_commercial(long jd, final int sg) {
+    static int[] jd_to_commercial(long jd, final long sg) {
         int a = jd_to_civil(jd - 3, sg)[0];
         final int y;
         if (jd >= commercial_to_jd(a + 1, 1, 1, sg)) {
@@ -144,12 +144,12 @@ abstract class DateUtils {
         return new int[] { y, w, d };
     }
 
-    private static long weeknum_to_jd(int y, int w, int d, int f, final int sg) {
+    private static long weeknum_to_jd(int y, int w, int d, int f, final long sg) {
         long a = find_fdoy(y, sg) + 6;
         return (a - ((a - f) + 1) % 7 - 7) + 7 * w + d;
     }
 
-    private static int[] jd_to_weeknum(long jd, int f, final int sg) {
+    private static int[] jd_to_weeknum(long jd, int f, final long sg) {
         final int y = jd_to_civil(jd, sg)[0];
         long a = find_fdoy(y, sg) + 6;
 
@@ -159,7 +159,7 @@ abstract class DateUtils {
         return new int[] { y, w, d };
     }
 
-    private static long nth_kday_to_jd(int y, int m, int n, int k, final int sg) {
+    private static long nth_kday_to_jd(int y, int m, int n, int k, final long sg) {
         final long j;
         if (n > 0) {
             j = find_fdom(y, m, sg) - 1;
@@ -170,7 +170,7 @@ abstract class DateUtils {
         return (j - (((j - k) + 1) % 7)) + 7 * n;
     }
 
-    private static int[] jd_to_nth_kday(long jd, final int sg) {
+    private static int[] jd_to_nth_kday(long jd, final long sg) {
         final int[] y_m_d = jd_to_civil(jd, sg);
         final int y = y_m_d[0];
         final int m = y_m_d[1];
@@ -271,7 +271,7 @@ abstract class DateUtils {
         return INVALID_OFFSET; // 0
     }
 
-    static Long find_ldom(int y, int m, final int sg) {
+    static Long find_ldom(int y, int m, final long sg) {
         Long j = null;
         for (int d = 31; d >= 1; d--) {
             j = _valid_civil_p(y, m, d, sg);
@@ -280,7 +280,7 @@ abstract class DateUtils {
         return j;
     }
 
-    static Long find_fdom(int y, int m, final int sg) {
+    static Long find_fdom(int y, int m, final long sg) {
         Long j = null;
         for (int d = 1; d <= 31; d++) {
             j = _valid_civil_p(y, m, d, sg);
@@ -289,7 +289,7 @@ abstract class DateUtils {
         return j;
     }
 
-    static Long find_fdoy(int y, final int sg) {
+    static Long find_fdoy(int y, final long sg) {
         Long j = null;
         for (int d = 1; d <= 31; d++) {
             j = _valid_civil_p(y, 1, d, sg);
@@ -298,7 +298,7 @@ abstract class DateUtils {
         return j;
     }
 
-    static Long find_ldoy(int y, final int sg) {
+    static Long find_ldoy(int y, final long sg) {
         Long j = null;
         for (int d = 31; d >= 1; d--) {
             j = _valid_civil_p(y, 12, d, sg);
@@ -307,7 +307,7 @@ abstract class DateUtils {
         return j;
     }
 
-    static Long _valid_civil_p(int y, int m, int d, final int sg) {
+    static Long _valid_civil_p(int y, int m, int d, final long sg) {
         if (d < 0) {
             Long j = find_ldom(y, m, sg);
             if (j == null) return null;
@@ -323,7 +323,7 @@ abstract class DateUtils {
         return jd;
     }
 
-    static Long _valid_ordinal_p(int y, int d, final int sg) {
+    static Long _valid_ordinal_p(int y, int d, final long sg) {
         if (d < 0) {
             Long j = find_ldoy(y, sg);
             if (j == null) return null;
@@ -340,7 +340,7 @@ abstract class DateUtils {
         return jd;
     }
 
-    static Long _valid_commercial_p(int y, int w, int d, final int sg) {
+    static Long _valid_commercial_p(int y, int w, int d, final long sg) {
         if (d < 0) d += 8;
 
         if (w < 0) {
@@ -356,7 +356,7 @@ abstract class DateUtils {
         return jd;
     }
 
-    static Long _valid_weeknum_p(int y, int w, int d, int f, final int sg) {
+    static Long _valid_weeknum_p(int y, int w, int d, int f, final long sg) {
         if (d < 0) d += 7;
 
         if (w < 0) {
@@ -373,7 +373,7 @@ abstract class DateUtils {
         return jd;
     }
 
-    static Long _valid_nth_kday_p(int y, int m, int n, int k, final int sg) {
+    static Long _valid_nth_kday_p(int y, int m, int n, int k, final long sg) {
         if (k < 0) k += 7;
 
         if (n < 0) {
@@ -419,8 +419,8 @@ abstract class DateUtils {
         return t.convertToInteger().getIntValue() - 4712; /* unshift */
     }
 
-    static int guess_style(ThreadContext context, IRubyObject y, double sg) { /* -/+oo or zero */
-        int style = 0;
+    static long guess_style(ThreadContext context, IRubyObject y, double sg) { /* -/+oo or zero */
+        long style = 0;
 
         if (sg == Double.POSITIVE_INFINITY) { // Double.isInfinite
             style = JULIAN;

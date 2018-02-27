@@ -94,7 +94,7 @@ public class RubyDateTime extends RubyDate {
         super(runtime, getDateTime(runtime), new DateTime(millis, chronology));
     }
 
-    private RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, int start) {
+    private RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, long start) {
         super(context, klass, ajd, off, start);
     }
 
@@ -105,14 +105,14 @@ public class RubyDateTime extends RubyDate {
         this.off = off;
     }
 
-    RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, int start) {
+    RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, long start) {
         super(runtime, klass);
 
         this.dt = dt;
         this.off = off; this.start = start;
     }
 
-    RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, int start, int subMillisNum, int subMillisDen) {
+    RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off, long start, int subMillisNum, int subMillisDen) {
         super(runtime, klass);
 
         this.dt = dt;
@@ -125,7 +125,7 @@ public class RubyDateTime extends RubyDate {
     }
 
     @Override
-    RubyDate newInstance(final ThreadContext context, final DateTime dt, int off, int start, int subNum, int subDen) {
+    RubyDate newInstance(final ThreadContext context, final DateTime dt, int off, long start, int subNum, int subDen) {
         return new RubyDateTime(context.runtime, getMetaClass(), dt, off, start, subNum, subDen);
     }
 
@@ -171,7 +171,7 @@ public class RubyDateTime extends RubyDate {
         final int len = args.length;
 
         int hour = 0, minute = 0, second = 0; long millis = 0; int subMillisNum = 0, subMillisDen = 1;
-        int off = 0, sg = ITALY;
+        int off = 0; long sg = ITALY;
 
         if (len == 8) sg = val2sg(context, args[7]);
         if (len >= 7) off = val2off(context, args[6]);
@@ -337,7 +337,7 @@ public class RubyDateTime extends RubyDate {
             fr = zero;
         }
 
-        int off = 0, sg = ITALY;
+        int off = 0; long sg = ITALY;
         if (len > 4) off = val2off(context, args[4]);
         if (len > 5) sg = val2sg(context, args[5]);
 
@@ -365,7 +365,7 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod(meta = true)
     public static RubyDateTime now(ThreadContext context, IRubyObject self, IRubyObject sg) {
-        final int start = val2sg(context, sg);
+        final long start = val2sg(context, sg);
         final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
         final DateTime dt = new DateTime(getChronology(context, start, zone));
         final int off = zone.getOffset(dt.getMillis()) / 1000;
