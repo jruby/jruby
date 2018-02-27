@@ -34,9 +34,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import java.lang.reflect.Member;
 import org.jruby.NativeException;
 import org.jruby.Ruby;
@@ -56,7 +53,11 @@ public class RaiseException extends JumpException {
 
     private RubyException exception;
     private String providedMessage;
-    private boolean nativeException;
+
+    public RaiseException(String message, RubyException exception) {
+        super(message);
+        setException(exception);
+    }
 
     /**
      * Construct a new RaiseException to wrap the given Ruby exception for Java-land
@@ -65,10 +66,11 @@ public class RaiseException extends JumpException {
      * This constructor will generate a backtrace using the Java
      * stack trace and the interpreted Ruby frames for the current thread.
      *
-     * @param actException The Ruby exception to wrap
+     * @param exception The Ruby exception to wrap
      */
-    public RaiseException(RubyException actException) {
-        this(actException, false);
+    public RaiseException(RubyException exception) {
+        this(exception.getMessageAsJavaString(), exception);
+        preRaise(exception.getRuntime().getCurrentContext());
     }
 
     /**
@@ -82,50 +84,30 @@ public class RaiseException extends JumpException {
      * @param backtrace
      */
     public RaiseException(RubyException exception, IRubyObject backtrace) {
-        super(exception.getMessageAsJavaString());
-        setException(exception, false);
+        this(exception.getMessageAsJavaString(), exception);
         preRaise(exception.getRuntime().getCurrentContext(), backtrace);
     }
 
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
-        super(msg);
-        if (msg == null) {
-            msg = "No message available";
-        }
-        providedMessage = '(' + excptnClass.getName() + ") " + msg;
-        this.nativeException = nativeException;
-        final ThreadContext context = runtime.getCurrentContext();
-        setException((RubyException) Helpers.invoke(
-                context,
-                excptnClass,
-                "new",
-                RubyString.newUnicodeString(runtime, msg)),
-                nativeException);
-        preRaise(context);
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg) {
+        this(runtime, excptnClass, msg, null);
     }
 
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace, boolean nativeException) {
-        super(msg);
-        if (msg == null) {
-            msg = "No message available";
-        }
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace) {
+        super(msg == null ? msg = "No message available" : msg);
+
         providedMessage = '(' + excptnClass.getName() + ") " + msg;
-        this.nativeException = nativeException;
+
         final ThreadContext context = runtime.getCurrentContext();
-        setException((RubyException) Helpers.invoke(
-                context,
-                excptnClass,
-                "new",
-                RubyString.newUnicodeString(runtime, msg)),
-                nativeException);
+        setException(constructException(runtime, excptnClass, msg, context));
         preRaise(context, backtrace);
     }
 
-    public RaiseException(RubyException exception, boolean nativeException) {
-        super(exception.getMessageAsJavaString());
-        this.nativeException = nativeException;
-        setException(exception, nativeException);
-        preRaise(exception.getRuntime().getCurrentContext());
+    private RubyException constructException(Ruby runtime, RubyClass excptnClass, String msg, ThreadContext context) {
+        return (RubyException) Helpers.invoke(
+                context,
+                excptnClass,
+                "new",
+                RubyString.newUnicodeString(runtime, msg));
     }
 
     @Override
@@ -178,7 +160,7 @@ public class RaiseException extends JumpException {
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         if (requiresBacktrace(context)) {
             if (backtrace == null) {
-                exception.prepareBacktrace(context, nativeException);
+                exception.prepareBacktrace(context);
             } else {
                 exception.forceBacktrace(backtrace);
                 if ( backtrace.isNil() ) return;
@@ -209,9 +191,8 @@ public class RaiseException extends JumpException {
      * Sets the exception
      * @param newException The exception to set
      */
-    protected final void setException(RubyException newException, boolean nativeException) {
+    protected final void setException(RubyException newException) {
         this.exception = newException;
-        this.nativeException = nativeException;
     }
 
     public static StackTraceElement[] javaTraceFromRubyTrace(RubyStackTraceElement[] trace) {
@@ -238,7 +219,7 @@ public class RaiseException extends JumpException {
     public RaiseException(Throwable cause, NativeException nativeException) {
         super(nativeException.getMessageAsJavaString(), cause);
         providedMessage = super.getMessage(); // cause.getClass().getName() + ": " + message
-        setException(nativeException, true);
+        setException(nativeException);
         preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
         setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
     }

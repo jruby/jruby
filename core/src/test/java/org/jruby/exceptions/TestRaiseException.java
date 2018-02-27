@@ -63,7 +63,7 @@ public class TestRaiseException extends TestRubyBase {
         final int count = runtime.getBacktraceCount();
 
         final RubyClass RuntimeError = runtime.getRuntimeError();
-        RaiseException re = new RaiseException(runtime, RuntimeError, "", false);
+        RaiseException re = new RaiseException(runtime, RuntimeError, "");
         IRubyObject backtrace = re.getException().backtrace();
         assertNotNil( backtrace );
         assertTrue( ((RubyArray) backtrace).isEmpty() );
@@ -78,7 +78,7 @@ public class TestRaiseException extends TestRubyBase {
         IRubyObject backtrace = runtime.getNil();
 
         final RubyClass RuntimeError = runtime.getRuntimeError();
-        RaiseException re = new RaiseException(runtime, RuntimeError, "", backtrace, false);
+        RaiseException re = new RaiseException(runtime, RuntimeError, "", backtrace);
         backtrace = re.getException().backtrace();
         assertNil( backtrace );
 

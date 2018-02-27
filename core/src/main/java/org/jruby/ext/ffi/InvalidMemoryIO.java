@@ -25,7 +25,7 @@ public abstract class InvalidMemoryIO extends MemoryIO {
     }
 
     protected RaiseException ex() {
-        return new RaiseException(runtime, getErrorClass(runtime), message, true);
+        return new RaiseException(runtime, getErrorClass(runtime), message);
     }
 
     public ByteOrder order() {

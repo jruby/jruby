@@ -8,7 +8,6 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyBoolean;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.socket.Addrinfo;
-import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -24,9 +23,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.util.Arrays;
 
 import org.jruby.RubyString;
 import org.jruby.ext.socket.SocketUtils;
@@ -349,7 +345,7 @@ public class Sockaddr {
     }
 
     private static RuntimeException sockerr(Ruby runtime, String msg) {
-        return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
+        return new RaiseException(runtime, runtime.getClass("SocketError"), msg);
     }
 
     public static SocketAddress sockaddrFromBytes(Ruby runtime, byte[] val) throws IOException {

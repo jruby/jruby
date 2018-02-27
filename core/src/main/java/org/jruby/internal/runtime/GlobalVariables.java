@@ -93,7 +93,7 @@ public class GlobalVariables {
         GlobalVariable variable = globalVariables.get(name);
 
         if (variable != null && oldVariable != variable && variable.isTracing()) {
-            throw new RaiseException(runtime, runtime.getRuntimeError(), "can't alias in tracer", false);
+            throw new RaiseException(runtime, runtime.getRuntimeError(), "can't alias in tracer");
         }
 
         globalVariables.put(name, oldVariable);

@@ -98,7 +98,7 @@ public class FiberQueue {
 
     public synchronized void checkShutdown() {
         if (queue == null) {
-            throw new RaiseException(runtime, runtime.getThreadError(), "queue shut down", false);
+            throw new RaiseException(runtime, runtime.getThreadError(), "queue shut down");
         }
     }
 
@@ -122,7 +122,7 @@ public class FiberQueue {
     private IRubyObject pop(ThreadContext context, boolean should_block) {
         final BlockingQueue<IRubyObject> queue = getQueueSafe();
         if (!should_block && queue.size() == 0) {
-            throw new RaiseException(context.runtime, context.runtime.getThreadError(), "queue empty", false);
+            throw new RaiseException(context.runtime, context.runtime.getThreadError(), "queue empty");
         }
         try {
             return context.getThread().executeTask(context, this, takeTask);

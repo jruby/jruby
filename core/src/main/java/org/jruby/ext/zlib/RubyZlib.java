@@ -34,9 +34,6 @@ package org.jruby.ext.zlib;
 
 import java.lang.reflect.Field;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
@@ -52,11 +49,9 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -320,7 +315,7 @@ public class RubyZlib {
 
     static RaiseException newZlibError(Ruby runtime, String klass, String message) {
         RubyClass errorClass = runtime.getModule("Zlib").getClass(klass);
-        return new RaiseException(RubyException.newException(runtime, errorClass, message), true);
+        return RubyException.newRaiseException(runtime, errorClass, message);
     }
 
     static RaiseException newGzipFileError(Ruby runtime, String message) {
@@ -344,7 +339,7 @@ public class RubyZlib {
         RubyException excn = RubyException.newException(runtime, errorClass, message);
         // TODO: not yet supported. rewrite GzipReader/Writer with Inflate/Deflate?
         excn.setInstanceVariable("@input", runtime.getNil());
-        return new RaiseException(excn, true);
+        return excn.getRaiseException();
     }
     
     static int FIXNUMARG(IRubyObject obj, int ifnil) {

@@ -445,8 +445,7 @@ public class RubyStringScanner extends RubyObject {
 
         if (!isMatched()) {
             RubyClass errorClass = runtime.getClass("StringScanner").getClass("Error");
-            throw new RaiseException(RubyException.newException(
-                    runtime, errorClass, "unscan failed: previous match had failed"));
+            throw RubyException.newRaiseException(runtime, errorClass, "unscan failed: previous match had failed");
         }
         pos = lastPos;
         clearMatched();

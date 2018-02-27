@@ -35,9 +35,7 @@ import jnr.netdb.Protocol;
 import jnr.netdb.Service;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -468,7 +466,7 @@ public class SocketUtils {
     }
 
     public static RuntimeException sockerr(Ruby runtime, String msg) {
-        return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
+        return new RaiseException(runtime, runtime.getClass("SocketError"), msg);
     }
 
     public static RuntimeException sockerr_with_trace(Ruby runtime, String msg, StackTraceElement[] trace) {
@@ -478,7 +476,7 @@ public class SocketUtils {
         for (int i = 0, il = trace.length; i < il; i++) {
             sb.append(eol).append(trace[i].toString());
         }
-        return new RaiseException(runtime, runtime.getClass("SocketError"), sb.toString(), true);
+        return new RaiseException(runtime, runtime.getClass("SocketError"), sb.toString());
     }
 
     public static int getPortFrom(ThreadContext context, IRubyObject _port) {

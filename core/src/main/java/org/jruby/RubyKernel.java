@@ -859,7 +859,7 @@ public class RubyKernel {
             case 0:
                 IRubyObject lastException = runtime.getGlobalVariables().get("$!");
                 if (lastException.isNil()) {
-                    raise = new RaiseException(runtime, runtime.getRuntimeError(), "", false);
+                    raise = new RaiseException(runtime, runtime.getRuntimeError(), "");
                 } else {
                     // non RubyException value is allowed to be assigned as $!.
                     raise = new RaiseException((RubyException) lastException);
