@@ -40,12 +40,7 @@ import org.jruby.util.ArraySupport;
 
 @JRubyClass(name="Interrupt", parent="SignalException")
 public class RubyInterrupt extends RubySignalException {
-    private static final ObjectAllocator INTERRUPT_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyInterrupt(runtime, klass);
-        }
-    };
+    private static final ObjectAllocator INTERRUPT_ALLOCATOR = (runtime, klass) -> new RubyInterrupt(runtime, klass);
 
     static RubyClass createInterruptClass(Ruby runtime, RubyClass signalExceptionClass) {
         RubyClass interruptClass = runtime.defineClass("Interrupt", signalExceptionClass, INTERRUPT_ALLOCATOR);

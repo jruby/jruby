@@ -54,60 +54,24 @@ public class RaiseException extends JumpException {
     private RubyException exception;
     private String providedMessage;
 
-    public RaiseException(String message, RubyException exception) {
+    protected RaiseException(String message, RubyException exception) {
         super(message);
         setException(exception);
-    }
-
-    /**
-     * Construct a new RaiseException to wrap the given Ruby exception for Java-land
-     * throwing purposes.
-     *
-     * This constructor will generate a backtrace using the Java
-     * stack trace and the interpreted Ruby frames for the current thread.
-     *
-     * @param exception The Ruby exception to wrap
-     */
-    public RaiseException(RubyException exception) {
-        this(exception.getMessageAsJavaString(), exception);
         preRaise(exception.getRuntime().getCurrentContext());
     }
 
-    /**
-     * Construct a new RaiseException to wrap the given Ruby exception for Java-land
-     * throwing purposes.
-     *
-     * This constructor will not generate a backtrace and will instead use the
-     * one specified by the
-     *
-     * @param exception The Ruby exception to wrap
-     * @param backtrace
-     */
-    public RaiseException(RubyException exception, IRubyObject backtrace) {
-        this(exception.getMessageAsJavaString(), exception);
-        preRaise(exception.getRuntime().getCurrentContext(), backtrace);
+    @Deprecated
+    public static RaiseException from(RubyException exception, IRubyObject backtrace) {
+        // FIXME: This form currently creates a new exception since it's providing a backtrace
+        return new RaiseException(exception, backtrace);
     }
 
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg) {
-        this(runtime, excptnClass, msg, null);
+    public static RaiseException from(Ruby runtime, RubyClass excptnClass, String msg) {
+        return RubyException.newException(runtime, excptnClass, msg).getRaiseException();
     }
 
-    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace) {
-        super(msg == null ? msg = "No message available" : msg);
-
-        providedMessage = '(' + excptnClass.getName() + ") " + msg;
-
-        final ThreadContext context = runtime.getCurrentContext();
-        setException(constructException(runtime, excptnClass, msg, context));
-        preRaise(context, backtrace);
-    }
-
-    private RubyException constructException(Ruby runtime, RubyClass excptnClass, String msg, ThreadContext context) {
-        return (RubyException) Helpers.invoke(
-                context,
-                excptnClass,
-                "new",
-                RubyString.newUnicodeString(runtime, msg));
+    public static RaiseException from(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace) {
+        return RubyException.newException(runtime, excptnClass, msg).getRaiseException();
     }
 
     @Override
@@ -223,4 +187,36 @@ public class RaiseException extends JumpException {
         preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
         setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
     }
+
+    @Deprecated
+    public RaiseException(RubyException exception) {
+        this(exception.getMessageAsJavaString(), exception);
+    }
+
+    @Deprecated
+    public RaiseException(RubyException exception, IRubyObject backtrace) {
+        this(exception.getMessageAsJavaString(), exception);
+        preRaise(exception.getRuntime().getCurrentContext(), backtrace);
+    }
+
+    @Deprecated
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg) {
+        this(runtime, excptnClass, msg, null);
+    }
+
+    @Deprecated
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace) {
+        super(msg == null ? msg = "No message available" : msg);
+
+        providedMessage = '(' + excptnClass.getName() + ") " + msg;
+
+        final ThreadContext context = runtime.getCurrentContext();
+        setException((RubyException) Helpers.invoke(
+                context,
+                excptnClass,
+                "new",
+                RubyString.newUnicodeString(runtime, msg)));
+        preRaise(context, backtrace);
+    }
+
 }

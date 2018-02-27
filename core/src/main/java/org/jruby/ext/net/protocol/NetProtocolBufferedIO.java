@@ -41,7 +41,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
 import org.jruby.Ruby;
-import org.jruby.RubyException;
 import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
@@ -123,7 +122,7 @@ public class NetProtocolBufferedIO {
                         return buf.concat(readItems);
                     } else {
                         RubyClass exc = (RubyClass)(runtime.getModule("Timeout").getConstant("Error"));
-                        throw RubyException.newRaiseException(runtime, exc, "execution expired");
+                        throw RaiseException.from(runtime, exc, "execution expired");
                     }
                 } catch(IOException exception) {
                     throw runtime.newIOErrorFromException(exception);

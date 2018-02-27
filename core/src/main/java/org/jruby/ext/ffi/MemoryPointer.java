@@ -61,7 +61,7 @@ public class MemoryPointer extends Pointer {
                 size > 0 ? (int) size : 1, align, clear));
         if (getMemoryIO() == null) {
             Ruby runtime = context.runtime;
-            throw new RaiseException(runtime, runtime.getNoMemoryError(),
+            throw RaiseException.from(runtime, runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", typeSize, count));
         }
         
@@ -81,7 +81,7 @@ public class MemoryPointer extends Pointer {
         final int total = typeSize * count;
         MemoryIO io = Factory.getInstance().allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
         if (io == null) {
-            throw new RaiseException(runtime, runtime.getNoMemoryError(),
+            throw RaiseException.from(runtime, runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", count, typeSize));
         }
 

@@ -43,11 +43,20 @@ public class NativeException extends RubyException {
     public static final String CLASS_NAME = "NativeException";
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
-        super(runtime, rubyClass);
-        this.cause = cause;
-        this.messageAsJavaString = cause.getClass().getName() + ": " + searchStackMessage(cause);
+        this(runtime, rubyClass, cause, buildMessage(cause));
     }
-    
+
+    private NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause, String message) {
+        super(runtime, rubyClass, message);
+        this.cause = cause;
+        String s = buildMessage(cause);
+        this.messageAsJavaString = message;
+    }
+
+    private static String buildMessage(Throwable cause) {
+        return cause.getClass().getName() + ": " + searchStackMessage(cause);
+    }
+
     private NativeException(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass, null);
         this.cause = new Throwable();
@@ -64,6 +73,7 @@ public class NativeException extends RubyException {
 
     public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
         RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, NATIVE_EXCEPTION_ALLOCATOR);
+        runtime.getObject().deprecateConstant(runtime, CLASS_NAME);
 
         exceptionClass.defineAnnotatedMethods(NativeException.class);
 

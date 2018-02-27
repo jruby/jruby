@@ -55,7 +55,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  *
  * @author  jpetersen
  */
-public abstract class AbstractRubyException<T extends RaiseException> extends RubyObject {
+public abstract class AbstractRubyException extends RubyObject {
 
     protected AbstractRubyException(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, null);
@@ -203,11 +203,11 @@ public abstract class AbstractRubyException<T extends RaiseException> extends Ru
         return super.toJava(target);
     }
 
-    protected abstract T constructRaiseException(String message);
+    protected abstract RaiseException constructRaiseException(String message);
 
-    public T getRaiseException() {
+    public RaiseException getRaiseException() {
         if (raiseException == null) {
-            return raiseException = constructRaiseException(message.asJavaString());
+            return raiseException = constructRaiseException(getMessageAsJavaString());
         }
         return raiseException;
     }
@@ -355,7 +355,7 @@ public abstract class AbstractRubyException<T extends RaiseException> extends Ru
     private IRubyObject backtrace;
     IRubyObject message;
     IRubyObject cause;
-    private T raiseException;
+    private RaiseException raiseException;
 
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;

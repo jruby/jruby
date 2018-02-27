@@ -1563,7 +1563,7 @@ public final class Ruby implements Constantizable {
     }
 
     private void initExceptions() {
-        standardError = defineClassIfAllowed("StandardError", exceptionClass);
+        standardError = RubyStandardError.createStandardErrorClass(this, exceptionClass);
         runtimeError = defineClassIfAllowed("RuntimeError", standardError);
         ioError = defineClassIfAllowed("IOError", standardError);
         scriptError = defineClassIfAllowed("ScriptError", exceptionClass);
@@ -3954,7 +3954,7 @@ public final class Ruby implements Constantizable {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
         RubyException err = RubyNameError.newNameError(getNameError(), msg, name, privateCall);
 
-        return new RaiseException(err);
+        return err.getRaiseException();
     }
 
     /**
@@ -4001,7 +4001,7 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        return new RaiseException(new RubyNameError(this, getNameError(), message, name));
+        return new RubyNameError(this, getNameError(), message, name).getRaiseException();
     }
 
     /**
@@ -4055,7 +4055,7 @@ public final class Ruby implements Constantizable {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
         RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args, privateCall);
 
-        return new RaiseException(err);
+        return err.getRaiseException();
     }
 
     /**
@@ -4067,11 +4067,11 @@ public final class Ruby implements Constantizable {
      * @return a new NoMethodError
      */
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
-        return new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args));
+        return new RubyNoMethodError(this, getNoMethodError(), message, name, args).getRaiseException();
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
-        return new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue));
+        return new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue).getRaiseException();
     }
 
     public RaiseException newLocalJumpErrorNoBlock() {
@@ -4111,11 +4111,11 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newSystemExit(int status) {
-        return new RaiseException(RubySystemExit.newInstance(this, status, "exit"));
+        return RubySystemExit.newInstance(this, status, "exit").getRaiseException();
     }
 
     public RaiseException newSystemExit(int status, String message) {
-        return new RaiseException(RubySystemExit.newInstance(this, status, message));
+        return RubySystemExit.newInstance(this, status, message).getRaiseException();
     }
 
     public RaiseException newIOError(String message) {
@@ -4200,7 +4200,7 @@ public final class Ruby implements Constantizable {
      * @return
      */
     public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
-        return RubyException.newRaiseException(this, exceptionClass, message);
+        return RaiseException.from(this, exceptionClass, message);
     }
 
     /**
@@ -4216,9 +4216,9 @@ public final class Ruby implements Constantizable {
      */
     private RaiseException newLightweightErrnoException(RubyClass exceptionClass, String message) {
         if (RubyInstanceConfig.ERRNO_BACKTRACE) {
-            return RubyException.newRaiseException(this, exceptionClass, message);
+            return RaiseException.from(this, exceptionClass, message);
         } else {
-            return RubyException.newRaiseException(this, exceptionClass, ERRNO_BACKTRACE_MESSAGE, disabledBacktrace());
+            return RaiseException.from(this, exceptionClass, ERRNO_BACKTRACE_MESSAGE, disabledBacktrace());
         }
     }
 
@@ -4237,11 +4237,11 @@ public final class Ruby implements Constantizable {
         final ThreadContext context = getCurrentContext();
         if (RubyInstanceConfig.STOPITERATION_BACKTRACE) {
             RubyException ex = RubyStopIteration.newInstance(context, result, message);
-            return new RaiseException(ex);
+            return ex.getRaiseException();
         }
         if ( message == null ) message = STOPIERATION_BACKTRACE_MESSAGE;
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
-        return new RaiseException(ex, disabledBacktrace());
+        return RaiseException.from(ex, disabledBacktrace());
     }
 
     @Deprecated
@@ -4815,7 +4815,7 @@ public final class Ruby implements Constantizable {
     public RaiseException newNameErrorObject(String message, IRubyObject name) {
         RubyException error = new RubyNameError(this, getNameError(), message, name);
 
-        return new RaiseException(error);
+        return error.getRaiseException();
     }
 
     @Deprecated

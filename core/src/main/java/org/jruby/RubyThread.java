@@ -1300,7 +1300,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
         if (args.length == 0) {
             if (errorInfo.isNil()) {
-                return new RaiseException(runtime, runtime.getRuntimeError(), "").getException();
+                // We force RaiseException here to populate backtrace
+                return RaiseException.from(runtime, runtime.getRuntimeError(), "").getException();
             }
             return errorInfo;
         }

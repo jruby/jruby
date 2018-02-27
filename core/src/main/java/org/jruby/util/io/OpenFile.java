@@ -903,7 +903,7 @@ public class OpenFile implements Finalizable {
                 posix.errno = Errno.valueOf(RubyNumeric.num2int(err));
                 throw runtime.newErrnoFromErrno(posix.errno, pathv);
             } else {
-                throw new RaiseException((RubyException)err);
+                throw ((RubyException)err).getRaiseException();
             }
         }
     }

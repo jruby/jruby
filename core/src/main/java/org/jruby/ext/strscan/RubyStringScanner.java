@@ -34,7 +34,6 @@ import org.joni.Region;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyNumeric;
@@ -53,7 +52,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.util.TypeConverter;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -445,7 +443,7 @@ public class RubyStringScanner extends RubyObject {
 
         if (!isMatched()) {
             RubyClass errorClass = runtime.getClass("StringScanner").getClass("Error");
-            throw RubyException.newRaiseException(runtime, errorClass, "unscan failed: previous match had failed");
+            throw RaiseException.from(runtime, errorClass, "unscan failed: previous match had failed");
         }
         pos = lastPos;
         clearMatched();

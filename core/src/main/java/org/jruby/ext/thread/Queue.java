@@ -494,7 +494,7 @@ public class Queue extends RubyObject implements DataType {
     public synchronized void checkShutdown() {
         if (isShutdown()) {
             Ruby runtime = getRuntime();
-            throw new RaiseException(runtime, runtime.getThreadError(), "queue shut down");
+            throw RaiseException.from(runtime, runtime.getThreadError(), "queue shut down");
         }
     }
 

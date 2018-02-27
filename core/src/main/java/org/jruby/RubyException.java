@@ -38,6 +38,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.Exception;
 import org.jruby.exceptions.JumpException.FlowControlException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -62,7 +63,19 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  * @author  jpetersen
  */
 @JRubyClass(name="Exception")
-public class RubyException<T extends RaiseException> extends AbstractRubyException<RaiseException> {
+public class RubyException extends AbstractRubyException {
+
+    protected RubyException(Ruby runtime, RubyClass rubyClass) {
+        super(runtime, rubyClass);
+    }
+
+    public RubyException(Ruby runtime, RubyClass rubyClass, String message) {
+        super(runtime, rubyClass, message);
+    }
+
+    protected RaiseException constructRaiseException(String message) {
+        return new Exception(message, this);
+    }
 
     public static RubyClass createExceptionClass(Ruby runtime) {
         RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
@@ -75,18 +88,6 @@ public class RubyException<T extends RaiseException> extends AbstractRubyExcepti
         exceptionClass.defineAnnotatedMethods(AbstractRubyException.class);
 
         return exceptionClass;
-    }
-
-    protected RubyException(Ruby runtime, RubyClass rubyClass) {
-        super(runtime, rubyClass);
-    }
-
-    public RubyException(Ruby runtime, RubyClass rubyClass, String message) {
-        super(runtime, rubyClass, message);
-    }
-
-    protected T constructRaiseException(String message) {
-        return (T) new RaiseException(message, this);
     }
 
     public static ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
@@ -121,21 +122,14 @@ public class RubyException<T extends RaiseException> extends AbstractRubyExcepti
         }
     };
 
-    public static RaiseException newRaiseException(Ruby runtime, RubyClass excptnClass, String msg) {
-        return newException(runtime, excptnClass, msg).getRaiseException();
-    }
-
-    public static RaiseException newRaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace) {
-        return newException(runtime, excptnClass, msg).getRaiseException();
-    }
-
     public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
         if (msg == null) {
             msg = "No message available";
         }
 
-        return new RubyException(runtime, excptnClass, msg);
+        return (RubyException) excptnClass.newInstance(runtime.getCurrentContext(), RubyString.newString(runtime, msg), Block.NULL_BLOCK);
     }
+
 
     @Deprecated
     public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {

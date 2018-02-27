@@ -345,7 +345,7 @@ public class Sockaddr {
     }
 
     private static RuntimeException sockerr(Ruby runtime, String msg) {
-        return new RaiseException(runtime, runtime.getClass("SocketError"), msg);
+        return RaiseException.from(runtime, runtime.getClass("SocketError"), msg);
     }
 
     public static SocketAddress sockaddrFromBytes(Ruby runtime, byte[] val) throws IOException {

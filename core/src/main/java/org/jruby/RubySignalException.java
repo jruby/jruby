@@ -30,6 +30,8 @@ import static jnr.constants.platform.Signal.NSIG;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.SignalException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -42,12 +44,8 @@ import org.jruby.util.TypeConverter;
 
 @JRubyClass(name="SignalException", parent="Exception")
 public class RubySignalException extends RubyException {
-    private static final ObjectAllocator SIGNAL_EXCEPTION_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubySignalException(runtime, klass);
-        }
-    };
+    private static final ObjectAllocator SIGNAL_EXCEPTION_ALLOCATOR =
+            (runtime, klass) -> new RubySignalException(runtime, klass);
 
     protected RubySignalException(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
@@ -121,6 +119,10 @@ public class RubySignalException extends RubyException {
     @Override
     public IRubyObject message(ThreadContext context) {
         return super.message(context);
+    }
+
+    protected RaiseException constructRaiseException(String message) {
+        return new SignalException(message, this);
     }
 
     private IRubyObject signo;

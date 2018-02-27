@@ -315,7 +315,7 @@ public class RubyZlib {
 
     static RaiseException newZlibError(Ruby runtime, String klass, String message) {
         RubyClass errorClass = runtime.getModule("Zlib").getClass(klass);
-        return RubyException.newRaiseException(runtime, errorClass, message);
+        return RaiseException.from(runtime, errorClass, message);
     }
 
     static RaiseException newGzipFileError(Ruby runtime, String message) {
