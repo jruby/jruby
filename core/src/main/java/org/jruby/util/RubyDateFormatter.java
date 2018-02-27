@@ -56,12 +56,23 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
 
 public class RubyDateFormatter {
-    private static final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
+
+    private static final String[] FORMAT_MONTHS;
+    private static final String[] FORMAT_SHORT_MONTHS;
+    private static final String[] FORMAT_WEEKDAYS;
+    private static final String[] FORMAT_SHORT_WEEKDAYS;
+    static {
+        final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
+        FORMAT_MONTHS = FORMAT_SYMBOLS.getMonths();
+        FORMAT_SHORT_MONTHS = FORMAT_SYMBOLS.getShortMonths();
+        FORMAT_WEEKDAYS = FORMAT_SYMBOLS.getWeekdays();
+        FORMAT_SHORT_WEEKDAYS = FORMAT_SYMBOLS.getShortWeekdays();
+    }
+
     private static final Token[] CONVERSION2TOKEN = new Token[256];
 
     private final Ruby runtime;
@@ -248,12 +259,12 @@ public class RubyDateFormatter {
     }
 
     public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
-        List<Token> compiledPattern = new LinkedList<Token>();
-
         Encoding enc = pattern.getEncoding();
         if (!enc.isAsciiCompatible()) {
             throw runtime.newArgumentError("format should have ASCII compatible encoding");
         }
+
+        final List<Token> compiledPattern = new LinkedList<Token>();
         if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
         }
@@ -359,9 +370,8 @@ public class RubyDateFormatter {
     /** Convenience method when using no pattern caching */
     public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, RubyNumeric sub_millis) {
         RubyString out = format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
-        if (pattern.isTaint()) {
-            out.setTaint(true);
-        }
+        out.setEncoding(pattern.getEncoding());
+        if (pattern.isTaint()) out.setTaint(true);
         return out;
     }
 
@@ -391,25 +401,19 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_WEEK_LONG:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
-                    int v = (dt.getDayOfWeek()+1)%8;
-                    if(v == 0) {
-                        v++;
-                    }
-                    output = FORMAT_SYMBOLS.getWeekdays()[v];
+                    int v = (dt.getDayOfWeek() + 1) % 8;
+                    output = FORMAT_WEEKDAYS[v == 0 ? 1 : v];
                     break;
                 case FORMAT_WEEK_SHORT:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
-                    v = (dt.getDayOfWeek()+1)%8;
-                    if(v == 0) {
-                        v++;
-                    }
-                    output = FORMAT_SYMBOLS.getShortWeekdays()[v];
+                    v = (dt.getDayOfWeek() + 1) % 8;
+                    output = FORMAT_SHORT_WEEKDAYS[v == 0 ? 1 : v];
                     break;
                 case FORMAT_MONTH_LONG:
-                    output = FORMAT_SYMBOLS.getMonths()[dt.getMonthOfYear()-1];
+                    output = FORMAT_MONTHS[dt.getMonthOfYear() - 1];
                     break;
                 case FORMAT_MONTH_SHORT:
-                    output = FORMAT_SYMBOLS.getShortMonths()[dt.getMonthOfYear()-1];
+                    output = FORMAT_SHORT_MONTHS[dt.getMonthOfYear() - 1];
                     break;
                 case FORMAT_DAY:
                     type = NUMERIC2;
