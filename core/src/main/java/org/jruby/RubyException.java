@@ -269,7 +269,6 @@ public class RubyException extends RubyObject {
     }
 
     @Override
-    @SuppressWarnings("deprecated")
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
         exception.backtraceData = backtraceData;
@@ -389,7 +388,6 @@ public class RubyException extends RubyObject {
     /**
      * @return error message if provided or nil
      */
-    @SuppressWarnings("deprecated")
     public IRubyObject getMessage() {
         return message == null ? getRuntime().getNil() : message;
     }
@@ -398,7 +396,6 @@ public class RubyException extends RubyObject {
      * Set the message for this NameError.
      * @param message the message
      */
-    @SuppressWarnings("deprecated")
     public void setMessage(IRubyObject message) {
         this.message = message;
     }

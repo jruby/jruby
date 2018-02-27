@@ -128,28 +128,6 @@ public class RaiseException extends JumpException {
         preRaise(exception.getRuntime().getCurrentContext());
     }
 
-    public RaiseException(Throwable cause, NativeException nativeException) {
-        super(nativeException.getMessageAsJavaString(), cause);
-        providedMessage = super.getMessage(); // cause.getClass().getName() + ": " + message
-        setException(nativeException, true);
-        preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
-        setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
-    }
-
-    @Deprecated
-    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
-        return createNativeRaiseException(runtime, cause, null);
-    }
-
-    @Deprecated
-    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
-        NativeException nativeException = new NativeException(runtime, runtime.getNativeException(), cause);
-
-        // FIXME: someday, add back filtering of reflection/handle methods between JRuby and target
-
-        return new RaiseException(cause, nativeException);
-    }
-
     @Override
     public String getMessage() {
         if (providedMessage == null) {
@@ -242,5 +220,26 @@ public class RaiseException extends JumpException {
             newTrace[i] = trace[i].asStackTraceElement();
         }
         return newTrace;
+    }
+
+    @Deprecated
+    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
+        return createNativeRaiseException(runtime, cause, null);
+    }
+
+    @Deprecated
+    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
+        NativeException nativeException = new NativeException(runtime, runtime.getNativeException(), cause);
+
+        return new RaiseException(cause, nativeException);
+    }
+
+    @Deprecated
+    public RaiseException(Throwable cause, NativeException nativeException) {
+        super(nativeException.getMessageAsJavaString(), cause);
+        providedMessage = super.getMessage(); // cause.getClass().getName() + ": " + message
+        setException(nativeException, true);
+        preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
+        setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
     }
 }
