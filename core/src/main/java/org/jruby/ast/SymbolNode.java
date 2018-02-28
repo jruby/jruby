@@ -80,7 +80,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
      * @return Returns a String
      */
     public String getName() {
-        return new String(bytes.unsafeBytes(), EncodingUtils.charsetForEncoding(bytes.getEncoding()));
+        return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize(), EncodingUtils.charsetForEncoding(bytes.getEncoding()));
     }
 
     public Encoding getEncoding() {
