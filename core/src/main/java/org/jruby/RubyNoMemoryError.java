@@ -35,8 +35,8 @@ import org.jruby.exceptions.NoMemoryError;
  *
  * @see NoMemoryError
  */
-@JRubyClass(name="NoMemoryError", parent="StandardError")
-public class RubyNoMemoryError extends RubyStandardError {
+@JRubyClass(name="NoMemoryError", parent="Exception")
+public class RubyNoMemoryError extends RubyException {
     protected RubyNoMemoryError(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
     }

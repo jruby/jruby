@@ -41,7 +41,7 @@ import org.jruby.RubyNoMemoryError;
  *
  * @see RubyNoMemoryError
  */
-public class NoMemoryError extends StandardError {
+public class NoMemoryError extends Exception {
     public NoMemoryError(String message, RubyNoMemoryError exception) {
         super(message, exception);
     }

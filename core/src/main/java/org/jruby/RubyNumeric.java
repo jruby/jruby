@@ -483,7 +483,7 @@ public class RubyNumeric extends RubyObject {
         final IRubyObject result;
         try {
             result = coerceBody(context, other);
-        } catch (StandardError e) { // e.g. NoMethodError: undefined method `coerce'
+        } catch (StandardError e) {
             context.setErrorInfo($ex); // restore $!
             RubyWarnings warnings = context.runtime.getWarnings();
             warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");

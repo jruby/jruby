@@ -35,8 +35,8 @@ import org.jruby.exceptions.RaiseException;
  *
  * @see SecurityError
  */
-@JRubyClass(name="SecurityError", parent="StandardError")
-public class RubySecurityError extends RubyStandardError {
+@JRubyClass(name="SecurityError", parent="Exception")
+public class RubySecurityError extends RubyException {
     protected RubySecurityError(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
     }

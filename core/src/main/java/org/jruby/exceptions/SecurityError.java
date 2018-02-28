@@ -41,7 +41,7 @@ import org.jruby.RubySecurityError;
  *
  * @see RubySecurityError
  */
-public class SecurityError extends StandardError {
+public class SecurityError extends Exception {
     public SecurityError(String message, RubySecurityError exception) {
         super(message, exception);
     }
