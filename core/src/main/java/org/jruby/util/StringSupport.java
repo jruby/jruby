@@ -1604,7 +1604,7 @@ public final class StringSupport {
     /**
      * rb_str_delete_bang
      */
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
+    static CodeRangeable strDeleteBang(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
         rubyString.modify();
         rubyString.keepCodeRange();
 
@@ -1646,9 +1646,9 @@ public final class StringSupport {
         return modify ? rubyString : null;
     }
 
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
+    public static CodeRangeable strDeleteBang(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
         try {
-            return delete_bangCommon19(rubyString, squeeze, tables, enc);
+            return strDeleteBang(rubyString, squeeze, tables, enc);
         } catch (IllegalArgumentException e) {
             throw runtime.newArgumentError(e.getMessage());
         }
