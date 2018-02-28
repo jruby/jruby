@@ -186,6 +186,11 @@ public class RaiseException extends JumpException {
     }
 
     @Deprecated
+    public RaiseException(RubyException exception, boolean unused) {
+        this(exception.getMessageAsJavaString(), exception);
+    }
+
+    @Deprecated
     public RaiseException(RubyException exception, IRubyObject backtrace) {
         this(exception.getMessageAsJavaString(), exception);
         preRaise(exception.getRuntime().getCurrentContext(), backtrace);
@@ -193,6 +198,11 @@ public class RaiseException extends JumpException {
 
     @Deprecated
     public RaiseException(Ruby runtime, RubyClass excptnClass, String msg) {
+        this(runtime, excptnClass, msg, null);
+    }
+
+    @Deprecated
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, boolean unused) {
         this(runtime, excptnClass, msg, null);
     }
 
@@ -211,4 +221,13 @@ public class RaiseException extends JumpException {
         preRaise(context, backtrace);
     }
 
+    @Deprecated
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace, boolean unused) {
+        this(runtime, excptnClass, msg, backtrace);
+    }
+
+    @Deprecated
+    protected final void setException(RubyException newException, boolean unused) {
+        this.exception = newException;
+    }
 }
