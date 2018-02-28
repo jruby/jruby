@@ -1719,19 +1719,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
-
+        if (block == Block.NULL_BLOCK) {
+            return getMetaClass().finvoke(context, this, name);
+        }
         return getMetaClass().finvoke(context, this, name, block);
     }
     @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
-
+        if (block == Block.NULL_BLOCK) {
+            return getMetaClass().finvoke(context, this, name, arg1);
+        }
         return getMetaClass().finvoke(context, this, name, arg1, block);
     }
     @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
-
+        if (block == Block.NULL_BLOCK) {
+            return getMetaClass().finvoke(context, this, name, arg1, arg2);
+        }
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
     @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true)
@@ -1740,6 +1746,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         final int length = args.length - 1;
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
+        if (block == Block.NULL_BLOCK) {
+            return getMetaClass().finvoke(context, this, name, args);
+        }
         return getMetaClass().finvoke(context, this, name, args, block);
     }
 
