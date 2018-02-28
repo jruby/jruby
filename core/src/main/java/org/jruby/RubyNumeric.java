@@ -136,31 +136,24 @@ public class RubyNumeric extends RubyObject {
         throw context.runtime.newArgumentError("invalid rounding mode: " + halfArg);
     }
 
-    // The implementations of these are all bonus (see TODO above)  I was going
-    // to throw an error from these, but it appears to be the wrong place to
-    // do it.
-    public double getDoubleValue() {
-        return 0;
-    }
+    // The implementations of these are all bonus (see above)
 
     /**
      * Return the value of this numeric as a 64-bit long. If the value does not
      * fit in 64 bits, it will be truncated.
      */
-    public long getLongValue() {
-        return 0;
-    }
+    public long getLongValue() { return 0; }
 
     /**
      * Return the value of this numeric as a 32-bit long. If the value does not
      * fit in 32 bits, it will be truncated.
      */
-    public int getIntValue() {
-        return 0;
-    }
+    public int getIntValue() { return (int) getLongValue(); }
+
+    public double getDoubleValue() { return getLongValue(); }
 
     public BigInteger getBigIntegerValue() {
-        return BigInteger.ZERO;
+        return BigInteger.valueOf(getLongValue());
     }
 
     public static RubyNumeric newNumeric(Ruby runtime) {
@@ -810,21 +803,38 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject y) {
+        return numRemainder(context, y);
+    }
+
+    public IRubyObject numRemainder(ThreadContext context, IRubyObject y) {
         RubyNumeric x = this;
         JavaSites.NumericSites sites = sites(context);
         IRubyObject z = sites.op_mod.call(context, this, this, y);
 
-        // non-numeric would error out in % call
-        RubyNumeric yNum = (RubyNumeric) y;
-
         if ((!Helpers.rbEqual(context, z, RubyFixnum.zero(context.runtime), sites.op_equal).isTrue()) &&
                 ((x.isNegative() &&
-                        yNum.isPositive()) ||
+                        RubyNumeric.positiveInt(context, y)) ||
                         (x.isPositive() &&
-                                yNum.isNegative()))) {
+                                RubyNumeric.negativeInt(context, y)))) {
             return sites.op_minus.call(context, z, z, y);
         }
         return z;
+    }
+
+    public static boolean positiveInt(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyNumeric) {
+            return ((RubyNumeric) num).isPositive();
+        }
+
+        return compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
+    }
+
+    public static boolean negativeInt(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyNumeric) {
+            return ((RubyNumeric) num).isNegative();
+        }
+
+        return compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
     }
 
     /** num_abs

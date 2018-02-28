@@ -334,7 +334,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return newArrayNoCopy(runtime, args, start, length);
     }
 
-    public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args) {
+    public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject... args) {
         return new RubyArray(runtime, args);
     }
 
