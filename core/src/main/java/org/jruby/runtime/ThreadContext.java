@@ -744,7 +744,7 @@ public final class ThreadContext {
      */
     public void renderCurrentBacktrace(StringBuilder sb) {
         TraceType traceType = runtime.getInstanceConfig().getTraceType();
-        BacktraceData backtraceData = traceType.getBacktrace(this, false);
+        BacktraceData backtraceData = traceType.getBacktrace(this);
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
@@ -801,7 +801,7 @@ public final class ThreadContext {
 
     private RubyStackTraceElement[] getFullTrace(Integer length, StackTraceElement[] stacktrace) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
-        return TraceType.Gather.CALLER.getBacktraceData(this, stacktrace, false).getBacktrace(runtime);
+        return TraceType.Gather.CALLER.getBacktraceData(this, stacktrace).getBacktrace(runtime);
     }
 
     private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
@@ -825,7 +825,7 @@ public final class ThreadContext {
     }
 
     public RubyStackTraceElement[] gatherCallerBacktrace() {
-        return Gather.CALLER.getBacktraceData(this, false).getBacktrace(runtime);
+        return Gather.CALLER.getBacktraceData(this).getBacktrace(runtime);
     }
 
     public boolean isEventHooksEnabled() {

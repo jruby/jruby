@@ -256,13 +256,21 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "===", meta = true)
         public static IRubyObject eqq(final ThreadContext context, final IRubyObject self, IRubyObject other) {
+            if (checkNativeException(self, other)) {
+                return context.tru;
+            }
+            return self.op_eqq(context, other);
+        }
+
+        @SuppressWarnings("deprecation")
+        private static boolean checkNativeException(IRubyObject self, IRubyObject other) {
             if ( other instanceof NativeException ) {
                 final java.lang.Class java_class = (java.lang.Class) self.dataGetStruct();
                 if ( java_class.isAssignableFrom( ((NativeException) other).getCause().getClass() ) ) {
-                    return context.runtime.getTrue();
+                    return true;
                 }
             }
-            return self.op_eqq(context, other);
+            return false;
         }
 
     }

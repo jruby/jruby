@@ -41,7 +41,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
 import org.jruby.Ruby;
-import org.jruby.RubyException;
 import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
@@ -111,21 +110,22 @@ public class NetProtocolBufferedIO {
             synchronized (nim.channel.blockingLock()) {
                 boolean oldBlocking = nim.channel.isBlocking();
 
+                Ruby runtime = recv.getRuntime();
                 try {
-                    selector = SelectorFactory.openWithRetryFrom(recv.getRuntime(), SelectorProvider.provider());
+                    selector = SelectorFactory.openWithRetryFrom(runtime, SelectorProvider.provider());
                     nim.channel.configureBlocking(false);
                     SelectionKey key = nim.channel.register(selector, SelectionKey.OP_READ);
                     int n = selector.select(timeout);
 
                     if(n > 0) {
-                        IRubyObject readItems = io.read(new IRubyObject[]{recv.getRuntime().newFixnum(1024*16)});
+                        IRubyObject readItems = io.read(new IRubyObject[]{runtime.newFixnum(1024*16)});
                         return buf.concat(readItems);
                     } else {
-                        RubyClass exc = (RubyClass)(recv.getRuntime().getModule("Timeout").getConstant("Error"));
-                        throw new RaiseException(RubyException.newException(recv.getRuntime(), exc, "execution expired"),false);
+                        RubyClass exc = (RubyClass)(runtime.getModule("Timeout").getConstant("Error"));
+                        throw RaiseException.from(runtime, exc, "execution expired");
                     }
                 } catch(IOException exception) {
-                    throw recv.getRuntime().newIOErrorFromException(exception);
+                    throw runtime.newIOErrorFromException(exception);
                 } finally {
                     if (selector != null) {
                         try {
