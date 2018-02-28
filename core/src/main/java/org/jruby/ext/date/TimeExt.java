@@ -28,7 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.date;
 
-import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
@@ -62,22 +61,30 @@ public abstract class TimeExt {
     }
 
     @JRubyMethod(name = "to_datetime")
-    public static RubyDateTime to_datetime1(ThreadContext context, IRubyObject self) {
-        final Ruby runtime = context.runtime;
-
+    public static RubyDateTime to_datetime(ThreadContext context, IRubyObject self) {
+        final RubyTime time = (RubyTime) self;
         final DateTime dt = ((RubyTime) self).getDateTime();
-        final long jd = civil_to_jd(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(), ITALY);
-
-        final RubyFixnum DAY_IN_SECS = RubyFixnum.newFixnum(runtime, DAY_IN_SECONDS);
-
-        int sec = dt.getSecondOfMinute(); // if (sec > 59) sec = 59;
-        IRubyObject subsec = RubyRational.newRationalConvert(context, ((RubyTime) self).subsec(), DAY_IN_SECS);
-        RubyNumeric fr = timeToDayFraction(context, dt.getHourOfDay(), dt.getMinuteOfHour(), sec);
-        fr = (RubyNumeric) ((RubyNumeric) subsec).op_plus(context, fr);
 
         final int off = dt.getZone().getOffset(dt.getMillis()) / 1000;
-        final Chronology chronology = getChronology(context, ITALY, off);
-        return new RubyDateTime(context, getDateTime(context.runtime), jd_to_ajd(context, jd, fr, off), chronology, off);
+        final DateTime val = new DateTime(
+                dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(),
+                dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
+                dt.getMillisOfSecond(), dt.getZone() // will use ISO chronology
+        );
+
+        long subMillisNum = 0, subMillisDen = 1;
+        if (time.getNSec() != 0) {
+            IRubyObject subMillis = RubyRational.newRationalCanonicalize(context, time.getNSec(), 1_000_000);
+            if (subMillis instanceof RubyRational) {
+                subMillisNum = ((RubyRational) subMillis).getNumerator().getLongValue();
+                subMillisDen = ((RubyRational) subMillis).getDenominator().getLongValue();
+            }
+            else {
+                subMillisNum = ((RubyInteger) subMillis).getLongValue();
+            }
+        }
+
+        return new RubyDateTime(context.runtime, getDateTime(context.runtime), val, off, ITALY, subMillisNum, subMillisDen);
     }
 
 }
