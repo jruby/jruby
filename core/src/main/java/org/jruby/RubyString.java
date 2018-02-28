@@ -5624,18 +5624,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target.isAssignableFrom(String.class)) {
-            return decodeString();
+            return target.cast(decodeString());
         }
         if (target.isAssignableFrom(ByteList.class)) {
-            return value;
+            return target.cast(value);
         }
         if (target == Character.class || target == Character.TYPE) {
             if ( strLength() != 1 ) {
                 throw getRuntime().newArgumentError("could not coerce string of length " + strLength() + " (!= 1) into a char");
             }
-            return decodeString().charAt(0);
+            return (T) (Character) decodeString().charAt(0);
         }
         return super.toJava(target);
     }

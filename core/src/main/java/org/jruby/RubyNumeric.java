@@ -1345,7 +1345,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         return JavaUtil.getNumericConverter(target).coerce(this, target);
     }
 

@@ -596,7 +596,7 @@ public class ScriptingContainerTest {
         filename = basedir + "/core/src/test/ruby/org/jruby/embed/ruby/next_year.rb";
         result = instance.parse(PathType.ABSOLUTE, filename);
         IRubyObject ret = result.run();
-        assertEquals(getNextYear(), ret.toJava(Integer.class));
+        assertEquals(getNextYear(), (int) ret.toJava(Integer.class));
 
         StringWriter sw = new StringWriter();
         instance.setWriter(sw);

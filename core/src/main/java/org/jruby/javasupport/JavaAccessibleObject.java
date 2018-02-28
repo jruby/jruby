@@ -169,9 +169,10 @@ public abstract class JavaAccessibleObject extends RubyObject {
     }
 
     @Override
-    public Object toJava(Class target) {
-        if ( AccessibleObject.class.isAssignableFrom(target) ) {
-            return accessibleObject();
+    public <T> T toJava(Class<T> target) {
+        AccessibleObject accessibleObject = accessibleObject();
+        if (target.isAssignableFrom(accessibleObject.getClass())) {
+            return target.cast(accessibleObject);
         }
         return super.toJava(target);
     }

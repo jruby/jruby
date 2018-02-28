@@ -2028,10 +2028,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @Override
-    public Object toJava(Class target) {
-        if (target == java.io.File.class) {
+    public <T> T toJava(Class<T> target) {
+        if (target == File.class) {
             final String path = getPath();
-            return path == null ? null : new java.io.File(path);
+            return path == null ? null : target.cast(new File(path));
         }
         return super.toJava(target);
     }
