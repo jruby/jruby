@@ -803,6 +803,10 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject y) {
+        return numRemainder(context, y);
+    }
+
+    public IRubyObject numRemainder(ThreadContext context, IRubyObject y) {
         RubyNumeric x = this;
         JavaSites.NumericSites sites = sites(context);
         IRubyObject z = sites.op_mod.call(context, this, this, y);
