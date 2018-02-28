@@ -811,17 +811,30 @@ public class RubyNumeric extends RubyObject {
         JavaSites.NumericSites sites = sites(context);
         IRubyObject z = sites.op_mod.call(context, this, this, y);
 
-        // non-numeric would error out in % call
-        RubyNumeric yNum = (RubyNumeric) y;
-
         if ((!Helpers.rbEqual(context, z, RubyFixnum.zero(context.runtime), sites.op_equal).isTrue()) &&
                 ((x.isNegative() &&
-                        yNum.isPositive()) ||
+                        RubyNumeric.positiveInt(context, y)) ||
                         (x.isPositive() &&
-                                yNum.isNegative()))) {
+                                RubyNumeric.negativeInt(context, y)))) {
             return sites.op_minus.call(context, z, z, y);
         }
         return z;
+    }
+
+    public static boolean positiveInt(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyNumeric) {
+            return ((RubyNumeric) num).isPositive();
+        }
+
+        return compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
+    }
+
+    public static boolean negativeInt(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyNumeric) {
+            return ((RubyNumeric) num).isNegative();
+        }
+
+        return compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
     }
 
     /** num_abs
