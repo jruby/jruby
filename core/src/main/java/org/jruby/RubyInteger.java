@@ -797,6 +797,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_le(context, this, other);
     }
+
     @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
         return context.nil;
