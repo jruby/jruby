@@ -47,7 +47,7 @@ public class RubyFatal extends RubyException {
         return fatalClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new Fatal(message, this);
     }
 }

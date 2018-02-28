@@ -66,7 +66,7 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new UncaughtThrowError(message, this);
     }
 

@@ -48,7 +48,7 @@ public class RubyIndexError extends RubyStandardError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new IndexError(message, this);
     }
 }

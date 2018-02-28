@@ -47,7 +47,7 @@ public class RubyFloatDomainError extends RubyRangeError {
         return floatDomainErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new FloatDomainError(message, this);
     }
 }

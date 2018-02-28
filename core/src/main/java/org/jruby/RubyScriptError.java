@@ -47,7 +47,7 @@ public class RubyScriptError extends RubyException {
         return scriptErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new ScriptError(message, this);
     }
 }

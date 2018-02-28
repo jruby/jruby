@@ -47,7 +47,7 @@ public class RubyRangeError extends RubyStandardError {
         return rangeErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new RangeError(message, this);
     }
 }

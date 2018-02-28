@@ -1,7 +1,6 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
-import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
@@ -903,7 +902,7 @@ public class OpenFile implements Finalizable {
                 posix.errno = Errno.valueOf(RubyNumeric.num2int(err));
                 throw runtime.newErrnoFromErrno(posix.errno, pathv);
             } else {
-                throw ((RubyException)err).getRaiseException();
+                throw ((RubyException)err).toThrowable();
             }
         }
     }

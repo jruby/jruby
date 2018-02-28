@@ -181,7 +181,7 @@ public class RubyNameError extends RubyStandardError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new NameError(message, this);
     }
 

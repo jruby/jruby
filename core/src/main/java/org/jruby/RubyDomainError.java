@@ -49,7 +49,7 @@ public class RubyDomainError extends RubyArgumentError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new DomainError(message, this);
     }
 

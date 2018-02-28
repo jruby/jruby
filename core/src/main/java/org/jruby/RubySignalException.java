@@ -57,7 +57,7 @@ public class RubySignalException extends RubyException {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new SignalException(message, this);
     }
 

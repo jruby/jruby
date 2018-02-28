@@ -47,7 +47,7 @@ public class RubyIOError extends RubyStandardError {
         return iOErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new IOError(message, this);
     }
 }

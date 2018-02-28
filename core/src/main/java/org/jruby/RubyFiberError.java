@@ -45,7 +45,7 @@ public class RubyFiberError extends RubyStandardError {
         return runtime.defineClass("FiberError", exceptionClass, (r, klass) -> new RubyFiberError(runtime, klass));
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new FiberError(message, this);
     }
 }

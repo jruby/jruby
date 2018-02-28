@@ -68,7 +68,7 @@ public class RubyStopIteration extends RubyIndexError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new StopIteration(message, this);
     }
 

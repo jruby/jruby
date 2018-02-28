@@ -47,7 +47,7 @@ public class RubySystemStackError extends RubyException {
         return systemStackErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new SystemStackError(message, this);
     }
 }

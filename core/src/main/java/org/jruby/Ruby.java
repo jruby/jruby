@@ -3944,7 +3944,7 @@ public final class Ruby implements Constantizable {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
         RubyException err = RubyNameError.newNameError(getNameError(), msg, name, privateCall);
 
-        return err.getRaiseException();
+        return err.toThrowable();
     }
 
     /**
@@ -3991,7 +3991,7 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        return new RubyNameError(this, getNameError(), message, name).getRaiseException();
+        return new RubyNameError(this, getNameError(), message, name).toThrowable();
     }
 
     /**
@@ -4045,7 +4045,7 @@ public final class Ruby implements Constantizable {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
         RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args, privateCall);
 
-        return err.getRaiseException();
+        return err.toThrowable();
     }
 
     /**
@@ -4057,11 +4057,11 @@ public final class Ruby implements Constantizable {
      * @return a new NoMethodError
      */
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
-        return new RubyNoMethodError(this, getNoMethodError(), message, name, args).getRaiseException();
+        return new RubyNoMethodError(this, getNoMethodError(), message, name, args).toThrowable();
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
-        return new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue).getRaiseException();
+        return new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue).toThrowable();
     }
 
     public RaiseException newLocalJumpErrorNoBlock() {
@@ -4101,11 +4101,11 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newSystemExit(int status) {
-        return RubySystemExit.newInstance(this, status, "exit").getRaiseException();
+        return RubySystemExit.newInstance(this, status, "exit").toThrowable();
     }
 
     public RaiseException newSystemExit(int status, String message) {
-        return RubySystemExit.newInstance(this, status, message).getRaiseException();
+        return RubySystemExit.newInstance(this, status, message).toThrowable();
     }
 
     public RaiseException newIOError(String message) {
@@ -4227,7 +4227,7 @@ public final class Ruby implements Constantizable {
         final ThreadContext context = getCurrentContext();
         if (RubyInstanceConfig.STOPITERATION_BACKTRACE) {
             RubyException ex = RubyStopIteration.newInstance(context, result, message);
-            return ex.getRaiseException();
+            return ex.toThrowable();
         }
         if ( message == null ) message = STOPIERATION_BACKTRACE_MESSAGE;
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
@@ -4805,7 +4805,7 @@ public final class Ruby implements Constantizable {
     public RaiseException newNameErrorObject(String message, IRubyObject name) {
         RubyException error = new RubyNameError(this, getNameError(), message, name);
 
-        return error.getRaiseException();
+        return error.toThrowable();
     }
 
     @Deprecated

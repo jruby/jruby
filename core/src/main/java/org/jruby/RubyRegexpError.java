@@ -47,7 +47,7 @@ public class RubyRegexpError extends RubyStandardError {
         return regexpErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new RegexpError(message, this);
     }
 }

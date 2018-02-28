@@ -73,7 +73,7 @@ public class RubyException extends AbstractRubyException {
         super(runtime, rubyClass, message);
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new Exception(message, this);
     }
 

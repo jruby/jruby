@@ -48,7 +48,7 @@ public class RubyNotImplementedError extends RubyScriptError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new NotImplementedError(message, this);
     }
 }

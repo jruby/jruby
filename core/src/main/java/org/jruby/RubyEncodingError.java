@@ -47,7 +47,7 @@ public class RubyEncodingError extends RubyStandardError {
         return encodingErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new EncodingError(message, this);
     }
 
@@ -61,7 +61,7 @@ public class RubyEncodingError extends RubyStandardError {
             return under.defineClassUnder("CompatibilityError", exceptionClass, (r, klass) -> new RubyCompatibilityError(runtime, klass));
         }
 
-        protected RaiseException constructRaiseException(String message) {
+        protected RaiseException constructThrowable(String message) {
             return new EncodingError.CompatibilityError(message, this);
         }
     }
@@ -81,7 +81,7 @@ public class RubyEncodingError extends RubyStandardError {
             return invalidByteSequenceErrorClass;
         }
 
-        protected RaiseException constructRaiseException(String message) {
+        protected RaiseException constructThrowable(String message) {
             return new EncodingError.InvalidByteSequenceError(message, this);
         }
     }
@@ -101,7 +101,7 @@ public class RubyEncodingError extends RubyStandardError {
             return undefinedConversionErrorClass;
         }
 
-        protected RaiseException constructRaiseException(String message) {
+        protected RaiseException constructThrowable(String message) {
             return new EncodingError.UndefinedConversionError(message, this);
         }
     }
@@ -118,7 +118,7 @@ public class RubyEncodingError extends RubyStandardError {
             return converterNotFoundErrorClass;
         }
 
-        protected RaiseException constructRaiseException(String message) {
+        protected RaiseException constructThrowable(String message) {
             return new EncodingError.ConverterNotFoundError(message, this);
         }
     }

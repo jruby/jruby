@@ -47,7 +47,7 @@ public class RubyThreadError extends RubyStandardError {
         return threadErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new ThreadError(message, this);
     }
 }

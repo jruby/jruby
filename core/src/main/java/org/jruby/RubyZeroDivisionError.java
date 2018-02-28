@@ -47,7 +47,7 @@ public class RubyZeroDivisionError extends RubyStandardError {
         return zeroDivisionErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new ZeroDivisionError(message, this);
     }
 }

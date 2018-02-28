@@ -53,7 +53,7 @@ public class RubyKeyError extends RubyIndexError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new KeyError(message, this);
     }
 

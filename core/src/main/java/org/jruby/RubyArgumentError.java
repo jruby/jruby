@@ -52,7 +52,7 @@ public class RubyArgumentError extends RubyStandardError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new ArgumentError(message, this);
     }
 }

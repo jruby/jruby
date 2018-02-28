@@ -52,8 +52,10 @@ import java.io.PrintStream;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
+ * An abstract representation of a Ruby exception. All Ruby exception types descend from here.
  *
- * @author  jpetersen
+ * Logic here handles aggregating a cause, connecting up a Java throwable, managing the backtrace, and other Ruby
+ * behavior surrounding exceptions.
  */
 public abstract class AbstractRubyException extends RubyObject {
 
@@ -195,21 +197,49 @@ public abstract class AbstractRubyException extends RubyObject {
         return cause == RubyBasicObject.UNDEF ? context.nil : cause;
     }
 
+    /**
+     * Coerce this Ruby exception to the requested Java type, if possible.
+     *
+     * If the requested type is a supertype of RaiseException, the attached throwable will be returned.
+     *
+     * Otherwise, it will fall back on RubyBasicObject toJava logic.
+     *
+     * @param target the target type to which this object should be converted
+     * @return the converted result
+     */
     @Override
     public Object toJava(Class target) {
         if (target.isAssignableFrom(RaiseException.class)) {
-            return target.cast(raiseException);
+            return target.cast(throwable);
         }
         return super.toJava(target);
     }
 
-    protected abstract RaiseException constructRaiseException(String message);
+    /**
+     * Construct an appropriate throwable for this Ruby exception.
+     *
+     * All such throwables must descend from the {@link org.jruby.exceptions.Exception} hierarchy and will be cached
+     * after construction.
+     *
+     * @param message the message to pass to the Java constructor for the throwable
+     * @return a throwable RaiseException attached to this Ruby exception
+     */
+    protected abstract RaiseException constructThrowable(String message);
 
-    public RaiseException getRaiseException() {
-        if (raiseException == null) {
-            return raiseException = constructRaiseException(getMessageAsJavaString());
+    /**
+     * Get a throwable suitable for throwing in Java.
+     *
+     * The throwable here will be constructed lazily by calling constructThrowable and then cached for future calls.
+     *
+     * All throwables returned by Ruby exception objects will descend from RaiseException and follow the Throwable
+     * hierarchy below {@link org.jruby.exceptions.Exception}
+     * @return
+     */
+    public RaiseException toThrowable() {
+        if (throwable == null) {
+            return throwable = constructThrowable(getMessageAsJavaString());
         }
-        return raiseException;
+        return throwable;
     }
 
     public void setCause(IRubyObject cause) {
@@ -355,7 +385,7 @@ public abstract class AbstractRubyException extends RubyObject {
     private IRubyObject backtrace;
     IRubyObject message;
     IRubyObject cause;
-    private RaiseException raiseException;
+    private RaiseException throwable;
 
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;

@@ -66,11 +66,11 @@ public class RaiseException extends JumpException {
     }
 
     public static RaiseException from(Ruby runtime, RubyClass excptnClass, String msg) {
-        return RubyException.newException(runtime, excptnClass, msg).getRaiseException();
+        return RubyException.newException(runtime, excptnClass, msg).toThrowable();
     }
 
     public static RaiseException from(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace) {
-        return RubyException.newException(runtime, excptnClass, msg).getRaiseException();
+        return RubyException.newException(runtime, excptnClass, msg).toThrowable();
     }
 
     @Override

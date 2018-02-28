@@ -48,7 +48,7 @@ public class RubyNoMemoryError extends RubyStandardError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new NoMemoryError(message, this);
     }
 }

@@ -47,7 +47,7 @@ public class RubyEOFError extends RubyIOError {
         return eofErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new EOFError(message, this);
     }
 }

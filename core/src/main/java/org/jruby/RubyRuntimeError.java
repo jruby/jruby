@@ -48,7 +48,7 @@ public class RubyRuntimeError extends RubyStandardError {
         return runtimeErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new RuntimeError(message, this);
     }
 }

@@ -47,7 +47,7 @@ public class RubyInterruptedRegexpError extends RubyRegexpError {
         return interruptedRegexpErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new InterruptedRegexpError(message, this);
     }
 }

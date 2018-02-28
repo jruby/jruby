@@ -339,7 +339,7 @@ public class RubyZlib {
         RubyException excn = RubyException.newException(runtime, errorClass, message);
         // TODO: not yet supported. rewrite GzipReader/Writer with Inflate/Deflate?
         excn.setInstanceVariable("@input", runtime.getNil());
-        return excn.getRaiseException();
+        return excn.toThrowable();
     }
     
     static int FIXNUMARG(IRubyObject obj, int ifnil) {

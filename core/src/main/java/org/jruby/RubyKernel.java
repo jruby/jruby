@@ -862,18 +862,18 @@ public class RubyKernel {
                     raise = RaiseException.from(runtime, runtime.getRuntimeError(), "");
                 } else {
                     // non RubyException value is allowed to be assigned as $!.
-                    raise = ((RubyException) lastException).getRaiseException();
+                    raise = ((RubyException) lastException).toThrowable();
                 }
                 break;
             case 1:
                 if (args[0] instanceof RubyString) {
-                    raise = ((RubyException) runtime.getRuntimeError().newInstance(context, args, block)).getRaiseException();
+                    raise = ((RubyException) runtime.getRuntimeError().newInstance(context, args, block)).toThrowable();
                 } else {
-                    raise = convertToException(runtime, args[0], null).getRaiseException();
+                    raise = convertToException(runtime, args[0], null).toThrowable();
                 }
                 break;
             case 2:
-                raise = convertToException(runtime, args[0], args[1]).getRaiseException();
+                raise = convertToException(runtime, args[0], args[1]).toThrowable();
                 break;
             default:
                 raise = RaiseException.from(convertToException(runtime, args[0], args[1]), args[2]);
@@ -1198,7 +1198,7 @@ public class RubyKernel {
     }
 
     private static RaiseException uncaughtThrow(Ruby runtime, IRubyObject tag, IRubyObject value, RubyString message) {
-        return RubyUncaughtThrowError.newUncaughtThrowError(runtime, tag, value, message).getRaiseException();
+        return RubyUncaughtThrowError.newUncaughtThrowError(runtime, tag, value, message).toThrowable();
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)

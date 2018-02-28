@@ -47,7 +47,7 @@ public class RubyTypeError extends RubyStandardError {
         return typeErrorClass;
     }
 
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new TypeError(message, this);
     }
 }

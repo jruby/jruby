@@ -129,7 +129,7 @@ public class RubySystemCallError extends RubyStandardError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new SystemCallError(message, this);
     }
 

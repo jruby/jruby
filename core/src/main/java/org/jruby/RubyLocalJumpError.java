@@ -75,7 +75,7 @@ public class RubyLocalJumpError extends RubyStandardError {
     }
 
     @Override
-    protected RaiseException constructRaiseException(String message) {
+    protected RaiseException constructThrowable(String message) {
         return new LocalJumpError(message, this);
     }
 
