@@ -9,7 +9,6 @@ import java.util.Map;
 import org.jcodings.Encoding;
 import org.jruby.EvalType;
 import org.jruby.MetaClass;
-import org.jruby.NativeException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -377,12 +376,18 @@ public class IRRuntimeHelpers {
 
     private static IRubyObject wrapJavaException(final ThreadContext context, final IRubyObject excType, final Throwable throwable) {
         final Ruby runtime = context.runtime;
-        if (excType == runtime.getNativeException()) { // wrap Throwable in a NativeException object
-            NativeException exception = new NativeException(runtime, runtime.getNativeException(), throwable);
-            exception.prepareIntegratedBacktrace(context, throwable.getStackTrace());
-            return exception;
+        if (excType == runtime.getNativeException()) {
+            return wrapWithNativeException(context, throwable, runtime);
         }
         return Helpers.wrapJavaException(runtime, throwable); // wrap as normal JI object
+    }
+
+    @SuppressWarnings("deprecation")
+    private static IRubyObject wrapWithNativeException(ThreadContext context, Throwable throwable, Ruby runtime) {
+        // wrap Throwable in a NativeException object
+        org.jruby.NativeException exception = new org.jruby.NativeException(runtime, runtime.getNativeException(), throwable);
+        exception.prepareIntegratedBacktrace(context, throwable.getStackTrace());
+        return exception;
     }
 
     private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {

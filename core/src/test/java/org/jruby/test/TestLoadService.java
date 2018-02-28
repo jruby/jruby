@@ -57,7 +57,7 @@ public class TestLoadService extends TestRubyBase {
         try{
             runtime.evalScriptlet("require ''");
         } catch (RaiseException e){
-            assertEquals("Empty library is not valid, exception should have been raised", RaiseException.class, e.getClass());
+            assertTrue("Empty library is not valid, exception should have been raised", RaiseException.class.isAssignableFrom(e.getClass()));
             assertNull("Empty library is not valid, exception should only be RaiseException with no root cause", e.getCause());
         }
     }
@@ -67,7 +67,7 @@ public class TestLoadService extends TestRubyBase {
             // presumably this require should fail
             runtime.evalScriptlet("require 'somethingthatdoesnotexist'");
         } catch (RaiseException e){
-            assertEquals("Require of non-existent library should fail", RaiseException.class, e.getClass());
+            assertTrue("Require of non-existent library should fail", RaiseException.class.isAssignableFrom(e.getClass()));
             assertNull("Require of non-existent library should , exception should only be RaiseException with no root cause", e.getCause());
         }
     }
@@ -78,7 +78,7 @@ public class TestLoadService extends TestRubyBase {
             // presumably this require should fail
             runtime.evalScriptlet("require 'rubygems'; require 'somethingthatdoesnotexist'");
         } catch (RaiseException e){
-            assertEquals("Require of non-existent library should fail", RaiseException.class, e.getClass());
+            assertTrue("Require of non-existent library should fail", RaiseException.class.isAssignableFrom(e.getClass()));
             assertNull("Require of non-existent library should , exception should only be RaiseException with no root cause", e.getCause());
         }
     }

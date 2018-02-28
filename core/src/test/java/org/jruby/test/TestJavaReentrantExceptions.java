@@ -1,8 +1,6 @@
 package org.jruby.test;
 import junit.framework.TestCase;
-import org.jruby.NativeException;
 import org.jruby.Ruby;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
