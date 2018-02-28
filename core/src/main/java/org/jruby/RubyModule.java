@@ -493,7 +493,7 @@ public class RubyModule extends RubyObject {
      * @param method
      * @return method
      */ // NOTE: used by AnnotationBinder
-    public final DynamicMethod putMethod(final Ruby runtime, String name, DynamicMethod method) {
+    public DynamicMethod putMethod(final Ruby runtime, String name, DynamicMethod method) {
         if (hasPrepends()) {
             method = method.dup();
             method.setImplementationClass(methodLocation);
@@ -1639,7 +1639,7 @@ public class RubyModule extends RubyObject {
      * @param method
      * @param oldName
      */ // NOTE: used by AnnotationBinder
-    public final void putAlias(String name, DynamicMethod method, String oldName) {
+    public void putAlias(String name, DynamicMethod method, String oldName) {
         if (name.equals(oldName)) return;
         putMethod(name, new AliasMethod(this, method, oldName));
     }
@@ -1650,7 +1650,7 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = searchForAliasMethod(getRuntime(), oldName);
 
         for (String name: aliases) {
-            putAlias(name, new AliasMethod(this, method, oldName), oldName);
+            putAlias(name, method, oldName);
         }
 
         methodLocation.invalidateCoreClasses();
