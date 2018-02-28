@@ -5635,7 +5635,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if ( strLength() != 1 ) {
                 throw getRuntime().newArgumentError("could not coerce string of length " + strLength() + " (!= 1) into a char");
             }
-            return target.cast(decodeString().charAt(0));
+            return (T) (Character) decodeString().charAt(0);
         }
         return super.toJava(target);
     }

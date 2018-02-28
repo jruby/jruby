@@ -162,17 +162,12 @@ public class RubyBoolean extends RubyObject implements Constantizable {
             return RubyString.newStringShared(f.getRuntime(), FALSE_BYTES);
         }
 
-        /*
-        Because Boolean objects can't cast to boolean via Class.cast, and you can't return
-        a primitive from a generified method, this impl remains ungenerified.
-         */
         @Override
-        public Object toJava(Class target) {
-            if (target.isAssignableFrom(Boolean.class) | target.equals(boolean.class)) {
-                return Boolean.FALSE;
-            } else {
-                return super.toJava(target);
+        public <T> T toJava(Class<T> target) {
+            if (target.isAssignableFrom(Boolean.class) || target == boolean.class) {
+                return (T) Boolean.FALSE;
             }
+            return super.toJava(target);
         }
     }
 
@@ -206,17 +201,12 @@ public class RubyBoolean extends RubyObject implements Constantizable {
             return RubyString.newStringShared(t.getRuntime(), TRUE_BYTES);
         }
 
-        /*
-        Because Boolean objects can't cast to boolean via Class.cast, and you can't return
-        a primitive from a generified method, this impl remains ungenerified.
-         */
         @Override
-        public Object toJava(Class target) {
-            if (target.isAssignableFrom(Boolean.class) | target.equals(boolean.class)) {
-                return Boolean.TRUE;
-            } else {
-                return super.toJava(target);
+        public <T> T toJava(Class<T> target) {
+            if (target.isAssignableFrom(Boolean.class) || target == boolean.class) {
+                return (T) Boolean.TRUE;
             }
+            return super.toJava(target);
         }
     }
     

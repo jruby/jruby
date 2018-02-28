@@ -251,22 +251,19 @@ public class RubyNil extends RubyObject implements Constantizable {
     @Override
     public <T> T toJava(Class<T> target) {
         if (target.isPrimitive()) {
-            if (target == Boolean.TYPE) {
-                return target.cast(false);
-            } else if (target == Byte.TYPE) {
-                return target.cast((byte)0);
-            } else if (target == Short.TYPE) {
-                return target.cast((short)0);
-            } else if (target == Character.TYPE) {
-                return target.cast((char)0);
-            } else if (target == Integer.TYPE) {
-                return target.cast(0);
-            } else if (target == Long.TYPE) {
-                return target.cast(0L);
-            } else if (target == Float.TYPE) {
-                return target.cast(0F);
-            } else if (target == Double.TYPE) {
-                return target.cast(0.0);
+            if (target == boolean.class) {
+                return (T) Boolean.FALSE;
+            } else if (target == char.class) {
+                return (T) (Character) '\0';
+            } else {
+                switch (target.getSimpleName().charAt(0)) {
+                    case 'b': return (T) (Byte) (byte) 0;
+                    case 's': return (T) (Short) (short) 0;
+                    case 'i': return (T) (Integer) 0;
+                    case 'l': return (T) (Long) 0L;
+                    case 'f': return (T) (Float) 0.0F;
+                    case 'd': return (T) (Double) 0.0;
+                }
             }
         }
         return null;
