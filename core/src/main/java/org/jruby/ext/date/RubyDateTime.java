@@ -409,7 +409,15 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod // Date.civil(year, mon, mday, @sg)
     public RubyDate to_date(ThreadContext context) {
-        return new RubyDate(context.runtime, getDate(context.runtime), dt.withTimeAtStartOfDay(), 0, start);
+        final Ruby runtime = context.runtime;
+        return new RubyDate(runtime, getDate(runtime), withTimeAt0InZone(dt, DateTimeZone.UTC), 0, start);
+    }
+
+    static DateTime withTimeAt0InZone(DateTime dt, DateTimeZone zone) {
+        long millis = dt.getZone().getMillisKeepLocal(zone, dt.getMillis());
+        final Chronology chronology = dt.getChronology().withZone(zone);
+        millis = chronology.millisOfDay().set(millis, 0);
+        return new DateTime(millis, chronology);
     }
 
     @JRubyMethod

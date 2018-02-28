@@ -23,6 +23,9 @@ class TestDate < Test::Unit::TestCase
     assert_equal 1, date.month
     assert_equal 1, date.day
 
+    assert_equal date, Date.send(:civil)
+    assert_equal date, Date.send(:new)
+
     date = Date.new -4712
     assert_equal -4712, date.year
     assert_equal 1, date.month
@@ -33,12 +36,12 @@ class TestDate < Test::Unit::TestCase
     assert_equal 1, date.month
     assert_equal 1, date.day
 
-    date = Date.new 1
+    date = Date.civil 1
     assert_equal 1, date.year
     assert_equal 1, date.month
     assert_equal 1, date.day
 
-    date = Date.new -1
+    date = Date.send :civil, -1
     assert_equal -1, date.year
     assert_equal 1, date.month
     assert_equal 1, date.day
@@ -53,12 +56,12 @@ class TestDate < Test::Unit::TestCase
     assert_equal 10, date.month
     assert_equal 29, date.day
 
-    date = Date.new -6, -6, -6
+    date = Date.send(:civil, -6, -6, -6)
     assert_equal -6, date.year
     assert_equal 7, date.month
     assert_equal 26, date.day
 
-    date = Date.new -9, -11, -20
+    date = Date.send(:new, -9, -11, -20)
     assert_equal -9, date.year
     assert_equal 2, date.month
     assert_equal 9, date.day
@@ -249,6 +252,14 @@ class TestDate < Test::Unit::TestCase
 
     d = DateTime.jd(0, 0,0,0, '+0900')
     assert_equal([-4712, 1, 1, 0, 0, 0, 9.to_r/24], [d.year, d.mon, d.mday, d.hour, d.min, d.sec, d.offset])
+
+    dt = DateTime.new(2012, 12, 24, 12, 23, 00, '+05:00')
+    assert_equal 2456286, dt.jd
+    assert_equal 2456286, dt.to_date.jd
+
+    assert_equal 0, dt.to_date.send(:hour)
+    assert_equal 0, dt.to_date.send(:minute)
+    assert_equal 0, dt.to_date.send(:second)
   end
 
   def test_ordinal
@@ -530,6 +541,26 @@ class TestDate < Test::Unit::TestCase
     assert_equal time.nsec, time2.nsec
     assert_equal time.usec, time2.usec
     assert_equal time, time2
+  end
+
+  def test_to_date
+    dt = DateTime.new(2012, 12, 31, 12, 23, 00, '+05:00')
+    date = dt.to_date
+    assert_equal 2012, date.year
+    assert_equal 12, date.month
+    assert_equal 31, date.day
+    assert_equal 0, date.send(:hour)
+    assert_equal 0, date.send(:minute)
+    assert_equal 0, date.send(:second)
+
+    dt = DateTime.new(1008, 12, 31, 10, 40, 00, '+11:00')
+    date = dt.to_date
+    assert_equal 1008, date.year
+    assert_equal 12, date.month
+    assert_equal 31, date.day
+    assert_equal 0, date.send(:hour)
+    assert_equal 0, date.send(:minute)
+    assert_equal 0, date.send(:second)
   end
 
   def test_parse_strftime
