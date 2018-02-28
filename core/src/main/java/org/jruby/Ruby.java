@@ -1564,53 +1564,52 @@ public final class Ruby implements Constantizable {
     }
 
     private void initExceptions() {
-        ifAllowed("StandardError", (ruby) -> standardError = RubyStandardError.define(ruby, exceptionClass));
-        ifAllowed("RubyError", (ruby) -> runtimeError = RubyRuntimeError.define(ruby, standardError));
-        ifAllowed("IOError", (ruby) -> ioError = RubyIOError.define(ruby, standardError));
-        ifAllowed("ScriptError", (ruby) -> scriptError = RubyScriptError.define(ruby, exceptionClass));
-        ifAllowed("RangeError", (ruby) -> rangeError = RubyRangeError.define(ruby, standardError));
-        ifAllowed("SignalException", (ruby) -> signalException = RubySignalException.define(ruby, exceptionClass));
-        ifAllowed("NameError", (ruby) -> {
+        ifAllowed("StandardError",          (ruby) -> standardError = RubyStandardError.define(ruby, exceptionClass));
+        ifAllowed("RubyError",              (ruby) -> runtimeError = RubyRuntimeError.define(ruby, standardError));
+        ifAllowed("IOError",                (ruby) -> ioError = RubyIOError.define(ruby, standardError));
+        ifAllowed("ScriptError",            (ruby) -> scriptError = RubyScriptError.define(ruby, exceptionClass));
+        ifAllowed("RangeError",             (ruby) -> rangeError = RubyRangeError.define(ruby, standardError));
+        ifAllowed("SignalException",        (ruby) -> signalException = RubySignalException.define(ruby, exceptionClass));
+        ifAllowed("NameError",              (ruby) -> {
             nameError = RubyNameError.define(ruby, standardError);
-            nameErrorMessage = RubyNameError.defineMessage(ruby, nameError);
+            nameErrorMessage = RubyNameError.RubyNameErrorMessage.define(ruby, nameError);
         });
-        ifAllowed("NoMethodError", (ruby) -> noMethodError = RubyNoMethodError.define(ruby, nameError));
-        ifAllowed("SystemExit", (ruby) -> systemExit = RubySystemExit.define(ruby, exceptionClass));
-        ifAllowed("LocalJumpError", (ruby) -> localJumpError = RubyLocalJumpError.define(ruby, standardError));
-        ifAllowed("SystemCallError", (ruby) -> systemCallError = RubySystemCallError.define(ruby, standardError));
-
-        ifAllowed("Fatal", (ruby) -> fatal = RubyFatal.define(ruby, exceptionClass));
-        ifAllowed("Interrupt", (ruby) -> interrupt = RubyInterrupt.define(ruby, signalException));
-        ifAllowed("TypeError", (ruby) -> typeError = RubyTypeError.define(ruby, standardError));
-        ifAllowed("ArgumentError", (ruby) -> argumentError = RubyArgumentError.define(ruby, standardError));
-        ifAllowed("UncaughtThrowError", (ruby) -> uncaughtThrowError = RubyUncaughtThrowError.define(ruby, argumentError));
-        ifAllowed("IndexError", (ruby) -> indexError = RubyIndexError.define(ruby, standardError));
-        ifAllowed("StopIteration", (ruby) -> stopIteration = RubyStopIteration.define(ruby, indexError));
-        ifAllowed("SyntaxError", (ruby) -> syntaxError = RubySyntaxError.define(ruby, scriptError));
-        ifAllowed("LoadError", (ruby) -> loadError = RubyLoadError.define(ruby, scriptError));
-        ifAllowed("NotImplementedError", (ruby) -> notImplementedError = RubyNotImplementedError.define(ruby, scriptError));
-        ifAllowed("SecurityError", (ruby) -> securityError = RubySecurityError.define(ruby, exceptionClass));
-        ifAllowed("NoMemoryError", (ruby) -> noMemoryError = RubyNoMemoryError.define(ruby, exceptionClass));
-        ifAllowed("RegexpError", (ruby) -> regexpError = RubyRegexpError.define(ruby, standardError));
+        ifAllowed("NoMethodError",          (ruby) -> noMethodError = RubyNoMethodError.define(ruby, nameError));
+        ifAllowed("SystemExit",             (ruby) -> systemExit = RubySystemExit.define(ruby, exceptionClass));
+        ifAllowed("LocalJumpError",         (ruby) -> localJumpError = RubyLocalJumpError.define(ruby, standardError));
+        ifAllowed("SystemCallError",        (ruby) -> systemCallError = RubySystemCallError.define(ruby, standardError));
+        ifAllowed("Fatal",                  (ruby) -> fatal = RubyFatal.define(ruby, exceptionClass));
+        ifAllowed("Interrupt",              (ruby) -> interrupt = RubyInterrupt.define(ruby, signalException));
+        ifAllowed("TypeError",              (ruby) -> typeError = RubyTypeError.define(ruby, standardError));
+        ifAllowed("ArgumentError",          (ruby) -> argumentError = RubyArgumentError.define(ruby, standardError));
+        ifAllowed("UncaughtThrowError",     (ruby) -> uncaughtThrowError = RubyUncaughtThrowError.define(ruby, argumentError));
+        ifAllowed("IndexError",             (ruby) -> indexError = RubyIndexError.define(ruby, standardError));
+        ifAllowed("StopIteration",          (ruby) -> stopIteration = RubyStopIteration.define(ruby, indexError));
+        ifAllowed("SyntaxError",            (ruby) -> syntaxError = RubySyntaxError.define(ruby, scriptError));
+        ifAllowed("LoadError",              (ruby) -> loadError = RubyLoadError.define(ruby, scriptError));
+        ifAllowed("NotImplementedError",    (ruby) -> notImplementedError = RubyNotImplementedError.define(ruby, scriptError));
+        ifAllowed("SecurityError",          (ruby) -> securityError = RubySecurityError.define(ruby, exceptionClass));
+        ifAllowed("NoMemoryError",          (ruby) -> noMemoryError = RubyNoMemoryError.define(ruby, exceptionClass));
+        ifAllowed("RegexpError",            (ruby) -> regexpError = RubyRegexpError.define(ruby, standardError));
         // Proposal to RubyCommons for interrupting Regexps
         ifAllowed("InterruptedRegexpError", (ruby) -> interruptedRegexpError = RubyInterruptedRegexpError.define(ruby, regexpError));
-        ifAllowed("EOFError", (ruby) -> eofError = RubyEOFError.define(ruby, ioError));
-        ifAllowed("ThreadError", (ruby) -> threadError = RubyThreadError.define(ruby, standardError));
-        ifAllowed("ConcurrencyError", (ruby) -> concurrencyError = RubyConcurrencyError.define(ruby, threadError));
-        ifAllowed("SystemStackError", (ruby) -> systemStackError = RubySystemStackError.define(ruby, exceptionClass));
-        ifAllowed("ZeroDivisionError", (ruby) -> zeroDivisionError = RubyZeroDivisionError.define(ruby, standardError));
-        ifAllowed("FloatDomainError", (ruby) -> RubyFloatDomainError.define(ruby, rangeError));
-        ifAllowed("EncodingError", (ruby) -> {
+        ifAllowed("EOFError",               (ruby) -> eofError = RubyEOFError.define(ruby, ioError));
+        ifAllowed("ThreadError",            (ruby) -> threadError = RubyThreadError.define(ruby, standardError));
+        ifAllowed("ConcurrencyError",       (ruby) -> concurrencyError = RubyConcurrencyError.define(ruby, threadError));
+        ifAllowed("SystemStackError",       (ruby) -> systemStackError = RubySystemStackError.define(ruby, exceptionClass));
+        ifAllowed("ZeroDivisionError",      (ruby) -> zeroDivisionError = RubyZeroDivisionError.define(ruby, standardError));
+        ifAllowed("FloatDomainError",       (ruby) -> RubyFloatDomainError.define(ruby, rangeError));
+        ifAllowed("EncodingError",          (ruby) -> {
             encodingError = RubyEncodingError.define(ruby, standardError);
             encodingCompatibilityError = RubyEncodingError.RubyCompatibilityError.define(ruby, encodingError, encodingClass);
             invalidByteSequenceError = RubyEncodingError.RubyInvalidByteSequenceError.define(ruby, encodingError, encodingClass);
             undefinedConversionError = RubyEncodingError.RubyUndefinedConversionError.define(ruby, encodingError, encodingClass);
             converterNotFoundError = RubyEncodingError.RubyConverterNotFoundError.define(ruby, encodingError, encodingClass);
         });
-        ifAllowed("Fiber", (ruby) -> fiberError = RubyFiberError.define(ruby, standardError));
-        ifAllowed("ConcurrencyError", (ruby) -> concurrencyError = RubyConcurrencyError.define(ruby, threadError));
-        ifAllowed("KeyError", (ruby) -> keyError = RubyKeyError.define(ruby, indexError));
-        ifAllowed("DomainError", (ruby) -> mathDomainError = RubyDomainError.define(ruby, argumentError, mathModule));
+        ifAllowed("Fiber",                  (ruby) -> fiberError = RubyFiberError.define(ruby, standardError));
+        ifAllowed("ConcurrencyError",       (ruby) -> concurrencyError = RubyConcurrencyError.define(ruby, threadError));
+        ifAllowed("KeyError",               (ruby) -> keyError = RubyKeyError.define(ruby, indexError));
+        ifAllowed("DomainError",            (ruby) -> mathDomainError = RubyDomainError.define(ruby, argumentError, mathModule));
 
         initErrno();
 

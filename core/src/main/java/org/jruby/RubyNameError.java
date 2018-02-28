@@ -89,6 +89,13 @@ public class RubyNameError extends RubyStandardError {
             return arg;
         }
 
+        static RubyClass define(Ruby runtime, RubyClass NameError) {
+            RubyClass Message = NameError.defineClassUnder("Message", runtime.getClass("Data"), ALLOCATOR);
+            NameError.setConstantVisibility(runtime, "Message", true);
+            Message.defineAnnotatedMethods(RubyNameErrorMessage.class);
+            return Message;
+        }
+
         @JRubyMethod(name = "_dump")
         public IRubyObject dump(ThreadContext context, IRubyObject arg) {
             return to_str(context);
@@ -153,13 +160,6 @@ public class RubyNameError extends RubyStandardError {
         NameError.defineAnnotatedMethods(RubyNameError.class);
         NameError.setReifiedClass(RubyNameError.class);
         return NameError;
-    }
-
-    static RubyClass defineMessage(Ruby runtime, RubyClass NameError) {
-        RubyClass Message = NameError.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage.ALLOCATOR);
-        NameError.setConstantVisibility(runtime, "Message", true);
-        Message.defineAnnotatedMethods(RubyNameErrorMessage.class);
-        return Message;
     }
 
     protected RubyNameError(Ruby runtime, RubyClass exceptionClass) {
