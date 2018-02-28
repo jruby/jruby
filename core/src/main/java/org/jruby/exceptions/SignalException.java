@@ -34,10 +34,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-import org.jruby.RubyException;
+import org.jruby.RubySignalException;
 
+/**
+ * Represents a Ruby SignalException as a throwable Java exception.
+ *
+ * @see RubySignalException
+ */
 public class SignalException extends Exception {
-    public SignalException(String message, RubyException exception) {
+    public SignalException(String message, RubySignalException exception) {
         super(message, exception);
     }
 }

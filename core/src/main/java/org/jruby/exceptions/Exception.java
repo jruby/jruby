@@ -36,6 +36,11 @@ package org.jruby.exceptions;
 
 import org.jruby.RubyException;
 
+/**
+ * Represents a Ruby Exception as a throwable Java exception.
+ *
+ * @see RubyException
+ */
 public class Exception extends RaiseException {
     public Exception(String message, RubyException exception) {
         super(message, exception);

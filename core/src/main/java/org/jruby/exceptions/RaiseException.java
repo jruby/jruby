@@ -35,7 +35,6 @@
 package org.jruby.exceptions;
 
 import java.lang.reflect.Member;
-import org.jruby.NativeException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
@@ -130,14 +129,7 @@ public class RaiseException extends JumpException {
                 if ( backtrace.isNil() ) return;
             }
 
-            // call Throwable.setStackTrace so that when RaiseException appears nested inside another exception,
-            // Ruby stack trace gets displayed
-            // JRUBY-2673: if wrapping a NativeException, use the actual Java exception's trace as our Java trace
-            if (exception instanceof NativeException) {
-                setStackTrace(((NativeException) exception).getCause().getStackTrace());
-            } else {
-                setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
-            }
+            setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
         }
     }
 
@@ -174,13 +166,13 @@ public class RaiseException extends JumpException {
 
     @Deprecated
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
-        NativeException nativeException = new NativeException(runtime, runtime.getNativeException(), cause);
+        org.jruby.NativeException nativeException = new org.jruby.NativeException(runtime, runtime.getNativeException(), cause);
 
         return new RaiseException(cause, nativeException);
     }
 
     @Deprecated
-    public RaiseException(Throwable cause, NativeException nativeException) {
+    public RaiseException(Throwable cause, org.jruby.NativeException nativeException) {
         super(nativeException.getMessageAsJavaString(), cause);
         providedMessage = super.getMessage(); // cause.getClass().getName() + ": " + message
         setException(nativeException);

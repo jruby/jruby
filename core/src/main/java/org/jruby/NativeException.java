@@ -30,11 +30,16 @@ package org.jruby;
 import java.lang.reflect.Member;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
+@Deprecated
 @JRubyClass(name = "NativeException", parent = "RuntimeError")
 public class NativeException extends RubyException {
 
@@ -63,13 +68,7 @@ public class NativeException extends RubyException {
         this.messageAsJavaString = null;
     }
     
-    private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            NativeException instance = new NativeException(runtime, klazz);
-            instance.setMetaClass(klazz);
-            return instance;
-        }
-    };
+    private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = (runtime, klazz) -> new NativeException(runtime, klazz);
 
     public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
         RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, NATIVE_EXCEPTION_ALLOCATOR);
@@ -78,6 +77,14 @@ public class NativeException extends RubyException {
         exceptionClass.defineAnnotatedMethods(NativeException.class);
 
         return exceptionClass;
+    }
+
+    @Override
+    public void prepareBacktrace(ThreadContext context) {
+        // if it's null, use cause's trace to build a raw stack trace
+        if (backtraceData == null) {
+            backtraceData = TraceType.Gather.RAW.getBacktraceData(getRuntime().getCurrentContext(), cause.getStackTrace());
+        }
     }
 
     @JRubyMethod

@@ -351,7 +351,7 @@ public abstract class AbstractRubyException extends RubyObject {
         return msg.isNil() ? null : msg.toString();
     }
 
-    private BacktraceData backtraceData;
+    protected BacktraceData backtraceData;
     private IRubyObject backtrace;
     IRubyObject message;
     IRubyObject cause;

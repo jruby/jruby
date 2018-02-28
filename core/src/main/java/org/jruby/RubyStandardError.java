@@ -30,18 +30,28 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.StandardError;
 
+/**
+ * The Java representation of a Ruby StandardError.
+ *
+ * @see StandardError
+ */
 @JRubyClass(name="StandardError", parent="Exception")
 public class RubyStandardError extends RubyException {
     protected RubyStandardError(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass createStandardErrorClass(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass signalExceptionClass = runtime.defineClass("StandardError", exceptionClass, (r, klass) -> new RubyStandardError(runtime, klass));
-
-        return signalExceptionClass;
+    protected RubyStandardError(Ruby runtime, RubyClass exceptionClass, String message) {
+        super(runtime, exceptionClass, message);
     }
 
+    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
+        RubyClass standardErrorClass = runtime.defineClass("StandardError", exceptionClass, (r, klass) -> new RubyStandardError(runtime, klass));
+
+        return standardErrorClass;
+    }
+
+    @Override
     protected RaiseException constructRaiseException(String message) {
         return new StandardError(message, this);
     }

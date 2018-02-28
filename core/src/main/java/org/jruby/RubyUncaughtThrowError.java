@@ -27,36 +27,32 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.UncaughtThrowError;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
+ * The Java representation of a Ruby UncaughtThrowError.
+ *
+ * @see UncaughtThrowError
  * @author kares
  */
 @JRubyClass(name="UncaughtThrowError", parent="ArgumentError")
-public class RubyUncaughtThrowError extends RubyException {
+public class RubyUncaughtThrowError extends RubyArgumentError {
 
     private IRubyObject tag, value;
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyUncaughtThrowError(runtime, klass);
-        }
-    };
-
-    static RubyClass createUncaughtThrowErrorClass(Ruby runtime, RubyClass argumentError) {
-        RubyClass UncaughtThrowError = runtime.defineClass("UncaughtThrowError", argumentError, ALLOCATOR);
+    static RubyClass define(Ruby runtime, RubyClass argumentError) {
+        RubyClass UncaughtThrowError = runtime.defineClass("UncaughtThrowError", argumentError, (runtime1, klass) -> new RubyUncaughtThrowError(runtime1, klass));
         UncaughtThrowError.defineAnnotatedMethods(RubyUncaughtThrowError.class);
         return UncaughtThrowError;
     }
 
     protected RubyUncaughtThrowError(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass, exceptionClass.getName());
-        // this.tag = this.value = runtime.getNil();
         this.message = runtime.getNil();
     }
 
@@ -67,6 +63,11 @@ public class RubyUncaughtThrowError extends RubyException {
         error.value = value;
         error.message = message;
         return error;
+    }
+
+    @Override
+    protected RaiseException constructRaiseException(String message) {
+        return new UncaughtThrowError(message, this);
     }
 
     @Override

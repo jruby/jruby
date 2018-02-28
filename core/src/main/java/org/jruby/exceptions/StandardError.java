@@ -34,10 +34,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-import org.jruby.RubyException;
+import org.jruby.RubyStandardError;
 
+/**
+ * Represents a RubyStandardError as a throwable Java exception.
+ *
+ * @see RubyStandardError
+ */
 public class StandardError extends Exception {
-    public StandardError(String message, RubyException exception) {
+    public StandardError(String message, RubyStandardError exception) {
         super(message, exception);
     }
 }

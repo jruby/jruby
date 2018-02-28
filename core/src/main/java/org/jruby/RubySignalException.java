@@ -42,6 +42,11 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubySignal;
 import org.jruby.util.TypeConverter;
 
+/**
+ * The Java representation of a Ruby SignalException.
+ *
+ * @see SignalException
+ */
 @JRubyClass(name="SignalException", parent="Exception")
 public class RubySignalException extends RubyException {
     private static final ObjectAllocator SIGNAL_EXCEPTION_ALLOCATOR =
@@ -51,7 +56,12 @@ public class RubySignalException extends RubyException {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass createSignalExceptionClass(Ruby runtime, RubyClass exceptionClass) {
+    @Override
+    protected RaiseException constructRaiseException(String message) {
+        return new SignalException(message, this);
+    }
+
+    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
         RubyClass signalExceptionClass = runtime.defineClass("SignalException", exceptionClass, SIGNAL_EXCEPTION_ALLOCATOR);
         signalExceptionClass.defineAnnotatedMethods(RubySignalException.class);
 
@@ -119,10 +129,6 @@ public class RubySignalException extends RubyException {
     @Override
     public IRubyObject message(ThreadContext context) {
         return super.message(context);
-    }
-
-    protected RaiseException constructRaiseException(String message) {
-        return new SignalException(message, this);
     }
 
     private IRubyObject signo;
