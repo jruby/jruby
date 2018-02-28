@@ -1598,7 +1598,7 @@ public final class Ruby implements Constantizable {
         ifAllowed("ConcurrencyError",       (ruby) -> concurrencyError = RubyConcurrencyError.define(ruby, threadError));
         ifAllowed("SystemStackError",       (ruby) -> systemStackError = RubySystemStackError.define(ruby, exceptionClass));
         ifAllowed("ZeroDivisionError",      (ruby) -> zeroDivisionError = RubyZeroDivisionError.define(ruby, standardError));
-        ifAllowed("FloatDomainError",       (ruby) -> RubyFloatDomainError.define(ruby, rangeError));
+        ifAllowed("FloatDomainError",       (ruby) -> floatDomainError = RubyFloatDomainError.define(ruby, rangeError));
         ifAllowed("EncodingError",          (ruby) -> {
             encodingError = RubyEncodingError.define(ruby, standardError);
             encodingCompatibilityError = RubyEncodingError.RubyCompatibilityError.define(ruby, encodingError, encodingClass);
