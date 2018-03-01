@@ -1383,7 +1383,7 @@ public class RubyDate extends RubyObject {
     private static double jd_to_ajd(long jd) { return jd - 0.5; }
 
     static RubyNumeric jd_to_ajd(ThreadContext context, long jd) {
-        return (RubyNumeric) RubyRational.newRationalCanonicalize(context, (jd * 2) - 1, 2);
+        return RubyRational.newRational(context.runtime, (jd * 2) - 1, 2);
     }
 
     static RubyNumeric jd_to_ajd(ThreadContext context, long jd, RubyNumeric fr, int of_sec) {
