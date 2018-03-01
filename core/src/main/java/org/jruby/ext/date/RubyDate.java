@@ -1551,6 +1551,18 @@ public class RubyDate extends RubyObject {
         return new RubyDateTime(context.runtime, getDateTime(context.runtime), dt.withTimeAtStartOfDay(), off, start);
     }
 
+    @JRubyMethod // Time.local(year, mon, mday)
+    public RubyTime to_time(ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        DateTime dt = this.dt;
+
+        dt = new DateTime(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(),
+                0, 0, 0,
+                RubyTime.getLocalTimeZone(runtime)
+        );
+        return new RubyTime(runtime, runtime.getTime(), dt);
+    }
+
     // date/format.rb
 
     @JRubyMethod // def strftime(fmt='%F')
