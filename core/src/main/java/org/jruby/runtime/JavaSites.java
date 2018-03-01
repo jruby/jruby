@@ -198,6 +198,7 @@ public class JavaSites {
         public final CallSite op_rshift = new FunctionalCachingCallSite(">>");
         public final CallSite size = new FunctionalCachingCallSite("size");
         public final CallSite ceil = new FunctionalCachingCallSite("ceil");
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
     }
 
     public static class IntegerSites {
@@ -287,6 +288,12 @@ public class JavaSites {
                 return cmp.call(context, other, other, recv);
             }
         };
+
+        public final RespondToCallSite respond_to_to_int = new RespondToCallSite("to_int");
+        public final CachingCallSite to_int = new FunctionalCachingCallSite("to_int");
+        public final CachingCallSite to_i = new FunctionalCachingCallSite("to_i");
+        public final CachingCallSite to_r = new FunctionalCachingCallSite("to_r");
+        public final CheckedSites checked_to_r = new CheckedSites("to_r");
     }
 
     public static class EnumerableSites {
@@ -311,7 +318,6 @@ public class JavaSites {
         public final CallSite read = new FunctionalCachingCallSite("read");
         public final CallSite to_f = new FunctionalCachingCallSite("to_f");
         public final CallSite new_ = new FunctionalCachingCallSite("new");
-        public final RespondToCallSite respond_to_to_int = new RespondToCallSite("to_int");
         public final RespondToCallSite respond_to_to_io = new RespondToCallSite("to_io");
         public final RespondToCallSite respond_to_to_hash = new RespondToCallSite("to_hash");
     }
@@ -334,6 +340,7 @@ public class JavaSites {
 
     public static class HelpersSites {
         public final CallSite hash = new FunctionalCachingCallSite("hash");
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
 
         public final ThreadContext.RecursiveFunctionEx<Ruby> recursive_hash = new ThreadContext.RecursiveFunctionEx<Ruby>() {
             public IRubyObject call(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
@@ -369,6 +376,7 @@ public class JavaSites {
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite finite = new FunctionalCachingCallSite("finite?");
         public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
+        public final CheckedSites to_c_checked = new CheckedSites("to_c");
     }
 
     public static class RationalSites {

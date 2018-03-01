@@ -185,10 +185,12 @@ public class RubyFloat extends RubyNumeric {
 
     @Override
     public RubyInteger convertToInteger() {
-        if (RubyFixnum.MIN <= value && value <= RubyFixnum.MAX) {
-            return RubyFixnum.newFixnum(getRuntime(), (long) value);
-        }
-        return RubyBignum.newBignum(getRuntime(), getBigIntegerValue());
+        return toInteger(getRuntime());
+    }
+
+    private RubyInteger toInteger(final Ruby runtime) {
+        if (value > 0.0) return dbl2ival(runtime, Math.floor(value));
+        return dbl2ival(runtime, Math.ceil(value));
     }
 
     public int signum() {
@@ -196,13 +198,25 @@ public class RubyFloat extends RubyNumeric {
     }
 
     @Override
+    @JRubyMethod(name = "negative?")
     public IRubyObject isNegative(ThreadContext context) {
-        return context.runtime.newBoolean(signum() < 0);
+        return context.runtime.newBoolean(isNegative());
     }
 
     @Override
+    @JRubyMethod(name = "positive?")
     public IRubyObject isPositive(ThreadContext context) {
-        return context.runtime.newBoolean(signum() > 0);
+        return context.runtime.newBoolean(isPositive());
+    }
+
+    @Override
+    public boolean isNegative() {
+        return signum() < 0;
+    }
+
+    @Override
+    public boolean isPositive() {
+        return signum() > 0;
     }
 
     public static RubyFloat newFloat(Ruby runtime, double value) {
@@ -230,7 +244,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_to_s
      *
      */
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = {"to_s", "inspect"})
     @Override
     public IRubyObject to_s() {
         final Ruby runtime = getRuntime();
@@ -281,6 +295,12 @@ public class RubyFloat extends RubyNumeric {
      *
      */
     @JRubyMethod(name = "-@")
+    @Override
+    public IRubyObject op_uminus(ThreadContext context) {
+        return RubyFloat.newFloat(context.runtime, -value);
+    }
+
+    @Deprecated
     public IRubyObject op_uminus() {
         return RubyFloat.newFloat(getRuntime(), -value);
     }
@@ -289,6 +309,7 @@ public class RubyFloat extends RubyNumeric {
      *
      */
     @JRubyMethod(name = "+", required = 1)
+    @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
@@ -364,7 +385,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_quo
     *
     */
-    @JRubyMethod(name = "quo")
+    @JRubyMethod(name = {"quo", "fdiv"})
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return numFuncall(context, this, sites(context).op_quo, other);
     }
@@ -465,7 +486,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_eq
      *
      */
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = {"==", "==="}, required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (Double.isNaN(value)) {
@@ -706,8 +727,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     @Override
     public IRubyObject truncate(ThreadContext context) {
-        if (value > 0.0) return floor(context);
-        return ceil(context);
+        return toInteger(context.runtime);
     }
 
     /**
@@ -823,7 +843,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context, IRubyObject digits) {
         double number, f;
-        int ndigits =  num2int(digits);
+        int ndigits = num2int(digits);
 
         if (ndigits < 0) {
             return ((RubyInteger) truncate(context)).floor(context, digits);

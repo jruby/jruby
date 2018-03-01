@@ -135,4 +135,17 @@ class TestString < Test::Unit::TestCase
     end
   end
 
+  public
+
+  def test_scan_error
+    string = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    assert_equal [], 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'.scan('d....r........')
+
+    ('a'..'z').to_a.each do |c1|
+      ('a'..'z').to_a.each do |c2|
+        string.downcase.scan("#{c1}....#{c2}........") # does not blow with ArrayIndexOutOfBoundsException
+      end
+    end
+  end
+
 end

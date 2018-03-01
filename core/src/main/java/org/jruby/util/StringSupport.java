@@ -2363,9 +2363,15 @@ public final class StringSupport {
         return -1;
     }
 
-    private static int rb_memsearch_qs_utf8_hash(byte[] xBytes, int x) {
-        int mix = 8353;
-        int h = xBytes[x] & 0xFF;
+    private static int rb_memsearch_qs_utf8_hash(byte[] xBytes, final int x) {
+        final int mix = 8353;
+        int h;
+        if (x != xBytes.length) {
+            h = xBytes[x] & 0xFF;
+        }
+        else {
+            h = '\0'; // (C) ary end - due y+m at rb_memsearch_qs_utf8
+        }
         if (h < 0xC0) {
             return h + 256;
         }
@@ -2403,7 +2409,7 @@ public final class StringSupport {
         for (; x < xe; ++x) {
             qstable[rb_memsearch_qs_utf8_hash(xsBytes, x)] = xe - x;
         }
-        /* Searching */
+        /* Searching */ // due y+m <= ... (y+m) might == ary.length
         for (; y + m <= ys + n; y += qstable[rb_memsearch_qs_utf8_hash(ysBytes, y+m)]) {
             if (xsBytes[xs] == ysBytes[y] && ByteList.memcmp(xsBytes, xs, ysBytes, y, m) == 0)
                 return y - ys;

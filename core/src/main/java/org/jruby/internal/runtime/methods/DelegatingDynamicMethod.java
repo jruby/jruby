@@ -41,7 +41,7 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     protected final DynamicMethod delegate;
 
     public DelegatingDynamicMethod(DynamicMethod delegate) {
-        super(delegate.getImplementationClass(), delegate.getVisibility());
+        super(delegate.getImplementationClass(), delegate.getVisibility(), delegate.getName());
         this.delegate = delegate;
     }
 
@@ -166,11 +166,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     @Override
     public String getName() {
         return delegate.getName();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setName(String name) {
-        delegate.setName(name);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override

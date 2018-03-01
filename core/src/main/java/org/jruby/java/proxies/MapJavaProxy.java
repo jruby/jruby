@@ -147,15 +147,15 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyArray keys() {
+        public RubyArray keys(ThreadContext context) {
             syncSize();
-            return super.keys();
+            return super.keys(context);
         }
 
         @Override
-        public RubyArray rb_values() {
+        public RubyArray values(ThreadContext context) {
             syncSize();
-            return super.rb_values();
+            return super.values(context);
         }
 
         @Override
@@ -178,15 +178,23 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-            internalPutSmall(key, value, checkForExisting);
+            internalPutNoResize(key, value, checkForExisting);
         }
 
         @Override
-        protected final void internalPutSmall(IRubyObject key, IRubyObject value, boolean checkForExisting) {
+        protected final IRubyObject internalPutNoResize(IRubyObject key, IRubyObject value, boolean checkForExisting) {
             @SuppressWarnings("unchecked")
+            Ruby runtime = getRuntime();
             final Map<Object, Object> map = mapDelegate();
-            map.put(key.toJava(Object.class), value.toJava(Object.class));
+            Object javaValue = value.toJava(Object.class);
+            Object existing = map.put(key.toJava(Object.class), javaValue);
             setSize( map.size() );
+            if (existing != null) {
+                if (existing == javaValue) return value;
+                return JavaUtil.convertJavaToUsableRubyObject(runtime, existing);
+            }
+            // none existing
+            return null;
         }
 
         @Override
@@ -628,8 +636,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      *
      */
     @JRubyMethod(name = "keys")
-    public RubyArray keys() {
-        return getOrCreateRubyHashMap().keys();
+    public RubyArray keys(ThreadContext context) {
+        return getOrCreateRubyHashMap().keys(context);
     }
 
     /** rb_hash_values

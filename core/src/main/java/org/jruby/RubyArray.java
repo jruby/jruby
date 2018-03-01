@@ -335,7 +335,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return newArrayNoCopy(runtime, args, start, length);
     }
 
-    public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args) {
+    public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject... args) {
         return new RubyArray(runtime, args);
     }
 
@@ -772,14 +772,21 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return hash(context);
     }
 
+    @Override
+    public RubyFixnum hash() {
+        return hash(getRuntime().getCurrentContext());
+    }
+
     /** rb_ary_hash
      *
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        return RubyFixnum.newFixnum(context.runtime, hashImpl(context));
+    }
 
-        long h = Helpers.hashStart(runtime, realLength);
+    private long hashImpl(final ThreadContext context) {
+        long h = Helpers.hashStart(context.runtime, realLength);
 
         h = Helpers.murmurCombine(h, System.identityHashCode(RubyArray.class));
 
@@ -789,10 +796,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             h = murmurCombine(h, n.getLongValue());
         }
 
-        h = hashEnd(h);
-
-        return runtime.newFixnum(h);
+        return hashEnd(h);
     }
+
+    // NOTE: there's some (passing) RubySpec where [ ary ] is mocked with a custom hash
+    // maybe JRuby doesn't need to obey 100% since it already has hashCode on other core types
+    //@Override
+    //public int hashCode() {
+    //    return (int) hashImpl(getRuntime().getCurrentContext());
+    //}
 
     /** rb_ary_store
      *
@@ -2824,6 +2836,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             RubySymbol each = runtime.newSymbol("each");
             for (int i = 0; i < args.length; i++) {
                 IRubyObject arg = args[i];
+                if (!arg.respondsTo("each")) throw runtime.newTypeError(arg, "must respond to :each");
                 newArgs[i] = to_enum.call(context, arg, arg, each);
             }
         }
@@ -3330,6 +3343,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         RubyHash hash = makeHash(context, block);
         if (realLength == hash.size()) return context.runtime.getNil();
 
+        // after evaluating the block, a new modify check is needed
+        modifyCheck();
+
         // TODO: (CON) This could be a no-op for packed arrays if size does not change
         unpack();
 
@@ -3489,8 +3505,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         try {
             Arrays.sort(values, begin, begin + realLength, new DefaultComparator(context, honorOverride) {
                 protected int compareGeneric(IRubyObject o1, IRubyObject o2) {
-                    //TODO: ary_sort_check should be done here
-                    return super.compareGeneric(o1, o2);
+                    int result = super.compareGeneric(o1, o2);
+                    modifyCheck();
+                    return result;
                 }
             });
         }
@@ -3627,8 +3644,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         Arrays.sort(newValues, 0, length, new BlockComparator(context, block, gt, lt) {
             @Override
             public int compare(IRubyObject obj1, IRubyObject obj2) {
-                //TODO: ary_sort_check should be done here
-                return super.compare(obj1, obj2);
+                int result = super.compare(obj1, obj2);
+                modifyCheck();
+                return result;
             }
         });
 

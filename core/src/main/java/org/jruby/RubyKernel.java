@@ -104,8 +104,8 @@ public class RubyKernel {
         private final Visibility visibility;
         private final CallType callType;
 
-        public MethodMissingMethod(RubyModule implementationClass, Visibility visibility, CallType callType) {
-            super(implementationClass, Visibility.PRIVATE);
+        MethodMissingMethod(RubyModule implementationClass, Visibility visibility, CallType callType) {
+            super(implementationClass, Visibility.PRIVATE, "method_missing");
 
             this.callType = callType;
             this.visibility = visibility;
@@ -2061,8 +2061,13 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "method", required = 1)
-    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
+    public static IRubyObject method(IRubyObject self, IRubyObject symbol) {
         return ((RubyBasicObject)self).method(symbol);
+    }
+
+    @Deprecated
+    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
+        return method(self, symbol);
     }
 
     @JRubyMethod(name = "to_s")
@@ -2075,21 +2080,38 @@ public class RubyKernel {
         return ((RubyBasicObject)self).extend(args);
     }
 
-    @JRubyMethod(name = {"send"}, omit = true)
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
+    @JRubyMethod(name = "send", omit = true)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, block);
     }
-    @JRubyMethod(name = {"send"}, omit = true)
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
+    @JRubyMethod(name = "send", omit = true)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"send"}, omit = true)
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+    @JRubyMethod(name = "send", omit = true)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"send"}, required = 1, rest = true, omit = true)
-    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "send", required = 1, rest = true, omit = true)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return ((RubyBasicObject)self).send(context, args, block);
+    }
+
+    @Deprecated
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
+        return send(context, self, arg0, block);
+    }
+    @Deprecated
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return send(context, self, arg0, arg1, block);
+    }
+    @Deprecated
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return send(context, self, arg0, arg1, arg2, block);
+    }
+    @Deprecated
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return send(context, self, args, block);
     }
 
     @JRubyMethod(name = "nil?")
@@ -2097,13 +2119,14 @@ public class RubyKernel {
         return ((RubyBasicObject)self).nil_p(context);
     }
 
+    @JRubyMethod(name = "=~", required = 1, writes = FrameField.BACKREF)
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return op_match19(context, self, arg);
+        return ((RubyBasicObject)self).op_match19(context, arg);
     }
 
-    @JRubyMethod(name = "=~", required = 1, writes = FrameField.BACKREF)
+    @Deprecated
     public static IRubyObject op_match19(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return ((RubyBasicObject)self).op_match19(context, arg);
+        return op_match(context, self, arg);
     }
 
     @JRubyMethod(name = "!~", required = 1, writes = FrameField.BACKREF)

@@ -43,6 +43,7 @@ import org.jruby.anno.FrameField;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
+import org.jruby.runtime.callsite.ModCallSite;
 import org.jruby.runtime.callsite.MulCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.callsite.GtCallSite;
@@ -122,6 +123,7 @@ public class MethodIndex {
                 {"+", "op_plus"},
                 {"-", "op_minus"},
                 {"*", "op_mul"},
+                {"%", "op_mod"},
                 {"==", "op_equal"},
                 {"<", "op_lt"},
                 {"<=", "op_le"},
@@ -169,6 +171,7 @@ public class MethodIndex {
             case "+" : return new PlusCallSite();
             case "-" : return new MinusCallSite();
             case "*" : return new MulCallSite();
+            case "%" : return new ModCallSite();
             case "<" : return new LtCallSite();
             case "<=" : return new LeCallSite();
             case ">" : return new GtCallSite();

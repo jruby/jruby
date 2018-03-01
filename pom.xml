@@ -115,7 +115,7 @@ DO NOT MODIFIY - GENERATED CODE
     <rake.version>10.4.2</rake.version>
     <jruby-launcher.version>1.1.1</jruby-launcher.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <asm.version>5.0.4</asm.version>
+    <asm.version>6.0</asm.version>
     <rspec-expectations.version>3.4.0</rspec-expectations.version>
     <its.osgi>osgi*/pom.xml</its.osgi>
     <base.javac.version>1.8</base.javac.version>
@@ -127,7 +127,7 @@ DO NOT MODIFIY - GENERATED CODE
     <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <invoker.skip>true</invoker.skip>
     <json.version>1.8.3</json.version>
-    <jar-dependencies.version>0.3.10</jar-dependencies.version>
+    <jar-dependencies.version>0.3.12</jar-dependencies.version>
     <power_assert.version>0.2.3</power_assert.version>
     <version.jruby>${project.version}</version.jruby>
     <main.basedir>${project.basedir}</main.basedir>

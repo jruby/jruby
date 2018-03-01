@@ -51,6 +51,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
@@ -244,25 +245,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public final int hashCode() {
         return (int) (value ^ value >>> 32);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-
-        if (other instanceof RubyFixnum) {
-            RubyFixnum num = (RubyFixnum)other;
-
-            if (num.value == value) {
-                return true;
-            }
-        } else if (other instanceof RubyFloat) {
-            return (double)value == ((RubyFloat) other).getDoubleValue();
-        }
-
-        return false;
     }
 
     /*  ================
@@ -752,6 +734,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return coerceBin(context, sites(context).op_mod, other);
     }
 
+    @Override
     public IRubyObject op_mod(ThreadContext context, long other) {
         return moduloFixnum(context, other);
     }
@@ -868,13 +851,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return coerceBin(context, sites(context).op_exp, other);
     }
 
-    private IRubyObject powerFixnum(ThreadContext context, RubyFixnum other) {
+    private RubyNumeric powerFixnum(ThreadContext context, RubyFixnum other) {
         Ruby runtime = context.runtime;
         long a = value;
         long b = other.value;
         if (b < 0) {
             RubyRational rational = RubyRational.newRationalRaw(runtime, this);
-            return numFuncall(context, rational, sites(context).op_exp_rational, other);
+            return (RubyNumeric) numFuncall(context, rational, sites(context).op_exp_rational, other);
         }
         if (b == 0) {
             return RubyFixnum.one(runtime);
@@ -935,7 +918,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return value == other;
     }
 
-    public boolean fastEqual(RubyFixnum other) {
+    public final boolean fastEqual(RubyFixnum other) {
         return value == other.value;
     }
 
@@ -948,6 +931,15 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return RubyBoolean.newBoolean(context.runtime, (double) value == ((RubyFloat) other).getDoubleValue());
         }
         return super.op_num_equal(context, other);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (other instanceof RubyFixnum) {
+            return value == ((RubyFixnum) other).value;
+        }
+        return false;
     }
 
     @Override
@@ -1281,6 +1273,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     @Override
+    final boolean isOne() {
+        return value == 1;
+    }
+
+    @Override
     public IRubyObject succ(ThreadContext context) {
         return ((RubyFixnum) this).op_plus_one(context);
     }
@@ -1335,37 +1332,61 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject fdivDouble(ThreadContext context, IRubyObject y) {
         if (y instanceof RubyFixnum) {
             return context.runtime.newFloat(((double) value) / ((double) fix2long(y)));
-        } else if (y instanceof RubyBignum) {
-            return RubyBignum.newBignum(context.runtime, value).fdivDouble(context, y);
-        } else if (y instanceof RubyFloat) {
-            return context.runtime.newFloat(((double) value) / ((RubyFloat) y).getDoubleValue());
-        } else {
-            return coerceBin(context, sites(context).fdiv, y);
         }
+        if (y instanceof RubyBignum) {
+            return RubyBignum.newBignum(context.runtime, value).fdivDouble(context, (RubyBignum) y);
+        }
+        if (y instanceof RubyFloat) {
+            return context.runtime.newFloat(((double) value) / ((RubyFloat) y).getDoubleValue());
+        }
+        return coerceBin(context, sites(context).fdiv, y);
     }
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sites(context).basic_op_lt.retrieveCache(metaClass).method.isBuiltin()) {
+        CachingCallSite op_lt_site = sites(context).basic_op_lt;
+        if (op_lt_site.retrieveCache(metaClass).method.isBuiltin()) {
             return runtime.newBoolean(value < 0);
         }
-        return sites(context).basic_op_lt.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_lt_site.call(context, this, this, RubyFixnum.zero(runtime));
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sites(context).basic_op_gt.retrieveCache(metaClass).method.isBuiltin()) {
+        CachingCallSite op_gt_site = sites(context).basic_op_gt;
+        if (op_gt_site.retrieveCache(metaClass).method.isBuiltin()) {
             return runtime.newBoolean(value > 0);
         }
-        return sites(context).basic_op_gt.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_gt_site.call(context, this, this, RubyFixnum.zero(runtime));
     }
 
     @Override
     protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
         long bytes = 8; // sizeof(long)
         return (-0.415241 * ndigits - 0.125 > bytes);
+    }
+
+    @Override
+    public IRubyObject numerator(ThreadContext context) {
+        return this;
+    }
+
+    @Override
+    public IRubyObject denominator(ThreadContext context) {
+        return one(context.runtime);
+    }
+
+    @Override
+    public RubyRational convertToRational() {
+        final Ruby runtime = getRuntime();
+        return RubyRational.newRationalRaw(runtime, this, one(runtime));
+    }
+
+    @Override
+    public IRubyObject remainder(ThreadContext context, IRubyObject y) {
+        return numRemainder(context, y);
     }
 
     private static JavaSites.FixnumSites sites(ThreadContext context) {

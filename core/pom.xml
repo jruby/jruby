@@ -135,7 +135,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.43</version>
+      <version>3.0.44</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -173,7 +173,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.13</version>
+      <version>2.1.15</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
@@ -183,7 +183,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.26</version>
+      <version>1.0.27</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>

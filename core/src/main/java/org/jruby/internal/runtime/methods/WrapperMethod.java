@@ -48,7 +48,7 @@ public class WrapperMethod extends DynamicMethod {
      * @param visibility
      */
     public WrapperMethod(RubyModule implementationClass, DynamicMethod method, Visibility visibility) {
-        super(implementationClass, visibility);
+        super(implementationClass, visibility, method.getName()   );
         this.method = method;
     }
     

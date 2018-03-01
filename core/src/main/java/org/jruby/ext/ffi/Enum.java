@@ -180,7 +180,7 @@ public final class Enum extends RubyObject {
 
     @JRubyMethod(name = { "symbols" })
     public final IRubyObject symbols(ThreadContext context) {
-        return kv_map.keys();
+        return kv_map.keys(context);
     }
 
     @JRubyMethod(name = { "tag" })

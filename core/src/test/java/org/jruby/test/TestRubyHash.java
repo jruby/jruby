@@ -36,6 +36,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author chadfowler
@@ -193,5 +194,21 @@ public class TestRubyHash extends TestRubyBase {
     // https://github.com/jruby/jruby/issues/2591
     public void testDoubleQuotedUtf8HashKey() throws Exception {
         assertEquals("UTF-8", eval("# encoding: utf-8\n h = { \"Ãa1\": true }\n puts h.keys.first.encoding"));
+    }
+
+    public void testPutExisting() {
+        Ruby ruby = Ruby.newInstance();
+        IRubyObject hash = ruby.evalScriptlet("{ \"Jane Doe\" => 10, \"Jim Doe\" => 6 }");
+        assertTrue(RubyHash.class.isInstance(hash));
+        RubyHash rubyHash = (RubyHash) hash;
+        assertEquals(10L, rubyHash.put("Jane Doe", 42));
+    }
+
+    public void testPutNotExisting() {
+        Ruby ruby = Ruby.newInstance();
+        IRubyObject hash = ruby.evalScriptlet("{ \"Jim Doe\" => 6 }");
+        assertTrue(RubyHash.class.isInstance(hash));
+        RubyHash rubyHash = (RubyHash) hash;
+        assertEquals(null, rubyHash.put("Jane Doe", 42));
     }
 }

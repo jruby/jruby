@@ -906,8 +906,10 @@ public class RubyLexer extends LexingCommon {
                 continue;
             case '#': {	/* it's a comment */
                 this.tokenSeen = tokenSeen;
-                if (!parser_magic_comment(lexb.makeShared(lex_p, lex_pend - lex_p))) {
-                    if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
+                if (!tokenSeen || !warnings.isVerbose()) {
+                    if (!parser_magic_comment(lexb.makeShared(lex_p, lex_pend - lex_p))) {
+                        if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
+                    }
                 }
                 lex_p = lex_pend;
             }
@@ -1918,6 +1920,7 @@ public class RubyLexer extends LexingCommon {
         }
 
         ByteList oneCharBL = new ByteList(1);
+        oneCharBL.setEncoding(getEncoding());
         oneCharBL.append(c);
         yaccValue = new StrNode(getPosition(), oneCharBL);
         setState(EXPR_END);

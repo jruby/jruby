@@ -60,7 +60,11 @@ import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.util.Numeric.*;
+import static org.jruby.util.Numeric.f_abs;
+import static org.jruby.util.Numeric.f_arg;
+import static org.jruby.util.Numeric.f_mul;
+import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.f_to_r;
 import static org.jruby.util.RubyStringBuilder.buildString;
 
 /**
@@ -133,31 +137,24 @@ public class RubyNumeric extends RubyObject {
         throw context.runtime.newArgumentError("invalid rounding mode: " + halfArg);
     }
 
-    // The implementations of these are all bonus (see TODO above)  I was going
-    // to throw an error from these, but it appears to be the wrong place to
-    // do it.
-    public double getDoubleValue() {
-        return 0;
-    }
+    // The implementations of these are all bonus (see above)
 
     /**
      * Return the value of this numeric as a 64-bit long. If the value does not
      * fit in 64 bits, it will be truncated.
      */
-    public long getLongValue() {
-        return 0;
-    }
+    public long getLongValue() { return 0; }
 
     /**
      * Return the value of this numeric as a 32-bit long. If the value does not
      * fit in 32 bits, it will be truncated.
      */
-    public int getIntValue() {
-        return 0;
-    }
+    public int getIntValue() { return (int) getLongValue(); }
+
+    public double getDoubleValue() { return getLongValue(); }
 
     public BigInteger getBigIntegerValue() {
-        return BigInteger.ZERO;
+        return BigInteger.valueOf(getLongValue());
     }
 
     public static RubyNumeric newNumeric(Ruby runtime) {
@@ -227,14 +224,13 @@ public class RubyNumeric extends RubyObject {
         return arg.convertToInteger().getLongValue();
     }
 
-    private static long float2long(RubyFloat flt) {
+    public static long float2long(RubyFloat flt) {
         double aFloat = flt.getDoubleValue();
         if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
             return (long) aFloat;
-        } else {
-            // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
-            throw flt.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
         }
+        // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
+        throw flt.getRuntime().newRangeError("float " + aFloat + " out of range of integer");
     }
 
     /**
@@ -248,8 +244,20 @@ public class RubyNumeric extends RubyObject {
      * MRI: macro DBL2IVAL
      */
     public static RubyInteger dbl2ival(Ruby runtime, double val) {
-        if (fixable(runtime, val)) {
-            return RubyFixnum.newFixnum(runtime, (long) val);
+        // MRI: macro FIXABLE, RB_FIXABLE (inlined + adjusted) :
+        if (Double.isNaN(val) || Double.isInfinite(val))  {
+            throw runtime.newFloatDomainError(Double.toString(val));
+        }
+
+        final long fix = (long) val;
+        if (fix == RubyFixnum.MIN || fix == RubyFixnum.MAX) {
+            BigInteger big = BigDecimal.valueOf(val).toBigInteger();
+            if (posFixable(big) && negFixable(big)) {
+                return RubyFixnum.newFixnum(runtime, fix);
+            }
+        }
+        else if (posFixable(val) && negFixable(val)) {
+            return RubyFixnum.newFixnum(runtime, fix);
         }
         return RubyBignum.newBignorm(runtime, val);
     }
@@ -426,7 +434,7 @@ public class RubyNumeric extends RubyObject {
             return null;
         }
 
-        return coerceResult(runtime, result, true).toJavaArrayMaybeUnsafe();
+        return coerceResult(context, result, true).toJavaArrayMaybeUnsafe();
     }
 
     protected final IRubyObject callCoerced(ThreadContext context, String method, IRubyObject other, boolean err) {
@@ -487,15 +495,15 @@ public class RubyNumeric extends RubyObject {
             throw e;
         }
 
-        return coerceResult(context.runtime, result, err);
+        return coerceResult(context, result, err);
     }
 
-    private static RubyArray coerceResult(final Ruby runtime, final IRubyObject result, final boolean err) {
+    private static RubyArray coerceResult(final ThreadContext context, final IRubyObject result, final boolean err) {
         if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2 ) {
-            if (err) throw runtime.newTypeError("coerce must return [x, y]");
+            if (err) throw context.runtime.newTypeError("coerce must return [x, y]");
 
-            if (!result.isNil()) {
-                RubyWarnings warnings = runtime.getWarnings();
+            if (result != context.nil) {
+                RubyWarnings warnings = context.runtime.getWarnings();
                 warnings.warn("Bad return value for #coerce, called by numerical comparison operators.");
                 warnings.warn("#coerce must return [x, y]. The next release will raise an error for this.");
             }
@@ -576,6 +584,8 @@ public class RubyNumeric extends RubyObject {
     /** rb_num_coerce_cmp
      *  coercion used for comparisons
      */
+
+    @Deprecated // no longer used
     protected final IRubyObject coerceCmp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
@@ -596,6 +606,8 @@ public class RubyNumeric extends RubyObject {
     /** rb_num_coerce_relop
      *  coercion used for relative operators
      */
+
+    @Deprecated // no longer used
     protected final IRubyObject coerceRelOp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
@@ -616,7 +628,7 @@ public class RubyNumeric extends RubyObject {
 
     private IRubyObject unwrapCoerced(ThreadContext context, String method, IRubyObject other, RubyArray ary) {
         IRubyObject result = (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
-        if (result.isNil()) {
+        if (result == context.nil) {
             return RubyComparable.cmperr(this, other);
         }
         return result;
@@ -625,7 +637,7 @@ public class RubyNumeric extends RubyObject {
     private IRubyObject unwrapCoerced(ThreadContext context, CallSite site, IRubyObject other, RubyArray ary) {
         IRubyObject car = ary.eltInternal(0);
         IRubyObject result = site.call(context, car, car, ary.eltInternal(1));
-        if (result.isNil()) {
+        if (result == context.nil) {
             return RubyComparable.cmperr(this, other);
         }
         return result;
@@ -779,7 +791,7 @@ public class RubyNumeric extends RubyObject {
     /** num_modulo
      *
      */
-    @JRubyMethod(name = "modulo")
+    @JRubyMethod(name = {"modulo", "%"})
     public IRubyObject modulo(ThreadContext context, IRubyObject other) {
         IRubyObject div = numFuncall(context, this, sites(context).div, other);
         IRubyObject product = sites(context).op_times.call(context, other, other, div);
@@ -790,18 +802,39 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "remainder")
-    public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
-        IRubyObject z = numFuncall(context, this, sites(context).op_mod, dividend);
-        RubyFixnum zero = RubyFixnum.zero(context.runtime);
+    public IRubyObject remainder(ThreadContext context, IRubyObject y) {
+        return numRemainder(context, y);
+    }
 
-        if (!equalInternal(context, z, zero) &&
-                ((isNegative(context).isTrue() &&
-                        positiveIntP(context, dividend).isTrue()) ||
-                (isPositive(context).isTrue() &&
-                        negativeIntP(context, dividend).isTrue()))) {
-            return sites(context).op_minus.call(context, z, z, dividend);
+    public IRubyObject numRemainder(ThreadContext context, IRubyObject y) {
+        RubyNumeric x = this;
+        JavaSites.NumericSites sites = sites(context);
+        IRubyObject z = sites.op_mod.call(context, this, this, y);
+
+        if ((!Helpers.rbEqual(context, z, RubyFixnum.zero(context.runtime), sites.op_equal).isTrue()) &&
+                ((x.isNegative() &&
+                        RubyNumeric.positiveInt(context, y)) ||
+                        (x.isPositive() &&
+                                RubyNumeric.negativeInt(context, y)))) {
+            return sites.op_minus.call(context, z, z, y);
         }
         return z;
+    }
+
+    public static boolean positiveInt(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyNumeric) {
+            return ((RubyNumeric) num).isPositive();
+        }
+
+        return compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
+    }
+
+    public static boolean negativeInt(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyNumeric) {
+            return ((RubyNumeric) num).isNegative();
+        }
+
+        return compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
     }
 
     /** num_abs
@@ -835,8 +868,15 @@ public class RubyNumeric extends RubyObject {
     *
     */
     @JRubyMethod(name = "real?")
+    public IRubyObject real_p(ThreadContext context) {
+        return context.runtime.newBoolean(isReal());
+    }
+
+    public boolean isReal() { return true; } // only RubyComplex isn't real
+
+    @Deprecated
     public IRubyObject scalar_p() {
-        return getRuntime().getTrue();
+        return getRuntime().newBoolean(isReal());
     }
 
     /** num_int_p
@@ -1211,22 +1251,27 @@ public class RubyNumeric extends RubyObject {
         return numFuncall(context, other, sites(context).op_equals, this);
     }
 
-    /** num_numerator
+    /** numeric_numerator
      *
      */
     @JRubyMethod(name = "numerator")
     public IRubyObject numerator(ThreadContext context) {
-        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        IRubyObject rational = f_to_r(context, this);
         return sites(context).numerator.call(context, rational, rational);
     }
 
-    /** num_denominator
+    /** numeric_denominator
      *
      */
     @JRubyMethod(name = "denominator")
     public IRubyObject denominator(ThreadContext context) {
-        IRubyObject rational = RubyRational.newRationalConvert(context, this);
+        IRubyObject rational = f_to_r(context, this);
         return sites(context).denominator.call(context, rational, rational);
+    }
+
+    public RubyRational convertToRational() {
+        final ThreadContext context = getRuntime().getCurrentContext();
+        return RubyRational.newRationalRaw(context.runtime, numerator(context), denominator(context));
     }
 
     /** numeric_to_c
@@ -1343,8 +1388,8 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "negative?")
     public IRubyObject isNegative(ThreadContext context) {
         return compareWithZero(context, this, sites(context).op_lt_checked);
-
     }
+
     /** num_positive_p
      *
      */
@@ -1353,18 +1398,12 @@ public class RubyNumeric extends RubyObject {
         return compareWithZero(context, this, sites(context).op_gt_checked);
     }
 
-    protected static IRubyObject negativeIntP(ThreadContext context, IRubyObject obj) {
-        if (obj instanceof RubyNumeric) {
-            return ((RubyNumeric) obj).isNegative(context);
-        }
-        return compareWithZero(context, obj, sites(context).op_lt_checked);
+    public boolean isNegative() {
+        return isNegative(getRuntime().getCurrentContext()).isTrue();
     }
 
-    protected static IRubyObject positiveIntP(ThreadContext context, IRubyObject obj) {
-        if (obj instanceof RubyNumeric) {
-            return ((RubyNumeric) obj).isPositive(context);
-        }
-        return compareWithZero(context, obj, sites(context).op_gt_checked);
+    public boolean isPositive() {
+        return isPositive(getRuntime().getCurrentContext()).isTrue();
     }
 
     protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {
@@ -1401,13 +1440,11 @@ public class RubyNumeric extends RubyObject {
             throw runtime.newFloatDomainError(Double.toString(f));
         }
         long l = (long) f;
-        if (l == RubyFixnum.MIN ||
-                l == RubyFixnum.MAX){
+        if (l == RubyFixnum.MIN || l == RubyFixnum.MAX) {
             BigInteger bigint = BigDecimal.valueOf(f).toBigInteger();
             return posFixable(bigint) && negFixable(bigint);
-        } else {
-            return posFixable(f) && negFixable(f);
         }
+        return posFixable(f) && negFixable(f);
     }
 
     // MRI: macro POSFIXABLE, RB_POSFIXABLE

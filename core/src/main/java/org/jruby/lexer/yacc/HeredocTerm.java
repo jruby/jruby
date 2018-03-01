@@ -150,12 +150,9 @@ public class HeredocTerm extends StrTerm {
             if (c == '#') {
                 int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
 
-                if (token != 0) {
-                    return token;
-                } else {
-                    tok.append(c);
-                    c = lexer.nextc();
-                }
+                if (token != 0) return token;
+
+                tok.append('#');
             }
 
             // MRI has extra pointer which makes our code look a little bit more strange in comparison
