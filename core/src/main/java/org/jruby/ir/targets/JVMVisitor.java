@@ -134,7 +134,7 @@ public class JVMVisitor extends IRVisitor {
     protected void emitScope(IRScope scope, String name, Signature signature, boolean specificArity, boolean print) {
         BasicBlock[] bbs = scope.prepareForCompilation();
 
-        if (print && Options.IR_PRINT.load()) {
+        if (print && IRRuntimeHelpers.shouldPrintIR(runtime)) {
             ByteArrayOutputStream baos = IRDumper.printIR(scope, true);
 
             LOG.info("Printing JIT IR for " + scope.getName() + ":\n" + new String(baos.toByteArray()));

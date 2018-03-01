@@ -77,6 +77,7 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
@@ -562,6 +563,21 @@ public class IRRuntimeHelpers {
             args[args.length - 1] = visitor.syms; // kwargs hash
         }
         return args;
+    }
+
+    /**
+     * If the ir.print property is enabled and we are not booting, or the ir.print.all property is enabled and we are
+     * booting, return true to indicate IR should be printed.
+     *
+     * @param runtime the current runtime
+     * @return whether to print IR
+     */
+    public static boolean shouldPrintIR(Ruby runtime) {
+        boolean booting = runtime.isBooting();
+        boolean print = Options.IR_PRINT.load();
+        boolean printAll = Options.IR_PRINT_ALL.load();
+
+        return (print && !booting) || (booting && printAll);
     }
 
     private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
