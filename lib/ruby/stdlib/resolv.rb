@@ -522,7 +522,6 @@ class Resolv
       requester = make_udp_requester
       senders = {}
       begin
-        requester.lazy_initialize
         @config.resolv(name) {|candidate, tout, nameserver, port|
           msg = Message.new
           msg.rd = 1
@@ -779,29 +778,21 @@ class Resolv
         end
 
         def recv_reply(readable_socks)
-          @mutex.synchronize {
-            unless @initialized
-              raise ResolvError.new("recv_reply called on uninitialized requester.")
-            end
-            reply, from = readable_socks[0].recvfrom(UDPSize)
-            return reply, [IPAddr.new(from[3]),from[1]]
-          }
+          lazy_initialize
+          reply, from = readable_socks[0].recvfrom(UDPSize)
+          return reply, [IPAddr.new(from[3]),from[1]]
         end
 
         def sender(msg, data, host, port=Port)
-          @mutex.synchronize {
-            unless @initialized
-              raise ResolvError.new("sender called on uninitialized requester.")
-            end
-            sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
-            return nil if !sock
-            service = [IPAddr.new(host), port]
-            id = DNS.allocate_request_id(service[0], service[1])
-            request = msg.encode
-            request[0,2] = [id].pack('n')
-            return @senders[[service, id]] =
-              Sender.new(request, data, sock, host, port)
-          }
+          lazy_initialize
+          sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
+          return nil if !sock
+          service = [IPAddr.new(host), port]
+          id = DNS.allocate_request_id(service[0], service[1])
+          request = msg.encode
+          request[0,2] = [id].pack('n')
+          return @senders[[service, id]] =
+            Sender.new(request, data, sock, host, port)
         end
 
         def close
@@ -855,28 +846,20 @@ class Resolv
         end
 
         def recv_reply(readable_socks)
-          @mutex.synchronize {
-            unless @initialized
-              raise ResolvError.new("recv_reply called on uninitialized requester.")
-            end
-            reply = readable_socks[0].recv(UDPSize)
-            return reply, nil
-          }
+          lazy_initialize
+          reply = readable_socks[0].recv(UDPSize)
+          return reply, nil
         end
 
         def sender(msg, data, host=@host, port=@port)
-          @mutex.synchronize {
-            unless @initialized
-              raise ResolvError.new("sender called on uninitialized requester.")
-            end
-            unless host == @host && port == @port
-              raise RequestError.new("host/port don't match: #{host}:#{port}")
-            end
-            id = DNS.allocate_request_id(@host, @port)
-            request = msg.encode
-            request[0,2] = [id].pack('n')
-            return @senders[[nil,id]] = Sender.new(request, data, @socks[0])
-          }
+          lazy_initialize
+          unless host == @host && port == @port
+            raise RequestError.new("host/port don't match: #{host}:#{port}")
+          end
+          id = DNS.allocate_request_id(@host, @port)
+          request = msg.encode
+          request[0,2] = [id].pack('n')
+          return @senders[[nil,id]] = Sender.new(request, data, @socks[0])
         end
 
         def close
@@ -902,6 +885,7 @@ class Resolv
 
       class MDNSOneShot < UnconnectedUDP # :nodoc:
         def sender(msg, data, host, port=Port)
+          lazy_initialize
           id = DNS.allocate_request_id(host, port)
           request = msg.encode
           request[0,2] = [id].pack('n')
@@ -2665,7 +2649,7 @@ class Resolv
 
     def make_udp_requester # :nodoc:
       nameserver_port = @config.nameserver_port
-      Requester::MDNSOneShot.new(*nameserver_port).lazy_initialize
+      Requester::MDNSOneShot.new(*nameserver_port)
     end
 
   end
