@@ -67,8 +67,9 @@ public abstract class TimeExt {
 
         final int off = dt.getZone().getOffset(dt.getMillis()) / 1000;
 
+        int year = dt.getYear(); if (year <= 0) year--; // JODA's Julian chronology (no year 0)
         dt = new DateTime(
-                dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(),
+                year, dt.getMonthOfYear(), dt.getDayOfMonth(),
                 dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
                 dt.getMillisOfSecond(), getChronology(context, ITALY, dt.getZone())
         );

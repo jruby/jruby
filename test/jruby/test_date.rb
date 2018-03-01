@@ -555,6 +555,16 @@ class TestDate < Test::Unit::TestCase
 
     assert_equal time, datetime.to_time.utc
     assert_equal time, datetime.to_time
+
+    time = Time.new(-8, 1, 2, 23, 54, 0, '+11:00')
+    dt = DateTime.new(-8, 1, 2, 23, 54, 0, '+11:00')
+    assert_equal '#<DateTime: -0008-01-02T23:54:00+11:00 ((1718137j,46440s,0n),+39600s,2299161j)>', time.to_datetime.inspect
+    assert_equal dt, time.to_datetime
+
+    time = Time.new(0, 1, 1, 11, 00, 0, '+11:00')
+    dt = DateTime.new(0, 1, 1, 11, 00, 0, '+11:00')
+    assert_equal '#<DateTime: 0000-01-01T11:00:00+11:00 ((1721058j,0s,0n),+39600s,2299161j)>', time.to_datetime.inspect
+    assert_equal dt, time.to_datetime
   end
 
   def test_to_date
