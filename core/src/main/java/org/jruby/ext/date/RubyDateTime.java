@@ -427,9 +427,13 @@ public class RubyDateTime extends RubyDate {
     public RubyTime to_time(ThreadContext context) {
         final Ruby runtime = context.runtime;
         DateTime dt = this.dt;
-        dt = dt.withZoneRetainFields(RubyTime.getTimeZone(runtime, this.off));
 
-        //DateTime dt = new DateTime(this.dt.getMillis(), RubyTime.getTimeZone(runtime, this.off));
+        dt = new DateTime(
+                dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(),
+                dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
+                dt.getMillisOfSecond(), RubyTime.getTimeZone(runtime, this.off)
+        );
+
         RubyTime time = new RubyTime(runtime, runtime.getTime(), dt);
         if (subMillisNum != 0) {
             RubyNumeric usec = (RubyNumeric)

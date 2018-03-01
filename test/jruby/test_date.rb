@@ -1,3 +1,4 @@
+# encoding: US-ASCII
 require 'test/unit'
 
 class TestDate < Test::Unit::TestCase
@@ -543,6 +544,19 @@ class TestDate < Test::Unit::TestCase
     assert_equal time, time2
   end
 
+  def test_to_datetime
+    time = Time.new(1008, 12, 25, 10, 44, 36, '-11:00')
+    dt = DateTime.new(1008, 12, 25, 10, 44, 36, '-11:00')
+    assert_equal '#<DateTime: 1008-12-25T10:44:36-11:00 ((2089589j,78276s,0n),-39600s,2299161j)>', time.to_datetime.inspect
+    assert_equal dt, time.to_datetime
+
+    time = Time.utc(3, 12, 31, 23, 58, 59)
+    datetime = time.to_datetime
+
+    assert_equal time, datetime.to_time.utc
+    assert_equal time, datetime.to_time
+  end
+
   def test_to_date
     dt = DateTime.new(2012, 12, 31, 12, 23, 00, '+05:00')
     date = dt.to_date
@@ -553,11 +567,27 @@ class TestDate < Test::Unit::TestCase
     assert_equal 0, date.send(:minute)
     assert_equal 0, date.send(:second)
 
-    dt = DateTime.new(1008, 12, 31, 10, 40, 00, '+11:00')
+    date = dt.to_time.to_date
+    assert_equal 2012, date.year
+    assert_equal 12, date.month
+    assert_equal 31, date.day
+    assert_equal 0, date.send(:hour)
+    assert_equal 0, date.send(:minute)
+    assert_equal 0, date.send(:second)
+
+    dt = DateTime.new(1008, 12, 9, 10, 40, 00, '+11:00')
     date = dt.to_date
     assert_equal 1008, date.year
     assert_equal 12, date.month
-    assert_equal 31, date.day
+    assert_equal 9, date.day
+    assert_equal 0, date.send(:hour)
+    assert_equal 0, date.send(:minute)
+    assert_equal 0, date.send(:second)
+
+    date = dt.to_time.to_date
+    assert_equal 1008, date.year
+    assert_equal 12, date.month
+    assert_equal 3, date.day
     assert_equal 0, date.send(:hour)
     assert_equal 0, date.send(:minute)
     assert_equal 0, date.send(:second)

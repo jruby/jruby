@@ -63,13 +63,14 @@ public abstract class TimeExt {
     @JRubyMethod(name = "to_datetime")
     public static RubyDateTime to_datetime(ThreadContext context, IRubyObject self) {
         final RubyTime time = (RubyTime) self;
-        final DateTime dt = ((RubyTime) self).getDateTime();
+        DateTime dt = ((RubyTime) self).getDateTime();
 
         final int off = dt.getZone().getOffset(dt.getMillis()) / 1000;
-        final DateTime val = new DateTime(
+
+        dt = new DateTime(
                 dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(),
                 dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
-                dt.getMillisOfSecond(), dt.getZone() // will use ISO chronology
+                dt.getMillisOfSecond(), getChronology(context, ITALY, dt.getZone())
         );
 
         long subMillisNum = 0, subMillisDen = 1;
@@ -84,7 +85,7 @@ public abstract class TimeExt {
             }
         }
 
-        return new RubyDateTime(context.runtime, getDateTime(context.runtime), val, off, ITALY, subMillisNum, subMillisDen);
+        return new RubyDateTime(context.runtime, getDateTime(context.runtime), dt, off, ITALY, subMillisNum, subMillisDen);
     }
 
 }
