@@ -745,49 +745,74 @@ class Resolv
         def initialize(*nameserver_port)
           super()
           @nameserver_port = nameserver_port
-          @socks_hash = {}
-          @socks = []
-          nameserver_port.each {|host, port|
-            if host.index(':')
-              bind_host = "::"
-              af = Socket::AF_INET6
-            else
-              bind_host = "0.0.0.0"
-              af = Socket::AF_INET
-            end
-            next if @socks_hash[bind_host]
-            begin
-              sock = UDPSocket.new(af)
-            rescue Errno::EAFNOSUPPORT
-              next # The kernel doesn't support the address family.
-            end
-            sock.do_not_reverse_lookup = true
-            DNS.bind_random_port(sock, bind_host)
-            @socks << sock
-            @socks_hash[bind_host] = sock
+          @mutex = Thread::Mutex.new
+          @initialized = false
+        end
+
+        def lazy_initialize
+          @mutex.synchronize {
+            next if @initialized
+            @initialized = true
+            @socks_hash = {}
+            @socks = []
+            @nameserver_port.each {|host, port|
+              if host.index(':')
+                bind_host = "::"
+                af = Socket::AF_INET6
+              else
+                bind_host = "0.0.0.0"
+                af = Socket::AF_INET
+              end
+              next if @socks_hash[bind_host]
+              begin
+                sock = UDPSocket.new(af)
+              rescue Errno::EAFNOSUPPORT
+                next # The kernel doesn't support the address family.
+              end
+              @socks << sock
+              @socks_hash[bind_host] = sock
+              sock.do_not_reverse_lookup = true
+              DNS.bind_random_port(sock, bind_host)
+            }
           }
+          self
         end
 
         def recv_reply(readable_socks)
-          reply, from = readable_socks[0].recvfrom(UDPSize)
-          return reply, [IPAddr.new(from[3]),from[1]]
+          @mutex.synchronize {
+            unless @initialized
+              raise ResolvError.new("recv_reply called on uninitialized requester.")
+            end
+            reply, from = readable_socks[0].recvfrom(UDPSize)
+            return reply, [IPAddr.new(from[3]),from[1]]
+          }
         end
 
         def sender(msg, data, host, port=Port)
-          sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
-          return nil if !sock
-          service = [IPAddr.new(host), port]
-          id = DNS.allocate_request_id(service[0], service[1])
-          request = msg.encode
-          request[0,2] = [id].pack('n')
-          return @senders[[service, id]] =
-            Sender.new(request, data, sock, host, port)
+          @mutex.synchronize {
+            unless @initialized
+              raise ResolvError.new("sender called on uninitialized requester.")
+            end
+            sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
+            return nil if !sock
+            service = [IPAddr.new(host), port]
+            id = DNS.allocate_request_id(service[0], service[1])
+            request = msg.encode
+            request[0,2] = [id].pack('n')
+            return @senders[[service, id]] =
+              Sender.new(request, data, sock, host, port)
+          }
         end
 
         def close
-          super
-          @senders.each_key {|service, id|
-            DNS.free_request_id(service[0], service[1], id)
+          @mutex.synchronize {
+            if @initialized
+              super
+              @senders.each_key {|service, id|
+                DNS.free_request_id(service[0], service[1], id)
+              }
+              @initialized = false
+            end
           }
         end
 
