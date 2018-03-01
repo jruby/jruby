@@ -648,7 +648,32 @@ public class RubyRational extends RubyNumeric {
     @Override
     @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
-        return f_div(context, f_to_f(context, this), other);
+        if (other instanceof RubyInteger) {
+            if (f_zero_p(context, other)) {
+                throw context.runtime.newZeroDivisionError();
+            } else {
+                return f_muldiv(context, getMetaClass(),
+                        num, den,
+                        (RubyInteger) other, RubyFixnum.one(context.runtime), false);
+            }
+        } else if (other instanceof RubyFloat) {
+            return dbl2num(context.runtime, getDoubleValue() / ((RubyFloat) other).getDoubleValue());
+        } else if (other instanceof RubyRational) {
+            if (f_zero_p(context, other)) {
+                throw context.runtime.newZeroDivisionError();
+            } else {
+                if (f_one_p(context, this)) {
+                    return newRationalNoReduce(context, getMetaClass(),
+                            ((RubyRational) other).num, ((RubyRational) other).den);
+                }
+
+                return f_muldiv(context, getMetaClass(),
+                        num, den,
+                        ((RubyRational) other).num, ((RubyRational) other).den, false);
+            }
+        } else {
+            return coerceBin(context, sites(context).op_quo, other);
+        }
     }
 
     /** nurat_expt

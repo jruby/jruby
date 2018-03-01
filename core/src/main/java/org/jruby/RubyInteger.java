@@ -612,7 +612,15 @@ public abstract class RubyInteger extends RubyNumeric {
     @Override
     @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject y) {
-        return fdivDouble(context, y);
+        RubyInteger x = this;
+        if (y instanceof RubyInteger && !((RubyInteger) y).isZero()) {
+            RubyInteger gcd = (RubyInteger) gcd(context, y);
+                if (!gcd.isZero()) {
+                    x = (RubyInteger) x.idiv(context, gcd);
+                    y = ((RubyInteger) y).idiv(context, gcd);
+                }
+            }
+        return x.fdivDouble(context, y);
     }
 
     public abstract IRubyObject fdivDouble(ThreadContext context, IRubyObject y);
