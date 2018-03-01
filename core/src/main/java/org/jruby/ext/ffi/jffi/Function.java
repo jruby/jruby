@@ -146,7 +146,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         
         // Replace memory object with one that throws an exception on any access
         setMemoryIO(new FreedMemoryIO(context.runtime));
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "autorelease=", required = 1)
@@ -155,7 +155,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
             ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(autorelease = release.isTrue());
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = { "autorelease?", "autorelease" })

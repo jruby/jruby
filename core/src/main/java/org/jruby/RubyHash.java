@@ -1160,7 +1160,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "<", required = 1)
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         final RubyHash otherHash = ((RubyBasicObject) other).convertToHash();
-        if (size() >= otherHash.size()) return context.runtime.getFalse();
+        if (size() >= otherHash.size()) return context.fals;
 
         return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
     }
@@ -1168,7 +1168,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "<=", required = 1)
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         final RubyHash otherHash = other.convertToHash();
-        if (size() > otherHash.size()) return context.runtime.getFalse();
+        if (size() > otherHash.size()) return context.fals;
 
         return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
     }
@@ -1524,7 +1524,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "select!")
     public IRubyObject select_bang(final ThreadContext context, final Block block) {
-        if (block.isGiven()) return keep_ifCommon(context, block) ? this : context.runtime.getNil();
+        if (block.isGiven()) return keep_ifCommon(context, block) ? this : context.nil;
 
         return enumeratorizeWithSize(context, this, "select!", enumSizeFn());
     }
@@ -1579,7 +1579,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod
     public IRubyObject key(ThreadContext context, IRubyObject expected) {
         IRubyObject key = internalIndex(context, expected);
-        return key != null ? key : context.runtime.getNil();
+        return key != null ? key : context.nil;
     }
 
     private IRubyObject internalIndex(final ThreadContext context, final IRubyObject expected) {
@@ -2085,9 +2085,9 @@ public class RubyHash extends RubyObject implements Map {
         IRubyObject pattern = args.length > 0 ? args[0] : null;
         boolean patternGiven = pattern != null;
 
-        if (isEmpty()) return context.runtime.getFalse();
+        if (isEmpty()) return context.fals;
 
-        if (!block.isGiven() && !patternGiven) return context.runtime.getTrue();
+        if (!block.isGiven() && !patternGiven) return context.tru;
         if (patternGiven) return any_p_p(context, pattern);
 
         if (block.getSignature().arityValue() > 1) {
@@ -2102,9 +2102,9 @@ public class RubyHash extends RubyObject implements Map {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
                 IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
                 if (block.yield(context, newAssoc).isTrue())
-                    return context.runtime.getTrue();
+                    return context.tru;
             }
-            return context.runtime.getFalse();
+            return context.fals;
         } finally {
             iteratorExit();
         }
@@ -2115,9 +2115,9 @@ public class RubyHash extends RubyObject implements Map {
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
                 if (block.yieldArray(context, context.runtime.newArray(entry.key, entry.value), null).isTrue())
-                    return context.runtime.getTrue();
+                    return context.tru;
             }
-            return context.runtime.getFalse();
+            return context.fals;
         } finally {
             iteratorExit();
         }

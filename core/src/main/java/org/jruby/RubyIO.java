@@ -1059,7 +1059,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (openFile.encs.enc2 != null) return encodingService.getEncoding(openFile.encs.enc2);
 
         if (openFile.isWritable()) {
-            return openFile.encs.enc == null ? context.runtime.getNil() : encodingService.getEncoding(openFile.encs.enc);
+            return openFile.encs.enc == null ? context.nil : encodingService.getEncoding(openFile.encs.enc);
         }
 
         return encodingService.getEncoding(getReadEncoding());
@@ -1564,7 +1564,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         OpenFile myOpenFile = getOpenFileChecked();
 
         if (myOpenFile.getProcess() == null) {
-            return context.runtime.getNil();
+            return context.nil;
         }
 
         // Of course this isn't particularly useful.
@@ -2436,7 +2436,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (args.length == 2) {
             arg = args[1];
         } else {
-            arg = context.runtime.getNil();
+            arg = context.nil;
         }
 
         return ctl(context, cmd, arg);

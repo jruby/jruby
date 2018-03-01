@@ -80,7 +80,7 @@ public class Mutex extends RubyObject {
     @JRubyMethod
     public RubyBoolean try_lock(ThreadContext context) {
         if (lock.isHeldByCurrentThread()) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         return context.runtime.newBoolean(context.getThread().tryLock(lock));
     }

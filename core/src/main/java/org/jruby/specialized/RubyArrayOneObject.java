@@ -163,7 +163,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
         modifyCheck();
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @Override

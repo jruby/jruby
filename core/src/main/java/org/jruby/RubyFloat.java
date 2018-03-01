@@ -491,7 +491,7 @@ public class RubyFloat extends RubyNumeric {
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (Double.isNaN(value)) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
@@ -505,7 +505,7 @@ public class RubyFloat extends RubyNumeric {
 
     public IRubyObject op_equal(ThreadContext context, double other) {
         if (Double.isNaN(value)) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         return RubyBoolean.newBoolean(context.runtime, value == other);
     }

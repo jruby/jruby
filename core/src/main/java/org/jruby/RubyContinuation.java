@@ -109,7 +109,7 @@ public class RubyContinuation extends RubyObject {
         } catch (Continuation c) {
             if (c == continuation) {
                 if (continuation.args.length == 0) {
-                    return context.runtime.getNil();
+                    return context.nil;
                 } else if (continuation.args.length == 1) {
                     return continuation.args[0];
                 } else {

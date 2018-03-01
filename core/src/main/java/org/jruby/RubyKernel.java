@@ -629,12 +629,12 @@ public class RubyKernel {
 
     @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject isPrivate) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     /** Returns value of $_.

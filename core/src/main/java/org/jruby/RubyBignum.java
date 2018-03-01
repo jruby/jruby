@@ -999,7 +999,7 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyFloat) {
             double a = ((RubyFloat) other).getDoubleValue();
             if (Double.isNaN(a)) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
             return RubyBoolean.newBoolean(context.runtime, a == big2dbl(this));
         } else {

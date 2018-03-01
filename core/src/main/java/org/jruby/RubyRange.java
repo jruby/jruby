@@ -383,8 +383,8 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject equalityInner(ThreadContext context, IRubyObject other, MethodNames equalityCheck) {
-        if (this == other) return context.runtime.getTrue();
-        if (!(other instanceof RubyRange)) return context.runtime.getFalse();
+        if (this == other) return context.tru;
+        if (!(other instanceof RubyRange)) return context.fals;
 
         RubyRange otherRange = (RubyRange) other;
 
@@ -435,7 +435,7 @@ public class RubyRange extends RubyObject {
         if (result.isNil()) {
             return null;
         }
-        return RubyComparable.cmpint(context, result, a, b) < 0 ? context.runtime.getTrue() : null;
+        return RubyComparable.cmpint(context, result, a, b) < 0 ? context.tru : null;
     }
 
     private static IRubyObject rangeLe(ThreadContext context, IRubyObject a, IRubyObject b) {
@@ -447,7 +447,7 @@ public class RubyRange extends RubyObject {
         if (c == 0) {
             return RubyFixnum.zero(context.runtime);
         }
-        return c < 0 ? context.runtime.getTrue() : null;
+        return c < 0 ? context.tru : null;
     }
 
     private void rangeEach(ThreadContext context, RangeCallBack callback) {
@@ -747,7 +747,7 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(name = "cover?")
     public RubyBoolean cover_p(ThreadContext context, IRubyObject obj) {
         if (rangeLe(context, begin, obj) == null) {
-            return context.runtime.getFalse(); // obj < start...end
+            return context.fals; // obj < start...end
         }
         return context.runtime.newBoolean(isExclusive
                 ? // begin <= obj < end || begin <= obj <= end

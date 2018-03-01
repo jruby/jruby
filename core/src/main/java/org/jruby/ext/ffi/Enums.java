@@ -121,7 +121,7 @@ public final class Enums extends RubyObject {
                 return item;
             }
         }
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "__map_symbol")

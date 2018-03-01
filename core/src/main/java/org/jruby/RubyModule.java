@@ -1176,11 +1176,11 @@ public class RubyModule extends RubyObject {
         // See if module is in chain...Cannot match against itself so start at superClass.
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isSame(moduleToCompare)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
         }
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "singleton_class?")
@@ -2276,7 +2276,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if(!(other instanceof RubyModule)) return context.runtime.getFalse();
+        if(!(other instanceof RubyModule)) return context.fals;
 
         RubyModule otherModule = (RubyModule) other;
         if(otherModule.isIncluded()) {
@@ -2678,12 +2678,12 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "included", required = 1, visibility = PRIVATE)
     public IRubyObject included(ThreadContext context, IRubyObject other) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "extended", required = 1, visibility = PRIVATE)
     public IRubyObject extended(ThreadContext context, IRubyObject other, Block block) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
@@ -2823,22 +2823,22 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "method_added", required = 1, visibility = PRIVATE)
     public IRubyObject method_added(ThreadContext context, IRubyObject nothing) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_removed", required = 1, visibility = PRIVATE)
     public IRubyObject method_removed(ThreadContext context, IRubyObject nothing) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_undefined", required = 1, visibility = PRIVATE)
     public IRubyObject method_undefined(ThreadContext context, IRubyObject nothing) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_defined?", required = 1)
     public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol) {
-        return isMethodBound(symbol.asJavaString(), true) ? context.runtime.getTrue() : context.runtime.getFalse();
+        return isMethodBound(symbol.asJavaString(), true) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "public_method_defined?", required = 1)
@@ -3163,11 +3163,11 @@ public class RubyModule extends RubyObject {
         RubyModule module = this;
         do {
             if (module.hasClassVariable(internedName)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
         } while ((module = module.getSuperClass()) != null);
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     /** rb_mod_cvar_get
@@ -3376,7 +3376,7 @@ public class RubyModule extends RubyObject {
             removeAutoload(name);
             // FIXME: I'm not sure this is right, but the old code returned
             // the undef, which definitely isn't right...
-            return context.runtime.getNil();
+            return context.nil;
         }
 
         if (hasConstantInHierarchy(name)) {

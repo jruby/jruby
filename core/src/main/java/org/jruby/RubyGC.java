@@ -67,12 +67,12 @@ public class RubyGC {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject start(ThreadContext context, IRubyObject recv) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod
     public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)

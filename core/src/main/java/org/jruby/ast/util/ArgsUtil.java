@@ -119,7 +119,7 @@ public final class ArgsUtil {
             if (options.containsKey(keySym)) {
                 ret[index] = options.fastARef(keySym);
             } else {
-                ret[index] = context.runtime.getNil();
+                ret[index] = context.nil;
             }
             index++;
             validKeySet.add(keySym);

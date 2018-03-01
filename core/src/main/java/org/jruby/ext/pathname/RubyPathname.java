@@ -241,7 +241,7 @@ public class RubyPathname extends RubyObject {
         if (other instanceof RubyPathname) {
             return Helpers.rbEqual(context, getPath(), ((RubyPathname) other).getPath());
         } else {
-            return context.runtime.getFalse();
+            return context.fals;
         }
     }
 

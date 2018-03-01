@@ -152,7 +152,7 @@ public class RipperParserBase {
     }
 
     public IRubyObject escape(IRubyObject arg) {
-        return arg == null ? context.runtime.getNil() : arg;
+        return arg == null ? context.nil : arg;
     }
     
     public IRubyObject formal_argument(IRubyObject identifier) {

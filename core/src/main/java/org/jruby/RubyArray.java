@@ -2026,13 +2026,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        if (this == obj) return context.runtime.getTrue();
+        if (this == obj) return context.tru;
 
         if (!(obj instanceof RubyArray)) {
-            if (obj == context.nil) return context.runtime.getFalse();
+            if (obj == context.nil) return context.fals;
 
             if (!sites(context).respond_to_to_ary.respondsTo(context, obj, obj)) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
             return Helpers.rbEqual(context, obj, this);
         }
@@ -2041,14 +2041,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public RubyBoolean compare(ThreadContext context, CallSite site, IRubyObject other) {
         if (!(other instanceof RubyArray)) {
-            if (!sites(context).respond_to_to_ary.respondsTo(context, other, other)) return context.runtime.getFalse();
+            if (!sites(context).respond_to_to_ary.respondsTo(context, other, other)) return context.fals;
 
             return Helpers.rbEqual(context, other, this);
         }
 
         RubyArray ary = (RubyArray) other;
 
-        if (realLength != ary.realLength) return context.runtime.getFalse();
+        if (realLength != ary.realLength) return context.fals;
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject a = elt(i);
@@ -2056,10 +2056,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
             if (a == b) continue; // matching MRI opt. mock frameworks can throw errors if we don't
 
-            if (!site.call(context, a, a, b).isTrue()) return context.runtime.getFalse();
+            if (!site.call(context, a, a, b).isTrue()) return context.fals;
         }
 
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     /** rb_ary_eql
@@ -2068,7 +2068,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql(ThreadContext context, IRubyObject obj) {
         if(!(obj instanceof RubyArray)) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         return RecursiveComparator.compare(context, sites(context).eql, this, obj);
     }
@@ -3321,7 +3321,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     public IRubyObject uniq_bang(ThreadContext context) {
         RubyHash hash = makeHash();
-        if (realLength == hash.size()) return context.runtime.getNil();
+        if (realLength == hash.size()) return context.nil;
 
         // TODO: (CON) This could be a no-op for packed arrays if size does not change
         unpack();
@@ -3341,7 +3341,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (!block.isGiven()) return uniq_bang(context);
         RubyHash hash = makeHash(context, block);
-        if (realLength == hash.size()) return context.runtime.getNil();
+        if (realLength == hash.size()) return context.nil;
 
         // after evaluating the block, a new modify check is needed
         modifyCheck();
@@ -3746,7 +3746,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "cycle", new IRubyObject[] {arg}, cycleSizeFn(context));
 
         long times = RubyNumeric.num2long(arg);
-        if (times <= 0) return context.runtime.getNil();
+        if (times <= 0) return context.nil;
 
         return cycleCommon(context, times, block);
     }
@@ -3757,7 +3757,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 block.yield(context, eltOk(i));
             }
         }
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     private SizeFn cycleSizeFn(final ThreadContext context) {
@@ -4380,47 +4380,47 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!block.isGiven()) return all_pBlockless(context);
 
         for (int i = 0; i < realLength; i++) {
-            if (!block.yield(context, eltOk(i)).isTrue()) return context.runtime.getFalse();
+            if (!block.yield(context, eltOk(i)).isTrue()) return context.fals;
         }
 
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     private IRubyObject all_pBlockless(ThreadContext context) {
         for (int i = 0; i < realLength; i++) {
-            if (!eltOk(i).isTrue()) return context.runtime.getFalse();
+            if (!eltOk(i).isTrue()) return context.fals;
         }
 
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     @JRubyMethod(name = "any?", optional = 1)
     public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
-        if (isEmpty()) return context.runtime.getFalse();
+        if (isEmpty()) return context.fals;
         if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, args, block);
         boolean patternGiven = args.length > 0;
         if (!block.isGiven() || patternGiven) return any_pBlockless(context, args);
 
         for (int i = 0; i < realLength; i++) {
-            if (block.yield(context, eltOk(i)).isTrue()) return context.runtime.getTrue();
+            if (block.yield(context, eltOk(i)).isTrue()) return context.tru;
         }
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     private IRubyObject any_pBlockless(ThreadContext context, IRubyObject[] args) {
         IRubyObject pattern = args.length > 0 ? args[0] : null;
         if (pattern == null) {
             for (int i = 0; i < realLength; i++) {
-                if (eltOk(i).isTrue()) return context.runtime.getTrue();
+                if (eltOk(i).isTrue()) return context.tru;
             }
         } else {
             for (int i = 0; i < realLength; i++) {
-                if (pattern.callMethod(context, "===", eltOk(i)).isTrue()) return context.runtime.getTrue();
+                if (pattern.callMethod(context, "===", eltOk(i)).isTrue()) return context.tru;
             }
         }
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod

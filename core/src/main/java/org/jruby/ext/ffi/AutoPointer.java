@@ -157,7 +157,7 @@ public class AutoPointer extends Pointer {
         reaper = null;
         referent = null;
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "autorelease=")
@@ -170,7 +170,7 @@ public class AutoPointer extends Pointer {
 
         r.autorelease(autorelease.isTrue());
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "autorelease?")

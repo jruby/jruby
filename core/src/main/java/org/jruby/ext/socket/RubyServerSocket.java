@@ -131,7 +131,7 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
-        return doAcceptNonblock(this, context, ArgsUtil.extractKeywordArg(context, "exception", opts) != context.runtime.getFalse());
+        return doAcceptNonblock(this, context, ArgsUtil.extractKeywordArg(context, "exception", opts) != context.fals);
     }
 
     @Override

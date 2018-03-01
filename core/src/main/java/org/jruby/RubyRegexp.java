@@ -1033,10 +1033,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) {
-            return context.runtime.getTrue();
+            return context.tru;
         }
         if (!(other instanceof RubyRegexp)) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         RubyRegexp otherRegex = (RubyRegexp) other;
 

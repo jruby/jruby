@@ -294,21 +294,21 @@ public class Bootstrap {
     }
 
     public static IRubyObject True(ThreadContext context, MutableCallSite site) {
-        MethodHandle constant = (MethodHandle)context.runtime.getTrue().constant();
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.runtime.getTrue());
+        MethodHandle constant = (MethodHandle)context.tru.constant();
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.tru);
 
         site.setTarget(constant);
 
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     public static IRubyObject False(ThreadContext context, MutableCallSite site) {
-        MethodHandle constant = (MethodHandle)context.runtime.getFalse().constant();
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.runtime.getFalse());
+        MethodHandle constant = (MethodHandle)context.fals.constant();
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.fals);
 
         site.setTarget(constant);
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     public static Ruby runtime(ThreadContext context, MutableCallSite site) {

@@ -467,7 +467,7 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "eos?")
     public RubyBoolean eos_p(ThreadContext context) {
         check();
-        return pos >= str.getByteList().getRealSize() ? context.runtime.getTrue() : context.runtime.getFalse();
+        return pos >= str.getByteList().getRealSize() ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "empty?")
@@ -482,13 +482,13 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "rest?")
     public RubyBoolean rest_p(ThreadContext context) {
         check();
-        return pos >= str.getByteList().getRealSize() ? context.runtime.getFalse() : context.runtime.getTrue();
+        return pos >= str.getByteList().getRealSize() ? context.fals : context.tru;
     }
 
     @JRubyMethod(name = "matched?")
     public RubyBoolean matched_p(ThreadContext context) {
         check();
-        return isMatched() ? context.runtime.getTrue() : context.runtime.getFalse();
+        return isMatched() ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "matched")
@@ -547,7 +547,7 @@ public class RubyStringScanner extends RubyObject {
     public IRubyObject pre_match(ThreadContext context) {
         check();
         if (!isMatched()) {
-            return context.runtime.getNil();
+            return context.nil;
         }
         return extractRange(context.runtime, 0, lastPos + beg);
     }

@@ -319,14 +319,14 @@ public class RubyFileTest {
     public static IRubyObject worldReadable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         RubyFileStat stat = getRubyFileStat(context, filename);
 
-        return stat == null ? context.runtime.getNil() : stat.worldReadable(context);
+        return stat == null ? context.nil : stat.worldReadable(context);
     }
 
     @JRubyMethod(name = "world_writable?", required = 1, module = true)
     public static IRubyObject worldWritable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         RubyFileStat stat = getRubyFileStat(context, filename);
 
-        return stat == null ? context.runtime.getNil() : stat.worldWritable(context);
+        return stat == null ? context.nil : stat.worldWritable(context);
     }
 
     /**

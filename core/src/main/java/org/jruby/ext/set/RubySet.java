@@ -860,7 +860,7 @@ public class RubySet extends RubyObject implements Set {
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if ( this == other ) return context.runtime.getTrue();
+        if ( this == other ) return context.tru;
         if ( getMetaClass().isInstance(other) ) {
             return this.hash.op_equal(context, ((RubySet) other).hash); // @hash == ...
         }
@@ -868,12 +868,12 @@ public class RubySet extends RubyObject implements Set {
             RubySet that = (RubySet) other;
             if ( this.size() == that.size() ) { // && includes all of our elements :
                 for ( IRubyObject obj : elementsOrdered() ) {
-                    if ( ! that.containsImpl(obj) ) return context.runtime.getFalse();
+                    if ( ! that.containsImpl(obj) ) return context.fals;
                 }
-                return context.runtime.getTrue();
+                return context.tru;
             }
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "reset")
@@ -887,7 +887,7 @@ public class RubySet extends RubyObject implements Set {
         if ( other instanceof RubySet ) {
             return this.hash.op_eql(context, ((RubySet) other).hash);
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @Override

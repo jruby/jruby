@@ -208,12 +208,12 @@ public class JavaPackage extends RubyModule {
     private IRubyObject respond_to(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
         String name = mname.asJavaString();
 
-        if (getMetaClass().respondsToMethod(name, !includePrivate)) return context.runtime.getTrue();
+        if (getMetaClass().respondsToMethod(name, !includePrivate)) return context.tru;
         /*
         if ( ( name = BlankSlateWrapper.handlesMethod(name) ) != null ) {
             RubyBoolean bound = checkMetaClassBoundMethod(context, name, includePrivate);
             if ( bound != null ) return bound;
-            return context.runtime.getFalse(); // un-bound (removed) method
+            return context.fals; // un-bound (removed) method
         }
         */
 
@@ -229,9 +229,9 @@ public class JavaPackage extends RubyModule {
         DynamicMethod method = getMetaClass().searchMethod(name);
         if ( ! method.isUndefined() && ! method.isNotImplemented() ) {
             if ( ! includePrivate && method.getVisibility() == PRIVATE ) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
-            return context.runtime.getTrue();
+            return context.tru;
         }
         return null;
     }
@@ -249,9 +249,9 @@ public class JavaPackage extends RubyModule {
     private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
         final String name = mname.asJavaString();
         if ( BlankSlateWrapper.handlesMethod(name) != null ) {
-            return context.runtime.getFalse(); // not missing!
+            return context.fals; // not missing!
         }
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     @JRubyMethod(name = "method_missing", visibility = Visibility.PRIVATE)

@@ -1294,7 +1294,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return this == obj ? context.runtime.getTrue() : context.runtime.getFalse();
+        return this == obj ? context.tru : context.fals;
     }
 
     @Deprecated
@@ -1995,7 +1995,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @JRubyMethod(name = "equal?", required = 1)
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
-        return this == other ? context.runtime.getTrue() : context.runtime.getFalse();
+        return this == other ? context.tru : context.fals;
     }
 
     @Deprecated
@@ -2155,7 +2155,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         port.callMethod(context, "write", this);
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     /** rb_obj_tainted
@@ -2253,11 +2253,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public RubyBoolean instance_of_p(ThreadContext context, IRubyObject type) {
         if (type() == type) {
-            return context.runtime.getTrue();
+            return context.tru;
         } else if (!(type instanceof RubyModule)) {
             throw context.runtime.newTypeError("class or module required");
         } else {
-            return context.runtime.getFalse();
+            return context.fals;
         }
     }
 
@@ -2768,7 +2768,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Only the object <i>nil</i> responds <code>true</code> to <code>nil?</code>.
      */
     public IRubyObject nil_p(ThreadContext context) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     /** rb_obj_pattern_match
@@ -2781,11 +2781,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  pattern-match semantics.
      */
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     /**
@@ -2825,9 +2825,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject name) {
         if (variableTableContains(validateInstanceVariable(name, name.asJavaString()))) {
-            return context.runtime.getTrue();
+            return context.tru;
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     /** rb_obj_ivar_get
@@ -2855,7 +2855,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if ((value = variableTableFetch(validateInstanceVariable(name, name.asJavaString()))) != null) {
             return (IRubyObject)value;
         }
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     /** rb_obj_ivar_set
