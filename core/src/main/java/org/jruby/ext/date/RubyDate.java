@@ -414,9 +414,15 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "civil", alias = "new", meta = true, optional = 4) // 4 args case
     public static RubyDate civil(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // IRubyObject year, IRubyObject month, IRubyObject mday, IRubyObject start
-
-        // TODO interpreter needs a ThreeOperandArgNoBlockCallInstr otherwise routes 3 args here
-        if (args.length == 3) return civil(context, self, args[0], args[1], args[2]);
+        switch (args.length) {
+            // NOTE: slightly annoying but send might route its Date.send(:civil, *args) here
+            case 0: return civil(context, self);
+            case 1: return civil(context, self, args[0]);
+            case 2: return civil(context, self, args[0], args[1]);
+            // besides the above note on send ^^
+            // interpreter does not have a ThreeOperandArgNoBlockCallInstr thus routes 3 args as args[] here
+            case 3: return civil(context, self, args[0], args[1], args[2]);
+        }
 
         final long sg = val2sg(context, args[3]);
 
