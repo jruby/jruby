@@ -170,7 +170,7 @@ public class RubyDateTime extends RubyDate {
 
         final int len = args.length;
 
-        int hour = 0, minute = 0, second = 0; long millis = 0; int subMillisNum = 0, subMillisDen = 1;
+        int hour = 0, minute = 0, second = 0; long millis = 0; long subMillisNum = 0, subMillisDen = 1;
         int off = 0; long sg = ITALY;
 
         if (len == 8) sg = val2sg(context, args[7]);
@@ -178,7 +178,7 @@ public class RubyDateTime extends RubyDate {
 
         final int year = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
         final int month = getMonth(args[1]);
-        final int[] rest = new int[] { 0, 1 };
+        final long[] rest = new long[] { 0, 1 };
         final int day = (int) getDay(context, args[2], rest);
 
         if (len >= 4 || rest[0] != 0) {
@@ -192,10 +192,10 @@ public class RubyDateTime extends RubyDate {
         if (len >= 6 || rest[0] != 0) {
             IRubyObject sec = len >= 6 ? args[5] : RubyFixnum.zero(context.runtime);
             second = getSecond(context, sec, rest);
-            final int r0 = rest[0], r1 = rest[1];
+            final long r0 = rest[0], r1 = rest[1];
             if (r0 != 0) {
                 millis = ( 1000 * r0 ) / r1;
-                subMillisNum = (int) ((1000 * r0) - (millis * r1)); subMillisDen = r1;
+                subMillisNum = ((1000 * r0) - (millis * r1)); subMillisDen = r1;
             }
         }
 
@@ -222,23 +222,23 @@ public class RubyDateTime extends RubyDate {
         return new RubyDateTime(context.runtime, (RubyClass) self, dt, off, sg, subMillisNum, subMillisDen);
     }
 
-    static long getDay(ThreadContext context, IRubyObject day, final int[] rest) {
+    static long getDay(ThreadContext context, IRubyObject day, final long[] rest) {
         long d = day.convertToInteger().getLongValue();
 
         if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
             RubyRational rat = ((RubyNumeric) day).convertToRational();
             long num = rat.getNumerator().getLongValue();
             int den = rat.getDenominator().getIntValue();
-            rest[0] = (int) (num - d * den); rest[1] = den;
+            rest[0] = (num - d * den); rest[1] = den;
         }
 
         return d;
     }
 
-    static int getHour(ThreadContext context, IRubyObject hour, final int[] rest) {
+    static int getHour(ThreadContext context, IRubyObject hour, final long[] rest) {
         long h = hour.convertToInteger().getLongValue();
-        int i = 0;
-        final int r0 = rest[0], r1 = rest[1];
+        long i = 0;
+        final long r0 = rest[0], r1 = rest[1];
         if (r0 != 0) {
             i = (24 * r0) / r1;
             rest[0] = (24 * r0) - (i * r1);
@@ -249,10 +249,10 @@ public class RubyDateTime extends RubyDate {
         return (int) (h < 0 ? h + 24 : h); // JODA will handle invalid value
     }
 
-    static int getMinute(ThreadContext context, IRubyObject val, final int[] rest) {
+    static int getMinute(ThreadContext context, IRubyObject val, final long[] rest) {
         long v = val.convertToInteger().getLongValue();
-        int i = 0;
-        final int r0 = rest[0], r1 = rest[1];
+        long i = 0;
+        final long r0 = rest[0], r1 = rest[1];
         if (r0 != 0) {
             i = (60 * r0) / r1;
             rest[0] = (60 * r0) - (i * r1);
@@ -263,24 +263,24 @@ public class RubyDateTime extends RubyDate {
         return (int) (v < 0 ? v + 60 : v); // JODA will handle invalid value
     }
 
-    static int getSecond(ThreadContext context, IRubyObject sec, final int[] rest) {
+    static int getSecond(ThreadContext context, IRubyObject sec, final long[] rest) {
         return getMinute(context, sec, rest);
     }
 
-    private static void addRationalModToRest(ThreadContext context, IRubyObject val, long ival, final int[] rest) {
+    private static void addRationalModToRest(ThreadContext context, IRubyObject val, long ival, final long[] rest) {
         if (!(val instanceof RubyInteger) && val instanceof RubyNumeric) { // Rational|Float
             RubyRational rat = ((RubyNumeric) val).convertToRational();
             long num = rat.getNumerator().getLongValue();
-            int den = rat.getDenominator().getIntValue();
+            long den = rat.getDenominator().getLongValue();
             num -= ival * den;
             if (num != 0) {
                 IRubyObject res = RubyRational.newRational(context.runtime, rest[0], rest[1]).
                         op_plus(context, RubyRational.newRationalCanonicalize(context, num, den));
                 if (res instanceof RubyRational) {
-                    rest[0] = ((RubyRational) res).getNumerator().getIntValue();
-                    rest[1] = ((RubyRational) res).getDenominator().getIntValue();
+                    rest[0] = ((RubyRational) res).getNumerator().getLongValue();
+                    rest[1] = ((RubyRational) res).getDenominator().getLongValue();
                 } else {
-                    rest[0] = res.convertToInteger().getIntValue();
+                    rest[0] = res.convertToInteger().getLongValue();
                     rest[1] = 1;
                 }
             }
@@ -320,7 +320,7 @@ public class RubyDateTime extends RubyDate {
         final int len = args.length;
         final RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
-        final int[] rest = new int[] { 0, 1 };
+        final long[] rest = new long[] { 0, 1 };
         final long jd = getDay(context, args[0], rest);
 
         final IRubyObject hour = (len > 1) ? args[1] : zero;

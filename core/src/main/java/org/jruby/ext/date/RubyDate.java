@@ -403,7 +403,7 @@ public class RubyDate extends RubyObject {
     static DateTime civilImpl(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject mday, final long sg) {
         final int y = (sg > 0) ? getYear(year) : year.convertToInteger().getIntValue();
         final int m = getMonth(month);
-        final int[] rest = new int[] { 0, 1 };
+        final long[] rest = new long[] { 0, 1 };
         final int d = (int) getDay(context, mday, rest);
 
         DateTime dt = civilDate(context, y, m ,d, getChronology(context, sg, 0));
@@ -533,7 +533,7 @@ public class RubyDate extends RubyObject {
     }
 
     private static RubyDate jdImpl(ThreadContext context, IRubyObject self, IRubyObject jd, final long sg) {
-        final int[] rest = new int[] { 0, 1 };
+        final long[] rest = new long[] { 0, 1 };
         long jdi = getDay(context, jd, rest);
         RubyNumeric ajd = jd_to_ajd(context, jdi);
 
@@ -542,7 +542,7 @@ public class RubyDate extends RubyObject {
         return date;
     }
 
-    static DateTime adjustWithDayFraction(ThreadContext context, DateTime dt, final int[] rest) {
+    static DateTime adjustWithDayFraction(ThreadContext context, DateTime dt, final long[] rest) {
         final RubyFixnum zero = RubyFixnum.zero(context.runtime);
         int ival = getHour(context, zero, rest);
         dt = dt.plusHours(ival);
