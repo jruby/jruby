@@ -83,6 +83,29 @@ class TestDate < Test::Unit::TestCase
     assert_equal 26, date.day
   end
 
+  def test_new_civil_send
+    args = [ 2018, 7 ]
+    date = Date.send(:new, *args) { raise 'block-not-called' }
+    assert_equal 2018, date.year
+    assert_equal 7, date.month
+    assert_equal 1, date.day
+    date = Date.public_send(:new, 2018, 7)
+    assert_equal 2018, date.year
+    assert_equal 7, date.month
+    assert_equal 1, date.day
+
+    args = [ 2018 ]
+    date = DateTime.send(:civil, *args) { raise 'block-not-called' }
+    assert_equal 2018, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
+
+    date = DateTime.public_send(:civil, 2018) { raise 'block-not-called' }
+    assert_equal 2018, date.year
+    assert_equal 1, date.month
+    assert_equal 1, date.day
+  end
+
   def test_date_time_methods
     date = Date.new(1, 2, 3)
     assert_equal 1, date.year
@@ -567,6 +590,17 @@ class TestDate < Test::Unit::TestCase
     assert_equal dt, time.to_datetime
   end
 
+  def test_to_time_roundtrip # based on AR-JDBC testing
+    time = Time.utc(3, 12, 31, 23, 58, 59)
+    time2 = time.to_datetime.to_time # '0004-01-01 00:56:43 +0057' in < 9.2
+    assert_equal time, time2
+    assert_equal 3, time2.year
+    assert_equal 31, time2.day
+    assert_equal 0, time2.utc_offset
+    assert_equal time.zone, time2.zone if defined? JRUBY_VERSION
+    # MRI: bug? <"UTC"> expected but was <nil>
+  end
+
   def test_to_date
     dt = DateTime.new(2012, 12, 31, 12, 23, 00, '+05:00')
     date = dt.to_date
@@ -620,6 +654,19 @@ class TestDate < Test::Unit::TestCase
     d = DateTime.parse(s + '1234')
     assert_equal Rational(617283945617, 5000000000000), d.sec_fraction
     assert_equal(s, d.strftime(f))
+
+    prec = 1_000_000_000
+    args = [ 0, 3, 6, 11, 17, Rational(prec - 1, prec) ]
+    d = DateTime.send(:new, *args)
+    assert_equal [ 0, 3, 6, 11, 17, 0 ], [ d.year, d.month, d.day, d.hour, d.minute, d.second ]
+    assert_equal(Rational(prec - 1, prec), d.sec_fraction)
+    assert_equal('9' * 9, d.strftime('%9N'))
+
+    prec = 1_000_000_000_000
+    args = [ -4712, 1, 1, 11, 11, Rational(prec - 1, prec) ]
+    d = DateTime.send(:new, *args)
+    assert_equal(Rational(prec - 1, prec), d.sec_fraction)
+    assert_equal('9' * 12, d.strftime('%12N'))
   end
 
 
