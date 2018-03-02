@@ -115,7 +115,9 @@ public final class ThreadContext {
 
     // List of active dynamic scopes.  Each of these may have captured other dynamic scopes
     // to implement closures.
+    @Deprecated
     private DynamicScope[] scopeStack = new DynamicScope[INITIAL_SIZE];
+    @Deprecated
     private int scopeIndex = -1;
     public DynamicScope topLevel;
 
@@ -294,6 +296,7 @@ public final class ThreadContext {
         this.lastExitStatus = lastExitStatus;
     }
 
+    @Deprecated
     public void printScope() {
         LOG.debug("SCOPE STACK:");
         for (int i = 0; i <= scopeIndex; i++) {
@@ -301,10 +304,12 @@ public final class ThreadContext {
         }
     }
 
+    @Deprecated
     public DynamicScope getCurrentScope() {
         return scopeStack[scopeIndex];
     }
 
+    @Deprecated
     public StaticScope getCurrentStaticScope() {
         return scopeStack[scopeIndex].getStaticScope();
     }
@@ -324,6 +329,7 @@ public final class ThreadContext {
         return newFrameStack;
     }
 
+    @Deprecated
     public void pushScope(DynamicScope scope) {
         int index = ++scopeIndex;
         DynamicScope[] stack = scopeStack;
@@ -333,10 +339,12 @@ public final class ThreadContext {
         }
     }
 
+    @Deprecated
     public void popScope() {
         scopeStack[scopeIndex--] = null;
     }
 
+    @Deprecated
     private void expandScopeStack() {
         int newSize = scopeStack.length * 2;
         DynamicScope[] newScopeStack = new DynamicScope[newSize];
@@ -647,6 +655,7 @@ public final class ThreadContext {
      * @return true if it exists
      *         false if not
      **/
+    @Deprecated
     public boolean scopeExistsOnCallStack(DynamicScope scope) {
         DynamicScope[] stack = scopeStack;
         for (int i = scopeIndex; i >= 0; i--) {
