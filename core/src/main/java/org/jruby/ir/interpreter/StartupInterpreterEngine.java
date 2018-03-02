@@ -27,7 +27,8 @@ import org.jruby.runtime.opto.ConstantCache;
  * This interpreter is meant to interpret the instructions generated directly from IRBuild.
  */
 public class StartupInterpreterEngine extends InterpreterEngine {
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
+    @Override
+    public IRubyObject interpret(ThreadContext context, Block block, DynamicScope scope, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
                                  String name, IRubyObject[] args, Block blockArg) {
         Instr[]   instrs    = interpreterContext.getInstructions();
@@ -39,7 +40,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         if (interpreterContext.receivesKeywordArguments()) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
 
         StaticScope currScope = interpreterContext.getStaticScope();
-        DynamicScope currDynScope = context.getCurrentScope();
+        DynamicScope currDynScope = scope;
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         int[] rescuePCs = interpreterContext.getRescueIPCs();

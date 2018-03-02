@@ -97,14 +97,16 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         context.setCurrentBlockType(Block.Type.PROC);
         InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
-        return Interpreter.INTERPRET_BLOCK(context, block, null, ic, args, block.getBinding().getMethod(), blockArg);
+        Binding binding = block.getBinding();
+        return Interpreter.INTERPRET_BLOCK(context, block, binding.getDynamicScope(), null, ic, args, binding.getMethod(), blockArg);
     }
 
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         context.setCurrentBlockType(Block.Type.NORMAL);
         InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
-        return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
+        Binding binding = block.getBinding();
+        return Interpreter.INTERPRET_BLOCK(context, block, binding.getDynamicScope(), self, ic, args, binding.getMethod(), Block.NULL_BLOCK);
     }
 
     @Override
@@ -127,16 +129,14 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         // is just wasteful allocation since the scope is not used at all.
         DynamicScope actualScope = binding.getDynamicScope();
         if (ic.pushNewDynScope()) {
-            context.pushScope(block.allocScope(actualScope));
-        } else if (ic.reuseParentDynScope()) {
-            // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-            context.pushScope(actualScope);
+            actualScope = block.allocScope(actualScope);
         }
+        context.pushScope(actualScope);
 
         self = IRRuntimeHelpers.updateBlockState(block, self);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
+            return Interpreter.INTERPRET_BLOCK(context, block, actualScope, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
             postYield(context, ic, binding, oldVis, prevFrame);

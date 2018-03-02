@@ -51,12 +51,15 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         }
     }
 
-    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block, RubyModule implClass) {
+    protected DynamicScope pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block, RubyModule implClass) {
         // update call stacks (push: frame, class, scope, etc.)
         context.preMethodFrameOnly(implClass, name, self, block);
         if (ic.pushNewDynScope()) {
-            context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
+            DynamicScope scope = DynamicScope.newDynamicScope(ic.getStaticScope());
+            context.pushScope(scope);
+            return scope;
         }
+        return null;
     }
 
     // FIXME: for subclasses we should override this method since it can be simple get
@@ -96,11 +99,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, args, block);
+                return ic.getEngine().interpret(context, null, null, self, ic, implClass, name, args, block);
             } else {
                 try {
-                    this.pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, args, block);
+                    DynamicScope scope = this.pre(ic, context, self, name, block, implClass);
+                    return ic.getEngine().interpret(context, null, scope, self, ic, implClass, name, args, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -129,11 +132,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, block);
+                return ic.getEngine().interpret(context, null, null, self, ic, implClass, name, block);
             } else {
                 try {
-                    this.pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, block);
+                    DynamicScope scope = this.pre(ic, context, self, name, block, implClass);
+                    return ic.getEngine().interpret(context, null, scope, self, ic, implClass, name, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -162,11 +165,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, block);
+                return ic.getEngine().interpret(context, null, null, self, ic, implClass, name, arg1, block);
             } else {
                 try {
-                    this.pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, block);
+                    DynamicScope scope = this.pre(ic, context, self, name, block, implClass);
+                    return ic.getEngine().interpret(context, null, scope, self, ic, implClass, name, arg1, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -195,11 +198,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
+                return ic.getEngine().interpret(context, null, null, self, ic, implClass, name, arg1, arg2, block);
             } else {
                 try {
-                    this.pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, block);
+                    DynamicScope scope = this.pre(ic, context, self, name, block, implClass);
+                    return ic.getEngine().interpret(context, null, scope, self, ic, implClass, name, arg1, arg2, block);
                 } finally {
                     this.post(ic, context);
                 }
@@ -227,11 +230,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
             if (ic.hasExplicitCallProtocol()) {
-                return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
+                return ic.getEngine().interpret(context, null, null, self, ic, implClass, name, arg1, arg2, arg3, block);
             } else {
                 try {
-                    this.pre(ic, context, self, name, block, implClass);
-                    return ic.getEngine().interpret(context, null, self, ic, implClass, name, arg1, arg2, arg3, block);
+                    DynamicScope scope = this.pre(ic, context, self, name, block, implClass);
+                    return ic.getEngine().interpret(context, null, scope, self, ic, implClass, name, arg1, arg2, arg3, block);
                 } finally {
                     this.post(ic, context);
                 }

@@ -736,13 +736,15 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "using", required = 1, frame = true, reads = SCOPE)
     public IRubyObject using(ThreadContext context, IRubyObject refinedModule) {
         if (context.getFrameSelf() != this) throw context.runtime.newRuntimeError("Module#using is not called on self");
+
+        StaticScope staticScope = context.getCurrentStaticScope();
+
         // FIXME: This is a lame test and I am unsure it works with JIT'd bodies...
-        if (context.getCurrentScope().getStaticScope().getIRScope() instanceof IRMethod) {
+        if (staticScope.getIRScope() instanceof IRMethod) {
             throw context.runtime.newRuntimeError("Module#using is not permitted in methods");
         }
 
         // I pass the cref even though I don't need to so that the concept is simpler to read
-        StaticScope staticScope = context.getCurrentStaticScope();
         RubyModule overlayModule = staticScope.getOverlayModuleForWrite(context);
         usingModule(context, overlayModule, refinedModule);
 
@@ -2977,7 +2979,7 @@ public class RubyModule extends RubyObject {
     public static RubyArray nesting(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.runtime;
         RubyModule object = runtime.getObject();
-        StaticScope scope = context.getCurrentScope().getStaticScope();
+        StaticScope scope = context.getCurrentStaticScope();
         RubyArray result = runtime.newArray();
 
         for (StaticScope current = scope; current.getModule() != object; current = current.getPreviousCRefScope()) {

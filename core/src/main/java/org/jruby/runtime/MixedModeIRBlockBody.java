@@ -141,16 +141,14 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         // is just wasteful allocation since the scope is not used at all.
         DynamicScope actualScope = binding.getDynamicScope();
         if (ic.pushNewDynScope()) {
-            context.pushScope(block.allocScope(actualScope));
-        } else if (ic.reuseParentDynScope()) {
-            // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-            context.pushScope(actualScope);
+            actualScope = block.allocScope(actualScope);
         }
+        context.pushScope(actualScope);
 
         self = IRRuntimeHelpers.updateBlockState(block, self);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
+            return Interpreter.INTERPRET_BLOCK(context, block, actualScope, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
             postYield(context, ic, binding, oldVis, prevFrame);

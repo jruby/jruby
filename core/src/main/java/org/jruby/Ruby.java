@@ -617,16 +617,16 @@ public final class Ruby implements Constantizable {
      */
     public Node parseFromMain(InputStream inputStream, String filename) {
         if (config.isInlineScript()) {
-            return parseInline(inputStream, filename, getCurrentContext().getCurrentScope());
+            return parseInline(inputStream, filename, getCurrentContext().topLevel);
         } else {
-            return parseFileFromMain(inputStream, filename, getCurrentContext().getCurrentScope());
+            return parseFileFromMain(inputStream, filename, getCurrentContext().topLevel);
         }
     }
 
     public ParseResult parseFromMain(String fileName, InputStream in) {
-        if (config.isInlineScript()) return parseInline(in, fileName, getCurrentContext().getCurrentScope());
+        if (config.isInlineScript()) return parseInline(in, fileName, getCurrentContext().topLevel);
 
-        return parseFileFromMain(fileName, in, getCurrentContext().getCurrentScope());
+        return parseFileFromMain(fileName, in, getCurrentContext().topLevel);
     }
 
     /**
@@ -1211,7 +1211,7 @@ public final class Ruby implements Constantizable {
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
         // relationship handled either more directly or through a descriptice method
         // FIXME: We need a failing test case for this since removing it did not regress tests
-        IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
+        IRScope top = new IRScriptBody(irManager, "", context.topLevel.getStaticScope());
         top.allocateInterpreterContext(new ArrayList<Instr>());
 
         // Initialize the "dummy" class used as a marker

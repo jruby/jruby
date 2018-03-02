@@ -87,13 +87,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         scope.setModule(currModule);
 
-        IRRuntimeHelpers.prepareScriptScope(context, scope);
+        DynamicScope dynamicScope = IRRuntimeHelpers.prepareScriptScope(context, scope);
 
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
             runBeginBlocks(ic.getBeginBlocks(), context, self, scope, null);
-            return INTERPRET_ROOT(context, self, ic, currModule, name);
+            return INTERPRET_ROOT(context, dynamicScope, self, ic, currModule, name);
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
@@ -102,31 +102,31 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    public static IRubyObject INTERPRET_ROOT(ThreadContext context, IRubyObject self,
+    public static IRubyObject INTERPRET_ROOT(ThreadContext context, DynamicScope scope, IRubyObject self,
            InterpreterContext ic, RubyModule clazz, String name) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, null, self, ic, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return ic.getEngine().interpret(context, null, scope, self, ic, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } finally {
             ThreadContext.popBacktrace(context);
         }
     }
 
-    public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,
+    public static IRubyObject INTERPRET_EVAL(ThreadContext context, DynamicScope scope, IRubyObject self,
            InterpreterContext ic, RubyModule clazz, IRubyObject[] args, String name, Block blockArg) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, null, self, ic, clazz, name, args, blockArg);
+            return ic.getEngine().interpret(context, null, scope, self, ic, clazz, name, args, blockArg);
         } finally {
             ThreadContext.popBacktrace(context);
         }
     }
 
-    public static IRubyObject INTERPRET_BLOCK(ThreadContext context, Block block, IRubyObject self,
+    public static IRubyObject INTERPRET_BLOCK(ThreadContext context, Block block, DynamicScope scope, IRubyObject self,
             InterpreterContext ic, IRubyObject[] args, String name, Block blockArg) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, block, self, ic, null, name, args, blockArg);
+            return ic.getEngine().interpret(context, block, scope, self, ic, null, name, args, blockArg);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -170,7 +170,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
             runBeginBlocks(ic.getBeginBlocks(), context, self, ss, null);
 
-            return Interpreter.INTERPRET_EVAL(context, self, ic, ic.getStaticScope().getModule(), IRubyObject.NULL_ARRAY, name, blockArg);
+            return Interpreter.INTERPRET_EVAL(context, evalScope, self, ic, ic.getStaticScope().getModule(), IRubyObject.NULL_ARRAY, name, blockArg);
         } finally {
             evalScope.clearEvalType();
             context.popScope();

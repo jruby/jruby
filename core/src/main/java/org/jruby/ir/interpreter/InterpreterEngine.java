@@ -72,37 +72,37 @@ import org.jruby.runtime.opto.ConstantCache;
  */
 public class InterpreterEngine {
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, DynamicScope scope, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
                                  String name, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, IRubyObject.NULL_ARRAY, blockArg);
+        return interpret(context, block, scope, self, interpreterContext, implClass, name, IRubyObject.NULL_ARRAY, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, DynamicScope scope, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
                                  String name, IRubyObject arg1, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1}, blockArg);
+        return interpret(context, block, scope, self, interpreterContext, implClass, name, new IRubyObject[] {arg1}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, DynamicScope scope, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
                                  String name, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2}, blockArg);
+        return interpret(context, block, scope, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, DynamicScope scope, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
                                  String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
+        return interpret(context, block, scope, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, DynamicScope scope, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
                                  String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block blockArg) {
-        return interpret(context, block, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
+        return interpret(context, block, scope, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, blockArg);
     }
 
-    public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
+    public IRubyObject interpret(ThreadContext context, Block block, DynamicScope scope, IRubyObject self,
                                          InterpreterContext interpreterContext, RubyModule implClass,
                                          String name, IRubyObject[] args, Block blockArg) {
         Instr[]   instrs    = interpreterContext.getInstructions();
@@ -121,7 +121,7 @@ public class InterpreterEngine {
         }
 
         StaticScope currScope = interpreterContext.getStaticScope();
-        DynamicScope currDynScope = context.getCurrentScope();
+        DynamicScope currDynScope = scope;
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();

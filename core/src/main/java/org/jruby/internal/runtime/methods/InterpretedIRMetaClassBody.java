@@ -24,16 +24,20 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
     }
 
     @Override
-    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block, RubyModule implClass) {
+    protected DynamicScope pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block, RubyModule implClass) {
         // update call stacks (push: frame, class, scope, etc.)
         context.preMethodFrameOnly(getImplementationClass(), name, self, block);
+        context.setCurrentVisibility(getVisibility());
         if (ic.pushNewDynScope()) {
             // Add a parent-link to current dynscope to support non-local returns cheaply
             // This doesn't affect variable scoping since local variables will all have
             // the right scope depth.
-            context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope(), context.getCurrentScope()));
+            DynamicScope currentScope = context.getCurrentScope();
+            DynamicScope scope = DynamicScope.newDynamicScope(ic.getStaticScope(), currentScope);
+            context.pushScope(scope);
+            return scope;
         }
-        context.setCurrentVisibility(getVisibility());
+        return null;
     }
 
     @Override

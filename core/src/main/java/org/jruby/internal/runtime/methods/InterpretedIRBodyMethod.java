@@ -6,6 +6,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -41,37 +42,42 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
         InterpreterContext ic = ensureInstrsReady();
 
         boolean hasExplicitCallProtocol = ic.hasExplicitCallProtocol();
+        DynamicScope scope = null;
 
-        if (!hasExplicitCallProtocol) this.pre(ic, context, self, name, block, getImplementationClass());
+        if (!hasExplicitCallProtocol) {
+            scope = this.pre(ic, context, self, name, block, getImplementationClass());
+        }
 
         try {
             switch (method.getScopeType()) {
-                case MODULE_BODY: return INTERPRET_MODULE(ic, context, self, clazz, method.getName(), block);
-                case CLASS_BODY: return INTERPRET_CLASS(ic, context, self, clazz, method.getName(), block);
-                case METACLASS_BODY: return INTERPRET_METACLASS(ic, context, self, clazz, "singleton class", block);
+                case MODULE_BODY: return INTERPRET_MODULE(ic, context, scope, self, clazz, method.getName(), block);
+                case CLASS_BODY: return INTERPRET_CLASS(ic, context, scope, self, clazz, method.getName(), block);
+                case METACLASS_BODY: return INTERPRET_METACLASS(ic, context, scope, self, clazz, "singleton class", block);
                 default: throw new RuntimeException("invalid body method type: " + method);
             }
         } finally {
-            if (!hasExplicitCallProtocol) this.post(ic, context);
+            if (!hasExplicitCallProtocol) {
+                this.post(ic, context);
+            }
         }
     }
 
-    private IRubyObject INTERPRET_METACLASS(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return interpretWithBacktrace(ic, context, self, name, block);
+    private IRubyObject INTERPRET_METACLASS(InterpreterContext ic, ThreadContext context, DynamicScope scope, IRubyObject self, RubyModule clazz, String name, Block block) {
+        return interpretWithBacktrace(ic, context, scope, self, name, block);
     }
 
-    private IRubyObject INTERPRET_MODULE(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return interpretWithBacktrace(ic, context, self, name, block);
+    private IRubyObject INTERPRET_MODULE(InterpreterContext ic, ThreadContext context, DynamicScope scope, IRubyObject self, RubyModule clazz, String name, Block block) {
+        return interpretWithBacktrace(ic, context, scope, self, name, block);
     }
 
-    private IRubyObject INTERPRET_CLASS(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        return interpretWithBacktrace(ic, context, self, name, block);
+    private IRubyObject INTERPRET_CLASS(InterpreterContext ic, ThreadContext context, DynamicScope scope, IRubyObject self, RubyModule clazz, String name, Block block) {
+        return interpretWithBacktrace(ic, context, scope, self, name, block);
     }
 
-    private IRubyObject interpretWithBacktrace(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
+    private IRubyObject interpretWithBacktrace(InterpreterContext ic, ThreadContext context, DynamicScope scope, IRubyObject self, String name, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return ic.getEngine().interpret(context, null, self, ic, getImplementationClass().getMethodLocation(), name, block);
+            return ic.getEngine().interpret(context, null, scope, self, ic, getImplementationClass().getMethodLocation(), name, block);
         } finally {
             ThreadContext.popBacktrace(context);
         }

@@ -79,10 +79,8 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
         // update call stacks (push: frame, class, needsDynamicScope, etc.)
         context.preMethodFrameOnly(implementationClass, name, self, block);
         if (needsDynamicScope) {
-            // Add a parent-link to current dynscope to support non-local returns cheaply
-            // This doesn't affect variable scoping since local variables will all have
-            // the right needsDynamicScope depth.
-            context.pushScope(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
+            DynamicScope scope = DynamicScope.newDynamicScope(staticScope, null);
+            context.pushScope(scope);
         }
         context.setCurrentVisibility(getVisibility());
     }

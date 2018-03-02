@@ -117,6 +117,7 @@ public final class ThreadContext {
     // to implement closures.
     private DynamicScope[] scopeStack = new DynamicScope[INITIAL_SIZE];
     private int scopeIndex = -1;
+    public DynamicScope topLevel;
 
     private static final Continuation[] EMPTY_CATCHTARGET_STACK = new Continuation[0];
     private Continuation[] catchStack = EMPTY_CATCHTARGET_STACK;
@@ -210,7 +211,7 @@ public final class ThreadContext {
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
         StaticScope topStaticScope = runtime.getStaticScopeFactory().newLocalScope(null);
-        pushScope(new ManyVarsDynamicScope(topStaticScope, null));
+        pushScope(topLevel = new ManyVarsDynamicScope(topStaticScope, null));
 
         Frame[] stack = frameStack;
         int length = stack.length;
@@ -978,7 +979,7 @@ public final class ThreadContext {
         Frame frame = getCurrentFrame();
         frame.setSelf(topSelf);
 
-        getCurrentScope().getStaticScope().setModule(objectClass);
+        topLevel.getStaticScope().setModule(objectClass);
     }
 
     public void preNodeEval(IRubyObject self) {
