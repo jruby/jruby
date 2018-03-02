@@ -42,6 +42,7 @@ public class JavaSites {
     public final TimeoutSites Timeout = new TimeoutSites();
     public final ArgfSites Argf = new ArgfSites();
     public final TracePointSites TracePoint = new TracePointSites();
+    public final MarshalSites Marshal = new MarshalSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -425,6 +426,14 @@ public class JavaSites {
 
     public static class TracePointSites {
         public final CheckedSites to_sym = new CheckedSites("to_sym");
+    }
+
+    public static class MarshalSites {
+        public final RespondToCallSite respond_to_binmode = new RespondToCallSite("binmode");
+        public final CachingCallSite binmode = new FunctionalCachingCallSite("binmode");
+        public final RespondToCallSite respond_to_read = new RespondToCallSite("read");
+        public final RespondToCallSite respond_to_getc = new RespondToCallSite("getc");
+        public final RespondToCallSite respond_to_write = new RespondToCallSite("write");
     }
 
     public static class CheckedSites {
