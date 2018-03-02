@@ -89,14 +89,13 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
     }
 
     public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
-        StaticScope scope = currDynScope.getStaticScope();
+        Operand[] operands = getOperands();
 
         if (helperMethod == Methods.IS_DEFINED_BACKREF) {
             return IRRuntimeHelpers.isDefinedBackref(
                     context,
-                    (IRubyObject) getOperands()[0].retrieve(context, self, currScope, currDynScope, temp));
+                    (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
         }
-        Operand[] operands = getOperands();
 
         switch (helperMethod) {
             case IS_DEFINED_NTH_REF:
