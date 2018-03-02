@@ -51,11 +51,15 @@ def jruby(java_options = {}, &code)
 
   puts "JAVA options: #{java_options.inspect}"
 
-  ant.java(java_options) do
-    classpath :path => 'lib/jruby.jar'
-    jvmarg :line => JVM_MODEL if JVM_MODEL
-    sysproperty :key => "jruby.home", :value => BASE_DIR
-    instance_eval(&code) if block_given?
+  begin
+    ant.java(java_options) do
+      classpath :path => 'lib/jruby.jar'
+      jvmarg :line => JVM_MODEL if JVM_MODEL
+      sysproperty :key => "jruby.home", :value => BASE_DIR
+      instance_eval(&code) if block_given?
+    end
+  rescue org.apache.tools.ant.ExitStausException => ese
+    fail ese
   end
 end
 
