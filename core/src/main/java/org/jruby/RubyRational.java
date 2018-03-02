@@ -645,8 +645,9 @@ public class RubyRational extends RubyNumeric {
     /** nurat_fdiv
      * 
      */
+    @Override
     @JRubyMethod(name = "fdiv")
-    public IRubyObject op_fdiv(ThreadContext context, IRubyObject other) {
+    public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
         return f_div(context, f_to_f(context, this), other);
     }
 
@@ -1432,6 +1433,11 @@ public class RubyRational extends RubyNumeric {
     @Deprecated
     public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
         return idiv(context, other);
+    }
+
+    @Deprecated
+    public IRubyObject op_fdiv(ThreadContext context, IRubyObject other) {
+        return fdiv(context, other);
     }
 
     private static JavaSites.RationalSites sites(ThreadContext context) {

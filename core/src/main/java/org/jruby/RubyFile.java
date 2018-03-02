@@ -39,6 +39,7 @@ import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.*;
@@ -69,13 +70,16 @@ import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.jruby.RubyInteger.singleCharByteList;
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.StringSupport.*;
 import static org.jruby.util.io.EncodingUtils.vmode;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
@@ -85,8 +89,8 @@ import static org.jruby.util.io.EncodingUtils.vperm;
 @JRubyClass(name="File", parent="IO", include="FileTest")
 public class RubyFile extends RubyIO implements EncodingCapable {
 
-    static final ByteList SLASH = new ByteList(new byte[] { '/' }, false);
-    static final ByteList BACKSLASH = new ByteList(new byte[] { '\\' }, false);
+    static final ByteList SLASH = singleCharByteList((byte) '/');
+    static final ByteList BACKSLASH = singleCharByteList((byte) '\\');
 
     public static RubyClass createFileClass(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
@@ -117,7 +121,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         // path separator
-        RubyString pathSeparator = RubyString.newString(runtime, new ByteList(new byte[] { (byte) File.pathSeparatorChar }, false));
+        RubyString pathSeparator = RubyString.newString(runtime, singleCharByteList((byte) File.pathSeparatorChar));
         pathSeparator.freeze(context);
         fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
 
@@ -447,13 +451,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
-        IRubyObject newPath = context.runtime.getNil();
         final String path = getPath();
         if (path != null) {
-            newPath = context.runtime.newString(path);
+            RubyString newPath = context.runtime.newString(path);
             newPath.setTaint(true);
+            return newPath;
         }
-        return newPath;
+        return context.nil;
     }
 
     @JRubyMethod(required = 1)
@@ -480,50 +484,72 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return RubyFixnum.zero(runtime);
     }
 
-    @JRubyMethod
     @Override
-    public IRubyObject inspect() {
-        StringBuilder val = new StringBuilder();
-        val.append("#<File:").append(getPath());
+    public final IRubyObject inspect() {
+        return inspect(getRuntime().getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyString inspect(ThreadContext context) {
+        final String path = openFile.getPath();
+        ByteList str = new ByteList(path.length() + 8);
+
+        str.append('#').append('<');
+        str.append(((RubyString) getMetaClass().to_s()).getByteList());
+        str.append(':').append( RubyEncoding.encodeUTF8(path) );
         if (!openFile.isOpen()) {
-            val.append(" (closed)");
+            str.append(' ').append('(');
+            str.append('c').append('l').append('o').append('s').append('e').append('d');
+            str.append(')');
         }
-        val.append('>');
-        return RubyString.newString(getRuntime(), val);
+        str.append('>');
+        // MRI knows whether path is UTF-8 so it might return ASCII-8BIT (we do not check)
+        str.setEncoding(UTF8Encoding.INSTANCE);
+        return RubyString.newStringLight(context.runtime, str);
     }
 
     private static final String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
     private static final Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
 
-    /* File class methods */
-    @JRubyMethod(required = 1, optional = 1, meta = true)
-    public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
-        final char separatorChar = separator.charAt(0);
-        String altSeparator = null;
-        char altSeparatorChar = '\0';
-        final IRubyObject rbAltSeparator = runtime.getClass("File").getConstant("ALT_SEPARATOR");
-        if (rbAltSeparator != context.nil) {
-          altSeparator = rbAltSeparator.toString();
-          altSeparatorChar = altSeparator.charAt(0);
-        }
+    private static final int NULL_CHAR = '\0';
 
-        RubyString origString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
+    /* File class methods */
+
+    @JRubyMethod(meta = true) // required = 1, optional = 1
+    public static RubyString basename(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        return basenameImpl(context, (RubyClass) recv, path, null);
+    }
+
+    @JRubyMethod(meta = true) // required = 1, optional = 1
+    public static RubyString basename(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject ext) {
+        return basenameImpl(context, (RubyClass) recv, path, ext == context.nil ? null : ext);
+    }
+
+    @Deprecated
+    public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject ext = (args.length > 1 && args[1] != context.nil) ? args[1] : null;
+        return basenameImpl(context, (RubyClass) recv, args[0], ext);
+    }
+
+    private static RubyString basenameImpl(ThreadContext context, RubyClass klass, IRubyObject path, IRubyObject ext) {
+        final Ruby runtime = context.runtime;
+
+        final int separatorChar = getSeparatorChar(klass);
+        final int altSeparatorChar = getAltSeparatorChar(klass);
+
+        RubyString origString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, path));
         Encoding origEncoding = origString.getEncoding();
         String name = origString.toString();
 
         // uri-like paths without parent directory
-        if (name.endsWith(".jar!/") || ROOT_PATTERN.matcher(name).matches()) {
-            return args[0];
-        }
+        if (name.endsWith(".jar!/") || ROOT_PATTERN.matcher(name).matches()) return (RubyString) path;
 
         // MRI-compatible basename handling for windows drive letter paths
         if (Platform.IS_WINDOWS) {
             if (name.length() > 1 && name.charAt(1) == ':' && Character.isLetter(name.charAt(0))) {
                 switch (name.length()) {
                 case 2:
-                    return RubyString.newEmptyString(runtime, origString.getEncoding()).infectBy(args[0]);
+                    return (RubyString) RubyString.newEmptyString(runtime, origString.getEncoding()).infectBy(path);
                 case 3:
                     return RubyString.newString(runtime, RubyString.encodeBytelist(name.substring(2), origEncoding));
                 default:
@@ -534,14 +560,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     default:
                         // strip c: away from relative-pathed name
                         name = name.substring(2);
-                        break;
                     }
                     break;
                 }
             }
         }
 
-        while (name.length() > 1 && (name.charAt(name.length() - 1) == separatorChar || (altSeparator != null && name.charAt(name.length() - 1) == altSeparatorChar))) {
+        while (name.length() > 1 && (name.charAt(name.length() - 1) == separatorChar || (name.charAt(name.length() - 1) == altSeparatorChar))) {
             name = name.substring(0, name.length() - 1);
         }
 
@@ -550,7 +575,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int length = name.length();
         for (int i = length - 1; i >= 0; i--) {
             char c = name.charAt(i);
-            if (c != separatorChar && (altSeparator == null || c != altSeparatorChar)) {
+            if (c != separatorChar && c != altSeparatorChar) {
                 break;
             }
             slashCount++;
@@ -560,27 +585,40 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         int index = name.lastIndexOf(separatorChar);
-        if (altSeparator != null) {
+        if (altSeparatorChar != NULL_CHAR) {
             index = Math.max(index, name.lastIndexOf(altSeparatorChar));
         }
 
-        if (!(name.equals(separator) || (altSeparator != null && name.equals(altSeparator))) && index != -1) {
+        if (!(contentEquals(name, separatorChar) || (contentEquals(name, altSeparatorChar))) && index != -1) {
             name = name.substring(index + 1);
         }
 
-        if (args.length == 2) {
-            String ext = RubyString.stringValue(args[1]).toString();
-            if (".*".equals(ext)) {
+        if (ext != null) {
+            final String extStr = RubyString.stringValue(ext).toString();
+            if (".*".equals(extStr)) {
                 index = name.lastIndexOf('.');
                 if (index > 0) {  // -1 no match; 0 it is dot file not extension
                     name = name.substring(0, index);
                 }
-            } else if (name.endsWith(ext)) {
-                name = name.substring(0, name.length() - ext.length());
+            } else if (name.endsWith(extStr)) {
+                name = name.substring(0, name.length() - extStr.length());
             }
         }
 
         return RubyString.newString(runtime, RubyString.encodeBytelist(name, origEncoding));
+    }
+
+    private static int getSeparatorChar(final RubyClass File) {
+        final RubyString sep = RubyString.stringValue(File.getConstant("SEPARATOR"));
+        return sep.getByteList().get(0);
+    }
+
+    private static int getAltSeparatorChar(final RubyClass File) {
+        final IRubyObject sep = File.getConstant("ALT_SEPARATOR");
+        if (sep instanceof RubyString) { // != nil
+            return ((RubyString) sep).getByteList().get(0);
+        }
+        return NULL_CHAR;
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)
@@ -715,9 +753,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
                     return jfilename.substring(0, 2) + '.';
-                } else {
-                    return ".";
                 }
+                return ".";
             }
             if (index == 0) {
                 return jfilename.substring(0, 1);
@@ -730,30 +767,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
 
             if (startsWithUNCOnWindows) {
-              index = jfilename.length();
-              String[] split = name.split(Pattern.quote(separator));
-              int pathSectionCount = 0;
-              for (int i = 0; i < split.length; i++) {
-                if (!split[i].isEmpty()) {
-                  pathSectionCount += 1;
+                index = jfilename.length();
+                List<String> split = StringSupport.split(name, separatorChar);
+                int pathSectionCount = 0;
+                for (int i = 0; i < split.size(); i++) {
+                    if (!split.get(i).isEmpty()) pathSectionCount += 1;
                 }
-              }
-              if (pathSectionCount > 2) {
-                  index = name.lastIndexOf(separator);
-              }
+                if (pathSectionCount > 2) index = name.lastIndexOf(separator);
             }
             result = jfilename.substring(0, index);
         }
 
         // trim leading slashes
         if (startsWithSeparator && result.length() > minPathLength) {
-          while (
-            result.length() > minPathLength &&
-            (result.charAt(minPathLength) == separatorChar ||
-              (altSeparator != null && result.charAt(minPathLength) == altSeparatorChar))
-          ) {
-            result = result.substring(1, result.length());
-          }
+            while ( result.length() > minPathLength &&
+                    (result.charAt(minPathLength) == separatorChar ||
+                            (altSeparator != null && result.charAt(minPathLength) == altSeparatorChar)) ) {
+                result = result.substring(1, result.length());
+            }
         }
 
         char endChar;
@@ -779,18 +810,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        IRubyObject baseFilename = basename(context, recv, new IRubyObject[]{arg});
-
-        String filename = RubyString.stringValue(baseFilename).getUnicodeValue();
-        String result = "";
+        String filename = basename(context, recv, arg).getUnicodeValue();
 
         int dotIndex = filename.lastIndexOf('.');
         if (dotIndex > 0 && dotIndex != (filename.length() - 1)) {
             // Dot is not at beginning and not at end of filename.
-            result = filename.substring(dotIndex);
+            return RubyString.newString(context.runtime, filename.substring(dotIndex));
         }
 
-        return context.runtime.newString(result);
+        return RubyString.newEmptyString(context.runtime);
     }
 
     /**
@@ -1060,8 +1088,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, arg));
 
-        return runtime.newArray(dirname(context, recv, filename),
-                basename(context, recv, new IRubyObject[]{filename}));
+        return runtime.newArray(dirname(context, recv, filename), basename(context, recv, filename));
     }
 
     @JRubyMethod(required = 2, meta = true)
@@ -1823,8 +1850,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static RubyString concatStrings(final Ruby runtime, String s1, String s2, String s3, Encoding enc) {
-        StringBuilder str = new StringBuilder(s1.length() + s2.length() + s3.length())
-                            .append(s1).append(s2).append(s3);
+        StringBuilder str =
+                new StringBuilder(s1.length() + s2.length() + s3.length()).append(s1).append(s2).append(s3);
         return new RubyString(runtime, runtime.getString(), str, enc);
     }
 
@@ -2028,10 +2055,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @Override
-    public Object toJava(Class target) {
-        if (target == java.io.File.class) {
+    public <T> T toJava(Class<T> target) {
+        if (target == File.class) {
             final String path = getPath();
-            return path == null ? null : new java.io.File(path);
+            return path == null ? null : target.cast(new File(path));
         }
         return super.toJava(target);
     }
@@ -2133,35 +2160,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         return found ? 0 : -1;
-    }
-
-    // String.startsWith for a CharSequence
-    private static boolean startsWith(final CharSequence str, final String prefix) {
-        int p = prefix.length();
-        if ( p > str.length() ) return false;
-        int i = 0;
-        while ( --p >= 0 ) {
-            if (str.charAt(i) != prefix.charAt(i)) return false;
-            i++;
-        }
-        return true;
-    }
-
-    private static boolean startsWith(final CharSequence str, final char c) {
-        return str.length() >= 1 && str.charAt(0) == c;
-    }
-
-    private static boolean startsWith(final CharSequence str, final char c1, final char c2) {
-        return str.length() >= 2 && str.charAt(0) == c1 && str.charAt(1) == c2;
-    }
-
-    // without any char[] array copying, also StringBuilder only has lastIndexOf(String)
-    private static int lastIndexOf(final CharSequence str, final char c, int index) {
-        while ( index >= 0 ) {
-            if ( str.charAt(index) == c ) return index;
-            index--;
-        }
-        return -1;
     }
 
     private static String replace(final String str, CharSequence target, CharSequence replace) {

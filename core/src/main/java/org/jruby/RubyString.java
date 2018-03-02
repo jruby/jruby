@@ -4706,56 +4706,33 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_delete / rb_str_delete_bang
      *
      */
-    public IRubyObject delete(ThreadContext context) {
-        return delete19(context);
-    }
-
-    public IRubyObject delete(ThreadContext context, IRubyObject arg) {
-        return delete19(context, arg);
-    }
-
-    public IRubyObject delete(ThreadContext context, IRubyObject[] args) {
-        return delete19(context, args);
-    }
-
-    public IRubyObject delete_bang(ThreadContext context) {
-        return delete_bang19(context);
-    }
-
-    public IRubyObject delete_bang(ThreadContext context, IRubyObject arg) {
-        return delete_bang19(context, arg);
-    }
-
-    public IRubyObject delete_bang(ThreadContext context, IRubyObject[] args) {
-        return delete_bang19(context, args);
-    }
 
     @JRubyMethod(name = "delete")
-    public IRubyObject delete19(ThreadContext context) {
+    public IRubyObject delete(ThreadContext context) {
         throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
     @JRubyMethod(name = "delete")
-    public IRubyObject delete19(ThreadContext context, IRubyObject arg) {
+    public IRubyObject delete(ThreadContext context, IRubyObject arg) {
         RubyString str = strDup(context.runtime);
-        str.delete_bang19(context, arg);
+        str.delete_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "delete", required = 1, rest = true)
-    public IRubyObject delete19(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject delete(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime);
-        str.delete_bang19(context, args);
+        str.delete_bang(context, args);
         return str;
     }
 
     @JRubyMethod(name = "delete!")
-    public IRubyObject delete_bang19(ThreadContext context) {
+    public IRubyObject delete_bang(ThreadContext context) {
         throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
     @JRubyMethod(name = "delete!")
-    public IRubyObject delete_bang19(ThreadContext context, IRubyObject arg) {
+    public IRubyObject delete_bang(ThreadContext context, IRubyObject arg) {
         if (value.getRealSize() == 0) return context.nil;
 
         final Ruby runtime = context.runtime;
@@ -4764,7 +4741,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
 
-        if (StringSupport.delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
+        if (StringSupport.strDeleteBang(this, runtime, squeeze, tables, enc) == null) {
             return context.nil;
         }
 
@@ -4772,7 +4749,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @JRubyMethod(name = "delete!", required = 1, rest = true)
-    public IRubyObject delete_bang19(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject delete_bang(ThreadContext context, IRubyObject[] args) {
         if (value.getRealSize() == 0) return context.nil;
 
         final Ruby runtime = context.runtime;
@@ -4787,63 +4764,70 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, i == 0, enc);
         }
 
-        if (StringSupport.delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
+        if (StringSupport.strDeleteBang(this, runtime, squeeze, tables, enc) == null) {
             return context.nil;
         }
 
         return this;
     }
 
+    @Deprecated
+    public IRubyObject delete19(ThreadContext context) {
+        return delete(context);
+    }
+
+    @Deprecated
+    public IRubyObject delete19(ThreadContext context, IRubyObject arg) {
+        return delete(context, arg);
+    }
+
+    @Deprecated
+    public IRubyObject delete19(ThreadContext context, IRubyObject[] args) {
+        return delete(context, args);
+    }
+
+    @Deprecated
+    public IRubyObject delete_bang19(ThreadContext context) {
+        return delete_bang(context);
+    }
+
+    @Deprecated
+    public IRubyObject delete_bang19(ThreadContext context, IRubyObject arg) {
+        return delete_bang(context, arg);
+    }
+
+    @Deprecated
+    public IRubyObject delete_bang19(ThreadContext context, IRubyObject[] args) {
+        return delete_bang(context, args);
+    }
+
     /** rb_str_squeeze / rb_str_squeeze_bang
      *
      */
+
+    @JRubyMethod(name = "squeeze")
     public IRubyObject squeeze(ThreadContext context) {
-        return squeeze19(context);
-    }
-
-    public IRubyObject squeeze(ThreadContext context, IRubyObject arg) {
-        return squeeze19(context, arg);
-    }
-
-    public IRubyObject squeeze(ThreadContext context, IRubyObject[] args) {
-        return squeeze19(context, args);
-    }
-
-    public IRubyObject squeeze_bang(ThreadContext context) {
-        return squeeze_bang19(context);
-    }
-
-    public IRubyObject squeeze_bang(ThreadContext context, IRubyObject arg) {
-        return squeeze_bang19(context, arg);
-    }
-
-    public IRubyObject squeeze_bang(ThreadContext context, IRubyObject[] args) {
-        return squeeze_bang19(context, args);
+        RubyString str = strDup(context.runtime);
+        str.squeeze_bang(context);
+        return str;
     }
 
     @JRubyMethod(name = "squeeze")
-    public IRubyObject squeeze19(ThreadContext context) {
+    public IRubyObject squeeze(ThreadContext context, IRubyObject arg) {
         RubyString str = strDup(context.runtime);
-        str.squeeze_bang19(context);
+        str.squeeze_bang(context, arg);
         return str;
     }
 
-    @JRubyMethod(name = "squeeze", required = 1)
-    public IRubyObject squeeze19(ThreadContext context, IRubyObject arg) {
+    @JRubyMethod(name = "squeeze", required = 1, rest = true)
+    public IRubyObject squeeze(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime);
-        str.squeeze_bang19(context, arg);
-        return str;
-    }
-
-    @JRubyMethod(name = "squeeze", required = 2, rest = true)
-    public IRubyObject squeeze19(ThreadContext context, IRubyObject[] args) {
-        RubyString str = strDup(context.runtime);
-        str.squeeze_bang19(context, args);
+        str.squeeze_bang(context, args);
         return str;
     }
 
     @JRubyMethod(name = "squeeze!")
-    public IRubyObject squeeze_bang19(ThreadContext context) {
+    public IRubyObject squeeze_bang(ThreadContext context) {
         if (value.getRealSize() == 0) {
             modifyCheck();
             return context.nil;
@@ -4867,8 +4851,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
-    @JRubyMethod(name = "squeeze!", required = 1)
-    public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject arg) {
+    @JRubyMethod(name = "squeeze!")
+    public IRubyObject squeeze_bang(ThreadContext context, IRubyObject arg) {
         final Ruby runtime = context.runtime;
 
         RubyString otherStr = arg.convertToString();
@@ -4889,8 +4873,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
-    @JRubyMethod(name = "squeeze!", rest = true, required = 2)
-    public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "squeeze!", required = 1, rest = true)
+    public IRubyObject squeeze_bang(ThreadContext context, IRubyObject[] args) {
         if (value.getRealSize() == 0) {
             modifyCheck();
             return context.nil;
@@ -4922,6 +4906,36 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         return this;
+    }
+
+    @Deprecated
+    public IRubyObject squeeze19(ThreadContext context) {
+        return squeeze(context);
+    }
+
+    @Deprecated
+    public IRubyObject squeeze19(ThreadContext context, IRubyObject arg) {
+        return squeeze(context, arg);
+    }
+
+    @Deprecated
+    public IRubyObject squeeze19(ThreadContext context, IRubyObject[] args) {
+        return squeeze(context, args);
+    }
+
+    @Deprecated
+    public IRubyObject squeeze_bang19(ThreadContext context) {
+        return squeeze_bang(context);
+    }
+
+    @Deprecated
+    public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject arg) {
+        return squeeze_bang(context, arg);
+    }
+
+    @Deprecated
+    public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject[] args) {
+        return squeeze_bang(context, args);
     }
 
     /** rb_str_tr / rb_str_tr_bang
@@ -5624,18 +5638,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target.isAssignableFrom(String.class)) {
-            return decodeString();
+            return target.cast(decodeString());
         }
         if (target.isAssignableFrom(ByteList.class)) {
-            return value;
+            return target.cast(value);
         }
         if (target == Character.class || target == Character.TYPE) {
             if ( strLength() != 1 ) {
                 throw getRuntime().newArgumentError("could not coerce string of length " + strLength() + " (!= 1) into a char");
             }
-            return decodeString().charAt(0);
+            return (T) (Character) decodeString().charAt(0);
         }
         return super.toJava(target);
     }

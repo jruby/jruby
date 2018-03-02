@@ -22,7 +22,6 @@ project 'JRuby Core' do
 
               'jruby.basedir' => '${basedir}/..',
               'jruby.test.memory' => '3G',
-              'jruby.test.memory.permgen' => '2G',
               'jruby.compile.memory' => '2G',
 
               'create.sources.jar' => false )
@@ -226,7 +225,7 @@ project 'JRuby Core' do
           'systemProperties' => {
             'jruby.home' =>  '${basedir}/..'
           },
-          'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
+          'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
           'includes' => [ 'org/jruby/test/MainTestSuite.java',
                           'org/jruby/embed/**/*Test*.java',
                           'org/jruby/util/**/*Test*.java',

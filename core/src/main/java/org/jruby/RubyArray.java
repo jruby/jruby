@@ -4970,7 +4970,7 @@ float_loop:
     }
 
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target.isArray()) {
             Class type = target.getComponentType();
             Object rawJavaArray = Array.newInstance(type, realLength);
@@ -4979,7 +4979,7 @@ float_loop:
             } catch (ArrayIndexOutOfBoundsException ex) {
                 throw concurrentModification(getRuntime(), ex);
             }
-            return rawJavaArray;
+            return target.cast(rawJavaArray);
         } else {
             return super.toJava(target);
         }

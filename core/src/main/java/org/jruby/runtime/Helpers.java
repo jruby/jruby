@@ -873,6 +873,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated
     public static void storeExceptionInErrorInfo(Throwable currentThrowable, ThreadContext context) {
         IRubyObject exception;
         if (currentThrowable instanceof RaiseException) {
@@ -883,6 +884,7 @@ public class Helpers {
         context.setErrorInfo(exception);
     }
 
+    @Deprecated
     public static void storeNativeExceptionInErrorInfo(Throwable currentThrowable, ThreadContext context) {
         IRubyObject exception;
         if (currentThrowable instanceof RaiseException) {

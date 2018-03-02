@@ -30,11 +30,18 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.LocalJumpError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * The Java representation of a Ruby LocalJumpError.
+ *
+ * @see LocalJumpError
+ */
 @JRubyClass(name="LocalJumpError",parent="StandardError")
-public class RubyLocalJumpError extends RubyException {
+public class RubyLocalJumpError extends RubyStandardError {
     public enum Reason {
         REDO, BREAK, NEXT, RETURN, RETRY, NOREASON;
         
@@ -44,14 +51,9 @@ public class RubyLocalJumpError extends RubyException {
         }
     }
     
-    private static ObjectAllocator LOCALJUMPERROR_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyLocalJumpError(runtime, klass);
-        }
-    };
+    private static ObjectAllocator LOCALJUMPERROR_ALLOCATOR = (runtime, klass) -> new RubyLocalJumpError(runtime, klass);
 
-    public static RubyClass createLocalJumpErrorClass(Ruby runtime, RubyClass standardErrorClass) {
+    public static RubyClass define(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("LocalJumpError", standardErrorClass, LOCALJUMPERROR_ALLOCATOR);
         
         nameErrorClass.defineAnnotatedMethods(RubyLocalJumpError.class);
@@ -70,6 +72,11 @@ public class RubyLocalJumpError extends RubyException {
         this.reason = reason;
         setInternalVariable("reason", runtime.newSymbol(reason.toString()));
         setInternalVariable("exit_value", exitValue);
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new LocalJumpError(message, this);
     }
 
     @JRubyMethod

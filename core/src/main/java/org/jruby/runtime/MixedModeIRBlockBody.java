@@ -87,7 +87,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         }
 
         if (interpreterContext == null) {
-            if (Options.IR_PRINT.load()) {
+            if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
 
                 LOG.info("Printing simple IR for " + closure.getName() + ":\n" + new String(baos.toByteArray()));

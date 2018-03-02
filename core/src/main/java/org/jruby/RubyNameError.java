@@ -31,6 +31,8 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -40,10 +42,13 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Sprintf;
 
 /**
+ * The Java representation of a Ruby NameError.
+ *
+ * @see NameError
  * @author Anders Bengtsson
  */
 @JRubyClass(name="NameError", parent="StandardError")
-public class RubyNameError extends RubyException {
+public class RubyNameError extends RubyStandardError {
     private IRubyObject name;
     private IRubyObject receiver;
     protected boolean privateCall;
@@ -59,12 +64,7 @@ public class RubyNameError extends RubyException {
     @JRubyClass(name = "NameError::Message", parent = "Data")
     public static final class RubyNameErrorMessage extends RubyObject {
 
-        private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new RubyNameErrorMessage(runtime);
-            }
-        };
+        private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubyNameErrorMessage(runtime);
 
         private final String message;
         private final IRubyObject object;
@@ -87,6 +87,13 @@ public class RubyNameError extends RubyException {
         @JRubyMethod(name = "_load", meta = true)
         public static IRubyObject load(IRubyObject recv, IRubyObject arg) {
             return arg;
+        }
+
+        static RubyClass define(Ruby runtime, RubyClass NameError) {
+            RubyClass Message = NameError.defineClassUnder("Message", runtime.getClass("Data"), ALLOCATOR);
+            NameError.setConstantVisibility(runtime, "Message", true);
+            Message.defineAnnotatedMethods(RubyNameErrorMessage.class);
+            return Message;
         }
 
         @JRubyMethod(name = "_dump")
@@ -146,25 +153,13 @@ public class RubyNameError extends RubyException {
         }
     }
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyNameError(runtime, klass);
-        }
-    };
+    private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubyNameError(runtime, klass);
 
-    static RubyClass createNameErrorClass(Ruby runtime, RubyClass StandardError) {
+    static RubyClass define(Ruby runtime, RubyClass StandardError) {
         RubyClass NameError = runtime.defineClass("NameError", StandardError, ALLOCATOR);
         NameError.defineAnnotatedMethods(RubyNameError.class);
         NameError.setReifiedClass(RubyNameError.class);
         return NameError;
-    }
-
-    static RubyClass createNameErrorMessageClass(Ruby runtime, RubyClass NameError) {
-        RubyClass Message = NameError.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage.ALLOCATOR);
-        NameError.setConstantVisibility(runtime, "Message", true);
-        Message.defineAnnotatedMethods(RubyNameErrorMessage.class);
-        return Message;
     }
 
     protected RubyNameError(Ruby runtime, RubyClass exceptionClass) {
@@ -183,6 +178,11 @@ public class RubyNameError extends RubyException {
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, IRubyObject name) {
         super(runtime, exceptionClass, message);
         this.name = name;
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new NameError(message, this);
     }
 
     @JRubyMethod(name = "exception", meta = true)

@@ -865,7 +865,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see IRubyObject#toJava
      */
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         return defaultToJava(target);
     }
 

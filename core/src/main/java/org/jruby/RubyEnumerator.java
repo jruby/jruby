@@ -835,7 +835,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             if (value instanceof RubyException) {
                 doneObject = value;
                 if ( silent ) return null;
-                throw new RaiseException((RubyException) value);
+                throw ((RubyException) value).toThrowable();
             }
 
             // otherwise, just return it

@@ -1894,7 +1894,7 @@ public class RubyClass extends RubyModule {
     }
 
     @Override
-    public Object toJava(final Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target == Class.class) {
             if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
@@ -1903,13 +1903,13 @@ public class RubyClass extends RubyModule {
             if ( ! javaClass.isNil() ) return javaClass.toJava(target);
 
             Class reifiedClass = nearestReifiedClass(this);
-            if ( reifiedClass != null ) return reifiedClass;
+            if ( reifiedClass != null ) return target.cast(reifiedClass);
             // should never fall through, since RubyObject has a reified class
         }
 
         if (target.isAssignableFrom(RubyClass.class)) {
             // they're asking for something RubyClass extends, give them that
-            return this;
+            return target.cast(this);
         }
 
         return defaultToJava(target);

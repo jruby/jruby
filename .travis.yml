@@ -12,8 +12,8 @@ before_install:
   - unset _JAVA_OPTIONS
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
-  - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:MaxMetaspaceSize=144M -XX:CompressedClassSpaceSize=96M"
-  - export JAVA_OPTS="$JAVA_OPTS -XX:MaxMetaspaceSize=96M -XX:CompressedClassSpaceSize=96M"
+  - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:CompressedClassSpaceSize=96M"
+  - export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=96M"
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS

@@ -25,11 +25,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.util.List;
+
 /**
  * This is utility class to convert given timezone into integer based timezone
  * diff. It's ported from ext/date/date_parse.c in MRI 2.3.1 under BSDL.
- * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_parse.c
  */
+// @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_parse.c
 public class TimeZoneConverter {
     // Ports zones_source in ext/date/date_parse.c in MRI 2.3.1 under BSDL.
     private static int getOffsetFromZonesSource(String z) {
@@ -423,22 +425,22 @@ public class TimeZoneConverter {
         z = z.substring(1);
 
         int hour = 0, min = 0, sec = 0;
-        if (z.contains(":")) {
-            final String[] splited = z.split(":");
-            if (splited.length == 2) {
-                hour = Integer.parseInt(splited[0]);
-                min = Integer.parseInt(splited[1]);
+        if (z.indexOf(':') != -1) {
+            final List<String> splited = StringSupport.split(z, ':');
+            if (splited.size() == 2) {
+                hour = Integer.parseInt(splited.get(0));
+                min = Integer.parseInt(splited.get(1));
             } else {
-                hour = Integer.parseInt(splited[0]);
-                min = Integer.parseInt(splited[1]);
-                sec = Integer.parseInt(splited[2]);
+                hour = Integer.parseInt(splited.get(0));
+                min = Integer.parseInt(splited.get(1));
+                sec = Integer.parseInt(splited.get(2));
             }
 
-        } else if (z.contains(",") || z.contains(".")) {
+        } else if (z.indexOf(',') != -1 || z.indexOf('.') != -1) {
             // TODO min = Rational(fr.to_i, 10**fr.size) * 60
             String[] splited = z.split("[\\.,]");
             hour = Integer.parseInt(splited[0]);
-            min = (int)(Integer.parseInt(splited[1]) * 60 / Math.pow(10, splited[1].length()));
+            min = (int) (Integer.parseInt(splited[1]) * 60 / Math.pow(10, splited[1].length()));
 
         } else {
             final int len = z.length();
@@ -469,6 +471,6 @@ public class TimeZoneConverter {
         return sign ? offset : -offset;
     }
 
-    private TimeZoneConverter() {
-    }
+    private TimeZoneConverter() { /* no instances */ }
+
 }

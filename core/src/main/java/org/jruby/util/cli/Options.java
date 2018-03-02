@@ -127,7 +127,8 @@ public class Options {
     public static final Option<Boolean> IR_WRITING           = bool(IR, "ir.writing", false, "Write JRuby IR file.");
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
-    public static final Option<Boolean>  IR_PRINT = bool(IR, "ir.print", false, "Print the final IR to be run before starting to execute each body of code.");
+    public static final Option<Boolean>  IR_PRINT_ALL = bool(IR, "ir.print.all", false, "Enable ir.print and include IR executed during JRuby's boot phase.");
+    public static final Option<Boolean>  IR_PRINT = bool(IR, "ir.print", IR_PRINT_ALL.load(), "Print the final IR to be run before starting to execute each body of code.");
     public static final Option<Boolean>  IR_PRINT_COLOR = bool(IR, "ir.print.color", false, "Print the final IR with color highlighting.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");

@@ -719,8 +719,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     @Override
-    public Object toJava(Class target) {
-        if (target == String.class || target == CharSequence.class) return symbol;
+    public <T> T toJava(Class<T> target) {
+        if (target == String.class || target == CharSequence.class) {
+            return target.cast(symbol);
+        }
 
         return super.toJava(target);
     }

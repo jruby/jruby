@@ -264,7 +264,7 @@ public class JavaUtil {
         return (T) javaObject.getValue();
     }
 
-    public static NumericConverter getNumericConverter(Class target) {
+    public static <T> NumericConverter<T> getNumericConverter(Class<T> target) {
         final NumericConverter converter = NUMERIC_CONVERTERS.get(target);
         return converter == null ? NUMERIC_TO_OTHER : converter;
     }
@@ -587,8 +587,8 @@ public class JavaUtil {
         public String toString() {return type.getName() + " converter";}
     }
 
-    public interface NumericConverter {
-        public Object coerce(RubyNumeric numeric, Class target);
+    public interface NumericConverter<T> {
+        T coerce(RubyNumeric numeric, Class<T> target);
     }
 
     private static IRubyObject trySimpleConversions(Ruby runtime, Object object) {
@@ -910,90 +910,61 @@ public class JavaUtil {
         JAVA_CONVERTERS.put(BigInteger.class, JAVA_BIGINTEGER_CONVERTER);
     }
 
-    private static final NumericConverter NUMERIC_TO_BYTE = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final long value = numeric.getLongValue();
-            if ( isLongByteable(value) ) return (byte) value;
-            throw numeric.getRuntime().newRangeError("too big for byte: " + numeric);
+    private static final NumericConverter<Byte> NUMERIC_TO_BYTE = (numeric, target) -> {
+        final long value = numeric.getLongValue();
+        if ( isLongByteable(value) ) return (byte) value;
+        throw numeric.getRuntime().newRangeError("too big for byte: " + numeric);
+    };
+    private static final NumericConverter<Short> NUMERIC_TO_SHORT = (numeric, target) -> {
+        final long value = numeric.getLongValue();
+        if ( isLongShortable(value) ) return (short) value;
+        throw numeric.getRuntime().newRangeError("too big for short: " + numeric);
+    };
+    private static final NumericConverter<Character> NUMERIC_TO_CHARACTER = (numeric, target) -> {
+        final long value = numeric.getLongValue();
+        if ( isLongCharable(value) ) return (char) value;
+        throw numeric.getRuntime().newRangeError("too big for char: " + numeric);
+    };
+    private static final NumericConverter<Integer> NUMERIC_TO_INTEGER = (numeric, target) -> {
+        final long value = numeric.getLongValue();
+        if ( isLongIntable(value) ) return (int) value;
+        throw numeric.getRuntime().newRangeError("too big for int: " + numeric);
+    };
+    private static final NumericConverter<Long> NUMERIC_TO_LONG = (numeric, target) -> numeric.getLongValue();
+    private static final NumericConverter<Float> NUMERIC_TO_FLOAT = (numeric, target) -> {
+        final double value = numeric.getDoubleValue();
+        // many cases are ok to convert to float; if not one of these, error
+        if ( isDoubleFloatable(value) ) return (float) value;
+        throw numeric.getRuntime().newTypeError("too big for float: " + numeric);
+    };
+    private static final NumericConverter<Double> NUMERIC_TO_DOUBLE = (numeric, target) -> numeric.getDoubleValue();
+    private static final NumericConverter<BigInteger> NUMERIC_TO_BIGINTEGER = (numeric, target) -> numeric.getBigIntegerValue();
+
+    private static final NumericConverter NUMERIC_TO_OTHER = (numeric, target) -> {
+        if (target.isAssignableFrom(numeric.getClass())) {
+            // just return as-is, since we can't do any coercion
+            return numeric;
+        }
+        // otherwise, error; no conversion available
+        throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
+    };
+    private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (numeric, target) -> {
+        // for Object, default to natural wrapper type
+        if (numeric instanceof RubyFixnum) {
+            long value = numeric.getLongValue();
+            return Long.valueOf(value);
+        } else if (numeric instanceof RubyFloat) {
+            double value = numeric.getDoubleValue();
+            return Double.valueOf(value);
+        } else if (numeric instanceof RubyBignum) {
+            return ((RubyBignum)numeric).getValue();
+        } else if (numeric instanceof RubyBigDecimal) {
+            return ((RubyBigDecimal)numeric).getValue();
+        } else {
+            return NUMERIC_TO_OTHER.coerce(numeric, target);
         }
     };
-    private static final NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final long value = numeric.getLongValue();
-            if ( isLongShortable(value) ) return (short) value;
-            throw numeric.getRuntime().newRangeError("too big for short: " + numeric);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final long value = numeric.getLongValue();
-            if ( isLongCharable(value) ) return (char) value;
-            throw numeric.getRuntime().newRangeError("too big for char: " + numeric);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final long value = numeric.getLongValue();
-            if ( isLongIntable(value) ) return (int) value;
-            throw numeric.getRuntime().newRangeError("too big for int: " + numeric);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_LONG = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            return numeric.getLongValue();
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_FLOAT = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final double value = numeric.getDoubleValue();
-            // many cases are ok to convert to float; if not one of these, error
-            if ( isDoubleFloatable(value) ) return (float) value;
-            throw numeric.getRuntime().newTypeError("too big for float: " + numeric);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_DOUBLE = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            return numeric.getDoubleValue();
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_BIGINTEGER = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            return numeric.getBigIntegerValue();
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_OBJECT = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            // for Object, default to natural wrapper type
-            if (numeric instanceof RubyFixnum) {
-                long value = numeric.getLongValue();
-                return Long.valueOf(value);
-            } else if (numeric instanceof RubyFloat) {
-                double value = numeric.getDoubleValue();
-                return Double.valueOf(value);
-            } else if (numeric instanceof RubyBignum) {
-                return ((RubyBignum)numeric).getValue();
-            } else if (numeric instanceof RubyBigDecimal) {
-                return ((RubyBigDecimal)numeric).getValue();
-            } else {
-                return NUMERIC_TO_OTHER.coerce(numeric, target);
-            }
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_OTHER = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            if (target.isAssignableFrom(numeric.getClass())) {
-                // just return as-is, since we can't do any coercion
-                return numeric;
-            }
-            // otherwise, error; no conversion available
-            throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_VOID = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            return null;
-        }
-    };
+    private static final NumericConverter NUMERIC_TO_VOID = (numeric, target) -> null;
     private static boolean isDoubleFloatable(double value) {
         return true;
     }

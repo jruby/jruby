@@ -126,6 +126,39 @@ public final class StringSupport {
         return result;
     }
 
+    // String.startsWith for a CharSequence
+    public static boolean startsWith(final CharSequence str, final String prefix) {
+        int p = prefix.length();
+        if ( p > str.length() ) return false;
+        int i = 0;
+        while ( --p >= 0 ) {
+            if (str.charAt(i) != prefix.charAt(i)) return false;
+            i++;
+        }
+        return true;
+    }
+
+    public static boolean startsWith(final CharSequence str, final char c) {
+        return str.length() >= 1 && str.charAt(0) == c;
+    }
+
+    public static boolean startsWith(final CharSequence str, final char c1, final char c2) {
+        return str.length() >= 2 && str.charAt(0) == c1 && str.charAt(1) == c2;
+    }
+
+    // without any char[] array copying, also StringBuilder only has lastIndexOf(String)
+    public static int lastIndexOf(final CharSequence str, final char c, int index) {
+        while ( index >= 0 ) {
+            if ( str.charAt(index) == c ) return index;
+            index--;
+        }
+        return -1;
+    }
+
+    public static boolean contentEquals(final CharSequence str, final int chr) {
+        return (str.length() == 1) && str.charAt(0) == chr;
+    }
+
     public static String codeRangeAsString(int codeRange) {
         switch (codeRange) {
             case CR_UNKNOWN: return "unknown";
@@ -1604,7 +1637,7 @@ public final class StringSupport {
     /**
      * rb_str_delete_bang
      */
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
+    static CodeRangeable strDeleteBang(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
         rubyString.modify();
         rubyString.keepCodeRange();
 
@@ -1646,9 +1679,9 @@ public final class StringSupport {
         return modify ? rubyString : null;
     }
 
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
+    public static CodeRangeable strDeleteBang(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
         try {
-            return delete_bangCommon19(rubyString, squeeze, tables, enc);
+            return strDeleteBang(rubyString, squeeze, tables, enc);
         } catch (IllegalArgumentException e) {
             throw runtime.newArgumentError(e.getMessage());
         }

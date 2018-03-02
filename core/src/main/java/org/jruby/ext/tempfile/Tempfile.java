@@ -45,24 +45,17 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.TypeConverter;
-import org.jruby.util.io.EncodingUtils;
-import org.jruby.util.io.IOOptions;
-import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.OpenFile;
 
 import java.io.File;
 import java.io.IOException;
-
-import static org.jruby.runtime.Visibility.*;
 
 /**
  * An implementation of tempfile.rb in Java.
@@ -95,7 +88,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         super(runtime, type);
     }
 
-    @JRubyMethod(optional = 3, visibility = PRIVATE)
+    @JRubyMethod(optional = 3, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length == 0) {
@@ -167,7 +160,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         }
     }
 
-    @JRubyMethod(visibility = PUBLIC)
+    @JRubyMethod
     public IRubyObject open(ThreadContext context) {
         if (!isClosed()) rbIoClose(context);
 
@@ -179,18 +172,18 @@ public class Tempfile extends RubyFile implements Finalizable {
         return this;
     }
 
-    @JRubyMethod(visibility = PROTECTED)
+    @JRubyMethod(visibility = Visibility.PROTECTED)
     public IRubyObject _close(ThreadContext context) {
         return !isClosed() ? super.close(context) : context.nil;
     }
 
-    @JRubyMethod(optional = 1, visibility = PUBLIC)
+    @JRubyMethod(optional = 1)
     public IRubyObject close(ThreadContext context, IRubyObject[] args, Block block) {
         boolean unlink = args.length == 1 ? args[0].isTrue() : false;
         return unlink ? close_bang(context) : _close(context);
     }
 
-    @JRubyMethod(name = "close!", visibility = PUBLIC)
+    @JRubyMethod(name = "close!")
     public IRubyObject close_bang(ThreadContext context) {
         _close(context);
         unlink(context);
@@ -273,15 +266,8 @@ public class Tempfile extends RubyFile implements Finalizable {
     }
 
     @JRubyMethod
-    @Override
-    public IRubyObject inspect() {
-        StringBuilder val = new StringBuilder();
-        val.append("#<Tempfile:").append(openFile.getPath());
-        if (!openFile.isOpen()) {
-            val.append(" (closed)");
-        }
-        val.append('>');
-        return getRuntime().newString(val.toString());
+    public RubyString inspect(ThreadContext context) {
+        return super.inspect(context);
     }
 
     @Override

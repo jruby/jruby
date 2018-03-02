@@ -862,24 +862,24 @@ public class RubyKernel {
             case 0:
                 IRubyObject lastException = runtime.getGlobalVariables().get("$!");
                 if (lastException.isNil()) {
-                    raise = new RaiseException(runtime, runtime.getRuntimeError(), "", false);
+                    raise = RaiseException.from(runtime, runtime.getRuntimeError(), "");
                 } else {
                     // non RubyException value is allowed to be assigned as $!.
-                    raise = new RaiseException((RubyException) lastException);
+                    raise = ((RubyException) lastException).toThrowable();
                 }
                 break;
             case 1:
                 if (args[0] instanceof RubyString) {
-                    raise = new RaiseException((RubyException) runtime.getRuntimeError().newInstance(context, args, block));
+                    raise = ((RubyException) runtime.getRuntimeError().newInstance(context, args, block)).toThrowable();
                 } else {
-                    raise = new RaiseException(convertToException(runtime, args[0], null));
+                    raise = convertToException(runtime, args[0], null).toThrowable();
                 }
                 break;
             case 2:
-                raise = new RaiseException(convertToException(runtime, args[0], args[1]));
+                raise = convertToException(runtime, args[0], args[1]).toThrowable();
                 break;
             default:
-                raise = new RaiseException(convertToException(runtime, args[0], args[1]), args[2]);
+                raise = RaiseException.from(convertToException(runtime, args[0], args[1]), args[2]);
                 break;
         }
 
@@ -1201,7 +1201,7 @@ public class RubyKernel {
     }
 
     private static RaiseException uncaughtThrow(Ruby runtime, IRubyObject tag, IRubyObject value, RubyString message) {
-        return new RaiseException( RubyUncaughtThrowError.newUncaughtThrowError(runtime, tag, value, message) );
+        return RubyUncaughtThrowError.newUncaughtThrowError(runtime, tag, value, message).toThrowable();
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)

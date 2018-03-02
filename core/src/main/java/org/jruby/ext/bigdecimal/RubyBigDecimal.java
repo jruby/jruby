@@ -1836,6 +1836,14 @@ public class RubyBigDecimal extends RubyNumeric {
          return getRuntime().newBoolean(isZero());
     }
 
+    @Override
+    public <T> T toJava(Class<T> target) {
+        if (target == BigDecimal.class) {
+            return (T) value;
+        }
+        return super.toJava(target);
+    }
+
     /**
      * Returns the correctly rounded square root of a positive
      * BigDecimal. This method performs the fast <i>Square Root by

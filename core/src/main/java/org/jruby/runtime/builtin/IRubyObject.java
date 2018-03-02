@@ -275,7 +275,7 @@ public interface IRubyObject {
      *
      * @param type The target type to which the object should be converted.
      */
-    Object toJava(Class type);
+    <T> T toJava(Class<T> type);
 
     /**
      * RubyMethod dup.

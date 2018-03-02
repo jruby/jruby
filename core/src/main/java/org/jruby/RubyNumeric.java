@@ -39,6 +39,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.StandardError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -481,18 +482,15 @@ public class RubyNumeric extends RubyObject {
         final IRubyObject result;
         try {
             result = coerceBody(context, other);
-        } catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
-            if (context.runtime.getStandardError().isInstance( e.getException() )) {
-                context.setErrorInfo($ex); // restore $!
-                RubyWarnings warnings = context.runtime.getWarnings();
-                warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
-                warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
-                if (err) {
-                    coerceFailed(context, other);
-                }
-                return null;
+        } catch (StandardError e) {
+            context.setErrorInfo($ex); // restore $!
+            RubyWarnings warnings = context.runtime.getWarnings();
+            warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
+            warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
+            if (err) {
+                coerceFailed(context, other);
             }
-            throw e;
+            return null;
         }
 
         return coerceResult(context, result, err);
@@ -1347,7 +1345,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         return JavaUtil.getNumericConverter(target).coerce(this, target);
     }
 

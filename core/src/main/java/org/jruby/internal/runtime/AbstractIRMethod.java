@@ -2,6 +2,7 @@ package org.jruby.internal.runtime;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
@@ -11,6 +12,7 @@ import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
@@ -41,7 +43,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
 
         // If we are printing, do the build right at creation time so we can see it
-        if (Options.IR_PRINT.load()) {
+        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
             ensureInstrsReady();
         }
     }
