@@ -555,6 +555,11 @@ public class RubyRational extends RubyNumeric {
     @Deprecated
     public IRubyObject op_sub(ThreadContext context, IRubyObject other) { return op_minus(context, other); }
 
+    @Override
+    public IRubyObject op_uminus(ThreadContext context) {
+        return RubyRational.newRationalNoReduce(context, num.negate(), den);
+    }
+
     /** f_muldiv
      * 
      */
