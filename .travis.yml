@@ -2,68 +2,107 @@ language: java
 
 sudo: false
 
-before_script:
-  - unset GEM_PATH GEM_HOME IRBRC
-  - "export PATH=`pwd`/bin:$PATH"
-  - echo $HOME
+dist: trusty
+
+cache:
+ directories:
+   - $HOME/.m2
 
 before_install:
-  - mvn -Xmx32M -v | grep 1.6.0; if [ $? = 0 ]; then export JAVA_OPTS="-client"; else export JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"; fi
-  - mvn -Xmx32M -v | grep 1.[67].0; if [ $? = 0 ]; then export JAVA_OPTS="-XX:MaxPermSize=224M $JAVA_OPTS"; else export JAVA_OPTS="-XX:MaxMetaspaceSize=224M -XX:CompressedClassSpaceSize=192M $JAVA_OPTS"; fi
-  - export JAVA_OPTS="-Xmn32M -Xmx544M $JAVA_OPTS" && echo $JAVA_OPTS
-  - mvn -Xmx32M -v | grep 1.[67].0; if [ $? = 0 ]; then export ANT_OPTS="-XX:MaxPermSize=80M"; else export ANT_OPTS="-XX:MaxMetaspaceSize=80M -XX:CompressedClassSpaceSize=72M"; fi
-  - export ANT_OPTS="-Xmn48M -Xmx160M $ANT_OPTS" && echo $ANT_OPTS
+  - unset _JAVA_OPTIONS
+  - rm ~/.m2/settings.xml
+  - export MAVEN_SKIP_RC=true
+  - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:MaxMetaspaceSize=144M -XX:CompressedClassSpaceSize=96M"
+  - export JAVA_OPTS="$JAVA_OPTS -XX:MaxMetaspaceSize=96M -XX:CompressedClassSpaceSize=96M"
 
-jdk: openjdk6
+before_script:
+  - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
+  - unset _JAVA_OPTIONS # travis/travis#8408
+  - export PATH="`pwd`/bin:$PATH"
+  - echo $HOME
+  - echo $JAVA_OPTS
+  - echo $MAVEN_OPTS
+
+jdk:
+  - oraclejdk8
+
+os:
+  - linux
 
 env:
-  # disable cext
   global:
-    - JAVA_OPTS="-Djruby.cext.enabled=false $JAVA_OPTS"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms48M -Xmx640M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
+    - MALLOC_ARENA_MAX=2
   matrix:
-    - TARGET='test-extended'
-    - TARGET='spec:ruby:fast'
-    - TARGET='spec:ruby19:fast'
-    - TARGET='jruby-jars'
-    - TARGET='complete'
-    - TARGET='osgi'
-    - TARGET='jruby-jars-extended'
-    - TARGET='main-extended'
+    - PHASE='-Ptest'
+    - PHASE='-Prake -Dtask=test:jruby'
+    #- PHASE='-Prake -Dtask=test:jruby:fullint' # included with OpenJDK bellow
+    - PHASE='-Prake -Dtask=test:jruby:jit'
+    - PHASE='-Prake -Dtask=test:jruby:aot'
+    - PHASE='-Prake -Dtask=test:mri'
+    - PHASE='-Prake -Dtask=test:mri:fullint'
+    - PHASE='-Prake -Dtask=test:mri:jit'
+    - PHASE='-Prake -Dtask=test:slow_suites'
+    - PHASE='-Prake -Dtask=test:tracing'
+    - PHASE='-Prake -Dtask=spec:ji'
+    - PHASE='-Prake -Dtask=spec:compiler'
+    - PHASE='-Prake -Dtask=spec:compiler' JRUBY_OPTS=-Xcompile.invokedynamic
+    - PHASE='-Prake -Dtask=spec:ffi'
+    - PHASE='-Prake -Dtask=spec:regression'
+    - PHASE='-Prake -Dtask=spec:ruby:fast'
+    - PHASE='-Prake -Dtask=spec:jruby'
+    - PHASE='-Prake -Dtask=spec:jrubyc'
+    - PHASE='-Prake -Dtask=spec:profiler'
 
 matrix:
   include:
-    # there is one integration test which uses a external jar for jdk7+
-    - jdk: oraclejdk7
-      env: TARGET='main'
-    - jdk: oraclejdk7
-      env: TARGET='j2ee'
-    - jdk: openjdk7
-      env: TARGET='test-extended'
-    - jdk: openjdk7
-      env: TARGET='spec:ruby19:fast'
-    - jdk: oraclejdk8
-      env: TARGET='test-extended'
-    - jdk: oraclejdk8
-      env: TARGET='spec:ruby19:fast'
-    - jdk: oraclejdk8 # less process Kill-ing under 8 than 6/7
-      env: TARGET='jruby-jars-extended'
-    - jdk: oraclejdk8 # less process Kill-ing under 8 than 6/7
-      env: TARGET='main-extended'
-  fast_finish: true
+    - env: PHASE='-Ptest'
+      jdk: openjdk8
+    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
+      jdk: openjdk8
+    # these profile do no need to run for all JDKs
+    - env: PHASE='-Pdist'
+      jdk: openjdk8
+    - env: PHASE='-Pjruby-jars'
+      jdk: openjdk8
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk8
+    - env: PHASE='-Pcomplete'
+      jdk: oraclejdk8
+    - env: PHASE='-Posgi'
+      jdk: oraclejdk8
+    - env: PHASE='-Pj2ee'
+      jdk: oraclejdk8
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+      jdk: oraclejdk8
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+      jdk: oraclejdk8
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+      jdk: oraclejdk8
+    - env: COMMAND=test/check_versions.sh
+      jdk: oraclejdk8
+    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+      jdk: oraclejdk9
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk9
+    - env: PHASE='-Pcomplete'
+      jdk: oraclejdk9
+  allow_failures:
+    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
+      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+      jdk: oraclejdk9
 
-branches:
-  only:
-    - master
-    - jruby-1_7
-    - /^test-.*$/
-    - /^ha-feature/
+install:
+  - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
+script: tool/travis-script.sh
 
-#before_install:
-#  - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
-
-install: /bin/true
-# |^[[:space:]]*\[exec\][[:space:]]*$
-script: "travis_retry ant $TARGET | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]"
 notifications:
   irc:
     channels:
@@ -73,3 +112,17 @@ notifications:
     template:
       - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
     skip_join: true
+
+# we are on a branch
+    on_success: always
+    on_failure: never
+
+services:
+  - redis-server
+  - haveged
+
+addons:
+  apt:
+    packages:
+      - oracle-java9-installer
+      - haveged
