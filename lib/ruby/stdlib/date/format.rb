@@ -877,42 +877,6 @@ class Date
     end
   end
 
-  # @private native code at MRI's (~ date_zone_to_diff)
-  def self.zone_to_diff(zone) # :nodoc:
-    zone = zone.downcase
-    if zone.sub!(/\s+(standard|daylight)\s+time\z/, '')
-      dst = $1 == 'daylight'
-    else
-      dst = zone.sub!(/\s+dst\z/, '')
-    end
-    if Format::ZONES.include?(zone)
-      offset = Format::ZONES[zone]
-      offset += 3600 if dst
-    elsif zone.sub!(/\A(?:gmt|utc?)?([-+])/, '')
-      sign = $1
-      if zone.include?(':')
-        hour, min, sec, = zone.split(':')
-      elsif zone.include?(',') || zone.include?('.')
-        hour, fr, = zone.split(/[,.]/)
-        min = Rational(fr.to_i, 10**fr.size) * 60
-      else
-        case zone.size
-          when 3
-            hour = zone[0,1]
-            min = zone[1,2]
-          else
-            hour = zone[0,2]
-            min = zone[2,2]
-            sec = zone[4,2]
-        end
-      end
-      offset = hour.to_i * 3600 + min.to_i * 60 + sec.to_i
-      offset = -offset if sign == '-'
-    end
-    offset
-  end
-  private_class_method :zone_to_diff
-
   def self.set_zone(h, zone) # :nodoc:
     h[:zone] = zone
     h[:offset] = zone_to_diff(zone)

@@ -54,6 +54,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.RubyDateParser;
+import org.jruby.util.TimeZoneConverter;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1612,6 +1613,13 @@ public class RubyDate extends RubyObject {
             default:
                 throw context.runtime.newArgumentError(args.length, 1);
         }
+    }
+
+    @JRubyMethod(name = "zone_to_diff", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject zone_to_diff(ThreadContext context, IRubyObject self, IRubyObject zone) {
+        final int offset = TimeZoneConverter.dateZoneToDiff(zone.asJavaString());
+        if (offset == TimeZoneConverter.INVALID_ZONE) return context.nil;
+        return RubyFixnum.newFixnum(context.runtime, offset);
     }
 
     @JRubyMethod(name = "i", meta = true, visibility = Visibility.PRIVATE)

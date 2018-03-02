@@ -381,6 +381,8 @@ public class TimeZoneConverter {
         }
     }
 
+    public static final int INVALID_ZONE = Integer.MIN_VALUE;
+
     /**
      * Ports date_zone_to_diff from ext/date/date_parse.c in MRI 2.3.1 under BSDL.
      */
@@ -420,7 +422,7 @@ public class TimeZoneConverter {
             sign = false;
         } else {
             // if z doesn't start with "+" or "-", invalid
-            return Integer.MIN_VALUE;
+            return INVALID_ZONE;
         }
         z = z.substring(1);
 
