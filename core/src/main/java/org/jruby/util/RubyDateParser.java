@@ -26,16 +26,11 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyBignum;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyHash;
-import org.jruby.RubyRational;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.math.BigInteger;
 import java.util.List;
 
 import static org.jruby.util.StrptimeParser.FormatBag.has;
@@ -65,64 +60,75 @@ public class RubyDateParser {
         return bag == null ? context.nil : convertFormatBagToHash(context, bag, text.getEncoding(), text.isTaint());
     }
 
-    static IRubyObject convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag,
-                                              Encoding encoding, boolean tainted) {
-        Ruby runtime = context.runtime;
-        RubyHash hash = RubyHash.newHash(runtime);
+    static RubyHash convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag,
+                                           Encoding encoding, boolean tainted) {
+        final Ruby runtime = context.runtime;
+        final RubyHash hash = RubyHash.newHash(runtime);
 
-        if (has(bag.getMDay())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "mday"), runtime.newFixnum(bag.getMDay()));
-        if (has(bag.getWDay())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "wday"), runtime.newFixnum(bag.getWDay()));
-        if (has(bag.getCWDay())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "cwday"), runtime.newFixnum(bag.getCWDay()));
-        if (has(bag.getYDay())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "yday"), runtime.newFixnum(bag.getYDay()));
-        if (has(bag.getCWeek())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "cweek"), runtime.newFixnum(bag.getCWeek()));
-        if (has(bag.getCWYear())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "cwyear"), RubyBignum.newBignum(runtime, bag.getCWYear()));
-        if (has(bag.getMin())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "min"), runtime.newFixnum(bag.getMin()));
-        if (has(bag.getMon())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "mon"), runtime.newFixnum(bag.getMon()));
-        if (has(bag.getHour())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "hour"), runtime.newFixnum(bag.getHour()));
-        if (has(bag.getYear())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "year"), RubyBignum.newBignum(runtime, bag.getYear()));
-        if (has(bag.getSec())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "sec"), runtime.newFixnum(bag.getSec()))
-                ;
-        if (has(bag.getWNum0())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "wnum0"), runtime.newFixnum(bag.getWNum0()));
-        if (has(bag.getWNum1())) hash.op_aset(context, RubySymbol.newSymbol(runtime, "wnum1"), runtime.newFixnum(bag.getWNum1()));
+        if (has(bag.getMDay())) setHashValue(runtime, hash, "mday", runtime.newFixnum(bag.getMDay()));
+        if (has(bag.getWDay())) setHashValue(runtime, hash, "wday", runtime.newFixnum(bag.getWDay()));
+        if (has(bag.getCWDay())) setHashValue(runtime, hash, "cwday", runtime.newFixnum(bag.getCWDay()));
+        if (has(bag.getYDay())) setHashValue(runtime, hash, "yday", runtime.newFixnum(bag.getYDay()));
+        if (has(bag.getCWeek())) setHashValue(runtime, hash, "cweek", runtime.newFixnum(bag.getCWeek()));
+        if (has(bag.getCWYear())) setHashValue(runtime, hash, "cwyear", RubyBignum.newBignum(runtime, bag.getCWYear()));
+        if (has(bag.getMin())) setHashValue(runtime, hash, "min", runtime.newFixnum(bag.getMin()));
+        if (has(bag.getMon())) setHashValue(runtime, hash, "mon", runtime.newFixnum(bag.getMon()));
+        if (has(bag.getHour())) setHashValue(runtime, hash, "hour", runtime.newFixnum(bag.getHour()));
+        if (has(bag.getYear())) setHashValue(runtime, hash, "year", RubyBignum.newBignum(runtime, bag.getYear()));
+        if (has(bag.getSec())) setHashValue(runtime, hash, "sec", runtime.newFixnum(bag.getSec()));
+        if (has(bag.getWNum0())) setHashValue(runtime, hash, "wnum0", runtime.newFixnum(bag.getWNum0()));
+        if (has(bag.getWNum1())) setHashValue(runtime, hash, "wnum1", runtime.newFixnum(bag.getWNum1()));
 
         if (bag.getZone() != null) {
             final RubyString zone = RubyString.newString(runtime, bag.getZone(), encoding);
             if (tainted) zone.taint(context);
 
-            hash.op_aset(context, RubySymbol.newSymbol(runtime, "zone"), zone);
+            setHashValue(runtime, hash, "zone", zone);
             int offset = TimeZoneConverter.dateZoneToDiff(bag.getZone());
-            if (offset != Integer.MIN_VALUE) hash.op_aset(context, RubySymbol.newSymbol(runtime, "offset"), runtime.newFixnum(offset));
+            if (offset != TimeZoneConverter.INVALID_ZONE) setHashValue(runtime, hash, "offset", runtime.newFixnum(offset));
         }
 
         if (has(bag.getSecFraction())) {
-            final RubyBignum secFraction = RubyBignum.newBignum(runtime, bag.getSecFraction());
-            final RubyFixnum secFractionSize = RubyFixnum.newFixnum(runtime, (long)Math.pow(10, bag.getSecFractionSize()));
-            hash.op_aset(context, RubySymbol.newSymbol(runtime, "sec_fraction"),
+            final RubyInteger secFraction = toRubyInteger(runtime, bag.getSecFraction());
+            final RubyFixnum secFractionSize = RubyFixnum.newFixnum(runtime, (long) Math.pow(10, bag.getSecFractionSize()));
+            setHashValue(runtime, hash, "sec_fraction",
                     RubyRational.newRationalCanonicalize(context, secFraction, secFractionSize));
         }
 
         if (bag.has(bag.getSeconds())) {
             if (has(bag.getSecondsSize())) {
-                final RubyBignum seconds = RubyBignum.newBignum(runtime, bag.getSeconds());
-                final RubyFixnum secondsSize = RubyFixnum.newFixnum(runtime, (long)Math.pow(10, bag.getSecondsSize()));
-                hash.op_aset(context, RubySymbol.newSymbol(runtime, "seconds"), RubyRational.newRationalCanonicalize(context, seconds, secondsSize));
+                final RubyInteger seconds = toRubyInteger(runtime, bag.getSeconds());
+                final RubyFixnum secondsSize = RubyFixnum.newFixnum(runtime, (long) Math.pow(10, bag.getSecondsSize()));
+                setHashValue(runtime, hash, "seconds", RubyRational.newRationalCanonicalize(context, seconds, secondsSize));
             } else {
-                hash.op_aset(context, RubySymbol.newSymbol(runtime, "seconds"), RubyBignum.newBignum(runtime, bag.getSeconds()));
+                setHashValue(runtime, hash, "seconds", toRubyInteger(runtime, bag.getSeconds()));
             }
         }
         if (has(bag.getMerid())) {
-            hash.op_aset(context, RubySymbol.newSymbol(runtime, "_merid"), runtime.newFixnum(bag.getMerid()));
+            setHashValue(runtime, hash, "_merid", runtime.newFixnum(bag.getMerid()));
         }
         if (has(bag.getCent())) {
-            hash.op_aset(context, RubySymbol.newSymbol(runtime, "_cent"), RubyBignum.newBignum(runtime, bag.getCent()));
+            setHashValue(runtime, hash, "_cent", RubyBignum.newBignum(runtime, bag.getCent()));
         }
         if (bag.getLeftover() != null) {
             final RubyString leftover = RubyString.newString(runtime, bag.getLeftover(), encoding);
             if (tainted) leftover.taint(context);
 
-            hash.op_aset(context, RubySymbol.newSymbol(runtime, "leftover"), leftover);
+            setHashValue(runtime, hash, "leftover", leftover);
         }
 
         return hash;
     }
+
+    private static RubyInteger toRubyInteger(final Ruby runtime, final Number i) {
+        if (i instanceof BigInteger) {
+            return RubyBignum.newBignum(runtime, (BigInteger) i);
+        }
+        return RubyFixnum.newFixnum(runtime, i.longValue());
+    }
+
+    private static void setHashValue(final Ruby runtime, final RubyHash hash, final String key, final IRubyObject value) {
+        hash.fastASet(RubySymbol.newSymbol(runtime, key), value);
+    }
+
 }
