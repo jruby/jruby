@@ -65,15 +65,6 @@ public abstract class TimeExt {
         final RubyTime time = (RubyTime) self;
         DateTime dt = ((RubyTime) self).getDateTime();
 
-        final int off = dt.getZone().getOffset(dt.getMillis()) / 1000;
-
-        int year = dt.getYear(); if (year <= 0) year--; // JODA's Julian chronology (no year 0)
-        dt = new DateTime(
-                year, dt.getMonthOfYear(), dt.getDayOfMonth(),
-                dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
-                dt.getMillisOfSecond(), getChronology(context, ITALY, dt.getZone())
-        );
-
         long subMillisNum = 0, subMillisDen = 1;
         if (time.getNSec() != 0) {
             IRubyObject subMillis = RubyRational.newRationalCanonicalize(context, time.getNSec(), 1_000_000);
@@ -86,7 +77,35 @@ public abstract class TimeExt {
             }
         }
 
+        final int off = dt.getZone().getOffset(dt.getMillis()) / 1000;
+
+        int year = dt.getYear(); if (year <= 0) year--; // JODA's Julian chronology (no year 0)
+
+        if (year == 1582) { // take the "slow" path -  JODA isn't adjusting for missing (reform) dates
+            return calcAjdFromCivil(context, dt, off, subMillisNum, subMillisDen);
+        }
+
+        dt = new DateTime(
+                year, dt.getMonthOfYear(), dt.getDayOfMonth(),
+                dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
+                dt.getMillisOfSecond(), getChronology(context, ITALY, dt.getZone())
+        );
+
         return new RubyDateTime(context.runtime, getDateTime(context.runtime), dt, off, ITALY, subMillisNum, subMillisDen);
+    }
+
+    private static RubyDateTime calcAjdFromCivil(ThreadContext context, final DateTime dt, final int off,
+                                                 final long subMillisNum, final long subMillisDen) {
+        final Ruby runtime = context.runtime;
+
+        long jd = civil_to_jd(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(), ITALY);
+        RubyNumeric fr = timeToDayFraction(context, dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute());
+
+        final RubyNumeric ajd = jd_to_ajd(context, jd, fr, off);
+        RubyDateTime dateTime = new RubyDateTime(context, getDateTime(runtime), ajd, off, ITALY);
+        dateTime.dt = dateTime.dt.withMillisOfSecond(dt.getMillisOfSecond());
+        dateTime.subMillisNum = subMillisNum; dateTime.subMillisDen = subMillisDen;
+        return dateTime;
     }
 
 }

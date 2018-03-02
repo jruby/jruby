@@ -226,7 +226,7 @@ public class RubyDate extends RubyObject {
     }
 
     static final int DAY_IN_SECONDS = 86_400; // 24 * 60 * 60
-    private static final int DAY_MS = 86_400_000; // 24 * 60 * 60 * 1000
+    static final int DAY_MS = 86_400_000; // 24 * 60 * 60 * 1000
     private static RubyFixnum DAY_MS_CACHE;
 
     private long initMillis(final ThreadContext context, IRubyObject ajd) {

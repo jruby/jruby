@@ -94,7 +94,7 @@ public class RubyDateTime extends RubyDate {
         super(runtime, getDateTime(runtime), new DateTime(millis, chronology));
     }
 
-    private RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, long start) {
+    RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, long start) {
         super(context, klass, ajd, off, start);
     }
 

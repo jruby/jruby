@@ -590,6 +590,20 @@ class TestDate < Test::Unit::TestCase
     assert_equal dt, time.to_datetime
   end
 
+  def test_to_datetime_reform
+    time = Time.utc(1582, 10, 15, 1, 2, 3)
+    dt = time.to_datetime
+    assert_equal [1582, 10, 15, 1, 2, 3], [ dt.year, dt.month, dt.day, dt.hour, dt.min, dt.sec ]
+
+    utc_time = Time.utc(1582, 10, 14, 1, 2, 3, 45 + Rational(6789, 10_000))
+    dt = utc_time.to_datetime
+    assert_equal DateTime::ITALY, dt.start
+    assert_equal [1582, 10, 24, 1, 2, 3], [ dt.year, dt.month, dt.day, dt.hour, dt.min, dt.sec ]
+    time = dt.to_time
+    assert_equal [1582, 10, 24], [ time.year, time.month, time.day ]
+    assert utc_time != time # no round-trip possible
+  end
+
   def test_to_time_roundtrip # based on AR-JDBC testing
     time = Time.utc(3, 12, 31, 23, 58, 59)
     time2 = time.to_datetime.to_time # '0004-01-01 00:56:43 +0057' in < 9.2
@@ -610,6 +624,7 @@ class TestDate < Test::Unit::TestCase
     assert_equal 0, date.send(:hour)
     assert_equal 0, date.send(:minute)
     assert_equal 0, date.send(:second)
+    assert_equal Date::ITALY, date.start
 
     date = dt.to_time.to_date
     assert_equal 2012, date.year
@@ -618,6 +633,7 @@ class TestDate < Test::Unit::TestCase
     assert_equal 0, date.send(:hour)
     assert_equal 0, date.send(:minute)
     assert_equal 0, date.send(:second)
+    assert_equal Date::ITALY, date.start
 
     dt = DateTime.new(1008, 12, 9, 10, 40, 00, '+11:00')
     date = dt.to_date
