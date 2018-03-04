@@ -156,6 +156,12 @@ public class RubyMethod extends AbstractRubyMethod {
     }
 
     @Override
+    @JRubyMethod(name = "===", required = 1)
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
+        return method.call(context, receiver, implementationModule, methodName, other, Block.NULL_BLOCK);
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (!(other instanceof RubyMethod)) {
             return false;
