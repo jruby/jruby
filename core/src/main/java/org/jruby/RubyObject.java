@@ -332,13 +332,22 @@ public class RubyObject extends RubyBasicObject {
 
     /**
      * The default toString method is just a wrapper that calls the
+     * Ruby "to_s" method.  This will raise if it is not actually a Ruby String.
+     *
+     * @param context thread context this is executing on.
+     * @return the string.
+     */
+    public RubyString toRubyString(ThreadContext context) {
+        return sites(context).to_s.call(context, this, this).convertToString();
+    }
+
+    /**
+     * The default toString method is just a wrapper that calls the
      * Ruby "to_s" method.
      */
     @Override
     public String toString() {
-        ThreadContext context = getRuntime().getCurrentContext();
-        RubyString rubyString = sites(context).to_s.call(context, this, this).convertToString();
-        return rubyString.getUnicodeValue();
+        return toRubyString(getRuntime().getCurrentContext()).getUnicodeValue();
     }
 
     /**

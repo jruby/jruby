@@ -809,7 +809,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         // FIXME: bytelist_love - making these tiny strings over and over...
         /* 6:tags 16:addr 1:eos */
         RubyString bytes = runtime.newString("#<");
-        bytes.append(getMetaClass().getRealClass().rubyName());
+        bytes.append(getMetaClass().getRealClass().toRubyString(runtime.getCurrentContext()));
         bytes.append(runtime.newString(":0x"));
         bytes.append(runtime.newString(Integer.toHexString(System.identityHashCode(this))));
         bytes.append(runtime.newString(">"));
@@ -1651,7 +1651,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (this instanceof RubyModule) {
             throw getRuntime().newFrozenError("class/module ");
         } else {
-            throw getRuntime().newFrozenError(getMetaClass().toString());
+            throw getRuntime().newFrozenError(getMetaClass().toRubyString(getRuntime().getCurrentContext()));
         }
     }
 

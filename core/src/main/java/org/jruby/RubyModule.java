@@ -136,6 +136,7 @@ import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
 import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.ids;
 
 
 /**
@@ -2389,9 +2390,8 @@ public class RubyModule extends RubyObject {
 
             return buffer;
         }
-        IRubyObject a = rubyName();
 
-        return a;
+        return rubyName();
     }
 
     /** rb_mod_eqq
@@ -3401,7 +3401,7 @@ public class RubyModule extends RubyObject {
         }
 
         // FIXME: bytelist_love: nameError should use symbol and not Java String.
-        throw runtime.newNameError(buildString(runtime, "wrong constant name", symbol), symbol.asJavaString());
+        throw runtime.newNameError(buildString(runtime, "wrong constant name", ids(runtime, symbol)), symbol.asJavaString());
     }
 
     @JRubyMethod(name = "const_defined?", required = 1, optional = 1)

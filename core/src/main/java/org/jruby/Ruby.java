@@ -209,6 +209,7 @@ import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.ids;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -1060,7 +1061,9 @@ public final class Ruby implements Constantizable {
         boolean parentIsObject = parent == objectClass;
 
         if (superClass == null) {
-            IRubyObject className = parentIsObject ? newSymbol(name) : parent.rubyName().append(newString("::")).append(newSymbol(name));
+            IRubyObject className = parentIsObject ?
+                    newSymbol(name) :
+                    parent.toRubyString(getCurrentContext()).append(newString("::")).append(ids(this, name));
             warnings.warn(ID.NO_SUPER_CLASS, buildString(this, "no super class for `", className, "', Object assumed"));
 
             superClass = objectClass;
@@ -1099,10 +1102,11 @@ public final class Ruby implements Constantizable {
         if (moduleObj != null ) {
             if (moduleObj.isModule()) return (RubyModule)moduleObj;
 
+            ThreadContext context = getCurrentContext();
             if (parentIsObject) {
-                throw newTypeError(buildString(this, moduleObj.getMetaClass().rubyName(), " is not a module"));
+                throw newTypeError(buildString(this, moduleObj.getMetaClass().toRubyString(context), " is not a module"));
             } else {
-                throw newTypeError(buildString(this, parent.rubyName(), "::", moduleObj.getMetaClass().rubyName(), " is not a module"));
+                throw newTypeError(buildString(this, parent.toRubyString(context), "::", moduleObj.getMetaClass().toRubyString(context), " is not a module"));
             }
         }
 
@@ -4089,9 +4093,13 @@ public final class Ruby implements Constantizable {
         return newFrozenError(objectType, false);
     }
 
+    public RaiseException newFrozenError(RubyString type) {
+        return newRaiseException(getRuntimeError(), buildString(this, "can't modify frozen ", ids(this, type)));
+    }
+
     public RaiseException newFrozenError(String objectType, boolean runtimeError) {
         // TODO: Should frozen error have its own distinct class?  If not should more share?
-        return newRaiseException(getRuntimeError(), buildString(this, "can't modify frozen ", newSymbol(objectType)));
+        return newRaiseException(getRuntimeError(), buildString(this, "can't modify frozen ", ids(this, objectType)));
     }
 
     public RaiseException newSystemStackError(String message) {
@@ -4140,8 +4148,9 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newTypeError(IRubyObject receivedObject, String expectedType) {
         return newRaiseException(getTypeError(),
-                buildString(this, "wrong argument type ", receivedObject.getMetaClass().getRealClass().rubyName(),
-                        " (expected ", newSymbol(expectedType), ")"));
+                buildString(this, "wrong argument type ",
+                        receivedObject.getMetaClass().getRealClass().toRubyString(getCurrentContext()),
+                        " (expected ", ids(this, expectedType), ")"));
     }
 
     public RaiseException newEOFError() {

@@ -83,6 +83,9 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
+import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.ids;
+
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(IRRuntimeHelpers.class);
 
@@ -1702,10 +1705,11 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject getVariableWithAccessor(IRubyObject self, VariableAccessor accessor, ThreadContext context, String name) {
+        Ruby runtime = context.runtime;
         IRubyObject result = (IRubyObject)accessor.get(self);
         if (result == null) {
-            if (context.runtime.isVerbose()) {
-                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
+            if (runtime.isVerbose()) {
+                runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, buildString(runtime, "instance variable ", ids(runtime, name)," not initialized"));
             }
             result = context.nil;
         }

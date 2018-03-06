@@ -29,8 +29,9 @@ package org.jruby.internal.runtime;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+
+import org.jruby.RubyString;
 import org.jruby.RubyThread;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -39,12 +40,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class NativeThread implements ThreadLike {
     private final Reference<Thread> nativeThread;
     public final RubyThread rubyThread;
-    public String rubyName;
+    public IRubyObject rubyName;
     
     public NativeThread(RubyThread rubyThread, Thread nativeThread) {
         this.rubyThread = rubyThread;
         this.nativeThread = new WeakReference<>(nativeThread);
-        this.rubyName = null;
+        this.rubyName = rubyThread.getContext().nil;
     }
     
     public void start() {
@@ -108,15 +109,26 @@ public class NativeThread implements ThreadLike {
         return nativeThread.get();
     }
 
+    // FIXME: bytelist_love: ThreadLike should deprecate these in favor of IRubyObject versions so we can properly encode names.
     @Override
+    @Deprecated
     public void setRubyName(String name) {
-        this.rubyName = name;
+        if (name == null) {
+            rubyName = rubyThread.getContext().nil;
+        } else {
+            rubyName = rubyThread.getContext().runtime.newString(name);
+        }
         updateName();
     }
 
+    public void setRubyName(IRubyObject name) {
+        this.rubyName = name;
+    }
+
     @Override
+    @Deprecated
     public String getRubyName() {
-        return rubyName;
+        return rubyName.asJavaString();
     }
 
     @Override
@@ -126,18 +138,11 @@ public class NativeThread implements ThreadLike {
         Thread thread = getThread();
         if (thread != null) nativeName = thread.getName();
 
-        if (rubyName == null || rubyName.length() == 0) {
-            if (nativeName.equals("")) {
-                return "(unnamed)";
-            } else {
-                return nativeName;
-            }
-        } else {
-            if (nativeName.equals("")) {
-                return rubyName.toString();
-            }
-            return rubyName + " (" + nativeName + ")";
+        if (rubyName.isNil() || ((RubyString) rubyName).size() == 0) {
+            return nativeName.equals("") ? "(unnamed)" :  nativeName;
         }
+
+        return nativeName.equals("") ? rubyName.toString() : rubyName + " (" + nativeName + ")";
     }
 
     private static final String RUBY_THREAD_PREFIX = "Ruby-";
@@ -146,7 +151,7 @@ public class NativeThread implements ThreadLike {
         // "Ruby-0-Thread-16: (irb):21"
         // "Ruby-0-Thread-17@worker#1: (irb):21"
         String newName;
-        String setName = rubyName;
+        String setName = rubyName.asJavaString();
         Thread thread = getThread();
 
         if (thread == null) return;

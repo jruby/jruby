@@ -57,6 +57,7 @@ import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.CodegenUtils.sig;
 import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import org.jruby.util.io.EncodingUtils;
@@ -911,7 +912,7 @@ public class Helpers {
         if (klass == null) {
             if (name != null) {
                 Ruby runtime = context.runtime;
-                throw runtime.newNameError(buildString(runtime, "superclass method '", decode(runtime, name), "' disabled"), name);
+                throw runtime.newNameError(buildString(runtime, "superclass method '", ids(runtime, name), "' disabled"), name);
             }
         }
         if (name == null) {
@@ -1695,7 +1696,7 @@ public class Helpers {
 
     public static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-            throw runtime.newTypeError(buildString(runtime, "can't define singleton method \"", decode(runtime, name), "\" for ", receiver.getMetaClass().rubyBaseName()));
+            throw runtime.newTypeError(buildString(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", receiver.getMetaClass().rubyBaseName()));
         }
 
         if (receiver.isFrozen()) {
@@ -1833,13 +1834,9 @@ public class Helpers {
         return context.nil;
     }
 
-    public static RubyString decode(Ruby runtime, String id) {
-        return (RubyString) runtime.newSymbol(id).to_s();
-    }
-
-    private static void warnAboutUninitializedIvar(Ruby runtime, String internedName) {
+    private static void warnAboutUninitializedIvar(Ruby runtime, String id) {
         runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED,
-                buildString(runtime, "instance variable ", decode(runtime, internedName), " not initialized"));
+                buildString(runtime, "instance variable ", ids(runtime, id), " not initialized"));
     }
 
     public static IRubyObject setInstanceVariable(IRubyObject value, IRubyObject self, String name) {

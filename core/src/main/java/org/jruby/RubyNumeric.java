@@ -67,6 +67,7 @@ import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negative_p;
 import static org.jruby.util.Numeric.f_to_r;
 import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.ids;
 
 /**
  * Base class for all numerical types in ruby.
@@ -430,7 +431,7 @@ public class RubyNumeric extends RubyObject {
             context.setErrorInfo($ex); // restore $!
 
             if (error) {
-                throw runtime.newTypeError(buildString(runtime, other.getMetaClass().rubyName(), " can't be coerced into ", getMetaClass().rubyName()));
+                throw runtime.newTypeError(buildString(runtime, other.getMetaClass().rubyName(), " can't be coerced into ", getMetaClass().toRubyString(context)));
             }
             return null;
         }
@@ -656,7 +657,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "singleton_method_added")
     public static IRubyObject sadded(IRubyObject self, IRubyObject name) {
         Ruby runtime = self.getRuntime();
-        throw runtime.newTypeError(buildString(runtime, "can't define singleton method \"", name, "\" for ", self.getType().rubyName()));
+        throw runtime.newTypeError(buildString(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", self.getType().rubyName()));
     }
 
     /** num_init_copy

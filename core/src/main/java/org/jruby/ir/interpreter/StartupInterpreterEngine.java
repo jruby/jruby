@@ -23,6 +23,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
+import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.ids;
+
 /**
  * This interpreter is meant to interpret the instructions generated directly from IRBuild.
  */
@@ -146,7 +149,8 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                 Object result = a == null ? null : (IRubyObject)a.get(object);
                 if (result == null) {
                     if (context.runtime.isVerbose()) {
-                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
+                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED,
+                                buildString(context.runtime, "instance variable ", ids(context.runtime, gfi.getRef()), " not initialized"));
                     }
                     result = context.nil;
                 }

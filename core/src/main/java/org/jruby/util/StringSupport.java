@@ -841,10 +841,14 @@ public final class StringSupport {
     /**
      * rb_str_dump
      */
+    public static ByteList dumpCommon(Ruby runtime, ByteList bytelist) {
+        return dumpCommon(runtime, bytelist, false);
+    }
 
-    public static ByteList dumpCommon(Ruby runtime, ByteList byteList) {
+    public static ByteList dumpCommon(Ruby runtime, ByteList byteList, boolean quoteOnlyIfNeeded) {
         ByteList buf = null;
         Encoding enc = byteList.getEncoding();
+        boolean includingsNonprintable = false;
 
         int p = byteList.getBegin();
         int end = p + byteList.getRealSize();
@@ -866,6 +870,7 @@ public final class StringSupport {
                 if (ASCIIEncoding.INSTANCE.isPrint(c)) {
                     len++;
                 } else {
+                    includingsNonprintable = true;
                     if (enc.isUTF8() && c > 0x7F) {
                         int n = preciseLength(enc, bytes, p - 1, end) - 1;
                         if (MBCLEN_CHARFOUND_LEN(n) > 0) {
@@ -897,7 +902,7 @@ public final class StringSupport {
         p = byteList.getBegin();
         end = p + byteList.getRealSize();
 
-        out[q++] = '"';
+        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
         while (p < end) {
             int c = bytes[p++] & 0xff;
             if (c == '"' || c == '\\') {
@@ -954,7 +959,7 @@ public final class StringSupport {
                 q = outBytes.getRealSize();
             }
         }
-        out[q++] = '"';
+        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
         outBytes.setRealSize(q);
         assert out == outBytes.getUnsafeBytes(); // must not reallocate
 

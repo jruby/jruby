@@ -704,7 +704,7 @@ public class RubyComplex extends RubyNumeric {
         Ruby runtime = context.runtime;
         if (other instanceof RubyComplex) return runtime.newArray(other, this);
 
-        throw runtime.newTypeError(buildString(runtime, other.getMetaClass().rubyName(), " can't be coerced into ", getMetaClass().rubyName()));
+        throw runtime.newTypeError(buildString(runtime, other.getMetaClass().toRubyString(context), " can't be coerced into ", getMetaClass().toRubyString(context)));
     }
 
     /** nucomp_abs 

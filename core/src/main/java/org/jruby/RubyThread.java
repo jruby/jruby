@@ -1113,21 +1113,26 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @Override
     public synchronized IRubyObject inspect() {
         // FIXME: There's some code duplication here with RubyObject#inspect
-        StringBuilder part = new StringBuilder(32);
-        String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(':');
-        part.append(identityString());
-        CharSequence name = threadImpl.getRubyName(); // thread.name
+        RubyString result = getRuntime().newString("#<");
+
+        result.cat(getMetaClass().getRealClass().rubyName());
+        result.catString(identityString());
+        String name = threadImpl.getRubyName(); // thread.name
         if (notEmpty(name)) {
-            part.append('@').append(name);
+            result.cat('@');
+            result.catString(name);
+            result.cat(':');
         }
         if (notEmpty(file) && line >= 0) {
-            part.append('@').append(file).append(':').append(line + 1);
+            result.cat('@');
+            result.catString(file);
+            result.cat(':');
+            result.catString("" + (line + 1));
         }
-        part.append(' ');
-        part.append(status.toString().toLowerCase());
-        part.append('>');
-        return getRuntime().newString(part.toString());
+        result.cat(' ');
+        result.catString(status.toString().toLowerCase());
+        result.cat('>');
+        return result;
     }
 
     private boolean notEmpty(CharSequence str) {
