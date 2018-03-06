@@ -4509,13 +4509,13 @@ public final class Ruby implements Constantizable {
     /**
      * Add a method, so it can be printed out later.
      *
-     * @param name the name of the method
+     * @param id raw name String of the method to be profiled
      * @param method
      */
-    void addProfiledMethod(final ByteList name, final DynamicMethod method) {
+    void addProfiledMethod(final String id, final DynamicMethod method) {
         if (!config.isProfiling() || method.isUndefined()) return;
 
-        getProfilingService().addProfiledMethod(name, method);
+        getProfilingService().addProfiledMethod(id, method);
     }
 
     /**

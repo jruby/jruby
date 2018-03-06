@@ -132,11 +132,10 @@ public abstract class ProfilePrinter {
         final String displayName;
         if (profileMethod != null) {
             DynamicMethod method = profileMethod.getMethod();
-            ByteList name = profileMethod.getName();
-            // FIXME: bytelist_love: replace with just bytelist once we process Method to be ByteList.
-            if (name == null) name = StringSupport.stringAsUTF8ByteList(method.getName());
-            // FIXME: bytelist_love: consider all bytelist version of moduleHashMethod once name in Module is ByteList.
-            displayName = moduleHashMethod(method.getImplementationClass(), name.toString());
+            String id = profileMethod.getName();
+            if (id == null) id = method.getName();
+            // FIXME: bytelist_love: we are still using id here but methodName should return either id or encoded name depending on how it is used.
+            displayName = moduleHashMethod(method.getImplementationClass(), id.toString());
         } else {
             displayName = "<unknown>";
         }

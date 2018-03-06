@@ -79,14 +79,10 @@ public class ProfiledMethods {
         return methods;
     }
 
-    public void addProfiledMethod(final String name, final DynamicMethod method) {
-        addProfiledMethod(StringSupport.stringAsUTF8ByteList(name), method);
-    }
-
-    public void addProfiledMethod(ByteList name, DynamicMethod method ) {
+    public void addProfiledMethod(String name, DynamicMethod method ) {
         final long serial = method.getSerialNumber();
 
-        if ( getMethods().size() >= getProfileMaxMethods()) {
+        if (getMethods().size() >= getProfileMaxMethods()) {
             getWarnings().warnOnce(IRubyWarnings.ID.PROFILE_MAX_METHODS_EXCEEDED, "method count exceeds max of " + getConfig().getProfileMaxMethods() + "; no new methods will be profiled");
             return;
         }

@@ -7,17 +7,16 @@ import org.jruby.util.ByteList;
  * A dynamic method + it's invocation name holder for profiling purposes.
  */
 public class ProfiledMethod {
-
-    final ByteList name;
+    final String id;
     final DynamicMethod method;
     
-    public ProfiledMethod(ByteList name, DynamicMethod method) {
-        this.name = name;
+    public ProfiledMethod(String id, DynamicMethod method) {
+        this.id = id;
         this.method = method;
     }
 
-    public ByteList getName() {
-        return name;
+    public String getName() {
+        return id;
     }
 
     public DynamicMethod getMethod() {

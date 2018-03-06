@@ -34,8 +34,6 @@ import org.jruby.runtime.profile.MethodEnhancer;
 import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.profile.ProfileReporter;
 import org.jruby.runtime.profile.ProfilingService;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * This implementation of {@link org.jruby.runtime.profile.ProfilingService} will be used for all profiling methods
@@ -68,22 +66,19 @@ public class BuiltinProfilingService implements ProfilingService {
     }
 
     @Override
-    public void addProfiledMethod(String name, DynamicMethod method) {
-        addProfiledMethod(StringSupport.stringAsUTF8ByteList(name), method);
+    public void addProfiledMethod(String id, DynamicMethod method) {
+        profiledMethods.addProfiledMethod(id, method);
     }
 
-    @Override
-    public void addProfiledMethod(ByteList name, DynamicMethod method) {
-        profiledMethods.addProfiledMethod(name, method);
-    }
     /**
      * @author Andre Kullmann
      */
     private final class DefaultMethodEnhancer implements MethodEnhancer {
         @Override
         @SuppressWarnings("deprecation")
-        public DynamicMethod enhance(ByteList name, DynamicMethod delegate) {
-            profiledMethods.addProfiledMethod(name, delegate);
+        public DynamicMethod enhance(String id, DynamicMethod delegate) {
+            profiledMethods.addProfiledMethod(id, delegate);
+
             return new ProfilingDynamicMethod(delegate);
         }
     }

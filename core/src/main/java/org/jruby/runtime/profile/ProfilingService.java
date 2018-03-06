@@ -28,7 +28,6 @@ package org.jruby.runtime.profile;
 import org.jruby.Ruby;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.util.ByteList;
 
 /**
  * A ProfilingService is used to profile jruby programs.
@@ -67,8 +66,5 @@ public interface ProfilingService {
      * @param name the name
      * @param method the method
      */
-    @Deprecated
     public void addProfiledMethod(String name, DynamicMethod method);
-
-    public void addProfiledMethod(ByteList name, DynamicMethod method);
 }

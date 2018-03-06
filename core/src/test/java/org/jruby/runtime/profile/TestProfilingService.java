@@ -3,7 +3,6 @@ package org.jruby.runtime.profile;
 import org.jruby.Ruby;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.util.ByteList;
 
 /**
  * @author Andre Kullmann
@@ -21,7 +20,7 @@ public class TestProfilingService implements ProfilingService {
     public MethodEnhancer newMethodEnhancer(Ruby runtime) {
         return new MethodEnhancer() {
             @Override
-            public DynamicMethod enhance(ByteList name, DynamicMethod delegate) {
+            public DynamicMethod enhance(String id, DynamicMethod delegate) {
                 return delegate;
             }
         };
@@ -34,10 +33,5 @@ public class TestProfilingService implements ProfilingService {
 
     @Override
     public void addProfiledMethod(String name, DynamicMethod method) {
-    }
-
-    @Override
-    public void addProfiledMethod(ByteList name, DynamicMethod method) {
-
     }
 }

@@ -497,7 +497,7 @@ public class RubyModule extends RubyObject {
 
         methodLocation.getMethodsForWrite().put(name, method);
 
-        runtime.addProfiledMethod(name, method);
+        runtime.addProfiledMethod(name.toString(), method);
         return method;
     }
 
@@ -1581,7 +1581,7 @@ public class RubyModule extends RubyObject {
             if (method.isUndefined()) return new CacheEntry(method, token);
 
             CacheEntry delegated = previous.newCacheEntry(name, method, token);
-            DynamicMethod enhancedMethod = getMethodEnhancer().enhance(name, delegated.method);
+            DynamicMethod enhancedMethod = getMethodEnhancer().enhance(name.toString(), delegated.method);
 
             return new CacheEntry(enhancedMethod, delegated.token);
         }
