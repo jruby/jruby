@@ -114,7 +114,7 @@ public class NativeThread implements ThreadLike {
     @Deprecated
     public void setRubyName(String name) {
         if (name == null) {
-            rubyName = rubyThread.getContext().nil;
+            rubyName = null;
         } else {
             rubyName = rubyThread.getContext().runtime.newString(name);
         }
@@ -151,7 +151,7 @@ public class NativeThread implements ThreadLike {
         // "Ruby-0-Thread-16: (irb):21"
         // "Ruby-0-Thread-17@worker#1: (irb):21"
         String newName;
-        String setName = rubyName.asJavaString();
+        String setName = rubyName == null ? null : rubyName.asJavaString();
         Thread thread = getThread();
 
         if (thread == null) return;
