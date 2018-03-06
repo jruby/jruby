@@ -45,7 +45,7 @@ public class NativeThread implements ThreadLike {
     public NativeThread(RubyThread rubyThread, Thread nativeThread) {
         this.rubyThread = rubyThread;
         this.nativeThread = new WeakReference<>(nativeThread);
-        this.rubyName = rubyThread.getContext().nil;
+        this.rubyName = null;
     }
     
     public void start() {
@@ -128,7 +128,7 @@ public class NativeThread implements ThreadLike {
     @Override
     @Deprecated
     public String getRubyName() {
-        return rubyName.asJavaString();
+        return rubyName == null ? null : rubyName.asJavaString();
     }
 
     @Override
@@ -138,7 +138,7 @@ public class NativeThread implements ThreadLike {
         Thread thread = getThread();
         if (thread != null) nativeName = thread.getName();
 
-        if (rubyName.isNil() || ((RubyString) rubyName).size() == 0) {
+        if (rubyName == null || rubyName.isNil() || ((RubyString) rubyName).size() == 0) {
             return nativeName.equals("") ? "(unnamed)" :  nativeName;
         }
 
