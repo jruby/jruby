@@ -1115,13 +1115,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // FIXME: There's some code duplication here with RubyObject#inspect
         RubyString result = getRuntime().newString("#<");
 
-        result.cat(getMetaClass().getRealClass().rubyName());
+        result.cat(getMetaClass().getRealClass().toRubyString(getRuntime().getCurrentContext()));
+        result.cat(':');
         result.catString(identityString());
         String name = threadImpl.getRubyName(); // thread.name
         if (notEmpty(name)) {
             result.cat('@');
             result.catString(name);
-            result.cat(':');
         }
         if (notEmpty(file) && line >= 0) {
             result.cat('@');
