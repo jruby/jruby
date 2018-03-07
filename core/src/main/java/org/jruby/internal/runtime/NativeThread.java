@@ -40,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class NativeThread implements ThreadLike {
     private final Reference<Thread> nativeThread;
     public final RubyThread rubyThread;
-    public IRubyObject rubyName;
+    public String rubyName;
     
     public NativeThread(RubyThread rubyThread, Thread nativeThread) {
         this.rubyThread = rubyThread;
@@ -111,24 +111,15 @@ public class NativeThread implements ThreadLike {
 
     // FIXME: bytelist_love: ThreadLike should deprecate these in favor of IRubyObject versions so we can properly encode names.
     @Override
-    @Deprecated
     public void setRubyName(String name) {
-        if (name == null) {
-            rubyName = null;
-        } else {
-            rubyName = rubyThread.getContext().runtime.newString(name);
-        }
-        updateName();
-    }
-
-    public void setRubyName(IRubyObject name) {
         this.rubyName = name;
+        updateName();
     }
 
     @Override
     @Deprecated
     public String getRubyName() {
-        return rubyName == null ? null : rubyName.asJavaString();
+        return rubyName;
     }
 
     @Override
@@ -138,11 +129,11 @@ public class NativeThread implements ThreadLike {
         Thread thread = getThread();
         if (thread != null) nativeName = thread.getName();
 
-        if (rubyName == null || rubyName.isNil() || ((RubyString) rubyName).size() == 0) {
+        if (rubyName == null || rubyName.length() == 0) {
             return nativeName.equals("") ? "(unnamed)" :  nativeName;
         }
 
-        return nativeName.equals("") ? rubyName.toString() : rubyName + " (" + nativeName + ")";
+        return nativeName.equals("") ? rubyName : rubyName + " (" + nativeName + ")";
     }
 
     private static final String RUBY_THREAD_PREFIX = "Ruby-";
@@ -151,7 +142,7 @@ public class NativeThread implements ThreadLike {
         // "Ruby-0-Thread-16: (irb):21"
         // "Ruby-0-Thread-17@worker#1: (irb):21"
         String newName;
-        String setName = rubyName == null ? null : rubyName.asJavaString();
+        String setName = rubyName;
         Thread thread = getThread();
 
         if (thread == null) return;
