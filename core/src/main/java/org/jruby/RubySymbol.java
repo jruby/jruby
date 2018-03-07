@@ -203,7 +203,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     public boolean validConstantName() {
         return ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
-            index == 0 && encoding.isUpper(codepoint) || index != 0 && (encoding.isAlnum(codepoint) || codepoint == '_'));
+            index == 0 && encoding.isUpper(codepoint) ||
+                    index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
     }
 
     @Override
