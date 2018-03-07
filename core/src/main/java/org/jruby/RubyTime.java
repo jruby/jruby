@@ -436,7 +436,7 @@ public class RubyTime extends RubyObject {
         this.dt = dt;
     }
 
-    protected long getTimeInMillis() {
+    public long getTimeInMillis() {
         return dt.getMillis();
     }
 
@@ -565,9 +565,7 @@ public class RubyTime extends RubyObject {
         throw new AssertionError(java.util.Arrays.toString(args));
     }
 
-    /**
-     * @see #strftime(ThreadContext, IRubyObject)
-     */
+    @Deprecated
     public RubyString strftime(IRubyObject format) {
         return strftime(getRuntime().getCurrentContext(), format);
     }
@@ -581,11 +579,11 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (other.isNil()) {
-            return context.runtime.getFalse();
-        }
         if (other instanceof RubyTime) {
             return context.runtime.newBoolean(cmp((RubyTime) other) == 0);
+        }
+        if (other == context.nil) {
+            return context.runtime.getFalse();
         }
 
         return RubyComparable.op_equal(context, this, other);
@@ -773,22 +771,21 @@ public class RubyTime extends RubyObject {
     @Override
     @JRubyMethod(name = {"to_s", "inspect"})
     public IRubyObject to_s() {
-        return inspectCommon(TO_S_FORMATTER, TO_S_UTC_FORMATTER);
+        final String str = inspectCommon(TO_S_FORMATTER, TO_S_UTC_FORMATTER);
+        return RubyString.newString(getRuntime(), str, USASCIIEncoding.INSTANCE);
     }
 
     public final IRubyObject to_s19() {
         return to_s();
     }
 
-    private RubyString inspectCommon(DateTimeFormatter formatter, DateTimeFormatter utcFormatter) {
+    private String inspectCommon(final DateTimeFormatter formatter, final DateTimeFormatter utcFormatter) {
         DateTimeFormatter simpleDateFormat;
         if (dt.getZone() == DateTimeZone.UTC) {
             simpleDateFormat = utcFormatter;
         } else {
             simpleDateFormat = formatter;
         }
-
-        String result = simpleDateFormat.print(dt);
 
         if (isTzRelative) {
             // display format needs to invert the UTC offset if this object was
@@ -797,16 +794,21 @@ public class RubyTime extends RubyObject {
             int offset = dtz.toTimeZone().getOffset(dt.getMillis());
             DateTimeZone invertedDTZ = DateTimeZone.forOffsetMillis(offset);
             DateTime invertedDT = dt.withZone(invertedDTZ);
-            result = simpleDateFormat.print(invertedDT);
+            return simpleDateFormat.print(invertedDT);
         }
 
-        return RubyString.newString(getRuntime(), result, USASCIIEncoding.INSTANCE);
+        return simpleDateFormat.print(dt);
+    }
+
+    @Override
+    public String toString() {
+        return inspectCommon(TO_S_FORMATTER, TO_S_UTC_FORMATTER);
     }
 
     @JRubyMethod
     @Override
     public RubyArray to_a() {
-        return RubyArray.newArrayMayCopy(getRuntime(), sec(), min(), hour(), mday(), month(), year(), wday(), yday(), isdst(), zone());
+        return RubyArray.newArrayNoCopy(getRuntime(), sec(), min(), hour(), mday(), month(), year(), wday(), yday(), isdst(), zone());
     }
 
     @JRubyMethod
