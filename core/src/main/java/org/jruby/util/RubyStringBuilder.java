@@ -4,8 +4,10 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
@@ -17,6 +19,21 @@ import static org.jruby.util.StringSupport.codePoint;
  * Helper methods to make Ruby Strings without the ceremony of manually building the string up.
   */
 public class RubyStringBuilder {
+    // FIXME: bytelist_love: should this be variadic?
+    public static RubyString types(Ruby runtime, RubyModule type) {
+        ThreadContext context = runtime.getCurrentContext();
+
+        return inspectIdentifierByteList(runtime, type.toRubyString(context).getByteList());
+    }
+
+    public static RubyString types(Ruby runtime, RubyModule type1, RubyModule type2) {
+        ThreadContext context = runtime.getCurrentContext();
+        RubyString fullTypeName = type1.toRubyString(context).catString("::").cat(type2.toRubyString(context));
+
+        return inspectIdentifierByteList(runtime, fullTypeName.getByteList());
+    }
+
+
     public static RubyString ids(Ruby runtime, String id) {
         ByteList identifier = runtime.newSymbol(id).getBytes();
 
@@ -148,14 +165,8 @@ public class RubyStringBuilder {
         }
         return result;
     }
-
-    public static RubyString dumpedValue(Ruby runtime, IRubyObject value) {
-        RubyString string = value.asString();
-
-        return runtime.newString(StringSupport.dumpCommon(runtime, string.getByteList(), true));
-    }
     
-    public static String buildString(Ruby runtime, IRubyObject value, String message) {
+    public static String str(Ruby runtime, IRubyObject value, String message) {
         RubyString buf = (RubyString) value.asString().dup();
 
         buf.cat19(runtime.newString(message));
@@ -163,7 +174,7 @@ public class RubyStringBuilder {
         return buf.toString();
     }
 
-    public static String buildString(Ruby runtime, String message, IRubyObject value) {
+    public static String str(Ruby runtime, String message, IRubyObject value) {
         RubyString buf = runtime.newString(message);
 
         buf.cat19(value.asString());
@@ -171,7 +182,7 @@ public class RubyStringBuilder {
         return buf.toString();
     }
 
-    public static String buildString(Ruby runtime, String messageBegin, IRubyObject value, String messageEnd) {
+    public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageEnd) {
         RubyString buf = runtime.newString(messageBegin);
 
         buf.cat19(value.asString());
@@ -180,7 +191,7 @@ public class RubyStringBuilder {
         return buf.toString();
     }
 
-    public static String buildString(Ruby runtime, IRubyObject value, String message, IRubyObject value2) {
+    public static String str(Ruby runtime, IRubyObject value, String message, IRubyObject value2) {
         RubyString buf = (RubyString) value.asString().dup();
 
         buf.cat19(runtime.newString(message));
@@ -189,7 +200,7 @@ public class RubyStringBuilder {
         return buf.toString();
     }
 
-    public static String buildString(Ruby runtime, IRubyObject value, String message, IRubyObject value2, String message2) {
+    public static String str(Ruby runtime, IRubyObject value, String message, IRubyObject value2, String message2) {
         RubyString buf = (RubyString) value.asString().dup();
 
         buf.cat19(runtime.newString(message));
@@ -199,7 +210,7 @@ public class RubyStringBuilder {
         return buf.toString();
     }
 
-    public static String buildString(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2) {
+    public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2) {
         RubyString buf = runtime.newString(messageBegin);
 
         buf.cat19(value.asString());
@@ -209,7 +220,7 @@ public class RubyStringBuilder {
         return buf.toString();
     }
 
-    public static String buildString(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2, String messageEnd) {
+    public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, IRubyObject value2, String messageEnd) {
         RubyString buf = runtime.newString(messageBegin);
 
         buf.cat19(value.asString());

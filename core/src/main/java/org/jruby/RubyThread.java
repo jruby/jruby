@@ -89,7 +89,9 @@ import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -669,7 +671,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             rubyThread.callInit(args, block);
 
             if (rubyThread.threadImpl == ThreadLike.DUMMY) {
-                throw runtime.newThreadError(buildString(runtime, "uninitialized thread - check " , ((RubyClass) recv).rubyName(), "#initialize"));
+                throw runtime.newThreadError(str(runtime, "uninitialized thread - check " , types(runtime, (RubyClass) recv), "#initialize"));
             }
         } else {
             // for Thread::start, which does not call the subclass's initialize
@@ -886,13 +888,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private IRubyObject getSymbolKey(IRubyObject originalKey) {
-        if (originalKey instanceof RubySymbol) {
-            return originalKey;
-        } else if (originalKey instanceof RubyString) {
-            return getRuntime().newSymbol(originalKey.asJavaString());
-        } else {
-            throw getRuntime().newTypeError(buildString(getRuntime(), originalKey, " is not a symbol nor a string"));
-        }
+        if (originalKey instanceof RubySymbol) return originalKey;
+
+        Ruby runtime = getRuntime();
+
+        if (originalKey instanceof RubyString) return runtime.newSymbol(((RubyString) originalKey).getByteList());
+
+        throw getRuntime().newTypeError(str(getRuntime(), ids(runtime, originalKey), " is not a symbol nor a string"));
     }
 
     private synchronized Map<IRubyObject, IRubyObject> getFiberLocals() {

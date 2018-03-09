@@ -1,13 +1,10 @@
 package org.jruby.ir.interpreter;
 
-import java.util.EmptyStackException;
-import java.util.Stack;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
@@ -23,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 
 /**
@@ -150,7 +147,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                 if (result == null) {
                     if (context.runtime.isVerbose()) {
                         context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED,
-                                buildString(context.runtime, "instance variable ", ids(context.runtime, gfi.getRef()), " not initialized"));
+                                str(context.runtime, "instance variable ", ids(context.runtime, gfi.getRef()), " not initialized"));
                     }
                     result = context.nil;
                 }

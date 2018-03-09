@@ -104,7 +104,6 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.opto.ConstantInvalidator;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
@@ -135,7 +134,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 
 
@@ -1863,7 +1862,7 @@ public class RubyModule extends RubyObject {
                 RubyClass tmp = clazz.getSuperClass();
                 while (tmp != null && tmp.isIncluded()) tmp = tmp.getSuperClass(); // need to skip IncludedModuleWrappers
                 if (tmp != null) tmp = tmp.getRealClass();
-                if (tmp != superClazz) throw runtime.newTypeError(buildString(runtime, "superclass mismatch for class ", decode(name)));
+                if (tmp != superClazz) throw runtime.newTypeError(str(runtime, "superclass mismatch for class ", ids(runtime, name)));
                 // superClazz = null;
             }
         } else if ((clazz = searchProvidersForClass(name, superClazz)) != null) {
@@ -1913,7 +1912,7 @@ public class RubyModule extends RubyObject {
         IRubyObject moduleObj = getConstantAtSpecial(name);
         RubyModule module;
         if (moduleObj != null) {
-            if (!moduleObj.isModule()) throw runtime.newTypeError(buildString(runtime, runtime.newSymbol(name), " is not a module"));
+            if (!moduleObj.isModule()) throw runtime.newTypeError(str(runtime, ids(runtime, name), " is not a module"));
             module = (RubyModule)moduleObj;
         } else if ((module = searchProvidersForModule(name)) != null) {
             // reopen a java module
@@ -3401,7 +3400,7 @@ public class RubyModule extends RubyObject {
         }
 
         // FIXME: bytelist_love: nameError should use symbol and not Java String.
-        throw runtime.newNameError(buildString(runtime, "wrong constant name", ids(runtime, symbol)), symbol.asJavaString());
+        throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, symbol)), symbol.getRawString());
     }
 
     @JRubyMethod(name = "const_defined?", required = 1, optional = 1)
@@ -3495,6 +3494,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_set(IRubyObject name, IRubyObject value) {
         RubySymbol symbol;
 
+        // FIXME: bytelist_love: we need some mechanism for new values to construct a symbol so the id-equivalent can look stuff up like these exprs
         if (name instanceof RubySymbol) {
             symbol = (RubySymbol) name;
         } else {
@@ -3503,7 +3503,7 @@ public class RubyModule extends RubyObject {
 
         if (!symbol.validConstantName()) {
             // FIXME: bytelist_love: nameError should use symbol and not Java String.
-            throw getRuntime().newNameError(buildString(getRuntime(), "wrong constant name ", name), symbol.asJavaString());
+            throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", name), symbol.getRawString());
 
         }
 

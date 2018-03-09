@@ -81,7 +81,9 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.io.EncodingUtils.encStrBufCat;
 
 import org.jruby.runtime.ivars.VariableTableManager;
@@ -618,7 +620,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 return respondTo.call(context, this, metaClass, respondName, mname).isTrue();
             }
             if ( arity.required() != 2 ) {
-                throw runtime.newArgumentError(buildString(runtime, runtime.newSymbol(respondName), " must accept 1 or 2 arguments (requires " + arity.getValue() + ")"));
+                throw runtime.newArgumentError(str(runtime, ids(runtime, respondName), " must accept 1 or 2 arguments (requires " + arity.getValue() + ")"));
             }
         }
 
@@ -682,7 +684,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public String asJavaString() {
         IRubyObject str = checkStringType();
         if (!str.isNil()) return ((RubyString) str).asJavaString();
-        throw getRuntime().newTypeError(buildString(getRuntime(), inspect(), " is not a string"));
+        throw getRuntime().newTypeError(str(getRuntime(), inspect(), " is not a string"));
     }
 
     /** rb_obj_as_string
@@ -753,7 +755,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         IRubyObject result = TypeConverter.convertToType(context, this, runtime.getInteger(), sites.to_int_checked, true);
 
         if (!(result instanceof RubyInteger)) {
-            throw getRuntime().newTypeError(buildString(runtime, getMetaClass().rubyName(), "#to_int should return Integer"));
+            throw getRuntime().newTypeError(str(runtime, types(runtime, getMetaClass()), "#to_int should return Integer"));
         }
 
         return (RubyInteger) result;
@@ -769,18 +771,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (convertMethod.equals("to_int")) return convertToInteger();
 
         IRubyObject result;
+        Ruby runtime = getRuntime();
         if (convertMethod.equals("to_i")) {
-            Ruby runtime = getRuntime();
             ThreadContext context = runtime.getCurrentContext();
             BasicObjectSites sites = sites(context);
             result = TypeConverter.convertToType(context, this, runtime.getInteger(), sites.to_i_checked, true);
         } else {
-            result = TypeConverter.convertToType(this, getRuntime().getInteger(), convertMethod, true);
+            result = TypeConverter.convertToType(this, runtime.getInteger(), convertMethod, true);
         }
 
         if (!(result instanceof RubyInteger)) {
-            Ruby runtime = getRuntime();
-            throw runtime.newTypeError(buildString(runtime, getMetaClass().rubyName(), "#", runtime.newSymbol(convertMethod), " should return Integer"));
+            throw runtime.newTypeError(str(runtime, types(runtime, getMetaClass()), "#", ids(runtime, convertMethod), " should return Integer"));
         }
 
         return (RubyInteger) result;
@@ -987,7 +988,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (!opts.isNil()) {
             IRubyObject freeze = ((RubyHash) opts).fastARef(runtime.newSymbol("freeze"));
             if (freeze != null && freeze != runtime.getTrue() && freeze != runtime.getFalse()) {
-                throw runtime.newArgumentError(buildString(runtime, "unexpected value for freeze: ", freeze.getType().rubyName()));
+                throw runtime.newArgumentError(str(runtime, "unexpected value for freeze: ", types(runtime, freeze.getType())));
             }
             if (freeze != null) {
                 kwfreeze = freeze.isTrue();
@@ -1001,9 +1002,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         Ruby runtime = context.runtime;
 
         if (isSpecialObject()) {
-            if (!freeze) {
-                throw runtime.newArgumentError(buildString(runtime, "can't unfreeze ", getType().rubyName()));
-            }
+            if (!freeze) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
+
             return this;
         }
 
@@ -2488,7 +2488,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public IRubyObject singleton_method(IRubyObject name) {
         RubySymbol symbol = TypeConverter.checkID(name);
-        final String methodName = symbol.asJavaString();
+        final String methodName = symbol.getRawString();
         final RubyClass klass = metaClass;
         if (klass.isSingleton()) {
             DynamicMethod method = klass.searchMethod(methodName);
@@ -2498,7 +2498,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 return newMethod;
             }
         }
-        throw getRuntime().newNameError(buildString(getRuntime(), "undefined method `", symbol,  "' for `", inspect(), "'"), methodName);
+        throw getRuntime().newNameError(str(getRuntime(), "undefined method `", symbol,  "' for `", inspect(), "'"), methodName);
     }
 
     /** rb_obj_method

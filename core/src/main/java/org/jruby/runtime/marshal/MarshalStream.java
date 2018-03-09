@@ -64,7 +64,8 @@ import org.jruby.util.ByteList;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.encoding.MarshalEncoding;
 
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -211,15 +212,16 @@ public class MarshalStream extends FilterOutputStream {
         String path = clazz.getName();
         
         if (path.charAt(0) == '#') {
-            throw clazz.getRuntime().newTypeError(buildString(clazz.getRuntime(),
-                    "can't dump anonymous " + (clazz.isClass() ? "class" : "module") + " ", clazz.rubyName()));
+            Ruby runtime = clazz.getRuntime();
+            String type = clazz.isClass() ? "class" : "module";
+            throw runtime.newTypeError(str(runtime, "can't dump anonymous " + type + " ", types(runtime, clazz)));
         }
         
         RubyModule real = clazz.isModule() ? clazz : ((RubyClass)clazz).getRealClass();
         Ruby runtime = clazz.getRuntime();
 
         if (runtime.getClassFromPath(path) != real) {
-            throw runtime.newTypeError(buildString(runtime, clazz.rubyName(), " can't be referred"));
+            throw runtime.newTypeError(str(runtime, types(runtime, clazz), " can't be referred"));
         }
         return path;
     }
@@ -232,7 +234,7 @@ public class MarshalStream extends FilterOutputStream {
             if (value instanceof DataType) {
                 Ruby runtime = value.getRuntime();
 
-                throw runtime.newTypeError(buildString(runtime, "no marshal_dump is defined for class ", value.getMetaClass().rubyName()));
+                throw runtime.newTypeError(str(runtime, "no marshal_dump is defined for class ", types(runtime, value.getMetaClass())));
             }
             ClassIndex nativeClassIndex = ((CoreObjectType)value).getNativeClassIndex();
 
@@ -314,7 +316,7 @@ public class MarshalStream extends FilterOutputStream {
                 write('T');
                 return;
             default:
-                throw runtime.newTypeError(buildString(runtime, "can't dump ", value.getMetaClass().rubyName()));
+                throw runtime.newTypeError(str(runtime, "can't dump ", types(runtime, value.getMetaClass())));
             }
         } else {
             dumpDefaultObjectHeader(value.getMetaClass());
@@ -397,7 +399,7 @@ public class MarshalStream extends FilterOutputStream {
         if (type.getName().charAt(0) == '#') {
             Ruby runtime = obj.getRuntime();
 
-            throw runtime.newTypeError(buildString(runtime, "can't dump anonymous class ", type.rubyName()));
+            throw runtime.newTypeError(str(runtime, "can't dump anonymous class ", types(runtime, type)));
         }
         
         // w_symbol

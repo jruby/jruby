@@ -30,7 +30,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.RegexpOptions;
 
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 
 public class RuntimeCache {
@@ -172,7 +172,8 @@ public class RuntimeCache {
     }
 
     private void warnAboutUninitializedIvar(Ruby runtime, String name) {
-        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, buildString(runtime, "instance variable ", ids(runtime, name), " not initialized"));
+        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED,
+                str(runtime, "instance variable ", ids(runtime, name), " not initialized"));
     }
 
     public final IRubyObject setVariable(int index, String name, IRubyObject object, IRubyObject value) {

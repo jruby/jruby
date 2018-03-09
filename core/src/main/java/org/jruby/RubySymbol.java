@@ -67,7 +67,7 @@ import org.jruby.util.StringSupport;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.codeLength;
@@ -285,14 +285,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
         if (bytes.length() == 0) {
             // FIXME: bytelist_love: change NameError to accept symbol as name.
-            throw runtime.newNameError(buildString(runtime, "wrong constant name ", ids(runtime, fqn)), "");
+            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), "");
         }
 
         RubySymbol symbol = runtime.newSymbol(bytes);
 
         if (!symbol.validConstantName()) {
-            // FIXME: bytelist_love: change NameError to accept symbol as name.
-            throw runtime.newNameError(buildString(runtime, "wrong constant name ", ids(runtime, fqn)), symbol.asJavaString());
+            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), symbol.getRawString());
         }
 
         return symbol;

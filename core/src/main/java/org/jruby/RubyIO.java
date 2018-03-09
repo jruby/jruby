@@ -44,13 +44,13 @@ import org.jcodings.transcode.EConvFlags;
 import org.jruby.api.API;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IOSites;
-import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.util.IOChannel;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
 
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.io.EncodingUtils.vmodeVperm;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
@@ -885,10 +885,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         RubyClass klass = (RubyClass)recv;
 
         if (block.isGiven()) {
-            IRubyObject className = klass.rubyName();
-            context.runtime.getWarnings().warn(
-                    ID.BLOCK_NOT_ACCEPTED,
-                    buildString(context.runtime, className, "::new() does not take block; use ", className, "::open() instead"));
+            IRubyObject className = types(context.runtime, klass);
+
+            context.runtime.getWarnings().warn(ID.BLOCK_NOT_ACCEPTED,
+                    str(context.runtime, className, "::new() does not take block; use ", className, "::open() instead"));
         }
 
         return klass.newInstance(context, args, block);

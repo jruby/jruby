@@ -66,8 +66,9 @@ import static org.jruby.util.Numeric.f_arg;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negative_p;
 import static org.jruby.util.Numeric.f_to_r;
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.types;
 
 /**
  * Base class for all numerical types in ruby.
@@ -282,7 +283,7 @@ public class RubyNumeric extends RubyObject {
             return ((RubyRational) arg).getDoubleValue();
         }
         if (arg instanceof RubyBoolean || arg instanceof RubyString || arg.isNil()) {
-            throw runtime.newTypeError(buildString(runtime, "can't convert ", arg.inspect(), " into Float"));
+            throw runtime.newTypeError(str(runtime, "can't convert ", arg.inspect(), " into Float"));
         }
 
         IRubyObject val = TypeConverter.convertToType(arg, runtime.getFloat(), "to_f");
@@ -431,7 +432,7 @@ public class RubyNumeric extends RubyObject {
             context.setErrorInfo($ex); // restore $!
 
             if (error) {
-                throw runtime.newTypeError(buildString(runtime, other.getMetaClass().rubyName(), " can't be coerced into ", getMetaClass().toRubyString(context)));
+                throw runtime.newTypeError(str(runtime, types(runtime, other.getMetaClass()), " can't be coerced into ", types(runtime, getMetaClass())));
             }
             return null;
         }
@@ -569,7 +570,7 @@ public class RubyNumeric extends RubyObject {
             @Override
             public IRubyObject call(ThreadContext context, JavaSites.CheckedSites site, IRubyObject obj, boolean recur) {
                 if (recur) {
-                    throw context.runtime.newNameError(buildString(context.runtime, "recursive call to ", decode(site.methodName)), site.methodName);
+                    throw context.runtime.newNameError(str(context.runtime, "recursive call to ", ids(context.runtime, site.methodName)), site.methodName);
                 }
                 return x.getMetaClass().finvokeChecked(context, x, site, obj);
             }
@@ -657,7 +658,8 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "singleton_method_added")
     public static IRubyObject sadded(IRubyObject self, IRubyObject name) {
         Ruby runtime = self.getRuntime();
-        throw runtime.newTypeError(buildString(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", self.getType().rubyName()));
+        throw runtime.newTypeError(str(runtime,
+                "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, self.getType())));
     }
 
     /** num_init_copy
@@ -666,7 +668,7 @@ public class RubyNumeric extends RubyObject {
     @Override
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject arg) {
-        throw getRuntime().newTypeError(buildString(getRuntime(), "can't copy ", getType().rubyName()));
+        throw getRuntime().newTypeError(str(getRuntime(), "can't copy ", types(getRuntime(), getType())));
     }
 
     /** num_coerce

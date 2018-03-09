@@ -76,14 +76,13 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 
 public class IRRuntimeHelpers {
@@ -1709,7 +1708,7 @@ public class IRRuntimeHelpers {
         IRubyObject result = (IRubyObject)accessor.get(self);
         if (result == null) {
             if (runtime.isVerbose()) {
-                runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, buildString(runtime, "instance variable ", ids(runtime, name)," not initialized"));
+                runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, str(runtime, "instance variable ", ids(runtime, name)," not initialized"));
             }
             result = context.nil;
         }

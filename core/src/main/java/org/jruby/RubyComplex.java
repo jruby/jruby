@@ -74,7 +74,8 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.safe_mul;
-import static org.jruby.util.RubyStringBuilder.buildString;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 
 /**
  *  complex.c as of revision: 20011
@@ -697,14 +698,14 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
+        if (other instanceof RubyNumeric && f_real_p(context, other)) {
             return context.runtime.newArray(newComplexBang(context, getMetaClass(), (RubyNumeric) other), this);
         }
 
-        Ruby runtime = context.runtime;
-        if (other instanceof RubyComplex) return runtime.newArray(other, this);
+        if (other instanceof RubyComplex) return context.runtime.newArray(other, this);
 
-        throw runtime.newTypeError(buildString(runtime, other.getMetaClass().toRubyString(context), " can't be coerced into ", getMetaClass().toRubyString(context)));
+        Ruby runtime = context.runtime;
+        throw runtime.newTypeError(str(runtime, types(runtime, other.getMetaClass()), " can't be coerced into ", types(runtime, getMetaClass())));
     }
 
     /** nucomp_abs 
@@ -1119,7 +1120,7 @@ public class RubyComplex extends RubyNumeric {
     private static RubyNumeric str_to_c_strict(ThreadContext context, RubyString str) {
         IRubyObject[] ary = str_to_c_internal(context, str);
         if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
-            throw context.runtime.newArgumentError(buildString(context.runtime, "invalid value for convert(): ", str.callMethod(context, "inspect")));
+            throw context.runtime.newArgumentError(str(context.runtime, "invalid value for convert(): ", str.callMethod(context, "inspect")));
 
         }
         return (RubyNumeric) ary[0]; // (RubyComplex)
