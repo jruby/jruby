@@ -807,13 +807,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject anyToString() {
         Ruby runtime = getRuntime();
 
-        // FIXME: bytelist_love - making these tiny strings over and over...
         /* 6:tags 16:addr 1:eos */
         RubyString bytes = runtime.newString("#<");
-        bytes.append(getMetaClass().getRealClass().toRubyString(runtime.getCurrentContext()));
-        bytes.append(runtime.newString(":0x"));
-        bytes.append(runtime.newString(Integer.toHexString(System.identityHashCode(this))));
-        bytes.append(runtime.newString(">"));
+        bytes.cat(getMetaClass().getRealClass().toRubyString(runtime.getCurrentContext()));
+        bytes.catString(":0x");
+        bytes.catString(Integer.toHexString(System.identityHashCode(this)));
+        bytes.catString(">");
         bytes.setTaint(isTaint());
         return bytes;
     }
@@ -1165,10 +1164,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public final IRubyObject hashyInspect() {
         final Ruby runtime = getRuntime();
-        byte[] name = getMetaClass().getRealClass().getName().getBytes(RubyEncoding.UTF8);
-        RubyString part = RubyString.newStringLight(runtime, 2 + name.length + 3 + 8 + 1); // #<Object:0x5a1c0542>
+        ByteList name = types(runtime, getMetaClass().getRealClass()).getByteList();
+        RubyString part = RubyString.newStringLight(runtime, 2 + name.length() + 3 + 8 + 1); // #<Object:0x5a1c0542>
         encStrBufCat(runtime, part, INSPECT_POUND_LT);
-        encStrBufCat(runtime, part, name, UTF8Encoding.INSTANCE);
+        encStrBufCat(runtime, part, name);
         encStrBufCat(runtime, part, INSPECT_COLON_ZERO_X);
         encStrBufCat(runtime, part, ConvertBytes.longToHexBytes(inspectHashCode()));
 
@@ -1224,13 +1223,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         boolean first = true;
         for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
             Object value = entry.getValue().get(this);
-            if (!(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
+            String id = entry.getKey();
+            // FIXME: bytelist_love: This probably should be symbol ala newSymbol(id).validInstanceVariableName()
+            if (!(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(id)) continue;
 
             IRubyObject obj = (IRubyObject) value;
 
             if (!first) encStrBufCat(runtime, part, INSPECT_COMMA);
             encStrBufCat(runtime, part, INSPECT_SPACE);
-            encStrBufCat(runtime, part, entry.getKey());
+            encStrBufCat(runtime, part, runtime.newSymbol(id).getBytes());
             encStrBufCat(runtime, part, INSPECT_EQUALS);
             encStrBufCat(runtime, part, sites(context).inspect.call(context, obj, obj).convertToString().getByteList());
 
