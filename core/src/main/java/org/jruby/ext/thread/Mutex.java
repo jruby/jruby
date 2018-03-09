@@ -34,12 +34,14 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
+import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.java.proxies.ConcreteJavaProxy;
 
 /**
  * The "Mutex" class from the 'thread' library.
@@ -129,10 +131,12 @@ public class Mutex extends RubyObject {
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
         long beg = System.currentTimeMillis();
-        double t = timeout.convertToFloat().getDoubleValue();
-
-        if (t < 0) throw context.runtime.newArgumentError("negative sleep timeout");
-
+        double t;
+        if (timeout instanceof ConcreteJavaProxy) {
+          t = RubyTime.convertTimeInterval(context, timeout.convertToFloat());
+        } else {
+          t = RubyTime.convertTimeInterval(context, timeout);
+        }
         unlock(context);
 
         try {
