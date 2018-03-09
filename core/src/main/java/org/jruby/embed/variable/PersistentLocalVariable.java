@@ -146,15 +146,6 @@ public class PersistentLocalVariable extends AbstractVariable {
      */
     @Override
     public void remove() {
-        final ThreadContext context = getCurrentContext();
-        try {
-            DynamicScope currentScope = context.getCurrentScope();
-            ManyVarsDynamicScope scope = (ManyVarsDynamicScope) context.getCurrentScope();
-            scope = new ManyVarsDynamicScope(context.runtime.getStaticScopeFactory().newEvalScope(currentScope.getStaticScope()), currentScope);
-        }
-        catch (ArrayIndexOutOfBoundsException e) {
-            //no context is left.
-            //no operation is needed.
-        }
+        // FIXME: Code originally here did not appear to actually do anything, so it was removed.
     }
 }
