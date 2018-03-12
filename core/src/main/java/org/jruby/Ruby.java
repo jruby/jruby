@@ -5251,6 +5251,8 @@ public final class Ruby implements Constantizable {
     // I know of use very few of them.  Even if there are many the size of these lists are modest.
     private final Map<String, List<StrptimeToken>> strptimeFormatCache = new ConcurrentHashMap<>();
 
+    transient RubyString tzVar;
+
     @Deprecated
     private void setNetworkStack() {
         deprecatedNetworkStackProperty();

@@ -1,2 +1,3 @@
 fails:DateTime#hour raises an error for Rational
 fails:DateTime#hour raises an error for Float
+fails:DateTime#hour raises an error for hour fractions smaller than -24
