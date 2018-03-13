@@ -30,9 +30,13 @@ package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -368,6 +372,32 @@ public class RubyPathname extends RubyObject {
             return context.nil;
         } else {
             return files;
+        }
+    }
+
+    @JRubyMethod(required = 1, optional = 1)
+    public IRubyObject glob(ThreadContext context, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
+        IRubyObject[] globArgs = new IRubyObject[3];
+
+        globArgs[0] = args[0];
+
+        if (args.length == 2) globArgs[1] = args[1];
+        if (args.length == 1) globArgs[1] = RubyFixnum.zero(runtime);
+
+        globArgs[2] = RubyHash.newKwargs(runtime, "base", context.runtime.getFile().callMethod(context, "realpath", getPath()));
+
+        RubyArray entries = context.runtime.getDir().callMethod(context, "glob", globArgs).convertToArray();
+        Stream<IRubyObject> pathnames = Arrays.stream(entries.toJavaArray())
+            .map(e -> context.runtime.getFile().callMethod(context, "join", new IRubyObject[] { getPath(), e }))
+            .map(s -> RubyPathname.newInstance(context, s));
+
+        if (block.isGiven()) {
+            pathnames.forEach(p -> block.yield(context, p));
+            return context.nil;
+        } else {
+            IRubyObject[] result = pathnames.collect(Collectors.toList()).toArray(new IRubyObject[entries.size()]);
+            return RubyArray.newArray(runtime, result);
         }
     }
 
