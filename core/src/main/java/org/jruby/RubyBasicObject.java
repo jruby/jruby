@@ -73,6 +73,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -1222,15 +1223,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         boolean first = true;
         for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
             Object value = entry.getValue().get(this);
-            String id = entry.getKey();
-            // FIXME: bytelist_love: This probably should be symbol ala newSymbol(id).validInstanceVariableName()
-            if (!(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(id)) continue;
+            RubySymbol symbol = runtime.newSymbol(entry.getKey());
+            if (!(value instanceof IRubyObject) || !symbol.validInstanceVariableName()) continue;
 
             IRubyObject obj = (IRubyObject) value;
 
             if (!first) encStrBufCat(runtime, part, INSPECT_COMMA);
             encStrBufCat(runtime, part, INSPECT_SPACE);
-            encStrBufCat(runtime, part, runtime.newSymbol(id).getBytes());
+            // FIXME: bytelist_love: EPICLY wrong but something in MRI gets around identifiers of arbitrary encoding.
+            encStrBufCat(runtime, part, symbol.asString().encode(context, runtime.getEncodingService().convertEncodingToRubyEncoding(part.getEncoding())).asString().getByteList());
             encStrBufCat(runtime, part, INSPECT_EQUALS);
             encStrBufCat(runtime, part, sites(context).inspect.call(context, obj, obj).convertToString().getByteList());
 
@@ -2833,10 +2834,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     fred.instance_variable_defined?("@c")   #=> false
      */
     public IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject name) {
-        if (variableTableContains(validateInstanceVariable(name, name.asJavaString()))) {
-            return context.runtime.getTrue();
-        }
-        return context.runtime.getFalse();
+        return context.runtime.newBoolean(variableTableContains(validateInstanceVariable(name)));
     }
 
     /** rb_obj_ivar_get
@@ -2860,11 +2858,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     fred.instance_variable_get("@b")   #=> 99
      */
     public IRubyObject instance_variable_get(ThreadContext context, IRubyObject name) {
-        Object value;
-        if ((value = variableTableFetch(validateInstanceVariable(name, name.asJavaString()))) != null) {
-            return (IRubyObject)value;
-        }
-        return context.runtime.getNil();
+        Object value = variableTableFetch(validateInstanceVariable(name));
+
+        return value != null ? (IRubyObject) value : context.nil;
     }
 
     /** rb_obj_ivar_set
@@ -2889,7 +2885,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         // no need to check for ensureInstanceVariablesSettable() here, that'll happen downstream in setVariable
-        return (IRubyObject)variableTableStore(validateInstanceVariable(name, name.asJavaString()), value);
+        return (IRubyObject) variableTableStore(validateInstanceVariable(name), value);
     }
 
     /** rb_obj_remove_instance_variable
@@ -2916,10 +2912,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject remove_instance_variable(ThreadContext context, IRubyObject name, Block block) {
         ensureInstanceVariablesSettable();
-        IRubyObject value;
-        if ((value = (IRubyObject)variableTableRemove(validateInstanceVariable(name, name.asJavaString()))) != null) {
-            return value;
-        }
+        IRubyObject value = (IRubyObject) variableTableRemove(validateInstanceVariable(name));
+        if (value != null) return value;
         throw context.runtime.newNameError("instance variable %1$s not defined", this, name);
     }
 
@@ -3018,16 +3012,26 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Checks if the name parameter represents a legal instance variable name, and otherwise throws a Ruby NameError
      */
+    @Deprecated
     protected String validateInstanceVariable(String name) {
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
         throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, name);
     }
 
-    protected String validateInstanceVariable(IRubyObject nameObj, String name) {
-        if (IdUtil.isValidInstanceVariableName(name)) return name;
+    @Deprecated
+    protected String validateInstanceVariable(IRubyObject name, String _unused_) {
+        return validateInstanceVariable(name);
+    }
 
-        throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, nameObj);
+    protected String validateInstanceVariable(IRubyObject name) {
+        RubySymbol symbol = RubySymbol.retrieveIDSymbol(name);
+
+        if (!symbol.validInstanceVariableName()) {
+            throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, name);
+        }
+
+        return symbol.idString();
     }
 
     /**

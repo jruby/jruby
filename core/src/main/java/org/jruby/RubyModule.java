@@ -3615,7 +3615,7 @@ public class RubyModule extends RubyObject {
     public void deprecateConstant(Ruby runtime, String name) {
         ConstantEntry entry = getConstantMap().get(name);
         if (entry == null) {
-            throw runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
+            throw runtime.newNameError(str(runtime, "constant ", types(runtime, this), "::", ids(runtime, name), " not defined"), name);
         }
 
         storeConstant(name, entry.value, entry.hidden, true);
