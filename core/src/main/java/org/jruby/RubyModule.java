@@ -136,6 +136,7 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.types;
 
 
 /**
@@ -3016,7 +3017,7 @@ public class RubyModule extends RubyObject {
         RubySymbol newSym = TypeConverter.checkID(newId);
         RubySymbol oldSym = TypeConverter.checkID(oldId); //  MRI uses rb_to_id but we return existing symbol
 
-        defineAlias(newSym.getRawString(), oldSym.getRawString());
+        defineAlias(newSym.idString(), oldSym.idString());
 
         if (isSingleton()) {
             ((MetaClass)this).getAttached().callMethod(context, "singleton_method_added", newSym);
@@ -3396,11 +3397,10 @@ public class RubyModule extends RubyObject {
 
     private RubyBoolean constantDefined(Ruby runtime, RubySymbol symbol, boolean inherit) {
         if (symbol.validConstantName()) {
-            return runtime.newBoolean(getConstantSkipAutoload(symbol.getRawString(), inherit, inherit) != null);
+            return runtime.newBoolean(getConstantSkipAutoload(symbol.idString(), inherit, inherit) != null);
         }
 
-        // FIXME: bytelist_love: nameError should use symbol and not Java String.
-        throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, symbol)), symbol.getRawString());
+        throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, symbol)), symbol.idString());
     }
 
     @JRubyMethod(name = "const_defined?", required = 1, optional = 1)
@@ -3418,7 +3418,7 @@ public class RubyModule extends RubyObject {
                 module = this;
             }
 
-            String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).getRawString();
+            String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).idString();
             IRubyObject obj = ((RubyModule) module).getConstantNoConstMissing(id, inherit, inherit);
 
             if (obj == null) return null;
@@ -3428,7 +3428,7 @@ public class RubyModule extends RubyObject {
         }, (index, segment, module) -> {
             if (module == null) module = this; // Bare 'Foo'
 
-            String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).getRawString();
+            String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).idString();
             return ((RubyModule) module).getConstantSkipAutoload(id, inherit, inherit);
         });
 
@@ -3492,44 +3492,28 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject name, IRubyObject value) {
-        RubySymbol symbol;
-
-        // FIXME: bytelist_love: we need some mechanism for new values to construct a symbol so the id-equivalent can look stuff up like these exprs
-        if (name instanceof RubySymbol) {
-            symbol = (RubySymbol) name;
-        } else {
-            symbol = RubySymbol.newHardSymbol(getRuntime(), name.convertToString().getByteList());
-        }
-
-        if (!symbol.validConstantName()) {
-            // FIXME: bytelist_love: nameError should use symbol and not Java String.
-            throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", name), symbol.getRawString());
-
-        }
-
-        return setConstant(symbol.getRawString(), value);
+        return setConstant(validateConstant(name), value);
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
     public IRubyObject remove_const(ThreadContext context, IRubyObject rubyName) {
-        String name = validateConstant(rubyName);
-        IRubyObject value;
-        if ((value = deleteConstant(name)) != null) {
-            invalidateConstantCache(name);
-            if (value != UNDEF) {
-                return value;
+        String id = validateConstant(rubyName);
+        IRubyObject value = deleteConstant(id);
+
+        if (value != null) { // found it!
+            invalidateConstantCache(id);
+
+            if (value == UNDEF) {  // autoload entry
+                removeAutoload(id);
+                return context.nil;
             }
-            removeAutoload(name);
-            // FIXME: I'm not sure this is right, but the old code returned
-            // the undef, which definitely isn't right...
-            return context.runtime.getNil();
+
+            return value;
         }
 
-        if (hasConstantInHierarchy(name)) {
-            throw cannotRemoveError(name);
-        }
+        if (hasConstantInHierarchy(id)) throw cannotRemoveError(id);
 
-        throw context.runtime.newNameError("constant " + name + " not defined for " + getName(), name);
+        throw context.runtime.newNameError("constant " + id + " not defined for " + getName(), id);
     }
 
     private boolean hasConstantInHierarchy(final String name) {
@@ -3639,29 +3623,29 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject deprecate_constant(ThreadContext context, IRubyObject rname) {
+    public IRubyObject deprecate_constant(ThreadContext context, IRubyObject name) {
         checkFrozen();
 
-        deprecateConstant(context.runtime, validateConstant(rname));
+        deprecateConstant(context.runtime, validateConstant(name));
         return this;
     }
 
     @JRubyMethod(rest = true)
     public IRubyObject deprecate_constant(ThreadContext context, IRubyObject[] names) {
-        for (IRubyObject rname : names) {
-            deprecate_constant(context, rname);
+        for (IRubyObject name: names) {
+            deprecate_constant(context, name);
         }
         return this;
     }
 
     @JRubyMethod
-    public IRubyObject private_constant(ThreadContext context, IRubyObject rubyName) {
+    public IRubyObject private_constant(ThreadContext context, IRubyObject name) {
         checkFrozen();
 
-        String name = validateConstant(rubyName);
+        String id = validateConstant(name);
 
-        setConstantVisibility(context.runtime, name, true);
-        invalidateConstantCache(name);
+        setConstantVisibility(context.runtime, id, true);
+        invalidateConstantCache(id);
 
         return this;
     }
@@ -3675,13 +3659,13 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject public_constant(ThreadContext context, IRubyObject rubyName) {
+    public IRubyObject public_constant(ThreadContext context, IRubyObject name) {
         checkFrozen();
 
-        String name = validateConstant(rubyName);
+        String id = validateConstant(name);
 
-        setConstantVisibility(context.runtime, name, false);
-        invalidateConstantCache(name);
+        setConstantVisibility(context.runtime, id, false);
+        invalidateConstantCache(id);
         return this;
     }
 
@@ -4182,7 +4166,9 @@ public class RubyModule extends RubyObject {
     //
 
     private RaiseException cannotRemoveError(String id) {
-        return getRuntime().newNameError("cannot remove " + id + " for " + getName(), id);
+        Ruby runtime = getRuntime();
+
+        return getRuntime().newNameError(str(runtime, "cannot remove ", ids(runtime, id), " for ", types(runtime, this)), id);
     }
 
 
@@ -4483,10 +4469,22 @@ public class RubyModule extends RubyObject {
         return publicNames;
     }
 
+    /**
+     * Validates name is a valid constant name and returns its id string.
+     * @param name object to verify as a valid constant.
+     * @return the id for this valid constant name.
+     */
     protected final String validateConstant(IRubyObject name) {
-        return validateConstant(name.asJavaString(), name);
+        RubySymbol symbol = RubySymbol.retrieveIDSymbol(name);
+
+        if (!symbol.validConstantName()) {
+            throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", name), symbol.idString());
+        }
+
+        return symbol.idString();
     }
 
+    @Deprecated
     protected final String validateConstant(String name, IRubyObject errorName) {
         if (IdUtil.isValidConstantName19(name)) return name;
 

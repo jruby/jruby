@@ -28,7 +28,6 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.JavaSites;
@@ -2489,7 +2488,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public IRubyObject singleton_method(IRubyObject name) {
         RubySymbol symbol = TypeConverter.checkID(name);
-        final String methodName = symbol.getRawString();
+        final String methodName = symbol.idString();
         final RubyClass klass = metaClass;
         if (klass.isSingleton()) {
             DynamicMethod method = klass.searchMethod(methodName);

@@ -151,9 +151,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     /**
-     * Return a raw (ISO-8859_1) string for use with our method tables etc.
+     * Return an id string (e.g. raw ISO-8859_1 charset String) for use with our method tables etc.
      */
-    public String getRawString() {
+    public String idString() {
         return symbol;
     }
 
@@ -178,6 +178,20 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         bytes.append((byte) '=');
 
         return newIDSymbol(getRuntime(), bytes);
+    }
+
+    // FIXME: bytelist_love: Do we need to worry about non-hard symbols being passed in?
+    /**
+     * When we know we need an entry in the symbol table because the provided name will be needed to be
+     * accessed as a valid identifier later we can call this.  If there is not already an entry we will
+     * return a new symbol.  Otherwise, the existing entry.
+     *
+     * @param name to get symbol table entry for (it may be a symbol already)
+     * @return the symbol table entry.
+     */
+    public static RubySymbol retrieveIDSymbol(IRubyObject name) {
+        return name instanceof RubySymbol ?
+                (RubySymbol) name : newIDSymbol(name.getRuntime(), name.convertToString().getByteList());
     }
 
     /**
@@ -291,7 +305,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         RubySymbol symbol = runtime.newSymbol(bytes);
 
         if (!symbol.validConstantName()) {
-            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), symbol.getRawString());
+            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), symbol.idString());
         }
 
         return symbol;
@@ -1117,7 +1131,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     public static String objectToSymbolString(IRubyObject object) {
         if (object instanceof RubySymbol) {
-            return ((RubySymbol) object).getRawString();
+            return ((RubySymbol) object).idString();
         }
         if (object instanceof RubyString) {
             return ((RubyString) object).getByteList().toString();

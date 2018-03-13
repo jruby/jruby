@@ -655,7 +655,7 @@ public class ParserSupport {
             return new FlipNode(node.getPosition(),
                     getFlipConditionNode(((DotNode) node).getBeginNode()),
                     getFlipConditionNode(((DotNode) node).getEndNode()),
-                    dotNode.isExclusive(), currentScope.getLocalScope().addVariable(symbolID.getRawString()));
+                    dotNode.isExclusive(), currentScope.getLocalScope().addVariable(symbolID.idString()));
         }
         case REGEXPNODE:
             if (Options.PARSER_WARN_REGEX_CONDITION.load()) {
@@ -1252,7 +1252,7 @@ public class ParserSupport {
 
     public ArgumentNode arg_var(ByteList id) {
         RubySymbol name = symbolID(id);
-        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name.getRawString()));
+        return new ArgumentNode(lexer.getPosition(), name, getCurrentScope().addVariableThisScope(name.idString()));
     }
 
     public ByteList formal_argument(ByteList identifier) {

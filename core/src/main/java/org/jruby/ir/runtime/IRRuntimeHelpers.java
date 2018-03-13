@@ -1424,7 +1424,7 @@ public class IRRuntimeHelpers {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
 
-        rubyClass.addMethod(methodName.getRawString(), newMethod);
+        rubyClass.addMethod(methodName.idString(), newMethod);
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", methodName);
     }
 
@@ -1434,7 +1434,7 @@ public class IRRuntimeHelpers {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        rubyClass.addMethod(methodName.getRawString(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
+        rubyClass.addMethod(methodName.idString(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
         if (!rubyClass.isRefinement()) {
             // FIXME: needs checkID and proper encoding to force hard symbol
             obj.callMethod(context, "singleton_method_added", methodName);

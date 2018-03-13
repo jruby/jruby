@@ -33,8 +33,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
-import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
@@ -56,7 +54,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.util.StringSupport;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -463,14 +460,14 @@ public class StaticScope implements Serializable {
     }
 
     public AssignableNode addAssign(ISourcePosition position, RubySymbol symbolID, Node value) {
-        int slot = addVariable(symbolID.getRawString());
+        int slot = addVariable(symbolID.idString());
         // No bit math to store level since we know level is zero for this case
         return new DAsgnNode(position, symbolID, slot, value);
     }
 
     public AssignableNode assign(ISourcePosition position, RubySymbol symbolID, Node value,
                                  StaticScope topScope, int depth) {
-        String id = symbolID.getRawString();
+        String id = symbolID.idString();
         int slot = exists(id);
 
         // We can assign if we already have variable of that name here or we are the only
@@ -494,7 +491,7 @@ public class StaticScope implements Serializable {
 
     // Note: This is private code made public only for parser.
     public Node declare(ISourcePosition position, RubySymbol symbolID, int depth) {
-        int slot = exists(symbolID.getRawString());
+        int slot = exists(symbolID.idString());
 
         if (slot >= 0) {
             return isBlockOrEval ?
