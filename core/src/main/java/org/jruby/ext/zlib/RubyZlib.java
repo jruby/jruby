@@ -33,8 +33,6 @@
 
 package org.jruby.ext.zlib;
 
-import java.lang.reflect.Field;
-
 import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
@@ -70,21 +68,8 @@ public class RubyZlib {
     public final static String ZLIB_VERSION = "1.2.3.3";
     public final static String VERSION = "0.6.0";
 
-    private static final Field crc32InternalField = getCRC32InternalField();
-
-    private static final Field getCRC32InternalField() {
-        try {
-            Field field = CRC32.class.getDeclaredField("crc");
-            field.setAccessible(true);
-            field.setInt(new CRC32(), 1);
-            return field;
-        } catch(Exception e) {
-            return null;
-        }
-    }
-
     /** Create the Zlib module and add it to the Ruby runtime.
-     * 
+     *
      */
     public static RubyModule createZlibModule(Ruby runtime) {
         RubyModule mZlib = runtime.defineModule("Zlib");
@@ -209,21 +194,16 @@ public class RubyZlib {
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
         if (!args[1].isNil()) start = (int)RubyNumeric.num2long(args[1]);
 
-        CRC32 checksum = new CRC32();
-        boolean slow = crc32InternalField == null;
+        final boolean slowPath = start != 0;
+        final int bytesLength = bytes == null ? 0 : bytes.length();
+        long result = 0;
         if (bytes != null) {
-            if (start != 0 && !slow) {
-                try {
-                    crc32InternalField.setInt(checksum, start);
-                } catch (IllegalAccessException iae) {
-                    slow = true;
-                }
-            }
-            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            CRC32 checksum = new CRC32();
+            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytesLength);
+            result = checksum.getValue();
         }
-        long result = checksum.getValue();
-        if (start != 0 && slow) {
-            result = JZlib.crc32_combine(start, result, bytes.length());
+        if (slowPath) {
+            result = JZlib.crc32_combine(start, result, bytesLength);
         }
         return recv.getRuntime().newFixnum(result);
     }
@@ -342,10 +322,10 @@ public class RubyZlib {
         excn.setInstanceVariable("@input", runtime.getNil());
         return excn.toThrowable();
     }
-    
+
     static int FIXNUMARG(IRubyObject obj, int ifnil) {
         if (obj.isNil()) return ifnil;
-        
+
         return RubyNumeric.fix2int(obj);
     }
 }
