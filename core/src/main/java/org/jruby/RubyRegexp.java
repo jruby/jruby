@@ -427,21 +427,26 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 pattern.getEncoding() + " regexp with " + strEnc + " string)");
     }
 
-    private Encoding checkEncoding(RubyString str, boolean warn) {
-        if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
-            throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
+    private Encoding prepareEncoding(RubyString str, boolean warn) {
+        Encoding enc = str.getEncoding();
+        int cr = str.scanForCodeRange();
+        if (cr == StringSupport.CR_BROKEN) {
+            throw getRuntime().newArgumentError("invalid byte sequence in " + enc);
         }
         check();
-        Encoding enc = str.getEncoding();
-        if (!enc.isAsciiCompatible()) {
-            if (enc != pattern.getEncoding()) encodingMatchError(getRuntime(), pattern, enc);
+        Encoding patternEnc = pattern.getEncoding();
+        if (patternEnc == enc) {
+        } else if (cr == StringSupport.CR_7BIT && patternEnc == USASCIIEncoding.INSTANCE) {
+            enc = patternEnc;
+        } else if (!enc.isAsciiCompatible()) {
+            encodingMatchError(getRuntime(), pattern, enc);
         } else if (options.isFixed()) {
-            if (enc != pattern.getEncoding() &&
-               (!pattern.getEncoding().isAsciiCompatible() ||
-               str.scanForCodeRange() != StringSupport.CR_7BIT)) encodingMatchError(getRuntime(), pattern, enc);
-            enc = pattern.getEncoding();
+            if (enc != patternEnc &&
+               (!patternEnc.isAsciiCompatible() ||
+               cr != StringSupport.CR_7BIT)) encodingMatchError(getRuntime(), pattern, enc);
+            enc = patternEnc;
         }
-        if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
+        if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && cr != StringSupport.CR_7BIT) {
             getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
         }
         return enc;
@@ -449,7 +454,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public final Regex preparePattern(RubyString str) {
         // checkEncoding does `check();` no need to here
-        Encoding enc = checkEncoding(str, true);
+        Encoding enc = prepareEncoding(str, true);
         if (enc == pattern.getEncoding()) return pattern;
         return getPreprocessedRegexpFromCache(getRuntime(), this.str, enc, options, RegexpSupport.ErrorMode.PREPROCESS);
     }
