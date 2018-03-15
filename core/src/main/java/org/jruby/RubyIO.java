@@ -2054,6 +2054,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             fptr.finalizeFlush(context, false);
 
+            fptr.finalizeFlush(context, false);
+
             // interrupt waiting threads
             fptr.interruptBlockingThreads(context);
             try {
