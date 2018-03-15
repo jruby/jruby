@@ -212,7 +212,7 @@ DO NOT MODIFIY - GENERATED CODE
       <extension>
         <groupId>org.torquebox.mojo</groupId>
         <artifactId>mavengem-wagon</artifactId>
-        <version>0.2.2</version>
+        <version>1.0.1</version>
       </extension>
     </extensions>
     <resources>
@@ -312,7 +312,7 @@ DO NOT MODIFIY - GENERATED CODE
       <plugin>
         <groupId>io.takari.polyglot</groupId>
         <artifactId>polyglot-maven-plugin</artifactId>
-        <version>0.1.15</version>
+        <version>0.3.0</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -363,7 +363,7 @@ DO NOT MODIFIY - GENERATED CODE
           <dependency>
             <groupId>io.takari.polyglot</groupId>
             <artifactId>polyglot-ruby</artifactId>
-            <version>0.1.15</version>
+            <version>0.3.0</version>
           </dependency>
         </dependencies>
       </plugin>
