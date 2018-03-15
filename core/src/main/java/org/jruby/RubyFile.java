@@ -41,6 +41,7 @@ import jnr.posix.util.Platform;
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1159,7 +1160,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
 
-            int result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
+            int result;
+
+            try {
+                result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
+            } catch (RaiseException re) {
+                if (re.getException().getMetaClass() == runtime.getNotImplementedError()) {
+                    // fall back on utimes
+                    result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
+                } else {
+                    throw re;
+                }
+            }
+
             if (result == -1) {
                 throw runtime.newErrnoFromInt(runtime.getPosix().errno());
             }
