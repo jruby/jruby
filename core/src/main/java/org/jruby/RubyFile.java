@@ -42,6 +42,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
@@ -1191,13 +1192,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             try {
                 result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
-            } catch (RaiseException re) {
-                if (re.getException().getMetaClass() == runtime.getNotImplementedError()) {
-                    // fall back on utimes
-                    result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
-                } else {
-                    throw re;
-                }
+            } catch (NotImplementedError re) {
+                // fall back on utimes
+                result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
             }
 
             if (result == -1) {
