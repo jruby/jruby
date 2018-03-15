@@ -2638,17 +2638,14 @@ public class OpenFile implements Finalizable {
      * @param thread A thread blocking on this IO
      */
     public void removeBlockingThread(RubyThread thread) {
-        boolean locked = lock();
-        try {
-            Set<RubyThread> blockingThreads = this.blockingThreads;
+        Set<RubyThread> blockingThreads = this.blockingThreads;
 
-            if (blockingThreads == null) {
-                return;
-            }
+        if (blockingThreads == null) {
+            return;
+        }
 
+        synchronized (blockingThreads) {
             blockingThreads.remove(thread);
-        } finally {
-            if (locked) unlock();
         }
     }
 
