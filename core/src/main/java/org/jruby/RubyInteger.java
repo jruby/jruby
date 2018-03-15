@@ -49,6 +49,7 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 
 import java.math.BigInteger;
@@ -602,6 +603,24 @@ public abstract class RubyInteger extends RubyNumeric {
 
     private static long op_mod_two(ThreadContext context, RubyInteger self) {
         return ((RubyInteger) sites(context).op_mod.call(context, self, self, RubyFixnum.two(context.runtime))).getLongValue();
+    }
+
+    @JRubyMethod(name = "allbits?")
+    public IRubyObject allbits_p(ThreadContext context, IRubyObject other) {
+        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        return ((RubyInteger) op_and(context, mask)).op_equal(context, mask);
+    }
+
+    @JRubyMethod(name = "anybits?")
+    public IRubyObject anybits_p(ThreadContext context, IRubyObject other) {
+        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        return ((RubyInteger) op_and(context, mask)).zero_p(context).isTrue() ? context.fals : context.tru;
+    }
+
+    @JRubyMethod(name = "nobits?")
+    public IRubyObject nobits_p(ThreadContext context, IRubyObject other) {
+        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        return ((RubyInteger) op_and(context, mask)).zero_p(context);
     }
 
     @JRubyMethod(name = "pred")
