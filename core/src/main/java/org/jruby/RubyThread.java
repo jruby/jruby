@@ -88,6 +88,7 @@ import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.common.IRubyWarnings.ID;
 
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
@@ -920,6 +921,40 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public boolean isAlive(){
         return threadImpl.isAlive() && status.get() != Status.DEAD;
+    }
+
+    @JRubyMethod
+    public IRubyObject fetch(ThreadContext context, IRubyObject key, Block block) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject value = op_aref(key);
+
+        if (value.isNil()) {
+            if (block.isGiven()) return block.yield(context, key);
+
+            throw runtime.newKeyError("key not found: " + key.inspect(), this, key);
+        }
+
+        return value;
+    }
+
+    @JRubyMethod
+    public IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
+        Ruby runtime = context.runtime;
+        boolean blockGiven = block.isGiven();
+
+        if (blockGiven) {
+            runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
+        }
+
+        IRubyObject value = op_aref(key);
+
+        if (value.isNil()) {
+            if (blockGiven) return block.yield(context, key);
+            return _default;
+        }
+
+        return value;
     }
 
     @JRubyMethod(name = "[]", required = 1)
