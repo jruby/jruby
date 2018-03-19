@@ -371,6 +371,12 @@ public class RubyDir extends RubyObject {
         return entries;
     }
 
+    @JRubyMethod(name = "children", meta = true)
+    public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject encoding) {
+        // TODO: encoding unused due to lack of encoding support in entries
+        return children(context, recv, arg);
+    }
+
     /**
      * Deletes the directory specified by <code>path</code>.  The directory must
      * be empty.
