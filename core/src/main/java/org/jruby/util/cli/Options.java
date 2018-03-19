@@ -188,6 +188,7 @@ public class Options {
     public static final Option<String> LOGGER_CLASS = string(DEBUG, "logger.class", new String[]{"class name"}, "org.jruby.util.log.StandardErrorLogger", "Use specified class for logging.");
     public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
+    public static final Option<Boolean> DEBUG_AMBIGUOUS_JAVA_CALLS = bool(DEBUG, "debug.ambiguous.java.calls", false, "Toggle verbose reporting of all ambiguous calls to Java objects");
 
     // TODO: Replace flag that's false on 9 with proper module checks
     public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", calculateSetAccessibleDefault(), "Try to set inaccessible Java methods to be accessible.");
