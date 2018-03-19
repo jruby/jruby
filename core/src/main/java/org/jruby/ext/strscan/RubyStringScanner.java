@@ -31,17 +31,7 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
-import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyException;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyMatchData;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
-import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
-import org.jruby.RubyThread;
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -625,5 +615,49 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "must_C_version", meta = true)
     public static IRubyObject mustCversion(IRubyObject recv) {
         return recv;
+    }
+
+    @JRubyMethod(name = "size")
+    public IRubyObject size(ThreadContext context) {
+        if (!isMatched()) return context.nil;
+        return context.runtime.newFixnum(regs.numRegs);
+    }
+
+    @JRubyMethod(name = "captures")
+    public IRubyObject captures(ThreadContext context) {
+        int i, numRegs;
+        RubyArray newAry;
+
+        if (!isMatched()) return context.nil;
+
+        Ruby runtime = context.runtime;
+
+        numRegs = regs.numRegs;
+        newAry  = RubyArray.newArray(runtime, numRegs);
+
+        for (i = 1; i < numRegs; i++) {
+            IRubyObject str = extractRange(runtime, lastPos + regs.beg[i],
+                    lastPos + regs.end[i]);
+            newAry.push(str);
+        }
+
+        return newAry;
+    }
+
+    @JRubyMethod(name = "values_at", rest = true)
+    public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
+        int i;
+        RubyArray newAry;
+
+        if (!isMatched()) return context.nil;
+
+        Ruby runtime = context.runtime;
+
+        newAry = RubyArray.newArray(runtime, args.length);
+        for (i = 0; i < args.length; i++) {
+            newAry.push(op_aref(context, args[i]));
+        }
+
+        return newAry;
     }
 }
