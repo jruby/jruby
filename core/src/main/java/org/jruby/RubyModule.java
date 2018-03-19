@@ -3844,9 +3844,7 @@ public class RubyModule extends RubyObject {
                 if ( value == UNDEF ) return mod.resolveUndefConstant(name);
 
                 if ( mod == objectClass && this != objectClass ) {
-                    String badCName = getName() + "::" + name;
-                    runtime.getWarnings().warn(ID.CONSTANT_BAD_REFERENCE,
-                        "toplevel constant " + name + " referenced by " + badCName);
+                    return null;
                 }
 
                 return value;
