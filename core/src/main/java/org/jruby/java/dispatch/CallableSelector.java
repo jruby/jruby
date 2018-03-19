@@ -280,7 +280,7 @@ public class CallableSelector {
                 method = mostSpecific;
 
                 if ( ambiguous ) {
-                    if (Options.DEBUG_AMBIGUOUS_JAVA_CALLS.load()) {
+                    if (Options.JI_AMBIGUOUS_CALLS_DEBUG.load()) {
                         runtime.newRuntimeError(
                                 "multiple Java methods found, dumping backtrace and choosing "
                                         + ((Member) ((JavaCallable) method).accessibleObject()).getName()
@@ -288,7 +288,7 @@ public class CallableSelector {
                         ).printStackTrace(runtime.getErr());
                     } else {
                         runtime.getWarnings().warn(
-                                "multiple Java methods found, use -Xdebug.ambiguous.java.calls for backtrace. Choosing "
+                                "multiple Java methods found, use -X" + Options.JI_AMBIGUOUS_CALLS_DEBUG.propertyName() + " for backtrace. Choosing "
                                         + ((Member) ((JavaCallable) method).accessibleObject()).getName()
                                         + prettyParams(msTypes));
                     }

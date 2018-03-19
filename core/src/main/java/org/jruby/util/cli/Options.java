@@ -188,7 +188,6 @@ public class Options {
     public static final Option<String> LOGGER_CLASS = string(DEBUG, "logger.class", new String[]{"class name"}, "org.jruby.util.log.StandardErrorLogger", "Use specified class for logging.");
     public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
-    public static final Option<Boolean> DEBUG_AMBIGUOUS_JAVA_CALLS = bool(DEBUG, "debug.ambiguous.java.calls", false, "Toggle verbose reporting of all ambiguous calls to Java objects");
 
     // TODO: Replace flag that's false on 9 with proper module checks
     public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", calculateSetAccessibleDefault(), "Try to set inaccessible Java methods to be accessible.");
@@ -199,6 +198,7 @@ public class Options {
     public static final Option<Boolean> JI_NEWSTYLEEXTENSION = bool(JAVA_INTEGRATION, "ji.newStyleExtension", false, "Extend Java classes without using a proxy object.");
     public static final Option<Boolean> JI_OBJECTPROXYCACHE = bool(JAVA_INTEGRATION, "ji.objectProxyCache", false, "Cache Java object wrappers between calls.");
     public static final Option<String> JI_PROXYCLASSFACTORY = string(JAVA_INTEGRATION, "ji.proxyClassFactory", "Allow external envs to replace JI proxy class factory");
+    public static final Option<Boolean> JI_AMBIGUOUS_CALLS_DEBUG = bool(JAVA_INTEGRATION, "ji.ambiguous.calls.debug", false, "Toggle verbose reporting of all ambiguous calls to Java objects");
     public static final Option<Boolean> AOT_LOADCLASSES = bool(JAVA_INTEGRATION, "aot.loadClasses", false, "Look for .class before .rb to load AOT-compiled code");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
