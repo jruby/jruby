@@ -744,4 +744,12 @@ class TestDate < Test::Unit::TestCase
     end
   end
 
+  def test_jd_day_fraction
+    t = 86400 * DateTime.new(1970, 1, 1).jd + Time.utc(2018, 3, 18, 23).to_i
+    dt = DateTime.jd((t + 0)/86400r)
+    assert_equal '2018-03-18T23:00:00+00:00', dt.to_s
+    dt = DateTime.jd((t + 1)/86400r)
+    assert_equal '2018-03-18T23:00:01+00:00', dt.to_s
+  end
+
 end

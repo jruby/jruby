@@ -545,21 +545,18 @@ public class RubyDate extends RubyObject {
 
     static DateTime adjustWithDayFraction(ThreadContext context, DateTime dt, final long[] rest) {
         final RubyFixnum zero = RubyFixnum.zero(context.runtime);
-        int ival = getHour(context, zero, rest);
+        int ival;
+
+        ival = getHour(context, zero, rest);
         dt = dt.plusHours(ival);
 
         if (rest[0] != 0) {
-            ival = getHour(context, zero, rest);
-            dt = dt.plusHours(ival);
+            ival = getMinute(context, zero, rest);
+            dt = dt.plusMinutes(ival);
 
             if (rest[0] != 0) {
-                ival = getMinute(context, zero, rest);
-                dt = dt.plusMinutes(ival);
-
-                if (rest[0] != 0) {
-                    ival = getSecond(context, zero, rest);
-                    dt = dt.plusSeconds(ival);
-                }
+                ival = getSecond(context, zero, rest);
+                dt = dt.plusSeconds(ival);
             }
         }
         return dt;
