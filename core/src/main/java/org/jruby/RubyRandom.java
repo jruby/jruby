@@ -742,8 +742,8 @@ public class RubyRandom extends RubyObject {
         return randomSeed(context.runtime);
     }
 
-    @JRubyMethod(name = "raw_seed", meta = true)
-    public static IRubyObject rawSeed(ThreadContext context, IRubyObject recv, IRubyObject num) {
+    @JRubyMethod(name = "urandom", meta = true)
+    public static IRubyObject urandom(ThreadContext context, IRubyObject recv, IRubyObject num) {
         Ruby runtime = context.runtime;
         int n = num.convertToInteger().getIntValue();
 
