@@ -438,7 +438,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public IRubyObject mtime(ThreadContext context) {
         checkClosed(context);
-        return context.runtime.newFileStat(getPath(), false).mtime();
+        return ((RubyFileStat) stat(context)).mtime();
     }
 
     @JRubyMethod(meta = true)
