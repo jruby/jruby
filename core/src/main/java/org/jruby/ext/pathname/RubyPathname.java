@@ -30,22 +30,12 @@ package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "Pathname")
@@ -371,6 +361,41 @@ public class RubyPathname extends RubyObject {
         }
     }
 
+    @JRubyMethod(required = 1, optional = 1)
+    public IRubyObject glob(ThreadContext context, IRubyObject[] _args, Block block) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject[] args = new IRubyObject[3];
+
+        args[0] = _args[0];
+        if (_args.length == 1) {
+            args[1] = RubyFixnum.zero(runtime);
+        } else {
+            args[1] = _args[1];
+        }
+
+        args[2] = RubyHash.newSmallHash(runtime);
+        ((RubyHash) args[2]).fastASetSmall(runtime.newSymbol("base"), getPath());
+
+        JavaSites.PathnameSites sites = sites(context);
+        CallSite glob = sites.glob;
+
+        if (block.isGiven()) {
+            return glob.call(context, this, runtime.getDir(), args, block);
+        } else {
+            RubyArray ary;
+            long i;
+            ary = glob.call(context, this, runtime.getDir(), args).convertToArray();
+            CallSite op_plus = sites.op_plus;
+            for (i = 0; i < ary.size(); i++) {
+                IRubyObject elt = ary.eltOk(i);
+                elt = op_plus.call(context, this, this, elt);
+                ary.eltSetOk(i, elt);
+            }
+            return ary;
+        }
+    }
+
     @JRubyMethod
     public IRubyObject opendir(ThreadContext context, Block block) {
         return context.runtime.getDir().callMethod(context, "open", new IRubyObject[] { getPath()},
@@ -444,5 +469,9 @@ public class RubyPathname extends RubyObject {
             paths.store(i, newInstance(context, clazz, path));
         }
         return paths;
+    }
+
+    private static JavaSites.PathnameSites sites(ThreadContext context) {
+        return context.sites.Pathname;
     }
 }
