@@ -69,7 +69,7 @@ public class TraceType {
 
         buffer.append("Backtrace generated:\n");
 
-        renderBacktraceJRuby(trace, buffer, false);
+        renderBacktraceJRuby(trace, buffer, false, Direction.Forward);
 
         // NOTE: other logXxx method do not remove the new-line
         // ... but if this is desired they should do so as well
@@ -298,7 +298,7 @@ public class TraceType {
             }
 
             public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
-                renderBacktraceJRuby(elts, buffer, color);
+                renderBacktraceJRuby(elts, buffer, color, Direction.Reverse);
             }
         };
 
@@ -388,9 +388,9 @@ public class TraceType {
 
         StringBuilder buffer = new StringBuilder(64 + frames.length * 48);
 
-        buffer.append(type).append(": ").append(message).append('\n');
+        renderBacktraceJRuby(frames, buffer, color, Direction.Reverse);
 
-        renderBacktraceJRuby(frames, buffer, color);
+        buffer.append(type).append(": ").append(message).append('\n');
 
         return buffer.toString();
     }
@@ -412,7 +412,9 @@ public class TraceType {
         return printBacktraceJRuby(frames, type, message, color);
     }
 
-    private static void renderBacktraceJRuby(RubyStackTraceElement[] frames, StringBuilder buffer, boolean color) {
+    private enum Direction { Forward, Reverse };
+
+    private static void renderBacktraceJRuby(RubyStackTraceElement[] frames, StringBuilder buffer, boolean color, Direction direction) {
         // find longest method name
         int longestMethod = 0;
         for (RubyStackTraceElement frame : frames) {
@@ -421,7 +423,8 @@ public class TraceType {
 
         // backtrace lines
         boolean first = true;
-        for (RubyStackTraceElement frame : frames) {
+        for (int i = 0; i < frames.length; i++) {
+            RubyStackTraceElement frame = direction == Direction.Forward ? frames[i] : frames[frames.length - i - 1];
             if (color) {
                 if (first) {
                     buffer.append(FIRST_COLOR);
