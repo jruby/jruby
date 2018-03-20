@@ -1567,6 +1567,7 @@ public final class Ruby implements Constantizable {
     private void initExceptions() {
         ifAllowed("StandardError",          (ruby) -> standardError = RubyStandardError.define(ruby, exceptionClass));
         ifAllowed("RubyError",              (ruby) -> runtimeError = RubyRuntimeError.define(ruby, standardError));
+        ifAllowed("FrozenError",            (ruby) -> frozenError = RubyFrozenError.define(ruby, runtimeError));
         ifAllowed("IOError",                (ruby) -> ioError = RubyIOError.define(ruby, standardError));
         ifAllowed("ScriptError",            (ruby) -> scriptError = RubyScriptError.define(ruby, exceptionClass));
         ifAllowed("RangeError",             (ruby) -> rangeError = RubyRangeError.define(ruby, standardError));

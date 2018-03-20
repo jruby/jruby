@@ -23,17 +23,31 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.exceptions;
 
-import org.jruby.RubyRuntimeError;
+package org.jruby;
+
+import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.FrozenError;
 
 /**
- * Represents a Ruby RuntimeError as a throwable Java exception.
+ * The Java representation of a Ruby FrozenError.
  *
- * @see RubyRuntimeError
+ * @see FrozenError
  */
-public class RuntimeError extends StandardError {
-    public RuntimeError(String message, RubyRuntimeError exception) {
-        super(message, exception);
+@JRubyClass(name="FrozenError", parent="RuntimeError")
+public class RubyFrozenError extends RubyRuntimeError {
+    protected RubyFrozenError(Ruby runtime, RubyClass exceptionClass) {
+        super(runtime, exceptionClass);
+    }
+
+    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
+        RubyClass frozenErrorClass = runtime.defineClass("FrozenError", exceptionClass, (r, klass) -> new RubyFrozenError(runtime, klass));
+
+        return frozenErrorClass;
+    }
+
+    protected RaiseException constructThrowable(String message) {
+        return new FrozenError(message, this);
     }
 }

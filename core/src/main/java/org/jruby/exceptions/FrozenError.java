@@ -25,15 +25,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-import org.jruby.RubyRuntimeError;
+import org.jruby.RubyFrozenError;
 
 /**
- * Represents a Ruby RuntimeError as a throwable Java exception.
+ * Represents a Ruby FrozenError as a throwable Java exception.
  *
- * @see RubyRuntimeError
+ * @see RubyFrozenError
  */
-public class RuntimeError extends StandardError {
-    public RuntimeError(String message, RubyRuntimeError exception) {
+public class FrozenError extends StandardError {
+    public FrozenError(String message, RubyFrozenError exception) {
         super(message, exception);
     }
 }
