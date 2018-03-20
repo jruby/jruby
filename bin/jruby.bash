@@ -20,6 +20,14 @@ case "`uname`" in
   MINGW*) jruby.exe "$@"; exit $?;;
 esac
 
+# ----- Determine how to call expr (jruby/jruby#5091) -------------------------
+# On Alpine linux, expr takes no -- arguments, and 'expr --' echoes '--'.
+_expr_dashed=$(expr -- 2>/dev/null)
+if [ "$_expr_dashed" != '--' ] ; then
+  alias expr="expr --"
+fi
+unset _expr_dashed
+
 # ----- Verify and Set Required Environment Variables -------------------------
 if [ -z "$JAVA_VM" ]; then
   JAVA_VM=-client
@@ -244,7 +252,7 @@ do
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
         val=${1:2}
-        if expr -- "$val" : '.*[.]' > /dev/null; then
+        if expr "$val" : '.*[.]' > /dev/null; then
           java_args=("${java_args[@]}" "-Djruby.${val}")
         else
           ruby_args=("${ruby_args[@]}" "-X${val}")
