@@ -4393,11 +4393,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return context.runtime.getTrue();
     }
 
-    @JRubyMethod(name = "any?")
-    public IRubyObject any_p(ThreadContext context, Block block) {
+    @JRubyMethod(name = "any?", optional = 1)
+    public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
         if (isEmpty()) return context.runtime.getFalse();
-        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block);
-        if (!block.isGiven()) return any_pBlockless(context);
+        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, args, block);
+        boolean patternGiven = args.length > 0;
+        if (!block.isGiven() || patternGiven) return any_pBlockless(context, args);
 
         for (int i = 0; i < realLength; i++) {
             if (block.yield(context, eltOk(i)).isTrue()) return context.runtime.getTrue();
@@ -4406,9 +4407,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return context.runtime.getFalse();
     }
 
-    private IRubyObject any_pBlockless(ThreadContext context) {
-        for (int i = 0; i < realLength; i++) {
-            if (eltOk(i).isTrue()) return context.runtime.getTrue();
+    private IRubyObject any_pBlockless(ThreadContext context, IRubyObject[] args) {
+        IRubyObject pattern = args.length > 0 ? args[0] : null;
+        if (pattern == null) {
+            for (int i = 0; i < realLength; i++) {
+                if (eltOk(i).isTrue()) return context.runtime.getTrue();
+            }
+        } else {
+            for (int i = 0; i < realLength; i++) {
+                if (pattern.callMethod(context, "===", eltOk(i)).isTrue()) return context.runtime.getTrue();
+            }
         }
 
         return context.runtime.getFalse();

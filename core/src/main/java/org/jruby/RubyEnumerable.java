@@ -1782,21 +1782,23 @@ public class RubyEnumerable {
         return runtime.getTrue();
     }
 
-    @JRubyMethod(name = "any?")
-    public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
-        return any_pCommon(context, self, block);
+    @JRubyMethod(name = "any?", optional = 1)
+    public static IRubyObject any_p(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
+        return any_pCommon(context, self, args, block);
     }
 
     @Deprecated
     public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block, Arity callbackArity) {
-        return any_pCommon(context, self, block);
+        return any_pCommon(context, self, new IRubyObject[]{}, block);
     }
 
-    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block) {
+    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         final Ruby runtime = context.runtime;
+        final IRubyObject pattern = (args.length > 0) ? args[0] : null;
+        final boolean patternGiven = pattern != null;
 
         try {
-            if (block.isGiven()) {
+            if (block.isGiven() && !patternGiven) {
                 each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", block.getSignature()) {
                     public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
                         IRubyObject packedArg = packEnumValues(context, args);
@@ -1805,13 +1807,23 @@ public class RubyEnumerable {
                     }
                 });
             } else {
-                each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", Signature.ONE_REQUIRED) {
-                    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                        IRubyObject packedArg = packEnumValues(context.runtime, args);
-                        if (packedArg.isTrue()) throw JumpException.SPECIAL_JUMP;
-                        return context.nil;
-                    }
-                });
+                if (patternGiven) {
+                    each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", Signature.ONE_REQUIRED) {
+                        public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                            IRubyObject packedArg = packEnumValues(context.runtime, args);
+                            if (pattern.callMethod(context, "===", packedArg).isTrue()) throw JumpException.SPECIAL_JUMP;
+                            return context.nil;
+                        }
+                    });
+                } else {
+                    each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", Signature.ONE_REQUIRED) {
+                        public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                            IRubyObject packedArg = packEnumValues(context.runtime, args);
+                            if (packedArg.isTrue()) throw JumpException.SPECIAL_JUMP;
+                            return context.nil;
+                        }
+                    });
+                }
             }
         } catch (JumpException.SpecialJump sj) {
             return runtime.getTrue();

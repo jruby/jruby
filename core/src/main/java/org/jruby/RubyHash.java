@@ -2055,11 +2055,15 @@ public class RubyHash extends RubyObject implements Map {
         return clone;
     }
 
-    @JRubyMethod(name = "any?")
-    public IRubyObject any_p(ThreadContext context, Block block) {
+    @JRubyMethod(name = "any?", optional = 1)
+    public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
+        IRubyObject pattern = args.length > 0 ? args[0] : null;
+        boolean patternGiven = pattern != null;
+
         if (isEmpty()) return context.runtime.getFalse();
 
-        if (!block.isGiven()) return context.runtime.getTrue();
+        if (!block.isGiven() && !patternGiven) return context.runtime.getTrue();
+        if (patternGiven) return any_p_p(context, pattern);
 
         if (block.getSignature().arityValue() > 1) {
             return any_p_i_fast(context, block);
@@ -2086,6 +2090,20 @@ public class RubyHash extends RubyObject implements Map {
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
                 if (block.yieldArray(context, context.runtime.newArray(entry.key, entry.value), null).isTrue())
+                    return context.runtime.getTrue();
+            }
+            return context.runtime.getFalse();
+        } finally {
+            iteratorExit();
+        }
+    }
+
+    private IRubyObject any_p_p(ThreadContext context, IRubyObject pattern) {
+        iteratorEntry();
+        try {
+            for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+                IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
+                if (pattern.callMethod(context, "===", newAssoc).isTrue())
                     return context.runtime.getTrue();
             }
             return context.runtime.getFalse();
