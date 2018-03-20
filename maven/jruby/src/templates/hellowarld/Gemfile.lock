@@ -21,7 +21,7 @@ GEM
       leafy-metrics (~> 0.6.2)
     puma (2.13.4-java)
     rack (1.6.4)
-    rack-protection (1.5.3)
+    rack-protection (1.5.5)
       rack
     rake (10.4.2)
     sinatra (1.4.6)

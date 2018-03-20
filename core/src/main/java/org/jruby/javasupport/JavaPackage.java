@@ -295,9 +295,9 @@ public class JavaPackage extends RubyModule {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object toJava(final Class target) {
+    public <T> T toJava(Class<T> target) {
         if ( target.isAssignableFrom( Package.class ) ) {
-            return Package.getPackage(packageName);
+            return target.cast(Package.getPackage(packageName));
         }
         return super.toJava(target);
     }

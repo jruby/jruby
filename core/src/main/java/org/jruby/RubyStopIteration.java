@@ -28,28 +28,25 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.StopIteration;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Ruby's StopIteration exception.
+ /**
+ * The Java representation of a Ruby StopIteration.
+ *
+ * @see StopIteration
  * @see RubyEnumerator
  * @author kares
  */
 @JRubyClass(name="StopIteration", parent="IndexError")
-public class RubyStopIteration extends RubyException {
+public class RubyStopIteration extends RubyIndexError {
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyStopIteration(runtime, klass);
-        }
-    };
-
-    static RubyClass createStopIterationClass(Ruby runtime, RubyClass superClass) {
-        RubyClass StopIteration = runtime.defineClass("StopIteration", superClass, ALLOCATOR);
+    static RubyClass define(Ruby runtime, RubyClass superClass) {
+        RubyClass StopIteration = runtime.defineClass("StopIteration", superClass, (runtime1, klass) -> new RubyStopIteration(runtime1, klass));
         StopIteration.defineAnnotatedMethods(RubyStopIteration.class);
         return StopIteration;
     }
@@ -68,6 +65,11 @@ public class RubyStopIteration extends RubyException {
 
     protected RubyStopIteration(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new StopIteration(message, this);
     }
 
     @JRubyMethod

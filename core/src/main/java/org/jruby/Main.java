@@ -354,11 +354,7 @@ public class Main {
         boolean heapError = false;
 
         if (oomeMessage != null) {
-            if (oomeMessage.contains("PermGen")) {
-                // report permgen memory error
-                config.getError().println("Error: Your application exhausted PermGen area of the heap.");
-                config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
-            } else if (oomeMessage.contains("unable to create new native thread")) {
+            if (oomeMessage.contains("unable to create new native thread")) {
                 // report thread exhaustion error
                 config.getError().println("Error: Your application demanded too many live threads, perhaps for Fiber or Enumerator.");
                 config.getError().println("Ensure your old Fibers and Enumerators are being cleaned up.");

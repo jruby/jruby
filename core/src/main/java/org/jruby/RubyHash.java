@@ -345,8 +345,8 @@ public class RubyHash extends RubyObject implements Map {
     { head.prevAdded = head.nextAdded = head; }
 
     public static final class RubyHashEntry implements Map.Entry {
-        private IRubyObject key;
-        private IRubyObject value;
+        IRubyObject key;
+        IRubyObject value;
         private RubyHashEntry next;
         private RubyHashEntry prevAdded;
         private RubyHashEntry nextAdded;
@@ -578,6 +578,10 @@ public class RubyHash extends RubyObject implements Map {
             }
         }
         return NO_ENTRY;
+    }
+
+    final RubyHashEntry getEntry(IRubyObject key) {
+        return internalGetEntry(key);
     }
 
     private boolean internalKeyExist(RubyHashEntry entry, int hash, IRubyObject key) {

@@ -51,16 +51,28 @@ import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
 import org.jruby.Ruby;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
 
 public class RubyDateFormatter {
-    private static final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
+
+    private static final String[] FORMAT_MONTHS;
+    private static final String[] FORMAT_SHORT_MONTHS;
+    private static final String[] FORMAT_WEEKDAYS;
+    private static final String[] FORMAT_SHORT_WEEKDAYS;
+    static {
+        final DateFormatSymbols FORMAT_SYMBOLS = new DateFormatSymbols(Locale.US);
+        FORMAT_MONTHS = FORMAT_SYMBOLS.getMonths();
+        FORMAT_SHORT_MONTHS = FORMAT_SYMBOLS.getShortMonths();
+        FORMAT_WEEKDAYS = FORMAT_SYMBOLS.getWeekdays();
+        FORMAT_SHORT_WEEKDAYS = FORMAT_SYMBOLS.getShortWeekdays();
+    }
+
     private static final Token[] CONVERSION2TOKEN = new Token[256];
 
     private final Ruby runtime;
@@ -247,12 +259,12 @@ public class RubyDateFormatter {
     }
 
     public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
-        List<Token> compiledPattern = new LinkedList<Token>();
-
         Encoding enc = pattern.getEncoding();
         if (!enc.isAsciiCompatible()) {
             throw runtime.newArgumentError("format should have ASCII compatible encoding");
         }
+
+        final List<Token> compiledPattern = new LinkedList<Token>();
         if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
         }
@@ -356,21 +368,20 @@ public class RubyDateFormatter {
     }
 
     /** Convenience method when using no pattern caching */
-    public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, IRubyObject sub_millis) {
+    public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, RubyNumeric sub_millis) {
         RubyString out = format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
-        if (pattern.isTaint()) {
-            out.setTaint(true);
-        }
+        out.setEncoding(pattern.getEncoding());
+        if (pattern.isTaint()) out.setTaint(true);
         return out;
     }
 
-    public RubyString format(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
+    public RubyString format(List<Token> compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
         return runtime.newString(formatToByteList(compiledPattern, dt, nsec, sub_millis));
     }
 
-    public ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
+    private ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec, RubyNumeric sub_millis) {
         RubyTimeOutputFormatter formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
-        ByteList toAppendTo = new ByteList();
+        final ByteList toAppendTo = new ByteList(24);
 
         for (Token token: compiledPattern) {
             CharSequence output = null;
@@ -390,25 +401,19 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_WEEK_LONG:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
-                    int v = (dt.getDayOfWeek()+1)%8;
-                    if(v == 0) {
-                        v++;
-                    }
-                    output = FORMAT_SYMBOLS.getWeekdays()[v];
+                    int v = (dt.getDayOfWeek() + 1) % 8;
+                    output = FORMAT_WEEKDAYS[v == 0 ? 1 : v];
                     break;
                 case FORMAT_WEEK_SHORT:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
-                    v = (dt.getDayOfWeek()+1)%8;
-                    if(v == 0) {
-                        v++;
-                    }
-                    output = FORMAT_SYMBOLS.getShortWeekdays()[v];
+                    v = (dt.getDayOfWeek() + 1) % 8;
+                    output = FORMAT_SHORT_WEEKDAYS[v == 0 ? 1 : v];
                     break;
                 case FORMAT_MONTH_LONG:
-                    output = FORMAT_SYMBOLS.getMonths()[dt.getMonthOfYear()-1];
+                    output = FORMAT_MONTHS[dt.getMonthOfYear() - 1];
                     break;
                 case FORMAT_MONTH_SHORT:
-                    output = FORMAT_SYMBOLS.getShortMonths()[dt.getMonthOfYear()-1];
+                    output = FORMAT_SHORT_MONTHS[dt.getMonthOfYear() - 1];
                     break;
                 case FORMAT_DAY:
                     type = NUMERIC2;
@@ -512,16 +517,10 @@ public class RubyDateFormatter {
                     output = RubyTimeOutputFormatter.formatNumber(dt.getMillisOfSecond(), 3, '0');
                     if (width > 3) {
                         StringBuilder buff = new StringBuilder(output.length() + 6).append(output);
-                        if (sub_millis == null || sub_millis.isNil()) { // Time
+                        if (sub_millis == null) { // Time
                             buff.append(RubyTimeOutputFormatter.formatNumber(nsec, 6, '0'));
                         } else { // Date, DateTime
-                            int prec = width - 3;
-                            final ThreadContext context = runtime.getCurrentContext(); // TODO really need the dynamic nature here?
-                            IRubyObject power = runtime.newFixnum(10).op_pow(context, prec);
-                            IRubyObject truncated = sub_millis.callMethod(context, "numerator").callMethod(context, "*", power);
-                            truncated = truncated.callMethod(context, "/", sub_millis.callMethod(context, "denominator"));
-                            long decimals = truncated.convertToInteger().getLongValue();
-                            buff.append(RubyTimeOutputFormatter.formatNumber(decimals, prec, '0'));
+                            formatSubMillisGt3(runtime, buff, width, sub_millis);
                         }
                         output = buff;
                     }
@@ -569,6 +568,18 @@ public class RubyDateFormatter {
         return toAppendTo;
     }
 
+    private static void formatSubMillisGt3(final Ruby runtime, final StringBuilder buff,
+                                           final int width, RubyNumeric sub_millis) {
+        final int prec = width - 3;
+        final ThreadContext context = runtime.getCurrentContext();
+        RubyNumeric power = (RubyNumeric) runtime.newFixnum(10).op_pow(context, prec);
+        RubyNumeric truncated = (RubyNumeric) sub_millis.numerator(context).
+                convertToInteger().op_mul(context, power);
+        truncated = (RubyNumeric) truncated.idiv(context, sub_millis.denominator(context));
+        long decimals = truncated.convertToInteger().getLongValue();
+        buff.append(RubyTimeOutputFormatter.formatNumber(decimals, prec, '0'));
+    }
+
     /**
      * Ruby always follows Astronomical year numbering,
      * that is BC x is -x+1 and there is a year 0 (BC 1)
@@ -587,8 +598,7 @@ public class RubyDateFormatter {
         dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
         dtCalendar.setMinimalDaysInFirstWeek(7);
         int value = dtCalendar.get(java.util.Calendar.WEEK_OF_YEAR);
-        if ((value == 52 || value == 53) &&
-                (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
+        if ((value == 52 || value == 53) && (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
             // MRI behavior: Week values are monotonous.
             // So, weeks that effectively belong to previous year,
             // will get the value of 0, not 52 or 53, as in Java.
@@ -608,8 +618,8 @@ public class RubyDateFormatter {
             hours = -hours;
         }
 
-        String mm = RubyTimeOutputFormatter.formatNumber(minutes, 2, '0');
-        String ss = RubyTimeOutputFormatter.formatNumber(seconds, 2, '0');
+        CharSequence mm = RubyTimeOutputFormatter.formatNumber(minutes, 2, '0');
+        CharSequence ss = RubyTimeOutputFormatter.formatNumber(seconds, 2, '0');
 
         char padder = formatter.getPadder('0');
         int defaultWidth = -1;
@@ -643,10 +653,12 @@ public class RubyDateFormatter {
             width = minWidth;
         }
         width -= after.length();
-        CharSequence before = RubyTimeOutputFormatter.formatSignedNumber(hours, width, padder);
+        StringBuilder before = RubyTimeOutputFormatter.formatSignedNumber(hours, width, padder);
 
         if (value < 0 && hours == 0) { // the formatter could not handle this case
-            before = before.toString().replace('+', '-');
+            for (int i=0; i<before.length(); i++) { // replace('+', '-')
+                if (before.charAt(i) == '+') before.setCharAt(i, '-');
+            }
         }
         return new StringBuilder(before.length() + after.length()).append(before).append(after); // before + after
     }

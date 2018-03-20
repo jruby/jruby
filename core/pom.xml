@@ -24,7 +24,6 @@ DO NOT MODIFIY - GENERATED CODE
     <pkg.dir>${build.dir}/pkg</pkg.dir>
     <spec.dir>spec</spec.dir>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-    <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
     <installer.gems>${jruby.win32ole.gem}</installer.gems>
     <prawn.git.repo>git://github.com/sandal/prawn.git</prawn.git.repo>
     <version.ruby.minor>0</version.ruby.minor>
@@ -585,7 +584,7 @@ DO NOT MODIFIY - GENERATED CODE
           <systemProperties>
             <jruby.home>${basedir}/..</jruby.home>
           </systemProperties>
-          <argLine>-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true</argLine>
+          <argLine>-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true</argLine>
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>

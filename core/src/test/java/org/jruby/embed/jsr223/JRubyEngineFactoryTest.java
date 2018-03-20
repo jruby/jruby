@@ -283,10 +283,10 @@ public class JRubyEngineFactoryTest {
         $this.append("first\n");
         engine.put("this", $this);
 
-        assertSame($this, engine.eval("$this"));
-        engine.eval("$this.append( \"2\n\" )");
+        assertSame($this, engine.eval("this"));
+        engine.eval("this.append( \"2\n\" )");
 
-        Object command = engine.eval("$command = $this.java_method :append, [java.lang.String]");
+        Object command = engine.eval("$command = this.java_method :append, [java.lang.String]");
 
         assertTrue( command instanceof org.jruby.RubyMethod );
         //assertEquals( "append", ((Method) command).getName() );

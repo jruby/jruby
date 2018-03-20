@@ -1374,9 +1374,15 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return one(context.runtime);
     }
 
+    @Override
     public RubyRational convertToRational() {
         final Ruby runtime = getRuntime();
         return RubyRational.newRationalRaw(runtime, this, one(runtime));
+    }
+
+    @Override
+    public IRubyObject remainder(ThreadContext context, IRubyObject y) {
+        return numRemainder(context, y);
     }
 
     private static JavaSites.FixnumSites sites(ThreadContext context) {

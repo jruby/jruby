@@ -11,8 +11,11 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+<<<<<<< HEAD
  * Copyright (C) 2017 Miguel Landaeta <miguel@miguel.cc>
  *
+=======
+>>>>>>> master
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,43 +33,38 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.exceptions.KeyError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author Miguel Landaeta
  */
 @JRubyClass(name="KeyError", parent="IndexError")
-public class RubyKeyError extends RubyException {
+public class RubyKeyError extends RubyIndexError {
     private IRubyObject receiver;
     private IRubyObject key;
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyKeyError(runtime, klass);
-        }
-    };
-
-    static RubyClass createKeyErrorClass(Ruby runtime, RubyClass IndexError) {
-        RubyClass KeyError = runtime.defineClass("KeyError", IndexError, ALLOCATOR);
-        KeyError.defineAnnotatedMethods(RubyKeyError.class);
-        KeyError.setReifiedClass(RubyKeyError.class);
-        return KeyError;
-    }
-
     protected RubyKeyError(Ruby runtime, RubyClass exceptionClass) {
-        this(runtime, exceptionClass, exceptionClass.getName());
-    }
-
-    public RubyKeyError(Ruby runtime, RubyClass exceptionClass, String message) {
-        this(runtime, exceptionClass, message, runtime.getNil(), runtime.getNil());
+        super(runtime, exceptionClass);
     }
 
     public RubyKeyError(Ruby runtime, RubyClass exceptionClass, String message, IRubyObject recv, IRubyObject key) {
         super(runtime, exceptionClass, message);
         this.receiver = recv;
         this.key = key;
+    }
+
+    static RubyClass define(Ruby runtime, RubyClass superClass) {
+        RubyClass KeyError = runtime.defineClass("KeyError", superClass, (runtime1, klass) -> new RubyKeyError(runtime1, klass));
+        KeyError.defineAnnotatedMethods(RubyKeyError.class);
+        KeyError.setReifiedClass(RubyKeyError.class);
+        return KeyError;
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new KeyError(message, this);
     }
 
     @JRubyMethod

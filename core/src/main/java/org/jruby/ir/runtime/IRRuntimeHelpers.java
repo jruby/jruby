@@ -9,7 +9,6 @@ import java.util.Map;
 import org.jcodings.Encoding;
 import org.jruby.EvalType;
 import org.jruby.MetaClass;
-import org.jruby.NativeException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -78,6 +77,7 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
@@ -377,12 +377,18 @@ public class IRRuntimeHelpers {
 
     private static IRubyObject wrapJavaException(final ThreadContext context, final IRubyObject excType, final Throwable throwable) {
         final Ruby runtime = context.runtime;
-        if (excType == runtime.getNativeException()) { // wrap Throwable in a NativeException object
-            NativeException exception = new NativeException(runtime, runtime.getNativeException(), throwable);
-            exception.prepareIntegratedBacktrace(context, throwable.getStackTrace());
-            return exception;
+        if (excType == runtime.getNativeException()) {
+            return wrapWithNativeException(context, throwable, runtime);
         }
         return Helpers.wrapJavaException(runtime, throwable); // wrap as normal JI object
+    }
+
+    @SuppressWarnings("deprecation")
+    private static IRubyObject wrapWithNativeException(ThreadContext context, Throwable throwable, Ruby runtime) {
+        // wrap Throwable in a NativeException object
+        org.jruby.NativeException exception = new org.jruby.NativeException(runtime, runtime.getNativeException(), throwable);
+        exception.prepareIntegratedBacktrace(context, throwable.getStackTrace());
+        return exception;
     }
 
     private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
@@ -557,6 +563,21 @@ public class IRRuntimeHelpers {
             args[args.length - 1] = visitor.syms; // kwargs hash
         }
         return args;
+    }
+
+    /**
+     * If the ir.print property is enabled and we are not booting, or the ir.print.all property is enabled and we are
+     * booting, return true to indicate IR should be printed.
+     *
+     * @param runtime the current runtime
+     * @return whether to print IR
+     */
+    public static boolean shouldPrintIR(Ruby runtime) {
+        boolean booting = runtime.isBooting();
+        boolean print = Options.IR_PRINT.load();
+        boolean printAll = Options.IR_PRINT_ALL.load();
+
+        return (print && !booting) || (booting && printAll);
     }
 
     private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {

@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 
 describe "NoMethodError.new" do
   it "allows passing method args" do
@@ -26,7 +26,7 @@ describe "NoMethodError#args" do
       NoMethodErrorSpecs::NoMethodErrorB.new.foo(1,a)
     rescue Exception => e
       e.args.should == [1,a]
-      e.args[1].object_id.should == a.object_id
+      e.args[1].should equal a
     end
   end
 end

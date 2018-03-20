@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 with_feature :encoding do
   describe "String#clear" do
@@ -14,7 +14,7 @@ with_feature :encoding do
     it "returns self after emptying it" do
       cleared = @s.clear
       cleared.should == ""
-      cleared.object_id.should == @s.object_id
+      cleared.should equal @s
     end
 
     it "preserves its encoding" do

@@ -38,6 +38,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.StandardError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -135,31 +136,24 @@ public class RubyNumeric extends RubyObject {
         throw context.runtime.newArgumentError("invalid rounding mode: " + halfArg);
     }
 
-    // The implementations of these are all bonus (see TODO above)  I was going
-    // to throw an error from these, but it appears to be the wrong place to
-    // do it.
-    public double getDoubleValue() {
-        return 0;
-    }
+    // The implementations of these are all bonus (see above)
 
     /**
      * Return the value of this numeric as a 64-bit long. If the value does not
      * fit in 64 bits, it will be truncated.
      */
-    public long getLongValue() {
-        return 0;
-    }
+    public long getLongValue() { return 0; }
 
     /**
      * Return the value of this numeric as a 32-bit long. If the value does not
      * fit in 32 bits, it will be truncated.
      */
-    public int getIntValue() {
-        return 0;
-    }
+    public int getIntValue() { return (int) getLongValue(); }
+
+    public double getDoubleValue() { return getLongValue(); }
 
     public BigInteger getBigIntegerValue() {
-        return BigInteger.ZERO;
+        return BigInteger.valueOf(getLongValue());
     }
 
     public static RubyNumeric newNumeric(Ruby runtime) {
@@ -184,20 +178,29 @@ public class RubyNumeric extends RubyObject {
     /** check_int
      *
      */
+    public static int checkInt(final Ruby runtime, long num){
+        if (num < Integer.MIN_VALUE) {
+            tooSmall(runtime, num);
+        } else if (num > Integer.MAX_VALUE) {
+            tooBig(runtime, num);
+        }
+        return (int) num;
+    }
+
     public static void checkInt(IRubyObject arg, long num){
         if (num < Integer.MIN_VALUE) {
-            tooSmall(arg, num);
+            tooSmall(arg.getRuntime(), num);
         } else if (num > Integer.MAX_VALUE) {
-            tooBig(arg, num);
+            tooBig(arg.getRuntime(), num);
         }
     }
 
-    private static void tooSmall(IRubyObject arg, long num) {
-        throw arg.getRuntime().newRangeError("integer " + num + " too small to convert to `int'");
+    private static void tooSmall(Ruby runtime, long num) {
+        throw runtime.newRangeError("integer " + num + " too small to convert to `int'");
     }
 
-    private static void tooBig(IRubyObject arg, long num) {
-        throw arg.getRuntime().newRangeError("integer " + num + " too big to convert to `int'");
+    private static void tooBig(Ruby runtime, long num) {
+        throw runtime.newRangeError("integer " + num + " too big to convert to `int'");
     }
 
     /**
@@ -788,21 +791,38 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject y) {
+        return numRemainder(context, y);
+    }
+
+    public IRubyObject numRemainder(ThreadContext context, IRubyObject y) {
         RubyNumeric x = this;
         JavaSites.NumericSites sites = sites(context);
         IRubyObject z = sites.op_mod.call(context, this, this, y);
 
-        // non-numeric would error out in % call
-        RubyNumeric yNum = (RubyNumeric) y;
-
         if ((!Helpers.rbEqual(context, z, RubyFixnum.zero(context.runtime), sites.op_equal).isTrue()) &&
                 ((x.isNegative() &&
-                        yNum.isPositive()) ||
+                        RubyNumeric.positiveInt(context, y)) ||
                         (x.isPositive() &&
-                                yNum.isNegative()))) {
+                                RubyNumeric.negativeInt(context, y)))) {
             return sites.op_minus.call(context, z, z, y);
         }
         return z;
+    }
+
+    public static boolean positiveInt(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyNumeric) {
+            return ((RubyNumeric) num).isPositive();
+        }
+
+        return compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
+    }
+
+    public static boolean negativeInt(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyNumeric) {
+            return ((RubyNumeric) num).isNegative();
+        }
+
+        return compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
     }
 
     /** num_abs
@@ -1305,7 +1325,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         return JavaUtil.getNumericConverter(target).coerce(this, target);
     }
 

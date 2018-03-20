@@ -28,6 +28,8 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.NoMethodError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
@@ -35,18 +37,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ArraySupport;
 
+/**
+ * The Java representation of a Ruby NoMethodError.
+ *
+ * @see NoMethodError
+ */
 @JRubyClass(name="NoMethodError", parent="NameError")
 public class RubyNoMethodError extends RubyNameError {
     private IRubyObject args;
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyNoMethodError(runtime, klass);
-        }
-    };
+    private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubyNoMethodError(runtime, klass);
 
-    static RubyClass createNoMethodErrorClass(Ruby runtime, RubyClass nameErrorClass) {
+    static RubyClass define(Ruby runtime, RubyClass nameErrorClass) {
         RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, ALLOCATOR);
         noMethodErrorClass.defineAnnotatedMethods(RubyNoMethodError.class);
         return noMethodErrorClass;
@@ -60,6 +62,11 @@ public class RubyNoMethodError extends RubyNameError {
     public RubyNoMethodError(Ruby runtime, RubyClass exceptionClass, String message, String name, IRubyObject args) {
         super(runtime, exceptionClass, message,  name);
         this.args = args;
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new NoMethodError(message, this);
     }
 
     public static RubyException newNoMethodError(IRubyObject recv, IRubyObject message, IRubyObject name, IRubyObject args) {

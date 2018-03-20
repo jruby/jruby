@@ -82,16 +82,16 @@ public class StrptimeParser {
 
         private String zone = null;
 
-        private BigInteger secFraction = null; // Rational
+        private Number secFraction = null; // Rational
         private int secFractionSize = Integer.MIN_VALUE;
 
-        private BigInteger seconds = null; // Bignum or Rational
+        private Number seconds = null; // Bignum or Rational
         private int secondsSize = Integer.MIN_VALUE;
 
         private int merid = Integer.MIN_VALUE;
         private long cent = Long.MIN_VALUE;
 
-        private boolean fail = false;
+        //private boolean fail = false;
         private String leftover = null;
 
         public int getMDay() {
@@ -150,7 +150,7 @@ public class StrptimeParser {
             return zone;
         }
 
-        public BigInteger getSecFraction() {
+        public Number getSecFraction() {
             return secFraction;
         }
 
@@ -158,7 +158,7 @@ public class StrptimeParser {
             return secFractionSize;
         }
 
-        public BigInteger getSeconds() {
+        public Number getSeconds() {
             return seconds;
         }
 
@@ -174,10 +174,6 @@ public class StrptimeParser {
             return cent;
         }
 
-        void fail() {
-            fail = true;
-        }
-
         public String getLeftover() {
             return leftover;
         }
@@ -190,7 +186,7 @@ public class StrptimeParser {
             return v != Long.MIN_VALUE;
         }
 
-        public static boolean has(BigInteger v) {
+        public static boolean has(Number v) {
             return v != null;
         }
     }
@@ -465,7 +461,7 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final BigInteger v;
+                        final Number v;
                         final int initPos = pos;
                         if (isNumberPattern(compiledPattern, tokenIndex)) {
                             if (token.getFormat() == StrptimeFormat.FORMAT_MILLISEC) {
@@ -477,7 +473,7 @@ public class StrptimeParser {
                             v = readDigitsMax();
                         }
 
-                        bag.secFraction = !negative ? v : v.negate();
+                        bag.secFraction = !negative ? v : negateInteger(v);
                         bag.secFractionSize = pos - initPos;
                         break;
                     }
@@ -515,8 +511,8 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final BigInteger sec = readDigitsMax();
-                        bag.seconds = !negative ? sec : sec.negate();
+                        final Number sec = readDigitsMax();
+                        bag.seconds = !negative ? sec : negateInteger(sec);
                         bag.secondsSize = 3;
                         break;
                     }
@@ -535,8 +531,8 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final BigInteger sec = readDigitsMax();
-                        bag.seconds = !negative ? sec : sec.negate();
+                        final Number sec = readDigitsMax();
+                        bag.seconds = !negative ? sec : negateInteger(sec);
                         break;
                     }
                     case FORMAT_WEEK_YEAR_S: // %U, %OU - Week number of the year.  The week starts with Sunday.  (00..53)
@@ -680,23 +676,35 @@ public class StrptimeParser {
         /**
          * Ports READ_DIGITS_MAX from ext/date/date_strptime.c in MRI 2.3.1 under BSDL.
          * see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
+         *
+         * @return integer value (Long or BigInteger)
          */
-        private BigInteger readDigitsMax() {
+        private Number readDigitsMax() {
             char c;
-            BigInteger v = BigInteger.ZERO;
+            long v = 0; BigInteger vBig = null;
             final int initPos = pos;
 
             while (true) {
-                if (isEndOfText(text, pos)) {
-                    break;
-                }
+                if (isEndOfText(text, pos)) break;
 
                 c = text.charAt(pos);
-                if (!isDigit(c)) {
-                    break;
-                } else {
-                    v = v.multiply(BigInteger.TEN).add(new BigInteger(Integer.toString(toInt(c))));
+                if (!isDigit(c)) break;
+
+                if (vBig == null) {
+                    try {
+                        long tmp = Math.multiplyExact(v, 10);
+                        tmp = Math.addExact(tmp, toInt(c));
+                        v = tmp;
+                    }
+                    catch (ArithmeticException overflow) {
+                        vBig = BigInteger.valueOf(v); continue;
+                    }
                 }
+                else {
+                    vBig = vBig.multiply(BigInteger.TEN);
+                    vBig = vBig.add(BigInteger.valueOf(toInt(c)));
+                }
+
                 pos += 1;
             }
 
@@ -704,7 +712,7 @@ public class StrptimeParser {
                 fail = true;
             }
 
-            return v;
+            return vBig == null ? v : vBig;
         }
 
         private long readDigitsMaxLong() {
@@ -713,16 +721,13 @@ public class StrptimeParser {
             final int initPos = pos;
 
             while (true) {
-                if (isEndOfText(text, pos)) {
-                    break;
-                }
+                if (isEndOfText(text, pos)) break;
 
                 c = text.charAt(pos);
-                if (!isDigit(c)) {
-                    break;
-                } else {
-                    v = v * 10 + toInt(c);
-                }
+                if (!isDigit(c)) break;
+
+                v = v * 10 + toInt(c);
+
                 pos += 1;
             }
 
@@ -843,5 +848,13 @@ public class StrptimeParser {
         private static int toInt(char c) {
             return c - '0';
         }
+
+        private static Number negateInteger(final Number i) {
+            if (i instanceof BigInteger) {
+                return ((BigInteger) i).negate();
+            }
+            return -i.longValue();
+        }
+
     }
 }

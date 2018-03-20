@@ -31,7 +31,17 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyMatchData;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
+import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
+import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -43,7 +53,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.util.TypeConverter;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -435,8 +444,7 @@ public class RubyStringScanner extends RubyObject {
 
         if (!isMatched()) {
             RubyClass errorClass = runtime.getClass("StringScanner").getClass("Error");
-            throw new RaiseException(RubyException.newException(
-                    runtime, errorClass, "unscan failed: previous match had failed"));
+            throw RaiseException.from(runtime, errorClass, "unscan failed: previous match had failed");
         }
         pos = lastPos;
         clearMatched();

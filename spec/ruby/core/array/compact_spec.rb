@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Array#compact" do
   it "returns a copy of array with all nil elements removed" do
@@ -50,7 +50,7 @@ describe "Array#compact!" do
 
   it "returns self if some nil elements are removed" do
     a = ['a', nil, 'b', false, 'c']
-    a.compact!.object_id.should == a.object_id
+    a.compact!.should equal a
   end
 
   it "returns nil if there are no nil elements to remove" do

@@ -301,12 +301,12 @@ public class JavaObject extends RubyObject {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object toJava(final Class target) {
+    public <T> T toJava(Class<T> target) {
         final Object value = getValue();
         if ( value == null ) return null;
 
         if ( target.isAssignableFrom( value.getClass() ) ) {
-            return value;
+            return target.cast(value);
         }
         return super.toJava(target);
     }

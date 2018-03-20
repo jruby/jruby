@@ -59,7 +59,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -1336,7 +1335,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
         if (args.length == 0) {
             if (errorInfo.isNil()) {
-                return new RaiseException(runtime, runtime.getRuntimeError(), "", false).getException();
+                // We force RaiseException here to populate backtrace
+                return RaiseException.from(runtime, runtime.getRuntimeError(), "").getException();
             }
             return errorInfo;
         }
