@@ -3,6 +3,8 @@ require 'test/unit'
 require 'resolv'
 require 'socket'
 require 'tempfile'
+require 'timeout'
+require 'minitest/mock'
 
 class TestResolvDNS < Test::Unit::TestCase
   def setup
@@ -220,5 +222,41 @@ class TestResolvDNS < Test::Unit::TestCase
       }
     }
     assert_operator(2**14, :<, m.to_s.length)
+  end
+
+  def test_timeout_without_leaking_file_descriptors_connected
+    socket = nil
+    bind_random_port = lambda do |udpsock, bind_host="0.0.0.0"|
+      socket = udpsock
+      sleep 3
+    end
+
+    Resolv::DNS.stub(:bind_random_port, bind_random_port) do
+      r = Resolv::DNS.new(nameserver_port: [['127.0.0.1', 53]])
+      begin
+        Timeout.timeout(0.5) { r.getname("8.8.8.8") }
+      rescue Timeout::Error
+      end
+    end
+
+    assert(socket.closed?, "file descriptor leaked")
+  end
+
+  def test_timeout_without_leaking_file_descriptors_unconnected
+    socket = nil
+    bind_random_port = lambda do |udpsock, bind_host="0.0.0.0"|
+      socket = udpsock
+      sleep 3
+    end
+
+    Resolv::DNS.stub(:bind_random_port, bind_random_port) do
+      r = Resolv::DNS.new
+      begin
+        Timeout.timeout(0.5) { r.getname("8.8.8.8") }
+      rescue Timeout::Error
+      end
+    end
+
+    assert(socket.closed?, "file descriptor leaked")
   end
 end
