@@ -4374,8 +4374,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     // Enumerable direct implementations (non-"each" versions)
     // NOTE: not a @JRubyMethod(name = "all?") as there's no Array#all? on MRI
-    public IRubyObject all_p(ThreadContext context, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block);
+    public IRubyObject all_p(ThreadContext context, IRubyObject[] args, Block block) {
+        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, args, block);
         if (!block.isGiven()) return all_pBlockless(context);
 
         for (int i = 0; i < realLength; i++) {
