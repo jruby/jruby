@@ -224,9 +224,8 @@ public class RubyMethod extends AbstractRubyMethod {
         int line = getLine(); // getLine adds 1 to 1-index but we need to reset to 0-index internally
         body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, method, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
-        Block b = MethodBlockBody.createMethodBlock(body);
-        
-        return RubyProc.newProc(runtime, b.toLambda());
+
+        return RubyProc.newProc(runtime, MethodBlockBody.createMethodBlock(body));
     }
 
     @JRubyMethod

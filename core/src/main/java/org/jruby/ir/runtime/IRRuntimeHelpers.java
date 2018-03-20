@@ -445,6 +445,8 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject newProc(Ruby runtime, Block block) {
+        if (block.getProcObject() != null) return block.getProcObject();
+
         return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(block.toProc());
     }
 

@@ -1301,11 +1301,15 @@ public class RubyKernel {
 
     @JRubyMethod(name = "proc", module = true, visibility = PRIVATE)
     public static RubyProc proc(ThreadContext context, IRubyObject recv, Block block) {
+        if (block.getProcObject() != null) return block.getProcObject();
+
         return context.runtime.newProc(block.toProc());
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static RubyProc lambda(ThreadContext context, IRubyObject recv, Block block) {
+        if (block.getProcObject() != null) return block.getProcObject();
+
         // If we encounter a amp'd proc we leave it a proc for some reason.
         Block newBlock = block.isProc() ? block : block.toLambda();
 

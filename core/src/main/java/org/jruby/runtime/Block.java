@@ -109,19 +109,31 @@ public class Block {
         return ProcBlock.newBlock(body, binding);
     }
 
+    public static Block newLambda(BlockBody body, Binding binding) {
+        return LambdaBlock.newBlock(body, binding);
+    }
+
     public Block toLambda() {
+        if (this == NULL_BLOCK) return this;
+
         return LambdaBlock.newBlock(body, binding, escapeBlock);
     }
 
     public Block toProc() {
+        if (this == NULL_BLOCK) return this;
+
         return ProcBlock.newBlock(body, binding, escapeBlock);
     }
 
     public Block toThread() {
+        if (this == NULL_BLOCK) return this;
+
         return ThreadBlock.newBlock(body, binding, escapeBlock);
     }
 
     public Block toNormal() {
+        if (this == NULL_BLOCK) return this;
+
         return NormalBlock.newBlock(body, binding, escapeBlock);
     }
 
