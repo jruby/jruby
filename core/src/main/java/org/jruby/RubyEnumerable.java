@@ -1607,14 +1607,16 @@ public class RubyEnumerable {
         return runtime.getTrue();
     }
 
-    @JRubyMethod(name = "one?")
-    public static IRubyObject one_p(ThreadContext context, IRubyObject self, final Block block) {
+    @JRubyMethod(name = "one?", optional = 1)
+    public static IRubyObject one_p(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         final Ruby runtime = context.runtime;
         final ThreadContext localContext = context;
         final boolean[] result = new boolean[] { false };
+        final IRubyObject pattern = (args.length > 0) ? args[0] : null;
+        final boolean patternGiven = pattern != null;
 
         try {
-            if (block.isGiven()) {
+            if (block.isGiven() && !patternGiven) {
                 callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, ctx, "one?");
@@ -1630,20 +1632,37 @@ public class RubyEnumerable {
                     }
                 });
             } else {
-                callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
-                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                        checkContext(localContext, ctx, "one?");
-                        IRubyObject larg = packEnumValues(runtime, largs);
-                        if (larg.isTrue()) {
-                            if (result[0]) {
-                                throw JumpException.SPECIAL_JUMP;
-                            } else {
-                                result[0] = true;
+                if (patternGiven) {
+                    callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                        public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                            checkContext(localContext, ctx, "one?");
+                            IRubyObject larg = packEnumValues(runtime, largs);
+                            if (pattern.callMethod(ctx, "===", larg).isTrue()) {
+                                if (result[0]) {
+                                    throw JumpException.SPECIAL_JUMP;
+                                } else {
+                                    result[0] = true;
+                                }
                             }
+                            return runtime.getNil();
                         }
-                        return runtime.getNil();
-                    }
-                });
+                    });
+                } else {
+                    callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                        public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                            checkContext(localContext, ctx, "one?");
+                            IRubyObject larg = packEnumValues(runtime, largs);
+                            if (larg.isTrue()) {
+                                if (result[0]) {
+                                    throw JumpException.SPECIAL_JUMP;
+                                } else {
+                                    result[0] = true;
+                                }
+                            }
+                            return runtime.getNil();
+                        }
+                    });
+                }
             }
         } catch (JumpException.SpecialJump sj) {
             return runtime.getFalse();
@@ -1653,7 +1672,7 @@ public class RubyEnumerable {
 
     @Deprecated
     public static IRubyObject one_p19(ThreadContext context, IRubyObject self, final Block block) {
-        return one_p(context, self, block);
+        return one_p(context, self, new IRubyObject[]{}, block);
     }
 
     @Deprecated
