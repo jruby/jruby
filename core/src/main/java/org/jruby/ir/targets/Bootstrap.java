@@ -1015,6 +1015,6 @@ public class Bootstrap {
 
     private static final MethodHandle CONSTRUCT_BLOCK = Binder.from(Block.class, Binding.class, CompiledIRBlockBody.class).invokeStaticQuiet(LOOKUP, Bootstrap.class, "constructBlock");
     public static Block constructBlock(Binding binding, CompiledIRBlockBody body) throws Throwable {
-        return new Block(body, binding);
+        return Block.newBlock(body, binding);
     }
 }

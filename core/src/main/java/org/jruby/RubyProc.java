@@ -141,7 +141,7 @@ public class RubyProc extends RubyObject implements DataType {
         if (procBlock.isThread()) {
             // binding for incoming proc must not share frame
             Binding newBinding = binding.cloneAndDupFrame();
-            procBlock = new Block(body, newBinding);
+            procBlock = Block.newBlock(body, newBinding);
 
             // Mark as escaped, so non-local flow errors immediately
             procBlock.escape();

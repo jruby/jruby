@@ -44,7 +44,7 @@ public class CallBlock extends BlockBody {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CallBlock(signature, callback, context);
 
-        return new Block(body, binding);
+        return Block.newBlock(body, binding);
     }
 
     @Deprecated

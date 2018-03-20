@@ -1950,7 +1950,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope scope, BlockBody body) {
-        Block block = new Block(body, context.currentBinding(self, scope));
+        Block block = Block.newBlock(body, context.currentBinding(self, scope));
 
         return block;
     }

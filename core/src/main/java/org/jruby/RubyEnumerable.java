@@ -125,7 +125,7 @@ public class RubyEnumerable {
     }
 
     public static IRubyObject each(ThreadContext context, IRubyObject self, BlockBody body) {
-        Block block = new Block(body, context.currentBinding(self, Visibility.PUBLIC));
+        Block block = Block.newBlock(body, context.currentBinding(self, Visibility.PUBLIC));
         return Helpers.invoke(context, self, "each", block);
     }
 

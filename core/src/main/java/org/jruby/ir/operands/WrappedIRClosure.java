@@ -80,7 +80,7 @@ public class WrappedIRClosure extends Operand {
         IRubyObject selfVal = (this.self instanceof Self) ? self : (IRubyObject)this.self.retrieve(context, self, currScope, currDynScope, temp);
         Binding binding = context.currentBinding(selfVal, currDynScope);
 
-        return new Block(body, binding);
+        return Block.newBlock(body, binding);
     }
 
     @Override

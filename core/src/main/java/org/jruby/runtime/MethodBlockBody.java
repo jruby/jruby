@@ -43,7 +43,7 @@ public class MethodBlockBody extends ContextAwareBlockBody {
                 body.getStaticScope().getDummyScope(),
                 body.method.getName(), body.getFile(), body.getLine());
 
-        return new Block(body, binding);
+        return Block.newBlock(body, binding);
     }
 
     @Override

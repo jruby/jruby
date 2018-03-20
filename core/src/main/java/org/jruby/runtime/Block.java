@@ -37,6 +37,10 @@ import java.util.Objects;
 import org.jruby.EvalType;
 import org.jruby.RubyProc;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.runtime.block.LambdaBlock;
+import org.jruby.runtime.block.NormalBlock;
+import org.jruby.runtime.block.ProcBlock;
+import org.jruby.runtime.block.ThreadBlock;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -55,76 +59,70 @@ public class Block {
 
     public final Type type;
 
-    private final Binding binding;
+    protected final Binding binding;
 
-    private final BlockBody body;
+    protected final BlockBody body;
 
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable
      * reference they are converted to Proc objects.  We store a reference of the associated
      * Proc object for easy conversion.
      */
-    private RubyProc proc = null;
+    protected RubyProc proc = null;
 
     /** Whether this block and any clones of it should be considered "escaped" */
-    private boolean escaped;
+    protected boolean escaped;
 
     /** What block to use for determining escape; defaults to this */
-    private Block escapeBlock = this;
+    protected Block escapeBlock;
 
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
-    public static final Block NULL_BLOCK = new Block(BlockBody.NULL_BODY);
-
-    public Block(BlockBody body, Binding binding) {
-        this(body, binding, Type.NORMAL);
-    }
+    public static final Block NULL_BLOCK = Block.newBlock(BlockBody.NULL_BODY);
 
     protected Block(BlockBody body, Binding binding, Type type) {
         assert binding != null;
         this.body = body;
         this.binding = binding;
-
         this.type = type;
+        this.escapeBlock = this;
     }
 
     protected Block(BlockBody body, Binding binding, Type type, Block escapeBlock) {
-        this(body, binding, type);
-
+        assert binding != null;
+        this.body = body;
+        this.binding = binding;
+        this.type = type;
         this.escapeBlock = escapeBlock;
     }
 
-    public Block(BlockBody body) {
-        this(body, Binding.DUMMY);
+    public static Block newBlock(BlockBody body) {
+        return NormalBlock.newBlock(body, Binding.DUMMY);
+    }
+
+    public static Block newBlock(BlockBody body, Binding binding) {
+        return NormalBlock.newBlock(body, binding);
     }
 
     public static Block newProc(BlockBody body, Binding binding) {
-        return new Block(body, binding, Type.PROC);
+        return ProcBlock.newBlock(body, binding);
     }
 
     public Block toLambda() {
-        if (type == Type.LAMBDA) return this;
-
-        return new Block(body, binding, Type.LAMBDA, escapeBlock);
+        return LambdaBlock.newBlock(body, binding, escapeBlock);
     }
 
     public Block toProc() {
-        if (type == Type.PROC) return this;
-
-        return new Block(body, binding, Type.PROC, escapeBlock);
+        return ProcBlock.newBlock(body, binding, escapeBlock);
     }
 
     public Block toThread() {
-        if (type == Type.THREAD) return this;
-
-        return new Block(body, binding, Type.THREAD, escapeBlock);
+        return ThreadBlock.newBlock(body, binding, escapeBlock);
     }
 
     public Block toNormal() {
-        if (type == Type.NORMAL) return this;
-
-        return new Block(body, binding, Type.NORMAL, escapeBlock);
+        return NormalBlock.newBlock(body, binding, escapeBlock);
     }
 
     public Block toType(Type type) {
@@ -154,16 +152,7 @@ public class Block {
     }
 
     public DynamicScope allocScope(DynamicScope parentScope) {
-        // SSS: Important!  Use getStaticScope() to use a copy of the static-scope stored in the block-body.
-        // Do not use 'closure.getStaticScope()' -- that returns the original copy of the static scope.
-        // This matters because blocks created for Thread bodies modify the static-scope field of the block-body
-        // that records additional state about the block body.
-        //
-        // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
-        // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
-        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, body.getEvalType());
-        if (type == Block.Type.LAMBDA) newScope.setLambda(true);
-        return newScope;
+        return DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, body.getEvalType());
     }
 
     public EvalType getEvalType() {
@@ -255,7 +244,7 @@ public class Block {
      * Clone this block and make it a lambda, as appropriate for define_method.
      */
     public Block cloneForMethod() {
-        return new Block(body, binding.cloneAndDupFrame(), Type.LAMBDA, escapeBlock);
+        return LambdaBlock.newBlock(body, binding.cloneAndDupFrame(), escapeBlock);
     }
 
     public Block cloneBlockForEval(IRubyObject self, EvalType evalType) {
@@ -350,6 +339,16 @@ public class Block {
         hash = 13 * hash + Objects.hashCode(this.binding);
         hash = 17 * hash + Objects.hashCode(this.body);
         return hash;
+    }
+
+    @Deprecated
+    public Block(BlockBody body, Binding binding) {
+        this(body, binding, Type.NORMAL);
+    }
+
+    @Deprecated
+    public Block(BlockBody body) {
+        this(body, Binding.DUMMY, Type.NORMAL);
     }
 
     @Deprecated

@@ -229,10 +229,10 @@ public class RubySet extends RubyObject implements Set {
     // set.rb do_with_enum (block is required)
     private static IRubyObject doWithEnum(final ThreadContext context, final IRubyObject enume, final EachBody blockImpl) {
         if ( enume.respondsTo("each_entry") ) {
-            return enume.callMethod(context, "each_entry", IRubyObject.NULL_ARRAY, new Block(blockImpl));
+            return enume.callMethod(context, "each_entry", IRubyObject.NULL_ARRAY, Block.newBlock(blockImpl));
         }
         if ( enume.respondsTo("each") ) {
-            return enume.callMethod(context, "each", IRubyObject.NULL_ARRAY, new Block(blockImpl));
+            return enume.callMethod(context, "each", IRubyObject.NULL_ARRAY, Block.newBlock(blockImpl));
         }
 
         throw context.runtime.newArgumentError("value must be enumerable");
@@ -423,7 +423,7 @@ public class RubySet extends RubyObject implements Set {
             }
         }
         else {
-            set.callMethod(context, "each", IRubyObject.NULL_ARRAY, new Block(
+            set.callMethod(context, "each", IRubyObject.NULL_ARRAY, Block.newBlock(
                 new EachBody(context.runtime) {
                     IRubyObject yieldImpl(ThreadContext context, IRubyObject e) {
                         addFlattened(context, seen, e); return context.nil;
@@ -989,7 +989,7 @@ public class RubySet extends RubyObject implements Set {
         final RubyClass Set = runtime.getClass("Set");
         final RubySet set = new RubySet(runtime, Set);
         set.allocHash(runtime, dig.size());
-        dig.callMethod(context, "each_strongly_connected_component", IRubyObject.NULL_ARRAY, new Block(
+        dig.callMethod(context, "each_strongly_connected_component", IRubyObject.NULL_ARRAY, Block.newBlock(
             new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
                 @Override
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {

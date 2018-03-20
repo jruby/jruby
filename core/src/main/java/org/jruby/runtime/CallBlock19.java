@@ -43,7 +43,7 @@ public class CallBlock19 extends BlockBody {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CallBlock19(signature, callback, context);
 
-        return new Block(body, binding);
+        return Block.newBlock(body, binding);
     }
 
     // This is a stop-gap method where we try to construct an equivalent Signature from an Arity but beyond very simple Arity's it will strip
@@ -53,7 +53,7 @@ public class CallBlock19 extends BlockBody {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CallBlock19(Signature.from(arity), callback, context);
         
-        return new Block(body, binding);
+        return Block.newBlock(body, binding);
     }
 
     public CallBlock19(Signature signature, BlockCallback callback, ThreadContext context) {
