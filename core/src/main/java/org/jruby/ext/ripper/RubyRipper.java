@@ -57,7 +57,7 @@ public class RubyRipper extends RubyObject {
         
         ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(runtime, ripper));
         ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(runtime, ripper));
-        
+
         ripper.defineAnnotatedMethods(RubyRipper.class);
     }
     
@@ -318,6 +318,11 @@ public class RubyRipper extends RubyObject {
             
         return context.runtime.newFixnum(parser.getLineno());
     }
+
+    @JRubyMethod
+    public IRubyObject state(ThreadContext context) {
+        return context.runtime.newFixnum(parser.getState());
+    }
     
     @JRubyMethod
     public IRubyObject parse(ThreadContext context) {
@@ -357,6 +362,29 @@ public class RubyRipper extends RubyObject {
     public IRubyObject dedent_string(ThreadContext context, IRubyObject _input, IRubyObject _width) {
         return dedent_string(context, this, _input, _width);
     }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject lex_state_name(ThreadContext context, IRubyObject self, IRubyObject lexStateParam) {
+        int lexState = lexStateParam.convertToInteger().getIntValue();
+
+        boolean needsSeparator = false;
+        RubyString name = null;
+        for (int i = 0; i < lexStateNames.length; i++) {
+            if ((lexState & (1<<i)) != 0) {
+                if (!needsSeparator) {
+                    name = context.runtime.newString(lexStateNames[i]);
+                    needsSeparator = true;
+                } else {
+                    name.cat('|');
+                    name.catString(lexStateNames[i]);
+                }
+            }
+        }
+
+        if (name == null) name = context.runtime.newString("EXPR_NONE");
+
+        return name;
+    }
     
     private LexerSource source(ThreadContext context, IRubyObject src, String filename, int lineno) {
         // FIXME: respond_to? returns private methods
@@ -380,8 +408,15 @@ public class RubyRipper extends RubyObject {
 
         return RubyNumeric.fix2int(line.convertToInteger()) - 1;
     }
-    
+
     private RipperParserBase parser = null;
     private IRubyObject filename = null;
     private boolean parseStarted = false;
+
+    // FIXME: Consider moving this to LexingCommon but it is very specific to ripper (perhaps I can make it more useful wit debuggin?).
+    // These are ordered in same order as LexerCommon.  Any changes to lex_state should update this.
+    private static String[] lexStateNames = new String[] {
+            "EXPR_BEG", "EXPR_END", "EXPR_ENDARG", "EXPR_ENDFN", "EXPR_ARG", "EXPR_CMDARG",
+            "EXPR_MID", "EXPR_FNAME", "EXPR_DOT", "EXPR_CLASS", "EXPR_LABEL", "EXPR_LABELED", "EXPR_FITEM"
+    };
 }

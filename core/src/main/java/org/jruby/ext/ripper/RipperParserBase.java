@@ -32,7 +32,6 @@ import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyString;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.StackState;
