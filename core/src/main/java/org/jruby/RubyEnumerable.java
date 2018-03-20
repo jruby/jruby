@@ -2030,7 +2030,7 @@ public class RubyEnumerable {
 
         IRubyObject enumerator = context.runtime.getEnumerator().allocate();
         enumerator.getInternalVariables().setInternalVariable("chunk_enumerable", self);
-        enumerator.getInternalVariables().setInternalVariable("chunk_categorize", RubyProc.newProc(context.runtime, block, block.type));
+        enumerator.getInternalVariables().setInternalVariable("chunk_categorize", RubyProc.newProc(context.runtime, block));
 
         Helpers.invoke(context, enumerator, "initialize",
                 CallBlock.newCallClosure(self, context.runtime.getEnumerable(), Signature.ONE_ARGUMENT,

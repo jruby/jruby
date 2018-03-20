@@ -92,7 +92,7 @@ public class RubyYielder extends RubyObject {
     public IRubyObject initialize(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         if (!block.isGiven()) throw runtime.newLocalJumpErrorNoBlock();
-        proc = runtime.newProc(Block.Type.PROC, block);
+        proc = runtime.newProc(block.toProc());
         return this;
     }
 

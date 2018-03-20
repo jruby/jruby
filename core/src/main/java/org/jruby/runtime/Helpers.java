@@ -1361,11 +1361,6 @@ public class Helpers {
     }
 
     @Deprecated // not-used
-    public static void registerEndBlock(Block block, Ruby runtime) {
-        runtime.pushExitBlock(runtime.newProc(Block.Type.LAMBDA, block));
-    }
-
-    @Deprecated // not-used
     public static IRubyObject match3(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
         if (value instanceof RubyString) {
             return regexp.op_match(context, value);
@@ -1838,10 +1833,6 @@ public class Helpers {
 
     public static IRubyObject setInstanceVariable(IRubyObject value, IRubyObject self, String name) {
         return self.getInstanceVariables().setInstanceVariable(name, value);
-    }
-
-    public static RubyProc newLiteralLambda(ThreadContext context, Block block, IRubyObject self) {
-        return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
     }
 
     public static void fillNil(final IRubyObject[] arr, int from, int to, Ruby runtime) {
@@ -2519,6 +2510,17 @@ public class Helpers {
     }
 
     /**
+     * We have respondTo logic in RubyModule and we have a special callsite for respond_to?.
+     * This method is just so we can share that logic.
+     */
+    public static boolean respondsToMethod(DynamicMethod method, boolean checkVisibility) {
+        if (method.isUndefined() || method.isNotImplemented()) return false;
+
+        return !(checkVisibility &&
+                (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
+    }
+
+    /**
      * This method is deprecated because it depends on having a Ruby frame pushed for checking method visibility,
      * and there's no way to enforce that. Most users of this method probably don't need to check visibility.
      *
@@ -2526,6 +2528,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, name, args, callType, block);
     }
@@ -2538,6 +2541,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, name, arg, callType, block);
     }
@@ -2550,20 +2554,18 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, CallType callType) {
         return Helpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
     }
 
-    /**
-     *
-     * We have respondTo logic in RubyModule and we have a special callsite for respond_to?.
-     * This method is just so we can share that logic.
-     */
-    public static boolean respondsToMethod(DynamicMethod method, boolean checkVisibility) {
-        if (method.isUndefined() || method.isNotImplemented()) return false;
-
-        return !(checkVisibility &&
-                (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
+    @Deprecated // not-used
+    public static void registerEndBlock(Block block, Ruby runtime) {
+        runtime.pushExitBlock(runtime.newProc(block.toLambda()));
     }
 
+    @Deprecated
+    public static RubyProc newLiteralLambda(ThreadContext context, Block block, IRubyObject self) {
+        return RubyProc.newProc(context.runtime, block.toLambda());
+    }
 }

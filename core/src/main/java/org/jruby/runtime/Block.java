@@ -53,18 +53,18 @@ public class Block {
         public final boolean checkArity;
     }
 
+    public final Type type;
+
+    private final Binding binding;
+
+    private final BlockBody body;
+
     /**
      * The Proc that this block is associated with.  When we reference blocks via variable
      * reference they are converted to Proc objects.  We store a reference of the associated
      * Proc object for easy conversion.
      */
     private RubyProc proc = null;
-
-    public Type type = Type.NORMAL;
-
-    private final Binding binding;
-
-    private final BlockBody body;
 
     /** Whether this block and any clones of it should be considered "escaped" */
     private boolean escaped;
@@ -78,13 +78,79 @@ public class Block {
     public static final Block NULL_BLOCK = new Block(BlockBody.NULL_BODY);
 
     public Block(BlockBody body, Binding binding) {
+        this(body, binding, Type.NORMAL);
+    }
+
+    protected Block(BlockBody body, Binding binding, Type type) {
         assert binding != null;
         this.body = body;
         this.binding = binding;
+
+        this.type = type;
+    }
+
+    protected Block(BlockBody body, Binding binding, Type type, Block escapeBlock) {
+        this(body, binding, type);
+
+        this.escapeBlock = escapeBlock;
     }
 
     public Block(BlockBody body) {
         this(body, Binding.DUMMY);
+    }
+
+    public static Block newProc(BlockBody body, Binding binding) {
+        return new Block(body, binding, Type.PROC);
+    }
+
+    public Block toLambda() {
+        if (type == Type.LAMBDA) return this;
+
+        return new Block(body, binding, Type.LAMBDA, escapeBlock);
+    }
+
+    public Block toProc() {
+        if (type == Type.PROC) return this;
+
+        return new Block(body, binding, Type.PROC, escapeBlock);
+    }
+
+    public Block toThread() {
+        if (type == Type.THREAD) return this;
+
+        return new Block(body, binding, Type.THREAD, escapeBlock);
+    }
+
+    public Block toNormal() {
+        if (type == Type.NORMAL) return this;
+
+        return new Block(body, binding, Type.NORMAL, escapeBlock);
+    }
+
+    public Block toType(Type type) {
+        switch (type) {
+            case PROC: return toProc();
+            case LAMBDA: return toLambda();
+            case THREAD: return toThread();
+            case NORMAL: return toNormal();
+        }
+        throw new RuntimeException("should not get here");
+    }
+
+    public boolean isLambda() {
+        return type == Type.LAMBDA;
+    }
+
+    public boolean isProc() {
+        return type == Type.PROC;
+    }
+
+    public boolean isThread() {
+        return type == Type.THREAD;
+    }
+
+    public boolean isNormal() {
+        return type == Type.NORMAL;
     }
 
     public DynamicScope allocScope(DynamicScope parentScope) {
@@ -174,40 +240,22 @@ public class Block {
     }
 
     public Block cloneBlock() {
-        Block newBlock = new Block(body, binding);
-
-        newBlock.type = type;
-        newBlock.escapeBlock = this;
-
-        return newBlock;
+        return new Block(body, binding, type, escapeBlock);
     }
 
     public Block cloneBlockAndBinding() {
-        Block newBlock = new Block(body, binding.clone());
-
-        newBlock.type = type;
-        newBlock.escapeBlock = this;
-
-        return newBlock;
+        return new Block(body, binding.clone(), type, this);
     }
 
     public Block cloneBlockAndFrame() {
-        Binding oldBinding = binding;
-        Binding binding = new Binding(
-                oldBinding.getSelf(),
-                oldBinding.getFrame().duplicate(),
-                oldBinding.getVisibility(),
-                oldBinding.getDynamicScope(),
-                oldBinding.getMethod(),
-                oldBinding.getFile(),
-                oldBinding.getLine());
+        return new Block(body, binding.cloneAndDupFrame(), type, this);
+    }
 
-        Block newBlock = new Block(body, binding);
-
-        newBlock.type = type;
-        newBlock.escapeBlock = this;
-
-        return newBlock;
+    /**
+     * Clone this block and make it a lambda, as appropriate for define_method.
+     */
+    public Block cloneForMethod() {
+        return new Block(body, binding.cloneAndDupFrame(), Type.LAMBDA, escapeBlock);
     }
 
     public Block cloneBlockForEval(IRubyObject self, EvalType evalType) {
@@ -228,16 +276,6 @@ public class Block {
         block.setEvalType(evalType);
 
         return block;
-    }
-
-    /**
-     * What is the arity of this block?
-     *
-     * @return the arity
-     */
-    @Deprecated
-    public Arity arity() {
-        return getSignature().arity();
     }
 
     public Signature getSignature() {
@@ -312,6 +350,11 @@ public class Block {
         hash = 13 * hash + Objects.hashCode(this.binding);
         hash = 17 * hash + Objects.hashCode(this.body);
         return hash;
+    }
+
+    @Deprecated
+    public Arity arity() {
+        return getSignature().arity();
     }
 
 }

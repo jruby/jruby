@@ -275,7 +275,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         if (args[last] instanceof RubyProc) {
             proc = (RubyProc) args[last];
         } else {
-            proc = runtime.newProc(Block.Type.PROC, block);
+            proc = runtime.newProc(block.toProc());
         }
 
         final Object[] convertedArgs = convertArguments((RubyArray) args[0]);

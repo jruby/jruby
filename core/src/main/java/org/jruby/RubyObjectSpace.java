@@ -73,7 +73,7 @@ public class RubyObjectSpace {
                 throw runtime.newArgumentError("wrong type argument " + finalizer.getType() + " (should be callable)");
             }
         } else {
-            finalizer = runtime.newProc(Block.Type.PROC, block);
+            finalizer = runtime.newProc(block.toProc());
         }
         IRubyObject obj = args[0];
         runtime.getObjectSpace().addFinalizer(obj, finalizer);

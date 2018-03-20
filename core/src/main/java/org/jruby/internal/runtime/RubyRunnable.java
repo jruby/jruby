@@ -57,7 +57,7 @@ public class RubyRunnable implements ThreadedRunnable {
         this.rubyThread = rubyThread;
         this.runtime = rubyThread.getRuntime();
 
-        proc = runtime.newProc(Block.Type.THREAD, currentBlock);
+        proc = runtime.newProc(currentBlock.toThread());
         this.arguments = args;
     }
 

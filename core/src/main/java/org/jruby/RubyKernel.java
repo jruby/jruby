@@ -154,7 +154,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject at_exit(ThreadContext context, IRubyObject recv, Block block) {
-        return context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.PROC, block));
+        return context.runtime.pushExitBlock(context.runtime.newProc(block));
     }
 
     @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE)
@@ -1237,7 +1237,7 @@ public class RubyKernel {
             return context.nil;
         }
         if (args.length == 1) {
-            proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
+            proc = RubyProc.newProc(context.runtime, block.toProc());
         }
         if (args.length == 2) {
             proc = (RubyProc)TypeConverter.convertToType(args[1], context.runtime.getProc(), "to_proc", true);
@@ -1301,15 +1301,15 @@ public class RubyKernel {
 
     @JRubyMethod(name = "proc", module = true, visibility = PRIVATE)
     public static RubyProc proc(ThreadContext context, IRubyObject recv, Block block) {
-        return context.runtime.newProc(Block.Type.PROC, block);
+        return context.runtime.newProc(block.toProc());
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static RubyProc lambda(ThreadContext context, IRubyObject recv, Block block) {
         // If we encounter a amp'd proc we leave it a proc for some reason.
-        Block.Type type = block.type == Block.Type.PROC ? block.type : Block.Type.LAMBDA;
+        Block newBlock = block.isProc() ? block : block.toLambda();
 
-        return context.runtime.newProc(type, block);
+        return context.runtime.newProc(newBlock);
     }
 
     @Deprecated

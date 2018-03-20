@@ -493,9 +493,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public IRubyObject to_proc(ThreadContext context) {
         BlockBody body = new SymbolProcBody(context.runtime, symbol);
 
-        return RubyProc.newProc(context.runtime,
-                                new Block(body, Binding.DUMMY),
-                                Block.Type.PROC);
+        return RubyProc.newProc(context.runtime, Block.newProc(body, Binding.DUMMY));
     }
 
     private static boolean isIdentStart(char c) {

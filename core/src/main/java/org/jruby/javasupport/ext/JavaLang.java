@@ -288,8 +288,7 @@ public abstract class JavaLang {
         public static IRubyObject to_proc(final ThreadContext context, final IRubyObject self) {
             final Ruby runtime = context.runtime;
             final java.lang.Runnable runnable = unwrapIfJavaObject(self);
-            final Block block = new Block(new RunBody(runtime, runnable));
-            return new RubyProc(runtime, runtime.getProc(), block, null, -1);
+            return RubyProc.newProc(runtime, new Block(new RunBody(runtime, runnable)));
         }
 
         private static final class RunBody extends JavaInternalBlockBody {

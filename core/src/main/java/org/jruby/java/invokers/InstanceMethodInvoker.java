@@ -75,7 +75,7 @@ public final class InstanceMethodInvoker extends MethodInvoker {
             JavaProxy proxy = castJavaProxy(self);
             final int len = args.length;
             // these extra arrays are really unfortunate; split some of these paths out to eliminate?
-            IRubyObject[] newArgs = ArraySupport.newCopy(args, RubyProc.newProc(context.runtime, block, block.type));
+            IRubyObject[] newArgs = ArraySupport.newCopy(args, RubyProc.newProc(context.runtime, block));
 
             JavaMethod method = (JavaMethod) findCallable(self, name, newArgs, len + 1);
             final Class<?>[] paramTypes = method.getParameterTypes();
@@ -94,7 +94,7 @@ public final class InstanceMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = RubyProc.newProc(context.runtime, block);
             JavaMethod method = (JavaMethod) findCallableArityOne(self, name, proc);
             final Class<?>[] paramTypes = method.getParameterTypes();
             Object cArg0 = proc.toJava(paramTypes[0]);
@@ -107,7 +107,7 @@ public final class InstanceMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = RubyProc.newProc(context.runtime, block);
             JavaMethod method = (JavaMethod) findCallableArityTwo(self, name, arg0, proc);
             final Class<?>[] paramTypes = method.getParameterTypes();
             Object cArg0 = arg0.toJava(paramTypes[0]);
@@ -121,7 +121,7 @@ public final class InstanceMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = RubyProc.newProc(context.runtime, block);
             JavaMethod method = (JavaMethod) findCallableArityThree(self, name, arg0, arg1, proc);
             final Class<?>[] paramTypes = method.getParameterTypes();
             Object cArg0 = arg0.toJava(paramTypes[0]);
@@ -136,7 +136,7 @@ public final class InstanceMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = RubyProc.newProc(context.runtime, block);
             JavaMethod method = (JavaMethod)findCallableArityFour(self, name, arg0, arg1, arg2, proc);
             final Class<?>[] paramTypes = method.getParameterTypes();
             Object cArg0 = arg0.toJava(paramTypes[0]);

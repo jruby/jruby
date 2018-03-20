@@ -55,35 +55,35 @@ import org.jruby.runtime.marshal.DataType;
  */
 @JRubyClass(name="Proc")
 public class RubyProc extends RubyObject implements DataType {
-    private Block block = Block.NULL_BLOCK;
-    private Block.Type type;
-    private String file = null;
-    private int line = -1;
+    private final Block block;
+    private final String file;
+    private final int line;
 
-    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
+    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block block) {
+        this(runtime, rubyClass, block, null, -1);
+    }
+
+    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block block, String file, int line) {
         super(runtime, rubyClass);
 
-        this.type = type;
-    }
+        this.block = prepareBlock(runtime, block);
 
-    @Deprecated
-    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
-        this(runtime, rubyClass, type, sourcePosition.getFile(), sourcePosition.getLine());
-    }
-
-    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, String file, int line) {
-        this(runtime, rubyClass, type);
+        this.block.setProcObject(this);
 
         this.file = file;
         this.line = line;
     }
 
+    public static RubyProc newProc(Ruby runtime, Block block) {
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), block);
 
-    public RubyProc(Ruby runtime, RubyClass rubyClass, Block block, String file, int line) {
-        this(runtime, rubyClass, block.type);
-        this.block = block;
-        this.file = file;
-        this.line = line;
+        return proc;
+    }
+
+    public static RubyProc newProc(Ruby runtime, Block block, String file, int line) {
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), block, file, line);
+
+        return proc;
     }
 
     public static RubyClass createProcClass(Ruby runtime) {
@@ -104,33 +104,6 @@ public class RubyProc extends RubyObject implements DataType {
 
     // Proc class
 
-    @Deprecated
-    public static RubyProc newProc(Ruby runtime, Block.Type type) {
-        throw runtime.newRuntimeError("deprecated RubyProc.newProc with no block; do not use");
-    }
-
-    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
-        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type);
-        proc.setup(block);
-
-        return proc;
-    }
-
-    @Deprecated
-    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
-        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
-        proc.setup(block);
-
-        return proc;
-    }
-
-    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, String file, int line) {
-        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, file, line);
-        proc.setup(block);
-
-        return proc;
-    }
-
     /**
      * Create a new instance of a Proc object.  We override this method (from RubyClass)
      * since we need to deal with special case of Proc.new with no arguments or block arg.  In
@@ -147,62 +120,47 @@ public class RubyProc extends RubyObject implements DataType {
             return block.getProcObject();
         }
 
-        RubyProc obj = new RubyProc(context.runtime, (RubyClass)recv, Block.Type.PROC);
-        obj.setup(block);
+        RubyProc obj = new RubyProc(context.runtime, (RubyClass)recv, block.toProc());
 
         obj.callMethod(context, "initialize", args, block);
         return obj;
     }
 
-    private void setup(Block procBlock) {
+    private static Block prepareBlock(Ruby runtime, Block procBlock) {
         if (!procBlock.isGiven()) {
-            throw getRuntime().newArgumentError("tried to create Proc object without a block");
+            throw runtime.newArgumentError("tried to create Proc object without a block");
         }
 
-        if (isLambda()) {
-            // TODO: warn "tried to create Proc object without a block"
-        }
+        BlockBody body = procBlock.getBody();
+        Binding binding = procBlock.getBinding();
+        StaticScope staticScope = body.getStaticScope();
 
-        if (isThread()) {
+        // pre-request dummy scope to avoid clone overhead in lightweight blocks
+        binding.getDummyScope(staticScope);
+
+        if (procBlock.isThread()) {
             // binding for incoming proc must not share frame
-            Binding oldBinding = procBlock.getBinding();
-            Binding newBinding = new Binding(
-                    oldBinding.getSelf(),
-                    oldBinding.getFrame().duplicate(),
-                    oldBinding.getVisibility(),
-                    oldBinding.getDynamicScope(),
-                    oldBinding.getMethod(),
-                    oldBinding.getFile(),
-                    oldBinding.getLine());
-            block = new Block(procBlock.getBody(), newBinding);
+            Binding newBinding = binding.cloneAndDupFrame();
+            procBlock = new Block(body, newBinding);
 
             // Mark as escaped, so non-local flow errors immediately
-            block.escape();
+            procBlock.escape();
 
             // modify the block with a new backref/lastline-grabbing scope
-            StaticScope oldScope = block.getBody().getStaticScope();
-            StaticScope newScope = oldScope.duplicate();
-            block.getBody().setStaticScope(newScope);
-        } else {
-            // just use as is
-            block = procBlock;
+            body.setStaticScope(staticScope.duplicate());
         }
 
         // force file/line info into the new block's binding
-        block.getBinding().setFile(block.getBody().getFile());
-        block.getBinding().setLine(block.getBody().getLine());
+        binding.setFile(body.getFile());
+        binding.setLine(body.getLine());
 
-        block.type = type;
-        block.setProcObject(this);
-
-        // pre-request dummy scope to avoid clone overhead in lightweight blocks
-        block.getBinding().getDummyScope(block.getBody().getStaticScope());
+        return procBlock;
     }
 
     @JRubyMethod(name = "clone")
     @Override
     public IRubyObject rbClone() {
-    	RubyProc newProc = newProc(getRuntime(), block, type, file, line);
+    	RubyProc newProc = newProc(getRuntime(), block, file, line);
     	// TODO: CLONE_SETUP here
     	return newProc;
     }
@@ -210,7 +168,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "dup")
     @Override
     public IRubyObject dup() {
-        return newProc(getRuntime(), block, type, file, line);
+        return newProc(getRuntime(), block, file, line);
     }
 
     @Override
@@ -263,7 +221,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
-        IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
+        IRubyObject[] preppedArgs = prepareArgs(context, block.type, block.getBody(), args);
 
         return call(context, preppedArgs, null, blockCallArg);
     }
@@ -331,7 +289,7 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     private boolean isLambda() {
-        return type.equals(Block.Type.LAMBDA);
+        return block.isLambda();
     }
 
     //private boolean isProc() {
@@ -339,12 +297,38 @@ public class RubyProc extends RubyObject implements DataType {
     //}
 
     private boolean isThread() {
-        return type.equals(Block.Type.THREAD);
+        return block.isThread();
     }
 
     @Deprecated
     public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
         return call(context, args, block);
+    }
+
+    @Deprecated
+    public static RubyProc newProc(Ruby runtime, Block.Type type) {
+        throw runtime.newRuntimeError("deprecated RubyProc.newProc with no block; do not use");
+    }
+
+    @Deprecated
+    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), block.toType(type), sourcePosition.getFile(), sourcePosition.getLine());
+
+        return proc;
+    }
+
+    @Deprecated
+    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), block.toType(type));
+
+        return proc;
+    }
+
+    @Deprecated
+    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, String file, int line) {
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), block.toType(type), file, line);
+
+        return proc;
     }
 
 }

@@ -63,7 +63,7 @@ public class RubyGenerator extends RubyObject {
         final IRubyObject proc;
 
         if (args.length == 0) {
-            proc = RubyProc.newProc(runtime, block, Block.Type.PROC);
+            proc = RubyProc.newProc(runtime, block.toProc());
         } else {
             if (!(args[0] instanceof RubyProc)) {
                 throw runtime.newTypeError(args[0], runtime.getProc());

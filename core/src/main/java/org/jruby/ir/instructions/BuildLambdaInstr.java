@@ -83,7 +83,7 @@ public class BuildLambdaInstr extends OneOperandResultBaseInstr implements Fixed
         Block block = (Block)getLambdaBody().retrieve(context, self, currScope, currDynScope, temp);
         // ENEBO: Now can live nil be passed as block reference?
         // SSS FIXME: Should we do the same %self retrieval as in the case of WrappedIRClosure? Or are lambdas special??
-        return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA, getFile(), getLine());
+        return RubyProc.newProc(context.runtime, block.toLambda(), getFile(), getLine());
     }
 
     @Override

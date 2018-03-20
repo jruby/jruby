@@ -168,6 +168,17 @@ public class Binding {
         clone.evalScopeBinding = this;
         return clone;
     }
+    
+    public Binding cloneAndDupFrame() {
+        return new Binding(
+                this.self,
+                this.frame.duplicate(),
+                this.visibility,
+                this.dynamicScope,
+                this.method,
+                this.filename,
+                this.line);
+    }
 
     /**
      * Clone the binding. The frame will be duplicated, and eval context will

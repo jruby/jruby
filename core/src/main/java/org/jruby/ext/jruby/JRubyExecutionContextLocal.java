@@ -56,7 +56,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
             }
             default_proc = block.getProcObject();
             if (default_proc == null) {
-                default_proc = RubyProc.newProc(context.runtime, block, block.type);
+                default_proc = RubyProc.newProc(context.runtime, block);
             }
         } else {
             if (args.length == 1) {

@@ -445,7 +445,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject newProc(Ruby runtime, Block block) {
-        return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
+        return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(block.toProc());
     }
 
     public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldVal, boolean unwrapArray) {
@@ -1640,7 +1640,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static void pushExitBlock(ThreadContext context, Block blk) {
-        context.runtime.pushEndBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
+        context.runtime.pushEndBlock(context.runtime.newProc(blk.toLambda()));
     }
 
     @JIT

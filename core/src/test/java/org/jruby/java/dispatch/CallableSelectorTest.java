@@ -51,7 +51,7 @@ public class CallableSelectorTest {
             @Override
             public Signature getSignature() { return Signature.ONE_ARGUMENT; }
         };
-        RubyProc dummyProc = RubyProc.newProc(runtime, new Block(body1, binding), Block.Type.PROC);
+        RubyProc dummyProc = RubyProc.newProc(runtime, Block.newProc(body1, binding));
 
         cache = new HashMap<>();
         methods = new JavaMethod[] {
@@ -84,7 +84,7 @@ public class CallableSelectorTest {
             @Override
             public Signature getSignature() { return Signature.TWO_ARGUMENTS; }
         };
-        dummyProc = RubyProc.newProc(runtime, new Block(body2, binding), Block.Type.PROC);
+        dummyProc = RubyProc.newProc(runtime, Block.newProc(body2, binding));
 
         cache = new HashMap<>();
         methods = new JavaMethod[] {
@@ -117,7 +117,7 @@ public class CallableSelectorTest {
             @Override
             public Signature getSignature() { return Signature.OPTIONAL; }
         };
-        dummyProc = RubyProc.newProc(runtime, new Block(body_1, binding), Block.Type.PROC);
+        dummyProc = RubyProc.newProc(runtime, Block.newProc(body_1, binding));
 
         cache = new HashMap<>();
         methods = new JavaMethod[] {
@@ -140,7 +140,7 @@ public class CallableSelectorTest {
             @Override
             public Signature getSignature() { return Signature.TWO_REQUIRED; }
         };
-        dummyProc = RubyProc.newProc(runtime, new Block(body_3, binding), Block.Type.PROC);
+        dummyProc = RubyProc.newProc(runtime, Block.newProc(body_3, binding));
 
         cache = new HashMap<>();
         methods = new JavaMethod[] {
@@ -163,7 +163,7 @@ public class CallableSelectorTest {
             @Override
             public Signature getSignature() { return Signature.ONE_REQUIRED; }
         };
-        dummyProc = RubyProc.newProc(runtime, new Block(body_2, binding), Block.Type.PROC);
+        dummyProc = RubyProc.newProc(runtime, Block.newProc(body_2, binding));
 
         cache = new HashMap<>();
         methods = new JavaMethod[] {

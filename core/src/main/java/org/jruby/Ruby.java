@@ -3501,16 +3501,8 @@ public final class Ruby implements Constantizable {
         return (RubyRational)RubyRational.newRationalConvert(getCurrentContext(), newFixnum(num), newFixnum(den));
     }
 
-    public RubyProc newProc(Block.Type type, Block block) {
-        if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
-
-        return RubyProc.newProc(this, block, type);
-    }
-
-    public RubyProc newBlockPassProc(Block.Type type, Block block) {
-        if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
-
-        return RubyProc.newProc(this, block, type);
+    public RubyProc newProc(Block block) {
+        return RubyProc.newProc(this, block);
     }
 
     public RubyBinding newBinding() {
@@ -5265,6 +5257,20 @@ public final class Ruby implements Constantizable {
                     + "If you need this option please set it manually as a JVM property.\n"
                     + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
         }
+    }
+
+    @Deprecated
+    public RubyProc newBlockPassProc(Block.Type type, Block block) {
+        if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
+
+        return RubyProc.newProc(this, block, type);
+    }
+
+    @Deprecated
+    public RubyProc newProc(Block.Type type, Block block) {
+        if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
+
+        return RubyProc.newProc(this, block, type);
     }
 
 }

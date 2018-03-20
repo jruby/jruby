@@ -201,7 +201,7 @@ public class SunSignalFacade implements SignalFacade {
             final RubyModule signalModule = runtime.getModule("Signal");
             Block block = CallBlock.newCallClosure(signalModule, signalModule, Signature.NO_ARGUMENTS,
                     callback, runtime.getCurrentContext());
-            retVals[0] = RubyProc.newProc(runtime, block, block.type);
+            retVals[0] = RubyProc.newProc(runtime, block);
         }
 
         return RubyArray.newArrayMayCopy(runtime, retVals);

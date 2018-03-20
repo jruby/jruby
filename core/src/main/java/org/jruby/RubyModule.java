@@ -2004,11 +2004,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        block = block.cloneBlockAndFrame();
-        RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
-
-        // a normal block passed to define_method changes to do arity checking; make it a lambda
-        proc.getBlock().type = Block.Type.LAMBDA;
+        RubyProc proc = runtime.newProc(block.cloneForMethod());
 
         newMethod = createProcMethod(name, visibility, proc);
 
@@ -2065,12 +2061,10 @@ public class RubyModule extends RubyObject {
     }
 
     private DynamicMethod createProcMethod(String name, Visibility visibility, RubyProc proc) {
-        Block block = proc.getBlock();
+        Block block = proc.getBlock().toLambda();
         block.getBinding().getFrame().setKlazz(this);
         block.getBinding().getFrame().setName(name);
         block.getBinding().setMethod(name);
-
-        block.type = Block.Type.LAMBDA;
 
         // various instructions can tell this scope is not an ordinary block but a block representing
         // a method definition.
