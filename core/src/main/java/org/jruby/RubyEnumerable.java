@@ -1811,30 +1811,34 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         final IRubyObject pattern = (args.length > 0) ? args[0] : null;
         final boolean patternGiven = pattern != null;
+        final ThreadContext localContext = context;
 
         try {
             if (block.isGiven() && !patternGiven) {
-                each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", block.getSignature()) {
-                    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                        IRubyObject packedArg = packEnumValues(context, args);
-                        if (block.yield(context, packedArg).isTrue()) throw JumpException.SPECIAL_JUMP;
+                callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
+                    public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+                        checkContext(localContext, context, "any?");
+                        IRubyObject larg = packEnumValues(runtime, largs);
+                        if (block.yield(context, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
                         return context.nil;
                     }
                 });
             } else {
                 if (patternGiven) {
-                    each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", Signature.ONE_REQUIRED) {
-                        public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                            IRubyObject packedArg = packEnumValues(context.runtime, args);
-                            if (pattern.callMethod(context, "===", packedArg).isTrue()) throw JumpException.SPECIAL_JUMP;
+                    callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                        public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+                            checkContext(localContext, context, "any?");
+                            IRubyObject larg = packEnumValues(runtime, largs);
+                            if (pattern.callMethod(context, "===", larg).isTrue()) throw JumpException.SPECIAL_JUMP;
                             return context.nil;
                         }
                     });
                 } else {
-                    each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#any?", Signature.ONE_REQUIRED) {
-                        public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                            IRubyObject packedArg = packEnumValues(context.runtime, args);
-                            if (packedArg.isTrue()) throw JumpException.SPECIAL_JUMP;
+                    callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                        public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+                            checkContext(localContext, context, "any?");
+                            IRubyObject larg = packEnumValues(runtime, largs);
+                            if (larg.isTrue()) throw JumpException.SPECIAL_JUMP;
                             return context.nil;
                         }
                     });
