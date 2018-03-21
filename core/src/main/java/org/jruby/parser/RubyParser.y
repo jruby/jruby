@@ -239,7 +239,6 @@ public class RubyParser {
 %type <Node> compstmt bodystmt stmts stmt expr arg primary command 
 %type <Node> stmt_or_begin
 %type <Node> expr_value primary_value opt_else cases if_tail exc_var rel_expr
-   // ENEBO: missing call_args2, open_args
 %type <Node> call_args opt_ensure paren_args superclass
 %type <Node> command_args var_ref opt_paren_args block_call block_command
 %type <Node> command_rhs arg_rhs
@@ -249,7 +248,6 @@ public class RubyParser {
 %type <ArgsNode> f_args f_larglist block_param block_param_def opt_block_param
 %type <Object> f_arglist
 %type <Node> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
-   // ENEBO: missing block_var == for_var, opt_block_var
 %type <Node> lhs none args
 %type <ListNode> qword_list word_list
 %type <ListNode> f_arg f_optarg
@@ -259,7 +257,6 @@ public class RubyParser {
 %type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
 %type <Node> f_kw, f_block_kw
 %type <ListNode> f_block_kwarg, f_kwarg
-   // ENEBO: missing when_args
 %type <HashNode> assoc_list
 %type <HashNode> assocs
 %type <KeyValuePair> assoc
@@ -268,13 +265,11 @@ public class RubyParser {
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
 %type <BlockArgNode> opt_f_block_arg f_block_arg
 %type <IterNode> brace_block do_block cmd_brace_block brace_body do_body
-   // ENEBO: missing mhls_entry
 %type <MultipleAsgnNode> mlhs mlhs_basic 
 %type <RescueBodyNode> opt_rescue
 %type <AssignableNode> var_lhs
 %type <LiteralNode> fsym
 %type <Node> fitem
-   // ENEBO: begin all new types
 %type <Node> f_arg_item
 %type <Node> bv_decls
 %type <Node> opt_bv_decl lambda_body 
@@ -282,8 +277,6 @@ public class RubyParser {
 %type <Node> mlhs_inner f_block_opt for_var
 %type <Node> opt_call_args f_marg f_margs
 %type <ByteList> bvar
-   // ENEBO: end all new types
-
 %type <ByteList> reswords f_bad_arg relop
 %type <ByteList> rparen rbracket 
 %type <Node> top_compstmt top_stmts top_stmt
@@ -1949,7 +1942,7 @@ brace_body      : {
                     lexer.getCmdArgumentState().reset($<Long>1.longValue());
                 }
 
- do_body 	: {
+do_body 	: {
                     support.pushBlockScope();
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
                     lexer.getCmdArgumentState().reset();

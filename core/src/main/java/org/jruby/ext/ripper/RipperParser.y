@@ -58,9 +58,11 @@ public class RipperParser extends RipperParserBase {
   keyword_alias keyword_defined keyword_BEGIN keyword_END keyword__LINE__
   keyword__FILE__ keyword__ENCODING__ keyword_do_lambda
 
-%token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
-%type <IRubyObject> sym symbol operation operation2 operation3 cname fname op
-%type <IRubyObject> f_norm_arg dot_or_colon restarg_mark blkarg_mark
+%token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
+%token <IRubyObject> tCHAR
+%type <IRubyObject> sym symbol operation operation2 operation3 op fname cname 
+%type <IRubyObject> f_norm_arg restarg_mark
+%type <IRubyObject> dot_or_colon blkarg_mark
 %token <IRubyObject> tUPLUS         /* unary+ */
 %token <IRubyObject> tUMINUS        /* unary- */
 %token <IRubyObject> tUMINUS_NUM    /* unary- */
@@ -128,8 +130,7 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> mrhs_arg
 %type <IRubyObject> compstmt bodystmt stmts stmt expr arg primary command
 %type <IRubyObject> stmt_or_begin
-%type <IRubyObject> expr_value primary_value opt_else cases if_tail exc_var
-   // ENEBO: missing call_args2, open_args
+%type <IRubyObject> expr_value primary_value opt_else cases if_tail exc_var rel_expr
 %type <IRubyObject> call_args opt_ensure paren_args superclass
 %type <IRubyObject> command_args var_ref opt_paren_args block_call block_command
 %type <IRubyObject> command_rhs arg_rhs
@@ -139,7 +140,6 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> f_args f_larglist block_param block_param_def opt_block_param
 %type <IRubyObject> f_arglist
 %type <IRubyObject> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
- // ENEBO: missing block_var == for_var, opt_block_var
 %type <IRubyObject> lhs none args
 %type <IRubyObject> qword_list word_list
 %type <RubyArray> f_arg f_optarg
@@ -148,8 +148,6 @@ public class RipperParser extends RipperParserBase {
 %type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
 %type <IRubyObject> f_kw, f_block_kw
 %type <RubyArray> f_block_kwarg, f_kwarg
-
-   // ENEBO: missing when_args
 %type <IRubyObject> assoc_list
 %type <RubyArray> assocs
 %type <IRubyObject> assoc 
@@ -157,14 +155,12 @@ public class RipperParser extends RipperParserBase {
 %type <RubyArray> f_block_optarg
 %type <IRubyObject> opt_block_arg block_arg none_block_pass
 %type <IRubyObject> opt_f_block_arg f_block_arg
-%type <IRubyObject> brace_block do_block cmd_brace_block
-   // ENEBO: missing mhls_entry
+%type <IRubyObject> brace_block do_block cmd_brace_block brace_body do_body
 %type <IRubyObject> mlhs mlhs_basic 
 %type <IRubyObject> opt_rescue
 %type <IRubyObject> var_lhs
 %type <IRubyObject> fsym
 %type <IRubyObject> fitem
-   // ENEBO: begin all new types
 %type <IRubyObject> f_arg_item
 %type <RubyArray> bv_decls
 %type <IRubyObject> opt_bv_decl lambda_body 
@@ -172,18 +168,17 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> mlhs_inner f_block_opt for_var
 %type <IRubyObject> opt_call_args f_marg f_margs
 %type <IRubyObject> bvar
-   // ENEBO: end all new types
-
-%type <IRubyObject> rparen rbracket reswords f_bad_arg
+%type <IRubyObject> reswords f_bad_arg relop
+%type <IRubyObject> rparen rbracket
 %type <IRubyObject> top_compstmt top_stmts top_stmt
 %token <IRubyObject> tSYMBOLS_BEG
 %token <IRubyObject> tQSYMBOLS_BEG
 %token <IRubyObject> tDSTAR
 %token <IRubyObject> tSTRING_DEND
-%type <IRubyObject> kwrest_mark, f_kwrest, f_label
+%type <IRubyObject> kwrest_mark f_kwrest f_label
+%type <IRubyObject> call_op call_op2
 %type <IRubyObject> f_arg_asgn
 %type <IRubyObject> fcall
-%type <IRubyObject> call_op call_op2
 %token <IRubyObject> tLABEL_END, tSTRING_DEND
 
 %type <IRubyObject> do then
@@ -419,14 +414,8 @@ block_command   : block_call
                 }
 
 // :brace_block - [!null]
-cmd_brace_block : tLBRACE_ARG {
-                    p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
-                } opt_block_param compstmt tRCURLY {
-                    $$ = p.dispatch("on_brace_block", $3, $4);
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
-                    p.popCurrentScope();
+cmd_brace_block : tLBRACE_ARG brace_body tRCURLY {
+                    $$ = $2;
                 }
 
 fcall           : operation
@@ -850,17 +839,8 @@ arg             : lhs '=' arg_rhs {
                 | arg tCMP arg {
                     $$ = p.dispatch("on_binary", $1, p.intern("<=>"), $3);
                 }
-                | arg tGT arg {
-                    $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
-                }
-                | arg tGEQ arg {
-                    $$ = p.dispatch("on_binary", $1, p.intern(">="), $3);
-                }
-                | arg tLT arg {
-                    $$ = p.dispatch("on_binary", $1, p.intern("<"), $3);
-                }
-                | arg tLEQ arg {
-                    $$ = p.dispatch("on_binary", $1, p.intern("<="), $3);
+                | rel_expr   %prec tCMP {
+                    $$ = $1;
                 }
                 | arg tEQ arg {
                     $$ = p.dispatch("on_binary", $1, p.intern("=="), $3);
@@ -905,6 +885,28 @@ arg             : lhs '=' arg_rhs {
                     $$ = $1;
                 }
 
+relop           : tGT {
+                    $$ = $1;
+                }
+                | tLT  {
+                    $$ = $1;
+                }
+                | tGEQ {
+                     $$ = $1;
+                }
+                | tLEQ {
+                     $$ = $1;
+                }
+
+rel_expr        : arg relop arg   %prec tGT {
+                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+
+                }
+		| rel_expr relop arg   %prec tGT {
+                     p.warning("comparison '" + $2 + "%s' after comparison");
+                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+                }
+ 
 arg_value       : arg {
                     $$ = $1;
                 }
@@ -1436,11 +1438,8 @@ lambda_body     : tLAMBEG compstmt tRCURLY {
                     $$ = $2;
                 }
 
-do_block        : keyword_do_block {
-                    p.pushBlockScope();
-                } opt_block_param compstmt keyword_end {
-                    $$ = p.dispatch("on_do_block", $3, $4);
-                    p.popCurrentScope();
+do_block        : keyword_do_block do_body keyword_end {
+                    $$ = $2;  
                 }
 
 block_call      : command do_block {
@@ -1485,14 +1484,8 @@ method_call     : fcall paren_args {
                     $$ = p.dispatch("on_aref", $1, $3);
                 }
 
-brace_block     : tLCURLY {
-                    p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
-                } opt_block_param compstmt tRCURLY {
-                    $$ = p.dispatch("on_brace_block", $3, $4);
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
-                    p.popCurrentScope();
+brace_block     : tLCURLY brace_body tRCURLY {
+                    $$ = $2;
                 }
                 | keyword_do {
                     p.pushBlockScope();
@@ -1501,6 +1494,26 @@ brace_block     : tLCURLY {
                 } opt_block_param compstmt keyword_end {
                     $$ = p.dispatch("on_do_block", $3, $4);
                     p.getCmdArgumentState().reset($<Long>2.longValue());
+                    p.popCurrentScope();
+                }
+
+brace_body      : {
+                    p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack()) >> 1;
+                    p.getCmdArgumentState().reset();
+                } opt_block_param compstmt  {
+                    $$ = p.dispatch("on_brace_block", $2, $3);
+                    p.getCmdArgumentState().reset($<Long>1.longValue());
+                    p.popCurrentScope();
+                }
+
+do_body 	: {
+                    p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
+                } opt_block_param bodystmt {
+                    $$ = p.dispatch("on_do_block", $2, $3);
+                    p.getCmdArgumentState().reset($<Long>1.longValue());
                     p.popCurrentScope();
                 }
 
@@ -1547,8 +1560,12 @@ strings         : string {
                 }
 
 // [!null]
-string          : tCHAR 
-                | string1
+string          : tCHAR {
+                    $$ = $1;
+                }
+                | string1 {
+                    $$ = $1;
+                }
                 | string string1 {
                     $$ = p.dispatch("on_string_concat", $1, $2);
                 }
