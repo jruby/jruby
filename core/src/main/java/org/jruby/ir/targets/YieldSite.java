@@ -67,4 +67,8 @@ public class YieldSite extends MutableCallSite {
     public IRubyObject yieldSpecific(ThreadContext context, Block block) {
         return IRRuntimeHelpers.yieldSpecific(context, block);
     }
+
+    public IRubyObject yieldValues(ThreadContext context, Block block, IRubyObject[] args) {
+        return block.yieldValues(context, args);
+    }
 }
