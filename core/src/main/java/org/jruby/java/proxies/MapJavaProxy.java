@@ -307,10 +307,13 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override // re-invent @JRubyMethod(name = "any?")
-        public IRubyObject any_p(ThreadContext context, Block block) {
+        public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
+            boolean patternGiven = args.length > 0;
+
             if (isEmpty()) return context.runtime.getFalse();
 
-            if (!block.isGiven()) return context.runtime.getTrue();
+            if (!block.isGiven() && !patternGiven) return context.runtime.getTrue();
+            if (patternGiven) return any_p_p(context, args[0]);
 
             if (block.getSignature().arityValue() > 1) {
                 return any_p_i_fast(context, block);
@@ -336,6 +339,18 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
                 final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
                 if ( block.yieldArray(context, runtime.newArray(key, val), null).isTrue() ) {
+                    return runtime.getTrue();
+                }
+            }
+            return runtime.getFalse();
+        }
+
+        private RubyBoolean any_p_p(ThreadContext context, IRubyObject pattern) {
+            final Ruby runtime = context.runtime;
+            for ( Map.Entry entry : entrySet() ) {
+                final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
+                final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+                if ( pattern.callMethod(context, "===", RubyArray.newArray(runtime, key, val)).isTrue() ) {
                     return runtime.getTrue();
                 }
             }
@@ -797,9 +812,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return dupImpl("clone");
     }
 
-    @JRubyMethod(name = "any?")
-    public IRubyObject any_p(ThreadContext context, Block block) {
-        return getOrCreateRubyHashMap().any_p(context, block);
+    @JRubyMethod(name = "any?", optional = 1)
+    public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
+        return getOrCreateRubyHashMap().any_p(context, args, block);
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true)
