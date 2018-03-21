@@ -71,7 +71,7 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         threadCheck(context);
 
-        return yield(context, args);
+        return yield(context, adjustArgs(block, args));
     }
     
     public abstract IRubyObject yield(ThreadContext context, IRubyObject[] args);
