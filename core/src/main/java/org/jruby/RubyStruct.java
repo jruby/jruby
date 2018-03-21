@@ -32,8 +32,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -174,6 +177,7 @@ public class RubyStruct extends RubyObject {
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         String name = null;
         boolean nilName = false;
+        boolean keywordInit = false;
         Ruby runtime = recv.getRuntime();
 
         if (args.length > 0) {
@@ -187,7 +191,14 @@ public class RubyStruct extends RubyObject {
 
         RubyArray member = runtime.newArray();
 
+        if (args[args.length - 1] instanceof RubyHash) {
+            RubyHash kwArgs = args[args.length - 1].convertToHash();
+            IRubyObject[] rets = ArgsUtil.extractKeywordArgs(runtime.getCurrentContext(), kwArgs, "keyword_init");
+            keywordInit = rets[0].isTrue();
+        }
+
         for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
+            if (i == args.length - 1 && args[i] instanceof RubyHash) break;
             member.append(runtime.newSymbol(args[i].asJavaString()));
         }
 
@@ -219,11 +230,13 @@ public class RubyStruct extends RubyObject {
 
         newStruct.setInternalVariable("__size__", member.length());
         newStruct.setInternalVariable("__member__", member);
+        newStruct.setInternalVariable("__keyword_init__", keywordInit ? runtime.getTrue() : runtime.getFalse());
 
         newStruct.getSingletonClass().defineAnnotatedMethods(StructMethods.class);
 
         // define access methods.
         for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
+            if (i == args.length - 1 && args[i] instanceof RubyHash) break;
             final String memberName = args[i].asJavaString();
             // if we are storing a name as well, index is one too high for values
             final int index = (name == null && !nilName) ? i : i - 1;
@@ -273,6 +286,13 @@ public class RubyStruct extends RubyObject {
         @JRubyMethod
         public static IRubyObject members(IRubyObject recv, Block block) {
             return RubyStruct.members19(recv, block);
+        }
+
+        @JRubyMethod
+        public static IRubyObject inspect(IRubyObject recv) {
+            IRubyObject keywordInit = RubyStruct.getInternalVariable((RubyClass)recv, "__keyword_init__");
+            if (!keywordInit.isTrue()) return recv.inspect();
+            return recv.inspect().convertToString().catString("(keyword_init: true)");
         }
     }
 
@@ -331,6 +351,19 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         modify();
         checkSize(args.length);
+
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), "__keyword_init__");
+
+        if (keywordInit.isTrue()) {
+            if (args.length != 1 || !(args[0] instanceof RubyHash)) throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
+            RubyHash kwArgs = args[0].convertToHash();
+            RubyArray __members__ = __member__();
+            String[] members = Stream.of(__members__.toJavaArray())
+                .map(o -> RubySymbol.objectToSymbolString(o))
+                .collect(Collectors.toList())
+                .toArray(new String[__members__.size()]);
+            args = ArgsUtil.extractKeywordArgs(context, kwArgs, members);
+        }
 
         System.arraycopy(args, 0, values, 0, args.length);
         Helpers.fillNil(values, args.length, values.length, context.runtime);
