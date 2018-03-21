@@ -47,13 +47,6 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        args = prepareArgumentsForCall(context, args, block.type);
-
-        return method.call(context, receiver, originModule, originName, args);
-    }
-
-    @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         args = prepareArgumentsForCall(context, args, block.type);
 
@@ -61,14 +54,14 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, IRubyObject self, Block blockArg) {
         IRubyObject[] realArgs = Helpers.restructureBlockArgs(context, value, getSignature(), block.type, false);
-        return method.call(context, receiver, originModule, originName, realArgs, Block.NULL_BLOCK);
+        return method.call(context, receiver, originModule, originName, realArgs, blockArg);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        return method.call(context, receiver, originModule, originName, args, Block.NULL_BLOCK);
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+        return method.call(context, receiver, originModule, originName, args, blockArg);
     }
 
     @Override

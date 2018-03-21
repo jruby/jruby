@@ -82,6 +82,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
+import static org.jruby.runtime.Helpers.arrayOf;
+
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(IRRuntimeHelpers.class);
 
@@ -465,8 +467,8 @@ public class IRRuntimeHelpers {
 
         switch (signature.arityValue()) {
             case -1 :
-                return argIsArray || (signature.opt() > 1 && value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
-            case  0 : return new IRubyObject[] { value };
+                return argIsArray || (signature.opt() > 1 && value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : arrayOf(value);
+            case  0 : return arrayOf(value);
             case  1 : {
                if (argIsArray) {
                    RubyArray valArray = ((RubyArray)value);
@@ -474,19 +476,19 @@ public class IRRuntimeHelpers {
                        value = RubyArray.newEmptyArray(context.runtime);
                    }
                }
-               return new IRubyObject[] { value };
+               return arrayOf(value);
             }
             default :
                 if (argIsArray) {
                     RubyArray valArray = (RubyArray)value;
                     if (valArray.size() == 1) value = valArray.eltInternal(0);
                     value = Helpers.aryToAry(context, value);
-                    return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+                    return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : arrayOf(value);
                 } else {
                     IRubyObject val0 = Helpers.aryToAry(context, value);
                     // FIXME: This logic exists in RubyProc and IRRubyBlockBody. consolidate when we do block call protocol work
                     if (val0.isNil()) {
-                        return new IRubyObject[] { value };
+                        return arrayOf(value);
                     } else if (!(val0 instanceof RubyArray)) {
                         throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
                     } else {
@@ -1945,7 +1947,7 @@ public class IRRuntimeHelpers {
         if (value instanceof RubyArray) {
             args = value.convertToArray().toJavaArray();
         } else {
-            args = new IRubyObject[] { value };
+            args = arrayOf(value);
         }
         return args;
     }

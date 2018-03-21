@@ -268,19 +268,20 @@ public class Signature {
     }
 
     public void checkArity(Ruby runtime, IRubyObject[] args) {
-        if (args.length < required()) {
-            throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + required() + ")");
+        int length = args.length;
+        if (length < required()) {
+            throw runtime.newArgumentError("wrong number of arguments (" + length + " for " + required() + ")");
         }
         if (rest == Rest.NONE || rest == Rest.ANON) {
             // no rest, so we have a maximum
-            if (args.length > required() + opt()) {
-                if (hasKwargs() && !TypeConverter.checkHashType(runtime, args[args.length - 1]).isNil()) {
+            if (length > required() + opt()) {
+                if (hasKwargs() && !TypeConverter.checkHashType(runtime, args[length - 1]).isNil()) {
                     // we have kwargs and a potential kwargs hash, check with length - 1
-                    if (args.length - 1 > required() + opt()) {
-                        throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
+                    if (length - 1 > required() + opt()) {
+                        throw runtime.newArgumentError("wrong number of arguments (" + length + " for " + (required() + opt) + ")");
                     }
                 } else {
-                    throw runtime.newArgumentError("wrong number of arguments (" + args.length + " for " + (required() + opt) + ")");
+                    throw runtime.newArgumentError("wrong number of arguments (" + length + " for " + (required() + opt) + ")");
                 }
             }
         }

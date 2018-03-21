@@ -56,27 +56,22 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        return yield(context, block, adjustArgs(block, args), null);
-    }
-
-    @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         return yield(context, block, adjustArgs(block, args), null, blockArg);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, IRubyObject self, Block blockArg) {
         threadCheck(context);
         
         return yield(context, new IRubyObject[] { value });
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         threadCheck(context);
 
-        return yield(context, adjustArgs(block, args));
+        return yield(context, args);
     }
     
     public abstract IRubyObject yield(ThreadContext context, IRubyObject[] args);

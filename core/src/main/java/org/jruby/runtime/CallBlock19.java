@@ -32,6 +32,8 @@ import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.runtime.Helpers.arrayOf;
+
 /**
  * A Block implemented using a Java-based BlockCallback implementation. For
  * lightweight block logic within Java code.
@@ -64,11 +66,6 @@ public class CallBlock19 extends BlockBody {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        return callback.call(context, args, Block.NULL_BLOCK);
-    }
-
-    @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         return callback.call(context, args, blockArg);
     }
@@ -80,35 +77,27 @@ public class CallBlock19 extends BlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-        return callback.call(context, new IRubyObject[] {arg0}, Block.NULL_BLOCK);
+        return callback.call(context, arrayOf(arg0), Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-        return callback.call(context, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
+        return callback.call(context, arrayOf(arg0, arg1), Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return callback.call(context, new IRubyObject[] {arg0, arg1, arg2}, Block.NULL_BLOCK);
+        return callback.call(context, arrayOf(arg0, arg1, arg2), Block.NULL_BLOCK);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-        return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, IRubyObject self, Block blockArg) {
+        return callback.call(context, arrayOf(value), blockArg);
     }
 
-    /**
-     * Yield to this block, usually passed to the current call.
-     * 
-     * @param context represents the current thread-specific data
-     * @param args The args to yield
-     * @param self The current self
-     * @return
-     */
     @Override
-    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        return callback.call(context, args, Block.NULL_BLOCK);
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+        return callback.call(context, args, blockArg);
     }
     
     public StaticScope getStaticScope() {

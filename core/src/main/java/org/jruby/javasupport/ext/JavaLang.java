@@ -309,17 +309,6 @@ public abstract class JavaLang {
             final IRubyObject yieldImpl(ThreadContext context) {
                 runnable.run(); return context.nil;
             }
-
-            @Override
-            protected final IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-                return yieldImpl(context);
-            }
-
-            @Override
-            protected final IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-                return yieldImpl(context); // avoid new IRubyObject[] { value }
-            }
-
         }
 
     }

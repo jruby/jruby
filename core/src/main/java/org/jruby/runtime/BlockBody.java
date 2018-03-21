@@ -36,7 +36,7 @@ package org.jruby.runtime;
 import com.headius.invokebinder.Binder;
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
-import org.jruby.RubyProc;
+import org.jruby.ir.JIT;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,13 +44,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
+import static org.jruby.runtime.Helpers.arrayOf;
+
 /**
  * The executable body portion of a closure.
  */
 public abstract class BlockBody {
 
     protected final Signature signature;
-    protected volatile MethodHandle testBlockBody;
 
     public BlockBody(Signature signature) {
         this.signature = signature;
@@ -68,183 +69,44 @@ public abstract class BlockBody {
         // NOOP - but "real" block bodies should track their eval-type
     }
 
-    public boolean canCallDirect() {
-        return false;
-    }
+    public abstract IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg);
 
-    public MethodHandle getTestBlockBody() {
-        final MethodHandle testBlockBody = this.testBlockBody;
-        if (testBlockBody != null) return testBlockBody;
-
-        return this.testBlockBody = Binder.from(boolean.class, ThreadContext.class, Block.class).drop(0).append(this).invoke(TEST_BLOCK_BODY);
-    }
-
-    private static final MethodHandle TEST_BLOCK_BODY = Binder.from(boolean.class, Block.class, BlockBody.class).invokeStaticQuiet(MethodHandles.lookup(), BlockBody.class, "testBlockBody");
-
-    public static boolean testBlockBody(Block block, BlockBody body) {
-        return block.getBody() == body;
-    }
-
-    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        throw new RuntimeException("callDirect not implemented in base class. We should never get here.");
-    }
-
-    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        throw new RuntimeException("yieldDirect not implemented in base class. We should never get here.");
-    }
-
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        if (canCallDirect()) {
-            return callDirect(context, block, args, Block.NULL_BLOCK);
-        } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
-        }
-    }
+    public abstract IRubyObject yield(ThreadContext context, Block block, IRubyObject value, IRubyObject self, Block blockArg);
 
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        if (canCallDirect()) {
-            return callDirect(context, block, args, blockArg);
-        } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
-        }
-    }
-
-    public final IRubyObject yield(ThreadContext context, Block block, IRubyObject value) {
-        if (canCallDirect()) {
-            return yieldDirect(context, block, new IRubyObject[] { value }, null);
-        } else {
-            return doYield(context, block, value);
-        }
-    }
-
-    public final IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        if (canCallDirect()) {
-            return yieldDirect(context, block, args, self);
-        } else {
-            IRubyObject[] preppedValue = RubyProc.prepareArgs(context, block.type, this, args);
-            return doYield(context, block, preppedValue, self);
-        }
-    }
-
-    /**
-     * Subclass specific yield implementation.
-     * <p>
-     * Should not be called directly. Gets called by {@link #yield(ThreadContext, Block, org.jruby.runtime.builtin.IRubyObject)}
-     * after ensuring that any common yield logic is taken care of.
-     */
-    protected abstract IRubyObject doYield(ThreadContext context, Block block, IRubyObject value);
-
-    /**
-     * Subclass specific yield implementation.
-     * <p>
-     * Should not be called directly. Gets called by {@link #yield(ThreadContext, Block, org.jruby.runtime.builtin.IRubyObject[], org.jruby.runtime.builtin.IRubyObject)}
-     * after ensuring that all common yield logic is taken care of.
-     */
-    protected abstract IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self);
-
-    // FIXME: This should be unified with the final versions above
-    // Here to allow incremental replacement. Overriden by subclasses which support it.
-    public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        return yield(context, block, args, self);
-    }
-
-    // FIXME: This should be unified with the final versions above
-    // Here to allow incremental replacement. Overriden by subclasses which support it.
-    public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
-        return yield(context, block, value);
-    }
-
-    public IRubyObject call(ThreadContext context, Block block) {
-        IRubyObject[] args = IRubyObject.NULL_ARRAY;
-        if (canCallDirect()) {
-            return callDirect(context, block, args, Block.NULL_BLOCK);
-        } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
-        }
-    }
-
-    public IRubyObject call(ThreadContext context, Block block, Block unusedBlock) {
-        return call(context, block);
+        return yield(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block) {
-        if (canCallDirect()) {
-            return yieldDirect(context, block, null, null);
-        } else {
-            return yield(context, block, null);
-        }
+        return yield(context, block, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
     }
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0) {
-        IRubyObject[] args = new IRubyObject[] {arg0};
-        if (canCallDirect()) {
-            return callDirect(context, block, args, Block.NULL_BLOCK);
-        } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
-        }
-    }
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, Block unusedBlock) {
-        return call(context, block, arg0);
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, Block blockArg) {
+        return yield(context, block, prepareArgumentsForCall(context, arrayOf(arg0), block.type), null, blockArg);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-        if (canCallDirect()) {
-            return yieldDirect(context, block, new IRubyObject[] { arg0 }, null);
-        } else {
-            return yield(context, block, arg0);
-        }
+        return yield(context, block, arg0, null, Block.NULL_BLOCK);
     }
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-        IRubyObject[] args = new IRubyObject[] {arg0, arg1};
-        if (canCallDirect()) {
-            return callDirect(context, block, args, Block.NULL_BLOCK);
-        } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
-        }
-    }
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block unusedBlock) {
-        return call(context, block, arg0, arg1);
+
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
+        return yield(context, block, prepareArgumentsForCall(context, new IRubyObject[] {arg0, arg1}, block.type), null, blockArg);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-        if (canCallDirect()) {
-            return yieldDirect(context, block, new IRubyObject[] { arg0, arg1 }, null);
-        } else {
-            return yield(context, block, new IRubyObject[] { arg0, arg1 }, null);
-        }
+        return yield(context, block, new IRubyObject[] { arg0, arg1 }, null, Block.NULL_BLOCK);
     }
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
-        if (canCallDirect()) {
-            return callDirect(context, block, args, Block.NULL_BLOCK);
-        } else {
-            return yield(context, block, prepareArgumentsForCall(context, args, block.type), null);
-        }
-    }
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
-        return call(context, block, arg0, arg1, arg2);
+        return yield(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        if (canCallDirect()) {
-            return yieldDirect(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
-        } else {
-            return yield(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null);
-        }
+        return yield(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null, Block.NULL_BLOCK);
     }
-
 
     public abstract StaticScope getStaticScope();
     public abstract void setStaticScope(StaticScope newScope);
-
-    /**
-     * What is the arity of this block?
-     *
-     * @return the arity
-     */
-    @Deprecated
-    public Arity arity() {
-        return signature.arity();
-    }
 
     /**
      * Is the current block a real yield'able block instead a null one
@@ -288,4 +150,14 @@ public abstract class BlockBody {
     }
 
     public static final BlockBody NULL_BODY = new NullBlockBody();
+
+    /**
+     * What is the arity of this block?
+     *
+     * @return the arity
+     */
+    @Deprecated
+    public Arity arity() {
+        return signature.arity();
+    }
 }

@@ -62,7 +62,6 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
-import org.jruby.util.StringSupport;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -1074,18 +1073,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         }
 
         @Override
-        public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, Block blockArg) {
+        public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, IRubyObject self, Block blockArg) {
             return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), blockArg);
-        }
-
-        @Override
-        protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-            return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
-        }
-
-        @Override
-        protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-            return yieldInner(context, RubyArray.newArrayMayCopy(context.runtime, args), Block.NULL_BLOCK);
         }
 
         @Override

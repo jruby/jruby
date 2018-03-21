@@ -109,7 +109,7 @@ public class TestRaiseException extends TestRubyBase {
         //    at org.jruby.runtime.callsite.CachingCallSite.cacheAndCall(org/jruby/runtime/callsite/CachingCallSite.java:293)
         //    at org.jruby.runtime.callsite.CachingCallSite.call(org/jruby/runtime/callsite/CachingCallSite.java:131)
         //    at test_raise_exception2.block in throw_it(test_raise_exception2:3)
-        //    at org.jruby.runtime.CompiledIRBlockBody.yieldDirect(org/jruby/runtime/CompiledIRBlockBody.java:156)
+        //    at org.jruby.runtime.CompiledIRBlockBody.invokeYieldDirect(org/jruby/runtime/CompiledIRBlockBody.java:156)
         //    at org.jruby.runtime.BlockBody.yield(org/jruby/runtime/BlockBody.java:110)
         //    at org.jruby.runtime.Block.yield(org/jruby/runtime/Block.java:167)
         //    at org.jruby.RubyArray.each(org/jruby/RubyArray.java:1567)

@@ -33,6 +33,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import static org.jruby.runtime.Helpers.arrayOf;
+
 /**
  * A Block implemented using a Java-based BlockCallback implementation. For
  * lightweight block logic within Java code.
@@ -68,11 +70,6 @@ public class CallBlock extends BlockBody {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        return callback.call(context, adjustArgs(block, args), Block.NULL_BLOCK);
-    }
-
-    @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         return callback.call(context, adjustArgs(block, args), blockArg);
     }
@@ -88,13 +85,13 @@ public class CallBlock extends BlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-        return callback.call(context, new IRubyObject[]{value}, Block.NULL_BLOCK);
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, IRubyObject self, Block blockArg) {
+        return callback.call(context, arrayOf(value), blockArg);
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        return callback.call(context, adjustArgs(block, args), Block.NULL_BLOCK);
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+        return callback.call(context, adjustArgs(block, args), blockArg);
     }
 
     public StaticScope getStaticScope() {

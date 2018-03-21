@@ -3,7 +3,6 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
-import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
@@ -47,7 +46,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    public boolean canCallDirect() {
+    public boolean canInvokeDirect() {
         return jittedBody != null || (interpreterContext != null && interpreterContext.hasExplicitCallProtocol());
     }
 
@@ -109,25 +108,25 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+    protected IRubyObject invokeCallDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
         // We should never get here if jittedBody is null
         assert jittedBody != null : "direct call in MixedModeIRBlockBody without jitted body";
 
         context.setCurrentBlockType(Block.Type.PROC);
-        return jittedBody.callDirect(context, block, args, blockArg);
+        return jittedBody.invokeCallDirect(context, block, args, blockArg, null);
     }
 
     @Override
-    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+    protected IRubyObject invokeYieldDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
         // We should never get here if jittedBody is null
         assert jittedBody != null : "direct yield in MixedModeIRBlockBody without jitted body";
 
         context.setCurrentBlockType(Block.Type.NORMAL);
-        return jittedBody.yieldDirect(context, block, args, self);
+        return jittedBody.invokeYieldDirect(context, block, args, blockArg, self);
     }
 
     @Override
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
+    protected IRubyObject invoke(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
         if (callCount >= 0) promoteToFullBuild(context);
 
         InterpreterContext ic = ensureInstrsReady();

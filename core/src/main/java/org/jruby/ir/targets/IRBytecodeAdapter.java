@@ -13,6 +13,7 @@ import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -167,10 +168,11 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadBlockType() {
-        if (signature.argOffset("type") == -1) {
+        if (signature.argOffset("selfBlock") == -1) {
             adapter.aconst_null();
         } else {
-            adapter.aload(signature.argOffset("type"));
+            adapter.aload(signature.argOffset("selfBlock"));
+            adapter.getfield(p(Block.class), "type", ci(Block.Type.class));
         }
     }
 

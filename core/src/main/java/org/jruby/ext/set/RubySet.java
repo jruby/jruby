@@ -254,18 +254,12 @@ public class RubySet extends RubyObject implements Set {
             return yieldImpl(context, args[0]);
         }
 
-        abstract IRubyObject yieldImpl(ThreadContext context, IRubyObject val) ;
-
         @Override
-        protected final IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+        public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
             return yieldImpl(context, args[0]);
         }
 
-        @Override
-        protected final IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-            return yieldImpl(context, value); // avoid new IRubyObject[] { value }
-        }
-
+        abstract IRubyObject yieldImpl(ThreadContext context, IRubyObject val);
     }
 
     @JRubyMethod
@@ -994,13 +988,14 @@ public class RubySet extends RubyObject implements Set {
             new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
                 @Override
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                    return doYield(context, null, args[0]);
+                    // set.add( self.class.new(css) ) :
+                    set.addImpl(runtime, RubySet.this.newSet(context, Set, (RubyArray) args[0]));
+                    return context.nil;
                 }
 
                 @Override
-                protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject css) {
-                    // set.add( self.class.new(css) ) :
-                    set.addImpl(runtime, RubySet.this.newSet(context, Set, (RubyArray) css));
+                public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+                    set.addImpl(runtime, RubySet.this.newSet(context, Set, (RubyArray) args[0]));
                     return context.nil;
                 }
             })

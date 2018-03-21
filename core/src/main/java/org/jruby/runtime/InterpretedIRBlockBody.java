@@ -89,32 +89,32 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     }
 
     @Override
-    public boolean canCallDirect() {
+    public boolean canInvokeDirect() {
         return interpreterContext != null && interpreterContext.hasExplicitCallProtocol();
     }
 
     @Override
-    protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+    protected IRubyObject invokeCallDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
         context.setCurrentBlockType(Block.Type.PROC);
         InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
         return Interpreter.INTERPRET_BLOCK(context, block, null, ic, args, block.getBinding().getMethod(), blockArg);
     }
 
     @Override
-    protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
+    protected IRubyObject invokeYieldDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
         context.setCurrentBlockType(Block.Type.NORMAL);
         InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
-        return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
+        return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, block.getBinding().getMethod(), blockArg);
     }
 
     @Override
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
+    protected IRubyObject invoke(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
         if (callCount >= 0) promoteToFullBuild(context);
 
         InterpreterContext ic = ensureInstrsReady();
 
         // Update interpreter context for next time this block is executed
-        // This ensures that if we had determined canCallDirect() is false
+        // This ensures that if we had determined canInvokeDirect() is false
         // based on the old IC, we continue to execute with it.
         interpreterContext = fullInterpreterContext;
 

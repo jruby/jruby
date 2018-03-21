@@ -43,6 +43,8 @@ import org.jruby.runtime.block.ProcBlock;
 import org.jruby.runtime.block.ThreadBlock;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.runtime.Helpers.arrayOf;
+
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
@@ -176,7 +178,7 @@ public class Block {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return body.call(context, this, args);
+        return body.call(context, this, args, NULL_BLOCK);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockArg) {
@@ -184,16 +186,16 @@ public class Block {
     }
 
     public IRubyObject call(ThreadContext context) {
-        return body.call(context, this);
+        return body.call(context, this, IRubyObject.NULL_ARRAY, NULL_BLOCK);
     }
     public IRubyObject call(ThreadContext context, Block blockArg) {
-        return body.call(context, this, blockArg);
+        return body.call(context, this, IRubyObject.NULL_ARRAY, blockArg);
     }
     public IRubyObject yieldSpecific(ThreadContext context) {
         return body.yieldSpecific(context, this);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0) {
-        return body.call(context, this, arg0);
+        return body.call(context, this, arg0, NULL_BLOCK);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockArg) {
         return body.call(context, this, arg0, blockArg);
@@ -202,7 +204,7 @@ public class Block {
         return body.yieldSpecific(context, this, arg0);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return body.call(context, this, arg0, arg1);
+        return body.call(context, this, arg0, arg1, NULL_BLOCK);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
         return body.call(context, this, arg0, arg1, blockArg);
@@ -211,7 +213,7 @@ public class Block {
         return body.yieldSpecific(context, this, arg0, arg1);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return body.call(context, this, arg0, arg1, arg2);
+        return body.call(context, this, arg0, arg1, arg2, NULL_BLOCK);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
         return body.call(context, this, arg0, arg1, arg2, blockArg);
@@ -221,11 +223,11 @@ public class Block {
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
-        return body.yield(context, this, value);
+        return body.yield(context, this, value, null, NULL_BLOCK);
     }
 
     public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
-        return body.yield(context, this, new IRubyObject[] { value }, self);
+        return body.yield(context, this, arrayOf(value), self, NULL_BLOCK);
     }
 
     public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
@@ -233,11 +235,11 @@ public class Block {
         // introduce a specialized entry-point when we know that this block has
         // explicit call protocol IR instructions.
         IRubyObject[] args = IRRuntimeHelpers.singleBlockArgToArray(value);
-        return body.yield(context, this, args, self);
+        return body.yield(context, this, args, self, NULL_BLOCK);
     }
 
     public IRubyObject yieldValues(ThreadContext context, IRubyObject[] args) {
-        return body.yield(context, this, args, null);
+        return body.yield(context, this, args, null, NULL_BLOCK);
     }
 
     public Block cloneBlock() {
