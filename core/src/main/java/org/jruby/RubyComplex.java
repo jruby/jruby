@@ -1003,21 +1003,19 @@ public class RubyComplex extends RubyNumeric {
 
     // MRI: f_finite_p
     public boolean checkFinite(ThreadContext context, IRubyObject value) {
-        IRubyObject magnitude = magnitude(context);
-
-        if (magnitude instanceof RubyInteger || magnitude instanceof RubyRational) {
+        if (value instanceof RubyInteger || value instanceof RubyRational) {
             return true;
         }
 
-        if (magnitude instanceof RubyFloat) {
-            return ((RubyFloat) magnitude).finite_p().isTrue();
+        if (value instanceof RubyFloat) {
+            return ((RubyFloat) value).finite_p().isTrue();
         }
 
-        if (magnitude instanceof RubyRational) {
+        if (value instanceof RubyRational) {
             return true;
         }
 
-        return sites(context).finite.call(context, magnitude, magnitude).isTrue();
+        return sites(context).finite.call(context, value, value).isTrue();
     }
 
     @JRubyMethod(name = "infinite?")
