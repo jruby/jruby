@@ -125,6 +125,7 @@ public class RubyComplex extends RubyNumeric {
         super(runtime, clazz);
         this.real = real;
         this.image = image;
+        this.flags |= FROZEN_F;
     }
 
     /** rb_complex_raw

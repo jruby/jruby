@@ -90,6 +90,7 @@ public class RubyRational extends RubyNumeric {
         super(runtime, clazz);
         this.num = num;
         this.den = den;
+        this.flags |= FROZEN_F;
     }
 
     private RubyRational(Ruby runtime, RubyClass clazz, IRubyObject num, IRubyObject den) {
