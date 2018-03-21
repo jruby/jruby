@@ -1021,19 +1021,24 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "infinite?")
     @Override
     public IRubyObject infinite_p(ThreadContext context) {
-        IRubyObject magnitude = magnitude(context);
+        if (checkInfinite(context, real).isNil() && checkInfinite(context, image).isNil()) {
+            return context.nil;
+        }
+        return RubyFixnum.newFixnum(getRuntime(), 1);
+    }
 
-        if (magnitude instanceof RubyInteger || magnitude instanceof RubyRational) {
+    public IRubyObject checkInfinite(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyInteger || value instanceof RubyRational) {
             return context.nil;
         }
 
-        if (magnitude instanceof RubyFloat) {
-            return ((RubyFloat) magnitude).infinite_p();
+        if (value instanceof RubyFloat) {
+            return ((RubyFloat) value).infinite_p();
         }
 
-        return sites(context).infinite.call(context, magnitude, magnitude);
+        return sites(context).infinite.call(context, value, value);
     }
-    
+
     private static final ByteList SEP = RubyFile.SLASH;
     private static final ByteList _eE = new ByteList(new byte[] { '.', 'e', 'E' }, false);
 
