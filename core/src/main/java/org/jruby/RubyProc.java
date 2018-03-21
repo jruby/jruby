@@ -87,6 +87,11 @@ public class RubyProc extends RubyObject implements DataType {
         return proc;
     }
 
+    public RubyProc toLambda() {
+        Ruby runtime = getRuntime();
+        return new RubyProc(runtime, runtime.getProc(), block.toLambda());
+    }
+
     public static RubyClass createProcClass(Ruby runtime) {
         RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setProc(procClass);

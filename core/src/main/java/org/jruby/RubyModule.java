@@ -2005,9 +2005,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        RubyProc proc = runtime.newProc(block.cloneForMethod());
-
-        newMethod = createProcMethod(name, visibility, proc);
+        newMethod = createProcMethod(name, visibility, block);
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
@@ -2062,7 +2060,15 @@ public class RubyModule extends RubyObject {
     }
 
     private DynamicMethod createProcMethod(String name, Visibility visibility, RubyProc proc) {
-        Block block = proc.getBlock().toLambda();
+        proc = proc.toLambda();
+        Block block = proc.getBlock();
+
+        prepBlockForMethod(block, name);
+
+        return new ProcMethod(this, proc, visibility, name);
+    }
+
+    private void prepBlockForMethod(Block block, String name) {
         block.getBinding().getFrame().setKlazz(this);
         block.getBinding().getFrame().setName(name);
         block.getBinding().setMethod(name);
@@ -2070,6 +2076,14 @@ public class RubyModule extends RubyObject {
         // various instructions can tell this scope is not an ordinary block but a block representing
         // a method definition.
         block.getBody().getStaticScope().makeArgumentScope();
+    }
+
+    private DynamicMethod createProcMethod(String name, Visibility visibility, Block block) {
+        block = block.cloneForMethod();
+
+        prepBlockForMethod(block, name);
+
+        RubyProc proc = RubyProc.newProc(getRuntime(), block);
 
         return new ProcMethod(this, proc, visibility, name);
     }
