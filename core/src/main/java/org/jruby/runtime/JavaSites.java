@@ -435,6 +435,7 @@ public class JavaSites {
         public final RespondToCallSite respond_to_read = new RespondToCallSite("read");
         public final RespondToCallSite respond_to_getc = new RespondToCallSite("getc");
         public final RespondToCallSite respond_to_write = new RespondToCallSite("write");
+    }
 
     public static class PathnameSites {
         public final CallSite glob = new FunctionalCachingCallSite("glob");

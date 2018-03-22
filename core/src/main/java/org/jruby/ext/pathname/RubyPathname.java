@@ -366,6 +366,7 @@ public class RubyPathname extends RubyObject {
         Ruby runtime = context.runtime;
 
         IRubyObject[] args = new IRubyObject[3];
+        boolean blockGiven = block.isGiven();
 
         args[0] = _args[0];
         if (_args.length == 1) {
@@ -375,25 +376,23 @@ public class RubyPathname extends RubyObject {
         }
 
         args[2] = RubyHash.newSmallHash(runtime);
-        ((RubyHash) args[2]).fastASetSmall(runtime.newSymbol("base"), getPath());
+        ((RubyHash) args[2]).fastASetSmall(runtime.newSymbol("base"), context.runtime.getFile().callMethod(context, "realpath", getPath()));
 
         JavaSites.PathnameSites sites = sites(context);
         CallSite glob = sites.glob;
 
-        if (block.isGiven()) {
-            return glob.call(context, this, runtime.getDir(), args, block);
-        } else {
-            RubyArray ary;
-            long i;
-            ary = glob.call(context, this, runtime.getDir(), args).convertToArray();
-            CallSite op_plus = sites.op_plus;
-            for (i = 0; i < ary.size(); i++) {
-                IRubyObject elt = ary.eltOk(i);
-                elt = op_plus.call(context, this, this, elt);
-                ary.eltSetOk(i, elt);
-            }
-            return ary;
+        RubyArray ary;
+        long i;
+        ary = glob.call(context, this, runtime.getDir(), args).convertToArray();
+        CallSite op_plus = sites.op_plus;
+        for (i = 0; i < ary.size(); i++) {
+            IRubyObject elt = ary.eltOk(i);
+            elt = op_plus.call(context, this, this, elt);
+            ary.eltSetOk(i, elt);
+            if (blockGiven) block.yield(context, elt);
         }
+
+        return blockGiven ? context.nil : ary;
     }
 
     @JRubyMethod
