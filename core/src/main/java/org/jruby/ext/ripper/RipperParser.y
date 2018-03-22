@@ -1586,11 +1586,8 @@ regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
                     $$ = p.dispatch("on_regexp_literal", $2, $3);
                 }
 
-words           : tWORDS_BEG ' ' tSTRING_END {
-                    $$ = p.dispatch("on_array", p.dispatch("on_words_new"));
-                }
-                | tWORDS_BEG word_list tSTRING_END {
-                    $$ = p.dispatch("on_array", $2);
+words           : tWORDS_BEG ' ' word_list tSTRING_END {
+                    $$ = p.dispatch("on_array", $3);
                 }
 
 word_list       : /* none */ {
@@ -1607,11 +1604,8 @@ word            : string_content {
                     $$ = p.dispatch("on_word_add", $1, $2);
                 }
 
-symbols         : tSYMBOLS_BEG ' ' tSTRING_END {
-                    $$ = p.dispatch("on_array", p.dispatch("on_symbols_new"));
-                }
-                | tSYMBOLS_BEG symbol_list tSTRING_END {
-                    $$ = p.dispatch("on_array", $2);
+symbols         : tSYMBOLS_BEG ' ' symbol_list tSTRING_END {
+                    $$ = p.dispatch("on_array", $3);
                 }
 
 symbol_list     : /* none */ {
@@ -1621,18 +1615,12 @@ symbol_list     : /* none */ {
                     $$ = p.dispatch("on_symbols_add", $1, $2);
                 }
 
-qwords          : tQWORDS_BEG ' ' tSTRING_END {
-                    $$ = p.dispatch("on_array", p.dispatch("on_qwords_new"));
-                }
-                | tQWORDS_BEG qword_list tSTRING_END {
-                    $$ = p.dispatch("on_array", $2);
+qwords          : tQWORDS_BEG ' ' qword_list tSTRING_END {
+                    $$ = p.dispatch("on_array", $3);
                 }
 
-qsymbols        : tQSYMBOLS_BEG ' ' tSTRING_END {
-                    $$ = p.dispatch("on_array", p.dispatch("on_qsymbols_new"));
-                }
-                | tQSYMBOLS_BEG qsym_list tSTRING_END {
-                    $$ = p.dispatch("on_array", $2);
+qsymbols        : tQSYMBOLS_BEG ' ' qsym_list tSTRING_END {
+                    $$ = p.dispatch("on_array", $3);
                 }
 
 qword_list      : /* none */ {

@@ -74,17 +74,28 @@ public class StringTerm extends StrTerm {
     }
 
     private int endFound(RipperLexer lexer) throws IOException {
-            if ((flags & STR_FUNC_QWORDS) != 0) {
-                flags = -1;
-                return ' ';
-            }
+        if ((flags & STR_FUNC_QWORDS) != 0) {
+            flags |= STR_FUNC_TERM;
+            lexer.pushback(0);
+            return ' ';
+        }
 
-            if ((flags & STR_FUNC_REGEXP) != 0) {
-                validateRegexp(lexer);
-                return RubyParser.tREGEXP_END;
-            }
+        lexer.setStrTerm(null);
 
-            return RubyParser.tSTRING_END;
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            validateRegexp(lexer);
+            lexer.setState(EXPR_END | EXPR_ENDARG);
+            return RubyParser.tREGEXP_END;
+        }
+
+        if ((flags & STR_FUNC_LABEL) != 0 && lexer.isLabelSuffix()) {
+            lexer.nextc();
+            lexer.setState(EXPR_BEG | EXPR_LABEL);
+            return RubyParser.tLABEL_END;
+        }
+
+        lexer.setState(EXPR_END | EXPR_ENDARG);
+        return RubyParser.tSTRING_END;
     }
 
     private void validateRegexp(RipperLexer lexer) throws IOException {
@@ -105,9 +116,11 @@ public class StringTerm extends StrTerm {
         boolean spaceSeen = false;
         int c;
 
-        if (flags == -1) {
+        if ((flags & STR_FUNC_TERM) != 0) {
+            if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
             lexer.ignoreNextScanEvent = true;
-            return RubyParser.tSTRING_END;
+            lexer.setStrTerm(null);
+            return ((flags & STR_FUNC_REGEXP) != 0) ? RubyParser.tREGEXP_END : RubyParser.tSTRING_END;
         }
         
         ByteList buffer = createByteList(lexer);        
@@ -121,6 +134,11 @@ public class StringTerm extends StrTerm {
             spaceSeen = true;
         }
 
+        if ((flags & STR_FUNC_LIST) != 0) {
+            flags &= ~STR_FUNC_LIST;
+            spaceSeen = true;
+        }
+        
         if (c == end && nest == 0) {
             return endFound(lexer);
         }
@@ -149,12 +167,11 @@ public class StringTerm extends StrTerm {
 
         if (parseStringIntoBuffer(lexer, src, buffer, enc) == EOF) {
             if ((flags & STR_FUNC_REGEXP) != 0) {
-                if (lexer.eofp) lexer.compile_error("unterminated regexp meets end of file");
-                return RubyParser.tREGEXP_END;
+                lexer.compile_error("unterminated regexp meets end of file");
             } else {
-                if (lexer.eofp) lexer.compile_error("unterminated string meets end of file");
-                return RubyParser.tSTRING_END;
+                lexer.compile_error("unterminated string meets end of file");
             }
+            flags |= STR_FUNC_TERM;
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));

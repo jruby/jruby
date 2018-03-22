@@ -72,33 +72,32 @@ public class StringTerm extends StrTerm {
     }
 
     private int endFound(RubyLexer lexer) throws IOException {
-            if ((flags & STR_FUNC_QWORDS) != 0) {
-                flags |= STR_FUNC_TERM;
-                lexer.pushback(0);
-                lexer.getPosition();
-                return ' ';
-            }
+        if ((flags & STR_FUNC_QWORDS) != 0) {
+            flags |= STR_FUNC_TERM;
+            lexer.pushback(0);
+            lexer.getPosition();
+            return ' ';
+        }
 
-            lexer.setStrTerm(null);
+        lexer.setStrTerm(null);
 
-            if ((flags & STR_FUNC_REGEXP) != 0) {
-                RegexpOptions options = lexer.parseRegexpFlags();
-                ByteList regexpBytelist = ByteList.create("");
-
-                lexer.setState(EXPR_END | EXPR_ENDARG);
-                lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
-                return RubyParser.tREGEXP_END;
-            }
-
-            if ((flags & STR_FUNC_LABEL) != 0 && lexer.isLabelSuffix()) {
-                lexer.nextc();
-                lexer.setState(EXPR_BEG | EXPR_LABEL);
-                return RubyParser.tLABEL_END;
-            }
-
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            RegexpOptions options = lexer.parseRegexpFlags();
+            ByteList regexpBytelist = ByteList.create("");
             lexer.setState(EXPR_END | EXPR_ENDARG);
-            lexer.setValue("" + end);
-            return RubyParser.tSTRING_END;
+            lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
+            return RubyParser.tREGEXP_END;
+        }
+
+        if ((flags & STR_FUNC_LABEL) != 0 && lexer.isLabelSuffix()) {
+            lexer.nextc();
+            lexer.setState(EXPR_BEG | EXPR_LABEL);
+            return RubyParser.tLABEL_END;
+        }
+
+        lexer.setState(EXPR_END | EXPR_ENDARG);
+        lexer.setValue("" + end);
+        return RubyParser.tSTRING_END;
     }
 
     public int parseString(RubyLexer lexer) throws IOException {

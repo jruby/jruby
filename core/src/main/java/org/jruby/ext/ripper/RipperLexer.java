@@ -522,15 +522,11 @@ public class RipperLexer extends LexingCommon {
             return RipperParser.tSTRING_BEG;
 
         case 'W':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_dword, begin, end);
             return RipperParser.tWORDS_BEG;
 
         case 'w':
-            lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_sword, begin, end);
             return RipperParser.tQWORDS_BEG;
 
         case 'x':
@@ -547,15 +543,11 @@ public class RipperLexer extends LexingCommon {
             return RipperParser.tSYMBEG;
 
         case 'I':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_dquote, begin, end);
             return RipperParser.tSYMBOLS_BEG;
 
         case 'i':
-            lex_strterm = new StringTerm(/* str_squote | */STR_FUNC_QWORDS, begin, end);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_sword, begin, end);
             return RipperParser.tQSYMBOLS_BEG;
         default:
             compile_error("Unknown type of %string. Expected 'Q', 'q', 'w', 'x', 'r' or any non letter character, but found '" + c + "'.");
@@ -949,27 +941,8 @@ public class RipperLexer extends LexingCommon {
         boolean spaceSeen = false;
         boolean commandState;
         boolean tokenSeen = this.tokenSeen;
-        
-        if (lex_strterm != null) {
-            int tok = lex_strterm.parseString(this, src);
 
-            if (tok == RipperParser.tSTRING_END && (lex_strterm.getFlags() & STR_FUNC_LABEL) != 0) {
-                if ((isLexState(lex_state, EXPR_BEG|EXPR_ENDFN) && !conditionState.isInState() ||
-                        isARG()) && isLabelSuffix()) {
-                    nextc();
-                    tok = RipperParser.tLABEL_END;
-                    setState(EXPR_BEG|EXPR_LABEL);
-                    lex_strterm = null;
-                }
-            }
-
-            if (tok == RipperParser.tSTRING_END || tok == RipperParser.tREGEXP_END) {
-                lex_strterm = null;
-                setState(EXPR_END|EXPR_ENDARG);
-            }
-
-            return tok;
-        }
+        if (lex_strterm != null) return lex_strterm.parseString(this, src);
 
         commandState = commandStart;
         commandStart = false;

@@ -99,9 +99,9 @@ public class HeredocTerm extends StrTerm {
     
     protected int restore(RipperLexer lexer) {
         lexer.heredoc_restore(this);
-        lexer.setStrTerm(null);
+        lexer.setStrTerm(new StringTerm(flags | STR_FUNC_TERM, 0, 0)); // Weird way of ending
         
-        return EOF;
+        return RubyParser.tSTRING_CONTENT;
     }
     
     @Override
@@ -118,6 +118,8 @@ public class HeredocTerm extends StrTerm {
         if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
             lexer.dispatchHeredocEnd();
             lexer.heredoc_restore(this);
+            lexer.setStrTerm(null);
+            lexer.setState(EXPR_END);
             return RubyParser.tSTRING_END;
         }
 
