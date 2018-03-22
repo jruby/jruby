@@ -947,9 +947,9 @@ public class RipperLexer extends LexingCommon {
         commandState = commandStart;
         commandStart = false;
         this.tokenSeen = true;
+        boolean fallthru = false;
 
         loop: for(;;) {
-            boolean fallthru = false;
             last_state = lex_state;
             c = nextc();
             switch(c) {
@@ -998,6 +998,7 @@ public class RipperLexer extends LexingCommon {
                         !isLexState(lex_state, EXPR_LABELED);
                 if (normalArg || isLexStateAll(lex_state, EXPR_ARG | EXPR_LABELED)) {
                     if (!fallthru) dispatchScanEvent(RipperParser.tIGNORED_NL);
+                    fallthru = false;
                     if (!normalArg && inKwarg) {
                         commandStart = true;
                         setState(EXPR_BEG);
