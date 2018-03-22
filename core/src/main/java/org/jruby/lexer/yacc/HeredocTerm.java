@@ -82,7 +82,7 @@ public class HeredocTerm extends StrTerm {
 
     protected int restore(RubyLexer lexer) {
         lexer.heredoc_restore(this);
-        lexer.setStrTerm(null);
+        lexer.setStrTerm(new StringTerm(flags | STR_FUNC_TERM, 0, 0, line)); // weird way to terminate heredoc.
 
         return EOF;
     }
@@ -100,6 +100,8 @@ public class HeredocTerm extends StrTerm {
         // Found end marker for this heredoc
         if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
             lexer.heredoc_restore(this);
+            lexer.setStrTerm(null);
+            lexer.setState(EXPR_END);
             return RubyParser.tSTRING_END;
         }
 

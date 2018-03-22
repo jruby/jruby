@@ -624,16 +624,12 @@ public class RubyLexer extends LexingCommon {
             return RubyParser.tSTRING_BEG;
 
         case 'W':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end, ruby_sourceline);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_dword, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return RubyParser.tWORDS_BEG;
 
         case 'w':
-            lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end, ruby_sourceline);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_sword, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return RubyParser.tQWORDS_BEG;
 
@@ -654,15 +650,11 @@ public class RubyLexer extends LexingCommon {
             return RubyParser.tSYMBEG;
         
         case 'I':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end, ruby_sourceline);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_dword, begin, end, ruby_sourceline);
             yaccValue = "%" + c + begin;
             return RubyParser.tSYMBOLS_BEG;
         case 'i':
-            lex_strterm = new StringTerm(/* str_squote | */STR_FUNC_QWORDS, begin, end, ruby_sourceline);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_sword, begin, end, ruby_sourceline);
             yaccValue = "%" + c + begin;
             return RubyParser.tQSYMBOLS_BEG;
         default:
@@ -862,26 +854,7 @@ public class RubyLexer extends LexingCommon {
         boolean commandState;
         boolean tokenSeen = this.tokenSeen;
         
-        if (lex_strterm != null) {
-            int tok = lex_strterm.parseString(this);
-
-            if (tok == RubyParser.tSTRING_END && (lex_strterm.getFlags() & STR_FUNC_LABEL) != 0) {
-                if ((isLexState(lex_state, EXPR_BEG|EXPR_ENDFN) && !conditionState.isInState() ||
-                        isARG()) && isLabelSuffix()) {
-                    nextc();
-                    tok = RubyParser.tLABEL_END;
-                    setState(EXPR_BEG|EXPR_LABEL);
-                    lex_strterm = null;
-                }
-            }
-
-            if (tok == RubyParser.tSTRING_END || tok == RubyParser.tREGEXP_END) {
-                lex_strterm = null;
-                setState(EXPR_END|EXPR_ENDARG);
-            }
-
-            return tok;
-        }
+        if (lex_strterm != null) return lex_strterm.parseString(this);
 
         commandState = commandStart;
         commandStart = false;

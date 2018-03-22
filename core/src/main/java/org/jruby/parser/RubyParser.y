@@ -2056,11 +2056,8 @@ regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
                     $$ = support.newRegexpNode(support.getPosition($2), $2, (RegexpNode) $3);
                 }
 
-words           : tWORDS_BEG ' ' tSTRING_END {
-                    $$ = new ZArrayNode(lexer.getPosition());
-                }
-                | tWORDS_BEG word_list tSTRING_END {
-                    $$ = $2;
+words           : tWORDS_BEG ' ' word_list tSTRING_END {
+                    $$ = $3;
                 }
 
 word_list       : /* none */ {
@@ -2077,11 +2074,8 @@ word            : string_content {
                      $$ = support.literal_concat(support.getPosition($1), $1, $<Node>2);
                 }
 
-symbols         : tSYMBOLS_BEG ' ' tSTRING_END {
-                    $$ = new ArrayNode(lexer.getPosition());
-                }
-                | tSYMBOLS_BEG symbol_list tSTRING_END {
-                    $$ = $2;
+symbols         : tSYMBOLS_BEG ' ' symbol_list tSTRING_END {
+                    $$ = $3;
                 }
 
 symbol_list     : /* none */ {
@@ -2091,18 +2085,12 @@ symbol_list     : /* none */ {
                     $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode($1.getPosition()).add($2) : support.asSymbol($1.getPosition(), $2));
                 }
 
-qwords          : tQWORDS_BEG ' ' tSTRING_END {
-                     $$ = new ZArrayNode(lexer.getPosition());
-                }
-                | tQWORDS_BEG qword_list tSTRING_END {
-                    $$ = $2;
+qwords          : tQWORDS_BEG ' ' qword_list tSTRING_END {
+                    $$ = $3;
                 }
 
-qsymbols        : tQSYMBOLS_BEG ' ' tSTRING_END {
-                    $$ = new ZArrayNode(lexer.getPosition());
-                }
-                | tQSYMBOLS_BEG qsym_list tSTRING_END {
-                    $$ = $2;
+qsymbols        : tQSYMBOLS_BEG ' ' qsym_list tSTRING_END {
+                    $$ = $3;
                 }
 
 

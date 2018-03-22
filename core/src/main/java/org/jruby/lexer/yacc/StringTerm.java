@@ -73,19 +73,30 @@ public class StringTerm extends StrTerm {
 
     private int endFound(RubyLexer lexer) throws IOException {
             if ((flags & STR_FUNC_QWORDS) != 0) {
-                flags = -1;
+                flags |= STR_FUNC_TERM;
+                lexer.pushback(0);
                 lexer.getPosition();
                 return ' ';
             }
+
+            lexer.setStrTerm(null);
 
             if ((flags & STR_FUNC_REGEXP) != 0) {
                 RegexpOptions options = lexer.parseRegexpFlags();
                 ByteList regexpBytelist = ByteList.create("");
 
+                lexer.setState(EXPR_END | EXPR_ENDARG);
                 lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
                 return RubyParser.tREGEXP_END;
             }
 
+            if ((flags & STR_FUNC_LABEL) != 0 && lexer.isLabelSuffix()) {
+                lexer.nextc();
+                lexer.setState(EXPR_BEG | EXPR_LABEL);
+                return RubyParser.tLABEL_END;
+            }
+
+            lexer.setState(EXPR_END | EXPR_ENDARG);
             lexer.setValue("" + end);
             return RubyParser.tSTRING_END;
     }
@@ -94,14 +105,22 @@ public class StringTerm extends StrTerm {
         boolean spaceSeen = false;
         int c;
 
-        if (flags == -1) {
+        if ((flags & STR_FUNC_TERM) != 0) {
+            if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
+            lexer.setState(EXPR_END|EXPR_ENDARG);
             lexer.setValue("" + end);
-            return RubyParser.tSTRING_END;
+            lexer.setStrTerm(null);
+            return ((flags & STR_FUNC_REGEXP) != 0) ? RubyParser.tREGEXP_END : RubyParser.tSTRING_END;
         }
 
         c = lexer.nextc();
         if ((flags & STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
             do { c = lexer.nextc(); } while (Character.isWhitespace(c));
+            spaceSeen = true;
+        }
+
+        if ((flags & STR_FUNC_LIST) != 0) {
+            flags &= ~STR_FUNC_LIST;
             spaceSeen = true;
         }
 
