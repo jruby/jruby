@@ -312,7 +312,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         // add block if needed
         if (signature.lastArgType() != Block.class) {
-            binder = binder.append("block", Block.NULL_BLOCK);
+            binder = binder.append("block", Block.class, Block.NULL_BLOCK);
         }
 
         // bind to site
