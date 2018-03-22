@@ -420,9 +420,16 @@ public class ShellLauncher {
     // MRI: Hopefully close to dln_find_exe_r used by popen logic
     public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
         String[] pathNodes;
+
         if (pathObject == null || pathObject.isNil()) {
+            RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+            pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
+        }
+
+        if (pathObject == null) {
             pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee
         }
+
         else {
             String pathSeparator = System.getProperty("path.separator");
             String path = pathObject.toString();
