@@ -21,12 +21,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod> {
-    private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRMethod.class);
-
-    private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
-
     private volatile int callCount = 0;
-    private volatile InterpretedIRMethod baseMethod;
+    private final InterpretedIRMethod baseMethod;
     private volatile DynamicMethod jittedMethod;
 
     public MixedModeIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
@@ -40,6 +36,15 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         if (Options.JIT_THRESHOLD.load() < 0) {
             callCount = -1;
         }
+    }
+
+    protected MixedModeIRMethod(MixedModeIRMethod copy) {
+        super(copy.getIRScope(), copy.getVisibility(), copy.getImplementationClass());
+
+        this.serialNumber = copy.serialNumber;
+        this.callCount = copy.callCount;
+        this.baseMethod = copy.baseMethod;
+        this.jittedMethod = copy.jittedMethod;
     }
 
     public DynamicMethod getActualMethod() {
@@ -125,19 +130,28 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         return className;
     }
 
-    @Override
-    public DynamicMethod dup() {
-        MixedModeIRMethod x = (MixedModeIRMethod) super.dup();
-        x.callCount = callCount;
-        x.baseMethod = baseMethod;
-
-        return x;
-    }
-
     public void setCallCount(int callCount) {
         synchronized (this) {
             this.callCount = callCount;
         }
     }
 
+    @Override
+    public DynamicMethod dup() {
+        return new MixedModeIRMethod(this);
+    }
+
+    @Override
+    public void setImplementationClass(RubyModule implClass) {
+        super.setImplementationClass(implClass);
+        baseMethod.setImplementationClass(implClass);
+        if (jittedMethod != null) jittedMethod.setImplementationClass(implClass);
+    }
+
+    @Override
+    public void setDefinedClass(RubyModule definedClass) {
+        super.setDefinedClass(definedClass);
+        baseMethod.setDefinedClass(definedClass);
+        if (jittedMethod != null) jittedMethod.setDefinedClass(definedClass);
+    }
 }
