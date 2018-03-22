@@ -12,20 +12,20 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyArray.newArray;
 import static org.jruby.runtime.Helpers.arrayOf;
 
-public abstract class IRBlockBody extends ContextAwareBlockBody {
+public abstract class AbstractIRBlockBody extends ContextAwareBlockBody {
     protected final String fileName;
     protected final int lineNumber;
     protected final IRClosure closure;
     ThreadLocal<EvalType> evalType;
 
-    public IRBlockBody(IRScope closure, Signature signature) {
+    public AbstractIRBlockBody(IRScope closure, Signature signature) {
         // ThreadLocal not set by default to avoid having many thread-local values initialized
         // servers such as Tomcat tend to do thread-local checks when un-deploying apps,
         // for JRuby leads to 100s of SEVERE warnings for a mid-size (booted) Rails app
         this(closure, signature, new ThreadLocal());
     }
 
-    /* internal */ IRBlockBody(IRScope closure, Signature signature, ThreadLocal evalType) {
+    /* internal */ AbstractIRBlockBody(IRScope closure, Signature signature, ThreadLocal evalType) {
         super(closure.getStaticScope(), signature);
         this.closure = (IRClosure) closure;
         this.fileName = closure.getFileName();
@@ -33,11 +33,13 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         this.evalType = evalType;
     }
 
+    @Override
     public final EvalType getEvalType() {
         final EvalType type = this.evalType.get();
         return type == null ? EvalType.NONE : type;
     }
 
+    @Override
     public void setEvalType(final EvalType type) {
         if (type == null || type == EvalType.NONE) {
             this.evalType.remove();
@@ -46,6 +48,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         }
     }
 
+    @Override
     public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, IRubyObject self, Block blockArg) {
         if (canInvokeDirect()) {
             return invokeYieldDirect(context, block, arrayOf(value), blockArg, self);
@@ -54,6 +57,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         }
     }
 
+    @Override
     public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
         if (canInvokeDirect()) {
             return invokeYieldDirect(context, block, args, blockArg, self);
@@ -87,52 +91,46 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block) {
-        return invokeSpecific(context, block, Block.NULL_BLOCK, null);
+        return invokeYieldSpecific(context, block, Block.NULL_BLOCK, null);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-        return invokeSpecific(context, block, arg0, Block.NULL_BLOCK, null);
+        return invokeYieldSpecific(context, block, arg0, Block.NULL_BLOCK, null);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-        return invokeSpecific(context, block, arg0, arg1, Block.NULL_BLOCK, null);
+        return invokeYieldSpecific(context, block, arg0, arg1, Block.NULL_BLOCK, null);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return invokeSpecific(context, block, arg0, arg1, arg2, Block.NULL_BLOCK, null);
+        return invokeYieldSpecific(context, block, arg0, arg1, arg2, Block.NULL_BLOCK, null);
     }
 
-    protected abstract boolean canInvokeDirect();
+    protected boolean canInvokeDirect() {
+        return false;
+    }
 
-    /**
-     * This is the only method that *must* be implemented in blocks, and represents the bulk of logic.
-     *
-     * Other forms empty into this one and can be overridden to optimize specific paths.
-     *
-     * @param context
-     * @param block
-     * @param args
-     * @param blockArg
-     * @param self
-     * @return
-     */
-    protected abstract IRubyObject invoke(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self);
+    protected IRubyObject invoke(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
+        throw new UnsupportedOperationException("invoke not implemented");
+    }
 
-    protected abstract IRubyObject invokeCallDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self);
+    protected IRubyObject invokeCallDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
+        throw new UnsupportedOperationException("invokeCallDirect not implemented");
+    }
 
-    protected abstract IRubyObject invokeYieldDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self);
+    protected IRubyObject invokeYieldDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
+        throw new UnsupportedOperationException("invokeYieldDirect not implemented");
+    }
 
     IRubyObject invokeYield(ThreadContext context, Block block, IRubyObject value, Block blockArg, IRubyObject self) {
         if (block.isLambda()) return invokeLambda(context, block, value, blockArg, self);
 
         int blockArity = signature.arityValue();
 
-        if (value == null) { // no args case from BlockBody.yieldSpecific
-            return invoke(context, block, IRubyObject.NULL_ARRAY, blockArg, self);
-        } else if (!signature.hasKwargs() && blockArity >= -1 && blockArity <= 1) {
+        if (!signature.hasKwargs() && blockArity >= -1 && blockArity <= 1) {
             return invoke(context, block, arrayOf(value), blockArg, self);
         } else {
             return invoke(context, block, toAry(context, value), blockArg, self);
@@ -141,9 +139,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     IRubyObject invokeLambda(ThreadContext context, Block block, IRubyObject value, Block blockArg, IRubyObject self) {
         // Lambda does not splat arrays even if a rest arg is present when it wants a single parameter filled.
-        if (value == null) { // no args case from BlockBody.yieldSpecific
-            return invokeLambda(context, block, IRubyObject.NULL_ARRAY, blockArg, self);
-        } else if (signature.required() == 1 || signature.arityValue() == -1) {
+        if (signature.required() == 1 || signature.arityValue() == -1) {
             return invokeLambda(context, block, arrayOf(value), blockArg, self);
         } else {
             return invokeLambda(context, block, toAry(context, value), blockArg, self);
@@ -156,7 +152,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         return invoke(context, block, args, blockArg, self);
     }
 
-    IRubyObject invokeSpecific(ThreadContext context, Block block, Block blockArg, IRubyObject self) {
+    IRubyObject invokeYieldSpecific(ThreadContext context, Block block, Block blockArg, IRubyObject self) {
         if (canInvokeDirect()) {
             return invokeYieldDirect(context, block, null, blockArg, self);
         } else {
@@ -166,8 +162,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         }
     }
 
-    IRubyObject invokeSpecific(ThreadContext context, Block block, IRubyObject arg0, Block blockArg, IRubyObject self) {
-        if (canInvokeDirect()) return invokeSpecificDirect(context, block, arg0, blockArg, self);
+    IRubyObject invokeYieldSpecific(ThreadContext context, Block block, IRubyObject arg0, Block blockArg, IRubyObject self) {
+        if (canInvokeDirect()) return invokeYieldSpecificDirect(context, block, arg0, blockArg, self);
 
         if (arg0 instanceof RubyArray) {
             // Unwrap the array arg
@@ -182,7 +178,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         return invokeYield(context, block, arg0, blockArg, self);
     }
 
-    IRubyObject invokeSpecificDirect(ThreadContext context, Block block, IRubyObject arg0, Block blockArg, IRubyObject self) {
+    IRubyObject invokeYieldSpecificDirect(ThreadContext context, Block block, IRubyObject arg0, Block blockArg, IRubyObject self) {
         IRubyObject[] args;
         if (arg0 instanceof RubyArray) {
             // Unwrap the array arg
@@ -193,37 +189,55 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         return invokeYieldDirect(context, block, args, blockArg, self);
     }
 
-    IRubyObject invokeSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block blockArg, IRubyObject self) {
-        if (canInvokeDirect()) return invokeSpecificDirect(context, block, arg0, arg1, blockArg, self);
+    IRubyObject invokeYieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block blockArg, IRubyObject self) {
+        if (canInvokeDirect()) return invokeYieldSpecificDirect(context, block, arg0, arg1, blockArg, self);
+
+        IRubyObject[] args = boxArgs(context, block, arg0, arg1);
+
+        return invoke(context, block, args, blockArg, self);
+    }
+
+    private IRubyObject[] boxArgs(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
+        IRubyObject[] args;
 
         switch (signature.arityValue()) {
             case 0:
-                return invoke(context, block, IRubyObject.NULL_ARRAY, blockArg, self);
+                args = IRubyObject.NULL_ARRAY;
+                break;
             case 1:
-                return invoke(context, block, arrayOf(newArray(context.runtime, arg0, arg1)), blockArg, self);
+                args = arrayOf(newArray(context.runtime, arg0, arg1));
+                break;
             default:
-                IRubyObject[] args = arrayOf(arg0, arg1);
+                args = arrayOf(arg0, arg1);
                 if (block.isLambda()) signature.checkArity(context.runtime, args);
-                return invoke(context, block, args, blockArg, self);
         }
+        return args;
     }
 
-    IRubyObject invokeSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg, IRubyObject self) {
-        if (canInvokeDirect()) return invokeSpecificDirect(context, block, arg0, arg1, arg2, blockArg, self);
+    private IRubyObject[] boxArgs(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        IRubyObject[] args;
 
         switch (signature.arityValue()) {
             case 0:
-                return invoke(context, block, IRubyObject.NULL_ARRAY, blockArg, self);
+                args = IRubyObject.NULL_ARRAY;
+                break;
             case 1:
-                return invoke(context, block, arrayOf(newArray(context.runtime, arg0, arg1, arg2)), blockArg, self);
+                args = arrayOf(newArray(context.runtime, arg0, arg1, arg2));
+                break;
             default:
-                IRubyObject[] args = arrayOf(arg0, arg1, arg2);
+                args = arrayOf(arg0, arg1, arg2);
                 if (block.isLambda()) signature.checkArity(context.runtime, args);
-                return invoke(context, block, args, blockArg, self);
         }
+        return args;
     }
 
-    IRubyObject invokeSpecificDirect(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block blockArg, IRubyObject self) {
+    IRubyObject invokeYieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg, IRubyObject self) {
+        if (canInvokeDirect()) return invokeYieldSpecificDirect(context, block, arg0, arg1, arg2, blockArg, self);
+
+        return invoke(context, block, boxArgs(context, block, arg0, arg1, arg2), blockArg, self);
+    }
+
+    IRubyObject invokeYieldSpecificDirect(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block blockArg, IRubyObject self) {
         switch (signature.arityValue()) {
             case 0:
                 return invokeYieldDirect(context, block, arrayOf(arg0, arg1), blockArg, self);
@@ -234,7 +248,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         }
     }
 
-    IRubyObject invokeSpecificDirect(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg, IRubyObject self) {
+    IRubyObject invokeYieldSpecificDirect(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg, IRubyObject self) {
         switch (signature.arityValue()) {
             case 0:
                 return invokeYieldDirect(context, block, arrayOf(arg0, arg1, arg2), blockArg, self);

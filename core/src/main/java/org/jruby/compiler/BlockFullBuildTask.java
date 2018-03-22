@@ -1,24 +1,23 @@
 package org.jruby.compiler;
 
-import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.runtime.MixedModeIRBlockBody;
+import org.jruby.runtime.OptInterpretedIRBlockBody;
 
 /**
  * Created by headius on 12/8/16.
  */
-class FullBuildTask implements Runnable {
+class BlockFullBuildTask implements Runnable {
     private JITCompiler jitCompiler;
-    private final Compilable<InterpreterContext> method;
+    private final MixedModeIRBlockBody method;
 
-    FullBuildTask(JITCompiler jitCompiler, Compilable<InterpreterContext> method) {
+    BlockFullBuildTask(JITCompiler jitCompiler, MixedModeIRBlockBody method) {
         this.jitCompiler = jitCompiler;
         this.method = method;
     }
 
     public void run() {
         try {
-            method.getIRScope().getRootLexicalScope().prepareFullBuild();
-
-            method.completeBuild(method.getIRScope().prepareFullBuild());
+            method.completeBuild(new OptInterpretedIRBlockBody(method.getScope(), method.getSignature()));
 
             if (jitCompiler.config.isJitLogging()) {
                 JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(), "done building");

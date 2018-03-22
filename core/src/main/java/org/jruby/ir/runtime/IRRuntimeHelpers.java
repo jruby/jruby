@@ -1403,12 +1403,8 @@ public class IRRuntimeHelpers {
     public static void defInterpretedClassMethod(ThreadContext context, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
-        DynamicMethod newMethod;
-        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
-            newMethod = new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass);
-        } else {
-            newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
-        }
+        DynamicMethod newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
+
         // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(method.getName(), newMethod);
         if (!rubyClass.isRefinement()) {
@@ -1458,12 +1454,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, rubyClass, method.getName(), currVisibility);
 
-        DynamicMethod newMethod;
-        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
-            newMethod = new InterpretedIRMethod(method, newVisibility, rubyClass);
-        } else {
-            newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
-        }
+        DynamicMethod newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(rubyClass, method.getName(), newMethod, currVisibility, context, runtime);

@@ -28,8 +28,6 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     protected final Signature signature;
     protected final IRScope method;
     protected final StaticScope staticScope;
-    protected InterpreterContext interpreterContext = null;
-    protected int callCount = 0;
     private MethodData methodData;
 
     public AbstractIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
@@ -38,22 +36,10 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         this.staticScope = method.getStaticScope();
         this.staticScope.determineModule();
         this.signature = staticScope.getSignature();
-
-        // -1 jit.threshold is way of having interpreter not promote full builds.
-        if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
-
-        // If we are printing, do the build right at creation time so we can see it
-        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
-            ensureInstrsReady();
-        }
     }
 
     public IRScope getIRScope() {
         return method;
-    }
-
-    public void setCallCount(int callCount) {
-        this.callCount = callCount;
     }
 
     public StaticScope getStaticScope() {

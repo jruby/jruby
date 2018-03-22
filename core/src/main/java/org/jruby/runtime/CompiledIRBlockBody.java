@@ -5,7 +5,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.invoke.MethodHandle;
 
-public class CompiledIRBlockBody extends IRBlockBody {
+import static org.jruby.runtime.Helpers.arrayOf;
+
+public class CompiledIRBlockBody extends AbstractIRBlockBody {
     protected final MethodHandle handle;
 
     public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
@@ -28,6 +30,56 @@ public class CompiledIRBlockBody extends IRBlockBody {
 
     public MethodHandle getHandle() {
         return handle;
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject value, IRubyObject self, Block blockArg) {
+        return invokeYieldDirect(context, block, arrayOf(value), blockArg, self);
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
+        return invokeYieldDirect(context, block, args, blockArg, self);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, Block blockArg) {
+        return invokeCallDirect(context, block, arrayOf(arg0), blockArg, null);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
+        return invokeCallDirect(context, block, arrayOf(arg0, arg1), blockArg, null);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
+        return invokeCallDirect(context, block, arrayOf(arg0, arg1, arg2), blockArg, null);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
+        return invokeCallDirect(context, block, args, blockArg, null);
+    }
+
+    @Override
+    public IRubyObject yieldSpecific(ThreadContext context, Block block) {
+        return invokeYieldDirect(context, block, null, Block.NULL_BLOCK, null);
+    }
+
+    @Override
+    public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
+        return invokeYieldSpecificDirect(context, block, arg0, Block.NULL_BLOCK, null);
+    }
+
+    @Override
+    public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
+        return invokeYieldSpecificDirect(context, block, arg0, arg1, Block.NULL_BLOCK, null);
+    }
+
+    @Override
+    public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return invokeYieldSpecificDirect(context, block, arg0, arg1, arg2, Block.NULL_BLOCK, null);
     }
 
     @Override

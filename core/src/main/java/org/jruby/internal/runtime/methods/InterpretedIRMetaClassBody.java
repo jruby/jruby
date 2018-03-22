@@ -35,11 +35,4 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
         }
         context.setCurrentVisibility(getVisibility());
     }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        return callInternal(context, self, clazz, name, block);
-    }
 }

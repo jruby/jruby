@@ -77,32 +77,32 @@ public abstract class BlockBody {
         return yield(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context, Block block) {
-        return yield(context, block, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
-    }
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, Block blockArg) {
         return yield(context, block, prepareArgumentsForCall(context, arrayOf(arg0), block.type), null, blockArg);
+    }
+
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
+        return yield(context, block, prepareArgumentsForCall(context, arrayOf(arg0, arg1), block.type), null, blockArg);
+    }
+
+    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
+        return yield(context, block, prepareArgumentsForCall(context, arrayOf(arg0, arg1, arg2), block.type), null, blockArg);
+    }
+
+    public IRubyObject yieldSpecific(ThreadContext context, Block block) {
+        return yield(context, block, IRubyObject.NULL_ARRAY, null, Block.NULL_BLOCK);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
         return yield(context, block, arg0, null, Block.NULL_BLOCK);
     }
 
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, Block blockArg) {
-        return yield(context, block, prepareArgumentsForCall(context, new IRubyObject[] {arg0, arg1}, block.type), null, blockArg);
-    }
-
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-        return yield(context, block, new IRubyObject[] { arg0, arg1 }, null, Block.NULL_BLOCK);
-    }
-
-    public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockArg) {
-        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
-        return yield(context, block, prepareArgumentsForCall(context, args, block.type), null, blockArg);
+        return yield(context, block, arrayOf(arg0, arg1), null, Block.NULL_BLOCK);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return yield(context, block, new IRubyObject[] { arg0, arg1, arg2 }, null, Block.NULL_BLOCK);
+        return yield(context, block, arrayOf(arg0, arg1, arg2), null, Block.NULL_BLOCK);
     }
 
     public abstract StaticScope getStaticScope();

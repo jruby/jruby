@@ -5,31 +5,26 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.ir.persistence.IRDumper;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-
-public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
+public class MixedModeIRBlockBody extends AbstractIRBlockBody implements Compilable<AbstractIRBlockBody> {
     private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
 
     protected boolean pushScope;
     protected boolean reuseParentScope;
-    private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private volatile int callCount = 0;
-    private InterpreterContext interpreterContext;
-    private volatile CompiledIRBlockBody jittedBody;
+    private final InterpretedIRBlockBody baseBody;
+    private AbstractIRBlockBody jittedBody;
 
     public MixedModeIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
         this.pushScope = true;
         this.reuseParentScope = false;
+        this.baseBody = new InterpretedIRBlockBody(closure, signature);
 
         // JIT currently JITs blocks along with their method and no on-demand by themselves.  We only
         // promote to full build here if we are -X-C.
@@ -47,7 +42,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     public boolean canInvokeDirect() {
-        return jittedBody != null || (interpreterContext != null && interpreterContext.hasExplicitCallProtocol());
+        return jittedBody != null;
     }
 
     @Override
@@ -58,7 +53,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    public void completeBuild(CompiledIRBlockBody blockBody) {
+    public void completeBuild(AbstractIRBlockBody blockBody) {
         setCallCount(-1);
         blockBody.evalType = this.evalType; // share with parent
         this.jittedBody = blockBody;
@@ -79,22 +74,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     public InterpreterContext ensureInstrsReady() {
-        if (IRRuntimeHelpers.isDebug() && !displayedCFG) {
-            LOG.info("Executing '" + closure + "' (pushScope=" + pushScope + ", reuseParentScope=" + reuseParentScope);
-            LOG.info(closure.debugOutput());
-            displayedCFG = true;
-        }
-
-        if (interpreterContext == null) {
-            if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime())) {
-                ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
-
-                LOG.info("Printing simple IR for " + closure.getName() + ":\n" + new String(baos.toByteArray()));
-            }
-
-            interpreterContext = closure.getInterpreterContext();
-        }
-        return interpreterContext;
+        return baseBody.ensureInstrsReady();
     }
 
     @Override
@@ -109,18 +89,12 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     protected IRubyObject invokeCallDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
-        // We should never get here if jittedBody is null
-        assert jittedBody != null : "direct call in MixedModeIRBlockBody without jitted body";
-
         context.setCurrentBlockType(Block.Type.PROC);
         return jittedBody.invokeCallDirect(context, block, args, blockArg, null);
     }
 
     @Override
     protected IRubyObject invokeYieldDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
-        // We should never get here if jittedBody is null
-        assert jittedBody != null : "direct yield in MixedModeIRBlockBody without jitted body";
-
         context.setCurrentBlockType(Block.Type.NORMAL);
         return jittedBody.invokeYieldDirect(context, block, args, blockArg, self);
     }
@@ -129,31 +103,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     protected IRubyObject invoke(ThreadContext context, Block block, IRubyObject[] args, Block blockArg, IRubyObject self) {
         if (callCount >= 0) promoteToFullBuild(context);
 
-        InterpreterContext ic = ensureInstrsReady();
-
-        Binding binding = block.getBinding();
-        Visibility oldVis = binding.getFrame().getVisibility();
-        Frame prevFrame = context.preYieldNoScope(binding);
-
-        // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
-        // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
-        // is just wasteful allocation since the scope is not used at all.
-        DynamicScope actualScope = binding.getDynamicScope();
-        if (ic.pushNewDynScope()) {
-            context.pushScope(block.allocScope(actualScope));
-        } else if (ic.reuseParentDynScope()) {
-            // Reuse! We can avoid the push only if surrounding vars aren't referenced!
-            context.pushScope(actualScope);
-        }
-
-        self = IRRuntimeHelpers.updateBlockState(block, self);
-
-        try {
-            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
-        }
-        finally {
-            postYield(context, ic, binding, oldVis, prevFrame);
-        }
+        return baseBody.invoke(context, block, args, blockArg, self);
     }
 
     private void promoteToFullBuild(ThreadContext context) {

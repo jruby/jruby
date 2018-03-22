@@ -3,7 +3,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -16,8 +15,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     public InterpretedIRBodyMethod(IRScope method, RubyModule implementationClass) {
         super(method, Visibility.PUBLIC, implementationClass);
-
-        callCount = -1;
     }
 
     @Override
@@ -27,22 +24,58 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        return call(context, self, clazz, name, block);
+        return callInternal(context, self, clazz, name, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
         return callInternal(context, self, clazz, name, block);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        return callInternal(context, self, clazz, name, block);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return callInternal(context, self, clazz, name, block);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return callInternal(context, self, clazz, name, block);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        return callInternal(context, self, clazz, name, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        return callInternal(context, self, clazz, name, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        return callInternal(context, self, clazz, name, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        return callInternal(context, self, clazz, name, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return callInternal(context, self, clazz, name, Block.NULL_BLOCK);
     }
 
     protected IRubyObject callInternal(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         InterpreterContext ic = ensureInstrsReady();
 
-        boolean hasExplicitCallProtocol = ic.hasExplicitCallProtocol();
-
-        if (!hasExplicitCallProtocol) this.pre(ic, context, self, name, block, getImplementationClass());
+        this.pre(ic, context, self, name, block, getImplementationClass());
 
         try {
             switch (method.getScopeType()) {
@@ -52,7 +85,7 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
                 default: throw new RuntimeException("invalid body method type: " + method);
             }
         } finally {
-            if (!hasExplicitCallProtocol) this.post(ic, context);
+            this.post(ic, context);
         }
     }
 
@@ -75,45 +108,5 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
         } finally {
             ThreadContext.popBacktrace(context);
         }
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        return call(context, self, clazz, name, block);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return call(context, self, clazz, name, block);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return call(context, self, clazz, name, block);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return call(context, self, clazz, name, Block.NULL_BLOCK);
     }
 }

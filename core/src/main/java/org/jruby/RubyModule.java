@@ -92,7 +92,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.IRBlockBody;
+import org.jruby.runtime.AbstractIRBlockBody;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -105,7 +105,6 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.opto.ConstantInvalidator;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
@@ -1991,9 +1990,9 @@ public class RubyModule extends RubyObject {
 
         // If we know it comes from IR we can convert this directly to a method and
         // avoid overhead of invoking it as a block
-        if (block.getBody() instanceof IRBlockBody &&
+        if (block.getBody() instanceof AbstractIRBlockBody &&
                 runtime.getInstanceConfig().getCompileMode().shouldJIT()) { // FIXME: Once Interp and Mixed Methods are one class we can fix this to work in interp mode too.
-            IRBlockBody body = (IRBlockBody) block.getBody();
+            AbstractIRBlockBody body = (AbstractIRBlockBody) block.getBody();
             IRClosure closure = body.getScope();
 
             // Ask closure to give us a method equivalent.

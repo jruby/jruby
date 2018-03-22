@@ -146,13 +146,23 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     public Runnable getTaskFor(ThreadContext context, Compilable method) {
+        boolean shouldJit = context.runtime.getInstanceConfig().getCompileMode().shouldJIT();
+
         if (method instanceof MixedModeIRMethod) {
-            return new MethodJITTask(this, (MixedModeIRMethod) method, method.getClassName(context));
+            if (shouldJit) {
+                return new MethodJITTask(this, (MixedModeIRMethod) method, method.getClassName(context));
+            } else {
+                return new MethodFullBuildTask(this, (MixedModeIRMethod) method);
+            }
         } else if (method instanceof MixedModeIRBlockBody) {
-            return new BlockJITTask(this, (MixedModeIRBlockBody) method, method.getClassName(context));
+            if (shouldJit) {
+                return new BlockJITTask(this, (MixedModeIRBlockBody) method, method.getClassName(context));
+            } else {
+                return new BlockFullBuildTask(this, (MixedModeIRBlockBody) method);
+            }
         }
 
-        return new FullBuildTask(this, method);
+        throw new RuntimeException("unknown method type for JIT: " + method);
     }
 
     public void buildThresholdReached(ThreadContext context, final Compilable method) {
