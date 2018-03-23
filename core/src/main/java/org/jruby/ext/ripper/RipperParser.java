@@ -4630,13 +4630,13 @@ states[590] = new RipperParserState() {
 states[591] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     p.shadowing_lvar(((IRubyObject)yyVals[0+yyTop]));
-                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
+                    yyVal = p.dispatch("on_kwrest_param", ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[592] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.internalId();
+                    yyVal = p.dispatch("on_kwrest_param", null);
     return yyVal;
   }
 };

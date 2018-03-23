@@ -2024,10 +2024,10 @@ kwrest_mark     : tPOW {
 
 f_kwrest        : kwrest_mark tIDENTIFIER {
                     p.shadowing_lvar($2);
-                    $$ = $2;
+                    $$ = p.dispatch("on_kwrest_param", $2);
                 }
                 | kwrest_mark {
-                    $$ = p.internalId();
+                    $$ = p.dispatch("on_kwrest_param", null);
                 }
 
 f_opt           : f_arg_asgn '=' arg_value {
