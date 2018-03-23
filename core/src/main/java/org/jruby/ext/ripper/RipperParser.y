@@ -486,7 +486,7 @@ mlhs_basic      : mlhs_head {
                     $$ = p.dispatch("on_mlhs_add_star", $1, $3);
                 }
                 | mlhs_head tSTAR mlhs_node ',' mlhs_post {
-                    $$ = p.dispatch("on_mlhs_add",
+                    $$ = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", $1, $3),
                                     $5);
                 }
@@ -494,7 +494,7 @@ mlhs_basic      : mlhs_head {
                     $$ = p.dispatch("on_mlhs_add_star", $1, null);
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
-                    $$ = p.dispatch("on_mlhs_add",
+                    $$ = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", $1, null),
                                     $4);
                 }
@@ -502,7 +502,7 @@ mlhs_basic      : mlhs_head {
                     $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), $2);
                 }
                 | tSTAR mlhs_node ',' mlhs_post {
-                    $$ = p.dispatch("on_mlhs_add",
+                    $$ = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), $2),
                                     $4);
                 }
@@ -510,7 +510,7 @@ mlhs_basic      : mlhs_head {
                     $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null);
                 }
                 | tSTAR ',' mlhs_post {
-                    $$ = p.dispatch("on_mlhs_add",
+                    $$ = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null),
                                     $3);
                 }
@@ -537,19 +537,19 @@ mlhs_post       : mlhs_item {
                 }
 
 mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
-                    $$ = p.assignableIdentifier($1);
+                    $$ = p.assignableIdentifier(p.dispatch("on_var_field", $1));
                 }
                 | tIVAR {
-                    $$ = $1;
+                    $$ = p.dispatch("on_var_field", $1);
                 }
                 | tGVAR {
-                    $$ = $1;
+                    $$ = p.dispatch("on_var_field", $1);
                 }
                 | tCONSTANT {
-                    $$ = p.assignableConstant($1);
+                    $$ = p.assignableConstant(p.dispatch("on_var_field", $1));
                 }
                 | tCVAR {
-                    $$ = $1;
+                    $$ = p.dispatch("on_var_field", $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
                     p.yyerror("Can't assign to nil");
@@ -616,7 +616,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = p.dispatch("on_var_field", $1);
                 }
                 | tCONSTANT {
-                    $$ = p.dispatch("on_var_field", p.assignableConstant($1));
+                    $$ = p.assignableConstant(p.dispatch("on_var_field", $1));
                 }
                 | tCVAR {
                     $$ = p.dispatch("on_var_field", $1);
@@ -675,7 +675,8 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = val;
                 }
                 | backref {
-                    $$ = p.dispatch("on_assign_error", $1);
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                     p.error();
                 }
 
@@ -1275,25 +1276,41 @@ f_margs         : f_marg_list {
                     $$ = p.dispatch("on_mlhs_add_star", $1, $4);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", $1, $4);
+                    $$ = p.dispatch("on_mlhs_add_post", 
+                                    p.dispatch("on_mlhs_add_star", $1, $4),
+                                    $6);
                 }
                 | f_marg_list ',' tSTAR {
                     $$ = p.dispatch("on_mlhs_add_star", $1, null);
                 }
                 | f_marg_list ',' tSTAR ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", $1, $5);
+                    $$ = p.dispatch("on_mlhs_add_post", 
+                                    p.dispatch("on_mlhs_add_star", $1, null),
+                                    $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), $2);
+                    $$ = p.dispatch("on_mlhs_add_star",
+                                    p.dispatch("on_mlhs_new"),
+                                    $2);
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", $2, $4);
+                    $$ = p.dispatch("on_mlhs_add_post", 
+                                    p.dispatch("on_mlhs_add_star",
+                                               p.dispatch("on_mlhs_new"),
+                                               $2),
+                                    $4);
                 }
                 | tSTAR {
-                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null);
+                    $$ = p.dispatch("on_mlhs_add_star",
+                                    p.dispatch("on_mlhs_new"),
+                                    null);
                 }
                 | tSTAR ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null);
+                    $$ = p.dispatch("on_mlhs_add_post", 
+                                    p.dispatch("on_mlhs_add_star",
+                                               p.dispatch("on_mlhs_new"),
+                                               null),
+                                    $3);
                 }
 
 block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
@@ -1791,7 +1808,7 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = p.dispatch("on_var_field", $1);
                 }
                 | tCONSTANT {
-                    $$ = p.dispatch("on_var_field", p.assignableConstant($1));
+                    $$ = p.assignableConstant(p.dispatch("on_var_field", $1));
                 }
                 | tCVAR {
                     $$ = p.dispatch("on_var_field", $1);
