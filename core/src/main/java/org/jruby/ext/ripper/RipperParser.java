@@ -3354,7 +3354,7 @@ states[375] = new RipperParserState() {
 };
 states[376] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = p.dispatch("on_mlhs_paren", ((IRubyObject)yyVals[0+yyTop]));
+                    yyVal = ((IRubyObject)yyVals[0+yyTop]);
     return yyVal;
   }
 };

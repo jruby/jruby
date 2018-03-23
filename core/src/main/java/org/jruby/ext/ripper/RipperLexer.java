@@ -1957,14 +1957,14 @@ public class RipperLexer extends LexingCommon {
         parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(EXPR_ENDARG);
+        setState(EXPR_END);
         return RipperParser.tRBRACK;
     }
 
     private int rightCurly() {
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(EXPR_ENDARG);
+        setState(EXPR_END);
         //System.out.println("braceNest: " + braceNest);
         int tok = braceNest == 0 ? RipperParser.tSTRING_DEND : RipperParser.tRCURLY;
         braceNest--;

@@ -1254,7 +1254,7 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                    $$ = p.dispatch("on_mlhs_paren", $1);
+                    $$ = $1;
                 }
                 | tLPAREN f_margs rparen {
                     $$ = p.dispatch("on_mlhs_paren", $2);
