@@ -2122,7 +2122,7 @@ public class RipperLexer extends LexingCommon {
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
                     }
-                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
+                    return setIntegerLiteral(numberLiteralSuffix(SUFFIX_ALL));
                 case 'b' :
                 case 'B' : // binary
                     c = nextc();
@@ -2146,7 +2146,7 @@ public class RipperLexer extends LexingCommon {
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
                     }
-                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
+                    return setIntegerLiteral(numberLiteralSuffix(SUFFIX_ALL));
                 case 'd' :
                 case 'D' : // decimal
                     c = nextc();
@@ -2170,7 +2170,7 @@ public class RipperLexer extends LexingCommon {
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
                     }
-                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
+                    return setIntegerLiteral(numberLiteralSuffix(SUFFIX_ALL));
                 case 'o':
                 case 'O':
                     c = nextc();
@@ -2193,7 +2193,7 @@ public class RipperLexer extends LexingCommon {
 
                         if (nondigit != '\0') compile_error("Trailing '_' in number.");
 
-                        return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
+                        return setIntegerLiteral(numberLiteralSuffix(SUFFIX_ALL));
                     }
                 case '8' :
                 case '9' :
@@ -2206,7 +2206,7 @@ public class RipperLexer extends LexingCommon {
                 default :
                     pushback(c);
                     numberBuffer.append('0');
-                    return setIntegerLiteral(numberBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
+                    return setIntegerLiteral(numberLiteralSuffix(SUFFIX_ALL));
             }
         }
 
@@ -2292,21 +2292,25 @@ public class RipperLexer extends LexingCommon {
         if (nondigit != '\0') compile_error("Trailing '_' in number.");
 
         boolean isFloat = seen_e || seen_point;
-        if (isFloat) return getFloatToken(number, numberLiteralSuffix(seen_e ? SUFFIX_I : SUFFIX_ALL));
+        if (isFloat) {
+            int suffix = numberLiteralSuffix(seen_e ? SUFFIX_I : SUFFIX_ALL);
+            return setNumberLiteral(getFloatToken(number, suffix), suffix);
+        }
 
-        return setIntegerLiteral(number, numberLiteralSuffix(SUFFIX_ALL));
+        return setIntegerLiteral(numberLiteralSuffix(SUFFIX_ALL));
     }
 
-    private int setNumberLiteral(String number, int type, int suffix) {
+    private int setNumberLiteral(int type, int suffix) {
         if ((suffix & SUFFIX_I) != 0) type = RipperParser.tIMAGINARY;
 
+        setState(EXPR_END|EXPR_ENDARG);
         return type;
     }
 
-    private int setIntegerLiteral(String value, int suffix) {
+    private int setIntegerLiteral(int suffix) {
         int type = (suffix & SUFFIX_R) != 0 ? RipperParser.tRATIONAL : RipperParser.tINTEGER;
 
-        return setNumberLiteral(value, type, suffix);
+        return setNumberLiteral(type, suffix);
     }
 
     // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be

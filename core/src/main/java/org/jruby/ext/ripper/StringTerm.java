@@ -84,6 +84,7 @@ public class StringTerm extends StrTerm {
 
         if ((flags & STR_FUNC_REGEXP) != 0) {
             validateRegexp(lexer);
+            lexer.dispatchScanEvent(RubyParser.tREGEXP_END);
             lexer.setState(EXPR_END | EXPR_ENDARG);
             return RubyParser.tREGEXP_END;
         }
@@ -138,7 +139,7 @@ public class StringTerm extends StrTerm {
             flags &= ~STR_FUNC_LIST;
             spaceSeen = true;
         }
-        
+
         if (c == end && nest == 0) {
             return endFound(lexer);
         }

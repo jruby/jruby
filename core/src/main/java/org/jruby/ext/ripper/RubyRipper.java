@@ -57,8 +57,15 @@ public class RubyRipper extends RubyObject {
         
         ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(runtime, ripper));
         ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(runtime, ripper));
+        defineLexStateConstants(runtime, ripper);
 
         ripper.defineAnnotatedMethods(RubyRipper.class);
+    }
+
+    private static void defineLexStateConstants(Ruby runtime, RubyClass ripper) {
+        for (int i = 0; i < lexStateNames.length; i++) {
+            ripper.defineConstant(lexStateNames[i], runtime.newFixnum((1 << i)));
+        }
     }
     
     // Creates mapping table of token to arity for on_* method calls for the scanner support
