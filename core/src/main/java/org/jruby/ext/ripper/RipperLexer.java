@@ -543,7 +543,7 @@ public class RipperLexer extends LexingCommon {
             return RipperParser.tSYMBEG;
 
         case 'I':
-            lex_strterm = new StringTerm(str_dquote, begin, end);
+            lex_strterm = new StringTerm(str_dword, begin, end);
             return RipperParser.tSYMBOLS_BEG;
 
         case 'i':
