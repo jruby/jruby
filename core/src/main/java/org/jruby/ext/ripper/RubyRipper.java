@@ -328,7 +328,9 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject state(ThreadContext context) {
-        return context.runtime.newFixnum(parser.getState());
+        int state = parser.getState();
+
+        return state == 0 ? context.nil : context.runtime.newFixnum(parser.getState());
     }
     
     @JRubyMethod
