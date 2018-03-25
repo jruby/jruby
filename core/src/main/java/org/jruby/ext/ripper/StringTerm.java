@@ -33,7 +33,6 @@ import java.util.List;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.lexer.LexerSource;
-import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 
@@ -84,19 +83,19 @@ public class StringTerm extends StrTerm {
 
         if ((flags & STR_FUNC_REGEXP) != 0) {
             validateRegexp(lexer);
-            lexer.dispatchScanEvent(RubyParser.tREGEXP_END);
+            lexer.dispatchScanEvent(RipperParser.tREGEXP_END);
             lexer.setState(EXPR_END | EXPR_ENDARG);
-            return RubyParser.tREGEXP_END;
+            return RipperParser.tREGEXP_END;
         }
 
         if ((flags & STR_FUNC_LABEL) != 0 && lexer.isLabelSuffix()) {
             lexer.nextc();
             lexer.setState(EXPR_BEG | EXPR_LABEL);
-            return RubyParser.tLABEL_END;
+            return RipperParser.tLABEL_END;
         }
 
         lexer.setState(EXPR_END | EXPR_ENDARG);
-        return RubyParser.tSTRING_END;
+        return RipperParser.tSTRING_END;
     }
 
     private void validateRegexp(RipperLexer lexer) throws IOException {
@@ -121,7 +120,7 @@ public class StringTerm extends StrTerm {
             if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
             lexer.ignoreNextScanEvent = true;
             lexer.setStrTerm(null);
-            return ((flags & STR_FUNC_REGEXP) != 0) ? RubyParser.tREGEXP_END : RubyParser.tSTRING_END;
+            return ((flags & STR_FUNC_REGEXP) != 0) ? RipperParser.tREGEXP_END : RipperParser.tSTRING_END;
         }
         
         ByteList buffer = createByteList(lexer);        
@@ -150,7 +149,7 @@ public class StringTerm extends StrTerm {
         }        
 
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
-            int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
+            int token = lexer.peekVariableName(RipperParser.tSTRING_DVAR, RipperParser.tSTRING_DBEG);
 
             if (token != 0) {
                 if ((flags & STR_FUNC_REGEXP) != 0) {
@@ -180,7 +179,7 @@ public class StringTerm extends StrTerm {
             regexpFragments.add(buffer);
         }
         lexer.flush_string_content(enc[0]);
-        return RubyParser.tSTRING_CONTENT;
+        return RipperParser.tSTRING_CONTENT;
     }
 
     private void mixedEscape(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
