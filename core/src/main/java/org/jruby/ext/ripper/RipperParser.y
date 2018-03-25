@@ -552,22 +552,28 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = p.dispatch("on_var_field", $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
-                    p.yyerror("Can't assign to nil");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_self {
-                    p.yyerror("Can't change the value of self");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_true {
-                    p.yyerror("Can't assign to true");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_false {
-                    p.yyerror("Can't assign to false");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__FILE__ {
-                    p.yyerror("Can't assign to __FILE__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__LINE__ {
-                    p.yyerror("Can't assign to __LINE__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__ENCODING__ {
                     p.yyerror("Can't assign to __ENCODING__");
@@ -622,25 +628,32 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = p.dispatch("on_var_field", $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
-                    p.yyerror("Can't assign to nil");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_self {
-                    p.yyerror("Can't change the value of self");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_true {
-                    p.yyerror("Can't assign to true");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_false {
-                    p.yyerror("Can't assign to false");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__FILE__ {
-                    p.yyerror("Can't assign to __FILE__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__LINE__ {
-                    p.yyerror("Can't assign to __LINE__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__ENCODING__ {
-                    p.yyerror("Can't assign to __ENCODING__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     $$ = p.dispatch("on_aref_field", $1, $3);

@@ -2166,37 +2166,43 @@ states[96] = new RipperParserState() {
 };
 states[97] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to nil");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[98] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't change the value of self");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[99] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to true");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[100] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to false");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[101] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to __FILE__");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[102] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to __LINE__");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -2292,43 +2298,50 @@ states[115] = new RipperParserState() {
 };
 states[116] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to nil");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[117] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't change the value of self");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[118] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to true");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[119] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to false");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[120] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to __FILE__");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[121] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to __LINE__");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[122] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    p.yyerror("Can't assign to __ENCODING__");
+                    yyVal = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", ((IRubyObject)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -4832,6 +4845,6 @@ states[649] = new RipperParserState() {
   }
 };
 }
-					// line 2173 "RipperParser.y"
+					// line 2186 "RipperParser.y"
 }
-					// line 9723 "-"
+					// line 9736 "-"
