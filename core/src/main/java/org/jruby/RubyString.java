@@ -4063,10 +4063,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "delete_suffix!")
     public IRubyObject delete_suffix_bang(ThreadContext context, IRubyObject arg) {
-      RubyString result = (RubyString) delete_suffix(context, arg);
-      if (equals(result)) return context.runtime.getNil();
-      replaceInternal19(0, this.strLength(), result);
-      return this;
+        modifyCheck();
+        RubyString result = (RubyString) delete_suffix(context, arg);
+        if (equals(result)) return context.runtime.getNil();
+        replaceInternal19(0, this.strLength(), result);
+        return this;
     }
 
     @JRubyMethod(name = "start_with?", rest = true)
