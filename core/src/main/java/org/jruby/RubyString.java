@@ -4046,7 +4046,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "delete_suffix")
     public IRubyObject delete_suffix(ThreadContext context, IRubyObject arg) {
         RubyString suffix = arg.convertToString();
-        if (!this.end_with_p(context, suffix).isTrue()) return this;
+        if (!this.end_with_p(context, suffix).isTrue()) return this.dup();
         if (suffix.value.getRealSize() == this.value.getRealSize()) return newEmptyString(context.runtime, value.getEncoding());
         RubyString result = (RubyString) substr19(context.runtime, 0, this.strLength() - suffix.strLength());
         return result.isEmpty() ? this : result;
