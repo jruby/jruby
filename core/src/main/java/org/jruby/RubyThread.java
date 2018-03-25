@@ -1730,7 +1730,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     protected void printReportExceptionWarning() {
         PrintStream errorStream = getRuntime().getErrorStream();
         String name = threadImpl.getReportName();
-        errorStream.println("warning: thread \"" + name + "\" terminated with exception:");
+        errorStream.println("warning: thread \"" + name + "\" terminated with exception (report_on_exception is true):");
     }
 
     /**
