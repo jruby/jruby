@@ -4037,7 +4037,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "delete_prefix")
     public IRubyObject delete_prefix(ThreadContext context, IRubyObject arg) {
         RubyString prefix = arg.convertToString();
-        if (!this.start_with_p(context, prefix).isTrue()) return this;
+        if (!this.start_with_p(context, prefix).isTrue()) return this.dup();
         if (prefix.value.getRealSize() == this.value.getRealSize()) return newEmptyString(context.runtime, value.getEncoding());
         RubyString result = (RubyString) substr19(context.runtime, prefix.strLength(), this.strLength() - prefix.strLength());
         return result.isEmpty() ? this : result;
