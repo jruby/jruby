@@ -4054,6 +4054,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "delete_prefix!")
     public IRubyObject delete_prefix_bang(ThreadContext context, IRubyObject arg) {
+        modifyCheck();
         RubyString result = (RubyString) delete_prefix(context, arg);
         if (equals(result)) return context.runtime.getNil();
         replaceInternal19(0, this.strLength(), result);
