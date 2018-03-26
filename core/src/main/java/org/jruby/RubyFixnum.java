@@ -1274,6 +1274,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     @Override
+    public IRubyObject nonzero_p(ThreadContext context) {
+        return isZero() ? context.nil : this;
+    }
+
+    @Override
     final boolean isOne() {
         return value == 1;
     }

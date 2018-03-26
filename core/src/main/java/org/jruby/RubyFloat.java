@@ -722,6 +722,11 @@ public class RubyFloat extends RubyNumeric {
         return value == 0.0;
     }
 
+    @Override
+    public IRubyObject nonzero_p(ThreadContext context) {
+        return isZero() ? context.nil : this;
+    }
+
     /**
      * MRI: flo_truncate
      */

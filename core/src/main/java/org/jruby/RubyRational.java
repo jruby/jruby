@@ -433,6 +433,11 @@ public class RubyRational extends RubyNumeric {
     }
 
     @Override
+    public IRubyObject nonzero_p(ThreadContext context) {
+        return isZero() ? context.nil : this;
+    }
+
+    @Override
     public IRubyObject isNegative(ThreadContext context) {
         return context.runtime.newBoolean(signum() < 0);
     }

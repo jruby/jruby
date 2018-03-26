@@ -1057,6 +1057,11 @@ public class RubyBignum extends RubyInteger {
         return value.equals(BigInteger.ZERO);
     }
 
+    @Override
+    public IRubyObject nonzero_p(ThreadContext context) {
+        return isZero() ? context.nil : this;
+    }
+
     public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
         output.registerLinkTarget(bignum);
 
