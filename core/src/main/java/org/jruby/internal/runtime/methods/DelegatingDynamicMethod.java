@@ -37,11 +37,15 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 
-public abstract class DelegatingDynamicMethod extends DynamicMethod {
+public class DelegatingDynamicMethod extends DynamicMethod {
     protected final DynamicMethod delegate;
 
     public DelegatingDynamicMethod(DynamicMethod delegate) {
-        super(delegate.getImplementationClass(), delegate.getVisibility(), delegate.getName());
+        this(delegate.getImplementationClass(), delegate.getVisibility(), delegate.getName(), delegate);
+    }
+
+    public DelegatingDynamicMethod(RubyModule implementationClass, Visibility visibility, String name, DynamicMethod delegate) {
+        super(implementationClass, visibility, name);
         this.delegate = delegate;
     }
 
@@ -195,7 +199,7 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
 
     @Override
     public DynamicMethod dup() {
-        return new ProfilingDynamicMethod(delegate.dup());
+        return new DelegatingDynamicMethod(delegate.dup());
     }
 
     @Override
