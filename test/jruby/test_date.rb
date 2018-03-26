@@ -752,4 +752,33 @@ class TestDate < Test::Unit::TestCase
     assert_equal '2018-03-18T23:00:01+00:00', dt.to_s
   end
 
+  def test_jd_sec_fraction
+    jd = (86400 * DateTime.new(1970, 1, 1).jd + Time.utc(2018, 3, 25, 23).to_i)/86400r + 1/864000r
+    dt = DateTime.jd(jd)
+    assert_equal '2018-03-25T23:00:00+00:00', dt.to_s
+    #assert_equal 1r/10, dt.sec_fraction
+
+    dt = Date.jd(jd)
+    assert_equal '2018-03-25', dt.to_s
+    assert_equal 1r/10, dt.send(:sec_fraction)
+  end
+
+  def test_ordinal_sec_fraction
+    dt = Date.ordinal 2018, 111r/3 + 3/(864_000r * 1000)
+    assert_equal '2018-02-06', dt.to_s
+    assert_equal 3r/10_000, dt.send(:sec_fraction)
+  end
+
+  def test_commercial_sec_fraction
+    dt = Date.ordinal 2018, 221r/3 + 4/(864_000r * 10)
+    assert_equal '2018-03-14', dt.to_s
+    assert_equal 4r/100, dt.send(:sec_fraction)
+  end
+
+  def test_civil_sec_fraction
+    dt = Date.civil 2018, 11, 22r/3 + 3/(864_000 * 10_000r)
+    assert_equal '2018-11-07', dt.to_s
+    assert_equal 3r/100_000, dt.send(:sec_fraction)
+  end
+
 end

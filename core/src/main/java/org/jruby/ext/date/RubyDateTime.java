@@ -99,6 +99,10 @@ public class RubyDateTime extends RubyDate {
         super(context, klass, ajd, off, start);
     }
 
+    private RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, long[] rest, int off, long start) {
+        super(context, klass, ajd, rest, off, start);
+    }
+
     private RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off) {
         super(runtime, klass);
 
@@ -229,7 +233,7 @@ public class RubyDateTime extends RubyDate {
         if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
             RubyRational rat = ((RubyNumeric) day).convertToRational();
             long num = rat.getNumerator().getLongValue();
-            int den = rat.getDenominator().getIntValue();
+            long den = rat.getDenominator().getLongValue();
             rest[0] = (num - d * den); rest[1] = den;
         }
 
@@ -343,9 +347,7 @@ public class RubyDateTime extends RubyDate {
         if (len > 5) sg = val2sg(context, args[5]);
 
         RubyNumeric ajd = jd_to_ajd(context, jd, fr, off);
-        RubyDateTime dateTime = new RubyDateTime(context, (RubyClass) self, ajd, off, sg);
-        if (rest[0] != 0) dateTime.dt = adjustWithDayFraction(context, dateTime.dt, rest);
-        return dateTime;
+        return new RubyDateTime(context, (RubyClass) self, ajd, rest, off, sg);
     }
 
     /**
