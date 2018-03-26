@@ -1328,9 +1328,9 @@ public class RubyTime extends RubyObject {
         }
         // NOTE: we can probably do better here, but we're matching MRI behavior
         // this is for converting custom objects such as ActiveSupport::Duration
-        else if ( sec.respondsTo("divmod") ) {
+        else if ( sites(context).respond_to_divmod.respondsTo(context, sec, sec) ) {
             final Ruby runtime = context.runtime;
-            IRubyObject result = sec.callMethod(context, "divmod", RubyFixnum.newFixnum(runtime, 1));
+            IRubyObject result = sites(context).divmod.call(context, sec, sec, 1);
             if ( result instanceof RubyArray ) {
                 seconds = ((RubyNumeric) ((RubyArray) result).eltOk(0) ).getDoubleValue(); // div
                 seconds += ((RubyNumeric) ((RubyArray) result).eltOk(1) ).getDoubleValue(); // mod
