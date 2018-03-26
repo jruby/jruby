@@ -92,6 +92,12 @@ public class CoverageData {
     public synchronized Map<String, int[]> prepareCoverage(String filename, int[] lines) {
         assert lines != null;
 
+        if (filename == null) {
+            // null filename from certain evals, Ruby.executeScript, etc (jruby/jruby#5111)
+            // we opt to ignore scripts with no filename, since coverage means nothing
+            return coverage;
+        }
+
         Map<String, int[]> coverage = this.coverage;
 
         if (coverage != null) {
