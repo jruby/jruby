@@ -1416,7 +1416,7 @@ public class RubyTime extends RubyObject {
             try {
                 offset = offsetVar.convertToInteger().getIntValue() * 1000;
             }
-            catch (RaiseException typeError) {
+            catch (TypeError typeError) {
                 context.setErrorInfo($ex); // restore $!
             }
         }
@@ -1427,7 +1427,7 @@ public class RubyTime extends RubyObject {
             try {
                 zone = zoneVar.convertToString().toString();
             }
-            catch (RaiseException typeError) {
+            catch (TypeError typeError) {
                 context.setErrorInfo($ex); // restore $!
             }
         }
