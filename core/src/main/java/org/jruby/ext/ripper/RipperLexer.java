@@ -96,8 +96,6 @@ public class RipperLexer extends LexingCommon {
         map.put("__ENCODING__", Keyword.__ENCODING__);
     }
 
-    public boolean ignoreNextScanEvent = false;
-
     protected void ambiguousOperator(String op, String syn) {
         parser.dispatch("on_operator_ambiguous", getRuntime().newSymbol(op), getRuntime().newString(syn));
     }
@@ -248,6 +246,7 @@ public class RipperLexer extends LexingCommon {
     protected ByteList delayed = null;
     private int delayed_line = 0;
     private int delayed_col = 0;
+    private boolean cr_seen = false;
 
     /**
      * Has lexing started yet?
@@ -267,64 +266,76 @@ public class RipperLexer extends LexingCommon {
             tokp = lex_p;
         }
     }
-    
-    public int nextc() {
-        if (lex_p == lex_pend) {
-            line_offset += lex_pend;
 
-            ByteList v = lex_nextline;
-            lex_nextline = null;
-            
-            if (v == null) {
-                if (eofp) return EOF;
-                
-                if (src == null || (v = src.gets()) == null) {
-                    eofp = true;
-                    lex_goto_eol();
-                    return EOF;
-                } 
+    public void addDelayedToken(int tok, int end) {
+        // Left over stuffs...Add to delayed for later processing.
+        if (tok < end) {
+            if (delayed == null) {
+                delayed = new ByteList();
+                delayed.setEncoding(getEncoding());
+                delayed_line = ruby_sourceline;
+                delayed_col = tok - lex_pbeg;
             }
-        
-            // Left over stuffs...Add to delayed for later processing.
-            if (tokp < lex_pend) {
-                if (delayed == null) {
-                    delayed = new ByteList();
-                    delayed.setEncoding(getEncoding());
-                    delayed.append(lexb, tokp, lex_pend - tokp);
-                    delayed_line = ruby_sourceline;
-                    delayed_col = tokp - lex_pbeg;
-                } else {
-                    delayed.append(lexb, tokp, lex_pend - tokp);
-                }
-            }
-        
-            if (heredoc_end > 0) {
-                ruby_sourceline = heredoc_end;
-                heredoc_end = 0;
-            }
-            ruby_sourceline++;
-            line_count++;
-            lex_pbeg = lex_p = 0;
-            lex_pend = lex_p + v.length();
-            lexb = v;
-            flush();
-            lex_lastline = v;
+            delayed.append(lexb, tok, end - tok);
+            tokp = end;
         }
-        
+    }
+
+    private boolean nextLine() {
+        line_offset += lex_pend;
+
+        ByteList v = lex_nextline;
+        lex_nextline = null;
+
+        if (v == null) {
+            if (eofp) return true;
+
+            if (src == null || (v = src.gets()) == null) {
+                eofp = true;
+                lex_goto_eol();
+                return true;
+            }
+            cr_seen = false;
+        }
+
+        addDelayedToken(tokp, lex_pend);
+
+        if (heredoc_end > 0) {
+            ruby_sourceline = heredoc_end;
+            heredoc_end = 0;
+        }
+        ruby_sourceline++;
+        line_count++;
+        lex_pbeg = lex_p = 0;
+        lex_pend = lex_p + v.length();
+        lexb = v;
+        flush();
+        lex_lastline = v;
+
+        return false;
+    }
+
+    private int cr(int c) {
+        if (peek('\n')) {
+            lex_p++;
+            c = '\n';
+        } else if (!cr_seen) {
+            cr_seen = true;
+            warn("encountered \\\\r in middle of line, treated as a mere space");
+        }
+        return c;
+    }
+
+    public int nextc() {
+        if (lex_p == lex_pend || eofp || lex_nextline != null) {
+            if (nextLine()) return EOF;
+        }
+
         int c = p(lex_p);
         lex_p++;
-        if (c == '\r') {
-            if (peek('\n')) {
-                lex_p++;
-                c = '\n';
-            } else if (ruby_sourceline > last_cr_line) {
-                last_cr_line = ruby_sourceline;
-                warn("encountered \\\\r in middle of line, treated as a mere space");
-                c = ' ';
-            }
-        }
 
-//        System.out.println("C: " + (char) c + ", LEXP: " + lex_p + ", PEND: "+ lex_pend);
+        if (c == '\r') c = cr(c);
+
         return c;
     }
     
@@ -714,7 +725,9 @@ public class RipperLexer extends LexingCommon {
     }
     
     public boolean hasScanEvent() {
-        if (lex_p < tokp) throw parser.getRuntime().newRuntimeError("lex_p < tokp");
+        if (lex_p < tokp) {
+            throw parser.getRuntime().newRuntimeError("lex_p < tokp");
+        }
         
         return lex_p > tokp;
     }

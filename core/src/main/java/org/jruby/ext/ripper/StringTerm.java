@@ -76,6 +76,7 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_QWORDS) != 0) {
             flags |= STR_FUNC_TERM;
             lexer.pushback(0);
+            lexer.addDelayedToken(lexer.tokp, lexer.lex_p);
             return ' ';
         }
 
@@ -118,7 +119,7 @@ public class StringTerm extends StrTerm {
 
         if ((flags & STR_FUNC_TERM) != 0) {
             if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
-            lexer.ignoreNextScanEvent = true;
+            lexer.setState(EXPR_BEG | EXPR_LABEL);
             lexer.setStrTerm(null);
             return ((flags & STR_FUNC_REGEXP) != 0) ? RipperParser.tREGEXP_END : RipperParser.tSTRING_END;
         }
@@ -128,7 +129,6 @@ public class StringTerm extends StrTerm {
         c = lexer.nextc();
         if ((flags & STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
             do { 
-                buffer.append((char) c);
                 c = lexer.nextc();
             } while (Character.isWhitespace(c));
             spaceSeen = true;
@@ -145,6 +145,7 @@ public class StringTerm extends StrTerm {
         
         if (spaceSeen) {
             lexer.pushback(c);
+            lexer.addDelayedToken(lexer.tokp, lexer.lex_p);
             return ' ';
         }        
 
