@@ -1646,7 +1646,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (ch instanceof RubyString) {
             str = ((RubyString)ch).substr(context.runtime, 0, 1);
         } else {
-            str = RubyString.newStringShared(context.runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[RubyNumeric.num2chr(ch) & 0xFF]);
+            str = RubyString.newStringShared(context.runtime, RubyInteger.SINGLE_CHAR_BYTELISTS[RubyNumeric.num2chr(ch) & 0xFF]);
         }
 
         sites(context).write.call(context, this, this, str);
@@ -1659,7 +1659,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             ((RubyIO)maybeIO).putc(context, object);
         } else {
             byte c = RubyNumeric.num2chr(object);
-            IRubyObject str = RubyString.newStringShared(context.runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[c & 0xFF]);
+            IRubyObject str = RubyString.newStringShared(context.runtime, RubyInteger.SINGLE_CHAR_BYTELISTS[c & 0xFF]);
             sites(context).write.call(context, maybeIO, maybeIO, str);
         }
 

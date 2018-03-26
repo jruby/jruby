@@ -299,8 +299,6 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     static final ByteList[] SINGLE_CHAR_BYTELISTS;
-    @Deprecated
-    public static final ByteList[] SINGLE_CHAR_BYTELISTS19;
     static {
         SINGLE_CHAR_BYTELISTS = new ByteList[256];
         for (int i = 0; i < 256; i++) {
@@ -308,8 +306,9 @@ public abstract class RubyInteger extends RubyNumeric {
             SINGLE_CHAR_BYTELISTS[i] = bytes;
             bytes.setEncoding(i < 0x80 ? USASCIIEncoding.INSTANCE : ASCIIEncoding.INSTANCE);
         }
-        SINGLE_CHAR_BYTELISTS19 = SINGLE_CHAR_BYTELISTS;
     }
+    @Deprecated
+    public static final ByteList[] SINGLE_CHAR_BYTELISTS19 = SINGLE_CHAR_BYTELISTS;
 
     static ByteList singleCharByteList(final byte index) {
         return SINGLE_CHAR_BYTELISTS[index & 0xFF];

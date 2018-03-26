@@ -46,19 +46,17 @@ public final class Kernel {
     public static void define(final Ruby runtime) {
         runtime.getKernel().defineAnnotatedMethods(Kernel.class);
         final RubyModule Kernel = runtime.getKernel();
-        // can share the method since it receives its interned name
-        JavaPackageMethod get_pkg = new JavaPackageMethod(Kernel);
-        Kernel.addMethodInternal("java", get_pkg);
-        Kernel.addMethodInternal("javax", get_pkg);
-        Kernel.addMethodInternal("javafx", get_pkg);
-        Kernel.addMethodInternal("com", get_pkg);
-        Kernel.addMethodInternal("org", get_pkg);
+        Kernel.addMethodInternal("java", new JavaPackageMethod(Kernel, "java"));
+        Kernel.addMethodInternal("javax", new JavaPackageMethod(Kernel, "javax"));
+        Kernel.addMethodInternal("javafx", new JavaPackageMethod(Kernel, "javafx"));
+        Kernel.addMethodInternal("com", new JavaPackageMethod(Kernel, "com"));
+        Kernel.addMethodInternal("org", new JavaPackageMethod(Kernel, "org"));
     }
 
     private static final class JavaPackageMethod extends JavaMethod.JavaMethodZero {
 
-        JavaPackageMethod(RubyModule implClass) {
-            super(implClass, PUBLIC);
+        JavaPackageMethod(RubyModule implClass, String name) {
+            super(implClass, PUBLIC, name);
         }
 
         @Override

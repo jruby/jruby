@@ -418,7 +418,7 @@ public abstract class Initializer {
             else { // lower-case name
                 if ( ! proxy.respondsTo(simpleName) ) {
                     // define a class method
-                    proxy.getSingletonClass().addMethod(simpleName, new JavaMethod.JavaMethodZero(proxy.getSingletonClass(), PUBLIC) {
+                    proxy.getSingletonClass().addMethod(simpleName, new JavaMethod.JavaMethodZero(proxy.getSingletonClass(), PUBLIC, simpleName) {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                             return innerProxy;

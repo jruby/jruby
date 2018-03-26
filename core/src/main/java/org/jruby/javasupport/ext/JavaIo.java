@@ -61,7 +61,7 @@ public abstract class JavaIo {
     private static final class InputStreamToIO extends JavaMethod.JavaMethodZeroOrOne {
 
         InputStreamToIO(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "to_io");
         }
 
         @Override
@@ -85,7 +85,7 @@ public abstract class JavaIo {
     private static final class OutputStreamToIO extends JavaMethod.JavaMethodZeroOrOne {
 
         OutputStreamToIO(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "to_io");
         }
 
         @Override
@@ -109,7 +109,7 @@ public abstract class JavaIo {
     private static final class ChannelToIO extends JavaMethod.JavaMethodZeroOrOne {
 
         ChannelToIO(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "to_io");
         }
 
         @Override

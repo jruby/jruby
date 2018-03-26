@@ -536,7 +536,7 @@ public abstract class JavaLang {
     private static final class UByteGet extends JavaMethod.JavaMethodOne {
 
         UByteGet(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "ubyte_get");
         }
 
         @Override
@@ -551,7 +551,7 @@ public abstract class JavaLang {
     private static final class UByteSet extends JavaMethod.JavaMethodTwo {
 
         UByteSet(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "ubyte_set");
         }
 
         @Override

@@ -38,7 +38,12 @@ public class ConstantLookupSite extends MutableCallSite {
 
     private final SiteTracker tracker = new SiteTracker();
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(ConstantLookupSite.class), "constLookup", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class, int.class));
+    public static final Handle BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(ConstantLookupSite.class),
+            "constLookup",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class, int.class),
+            false);
 
     public ConstantLookupSite(MethodType type, String name, boolean publicOnly, boolean callConstMissing) {
         super(type);

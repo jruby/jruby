@@ -1032,7 +1032,7 @@ public class RubyComplex extends RubyNumeric {
             } else {
                 si = match.op_aref19(RubyFixnum.three(runtime));
                 IRubyObject t = match.op_aref19(RubyFixnum.four(runtime));
-                if (t.isNil()) t = runtime.newString(RubyFixnum.SINGLE_CHAR_BYTELISTS19['1']);
+                if (t.isNil()) t = runtime.newString(RubyInteger.SINGLE_CHAR_BYTELISTS['1']);
                 si.convertToString().cat(t.convertToString().getByteList());
             }
             re = match.post_match(context);

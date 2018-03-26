@@ -31,7 +31,12 @@ public class SelfInvokeSite extends InvokeSite {
         this(type, name, callType, false, file, line);
     }
 
-    public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SelfInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, String.class, int.class));
+    public static Handle BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(SelfInvokeSite.class),
+            "bootstrap",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, String.class, int.class),
+            false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, String file, int line) {
         boolean literalClosure = closureInt != 0;
