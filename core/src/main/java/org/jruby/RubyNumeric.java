@@ -1403,6 +1403,27 @@ public class RubyNumeric extends RubyObject {
         return context.runtime.getNil();
     }
 
+    @JRubyMethod(name = "clone", required = 0, optional = 1)
+    public IRubyObject rbClone(IRubyObject[] args) {
+        if (args.length == 0) return this;
+
+        Ruby runtime = args[0].getRuntime();
+
+        if (!(args[0] instanceof RubyHash)) {
+            throw runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
+        }
+
+        IRubyObject[] rets = ArgsUtil.extractKeywordArgs(runtime.getCurrentContext(), args[0].convertToHash(), "freeze");
+        if (!rets[0].isTrue()) throw runtime.newArgumentError("can't unfreeze " + getType());
+
+        return this;
+    }
+
+    @Override
+    public IRubyObject dup() {
+        return this;
+    }
+
     public static IRubyObject numFuncall(ThreadContext context, IRubyObject x, CallSite site) {
         return context.safeRecurse(new NumFuncall0(), site, x, site.methodName, true);
     }
