@@ -4037,7 +4037,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "delete_prefix")
     public IRubyObject delete_prefix(ThreadContext context, IRubyObject arg) {
         RubyString prefix = arg.convertToString();
-        if (!this.start_with_p(context, prefix).isTrue()) return this;
+        if (!this.start_with_p(context, prefix).isTrue()) return this.dup();
         if (prefix.value.getRealSize() == this.value.getRealSize()) return newEmptyString(context.runtime, value.getEncoding());
         RubyString result = (RubyString) substr19(context.runtime, prefix.strLength(), this.strLength() - prefix.strLength());
         return result.isEmpty() ? this : result;
@@ -4046,7 +4046,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "delete_suffix")
     public IRubyObject delete_suffix(ThreadContext context, IRubyObject arg) {
         RubyString suffix = arg.convertToString();
-        if (!this.end_with_p(context, suffix).isTrue()) return this;
+        if (!this.end_with_p(context, suffix).isTrue()) return this.dup();
         if (suffix.value.getRealSize() == this.value.getRealSize()) return newEmptyString(context.runtime, value.getEncoding());
         RubyString result = (RubyString) substr19(context.runtime, 0, this.strLength() - suffix.strLength());
         return result.isEmpty() ? this : result;
@@ -4054,6 +4054,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "delete_prefix!")
     public IRubyObject delete_prefix_bang(ThreadContext context, IRubyObject arg) {
+        modifyCheck();
         RubyString result = (RubyString) delete_prefix(context, arg);
         if (equals(result)) return context.runtime.getNil();
         replaceInternal19(0, this.strLength(), result);
@@ -4062,10 +4063,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "delete_suffix!")
     public IRubyObject delete_suffix_bang(ThreadContext context, IRubyObject arg) {
-      RubyString result = (RubyString) delete_suffix(context, arg);
-      if (equals(result)) return context.runtime.getNil();
-      replaceInternal19(0, this.strLength(), result);
-      return this;
+        modifyCheck();
+        RubyString result = (RubyString) delete_suffix(context, arg);
+        if (equals(result)) return context.runtime.getNil();
+        replaceInternal19(0, this.strLength(), result);
+        return this;
     }
 
     @JRubyMethod(name = "start_with?", rest = true)
