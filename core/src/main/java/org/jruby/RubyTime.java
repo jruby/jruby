@@ -51,6 +51,8 @@ import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.TypeError;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -1340,7 +1342,16 @@ public class RubyTime extends RubyObject {
             }
         }
         else {
-            throw context.runtime.newTypeError("can't convert " + sec.getMetaClass().getName() + " into time interval");
+            seconds = 0; boolean raise = true;
+            if ( sec instanceof JavaProxy ) {
+                try { // support java.lang.Number proxies
+                    seconds = sec.convertToFloat().getDoubleValue(); raise = false;
+                } catch (TypeError ex) { /* fallback bellow to raising a TypeError */ }
+            }
+
+            if (raise) {
+                throw context.runtime.newTypeError("can't convert " + sec.getMetaClass().getName() + " into time interval");
+            }
         }
 
         if ( seconds < 0 ) throw context.runtime.newArgumentError("time interval must be positive");

@@ -41,7 +41,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.java.proxies.ConcreteJavaProxy;
 
 /**
  * The "Mutex" class from the 'thread' library.
@@ -130,13 +129,9 @@ public class Mutex extends RubyObject {
 
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
-        long beg = System.currentTimeMillis();
-        double t;
-        if (timeout instanceof ConcreteJavaProxy) {
-          t = RubyTime.convertTimeInterval(context, timeout.convertToFloat());
-        } else {
-          t = RubyTime.convertTimeInterval(context, timeout);
-        }
+        final long beg = System.currentTimeMillis();
+        double t = RubyTime.convertTimeInterval(context, timeout);
+
         unlock(context);
 
         try {
