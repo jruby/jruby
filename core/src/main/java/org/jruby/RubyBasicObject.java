@@ -511,7 +511,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     // MRI: special_object_p
     public boolean isSpecialObject() {
-        return isImmediate() || this instanceof RubyBignum || this instanceof RubyFloat;
+        return isImmediate() || this instanceof RubyBignum || this instanceof RubyFloat || this instanceof RubyRational || this instanceof RubyComplex;
     }
 
     /**
