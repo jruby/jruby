@@ -934,26 +934,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return runtime.newFixnum(tmp);
     }
 
-    protected IRubyObject intPowTmp3(ThreadContext context, RubyInteger y, RubyBignum m, boolean negaFlg) {
-        Ruby runtime = context.runtime;
-
-        BigInteger xn, yn, mn, zn;
-
-        xn = BigInteger.valueOf(this.getLongValue());
-        if (y instanceof RubyFixnum) {
-            yn = BigInteger.valueOf(y.getLongValue());
-        } else {
-            yn = y.getBigIntegerValue();
-        }
-        mn = m.getBigIntegerValue();
-
-        zn = xn.modPow(yn, mn);
-        if (negaFlg & zn.signum() == 1) {
-            zn = zn.negate();
-        }
-        return RubyBignum.bignorm(runtime, zn);
-    }
-
     // MRI: MUL_MODULO macro defined within int_pow_tmp2 in numeric.c
     private static RubyFixnum mulModulo(ThreadContext context, RubyFixnum a, RubyFixnum b, IRubyObject c) {
         return (RubyFixnum) ((RubyInteger) a.op_mul(context, b.getLongValue())).modulo(context, c);
