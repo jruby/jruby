@@ -41,6 +41,7 @@ import java.net.ProtocolFamily;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.MulticastSocket;
+import java.net.SocketOption;
 import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.net.DatagramPacket;
@@ -49,6 +50,7 @@ import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.UnsupportedAddressTypeException;
 
 import jnr.constants.platform.AddressFamily;
 import jnr.netdb.Service;
@@ -124,6 +126,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         Ruby runtime = context.runtime;
 
         try {
+            this.family = family;
             DatagramChannel channel = DatagramChannel.open(family);
             initSocket(newChannelFD(runtime, channel));
         } catch (ConnectException e) {
@@ -188,6 +191,11 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
 
             return RubyFixnum.zero(runtime);
+        }
+        catch (UnsupportedAddressTypeException e) {
+            // This may not be the appropriate message for all such exceptions
+            ProtocolFamily family = this.family == null ? StandardProtocolFamily.INET : this.family;
+            throw SocketUtils.sockerr(runtime, "bind: unsupported address " + host.inspect() + " for protocol family " + family);
         }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
@@ -634,6 +642,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     private volatile Class<? extends InetAddress> explicitFamily;
+    private volatile ProtocolFamily family;
 
     @Deprecated
     public IRubyObject bind(IRubyObject host, IRubyObject port) {

@@ -32,7 +32,7 @@ public class TestRubyBigDecimal extends TestCase {
     RubyFloat NAN = RubyFloat.newFloat(runtime, RubyFloat.NAN);
 
     try {
-      decimalValue.op_quo20(currentContext, NAN);
+      decimalValue.op_quo(currentContext, NAN);
     } catch (RaiseException re) {
         RubyException rubyException = re.getException();
         assertEquals(runtime.getFloatDomainError(), rubyException.getMetaClass());
@@ -48,7 +48,7 @@ public class TestRubyBigDecimal extends TestCase {
     RubyFloat INFINITY = RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
 
     try {
-      decimalValue.op_quo20(currentContext, INFINITY);
+      decimalValue.op_quo(currentContext, INFINITY);
     } catch (RaiseException re) {
       RubyException rubyException = re.getException();
       assertEquals(runtime.getFloatDomainError(), rubyException.getMetaClass());

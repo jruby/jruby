@@ -571,7 +571,7 @@ public class Java implements Library {
 
         final RubyClass subclassSingleton = subclass.getSingletonClass();
         subclassSingleton.addReadWriteAttribute(context, "java_proxy_class");
-        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC) {
+        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 IRubyObject javaInterfaces = self.getInstanceVariables().getInstanceVariable("@java_interfaces");
@@ -588,7 +588,7 @@ public class Java implements Library {
         private final NonBlockingHashMapLong<JavaProxyConstructor> cache = new NonBlockingHashMapLong<>(8);
 
         JCreateMethod(RubyModule cls) {
-            super(cls, PUBLIC);
+            super(cls, PUBLIC, "__jcreate!");
         }
 
         private static JavaProxyClass getProxyClass(final IRubyObject self) {
@@ -1500,7 +1500,7 @@ public class Java implements Library {
 
     private static final class DummyInitialize extends JavaMethodZero {
 
-        DummyInitialize(final RubyClass clazz) { super(clazz, PRIVATE); }
+        DummyInitialize(final RubyClass clazz) { super(clazz, PRIVATE, "initialize"); }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {

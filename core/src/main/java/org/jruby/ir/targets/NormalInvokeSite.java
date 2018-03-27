@@ -28,7 +28,12 @@ public class NormalInvokeSite extends InvokeSite {
         super(type, name, CallType.NORMAL, literalClosure, file, line);
     }
 
-    public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(NormalInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, String.class, int.class));
+    public static Handle BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(NormalInvokeSite.class),
+            "bootstrap",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, String.class, int.class),
+            false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, String file, int line) {
         boolean literalClosure = closureInt != 0;

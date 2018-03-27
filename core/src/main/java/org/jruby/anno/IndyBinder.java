@@ -357,7 +357,12 @@ public class IndyBinder extends AbstractProcessor {
                 }
                 buffer.append(')');
 
-                Handle handle = new Handle(isStatic ? H_INVOKESTATIC : H_INVOKEVIRTUAL, qualifiedName.toString().replace('.', '/'), method.getSimpleName().toString(), Method.getMethod(buffer.toString()).getDescriptor());
+                Handle handle = new Handle(
+                        isStatic ? H_INVOKESTATIC : H_INVOKEVIRTUAL,
+                        qualifiedName.toString().replace('.', '/'),
+                        method.getSimpleName().toString(),
+                        Method.getMethod(buffer.toString()).getDescriptor(),
+                        false);
 
                 int handleOffset = calculateHandleOffset(method.getParameters().size(), anno.required(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
 

@@ -343,6 +343,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public JavaMethod constructJavaMethod(RubyModule implementationClass, JavaMethodDescriptor desc, String name, Class c) throws InstantiationException, IllegalAccessException, java.lang.reflect.InvocationTargetException, NoSuchMethodException {
         // In order to support older versions of generated JavaMethod invokers, we check for the Version
         // annotation to be present and > 0. If absent, we use a thread local to allow the deprecated constructor

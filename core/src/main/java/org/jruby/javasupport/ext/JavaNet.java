@@ -61,7 +61,7 @@ public abstract class JavaNet {
     private static final class URLOpenMethod extends JavaMethod.JavaMethodZeroOrNBlock {
 
         URLOpenMethod(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "open");
         }
 
         @Override

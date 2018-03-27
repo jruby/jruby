@@ -779,7 +779,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         }
 
         public ArrayNewMethod(RubyModule implClass, Visibility visibility, DynamicMethod oldNew) {
-            super(implClass, visibility);
+            super(implClass, visibility, "new");
             this.newMethod = oldNew;
         }
 
