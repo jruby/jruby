@@ -38,8 +38,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
- *
- * @deprecated use {@link DelegatingDynamicMethod}
  */
 @Deprecated
 public class WrapperMethod extends DynamicMethod {
