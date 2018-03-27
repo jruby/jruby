@@ -1549,22 +1549,17 @@ public class RubyTime extends RubyObject {
         }
 
         RubyTime time = new RubyTime(runtime, klass, dt);
-        // Ignores usec if 8 args (for compatibility with parsedate) or if not supplied.
-        if (args.length != 8 && !args[6].isNil()) {
-            boolean fractionalUSecGiven = args[6] instanceof RubyFloat || args[6] instanceof RubyRational;
-
-            if (fractionalUSecGiven) {
-                if (args[6] instanceof RubyRational) {
-                    RubyRational usecRat = (RubyRational) args[6];
-                    RubyRational nsecRat = (RubyRational) usecRat.op_mul(context, runtime.newFixnum(1000));
-                    double tmpNanos = nsecRat.getDoubleValue(context);
-                    time.dt = dt.withMillis((long) (dt.getMillis() + (tmpNanos / 1000000)));
-                    nanos = (long) tmpNanos % 1000000;
-                } else {
-                    double micros = RubyNumeric.num2dbl(args[6]);
-                    time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
-                    nanos = (long) Math.rint((micros * 1000) % 1000000);
-                }
+        // Ignores usec if 8 args (for compatibility with parse-date) or if not supplied.
+        if (args.length != 8 && args[6] != context.nil) {
+            if (args[6] instanceof RubyRational) {
+                RubyRational nsec = (RubyRational) ((RubyRational) args[6]).op_mul(context, runtime.newFixnum(1000));
+                long tmpNanos = (long) nsec.getDoubleValue(context);
+                time.dt = dt.withMillis(dt.getMillis() + (tmpNanos / 1_000_000));
+                nanos = tmpNanos % 1_000_000;
+            } else if (args[6] instanceof RubyFloat) {
+                double micros = ((RubyFloat) args[6]).getDoubleValue();
+                time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
+                nanos = (long) Math.rint((micros * 1000) % 1_000_000);
             } else {
                 int usec = int_args[4] % 1000;
                 int msec = int_args[4] / 1000;
@@ -1578,8 +1573,7 @@ public class RubyTime extends RubyObject {
             }
         }
 
-        if (nanos != 0)
-            time.setNSec(nanos);
+        if (nanos != 0) time.setNSec(nanos);
 
         time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         time.setIsTzRelative(setTzRelative);
