@@ -36,18 +36,25 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * 
+ * This is similar to {@link DelegatingDynamicMethod} except that it does not delegate most properties of DynamicMethod.
+ * Visibility, etc, set on an instance of {@link PartialDelegatingMethod} will not be delegated to the contained method.
+ *
+ * This type of method is used primarily for altering the visibility of a parent class's method in a child class.
+ *
+ * Note that {@link AliasMethod} is not a suitable substitute since it always passes the method's original name to the
+ * delegate, and {@link DelegatingDynamicMethod} is not a suitable substitute since it delegates all properties to the
+ * delegate.
+ *
  * @author jpetersen
  */
-@Deprecated
-public class WrapperMethod extends DynamicMethod {
+public class PartialDelegatingMethod extends DynamicMethod {
     private DynamicMethod method;
 
     /**
-     * Constructor for WrapperCallable.
+     * Constructor for PartialDelegatingMethod.
      * @param visibility
      */
-    public WrapperMethod(RubyModule implementationClass, DynamicMethod method, Visibility visibility) {
+    public PartialDelegatingMethod(RubyModule implementationClass, DynamicMethod method, Visibility visibility) {
         super(implementationClass, visibility, method.getName()   );
         this.method = method;
     }
@@ -93,7 +100,7 @@ public class WrapperMethod extends DynamicMethod {
     }
     
     public DynamicMethod dup() {
-        return new WrapperMethod(getImplementationClass(), method, getVisibility());
+        return new PartialDelegatingMethod(getImplementationClass(), method, getVisibility());
     }
 
     public long getSerialNumber() {

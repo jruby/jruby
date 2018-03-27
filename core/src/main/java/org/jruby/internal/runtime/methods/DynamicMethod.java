@@ -395,7 +395,7 @@ public abstract class DynamicMethod {
     /**
      * Get the "real" method contained within this method. This simply returns
      * self except in cases where a method is wrapped to give it a new
-     * name or new implementation class (AliasMethod, WrapperMethod, ...).
+     * name or new implementation class (AliasMethod, PartialDelegatingMethod, ...).
      *
      * @return The "real" method associated with this one
      */
