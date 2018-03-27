@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.thread;
 
 import java.util.concurrent.locks.ReentrantLock;
@@ -33,6 +34,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
+import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -127,10 +129,8 @@ public class Mutex extends RubyObject {
 
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
-        long beg = System.currentTimeMillis();
-        double t = timeout.convertToFloat().getDoubleValue();
-
-        if (t < 0) throw context.runtime.newArgumentError("negative sleep timeout");
+        final long beg = System.currentTimeMillis();
+        double t = RubyTime.convertTimeInterval(context, timeout);
 
         unlock(context);
 

@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.date;
 
 import org.jcodings.specific.USASCIIEncoding;
@@ -96,6 +97,10 @@ public class RubyDateTime extends RubyDate {
 
     RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, long start) {
         super(context, klass, ajd, off, start);
+    }
+
+    private RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, long[] rest, int off, long start) {
+        super(context, klass, ajd, rest, off, start);
     }
 
     private RubyDateTime(Ruby runtime, RubyClass klass, DateTime dt, int off) {
@@ -228,7 +233,7 @@ public class RubyDateTime extends RubyDate {
         if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
             RubyRational rat = ((RubyNumeric) day).convertToRational();
             long num = rat.getNumerator().getLongValue();
-            int den = rat.getDenominator().getIntValue();
+            long den = rat.getDenominator().getLongValue();
             rest[0] = (num - d * den); rest[1] = den;
         }
 
@@ -342,9 +347,7 @@ public class RubyDateTime extends RubyDate {
         if (len > 5) sg = val2sg(context, args[5]);
 
         RubyNumeric ajd = jd_to_ajd(context, jd, fr, off);
-        RubyDateTime dateTime = new RubyDateTime(context, (RubyClass) self, ajd, off, sg);
-        if (rest[0] != 0) dateTime.dt = adjustWithDayFraction(context, dateTime.dt, rest);
-        return dateTime;
+        return new RubyDateTime(context, (RubyClass) self, ajd, rest, off, sg);
     }
 
     /**

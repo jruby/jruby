@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,6 +35,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import jnr.posix.POSIX;
@@ -50,6 +51,8 @@ import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.TypeError;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -1361,9 +1364,9 @@ public class RubyTime extends RubyObject {
         }
         // NOTE: we can probably do better here, but we're matching MRI behavior
         // this is for converting custom objects such as ActiveSupport::Duration
-        else if ( sec.respondsTo("divmod") ) {
+        else if ( sites(context).respond_to_divmod.respondsTo(context, sec, sec) ) {
             final Ruby runtime = context.runtime;
-            IRubyObject result = sec.callMethod(context, "divmod", RubyFixnum.newFixnum(runtime, 1));
+            IRubyObject result = sites(context).divmod.call(context, sec, sec, 1);
             if ( result instanceof RubyArray ) {
                 seconds = ((RubyNumeric) ((RubyArray) result).eltOk(0) ).getDoubleValue(); // div
                 seconds += ((RubyNumeric) ((RubyArray) result).eltOk(1) ).getDoubleValue(); // mod
@@ -1373,7 +1376,16 @@ public class RubyTime extends RubyObject {
             }
         }
         else {
-            throw context.runtime.newTypeError("can't convert " + sec.getMetaClass().getName() + " into time interval");
+            seconds = 0; boolean raise = true;
+            if ( sec instanceof JavaProxy ) {
+                try { // support java.lang.Number proxies
+                    seconds = sec.convertToFloat().getDoubleValue(); raise = false;
+                } catch (TypeError ex) { /* fallback bellow to raising a TypeError */ }
+            }
+
+            if (raise) {
+                throw context.runtime.newTypeError("can't convert " + sec.getMetaClass().getName() + " into time interval");
+            }
         }
 
         if ( seconds < 0 ) throw context.runtime.newArgumentError("time interval must be positive");
@@ -1438,7 +1450,7 @@ public class RubyTime extends RubyObject {
             try {
                 offset = offsetVar.convertToInteger().getIntValue() * 1000;
             }
-            catch (RaiseException typeError) {
+            catch (TypeError typeError) {
                 context.setErrorInfo($ex); // restore $!
             }
         }
@@ -1449,7 +1461,7 @@ public class RubyTime extends RubyObject {
             try {
                 zone = zoneVar.convertToString().toString();
             }
-            catch (RaiseException typeError) {
+            catch (TypeError typeError) {
                 context.setErrorInfo($ex); // restore $!
             }
         }
