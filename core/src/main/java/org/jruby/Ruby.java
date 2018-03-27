@@ -2820,14 +2820,24 @@ public final class Ruby implements Constantizable {
      * Get the default java.nio.charset.Charset for the current default internal encoding.
      */
     public Charset getDefaultCharset() {
-        Encoding enc = getDefaultInternalEncoding();
-        if (enc == null) {
-            enc = UTF8Encoding.INSTANCE;
-        }
+        Encoding enc = getDefaultEncoding();
 
         Charset charset = EncodingUtils.charsetForEncoding(enc);
 
         return charset;
+    }
+
+    /**
+     * Return the default internal encoding, if set, or UTF-8 by default.
+     *
+     * @return the default encoding used for new Ruby strings
+     */
+    public Encoding getDefaultEncoding() {
+        Encoding enc = getDefaultInternalEncoding();
+        if (enc == null) {
+            enc = UTF8Encoding.INSTANCE;
+        }
+        return enc;
     }
 
     public EncodingService getEncodingService() {
