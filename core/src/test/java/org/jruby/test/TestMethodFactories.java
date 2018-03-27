@@ -101,6 +101,7 @@ public class TestMethodFactories extends TestRubyBase {
         assertEquals(mod.getSingletonClass(), rubyMethod.owner(runtime.getCurrentContext()));
     }
 
+    @SuppressWarnings("deprecation")
     public static class VersionedMethods {
         @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_8)
         public static IRubyObject method18(IRubyObject self) {

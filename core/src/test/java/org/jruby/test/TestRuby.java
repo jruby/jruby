@@ -102,7 +102,8 @@ public class TestRuby extends TestRubyBase {
         runtime.evalScriptlet("ENV['sausage'] = 'biscuits'");
         assertNull(runtime.getPosix().getenv("sausage"));
     }
-    
+
+    @SuppressWarnings("deprecation")
     public void testRequireCextNotAllowedWhenCextIsDisabledGlobally() throws Exception {
         RubyInstanceConfig cfg = new RubyInstanceConfig();
         cfg.setCextEnabled(false);

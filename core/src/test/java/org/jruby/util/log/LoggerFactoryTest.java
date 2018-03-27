@@ -95,7 +95,7 @@ public class LoggerFactoryTest {
 
         changeLoggerImpl(JULLogger.class);
 
-        Logger logger = LoggerFactory.getLogger("JULLogger");
+        Logger logger = LoggerFactory.getLogger(LoggerFactoryTest.class);
         assertFalse( logger.isDebugEnabled() );
 
         logger.debug("ignored debug stuff");
@@ -107,11 +107,11 @@ public class LoggerFactoryTest {
 
         logger.info("logged at info level");
         handler.flush();
-        assertEquals(log += "JULLogger INFO: logged at info level\n", out.toString());
+        assertEquals(log += "LoggerFactoryTest INFO: logged at info level\n", out.toString());
 
         logger.warn("logged at {} {}", "warn", new StringBuilder("level"));
         handler.flush();
-        assertEquals(log += "JULLogger WARNING: logged at warn level\n", out.toString());
+        assertEquals(log += "LoggerFactoryTest WARNING: logged at warn level\n", out.toString());
 
         julLogger.setLevel(java.util.logging.Level.WARNING);
 
@@ -122,7 +122,7 @@ public class LoggerFactoryTest {
 
         logger.error("bad news", new RuntimeException("exception happened"));
         handler.flush();
-        assertStartsWith(log += "JULLogger SEVERE: bad news\njava.lang.RuntimeException: exception happened", out.toString());
+        assertStartsWith(log += "LoggerFactoryTest SEVERE: bad news\njava.lang.RuntimeException: exception happened", out.toString());
     }
 
     @Test
