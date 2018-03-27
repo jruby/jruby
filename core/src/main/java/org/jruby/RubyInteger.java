@@ -144,9 +144,11 @@ public abstract class RubyInteger extends RubyNumeric {
      *
      */
     @JRubyMethod(meta = true)
-    public static IRubyObject sqrt(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return RubyMath.sqrt(context, self, arg.convertToInteger()).convertToInteger();
+    public static IRubyObject sqrt(ThreadContext context, IRubyObject self, IRubyObject num) {
+        return num.convertToInteger().sqrt(context);
     }
+
+    public abstract IRubyObject sqrt(ThreadContext context);
 
     /*  ================
      *  Instance Methods

@@ -1456,6 +1456,21 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return numRemainder(context, y);
     }
 
+    // MRI: rb_int_s_isqrt, Fixnum portion
+    @Override
+    public IRubyObject sqrt(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        // TODO: this not exactly the same as MRI
+
+        if (isNegative()) {
+            throw runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        }
+        long n = value;
+        long sq = (long) Math.sqrt(n);
+        return RubyFixnum.newFixnum(runtime, sq);
+    }
+
     private static JavaSites.FixnumSites sites(ThreadContext context) {
         return context.sites.Fixnum;
     }
