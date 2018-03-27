@@ -36,7 +36,6 @@
 package org.jruby.exceptions;
 
 import java.lang.reflect.Member;
-
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
