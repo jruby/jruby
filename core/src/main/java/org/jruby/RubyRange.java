@@ -954,6 +954,22 @@ public class RubyRange extends RubyObject {
                 respond_to_end.respondsTo(context, obj, obj);
     }
 
+    /**
+     * Return true if the given object responds to "begin", "end" and "exclude_end?" methods.
+     *
+     * @param context current context
+     * @param obj possibly range-like object
+     * @param begin_checked checked site for begin
+     * @param end_checked checked site for end
+     * @param exclude_end_checked checked site for exclude_end?
+     * @return
+     */
+    public static boolean isRangeLike(ThreadContext context, IRubyObject obj, JavaSites.CheckedSites begin_checked, JavaSites.CheckedSites end_checked, JavaSites.CheckedSites exclude_end_checked) {
+        return (obj.checkCallMethod(context, begin_checked) != null) &&
+                (obj.checkCallMethod(context, end_checked) != null) &&
+                (obj.checkCallMethod(context, exclude_end_checked) != null);
+    }
+
     // MRI: rb_range_beg_len
     public static IRubyObject rangeBeginLength(ThreadContext context, IRubyObject range, int len, int[] begLen, int err) {
         JavaSites.RangeSites sites = sites(context);

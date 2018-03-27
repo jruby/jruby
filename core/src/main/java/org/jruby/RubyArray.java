@@ -1484,7 +1484,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             ThreadContext context = runtime.getCurrentContext();
             ArraySites sites = sites(context);
 
-            if (RubyRange.isRangeLike(context, arg0, sites.respond_to_begin, sites.respond_to_end)) {
+            if (RubyRange.isRangeLike(context, arg0, sites.begin_checked, sites.end_checked, sites.exclude_end_checked)) {
                 RubyRange range = RubyRange.rangeFromRangeLike(context, arg0, sites.begin, sites.end, sites.exclude_end);
 
                 long[] beglen = range.begLen(realLength, 0);
@@ -1538,7 +1538,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             ThreadContext context = getRuntime().getCurrentContext();
             ArraySites sites = sites(context);
 
-            if (RubyRange.isRangeLike(context, arg0, sites.respond_to_begin, sites.respond_to_end)) {
+            if (RubyRange.isRangeLike(context, arg0, sites.begin_checked, sites.end_checked, sites.exclude_end_checked)) {
                 RubyRange range = RubyRange.rangeFromRangeLike(context, arg0, sites.begin, sites.end, sites.exclude_end);
 
                 long beg = range.begLen0(realLength);
