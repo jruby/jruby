@@ -211,6 +211,11 @@ public class RubyException extends RubyObject {
         return callMethod(context, "to_s");
     }
 
+    @JRubyMethod(name = "full_message")
+    public IRubyObject full_message(ThreadContext context) {
+        return RubyString.newString(context.runtime, TraceType.Format.MRI.printBacktrace(this, false));
+    }
+
     /** inspects an object and return a kind of debug information
      *
      *@return A RubyString containing the debug information.
