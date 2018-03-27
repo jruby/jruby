@@ -38,6 +38,7 @@ import java.lang.reflect.Field;
 import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
+import org.jruby.RubyException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
