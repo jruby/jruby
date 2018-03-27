@@ -86,5 +86,6 @@ EXT_FILES = {
   'ext/fiddle/lib/fiddle.rb' => 'fiddle.rb',
   'ext/fiddle/lib/fiddle' => 'fiddle',
   'ext/ripper/lib/ripper' => 'ripper',
-  'ext/ripper/lib/ripper.rb' => 'ripper.rb'
+  'ext/ripper/lib/ripper.rb' => 'ripper.rb',
+  'ext/io/console/lib/console' => 'io/console'
 }

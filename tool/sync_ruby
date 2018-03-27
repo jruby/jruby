@@ -53,8 +53,9 @@ class Sync
     end
 
     for file, target in EXT_FILES
-      if File.directory? "#{@source}/#{file}"
-        cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/stdlib/", :verbose => true
+      if file !~ /.rb$/
+        mkdir_p "#{@source}/#{file}"
+        cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/stdlib/#{target}/..", :verbose => true
       else
         cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/stdlib/#{target}", :verbose => true
       end
