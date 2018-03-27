@@ -122,18 +122,25 @@ public class JavaUtil {
     }
 
     public static IRubyObject[] convertJavaArrayToRuby(final Ruby runtime, final Object[] objects) {
-        JavaConverter converter = getJavaConverter(objects.getClass().getComponentType());
-
-        return convertJavaArrayToRuby(runtime, objects, converter);
-    }
-
-    public static IRubyObject[] convertJavaArrayToRuby(final Ruby runtime, final Object[] objects, JavaConverter converter) {
         if ( objects == null || objects.length == 0 ) return IRubyObject.NULL_ARRAY;
+
+        if (objects instanceof String[]) return convertStringArrayToRuby(runtime, (String[]) objects, JAVA_STRING_CONVERTER);
 
         IRubyObject[] rubyObjects = new IRubyObject[objects.length];
 
         for (int i = 0; i < objects.length; i++) {
-            rubyObjects[i] = converter.get(runtime, objects, i);
+            rubyObjects[i] = convertJavaToUsableRubyObject(runtime, objects[i]);
+        }
+        return rubyObjects;
+    }
+
+    public static IRubyObject[] convertStringArrayToRuby(final Ruby runtime, final String[] strings, StringConverter converter) {
+        if ( strings == null || strings.length == 0 ) return IRubyObject.NULL_ARRAY;
+
+        IRubyObject[] rubyObjects = new IRubyObject[strings.length];
+
+        for (int i = 0; i < strings.length; i++) {
+            rubyObjects[i] = convertJavaToUsableRubyObjectWithConverter(runtime, strings[i], converter);
         }
         return rubyObjects;
     }
@@ -857,23 +864,9 @@ public class JavaUtil {
         }
     }
 
-    public static class InternalStringConverter extends StringConverter {
-        public InternalStringConverter() {
-            super();
-        }
+    public static final StringConverter JAVA_STRING_CONVERTER = new StringConverter();
 
-        @Override
-        public IRubyObject convert(Ruby runtime, Object object) {
-            if (object == null) return runtime.getNil();
-            return RubyString.newInternalFromJavaExternal(runtime, (String) object);
-        }
-    }
-
-    public static final JavaConverter JAVA_STRING_CONVERTER = new StringConverter();
-
-    public static final JavaConverter JAVA_INTERNAL_STRING_CONVERTER = new InternalStringConverter();
-
-    public static final JavaConverter JAVA_CHARSEQUENCE_CONVERTER = new JavaConverter(String.class) {
+    public static final JavaConverter JAVA_CHARSEQUENCE_CONVERTER = new JavaConverter(CharSequence.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyString.newUnicodeString(runtime, (CharSequence)object);

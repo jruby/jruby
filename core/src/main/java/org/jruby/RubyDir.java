@@ -311,7 +311,7 @@ public class RubyDir extends RubyObject {
         FileResource directory = JRubyFile.createResource(context, path);
         String[] files = getEntries(context, directory, adjustedPath);
 
-        return RubyArray.newArrayMayCopy(runtime, JavaUtil.convertJavaArrayToRuby(runtime, files, new JavaUtil.StringConverter() {
+        return RubyArray.newArrayMayCopy(runtime, JavaUtil.convertStringArrayToRuby(runtime, files, new JavaUtil.StringConverter() {
             public IRubyObject convert(Ruby runtime, Object object) {
                 if (object == null) return runtime.getNil();
                 return RubyString.newString(runtime, (String)object, encoding);
