@@ -5358,6 +5358,91 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         };
     }
 
+    private static ByteList GRAPHEME_CLUSTER_PATTERN = new ByteList(new byte[] {(byte)'\\', (byte)'X'});
+
+    private SizeFn eachGraphemeClusterSizeFn() {
+        final RubyString self = this;
+        return new SizeFn() {
+            @Override
+            public IRubyObject size(IRubyObject[] args) {
+                Ruby runtime = self.getRuntime();
+                ByteList value = self.getByteList();
+                Encoding enc = value.getEncoding();
+                if (!enc.isUnicode() || isSingleByteOptimizable(self, enc)) return self.length();
+
+                Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
+                int beg = value.getBegin();
+                int end = beg + value.getRealSize();
+                Matcher matcher = reg.matcher(value.getUnsafeBytes(), beg, end);
+                int count = 0;
+
+                while (beg < end) {
+                    int len = matcher.match(beg, end, Option.DEFAULT);
+                    if (len <= 0) break;
+                    count++;
+                    beg += len;
+                }
+                return RubyFixnum.newFixnum(runtime, count);
+            }
+        };
+    }
+
+    private IRubyObject enumerateGraphemeClusters(ThreadContext context, String name, Block block, boolean wantarray) {
+        RubyString str = this;
+        RubyArray ary = null;
+        Ruby runtime = context.getRuntime();
+        Encoding enc = value.getEncoding();
+        if (!enc.isUnicode() || isSingleByteOptimizable(str, enc)) return enumerateChars(context, name, block, wantarray);
+
+        if (block.isGiven()) {
+            if (wantarray) {
+                // this code should be live in 3.0
+                if (false) {
+                    runtime.getWarnings().warn("given block not used");
+                    ary = RubyArray.newArray(runtime);
+                } else {
+                    runtime.getWarnings().warning("passing a block to String#grapheme_clusters is deprecated");
+                    wantarray = false;
+                }
+            }
+        } else {
+            if (wantarray)
+                ary = RubyArray.newBlankArray(runtime, str.size());
+            else
+                return enumeratorizeWithSize(context, str, name, eachGraphemeClusterSizeFn());
+        }
+
+        Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
+
+        int beg = value.getBegin();
+        int end = beg + value.getRealSize();
+        byte[]bytes = value.getUnsafeBytes();
+        Matcher matcher = reg.matcher(bytes, beg, end);
+
+        while (beg < end) {
+            int len = matcher.match(beg, end, Option.DEFAULT);
+            if (len <= 0) break;
+            RubyString result = newStringShared(runtime, bytes, beg, len, enc);
+            if (wantarray)
+                ary.push(result);
+            else
+                block.yield(context, result);
+            beg += len;
+        }
+
+        return wantarray ? ary : str;
+    }
+
+    @JRubyMethod
+    public IRubyObject grapheme_clusters(ThreadContext context, Block block) {
+        return enumerateGraphemeClusters(context, "grapheme_clusters", block, true);
+    }
+
+    @JRubyMethod
+    public IRubyObject each_grapheme_cluster(ThreadContext context, Block block) {
+        return enumerateGraphemeClusters(context, "each_grapheme_cluster", block, false);
+    }
+
     /** rb_str_intern
      *
      */

@@ -49,6 +49,7 @@ public class LoggerFactoryTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void usingJULLogger() throws Exception {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         java.util.logging.Logger julLogger = java.util.logging.Logger.getLogger("JULLogger");

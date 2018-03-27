@@ -293,7 +293,7 @@ public class RubyDate extends RubyObject {
     /**
      * @deprecated internal Date.new!
      */
-    @JRubyMethod(name = "new!", meta = true)
+    @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self) {
         if (self == getDateTime(context.runtime)) {
             return new RubyDateTime(context.runtime, 0, CHRONO_ITALY_UTC);
@@ -304,7 +304,7 @@ public class RubyDate extends RubyObject {
     /**
      * @deprecated internal Date.new!
      */
-    @JRubyMethod(name = "new!", meta = true)
+    @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd) {
         if (ajd instanceof JavaProxy) { // backwards - compatibility with JRuby's date.rb
             if (self == getDateTime(context.runtime)) {
@@ -321,7 +321,7 @@ public class RubyDate extends RubyObject {
     /**
      * @deprecated internal Date.new!
      */
-    @JRubyMethod(name = "new!", meta = true)
+    @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of) {
         if (self == getDateTime(context.runtime)) {
             return new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of);
@@ -332,7 +332,7 @@ public class RubyDate extends RubyObject {
     /**
      * @deprecated internal Date.new!
      */
-    @JRubyMethod(name = "new!", meta = true)
+    @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of, IRubyObject sg) {
         if (self == getDateTime(context.runtime)) {
             return new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of, sg);

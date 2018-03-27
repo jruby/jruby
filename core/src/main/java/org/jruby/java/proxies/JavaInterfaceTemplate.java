@@ -171,7 +171,7 @@ public class JavaInterfaceTemplate {
 
                 // jcreate instantiates the proxy object which implements all interfaces
                 // and which is wrapped and implemented by this object
-                clazz.addMethod("__jcreate!", new InterfaceProxyFactory(clazz));
+                clazz.addMethod("__jcreate!", new InterfaceProxyFactory(clazz, "__jcreate!"));
             } else {
                 // The new "new" actually generates a real Java class to use for the Ruby class's
                 // backing store, instantiates that, and then calls initialize on it.
@@ -183,7 +183,7 @@ public class JavaInterfaceTemplate {
 
             // Used by our duck-typification of Proc into interface types, to allow
             // coercing a simple proc into an interface parameter.
-            clazz.addMethod("__jcreate_meta!", new InterfaceProxyFactory(clazz));
+            clazz.addMethod("__jcreate_meta!", new InterfaceProxyFactory(clazz, "__jcreate_meta!"));
 
             // If we hold a Java object, we need a java_class accessor
             clazz.addMethod("java_class", new JavaClassAccessor(clazz));
@@ -195,7 +195,7 @@ public class JavaInterfaceTemplate {
 
             // implement is called to force this class to create stubs for all methods in the given interface,
             // so they'll show up in the list of methods and be invocable without passing through method_missing
-            singleton.addMethod("implement", new JavaMethodOne(clazz, Visibility.PRIVATE) {
+            singleton.addMethod("implement", new JavaMethodOne(clazz, Visibility.PRIVATE, "implement") {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject iface) {
@@ -208,7 +208,7 @@ public class JavaInterfaceTemplate {
             });
 
             // implement all forces implementation of all interfaces we intend for this class to implement
-            singleton.addMethod("implement_all", new JavaMethodOne(clazz, Visibility.PRIVATE) {
+            singleton.addMethod("implement_all", new JavaMethodOne(clazz, Visibility.PRIVATE, "implement_all") {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
@@ -226,7 +226,7 @@ public class JavaInterfaceTemplate {
 
     private static final class InterfaceProxyFactory extends JavaMethodN { // __jcreate! and __jcreate_meta!
 
-        InterfaceProxyFactory(final RubyClass clazz) { super(clazz, Visibility.PRIVATE); }
+        InterfaceProxyFactory(final RubyClass clazz, String name) { super(clazz, Visibility.PRIVATE, name); }
 
         @Override // will be called with zero args
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
@@ -242,7 +242,7 @@ public class JavaInterfaceTemplate {
 
     private static class JavaClassAccessor extends JavaMethodZero {
 
-        JavaClassAccessor(final RubyClass klass) { super(klass, Visibility.PUBLIC); }
+        JavaClassAccessor(final RubyClass klass) { super(klass, Visibility.PUBLIC, "java_class"); }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
@@ -319,7 +319,7 @@ public class JavaInterfaceTemplate {
 
     private static class AppendFeatures extends JavaMethodOneBlock {
 
-        AppendFeatures(RubyModule singletonClass) { super(singletonClass, Visibility.PUBLIC); }
+        AppendFeatures(RubyModule singletonClass) { super(singletonClass, Visibility.PUBLIC, "append_features"); }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {

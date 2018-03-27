@@ -45,7 +45,6 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.Options;
-import org.jruby.util.io.ChannelDescriptor;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

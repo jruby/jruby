@@ -5278,7 +5278,7 @@ public final class Ruby implements Constantizable {
         deprecatedNetworkStackProperty();
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     private void deprecatedNetworkStackProperty() {
         if (Options.PREFER_IPV4.load()) {
             LOG.warn("Warning: not setting network stack system property because socket subsystem may already be booted."

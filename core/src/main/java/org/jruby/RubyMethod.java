@@ -35,10 +35,10 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
-import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -259,7 +259,7 @@ public class RubyMethod extends AbstractRubyMethod {
         RubyModule definedClass;
         RubyModule mklass = originModule;
 
-        if (method instanceof AliasMethod || method instanceof WrapperMethod) {
+        if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
             definedClass = method.getRealMethod().getDefinedClass();
         }
         else {

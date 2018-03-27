@@ -371,8 +371,17 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "zero?")
         public static IRubyObject zero_p(final ThreadContext context, final IRubyObject self) {
+            return context.runtime.newBoolean(isZero(self));
+        }
+
+        private static boolean isZero(final IRubyObject self) {
             java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
-            return context.runtime.newBoolean(Double.compare(val.doubleValue(), 0) == 0);
+            return Double.compare(val.doubleValue(), 0) == 0;
+        }
+
+        @JRubyMethod(name = "nonzero?")
+        public static IRubyObject nonzero_p(final ThreadContext context, final IRubyObject self) {
+            return isZero(self) ? context.nil : self;
         }
 
         @JRubyMethod(name = "coerce")
@@ -625,7 +634,7 @@ public abstract class JavaLang {
     private static final class UByteGet extends JavaMethod.JavaMethodOne {
 
         UByteGet(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "ubyte_get");
         }
 
         @Override
@@ -640,7 +649,7 @@ public abstract class JavaLang {
     private static final class UByteSet extends JavaMethod.JavaMethodTwo {
 
         UByteSet(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "ubyte_set");
         }
 
         @Override

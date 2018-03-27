@@ -15,6 +15,7 @@ jruby/test_case
 jruby/test_class
 jruby/test_comparable
 jruby/test_core_arities
+jruby/test_coverage
 jruby/test_custom_enumerable
 jruby/test_cvars_in_odd_scopes
 jruby/test_date
