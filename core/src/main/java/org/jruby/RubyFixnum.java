@@ -59,6 +59,8 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.util.Numeric.f_odd_p;
+
 /**
  * Implementation of the Fixnum class.
  */
@@ -871,6 +873,89 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return b % 2 == 0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
         }
         return Numeric.int_pow(context, a, b);
+    }
+
+    // MRI: int_pow_tmp1
+    protected IRubyObject intPowTmp1(ThreadContext context, RubyInteger y, long mm, boolean negaFlg) {
+        Ruby runtime = context.runtime;
+
+        long xx = getLongValue();
+        long tmp = 1L;
+        long yy;
+
+        for (/*NOP*/; !(y instanceof RubyFixnum); y = (RubyInteger) sites(context).op_rshift.call(context, y, y, RubyFixnum.one(runtime))) {
+            if (f_odd_p(context, y)) {
+                tmp = (tmp * xx) % mm;
+            }
+            xx = (xx * xx) % mm;
+        }
+        for (yy = y.convertToInteger().getLongValue(); yy != 0L; yy >>= 1L) {
+            if ((yy & 1L) != 0L) {
+                tmp = (tmp * xx) % mm;
+            }
+            xx = (xx * xx) % mm;
+        }
+
+        if (negaFlg && (tmp != 0)) {
+            tmp -= mm;
+        }
+        return runtime.newFixnum(tmp);
+    }
+
+    // MRI: int_pow_tmp2
+    protected IRubyObject intPowTmp2(ThreadContext context, IRubyObject y, long mm, boolean negaFlg) {
+        Ruby runtime = context.runtime;
+
+        long tmp = 1L;
+        long yy;
+
+        final IRubyObject m = runtime.newFixnum(mm);
+        RubyFixnum tmp2 = runtime.newFixnum(tmp);
+        RubyFixnum xx = (RubyFixnum) this;
+
+        for (/*NOP*/; !(y instanceof RubyFixnum); y = sites(context).op_rshift.call(context, y, y, RubyFixnum.one(runtime))) {
+            if (f_odd_p(context, y)) {
+                tmp2 = mulModulo(context, tmp2, xx, m);
+            }
+            xx = mulModulo(context, xx, xx, m);
+        }
+        for (yy = ((RubyFixnum) y).getLongValue(); yy != 0; yy >>= 1L) {
+            if ((yy & 1L) != 0) {
+                tmp2 = mulModulo(context, tmp2, xx, m);
+            }
+            xx = mulModulo(context, xx, xx, m);
+        }
+
+        tmp = tmp2.getLongValue();
+        if (negaFlg && (tmp != 0)) {
+            tmp -= mm;
+        }
+        return runtime.newFixnum(tmp);
+    }
+
+    protected IRubyObject intPowTmp3(ThreadContext context, RubyInteger y, RubyBignum m, boolean negaFlg) {
+        Ruby runtime = context.runtime;
+
+        BigInteger xn, yn, mn, zn;
+
+        xn = BigInteger.valueOf(this.getLongValue());
+        if (y instanceof RubyFixnum) {
+            yn = BigInteger.valueOf(y.getLongValue());
+        } else {
+            yn = y.getBigIntegerValue();
+        }
+        mn = m.getBigIntegerValue();
+
+        zn = xn.modPow(yn, mn);
+        if (negaFlg & zn.signum() == 1) {
+            zn = zn.negate();
+        }
+        return RubyBignum.bignorm(runtime, zn);
+    }
+
+    // MRI: MUL_MODULO macro defined within int_pow_tmp2 in numeric.c
+    private static RubyFixnum mulModulo(ThreadContext context, RubyFixnum a, RubyFixnum b, IRubyObject c) {
+        return (RubyFixnum) ((RubyInteger) a.op_mul(context, b.getLongValue())).modulo(context, c);
     }
 
     /** fix_abs

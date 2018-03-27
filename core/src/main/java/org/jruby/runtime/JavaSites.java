@@ -211,7 +211,9 @@ public class JavaSites {
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
         public final CallSite op_quo = new FunctionalCachingCallSite("/");
         public final CallSite op_mod = new FunctionalCachingCallSite("%");
-        public final CallSite size = new FunctionalCachingCallSite("size");
+        public final CallSite size = new FunctionalCachingCallSite("**");
+        public final CallSite op_pow = new FunctionalCachingCallSite("size");
+        public final CallSite op_uminus = new FunctionalCachingCallSite("-@");
         public final CheckedSites to_i_checked = new CheckedSites("to_i");
     }
 
@@ -236,6 +238,8 @@ public class JavaSites {
         public final CallSite op_lt_bignum = new FunctionalCachingCallSite("<");
         public final CallSite op_exp_rational = new FunctionalCachingCallSite("**");
         public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
+        public final CallSite op_uminus = new FunctionalCachingCallSite("-@");
+        public final CallSite op_rshift = new FunctionalCachingCallSite(">>");
         public final CheckedSites checked_op_and = new CheckedSites("&");
         public final CheckedSites checked_op_or = new CheckedSites("|");
         public final CheckedSites checked_op_xor = new CheckedSites("^");
