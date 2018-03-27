@@ -1163,11 +1163,25 @@ public class StringIO extends RubyObject implements EncodingCapable {
     }
 
     // MRI: strio_write
-    @JRubyMethod(name = {"write"}, required = 1)
+    @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
-        checkWritable();
+        Ruby runtime = context.runtime;
+        return RubyFixnum.newFixnum(runtime, stringIOWrite(context, runtime, arg));
+    }
 
-        final Ruby runtime = context.runtime;
+    @JRubyMethod(name = "write", required = 1, rest = true)
+    public IRubyObject write(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        long len = 0;
+        for (IRubyObject arg : args) {
+            len += stringIOWrite(context, runtime, arg);
+        }
+        return RubyFixnum.newFixnum(runtime, len);
+    }
+
+    // MRI: strio_write
+    private long stringIOWrite(ThreadContext context, Ruby runtime, IRubyObject arg) {
+        checkWritable();
 
         RubyString str = arg.asString();
         int len, olen;
@@ -1184,7 +1198,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 str = EncodingUtils.strConvEnc(context, str, encStr, enc);
             }
             len = str.size();
-            if (len == 0) return RubyFixnum.zero(runtime);
+            if (len == 0) return 0;
             checkModifiable();
             olen = ptr.string.size();
             if ((ptr.flags & OpenFile.APPEND) != 0) {
@@ -1202,7 +1216,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             ptr.pos += len;
         }
 
-        return RubyFixnum.newFixnum(runtime, len);
+        return len;
     }
 
     @JRubyMethod
