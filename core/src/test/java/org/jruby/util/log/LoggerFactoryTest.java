@@ -49,6 +49,7 @@ public class LoggerFactoryTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void usingJULLogger() throws Exception {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         java.util.logging.Logger julLogger = java.util.logging.Logger.getLogger("JULLogger");
@@ -95,7 +96,7 @@ public class LoggerFactoryTest {
 
         changeLoggerImpl(JULLogger.class);
 
-        Logger logger = LoggerFactory.getLogger(LoggerFactoryTest.class);
+        Logger logger = LoggerFactory.getLogger("JULLogger");
         assertFalse( logger.isDebugEnabled() );
 
         logger.debug("ignored debug stuff");
@@ -107,11 +108,11 @@ public class LoggerFactoryTest {
 
         logger.info("logged at info level");
         handler.flush();
-        assertEquals(log += "LoggerFactoryTest INFO: logged at info level\n", out.toString());
+        assertEquals(log += "JULLogger INFO: logged at info level\n", out.toString());
 
         logger.warn("logged at {} {}", "warn", new StringBuilder("level"));
         handler.flush();
-        assertEquals(log += "LoggerFactoryTest WARNING: logged at warn level\n", out.toString());
+        assertEquals(log += "JULLogger WARNING: logged at warn level\n", out.toString());
 
         julLogger.setLevel(java.util.logging.Level.WARNING);
 
@@ -122,7 +123,7 @@ public class LoggerFactoryTest {
 
         logger.error("bad news", new RuntimeException("exception happened"));
         handler.flush();
-        assertStartsWith(log += "LoggerFactoryTest SEVERE: bad news\njava.lang.RuntimeException: exception happened", out.toString());
+        assertStartsWith(log += "JULLogger SEVERE: bad news\njava.lang.RuntimeException: exception happened", out.toString());
     }
 
     @Test
