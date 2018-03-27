@@ -62,6 +62,7 @@ import org.jruby.util.TypeConverter;
 import java.io.IOException;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -1459,7 +1460,27 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "transform_keys")
     public IRubyObject transform_keys(final ThreadContext context, final Block block) {
-        return ((RubyHash)dup()).transform_keys_bang(context, block);
+        if (block.isGiven()) {
+            RubyHash result = newHash(context.runtime);
+            visitAll(context, new TransformKeysVisitor(block), result);
+            return result;
+        }
+
+        return enumeratorizeWithSize(context, this, "transform_keys", enumSizeFn());
+    }
+
+    private static class TransformKeysVisitor extends VisitorWithState<RubyHash> {
+        private final Block block;
+
+        public TransformKeysVisitor(Block block) {
+            this.block = block;
+        }
+
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyHash result) {
+            IRubyObject newKey = block.yield(context, key);
+            result.fastASet(newKey, value);
+        }
     }
 
     @JRubyMethod(name = "transform_values")
@@ -1471,10 +1492,9 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject transform_keys_bang(final ThreadContext context, final Block block) {
         if (block.isGiven()) {
             testFrozen("Hash");
-            RubyHash bak = (RubyHash)dup();
-            rb_clear();
-            bak.keys().forEach((k) -> {
-                op_aset(context, block.yield(context, (IRubyObject)k), bak.op_aref(context, (IRubyObject)k));
+            RubyArray keys = keys(context);
+            Arrays.stream(keys.toJavaArrayMaybeUnsafe()).forEach((key) -> {
+                op_aset(context, block.yield(context, key), delete(context, key));
             });
             return this;
         }
@@ -1682,6 +1702,10 @@ public class RubyHash extends RubyObject implements Map {
 
         if (block.isGiven()) return block.yield(context, key);
         return context.nil;
+    }
+
+    public IRubyObject delete(ThreadContext context, IRubyObject key) {
+        return delete(context, key, Block.NULL_BLOCK);
     }
 
     /** rb_hash_select
