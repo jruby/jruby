@@ -256,12 +256,8 @@ public class RubyRange extends RubyObject {
 
     private void init(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {
-            try {
-                IRubyObject result = invokedynamic(context, begin, MethodNames.OP_CMP, end);
-                if (result.isNil()) {
-                    throw context.runtime.newArgumentError("bad value for range");
-                }
-            } catch (RaiseException re) {
+            IRubyObject result = invokedynamic(context, begin, MethodNames.OP_CMP, end);
+            if (result.isNil()) {
                 throw context.runtime.newArgumentError("bad value for range");
             }
         }
