@@ -60,7 +60,8 @@ public class SyntaxException extends RuntimeException {
         NUL_IN_SYMBOL("NUL_IN_SYMBOL"),
         REGEXP_ENCODING_MISMATCH("REGEXP_ENCODING_MISMATCH"),
         INVALID_MULTIBYTE_CHAR("INVALID_MULTIBYTE_CHAR"),
-        RATIONAL_OUT_OF_RANGE("RATIONAL_OUT_OF_RANGE")
+        RATIONAL_OUT_OF_RANGE("RATIONAL_OUT_OF_RANGE"),
+        TOP_LEVEL_RETURN("TOP_LEVEL_RETURN")
         ;
         
         private String id;

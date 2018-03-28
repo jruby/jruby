@@ -290,6 +290,7 @@ public class RubyParser {
 %type <ArgumentNode> f_arg_asgn
 %type <FCallNode> fcall
 %token <ByteList> tLABEL_END, tSTRING_DEND
+%type <ISourcePosition> k_return k_class k_module
 
 /*
  *    precedence table
@@ -599,7 +600,7 @@ command        : fcall command_args %prec tLOWEST {
                 | keyword_yield command_args {
                     $$ = support.new_yield($1, $2);
                 }
-                | keyword_return call_args {
+                | k_return call_args {
                     $$ = new ReturnNode($1, support.ret_args($2, $1));
                 }
                 | keyword_break call_args {
@@ -1497,7 +1498,7 @@ primary         : literal
                 | tLBRACE assoc_list tRCURLY {
                     $$ = $2;
                 }
-                | keyword_return {
+                | k_return {
                     $$ = new ReturnNode($1, NilImplicitNode.NIL);
                 }
                 | keyword_yield tLPAREN2 call_args rparen {
@@ -1570,19 +1571,22 @@ primary         : literal
                       // ENEBO: Lots of optz in 1.9 parser here
                     $$ = new ForNode($1, $2, $8, $5, support.getCurrentScope());
                 }
-                | keyword_class cpath superclass {
-                    if (support.isInDef() || support.isInSingle()) {
+                | k_class cpath superclass {
+                    if (support.isInDef()) {
                         support.yyerror("class definition in method body");
                     }
                     support.pushLocalScope();
+                    $$ = support.isInClass(); // MRI reuses $1 but we use the value for position.
+                    support.setIsInClass(true);
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($5);
 
                     $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3, lexer.getRubySourceline());
                     support.popCurrentScope();
+                    support.setIsInClass($<Boolean>4.booleanValue());
                 }
-                | keyword_class tLSHFT expr {
-                    $$ = Boolean.valueOf(support.isInDef());
+                | k_class tLSHFT expr {
+                    $$ = new Integer((support.isInClass() ? 2 : 0) & (support.isInDef() ? 1 : 0));
                     support.setInDef(false);
                 } term {
                     $$ = Integer.valueOf(support.getInSingle());
@@ -1593,35 +1597,43 @@ primary         : literal
 
                     $$ = new SClassNode($1, $3, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
-                    support.setInDef($<Boolean>4.booleanValue());
+                    support.setInDef((($<Integer>4.intValue()) & 1) != 0);
+                    support.setIsInClass((($<Integer>4.intValue()) & 2) != 0);
                     support.setInSingle($<Integer>6.intValue());
                 }
-                | keyword_module cpath {
-                    if (support.isInDef() || support.isInSingle()) { 
+                | k_module cpath {
+                    if (support.isInDef()) { 
                         support.yyerror("module definition in method body");
                     }
+                    $$ = support.isInClass();
+                    support.setIsInClass(true);
                     support.pushLocalScope();
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($4);
 
                     $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
+                    support.setIsInClass($<Boolean>3.booleanValue());
                 }
                 | keyword_def fname {
-                    support.setInDef(true);
                     support.pushLocalScope();
                     $$ = lexer.getCurrentArg();
                     lexer.setCurrentArg(null);
+                } {
+                    $$ = support.isInDef();
+                    support.setInDef(true);
                 } f_arglist bodystmt keyword_end {
-                    Node body = support.makeNullNil($5);
+                    Node body = support.makeNullNil($6);
 
-                    $$ = new DefnNode($1, $2, (ArgsNode) $4, support.getCurrentScope(), body, $6.getLine());
+                    $$ = new DefnNode($1, $2, (ArgsNode) $5, support.getCurrentScope(), body, $7.getLine());
                     support.popCurrentScope();
-                    support.setInDef(false);
+                    support.setInDef($<Boolean>4.booleanValue());
                     lexer.setCurrentArg($<ByteList>3);
                 }
                 | keyword_def singleton dot_or_colon {
                     lexer.setState(EXPR_FNAME);
+                    $$ = support.isInDef();
+                    support.setInDef(true);
                 } fname {
                     support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
@@ -1635,6 +1647,7 @@ primary         : literal
                     $$ = new DefsNode($1, $2, $5, (ArgsNode) $7, support.getCurrentScope(), body, $9.getLine());
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
+                    support.setInDef($<Boolean>4.booleanValue());
                     lexer.setCurrentArg($<ByteList>6);
                 }
                 | keyword_break {
@@ -1654,6 +1667,21 @@ primary_value   : primary {
                     value_expr(lexer, $1);
                     $$ = $1;
                     if ($$ == null) $$ = NilImplicitNode.NIL;
+                }
+
+k_class         : keyword_class {
+                    $$ = $1;
+                }
+
+k_module        : keyword_module {
+                    $$ = $1;
+                }
+
+k_return        : keyword_return {
+                    if (support.isInClass() && !support.isInDef() && !support.getCurrentScope().isBlockScope()) {
+                        lexer.compile_error(PID.TOP_LEVEL_RETURN, "Invalid return in class/module body");
+                    }
+                    $$ = $1;
                 }
 
 then            : term
