@@ -1608,8 +1608,12 @@ public class EncodingUtils {
             throw runtime.newArgumentError("ASCII incompatible encoding needs binmode");
         }
 
+        if ((fmode & OpenFile.BINMODE) != 0 && (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) != 0) {
+            throw runtime.newArgumentError("newline decorator with binary mode");
+        }
+
         if ((fmode & OpenFile.BINMODE) == 0 && (EncodingUtils.DEFAULT_TEXTMODE != 0 || (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) != 0)) {
-            fmode |= EncodingUtils.DEFAULT_TEXTMODE;
+            fmode |= OpenFile.TEXTMODE;
             fmode_p[0] = fmode;
         } else if (EncodingUtils.DEFAULT_TEXTMODE == 0 && (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {
             fmode &= ~OpenFile.TEXTMODE;
