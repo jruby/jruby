@@ -208,6 +208,8 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(omit = true)
     public IRubyObject backtrace_locations(ThreadContext context) {
+        if (backtraceData == null) return context.nil;  // Exception generated explicitly without a backtrace.
+
         Ruby runtime = context.runtime;
         RubyStackTraceElement[] elements = backtraceData.getBacktrace(runtime);
 
