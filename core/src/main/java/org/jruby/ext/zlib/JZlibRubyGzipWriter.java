@@ -230,7 +230,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "orig_name=", required = 1)
     public IRubyObject set_orig_name(IRubyObject obj) {
-        nullFreeOrigName = obj.convertToString();
+        nullFreeOrigName = obj.convertToString().strDup(getRuntime());
         ensureNonNull(nullFreeOrigName);
         
         try {
@@ -244,7 +244,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "comment=", required = 1)
     public IRubyObject set_comment(IRubyObject obj) {
-        nullFreeComment = obj.convertToString();
+        nullFreeComment = obj.convertToString().strDup(getRuntime());
         ensureNonNull(nullFreeComment);
         
         try {
