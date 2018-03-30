@@ -74,6 +74,7 @@ public class RubyException extends RubyObject {
     IRubyObject cause;
     private IRubyObject backtrace;
     private RaiseException throwable;
+    private IRubyObject backtraceLocations;
 
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
@@ -208,12 +209,16 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(omit = true)
     public IRubyObject backtrace_locations(ThreadContext context) {
-        if (backtraceData == null) return context.nil;  // Exception generated explicitly without a backtrace.
+        if (backtraceLocations != null) return backtraceLocations;
+        
+        if (backtraceData == null) {
+            backtraceLocations = context.nil;
+        } else {
+            Ruby runtime = context.runtime;
+            backtraceLocations = RubyThread.Location.newLocationArray(runtime, backtraceData.getBacktrace(runtime));
+        }
 
-        Ruby runtime = context.runtime;
-        RubyStackTraceElement[] elements = backtraceData.getBacktrace(runtime);
-
-        return RubyThread.Location.newLocationArray(runtime, elements);
+        return backtraceLocations;
     }
 
     @JRubyMethod(optional = 1)
