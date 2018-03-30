@@ -46,6 +46,7 @@ package org.jruby;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
@@ -63,6 +64,7 @@ import org.jruby.runtime.JavaSites.KernelSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
@@ -1212,8 +1214,39 @@ public class RubyKernel {
     }
 
     @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
-    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject... messages) {
-        for (IRubyObject message : messages) warn(context, recv, message);
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        boolean kwargs = false;
+        int uplevel = -1;
+        if (args.length > 1) {
+            IRubyObject tmp = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
+            if (!tmp.isNil()) {
+                kwargs = true;
+                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, "uplevel");
+                uplevel = RubyNumeric.num2int(rets[0]);
+            }
+        }
+
+        RubyString message = context.runtime.newString();
+        int numberOfMessages = kwargs ? args.length - 1 : args.length;
+
+        if (uplevel >= 0) {
+            RubyStackTraceElement[] elements = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context).getBacktrace(context.runtime);
+
+            // User can ask for level higher than stack
+            if (elements.length <= uplevel + 1) uplevel = 0;
+
+            int index = uplevel + 1;
+            message.catString(elements[index].getFileName() + ":" + (elements[index].getLineNumber()) + " warning: ");
+        }
+
+        for (int i = 0; i < numberOfMessages; i++) {
+            message.append(args[i]);
+            if (i + 1 < numberOfMessages) message.cat('\n');
+
+        }
+
+        if (message.size() > 0) warn(context, recv, message);
+
         return context.nil;
     }
 
