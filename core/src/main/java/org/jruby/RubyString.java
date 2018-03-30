@@ -98,6 +98,7 @@ import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.codeRangeScan;
 import static org.jruby.util.StringSupport.encFastMBCLen;
 import static org.jruby.util.StringSupport.isSingleByteOptimizable;
+import static org.jruby.util.StringSupport.memchr;
 import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.offset;
 import static org.jruby.util.StringSupport.memsearch;
@@ -132,6 +133,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private static final byte[] SCRUB_REPL_UTF16LE = new byte[]{(byte)0xFD, (byte)0xFF};
     private static final byte[] SCRUB_REPL_UTF32BE = new byte[]{(byte)0x00, (byte)0x00, (byte)0xFF, (byte)0xFD};
     private static final byte[] SCRUB_REPL_UTF32LE = new byte[]{(byte)0xFD, (byte)0xFF, (byte)0x00, (byte)0x00};
+    public static final byte[] FORCE_ENCODING_BYTES = ".force_encoding(\"".getBytes();
 
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 
@@ -2004,6 +2006,238 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         result.setCodeRange(CR_7BIT);
 
         return result.infectBy(this);
+    }
+
+    @JRubyMethod(name = "undump")
+    public IRubyObject undump(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        RubyString str = this;
+        ByteList strByteList = str.value;
+        byte[] sBytes = strByteList.unsafeBytes();
+        int[] s = {strByteList.begin()};
+        int sLen = strByteList.realSize();
+        int s_end = s[0] + strByteList.realSize();
+        Encoding enc[] = {str.getEncoding()};
+        RubyString undumped = newString(runtime, sBytes, s[0], 0, enc[0]);
+        boolean[] utf8 = {false};
+        boolean[] binary = {false};
+        int w;
+
+        scanForCodeRange();
+        if (!isAsciiOnly()) {
+            throw runtime.newRuntimeError("non-ASCII character detected");
+        }
+        if (memchr(sBytes, s[0], '\0', strByteList.realSize()) != -1) {
+            throw runtime.newRuntimeError("string contains null byte");
+        }
+        if (sLen < 2) return invalidFormat(runtime);
+        if (sBytes[s[0]] != '"') return invalidFormat(runtime);
+
+        /* strip '"' at the start */
+        s[0]++;
+
+        for (; ; ) {
+            if (s[0] >= s_end) {
+                throw runtime.newRuntimeError("unterminated dumped string");
+            }
+
+            if (sBytes[s[0]] == '"') {
+                /* epilogue */
+                s[0]++;
+                if (s[0] == s_end) {
+                    /* ascii compatible dumped string */
+                    break;
+                } else {
+                    int size;
+
+                    if (utf8[0]) {
+                        throw runtime.newRuntimeError("dumped string contained Unicode escape but used force_encoding");
+                    }
+
+                    size = FORCE_ENCODING_BYTES.length;
+                    if (s_end - s[0] <= size) return invalidFormat(runtime);
+                    if (ByteList.memcmp(sBytes, s[0], FORCE_ENCODING_BYTES, 0, size) != 0) return invalidFormat(runtime);
+                    s[0] += size;
+
+                    int encname = s[0];
+                    s[0] = memchr(sBytes, s[0], '"', s_end - s[0]);
+                    size = s[0] - encname;
+                    if (s[0] == -1) return invalidFormat(runtime);
+                    if (s_end - s[0] != 2) return invalidFormat(runtime);
+                    if (sBytes[s[0]] != '"' || sBytes[s[0] + 1] != ')') return invalidFormat(runtime);
+
+                    Encoding enc2 = runtime.getEncodingService().findEncodingNoError(new ByteList(sBytes, encname, size));
+                    if (enc2 == null) {
+                        throw runtime.newRuntimeError("dumped string has unknown encoding name");
+                    }
+                    undumped.setEncoding(enc2);
+                }
+                break;
+            }
+
+            if (sBytes[s[0]] == '\\'){
+                s[0]++;
+                if (s[0] >= s_end) {
+                    throw runtime.newRuntimeError("invalid escape");
+                }
+                undumped.undumpAfterBackslash(runtime, sBytes, s, s_end, enc, utf8, binary);
+            }
+            else{
+                undumped.cat(sBytes, s[0]++, 1);
+            }
+        }
+
+        undumped.infectBy(str);
+        return undumped;
+    }
+
+    private static final IRubyObject invalidFormat(Ruby runtime) {
+        throw runtime.newRuntimeError("invalid dumped string; not wrapped with '\"' nor '\"...\".force_encoding(\"...\")' form");
+    }
+
+    private void undumpAfterBackslash(Ruby runtime, byte[] ssBytes, int[] ss, int s_end, Encoding[] penc, boolean[] utf8, boolean[] binary) {
+        int s = ss[0];
+        long c;
+        int codelen;
+        int[] hexlen = {0};
+        byte[] buf = new byte[6];
+        Encoding encUtf8 = null;
+
+        switch (ssBytes[s]) {
+            case '\\':
+            case '"':
+            case '#':
+                cat(ssBytes, s, 1); /* cat itself */
+                s++;
+                break;
+            case 'n':
+            case 'r':
+            case 't':
+            case 'f':
+            case 'v':
+            case 'b':
+            case 'a':
+            case 'e':
+                buf[0] = unescapeAscii(ssBytes[s]);
+                cat(buf, 0, 1);
+                s++;
+                break;
+            case 'u':
+                if (binary[0]) {
+                    throw runtime.newRuntimeError("hex escape and Unicode escape are mixed");
+                }
+                utf8[0] = true;
+                if (++s >= s_end) {
+                    throw runtime.newRuntimeError("invalid Unicode escape");
+                }
+                if (encUtf8 == null) encUtf8 = UTF8Encoding.INSTANCE;
+                if (penc[0] != encUtf8) {
+                    penc[0] = encUtf8;
+                    setEncoding(encUtf8);
+                }
+                if (ssBytes[s] == '{') { /* handle u{...} form */
+                    s++;
+                    for (;;) {
+                        if (s >= s_end) {
+                            throw runtime.newRuntimeError("unterminated Unicode escape");
+                        }
+                        if (ssBytes[s] == '}') {
+                            s++;
+                            break;
+                        }
+                        if (Character.isSpaceChar(ssBytes[s])) {
+                            s++;
+                            continue;
+                        }
+                        c = scanHex(ssBytes, s, s_end-s, hexlen);
+                        if (hexlen[0] == 0 || hexlen[0] > 6) {
+                            throw runtime.newRuntimeError("invalid Unicode escape");
+                        }
+                        if (c > 0x10ffff) {
+                            throw runtime.newRuntimeError("invalid Unicode codepoint (too large)");
+                        }
+                        if (0xd800 <= c && c <= 0xdfff) {
+                            throw runtime.newRuntimeError("invalid Unicode codepoint");
+                        }
+                        codelen = EncodingUtils.encMbcput((int) c, buf, 0, penc[0]);
+                        cat(buf, 0, codelen);
+                        s += hexlen[0];
+                    }
+                }
+                else { /* handle uXXXX form */
+                    c = scanHex(ssBytes, s, 4, hexlen);
+                    if (hexlen[0] != 4) {
+                        throw runtime.newRuntimeError("invalid Unicode escape");
+                    }
+                    if (0xd800 <= c && c <= 0xdfff) {
+                        throw runtime.newRuntimeError("invalid Unicode codepoint");
+                    }
+                    codelen = EncodingUtils.encMbcput((int) c, buf, 0, penc[0]);
+                    cat(buf, 0, codelen);
+                    s += hexlen[0];
+                }
+                break;
+            case 'x':
+                if (utf8[0]) {
+                    throw runtime.newRuntimeError("hex escape and Unicode escape are mixed");
+                }
+                binary[0] = true;
+                if (++s >= s_end) {
+                    throw runtime.newRuntimeError("invalid hex escape");
+                }
+                buf[0] = (byte) scanHex(ssBytes, s, 2, hexlen);
+                if (hexlen[0] != 2) {
+                    throw runtime.newRuntimeError("invalid hex escape");
+                }
+                cat(buf, 0, 1);
+                s += hexlen[0];
+                break;
+            default:
+                cat(ssBytes, s - 1, 2);
+                s++;
+        }
+
+        ss[0] = s;
+    }
+
+    private static final byte[] hexdigit = "0123456789abcdef0123456789ABCDEF".getBytes();
+
+    private static long scanHex(byte[] bytes, int start, int len, int[] retlen) {
+        int s = start;
+        long retval = 0;
+        int tmp;
+
+        while ((len--) > 0 && s < bytes.length && (tmp = memchr(hexdigit, 0, bytes[s], hexdigit.length)) != -1) {
+            retval <<= 4;
+            retval |= tmp & 15;
+            s++;
+        }
+        retlen[0] = (s - start); /* less than len */
+        return retval;
+    }
+
+    private static byte unescapeAscii(byte c) {
+        switch (c) {
+            case 'n':
+                return '\n';
+            case 'r':
+                return '\r';
+            case 't':
+                return '\t';
+            case 'f':
+                return '\f';
+            case 'v':
+                return '\13';
+            case 'b':
+                return '\010';
+            case 'a':
+                return '\007';
+            case 'e':
+                return 033;
+            default:
+                // not reached
+                return -1;
+        }
     }
 
     @JRubyMethod(name = "insert")

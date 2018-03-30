@@ -2027,15 +2027,17 @@ public class EncodingUtils {
     }
 
     // rb_enc_mbcput with Java exception
-    public static void encMbcput(int c, byte[] buf, int p, Encoding enc) {
+    public static int encMbcput(int c, byte[] buf, int p, Encoding enc) {
         int len = enc.codeToMbc(c, buf, p);
         if (len < 0) {
             throw new EncodingException(EncodingError.fromCode(len));
         }
+
+        return len;
     }
 
     // rb_enc_mbcput with Ruby exception
-    public static void encMbcput(ThreadContext context, int c, byte[] buf, int p, Encoding enc) {
+    public static int encMbcput(ThreadContext context, int c, byte[] buf, int p, Encoding enc) {
         int len = enc.codeToMbc(c, buf, p);
 
         // in MRI, this check occurs within some of the individual encoding functions, such as the
@@ -2052,6 +2054,8 @@ public class EncodingUtils {
             }
             throw context.runtime.newEncodingError(EncodingError.fromCode(len).getMessage());
         }
+
+        return len;
     }
 
     // rb_enc_codepoint_len
