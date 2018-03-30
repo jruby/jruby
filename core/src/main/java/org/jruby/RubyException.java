@@ -71,7 +71,7 @@ public class RubyException extends RubyObject {
     public static final int TRACE_MAX = RubyException.TRACE_HEAD + RubyException.TRACE_TAIL + 6;
     protected BacktraceData backtraceData;
     IRubyObject message;
-    IRubyObject cause;
+    IRubyObject cause = UNDEF;
     private IRubyObject backtrace;
     private RaiseException throwable;
     private IRubyObject backtraceLocations;
@@ -84,7 +84,6 @@ public class RubyException extends RubyObject {
         super(runtime, rubyClass);
 
         this.setMessage(message == null ? runtime.getNil() : runtime.newString(message));
-        this.cause = RubyBasicObject.UNDEF;
     }
 
     @JRubyMethod(name = "exception", optional = 1, rest = true, meta = true)
@@ -210,7 +209,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(omit = true)
     public IRubyObject backtrace_locations(ThreadContext context) {
         if (backtraceLocations != null) return backtraceLocations;
-        
+
         if (backtraceData == null) {
             backtraceLocations = context.nil;
         } else {
@@ -327,7 +326,7 @@ public class RubyException extends RubyObject {
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
     public Object getCause() {
-        return cause == RubyBasicObject.UNDEF ? null : cause;
+        return cause.isNil() ? null : cause;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {
