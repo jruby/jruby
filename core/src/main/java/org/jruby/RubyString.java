@@ -1987,12 +1987,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_dump
      *
      */
-    public IRubyObject dump() {
-        return dump19();
-    }
-
     @JRubyMethod(name = "dump")
-    public IRubyObject dump19() {
+    public IRubyObject dump() {
         ByteList outBytes = StringSupport.dumpCommon(getRuntime(), value);
 
         final RubyString result = new RubyString(getRuntime(), getMetaClass(), outBytes);
@@ -2010,12 +2006,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result.infectBy(this);
     }
 
-    public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
-        return insert19(context, indexArg, stringArg);
-    }
-
     @JRubyMethod(name = "insert")
-    public IRubyObject insert19(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
+    public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
         RubyString str = stringArg.convertToString();
         int index = RubyNumeric.num2int(indexArg);
         if (index == -1) return append19(stringArg);
@@ -6099,5 +6091,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @Deprecated
     public IRubyObject lines20(ThreadContext context, IRubyObject arg, Block block) {
         return lines(context, arg, block);
+    }
+
+    @Deprecated
+    public IRubyObject dump19() {
+        return dump();
+    }
+
+    @Deprecated
+    public IRubyObject insert19(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
+        return insert(context, indexArg, stringArg);
     }
 }
