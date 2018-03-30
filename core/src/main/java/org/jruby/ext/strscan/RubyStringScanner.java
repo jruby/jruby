@@ -42,6 +42,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -521,6 +522,9 @@ public class RubyStringScanner extends RubyObject {
             return context.nil;
         }
 
+        if (idx instanceof RubySymbol || idx instanceof RubyString) {
+            if (pattern == null) return context.nil;
+        }
         int i = RubyMatchData.backrefNumber(runtime, pattern, regs, idx);
         int numRegs = regs == null ? 1 : regs.numRegs;
 
