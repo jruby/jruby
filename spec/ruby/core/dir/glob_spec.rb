@@ -169,7 +169,7 @@ describe "Dir.glob" do
   ruby_version_is "2.5" do
     it "accepts base: parameter" do
       Dir.mkdir 'foo'
-      dir = File.join(@cwd, foo)
+      dir = File.join(@cwd, 'foo')
       files = %w[a/foo.c c/bar.c].map {|n| File.join(dir, n)}
       files.each {|n| File.write(n, "")}
       assert_equal(files, Dir.glob("*/*.c", base: dir))
