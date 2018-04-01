@@ -204,10 +204,10 @@ public class RubyZlib {
     @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
-        int start = 0;
+        long start = 0;
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = (int)RubyNumeric.num2long(args[1]);
+        if (!args[1].isNil()) start = RubyNumeric.num2long(args[1]);
 
         CRC32 checksum = new CRC32();
         boolean slow = crc32InternalField == null;
