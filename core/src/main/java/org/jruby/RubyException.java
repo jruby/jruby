@@ -71,6 +71,8 @@ public class RubyException extends RubyObject {
     public static final int TRACE_MAX = RubyException.TRACE_HEAD + RubyException.TRACE_TAIL + 6;
     protected BacktraceData backtraceData;
     IRubyObject message;
+    // We initialize this to UNDEF to know whether cause has been initialized (from ruby space we will just see nil
+    // but internally we want to know if there was a cause or it was set to nil explicitly).
     IRubyObject cause = UNDEF;
     private IRubyObject backtrace;
     private RaiseException throwable;
@@ -326,7 +328,7 @@ public class RubyException extends RubyObject {
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
     public Object getCause() {
-        return cause.isNil() ? null : cause;
+        return cause == UNDEF ? null : cause;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {
