@@ -115,13 +115,11 @@ project 'JRuby Dist' do
         basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
 
         FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
-          [ 'tar', 'zip' ].each do |format|
+          [ 'tar.gz', 'zip' ].each do |format|
             puts "create #{basefile}.#{format}"
             system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
           end
         end
-        puts "zipping #{basefile}.tar"
-        system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
       end
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
         execute_goal( 'attach-artifact',
