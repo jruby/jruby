@@ -1406,9 +1406,9 @@ public class RubyKernel {
         if (args[0] instanceof RubyFixnum) {
             cmd = (int)((RubyFixnum) args[0]).getLongValue();
         } else if (args[0] instanceof RubyString &&
-                ((RubyString) args[0]).getByteList().length() > 0) {
+                ((RubyString) args[0]).getByteList().byteLength() > 0) {
             // MRI behavior: use first byte of string value if len > 0
-            cmd = ((RubyString) args[0]).getByteList().charAt(0);
+            cmd = ((RubyString) args[0]).getByteList().get(0);
         } else {
             cmd = (int) args[0].convertToInteger().getLongValue();
         }

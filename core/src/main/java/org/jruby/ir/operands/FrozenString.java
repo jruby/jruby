@@ -66,7 +66,7 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
         try {
             return Helpers.byteListToString(val).intern();
         } catch (UnsupportedCharsetException e) {
-            return val.toString().intern();
+            return val.toByteString().intern();
         }
     }
 

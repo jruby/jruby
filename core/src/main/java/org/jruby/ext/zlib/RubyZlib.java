@@ -219,11 +219,11 @@ public class RubyZlib {
                     slow = true;
                 }
             }
-            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.byteLength());
         }
         long result = checksum.getValue();
         if (start != 0 && slow) {
-            result = JZlib.crc32_combine(start, result, bytes.length());
+            result = JZlib.crc32_combine(start, result, bytes.byteLength());
         }
         return recv.getRuntime().newFixnum(result);
     }
@@ -238,11 +238,11 @@ public class RubyZlib {
 
         Adler32 checksum = new Adler32();
         if (bytes != null) {
-            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.byteLength());
         }
         long result = checksum.getValue();
         if (start != 1) {
-            result = JZlib.adler32_combine(start, result, bytes.length());
+            result = JZlib.adler32_combine(start, result, bytes.byteLength());
         }
         return recv.getRuntime().newFixnum(result);
     }

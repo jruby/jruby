@@ -61,7 +61,7 @@ public class PopenExecutor {
                 filenameByteList.getBegin() + filenameByteList.getRealSize(),
                 chlen,
                 filenameByteList.getEncoding()) == '|') {
-            return filenameStr.makeShared(context.runtime, chlen[0], filenameByteList.length() - 1).infectBy(filenameOrCommand);
+            return filenameStr.makeShared(context.runtime, chlen[0], filenameByteList.byteLength() - 1).infectBy(filenameOrCommand);
         }
         return context.nil;
     }
@@ -1915,16 +1915,16 @@ public class PopenExecutor {
                  */
                 ByteList progByteList = prog.getByteList();
                 pBytes = progByteList.unsafeBytes();
-                for (p = 0; p < progByteList.length(); p++){
+                for (p = 0; p < progByteList.byteLength(); p++){
                     if (progByteList.get(p) == ' ' || progByteList.get(p) == '\t'){
-                        if (first.unsafeBytes() != DUMMY_ARRAY && first.length() == 0) first.setRealSize(p - first.begin());
+                        if (first.unsafeBytes() != DUMMY_ARRAY && first.byteLength() == 0) first.setRealSize(p - first.begin());
                     }
                     else{
                         if (first.unsafeBytes() == DUMMY_ARRAY) { first.setUnsafeBytes(pBytes); first.setBegin(p + progByteList.begin()); }
                     }
                     if (!has_meta && "*?{}[]<>()~&|\\$;'`\"\n#".indexOf(progByteList.get(p) & 0xFF) != -1)
                         has_meta = true;
-                    if (first.length() == 0) {
+                    if (first.byteLength() == 0) {
                         if (progByteList.get(p) == '='){
                             has_meta = true;
                         }
@@ -1936,8 +1936,8 @@ public class PopenExecutor {
                         break;
                 }
                 if (!has_meta && first.getUnsafeBytes() != DUMMY_ARRAY) {
-                    if (first.length() == 0) first.setRealSize(p - first.getBegin());
-                    if (first.length() > 0 && first.length() <= posix_sh_cmd_length &&
+                    if (first.byteLength() == 0) first.setRealSize(p - first.getBegin());
+                    if (first.byteLength() > 0 && first.byteLength() <= posix_sh_cmd_length &&
                         Arrays.binarySearch(posix_sh_cmds, first.toString(), StringComparator.INSTANCE) >= 0)
                         has_meta = true;
                 }
@@ -1949,7 +1949,7 @@ public class PopenExecutor {
                     List<byte[]> argv_buf = new ArrayList<>();
                     pBytes = prog.getByteList().unsafeBytes();
                     p = prog.getByteList().begin();
-                    int pEnd = prog.getByteList().length() + p;
+                    int pEnd = prog.getByteList().byteLength() + p;
                     while (p < pEnd){
                         while (p < pEnd && (pBytes[p] == ' ' || pBytes[p] == '\t'))
                             p++;

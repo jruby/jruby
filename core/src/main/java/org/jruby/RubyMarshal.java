@@ -127,7 +127,7 @@ public class RubyMarshal {
             if (str != context.nil) {
                 tainted = in.isTaint();
                 ByteList bytes = ((RubyString) str).getByteList();
-                rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+                rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.byteLength());
             } else if (sites(context).respond_to_getc.respondsTo(context, in, in) &&
                         sites(context).respond_to_read.respondsTo(context, in, in)) {
                 tainted = true;

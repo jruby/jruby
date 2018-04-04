@@ -199,7 +199,7 @@ public class RubyArgsFile extends RubyObject {
 
         private static boolean filenameEqlDash(final RubyString filename) {
             final ByteList filenameBytes = filename.getByteList();
-            return filenameBytes.length() == 1 && filenameBytes.get(0) == '-';
+            return filenameBytes.byteLength() == 1 && filenameBytes.get(0) == '-';
         }
 
         public static ArgsFileData getArgsFileData(Ruby runtime) {
@@ -805,8 +805,8 @@ public class RubyArgsFile extends RubyObject {
                     continue;
                 }
             } else if(args.length >= 1) {
-                if (((RubyString)str).getByteList().length() < len) {
-                    len -= ((RubyString)str).getByteList().length();
+                if (((RubyString)str).getByteList().byteLength() < len) {
+                    len -= ((RubyString)str).getByteList().byteLength();
                     args[0] = runtime.newFixnum(len);
                     continue;
                 }

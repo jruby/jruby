@@ -66,13 +66,13 @@ public class ConvertDouble {
         public void init(ByteList list, boolean isStrict) {
             bytes = list.getUnsafeBytes();
             index = list.begin();
-            endIndex = index + list.length();
+            endIndex = index + list.byteLength();
             this.isStrict = isStrict;
             // +2 for added exponent: E...
             // The algorithm trades digits for inc/dec exponent.
             // Worse case is adding E-1 when no exponent,
             // it trades one digit for 3 chars.
-            chars = new char[Math.min(list.length()+2, MAX_LENGTH)];
+            chars = new char[Math.min(list.byteLength()+2, MAX_LENGTH)];
             charsIndex = 0;
             significantDigitsProcessed = 0;
             adjustExponent = 0;

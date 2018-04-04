@@ -429,7 +429,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
             // Check the length every iteration, since
             // the block can modify this string.
-            while (ptr.pos < bytes.length()) {
+            while (ptr.pos < bytes.byteLength()) {
                 block.yield(context, runtime.newFixnum(bytes.get(ptr.pos++) & 0xFF));
             }
         }

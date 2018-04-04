@@ -1914,7 +1914,7 @@ public class OpenFile implements Finalizable {
                             rbuf.off++;
                             rbuf.len--;
                             ByteList strByteList = ((RubyString)str).getByteList();
-                            r = StringSupport.preciseLength(enc, strByteList.unsafeBytes(), strByteList.getBegin(), strByteList.getBegin() + strByteList.length());
+                            r = StringSupport.preciseLength(enc, strByteList.unsafeBytes(), strByteList.getBegin(), strByteList.getBegin() + strByteList.byteLength());
                             if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
                                 continue getc_needmore;
                             }
@@ -2073,7 +2073,7 @@ public class OpenFile implements Finalizable {
 
         str = doWriteconv(context, str);
         ByteList strByteList = ((RubyString)str).getByteList();
-        return binwrite(context, str, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+        return binwrite(context, str, strByteList.unsafeBytes(), strByteList.begin(), strByteList.byteLength(), nosync);
     }
 
     // MRI: rb_w32_write_console

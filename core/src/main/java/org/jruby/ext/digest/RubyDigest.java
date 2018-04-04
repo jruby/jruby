@@ -159,7 +159,7 @@ public class RubyDigest {
     @JRubyMethod(name = "bubblebabble", required = 1, meta = true)
     public static RubyString bubblebabble(IRubyObject recv, IRubyObject arg) {
         final ByteList bytes = arg.convertToString().getByteList();
-        return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(bytes.unsafeBytes(), bytes.begin(), bytes.length()));
+        return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(bytes.unsafeBytes(), bytes.begin(), bytes.byteLength()));
     }
 
     private static class Metadata {

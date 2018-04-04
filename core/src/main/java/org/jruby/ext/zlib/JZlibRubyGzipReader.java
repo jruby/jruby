@@ -261,8 +261,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         int ce = -1;
         
-        while (limit <= 0 || result.length() < limit) {
-            int sepOffset = result.length() - sep.getRealSize();
+        while (limit <= 0 || result.byteLength() < limit) {
+            int sepOffset = result.byteLength() - sep.getRealSize();
             if (sepOffset >= 0 && result.startsWith(sep, sepOffset)) break;
 
             ce = bufferedStream.read();
@@ -278,10 +278,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         // io.available() only returns 0 after EOF is encountered
         // so we need to differentiate between the empty string and EOF
-        if (0 == result.length() && -1 == ce) return getRuntime().getNil();
+        if (0 == result.byteLength() && -1 == ce) return getRuntime().getNil();
 
         line++;
-        position += result.length();
+        position += result.byteLength();
 
         return newStr(getRuntime(), result);
     }
@@ -392,7 +392,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
 
         val.append(buffer, 0, read);
-        this.position += val.length();
+        this.position += val.byteLength();
 
         if (outbuf != null) {
             outbuf.view(val);
@@ -420,7 +420,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         
         fixBrokenTrailingCharacter(val);
         
-        this.position += val.length();
+        this.position += val.byteLength();
         return newStr(getRuntime(), val);
     }
 
@@ -742,7 +742,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
         // fix broken trailing character
-        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(), result.getRealSize(), getReadEncoding(), result.length());
+        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(), result.getRealSize(), getReadEncoding(), result.byteLength());
 
         for (int i = 0; i < extraBytes; i++) {
             int read = bufferedStream.read();

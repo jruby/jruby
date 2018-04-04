@@ -679,7 +679,7 @@ public final class StringSupport {
         RubyString s = value.asString();
         ByteList bl = s.getByteList();
         final byte[] array = bl.getUnsafeBytes();
-        final int end = bl.length();
+        final int end = bl.byteLength();
         for (int i = bl.begin(); i < end; ++i) {
             if (array[i] == (byte) 0) {
                 throw runtime.newSecurityError("string contains null byte");
@@ -759,7 +759,7 @@ public final class StringSupport {
         ByteList sByteList = s.getByteList();
         byte[] sBytes = sByteList.unsafeBytes();
         int beg = sByteList.begin();
-        int len = sByteList.length();
+        int len = sByteList.byteLength();
         final Encoding enc = s.getEncoding();
         final int minlen = enc.minLength();
 
@@ -1841,8 +1841,8 @@ public final class StringSupport {
             ByteList rsByteList = ((RubyString) rs).getByteList();
             rsbytes = rsByteList.unsafeBytes();
             rsptr = rsByteList.begin();
-            if (rsByteList.length() == enc.minLength() &&
-                    enc.isNewLine(rsbytes, rsptr, rsByteList.length())) {
+            if (rsByteList.byteLength() == enc.minLength() &&
+                    enc.isNewLine(rsbytes, rsptr, rsByteList.byteLength())) {
                 rsnewline = true;
             }
         }

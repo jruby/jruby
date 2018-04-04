@@ -1853,14 +1853,14 @@ abstract public class AbstractMemory extends MemoryObject {
     public IRubyObject put_string(ThreadContext context, IRubyObject offArg, IRubyObject strArg) {
         long off = getOffset(offArg);
         ByteList bl = strArg.convertToString().getByteList();
-        getMemoryIO().putZeroTerminatedByteArray(off, bl.getUnsafeBytes(), bl.begin(), bl.length());
+        getMemoryIO().putZeroTerminatedByteArray(off, bl.getUnsafeBytes(), bl.begin(), bl.byteLength());
         return this;
     }
 
     @JRubyMethod(name = "write_string")
     public IRubyObject write_string(ThreadContext context, IRubyObject strArg) {
         ByteList bl = strArg.convertToString().getByteList();
-        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), bl.length());
+        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), bl.byteLength());
         return this;
     }
 
@@ -1868,7 +1868,7 @@ abstract public class AbstractMemory extends MemoryObject {
     public IRubyObject write_string(ThreadContext context, IRubyObject strArg, IRubyObject lenArg) {
         ByteList bl = strArg.convertToString().getByteList();
         getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(),
-                Math.min(bl.length(), (int) org.jruby.RubyInteger.num2long(lenArg)));
+                Math.min(bl.byteLength(), (int) org.jruby.RubyInteger.num2long(lenArg)));
         return this;
     }
 
@@ -1879,11 +1879,11 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     private IRubyObject putBytes(ThreadContext context, long off, ByteList bl, int idx, int len) {
-        if (idx < 0 || idx > bl.length()) {
+        if (idx < 0 || idx > bl.byteLength()) {
             throw context.runtime.newRangeError("invalid string index");
         }
 
-        if (len < 0 || len > (bl.length() - idx)) {
+        if (len < 0 || len > (bl.byteLength() - idx)) {
             throw context.runtime.newRangeError("invalid length");
         }
         getMemoryIO().put(off, bl.getUnsafeBytes(), bl.begin() + idx, len);
@@ -1895,7 +1895,7 @@ abstract public class AbstractMemory extends MemoryObject {
     public IRubyObject put_bytes(ThreadContext context, IRubyObject[] args) {
         ByteList bl = args[1].convertToString().getByteList();
         int idx = args.length > 2 ? Util.int32Value(args[2]) : 0;
-        int len = args.length > 3 ? Util.int32Value(args[3]) : (bl.length() - idx);
+        int len = args.length > 3 ? Util.int32Value(args[3]) : (bl.byteLength() - idx);
 
         return putBytes(context, getOffset(args[0]), bl, idx, len);
     }
@@ -1909,7 +1909,7 @@ abstract public class AbstractMemory extends MemoryObject {
     public IRubyObject write_bytes(ThreadContext context, IRubyObject[] args) {
         ByteList bl = args[0].convertToString().getByteList();
         int idx = args.length > 1 ? Util.int32Value(args[1]) : 0;
-        int len = args.length > 2 ? Util.int32Value(args[2]) : (bl.length() - idx);
+        int len = args.length > 2 ? Util.int32Value(args[2]) : (bl.byteLength() - idx);
         return putBytes(context, 0, bl, idx, len);
     }
 

@@ -308,7 +308,7 @@ public class RipperLexer extends LexingCommon {
         ruby_sourceline++;
         line_count++;
         lex_pbeg = lex_p = 0;
-        lex_pend = lex_p + v.length();
+        lex_pend = lex_p + v.byteLength();
         lexb = v;
         flush();
         lex_lastline = v;
@@ -369,7 +369,7 @@ public class RipperLexer extends LexingCommon {
         ByteList line = here.lastLine;
         lex_lastline = line;
         lex_pbeg = 0;
-        lex_pend = lex_pbeg + line.length();
+        lex_pend = lex_pbeg + line.byteLength();
         lex_p = lex_pbeg + here.nth;
         lexb = line;
         heredoc_end = ruby_sourceline;
@@ -444,12 +444,12 @@ public class RipperLexer extends LexingCommon {
         Encoding newEncoding = parser.getRuntime().getEncodingService().loadEncoding(name);
 
         if (newEncoding == null) {
-            compile_error("unknown encoding name: " + name.toString());
+            compile_error("unknown encoding name: " + name.toByteString());
             return;
         }
 
         if (!newEncoding.isAsciiCompatible()) {
-            compile_error(name.toString() + " is not ASCII compatible");
+            compile_error(name.toByteString() + " is not ASCII compatible");
             return;
         }
 
@@ -1061,7 +1061,7 @@ public class RipperLexer extends LexingCommon {
             case '=':
                 // documentation nodes
                 if (was_bol()) {
-                    if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), BEGIN_DOC_MARKER, BEGIN_DOC_MARKER.length()) && 
+                    if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), BEGIN_DOC_MARKER, BEGIN_DOC_MARKER.byteLength()) &&
                             Character.isWhitespace(p(lex_p + 5))) {
                         boolean first_p = true;
                         
@@ -1083,7 +1083,7 @@ public class RipperLexer extends LexingCommon {
 
                             if (c != '=') continue;
 
-                            if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), END_DOC_MARKER, END_DOC_MARKER.length()) &&
+                            if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), END_DOC_MARKER, END_DOC_MARKER.byteLength()) &&
                                     (lex_p + 3 == lex_pend || Character.isWhitespace(p(lex_p + 3)))) {
                                 break;
                             }
@@ -2110,7 +2110,7 @@ public class RipperLexer extends LexingCommon {
         int nondigit = 0;
 
         if (c == '0') {
-            int startLen = numberBuffer.length();
+            int startLen = numberBuffer.byteLength();
 
             switch (c = nextc()) {
                 case 'x' :
@@ -2131,7 +2131,7 @@ public class RipperLexer extends LexingCommon {
                     }
                     pushback(c);
 
-                    if (numberBuffer.length() == startLen) {
+                    if (numberBuffer.byteLength() == startLen) {
                         compile_error("Hexadecimal number without hex-digits.");
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
@@ -2155,7 +2155,7 @@ public class RipperLexer extends LexingCommon {
                     }
                     pushback(c);
 
-                    if (numberBuffer.length() == startLen) {
+                    if (numberBuffer.byteLength() == startLen) {
                         compile_error("Binary number without digits.");
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
@@ -2179,7 +2179,7 @@ public class RipperLexer extends LexingCommon {
                     }
                     pushback(c);
 
-                    if (numberBuffer.length() == startLen) {
+                    if (numberBuffer.byteLength() == startLen) {
                         compile_error("Binary number without digits.");
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
@@ -2202,7 +2202,7 @@ public class RipperLexer extends LexingCommon {
                             break;
                         }
                     }
-                    if (numberBuffer.length() > startLen) {
+                    if (numberBuffer.byteLength() > startLen) {
                         pushback(c);
 
                         if (nondigit != '\0') compile_error("Trailing '_' in number.");
@@ -2248,7 +2248,7 @@ public class RipperLexer extends LexingCommon {
                         compile_error("Trailing '_' in number.");
                     } else if (seen_point || seen_e) {
                         pushback(c);
-                        return getNumberLiteral(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                        return getNumberLiteral(numberBuffer.toByteString(), seen_e, seen_point, nondigit);
                     } else {
                     	int c2;
                         if (!Character.isDigit(c2 = nextc())) {
@@ -2258,7 +2258,7 @@ public class RipperLexer extends LexingCommon {
                             		// Enebo:  c can never be antrhign but '.'
                             		// Why did I put this here?
                             } else {
-                                return getNumberLiteral(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                                return getNumberLiteral(numberBuffer.toByteString(), seen_e, seen_point, nondigit);
                             }
                         } else {
                             numberBuffer.append('.');
@@ -2274,7 +2274,7 @@ public class RipperLexer extends LexingCommon {
                         compile_error("Trailing '_' in number.");
                     } else if (seen_e) {
                         pushback(c);
-                        return getNumberLiteral(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                        return getNumberLiteral(numberBuffer.toByteString(), seen_e, seen_point, nondigit);
                     } else {
                         numberBuffer.append((char) c);
                         seen_e = true;
@@ -2296,7 +2296,7 @@ public class RipperLexer extends LexingCommon {
                     break;
                 default :
                     pushback(c);
-                    return getNumberLiteral(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                    return getNumberLiteral(numberBuffer.toByteString(), seen_e, seen_point, nondigit);
             }
         }
     }

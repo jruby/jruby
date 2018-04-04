@@ -486,7 +486,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     public void writeString(ByteList value) throws IOException {
-        int len = value.length();
+        int len = value.byteLength();
         writeInt(len);
         out.write(value.getUnsafeBytes(), value.begin(), len);
     }

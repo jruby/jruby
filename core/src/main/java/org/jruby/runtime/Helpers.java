@@ -2335,14 +2335,7 @@ public class Helpers {
      * @return the resulting symbol string
      */
     public static String symbolBytesToString(ByteList value) {
-        Encoding encoding = value.getEncoding();
-        if (encoding == USASCIIEncoding.INSTANCE || encoding == ASCIIEncoding.INSTANCE) {
-            return value.toString(); // raw
-        } else if (encoding instanceof UnicodeEncoding) {
-            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), EncodingUtils.charsetForEncoding(value.getEncoding()));
-        } else {
-            return value.toString(); // raw
-        }
+        return value.toString();
     }
 
     /**
@@ -2355,7 +2348,7 @@ public class Helpers {
     public static String decodeByteList(Ruby runtime, ByteList value) {
         byte[] unsafeBytes = value.getUnsafeBytes();
         int begin = value.getBegin();
-        int length = value.length();
+        int length = value.byteLength();
 
         Encoding encoding = value.getEncoding();
 
@@ -2369,7 +2362,7 @@ public class Helpers {
             // No JDK Charset available for this encoding; convert to UTF-16 ourselves.
             Encoding utf16 = EncodingUtils.getUTF16ForPlatform();
 
-            return EncodingUtils.strConvEnc(runtime.getCurrentContext(), value, value.getEncoding(), utf16).toString();
+            return EncodingUtils.strConvEnc(runtime.getCurrentContext(), value, value.getEncoding(), utf16).toByteString();
         }
 
         return RubyEncoding.decode(unsafeBytes, begin, length, charset);

@@ -1184,7 +1184,7 @@ public class ParserSupport {
         if (head instanceof StrNode) {
         	
             //Do not add an empty string node
-            if(((StrNode) head).getValue().length() == 0) {
+            if(((StrNode) head).getValue().byteLength() == 0) {
                 head = createDStrNode(head.getPosition());
             } else {
                 head = createDStrNode(head.getPosition()).add(head);
@@ -1347,7 +1347,7 @@ public class ParserSupport {
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
     public boolean is_local_id(ByteList name) {
-        return lexer.isIdentifierChar(name.charAt(0));
+        return lexer.isIdentifierChar(name.get(0));
     }
 
     @Deprecated
@@ -1406,7 +1406,7 @@ public class ParserSupport {
 
     // 1.9
     public ByteList shadowing_lvar(ByteList name) {
-        if (name.realSize() == 1 && name.charAt(0) == '_') return name;
+        if (name.realSize() == 1 && name.get(0) == '_') return name;
 
         StaticScope current = getCurrentScope();
         if (current.exists(name) >= 0) yyerror("duplicated argument name");
@@ -1484,7 +1484,7 @@ public class ParserSupport {
         StaticScope scope = getCurrentScope();
 
         for (int i = 0; i < length; i++) {
-            if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
+            if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].get(0))) {
                 int slot = scope.isDefined(names[i]);
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn
@@ -1617,7 +1617,7 @@ public class ParserSupport {
 
     @Deprecated
     public String internalId() {
-        return INTERNAL_ID.toString();
+        return INTERNAL_ID.toByteString();
     }
 
 }

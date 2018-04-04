@@ -198,7 +198,7 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     private boolean hasUngotChars() {
-        return ungotChars.length() > 0;
+        return ungotChars.byteLength() > 0;
     }
 
     public final boolean writeDataBuffered() {
@@ -310,7 +310,7 @@ public class ChannelStream implements Stream, Finalizable {
         boolean found = false;
 
         if (hasUngotChars()) {
-            for(int i = 0; i < ungotChars.length(); i++){
+            for(int i = 0; i < ungotChars.byteLength(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
                 dst.append(ungotc);
                 found = ungotc == terminator;
@@ -354,7 +354,7 @@ public class ChannelStream implements Stream, Finalizable {
         boolean found = false;
 
         if (hasUngotChars()) {
-            for(int i = 0; i < ungotChars.length(); i++){
+            for(int i = 0; i < ungotChars.byteLength(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
                 dst.append(ungotc);
                 found = ungotc == terminator;
@@ -396,8 +396,8 @@ public class ChannelStream implements Stream, Finalizable {
      *
      */
     private void clearUngotChars() {
-        if(ungotChars.length() > 0) {
-            ungotChars.delete(0, ungotChars.length());
+        if(ungotChars.byteLength() > 0) {
+            ungotChars.delete(0, ungotChars.byteLength());
         }
     }
 
@@ -496,7 +496,7 @@ public class ChannelStream implements Stream, Finalizable {
         final int bytesToCopy = dst.remaining();
 
         if (hasUngotChars() && dst.hasRemaining()) {
-            for(int i = 0; i < ungotChars.length(); i++){
+            for(int i = 0; i < ungotChars.byteLength(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
                 dst.put(ungotc);
             }
@@ -535,7 +535,7 @@ public class ChannelStream implements Stream, Finalizable {
         int bytesCopied = 0;
 
         if (hasUngotChars() && len > 0) {
-            for(int i = 0; i < ungotChars.length(); i++){
+            for(int i = 0; i < ungotChars.byteLength(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
                 dst[off++] = ungotc;
                 ++bytesCopied;
@@ -563,7 +563,7 @@ public class ChannelStream implements Stream, Finalizable {
         dst.ensure(Math.min(len, bufferedInputBytesRemaining()));
 
         if (hasUngotChars()) {
-            for(int i = 0; i < ungotChars.length(); i++){
+            for(int i = 0; i < ungotChars.byteLength(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
                 ++bytesCopied;
                 dst.append(ungotc);
@@ -589,7 +589,7 @@ public class ChannelStream implements Stream, Finalizable {
      * @return The number of bytes that can be read without reading the underlying stream.
      */
     private final int bufferedInputBytesRemaining() {
-        return reading ? (buffer.remaining() + (ungotChars.length())) : 0;
+        return reading ? (buffer.remaining() + (ungotChars.byteLength())) : 0;
     }
 
     /**
@@ -777,7 +777,7 @@ public class ChannelStream implements Stream, Finalizable {
             // Adjust for buffered data
             if (reading) {
                 pos -= buffer.remaining();
-                return pos - (pos > 0 && hasUngotChars() ? ungotChars.length() : 0);
+                return pos - (pos > 0 && hasUngotChars() ? ungotChars.byteLength() : 0);
             } else {
                 return pos + buffer.position();
             }
@@ -1097,20 +1097,20 @@ public class ChannelStream implements Stream, Finalizable {
         ensureWrite();
 
         // Ruby ignores empty syswrites
-        if (buf == null || buf.length() == 0) return 0;
+        if (buf == null || buf.byteLength() == 0) return 0;
 
-        if (buf.length() > buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
+        if (buf.byteLength() > buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
             flushWrite(); // ensure nothing left to write
 
 
-            int n = descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
-            if(n != buf.length()) {
+            int n = descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.byteLength()));
+            if(n != buf.byteLength()) {
                 // TODO: check the return value here
             }
         } else {
-            if (buf.length() > buffer.remaining()) flushWrite();
+            if (buf.byteLength() > buffer.remaining()) flushWrite();
 
-            buffer.put(buf.getUnsafeBytes(), buf.begin(), buf.length());
+            buffer.put(buf.getUnsafeBytes(), buf.begin(), buf.byteLength());
         }
 
         if (isSync()) flushWrite();
@@ -1299,7 +1299,7 @@ public class ChannelStream implements Stream, Finalizable {
         ensureWrite();
 
         // Ruby ignores empty syswrites
-        if (buf == null || buf.length() == 0) return 0;
+        if (buf == null || buf.byteLength() == 0) return 0;
 
         if (buffer.position() != 0 && !flushWrite(false)) return 0;
 
@@ -1311,7 +1311,7 @@ public class ChannelStream implements Stream, Finalizable {
                     if (oldBlocking) {
                         selectableChannel.configureBlocking(false);
                     }
-                    return descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
+                    return descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.byteLength()));
                 } finally {
                     if (oldBlocking) {
                         selectableChannel.configureBlocking(oldBlocking);
@@ -1320,7 +1320,7 @@ public class ChannelStream implements Stream, Finalizable {
             }
         } else {
             // can't set nonblocking, so go ahead with it...not much else we can do
-            return descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
+            return descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.byteLength()));
         }
     }
 

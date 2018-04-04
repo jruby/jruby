@@ -40,10 +40,10 @@ public final class StringParameterStrategy extends PointerParameterStrategy {
         if (checkStringSafety) StringSupport.checkStringSafety(s.getRuntime(), s);
         MemoryIO memory;
         if (isDirect) {
-            memory = TransientNativeMemoryIO.allocateAligned(s.getRuntime(), bl.length() + 1, 1, false);
-            memory.putZeroTerminatedByteArray(0, bl.unsafeBytes(), bl.begin(), bl.length());
+            memory = TransientNativeMemoryIO.allocateAligned(s.getRuntime(), bl.byteLength() + 1, 1, false);
+            memory.putZeroTerminatedByteArray(0, bl.unsafeBytes(), bl.begin(), bl.byteLength());
         } else {
-            memory = new ArrayMemoryIO(s.getRuntime(), bl.unsafeBytes(), bl.begin(), bl.length());
+            memory = new ArrayMemoryIO(s.getRuntime(), bl.unsafeBytes(), bl.begin(), bl.byteLength());
         }
 
         s.setByteListShared();
@@ -65,6 +65,6 @@ public final class StringParameterStrategy extends PointerParameterStrategy {
 
     @Override
     public int length(Object parameter) {
-        return ((RubyString) parameter).getByteList().length();
+        return ((RubyString) parameter).getByteList().byteLength();
     }
 }

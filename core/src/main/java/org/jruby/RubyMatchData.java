@@ -732,7 +732,7 @@ public class RubyMatchData extends RubyObject {
         check();
         if (begin == -1) return context.nil;
 
-        final int strLen = str.getByteList().length();
+        final int strLen = str.getByteList().byteLength();
         return makeShared(context.runtime, str, end, strLen - end).infectBy(this);
     }
 

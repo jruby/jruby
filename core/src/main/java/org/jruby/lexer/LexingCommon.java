@@ -241,7 +241,7 @@ public abstract class LexingCommon {
     }
 
     public String getCurrentLine() {
-        return lex_lastline.toString();
+        return lex_lastline.toByteString();
     }
 
     public Encoding getEncoding() {
@@ -641,7 +641,7 @@ public abstract class LexingCommon {
     }
 
     protected boolean strncmp(ByteList one, ByteList two, int length) {
-        if (one.length() < length || two.length() < length) return false;
+        if (one.byteLength() < length || two.length() < length) return false;
 
         return one.makeShared(0, length).equal(two.makeShared(0, length));
     }
@@ -747,7 +747,7 @@ public abstract class LexingCommon {
     }
 
     public void validateFormalIdentifier(ByteList identifier) {
-        char first = identifier.charAt(0);
+        char first = (char) identifier.get(0);
 
         if (Character.isUpperCase(first)) {
             compile_error("formal argument cannot be a constant");
@@ -755,7 +755,7 @@ public abstract class LexingCommon {
 
         switch(first) {
             case '@':
-                if (identifier.charAt(1) == '@') {
+                if (identifier.get(1) == '@') {
                     compile_error("formal argument cannot be a class variable");
                 } else {
                     compile_error("formal argument cannot be an instance variable");
@@ -767,7 +767,7 @@ public abstract class LexingCommon {
             default:
                 // This mechanism feels a tad dicey but at this point we are dealing with a valid
                 // method name at least so we should not need to check the entire string...
-                char last = identifier.charAt(identifier.length() - 1);
+                char last = (char) identifier.get(identifier.byteLength() - 1);
 
                 if (last == '=' || last == '?' || last == '!') {
                     compile_error("formal argument must be local variable");
@@ -825,7 +825,7 @@ public abstract class LexingCommon {
     }
 
     public boolean whole_match_p(ByteList eos, boolean indent) {
-        int len = eos.length();
+        int len = eos.byteLength();
         int p = lex_pbeg;
 
         if (indent) {
@@ -958,20 +958,20 @@ public abstract class LexingCommon {
      */
     public static int magicCommentMarker(ByteList str, int begin) {
         int i = begin;
-        int len = str.length();
+        int len = str.byteLength();
 
         while (i < len) {
-            switch (str.charAt(i)) {
+            switch (str.get(i)) {
                 case '-':
-                    if (i >= 2 && str.charAt(i - 1) == '*' && str.charAt(i - 2) == '-') return i + 1;
+                    if (i >= 2 && str.get(i - 1) == '*' && str.get(i - 2) == '-') return i + 1;
                     i += 2;
                     break;
                 case '*':
                     if (i + 1 >= len) return -1;
 
-                    if (str.charAt(i + 1) != '-') {
+                    if (str.get(i + 1) != '-') {
                         i += 4;
-                    } else if (str.charAt(i - 1) != '-') {
+                    } else if (str.get(i - 1) != '-') {
                         i += 2;
                     } else {
                         return i + 2;
@@ -1005,7 +1005,7 @@ public abstract class LexingCommon {
         /* %r"([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*" */
         while (length > 0) {
             for (; length > 0; str++, --length) {
-                char c = magicLine.charAt(str);
+                char c = (char) magicLine.get(str);
 
                 switch (c) {
                     case '\'': case '"': case ':': case ';': continue;
@@ -1014,7 +1014,7 @@ public abstract class LexingCommon {
             }
 
             for (beg = str; length > 0; str++, --length) {
-                char c = magicLine.charAt(str);
+                char c = (char) magicLine.get(str);
 
                 switch (c) {
                     case '\'': case '"': case ':': case ';': break;
@@ -1024,9 +1024,9 @@ public abstract class LexingCommon {
                 }
                 break;
             }
-            for (end = str; length > 0 && Character.isWhitespace(magicLine.charAt(str)); str++, --length);
+            for (end = str; length > 0 && Character.isWhitespace(magicLine.get(str)); str++, --length);
             if (length == 0) break;
-            char c = magicLine.charAt(str);
+            char c = (char) magicLine.get(str);
             if (c != ':') {
                 if (!indicator) return false;
                 continue;
@@ -1034,11 +1034,11 @@ public abstract class LexingCommon {
 
             do {
                 str++;
-            } while (--length > 0 && Character.isWhitespace(magicLine.charAt(str)));
+            } while (--length > 0 && Character.isWhitespace(magicLine.get(str)));
             if (length == 0) break;
-            if (magicLine.charAt(str) == '"') {
-                for (vbeg = ++str; --length > 0 && str < length && magicLine.charAt(str) != '"'; str++) {
-                    if (magicLine.charAt(str) == '\\') {
+            if (magicLine.get(str) == '"') {
+                for (vbeg = ++str; --length > 0 && str < length && magicLine.get(str) != '"'; str++) {
+                    if (magicLine.get(str) == '\\') {
                         --length;
                         ++str;
                     }
@@ -1049,16 +1049,16 @@ public abstract class LexingCommon {
                     ++str;
                 }
             } else {
-                for (vbeg = str; length > 0 && magicLine.charAt(str) != '"' && magicLine.charAt(str) != ';' && !Character.isWhitespace(magicLine.charAt(str)); --length, str++);
+                for (vbeg = str; length > 0 && magicLine.get(str) != '"' && magicLine.get(str) != ';' && !Character.isWhitespace(magicLine.get(str)); --length, str++);
                 vend = str;
             }
             if (indicator) {
-                while (length > 0 && (magicLine.charAt(str) == ';' || Character.isWhitespace(magicLine.charAt(str)))) {
+                while (length > 0 && (magicLine.get(str) == ';' || Character.isWhitespace(magicLine.get(str)))) {
                     --length;
                     str++;
                 }
             } else {
-                while (length > 0 && Character.isWhitespace(magicLine.charAt(str))) {
+                while (length > 0 && Character.isWhitespace(magicLine.get(str))) {
                     --length;
                     str++;
                 }
@@ -1147,7 +1147,7 @@ public abstract class LexingCommon {
     }
 
     public void checkRegexpSyntax(Ruby runtime, ByteList value, RegexpOptions options) {
-        final String stringValue = value.toString();
+        final String stringValue = value.toByteString();
         // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
         if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
             return;

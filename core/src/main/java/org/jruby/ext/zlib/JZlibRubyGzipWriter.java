@@ -375,10 +375,10 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         try {
             // TODO: jzlib-1.1.0.jar throws IndexOutOfBoundException for zero length buffer.
             if (str.size() > 0) {
-                io.write(str.getByteList().getUnsafeBytes(), str.getByteList().begin(), str.getByteList().length());
+                io.write(str.getByteList().getUnsafeBytes(), str.getByteList().begin(), str.getByteList().byteLength());
             }
             
-            return runtime.newFixnum(str.getByteList().length());
+            return runtime.newFixnum(str.getByteList().byteLength());
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }

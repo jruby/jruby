@@ -1378,7 +1378,7 @@ public class RubyRational extends RubyNumeric {
 
             if (si != nil) {
                 ByteList siBytes = si.convertToString().getByteList();
-                if (siBytes.length() > 0 && siBytes.get(0) == '-') v = f_negate(context, v); 
+                if (siBytes.byteLength() > 0 && siBytes.get(0) == '-') v = f_negate(context, v);
             }
 
             if (exp != nil) {
@@ -1395,7 +1395,7 @@ public class RubyRational extends RubyNumeric {
     
     private static RubyNumeric str_to_r_strict(ThreadContext context, RubyString str) {
         IRubyObject[] ary = str_to_r_internal(context, str);
-        if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
+        if (ary[0] == context.nil || ary[1].convertToString().getByteList().byteLength() > 0) {
             throw context.runtime.newArgumentError("invalid value for convert(): " + str.inspect(context.runtime));
         }
         return (RubyNumeric) ary[0]; // (RubyRational)

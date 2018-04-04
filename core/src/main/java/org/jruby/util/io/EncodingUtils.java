@@ -1671,7 +1671,7 @@ public class EncodingUtils {
 
     // rb_str_buf_cat
     public static void  rbStrBufCat(Ruby runtime, RubyString str, ByteList ptr) {
-        if (ptr.length() == 0) return;
+        if (ptr.byteLength() == 0) return;
         // negative length check here, we shouldn't need
         strBufCat(runtime, str, ptr);
     }

@@ -91,8 +91,8 @@ public class MemoryPointer extends Pointer {
     @JRubyMethod(name = "from_string", meta = true)
     public static IRubyObject from_string(ThreadContext context, IRubyObject klass, IRubyObject s) {
         org.jruby.util.ByteList bl = s.convertToString().getByteList();
-        MemoryPointer ptr = (MemoryPointer) ((RubyClass) klass).newInstance(context, context.runtime.newFixnum(bl.length() + 1), Block.NULL_BLOCK);
-        ptr.getMemoryIO().putZeroTerminatedByteArray(0, bl.unsafeBytes(), bl.begin(), bl.length());
+        MemoryPointer ptr = (MemoryPointer) ((RubyClass) klass).newInstance(context, context.runtime.newFixnum(bl.byteLength() + 1), Block.NULL_BLOCK);
+        ptr.getMemoryIO().putZeroTerminatedByteArray(0, bl.unsafeBytes(), bl.begin(), bl.byteLength());
 
         return ptr;
     }

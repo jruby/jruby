@@ -1196,7 +1196,7 @@ public final class StructLayout extends Type {
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
             ByteList bl = value.convertToString().getByteList();
 
-            MemoryPointer mem = MemoryPointer.allocate(context.runtime, 1, bl.length() + 1, false);
+            MemoryPointer mem = MemoryPointer.allocate(context.runtime, 1, bl.byteLength() + 1, false);
             //
             // Keep a reference to the temporary memory in the cache so it does
             // not get freed by the GC until the struct is freed
@@ -1204,8 +1204,8 @@ public final class StructLayout extends Type {
             cache.putReference(m, mem);
 
             MemoryIO io = mem.getMemoryIO();
-            io.put(0, bl.getUnsafeBytes(), bl.begin(), bl.length());
-            io.putByte(bl.length(), (byte) 0);
+            io.put(0, bl.getUnsafeBytes(), bl.begin(), bl.byteLength());
+            io.putByte(bl.byteLength(), (byte) 0);
 
             ptr.getMemoryIO().putMemoryIO(m.getOffset(ptr), io);
         }
@@ -1336,7 +1336,7 @@ public final class StructLayout extends Type {
             if (isCharArray() && value instanceof RubyString) {
                 ByteList bl = value.convertToString().getByteList();
                 io.putZeroTerminatedByteArray(offset, bl.getUnsafeBytes(), bl.begin(),
-                    Math.min(bl.length(), arrayType.length() - 1));
+                    Math.min(bl.byteLength(), arrayType.length() - 1));
             } else {
                 throw context.runtime.newNotImplementedError("cannot set multi deminesional array field");
             }
@@ -1370,7 +1370,7 @@ public final class StructLayout extends Type {
             if (isCharArray() && value instanceof RubyString) {
                 ByteList bl = value.convertToString().getByteList();
                 ptr.getMemoryIO().putZeroTerminatedByteArray(m.offset, bl.getUnsafeBytes(), bl.begin(),
-                    Math.min(bl.length(), arrayType.length() - 1));
+                    Math.min(bl.byteLength(), arrayType.length() - 1));
 
             } else if (false) {
                 RubyArray ary = value.convertToArray();

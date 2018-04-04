@@ -1005,7 +1005,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (value.getRealSize() > length) {
             modify();
             value.setRealSize(length);
-        } else if (value.length() < length) {
+        } else if (value.byteLength() < length) {
             modify();
             value.length(length);
         }
@@ -1053,7 +1053,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public static String byteListToString(ByteList bytes) {
-        return bytesToString(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+        return bytesToString(bytes.getUnsafeBytes(), bytes.begin(), bytes.byteLength());
     }
 
     public static String bytesToString(byte[] bytes) {
@@ -2498,7 +2498,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public boolean isEmpty() {
-        return value.length() == 0;
+        return value.byteLength() == 0;
     }
 
     /** rb_str_append
@@ -2669,7 +2669,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         otherStr.modify();
         otherStr.associateEncoding(ascii8bit);
         ByteList otherBL = otherStr.getByteList();
-        if (otherBL.length() < 2) {
+        if (otherBL.byteLength() < 2) {
             throw context.runtime.newArgumentError("salt too short (need >=2 bytes)");
         }
 
@@ -3192,7 +3192,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     /* rb_str_substr */
     public final IRubyObject substr(Ruby runtime, int beg, int len) {
-        int length = value.length();
+        int length = value.byteLength();
         if (len < 0 || beg > length) return runtime.getNil();
 
         if (beg < 0) {
@@ -3206,7 +3206,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     /* str_byte_substr */
     private IRubyObject byteSubstr(Ruby runtime, int beg, int len) {
-        int length = value.length();
+        int length = value.byteLength();
 
         if (len < 0 || beg > length) return runtime.getNil();
 
@@ -3228,7 +3228,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final int index;
 
         if (idx instanceof RubyRange){
-            int[] begLen = ((RubyRange) idx).begLenInt(getByteList().length(), 0);
+            int[] begLen = ((RubyRange) idx).begLenInt(getByteList().byteLength(), 0);
             return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum) {
             index = RubyNumeric.fix2int((RubyFixnum)idx);
@@ -3238,7 +3238,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (RubyRange.isRangeLike(context, idx, sites.respond_to_begin, sites.respond_to_end)) {
                 RubyRange range = RubyRange.rangeFromRangeLike(context, idx, sites.begin, sites.end, sites.exclude_end);
 
-                int[] begLen = range.begLenInt(getByteList().length(), 0);
+                int[] begLen = range.begLenInt(getByteList().byteLength(), 0);
                 return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
             } else {
                 index = RubyNumeric.num2int(idx);
@@ -3246,7 +3246,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         IRubyObject obj = byteSubstr(runtime, index, 1);
-        if (obj.isNil() || ((RubyString)obj).getByteList().length() == 0) return runtime.getNil();
+        if (obj.isNil() || ((RubyString)obj).getByteList().byteLength() == 0) return runtime.getNil();
         return obj;
     }
 
@@ -3652,7 +3652,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             IRubyObject b = stringToInum(10);
             IRubyObject e = end.stringToInum(10);
 
-            RubyArray argsArr = RubyArray.newArray(runtime, RubyFixnum.newFixnum(runtime, value.length()), context.nil);
+            RubyArray argsArr = RubyArray.newArray(runtime, RubyFixnum.newFixnum(runtime, value.byteLength()), context.nil);
 
             if (b instanceof RubyFixnum && e instanceof RubyFixnum) {
                 long bl = RubyNumeric.fix2long(b);
@@ -3661,7 +3661,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 while (bl <= el) {
                     if (excl && bl == el) break;
                     argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bl));
-                    ByteList to = new ByteList(value.length() + 5);
+                    ByteList to = new ByteList(value.byteLength() + 5);
                     Sprintf.sprintf(to, "%.*d", argsArr);
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
@@ -3673,7 +3673,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
                 while (op.call(context, b, b, e).isTrue()) {
                     argsArr.eltSetOk(1, b);
-                    ByteList to = new ByteList(value.length() + 5);
+                    ByteList to = new ByteList(value.byteLength() + 5);
                     Sprintf.sprintf(to, "%.*d", argsArr);
                     RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
@@ -3702,7 +3702,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             if (next == null) break;
             current = next.convertToString();
             if (excl && current.op_equal19(context, end).isTrue()) break;
-            if (current.getByteList().length() > end.getByteList().length() || current.getByteList().length() == 0) break;
+            if (current.getByteList().byteLength() > end.getByteList().length() || current.getByteList().length() == 0) break;
         }
         return this;
     }
@@ -4933,11 +4933,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final ByteList countValue = countStr.getByteList();
         final Encoding enc = checkEncoding(countStr);
 
-        if ( countValue.length() == 1 && enc.isAsciiCompatible() ) {
+        if ( countValue.byteLength() == 1 && enc.isAsciiCompatible() ) {
             final byte[] countBytes = countValue.unsafeBytes();
-            final int begin = countValue.begin(), size = countValue.length();
+            final int begin = countValue.begin(), size = countValue.byteLength();
             if ( enc.isReverseMatchAllowed(countBytes, begin, begin + size) && ! isCodeRangeBroken() ) {
-                if ( value.length() == 0 ) return RubyFixnum.zero(runtime);
+                if ( value.byteLength() == 0 ) return RubyFixnum.zero(runtime);
 
                 int n = 0;
                 int[] len_p = {0};
@@ -4945,7 +4945,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
                 final byte[] bytes = value.unsafeBytes();
                 int i = value.begin();
-                final int end = i + value.length();
+                final int end = i + value.byteLength();
                 while ( i < end ) {
                     if ( ( bytes[i++] & 0xff ) == c ) n++;
                 }
@@ -4963,7 +4963,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject count(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
 
-        if ( value.length() == 0 ) return RubyFixnum.zero(runtime);
+        if ( value.byteLength() == 0 ) return RubyFixnum.zero(runtime);
 
         RubyString countStr = args[0].convertToString();
         Encoding enc = checkEncoding(countStr);
@@ -5365,7 +5365,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         // Check the length every iteration, since
         // the block can modify this string.
-        for (int i = 0; i < value.length(); i++) {
+        for (int i = 0; i < value.byteLength(); i++) {
             block.yield(context, runtime.newFixnum(value.get(i) & 0xFF));
         }
         return this;
@@ -5690,7 +5690,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         for (int i = 0; i < opTable.length; i++) {
             String op = opTable[i][1];
-            if (value.toString().equals(op)) {
+            if (value.toByteString().equals(op)) {
                 return getRuntime().getSymbolTable().getSymbol(opTable[i][0]);
             }
         }

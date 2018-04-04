@@ -2625,7 +2625,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             write(context, maybeIO, line);
         }
 
-        if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
+        if (line.byteLength() == 0 || !line.endsWith(separator.getByteList())) {
             write(context, maybeIO, separator);
         }
     }

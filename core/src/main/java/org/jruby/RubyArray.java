@@ -1981,7 +1981,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 return joinAny(context, sepString, i, joinStrings(sepString, i, result));
             }
 
-            len += ((RubyString) tmp).getByteList().length();
+            len += ((RubyString) tmp).getByteList().byteLength();
         }
 
         return joinStrings(sepString, realLength, (RubyString) RubyString.newStringLight(runtime, len).infectBy(this));

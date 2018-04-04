@@ -475,18 +475,18 @@ public class Pack {
     public static void encodeUM(Ruby runtime, ByteList lCurElemString, int occurrences, boolean ignoreStar, char type, ByteList result) {
         if (occurrences == 0 && type == 'm' && !ignoreStar) {
             encodes(runtime, result, lCurElemString.getUnsafeBytes(),
-                    lCurElemString.getBegin(), lCurElemString.length(),
-                    lCurElemString.length(), (byte) type, false);
+                    lCurElemString.getBegin(), lCurElemString.byteLength(),
+                    lCurElemString.byteLength(), (byte) type, false);
             return;
         }
 
         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
-        if (lCurElemString.length() == 0) return;
+        if (lCurElemString.byteLength() == 0) return;
 
         byte[] charsToEncode = lCurElemString.getUnsafeBytes();
-        for (int i = 0; i < lCurElemString.length(); i += occurrences) {
+        for (int i = 0; i < lCurElemString.byteLength(); i += occurrences) {
             encodes(runtime, result, charsToEncode,
-                    i + lCurElemString.getBegin(), lCurElemString.length() - i,
+                    i + lCurElemString.getBegin(), lCurElemString.byteLength() - i,
                     occurrences, (byte)type, true);
         }
     }
@@ -801,8 +801,8 @@ public class Pack {
         // Encoding encoding = encodedString.getEncoding();
         final RubyArray result = block.isGiven() ? null : runtime.newArray();
         // FIXME: potentially could just use ByteList here?
-        ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
-        ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), encodedString.begin(), encodedString.length());
+        ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.byteLength());
+        ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), encodedString.begin(), encodedString.byteLength());
         int next = safeGet(format);
 
         mainLoop: while (next != 0) {
@@ -1626,7 +1626,7 @@ public class Pack {
      * @return the stringbuffer
      **/
     private static final ByteList shrink(ByteList i2Shrink, int iLength) {
-        iLength = i2Shrink.length() - iLength;
+        iLength = i2Shrink.byteLength() - iLength;
 
         if (iLength < 0) {
             throw new IllegalArgumentException();
@@ -1673,7 +1673,7 @@ public class Pack {
     }
 
     private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
-        ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
+        ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.byteLength());
         ByteList result = new ByteList();
         boolean taintOutput = tainted;
         int listSize = list.size();
@@ -1797,7 +1797,7 @@ public class Pack {
                         lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
 
                         if (isStar) {
-                            occurrences = lCurElemString.length();
+                            occurrences = lCurElemString.byteLength();
                             // 'Z' adds extra null pad (versus 'a')
                             if (type == 'Z') occurrences++;
                         }
@@ -1806,13 +1806,13 @@ public class Pack {
                             case 'a' :
                             case 'A' :
                             case 'Z' :
-                                if (lCurElemString.length() >= occurrences) {
+                                if (lCurElemString.byteLength() >= occurrences) {
                                     result.append(lCurElemString.getUnsafeBytes(), lCurElemString.getBegin(), occurrences);
                                 } else {//need padding
                                     //I'm fairly sure there is a library call to create a
                                     //string filled with a given char with a given length but I couldn't find it
                                     result.append(lCurElemString);
-                                    occurrences -= lCurElemString.length();
+                                    occurrences -= lCurElemString.byteLength();
 
                                     switch (type) {
                                       case 'a':
@@ -1830,13 +1830,13 @@ public class Pack {
                                     int currentByte = 0;
                                     int padLength = 0;
 
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
-                                        occurrences = lCurElemString.length();
+                                    if (occurrences > lCurElemString.byteLength()) {
+                                        padLength = (occurrences - lCurElemString.byteLength()) / 2 + (occurrences + lCurElemString.byteLength()) % 2;
+                                        occurrences = lCurElemString.byteLength();
                                     }
 
                                     for (int i = 0; i < occurrences;) {
-                                        if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
+                                        if ((lCurElemString.get(i++) & 1) != 0) {//if the low bit is set
                                             currentByte |= 128; //set the high bit of the result
                                         }
 
@@ -1856,7 +1856,7 @@ public class Pack {
                                     }
 
                                     //do some padding, I don't understand the padding strategy
-                                    result.length(result.length() + padLength);
+                                    result.length(result.byteLength() + padLength);
                                 }
                             break;
                             case 'B' :
@@ -1864,13 +1864,13 @@ public class Pack {
                                     int currentByte = 0;
                                     int padLength = 0;
 
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
-                                        occurrences = lCurElemString.length();
+                                    if (occurrences > lCurElemString.byteLength()) {
+                                        padLength = (occurrences - lCurElemString.byteLength()) / 2 + (occurrences + lCurElemString.byteLength()) % 2;
+                                        occurrences = lCurElemString.byteLength();
                                     }
 
                                     for (int i = 0; i < occurrences;) {
-                                        currentByte |= lCurElemString.charAt(i++) & 1;
+                                        currentByte |= lCurElemString.get(i++) & 1;
 
                                         // we filled up current byte; append it and create next one
                                         if ((i & 7) == 0) {
@@ -1888,7 +1888,7 @@ public class Pack {
                                         result.append((byte) (currentByte & 0xff));
                                     }
 
-                                    result.length(result.length() + padLength);
+                                    result.length(result.byteLength() + padLength);
                                 }
                             break;
                             case 'h' :
@@ -1896,13 +1896,13 @@ public class Pack {
                                     int currentByte = 0;
                                     int padLength = 0;
 
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length() + 1;
-                                        occurrences = lCurElemString.length();
+                                    if (occurrences > lCurElemString.byteLength()) {
+                                        padLength = occurrences - lCurElemString.byteLength() + 1;
+                                        occurrences = lCurElemString.byteLength();
                                     }
 
                                     for (int i = 0; i < occurrences;) {
-                                        byte currentChar = (byte)lCurElemString.charAt(i++);
+                                        byte currentChar = (byte)lCurElemString.get(i++);
 
                                         if (Character.isJavaIdentifierStart(currentChar)) {
                                             //this test may be too lax but it is the same as in MRI
@@ -1926,7 +1926,7 @@ public class Pack {
                                         }
                                     }
 
-                                    result.length(result.length() + padLength / 2);
+                                    result.length(result.byteLength() + padLength / 2);
                                 }
                             break;
                             case 'H' :
@@ -1934,13 +1934,13 @@ public class Pack {
                                     int currentByte = 0;
                                     int padLength = 0;
 
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length() + 1;
-                                        occurrences = lCurElemString.length();
+                                    if (occurrences > lCurElemString.byteLength()) {
+                                        padLength = occurrences - lCurElemString.byteLength() + 1;
+                                        occurrences = lCurElemString.byteLength();
                                     }
 
                                     for (int i = 0; i < occurrences;) {
-                                        byte currentChar = (byte)lCurElemString.charAt(i++);
+                                        byte currentChar = (byte)lCurElemString.get(i++);
 
                                         if (Character.isJavaIdentifierStart(currentChar)) {
                                             //this test may be too lax but it is the same as in MRI
@@ -1964,7 +1964,7 @@ public class Pack {
                                         }
                                     }
 
-                                    result.length(result.length() + padLength / 2);
+                                    result.length(result.byteLength() + padLength / 2);
                                 }
                             break;
                         }
@@ -1982,7 +1982,7 @@ public class Pack {
                     }
                     break;
                 case '@' :
-                    occurrences -= result.length();
+                    occurrences -= result.byteLength();
                     if (occurrences > 0) {
                         grow(result, sNil10, occurrences);
                     }

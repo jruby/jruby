@@ -757,7 +757,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
             if (symbol == null) {
                 bytes = bytes.dup();
-                symbol = createSymbol(bytes.toString(), bytes, hash, hard);
+                symbol = createSymbol(bytes.toByteString(), bytes, hash, hard);
             }
 
             return symbol;
@@ -1009,7 +1009,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     private static int javaStringHashCode(ByteList iso8859) {
         int h = 0;
-        int length = iso8859.length();
+        int length = iso8859.byteLength();
         if (length > 0) {
             byte val[] = iso8859.getUnsafeBytes();
             int begin = iso8859.begin();
@@ -1047,9 +1047,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return ((RubySymbol) object).toString();
         }
         if (object instanceof RubyString) {
-            return ((RubyString) object).getByteList().toString();
+            return ((RubyString) object).getByteList().toByteString();
         }
-        return object.convertToString().getByteList().toString();
+        return object.convertToString().getByteList().toByteString();
     }
 
     private static final class SymbolProcBody extends ContextAwareBlockBody {

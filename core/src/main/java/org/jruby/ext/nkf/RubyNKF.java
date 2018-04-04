@@ -134,7 +134,7 @@ public class RubyNKF {
             throw runtime.newTypeError("can't convert " + s.getMetaClass() + " into String");
         }
         ByteList bytes = s.convertToString().getByteList();
-        ByteBuffer buf = ByteBuffer.wrap(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+        ByteBuffer buf = ByteBuffer.wrap(bytes.getUnsafeBytes(), bytes.begin(), bytes.byteLength());
         CharsetDecoder decoder;
         try {
             decoder = Charset.forName("x-JISAutoDetect").newDecoder();
@@ -441,7 +441,7 @@ public class RubyNKF {
         }
 
         static boolean isMimeText(ByteList str, Map<String, NKFCharset> options) {
-            if (str.length() <= 6) {
+            if (str.byteLength() <= 6) {
                 return false;
             }
             if (options.get("mime-decode") == NKFCharset.NOCONV) {

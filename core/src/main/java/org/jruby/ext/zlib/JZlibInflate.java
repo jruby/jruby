@@ -211,7 +211,7 @@ public class JZlibInflate extends ZStream {
                     throw RubyZlib.newStreamError(getRuntime(), "stream error");
             }
         }
-        if (string.convertToString().getByteList().length() <= 0) {
+        if (string.convertToString().getByteList().byteLength() <= 0) {
             return getRuntime().getFalse();
         }
         flater.setInput(string.convertToString().getByteList().bytes(), true);
@@ -316,13 +316,13 @@ public class JZlibInflate extends ZStream {
         // MRI behavior: in finished mode, we work as pass-through
         if (internalFinished()) {
             if (input.getRealSize() > 0) {
-                if (collected.length - collectedIdx < input.length()) {
-                    byte[] tmp = new byte[collected.length + input.length()];
+                if (collected.length - collectedIdx < input.byteLength()) {
+                    byte[] tmp = new byte[collected.length + input.byteLength()];
                     System.arraycopy(collected, 0, tmp, 0, collectedIdx);
                     collected = tmp;
                 }
-                System.arraycopy(input.getUnsafeBytes(), input.begin(), collected, collectedIdx, input.length());
-                collectedIdx += input.length();
+                System.arraycopy(input.getUnsafeBytes(), input.begin(), collected, collectedIdx, input.byteLength());
+                collectedIdx += input.byteLength();
                 resetBuffer(input);
             }
         }

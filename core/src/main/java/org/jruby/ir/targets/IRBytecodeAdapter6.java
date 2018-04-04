@@ -115,7 +115,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             @Override
             public void run() {
                 loadContext();
-                adapter.ldc(bl.toString());
+                adapter.ldc(bl.toByteString());
                 adapter.ldc(bl.getEncoding().toString());
                 adapter.ldc(cr);
                 adapter.ldc(file);
@@ -130,7 +130,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             @Override
             public void run() {
                 loadRuntime();
-                adapter.ldc(bl.toString());
+                adapter.ldc(bl.toByteString());
                 adapter.ldc(bl.getEncoding().toString());
                 invokeIRHelper("newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
             }

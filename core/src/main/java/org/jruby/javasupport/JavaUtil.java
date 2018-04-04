@@ -1122,7 +1122,7 @@ public class JavaUtil {
         if (javaClass == String.class) {
             RubyString rubyString = (RubyString) rubyObject.callMethod(context, "to_s");
             ByteList bytes = rubyString.getByteList();
-            return RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            return RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.begin(), bytes.byteLength());
         }
         if (javaClass == ByteList.class) {
             return rubyObject.convertToString().getByteList();
@@ -1493,7 +1493,7 @@ public class JavaUtil {
             break;
         case STRING:
             ByteList bytes = ((RubyString) object).getByteList();
-            javaObject = RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            javaObject = RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.begin(), bytes.byteLength());
             break;
         case TRUE:
             javaObject = Boolean.TRUE;
@@ -1583,7 +1583,7 @@ public class JavaUtil {
 
             // 1.9 support for encodings
             // TODO: Fix charset use for JRUBY-4553
-            return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), string.getEncoding().toString());
+            return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.byteLength(), string.getEncoding().toString());
         } catch (UnsupportedEncodingException uee) {
             return string.toString();
         }

@@ -130,7 +130,7 @@ public class CRLFStreamWrapper implements Stream {
             }
             bl.append(c);
         }
-        if (eof && bl.length() == 0) {
+        if (eof && bl.byteLength() == 0) {
             return null;
         }
         return bl;
@@ -282,9 +282,9 @@ public class CRLFStreamWrapper implements Stream {
     
     
     private void convertCRLFToLF(ByteList src, ByteList dst) {
-        for (int i = 0; i < src.length(); i++) {
+        for (int i = 0; i < src.byteLength(); i++) {
             int b = src.get(i);
-            if (b == CR && i + 1 < src.length() && src.get(i + 1) == LF) {
+            if (b == CR && i + 1 < src.byteLength() && src.get(i + 1) == LF) {
                 continue;
             }
             dst.append(b);

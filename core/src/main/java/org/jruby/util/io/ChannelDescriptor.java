@@ -562,11 +562,11 @@ public class ChannelDescriptor {
     public int read(int number, ByteList byteList) throws IOException, BadDescriptorException {
         checkOpen();
         
-        byteList.ensure(byteList.length() + number);
+        byteList.ensure(byteList.byteLength() + number);
         int bytesRead = read(ByteBuffer.wrap(byteList.getUnsafeBytes(),
-                byteList.begin() + byteList.length(), number));
+                byteList.begin() + byteList.byteLength(), number));
         if (bytesRead > 0) {
-            byteList.length(byteList.length() + bytesRead);
+            byteList.length(byteList.byteLength() + bytesRead);
         }
         return bytesRead;
     }
@@ -656,7 +656,7 @@ public class ChannelDescriptor {
     public int write(ByteList buf) throws IOException, BadDescriptorException {
         checkOpen();
         
-        return internalWrite(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
+        return internalWrite(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.byteLength()));
     }
 
     /**

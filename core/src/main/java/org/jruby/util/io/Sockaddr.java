@@ -334,7 +334,7 @@ public class Sockaddr {
     }
 
     public static AddressFamily getAddressFamilyFromSockaddr(Ruby runtime, ByteList val) {
-        if (val.length() < 2) {
+        if (val.byteLength() < 2) {
             throw runtime.newArgumentError("too short sockaddr");
         }
 

@@ -184,7 +184,7 @@ public class RubyStruct extends RubyObject {
         if (args.length > 0) {
             IRubyObject firstArgAsString = args[0].checkStringType();
             if (!firstArgAsString.isNil()) {
-                name = ((RubyString)firstArgAsString).getByteList().toString();
+                name = ((RubyString)firstArgAsString).getByteList().toByteString();
             } else if (args[0].isNil()) {
                 nilName = true;
             }

@@ -77,7 +77,7 @@ public class HeredocTerm extends StrTerm {
     }
     
     protected int error(RipperLexer lexer, int len, ByteList str, ByteList eos) {
-        lexer.compile_error("can't find string \"" + eos.toString() + "\" anywhere before EOF");
+        lexer.compile_error("can't find string \"" + eos.toByteString() + "\" anywhere before EOF");
 
         if (lexer.delayed == null) {
             lexer.dispatchScanEvent(RipperParser.tSTRING_CONTENT);
@@ -108,7 +108,7 @@ public class HeredocTerm extends StrTerm {
     public int parseString(RipperLexer lexer, LexerSource src) throws java.io.IOException {
         ByteList str = null;
         ByteList eos = nd_lit;
-        int len = nd_lit.length() - 1;
+        int len = nd_lit.byteLength() - 1;
         boolean indent = (flags & STR_FUNC_INDENT) != 0;
         int c = lexer.nextc();
         

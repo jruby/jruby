@@ -307,7 +307,7 @@ public class Dir {
     }
 
     public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags) {
-        if (globByteList.length() > 0) {
+        if (globByteList.byteLength() > 0) {
             final ArrayList<ByteList> result = new ArrayList<ByteList>();
             push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags));
             return result;
@@ -781,7 +781,7 @@ public class Dir {
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
+                            resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.byteLength(), enc.getCharset()));
                             if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);

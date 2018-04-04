@@ -48,7 +48,7 @@ public class ByteListLexerSource extends LexerSource {
     
     @Override
     public ByteList gets() {
-        int length = completeSource.length();
+        int length = completeSource.byteLength();
         if (offset >= length) return null; // At end of source/eof
 
         int end = completeSource.indexOf('\n', offset) + 1;

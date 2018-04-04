@@ -332,7 +332,7 @@ public class RubyLexer extends LexingCommon {
             ruby_sourceline++;
             line_count++;
             lex_pbeg = lex_p = 0;
-            lex_pend = lex_p + v.length();
+            lex_pend = lex_p + v.byteLength();
             lexb = v;
             flush();
             lex_lastline = v;
@@ -380,12 +380,12 @@ public class RubyLexer extends LexingCommon {
     }
 
     public void compile_error(String message) {
-        throw new SyntaxException(PID.BAD_HEX_NUMBER, getFile(), ruby_sourceline, lexb.toString(), message);
+        throw new SyntaxException(PID.BAD_HEX_NUMBER, getFile(), ruby_sourceline, lexb.toByteString(), message);
     }
 
     // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(PID pid, String message) {
-        String src = createAsEncodedString(lex_lastline.unsafeBytes(), lex_lastline.begin(), lex_lastline.length(), getEncoding());
+        String src = createAsEncodedString(lex_lastline.unsafeBytes(), lex_lastline.begin(), lex_lastline.byteLength(), getEncoding());
         throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message);
     }
 
@@ -393,7 +393,7 @@ public class RubyLexer extends LexingCommon {
         ByteList line = here.lastLine;
         lex_lastline = line;
         lex_pbeg = 0;
-        lex_pend = lex_pbeg + line.length();
+        lex_pend = lex_pbeg + line.byteLength();
         lex_p = lex_pbeg + here.nth;
         lexb = line;
         heredoc_end = ruby_sourceline;
@@ -938,7 +938,7 @@ public class RubyLexer extends LexingCommon {
             case '=':
                 // documentation nodes
                 if (was_bol()) {
-                    if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), BEGIN_DOC_MARKER, BEGIN_DOC_MARKER.length()) &&
+                    if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), BEGIN_DOC_MARKER, BEGIN_DOC_MARKER.byteLength()) &&
                             Character.isWhitespace(p(lex_p + 5))) {
                         for (;;) {
                             lex_goto_eol();
@@ -952,7 +952,7 @@ public class RubyLexer extends LexingCommon {
 
                             if (c != '=') continue;
 
-                            if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), END_DOC_MARKER, END_DOC_MARKER.length()) &&
+                            if (strncmp(lexb.makeShared(lex_p, lex_pend - lex_p), END_DOC_MARKER, END_DOC_MARKER.byteLength()) &&
                                     (lex_p + 3 == lex_pend || Character.isWhitespace(p(lex_p + 3)))) {
                                 break;
                             }
@@ -2050,7 +2050,7 @@ public class RubyLexer extends LexingCommon {
         int nondigit = 0;
 
         if (c == '0') {
-            int startLen = numberBuffer.length();
+            int startLen = numberBuffer.byteLength();
 
             switch (c = nextc()) {
                 case 'x' :
@@ -2071,12 +2071,12 @@ public class RubyLexer extends LexingCommon {
                     }
                     pushback(c);
 
-                    if (numberBuffer.length() == startLen) {
+                    if (numberBuffer.byteLength() == startLen) {
                         compile_error(PID.BAD_HEX_NUMBER, "Hexadecimal number without hex-digits.");
                     } else if (nondigit != '\0') {
                         compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     }
-                    return getIntegerToken(numberBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
+                    return getIntegerToken(numberBuffer.toByteString(), 16, numberLiteralSuffix(SUFFIX_ALL));
                 case 'b' :
                 case 'B' : // binary
                     c = nextc();
@@ -2095,12 +2095,12 @@ public class RubyLexer extends LexingCommon {
                     }
                     pushback(c);
 
-                    if (numberBuffer.length() == startLen) {
+                    if (numberBuffer.byteLength() == startLen) {
                         compile_error(PID.EMPTY_BINARY_NUMBER, "Binary number without digits.");
                     } else if (nondigit != '\0') {
                         compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     }
-                    return getIntegerToken(numberBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
+                    return getIntegerToken(numberBuffer.toByteString(), 2, numberLiteralSuffix(SUFFIX_ALL));
                 case 'd' :
                 case 'D' : // decimal
                     c = nextc();
@@ -2119,12 +2119,12 @@ public class RubyLexer extends LexingCommon {
                     }
                     pushback(c);
 
-                    if (numberBuffer.length() == startLen) {
+                    if (numberBuffer.byteLength() == startLen) {
                         compile_error(PID.EMPTY_BINARY_NUMBER, "Binary number without digits.");
                     } else if (nondigit != '\0') {
                         compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     }
-                    return getIntegerToken(numberBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
+                    return getIntegerToken(numberBuffer.toByteString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                 case 'o':
                 case 'O':
                     c = nextc();
@@ -2142,12 +2142,12 @@ public class RubyLexer extends LexingCommon {
                             break;
                         }
                     }
-                    if (numberBuffer.length() > startLen) {
+                    if (numberBuffer.byteLength() > startLen) {
                         pushback(c);
 
                         if (nondigit != '\0') compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
 
-                        return getIntegerToken(numberBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
+                        return getIntegerToken(numberBuffer.toByteString(), 8, numberLiteralSuffix(SUFFIX_ALL));
                     }
                 case '8' :
                 case '9' :
@@ -2160,7 +2160,7 @@ public class RubyLexer extends LexingCommon {
                 default :
                     pushback(c);
                     numberBuffer.append('0');
-                    return getIntegerToken(numberBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
+                    return getIntegerToken(numberBuffer.toByteString(), 10, numberLiteralSuffix(SUFFIX_ALL));
             }
         }
 
@@ -2188,7 +2188,7 @@ public class RubyLexer extends LexingCommon {
                         compile_error(PID.TRAILING_UNDERSCORE_IN_NUMBER, "Trailing '_' in number.");
                     } else if (seen_point || seen_e) {
                         pushback(c);
-                        return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                        return getNumberToken(numberBuffer.toByteString(), seen_e, seen_point, nondigit);
                     } else {
                     	int c2;
                         if (!Character.isDigit(c2 = nextc())) {
@@ -2198,7 +2198,7 @@ public class RubyLexer extends LexingCommon {
                             		// Enebo:  c can never be antrhign but '.'
                             		// Why did I put this here?
                             } else {
-                                return getIntegerToken(numberBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
+                                return getIntegerToken(numberBuffer.toByteString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                             }
                         } else {
                             numberBuffer.append('.');
@@ -2212,10 +2212,10 @@ public class RubyLexer extends LexingCommon {
                 case 'E' :
                     if (nondigit != 0) {
                         pushback(c);
-                        return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                        return getNumberToken(numberBuffer.toByteString(), seen_e, seen_point, nondigit);
                     } else if (seen_e) {
                         pushback(c);
-                        return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                        return getNumberToken(numberBuffer.toByteString(), seen_e, seen_point, nondigit);
                     } else {
                         numberBuffer.append((char) c);
                         seen_e = true;
@@ -2235,7 +2235,7 @@ public class RubyLexer extends LexingCommon {
                     break;
                 default :
                     pushback(c);
-                return getNumberToken(numberBuffer.toString(), seen_e, seen_point, nondigit);
+                return getNumberToken(numberBuffer.toByteString(), seen_e, seen_point, nondigit);
             }
         }
     }

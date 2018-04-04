@@ -383,7 +383,7 @@ public class Sprintf {
             format = list.getUnsafeBytes();
             int begin = list.begin();
             offset = begin;
-            length = begin + list.length();
+            length = begin + list.byteLength();
             encoding = list.getEncoding();
         } else {
             format = stringToBytes(charFormat, false);
@@ -625,19 +625,19 @@ public class Sprintf {
                         throw runtime.newArgumentError("invalid character");
                     }
                     if ((flags & FLAG_WIDTH) == 0) {
-                        buf.ensure(buf.length() + n);
+                        buf.ensure(buf.byteLength() + n);
                         EncodingUtils.encMbcput(c, buf.unsafeBytes(), buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                     }
                     else if ((flags & FLAG_MINUS) != 0) {
-                        buf.ensure(buf.length() + n);
+                        buf.ensure(buf.byteLength() + n);
                         EncodingUtils.encMbcput(c, buf.unsafeBytes(), buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                         buf.fill(' ', width - 1);
                     }
                     else {
                         buf.fill(' ', width - 1);
-                        buf.ensure(buf.length() + n);
+                        buf.ensure(buf.byteLength() + n);
                         EncodingUtils.encMbcput(c, buf.unsafeBytes(), buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                     }
@@ -655,7 +655,7 @@ public class Sprintf {
                     RubyString strArg = arg.asString();
                     ByteList bytes = strArg.getByteList();
                     Encoding enc = wrapper.checkEncoding(strArg);
-                    int len = bytes.length();
+                    int len = bytes.byteLength();
                     int strLen = strArg.strLength();
 
                     if (arg.isTaint()) tainted = true;

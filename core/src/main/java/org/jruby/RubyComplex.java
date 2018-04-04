@@ -1121,7 +1121,7 @@ public class RubyComplex extends RubyNumeric {
     // MRI: string_to_c_strict
     private static RubyNumeric str_to_c_strict(ThreadContext context, RubyString str) {
         IRubyObject[] ary = str_to_c_internal(context, str);
-        if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
+        if (ary[0] == context.nil || ary[1].convertToString().getByteList().byteLength() > 0) {
             throw context.runtime.newArgumentError("invalid value for convert(): " + str.inspect(context.runtime));
         }
         return (RubyNumeric) ary[0]; // (RubyComplex)
