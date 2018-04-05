@@ -123,7 +123,7 @@ module Enumerable
         values << obj
       end
     else
-      each do |obj|
+      each_entry do |obj|
         next if hash.key? obj
         hash[obj] = obj unless hash.key? obj
         values << obj
