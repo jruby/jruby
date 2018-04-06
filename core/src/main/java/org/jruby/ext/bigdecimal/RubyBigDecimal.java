@@ -207,10 +207,12 @@ public class RubyBigDecimal extends RubyNumeric {
         this.value = value;
     }
 
+    @Deprecated // no longer used
     public RubyBigDecimal(Ruby runtime, RubyBigDecimal rbd) {
         this(runtime, runtime.getClass("BigDecimal"), rbd);
     }
 
+    @Deprecated // no longer used
     public RubyBigDecimal(Ruby runtime, RubyClass klass, RubyBigDecimal rbd) {
         super(runtime, klass);
         this.isNaN = rbd.isNaN;
@@ -219,17 +221,28 @@ public class RubyBigDecimal extends RubyNumeric {
         this.value = rbd.value;
     }
 
+    RubyBigDecimal(Ruby runtime, RubyClass klass, BigDecimal value, int zeroSign, int infinitySign, boolean isNaN) {
+        super(runtime, klass);
+        this.isNaN = isNaN;
+        this.infinitySign = infinitySign;
+        this.zeroSign = zeroSign;
+        this.value = value;
+    }
+
     @Override
     public ClassIndex getNativeClassIndex() {
         return ClassIndex.BIGDECIMAL;
     }
 
     public static class BigDecimalKernelMethods {
-        @JRubyMethod(name = "BigDecimal", required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE)
-        public static IRubyObject newBigDecimal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-            if (args.length == 1) return newInstance(context, context.runtime.getClass("BigDecimal"), args[0]);
+        @JRubyMethod(name = "BigDecimal", module = true, visibility = Visibility.PRIVATE) // required = 1, optional = 1
+        public static IRubyObject newBigDecimal(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+            return newInstance(context, context.runtime.getClass("BigDecimal"), arg);
+        }
 
-            return newInstance(context, context.runtime.getClass("BigDecimal"), args[0], args[1]);
+        @JRubyMethod(name = "BigDecimal", module = true, visibility = Visibility.PRIVATE) // required = 1, optional = 1
+        public static IRubyObject newBigDecimal(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+            return newInstance(context, context.runtime.getClass("BigDecimal"), arg0, arg1);
         }
     }
 
@@ -485,7 +498,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyBigDecimal arg) {
-        return new RubyBigDecimal(runtime, (RubyClass) recv, arg);
+        return new RubyBigDecimal(runtime, (RubyClass) recv, arg.value, arg.zeroSign, arg.infinitySign, arg.isNaN);
     }
 
     private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyFixnum arg, MathContext mathContext) {
