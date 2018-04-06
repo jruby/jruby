@@ -880,7 +880,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return runtime.getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit");
     }
 
-    // @Deprecated
+    @Deprecated
     public IRubyObject op_pow(IRubyObject arg) {
         return op_pow(getRuntime().getCurrentContext(), arg);
     }
@@ -1774,6 +1774,11 @@ public class RubyBigDecimal extends RubyNumeric {
         return build;
     }
 
+    @Override
+    public IRubyObject to_s() {
+        return toStringImpl(getRuntime(), null);
+    }
+
     @JRubyMethod
     public RubyString to_s(ThreadContext context) {
         return toStringImpl(context.runtime, null);
@@ -1781,7 +1786,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyString to_s(ThreadContext context, IRubyObject arg) {
-        return toStringImpl(context.runtime, arg.isNil() ? null : arg.toString());
+        return toStringImpl(context.runtime, arg == context.nil ? null : arg.toString());
     }
 
     private RubyString toStringImpl(final Ruby runtime, String arg) {
@@ -1791,9 +1796,16 @@ public class RubyBigDecimal extends RubyNumeric {
 
         boolean asEngineering = arg == null || ! formatHasFloatingPointNotation(arg);
 
-        return RubyString.newString(runtime,
-            ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) )
-        );
+        return RubyString.newString(runtime, ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) ));
+    }
+
+    @Override
+    public String toString() {
+        if ( isNaN() ) return "NaN";
+        if ( isInfinity() ) return infinityString();
+        if ( isZero() ) return zeroSign < 0 ? "-0.0" : "0.0";
+
+        return engineeringValue(null).toString();
     }
 
     @Deprecated
