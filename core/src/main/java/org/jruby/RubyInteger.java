@@ -863,8 +863,16 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "<<")
     public abstract IRubyObject op_lshift(ThreadContext context, IRubyObject other);
 
+    public RubyInteger op_lshift(ThreadContext context, long other) {
+        return (RubyInteger) op_lshift(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = ">>")
     public abstract IRubyObject op_rshift(ThreadContext context, IRubyObject other);
+
+    public RubyInteger op_rshift(ThreadContext context, long other) {
+        return (RubyInteger) op_rshift(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
 
     @JRubyMethod(name = "to_f")
     public abstract IRubyObject to_f(ThreadContext context);
@@ -924,10 +932,12 @@ public abstract class RubyInteger extends RubyNumeric {
         return op_aref(getRuntime().getCurrentContext(), other);
     }
 
+    @Deprecated // no longer used
     public IRubyObject op_lshift(IRubyObject other) {
         return op_lshift(getRuntime().getCurrentContext(), other);
     }
 
+    @Deprecated // no longer used
     public IRubyObject op_rshift(IRubyObject other) {
         return op_rshift(getRuntime().getCurrentContext(), other);
     }

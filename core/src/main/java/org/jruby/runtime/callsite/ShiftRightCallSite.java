@@ -12,7 +12,7 @@ public class ShiftRightCallSite extends NormalCachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
         if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
-            return ((RubyFixnum) self).op_rshift(fixnum);
+            return ((RubyFixnum) self).op_rshift(context, fixnum);
         }
         return super.call(context, caller, self, fixnum);
     }

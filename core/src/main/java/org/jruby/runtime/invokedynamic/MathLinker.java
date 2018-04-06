@@ -295,11 +295,11 @@ public class MathLinker {
     }
 
     public static IRubyObject fixnum_op_rshift(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
-        return ((RubyFixnum)self).op_rshift(value);
+        return ((RubyFixnum)self).op_rshift(context, value);
     }
 
     public static IRubyObject fixnum_op_lshift(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
-        return ((RubyFixnum)self).op_lshift(value);
+        return ((RubyFixnum)self).op_lshift(context, value);
     }
 
     public static IRubyObject fixnum_op_plus_one(ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {

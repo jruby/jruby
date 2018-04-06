@@ -1261,18 +1261,24 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return RubyBignum.newBignum(context.runtime, value).op_lshift(context, other);
         }
 
-        return op_lshift(((RubyFixnum) other).getLongValue());
+        return op_lshift(context, ((RubyFixnum) other).getLongValue());
     }
 
-    public IRubyObject op_lshift(long width) {
-        return width < 0 ? rshift(-width) : lshift(width);
+    @Override
+    public RubyInteger op_lshift(ThreadContext context, final long width) {
+        return width < 0 ? rshift(context, -width) : lshift(context, width);
     }
 
-    private IRubyObject lshift(long width) {
+    private RubyInteger lshift(ThreadContext context, final long width) {
         if (width > BIT_SIZE - 1 || ((~0L << BIT_SIZE - width - 1) & value) != 0) {
-            return RubyBignum.newBignum(getRuntime(), value).op_lshift(RubyFixnum.newFixnum(getRuntime(), width));
+            return RubyBignum.newBignum(context.runtime, value).op_lshift(context, width);
         }
-        return RubyFixnum.newFixnum(getRuntime(), value << width);
+        return RubyFixnum.newFixnum(context.runtime, value << width);
+    }
+
+    @Deprecated // no longer used
+    public IRubyObject op_lshift(long width) {
+        return op_lshift(getRuntime().getCurrentContext(), width);
     }
 
     /** fix_rshift
@@ -1284,20 +1290,26 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return RubyBignum.newBignum(context.runtime, value).op_rshift(context, other);
         }
 
-        return op_rshift(((RubyFixnum) other).getLongValue());
+        return op_rshift(context, ((RubyFixnum) other).getLongValue());
     }
 
-    public IRubyObject op_rshift(long width) {
+    @Override
+    public RubyInteger op_rshift(ThreadContext context, final long width) {
         if (width == 0) return this;
 
-        return width < 0 ? lshift(-width) : rshift(width);
+        return width < 0 ? lshift(context, -width) : rshift(context, width);
     }
 
-    private IRubyObject rshift(long width) {
+    private RubyFixnum rshift(ThreadContext context, final long width) {
         if (width >= BIT_SIZE - 1) {
-            return value < 0 ? RubyFixnum.minus_one(getRuntime()) : RubyFixnum.zero(getRuntime());
+            return value < 0 ? RubyFixnum.minus_one(context.runtime) : RubyFixnum.zero(context.runtime);
         }
-        return RubyFixnum.newFixnum(getRuntime(), value >> width);
+        return RubyFixnum.newFixnum(context.runtime, value >> width);
+    }
+
+    @Deprecated
+    public IRubyObject op_rshift(long width) {
+        return op_rshift(getRuntime().getCurrentContext(), width);
     }
 
     /** fix_to_f

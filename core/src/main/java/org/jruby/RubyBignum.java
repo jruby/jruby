@@ -870,7 +870,12 @@ public class RubyBignum extends RubyInteger {
             other = other.convertToInteger();
         }
 
-        return bignorm(context.runtime, value.shiftLeft((int)shift));
+        return op_lshift(context, shift);
+    }
+
+    @Override
+    public RubyInteger op_lshift(ThreadContext context, long shift) {
+        return bignorm(context.runtime, value.shiftLeft((int) shift));
     }
 
     /** rb_big_rshift
@@ -896,7 +901,12 @@ public class RubyBignum extends RubyInteger {
             other = other.convertToInteger();
         }
 
-        return bignorm(context.runtime, value.shiftRight((int)shift));
+        return op_rshift(context, shift);
+    }
+
+    @Override
+    public RubyInteger op_rshift(ThreadContext context, long shift) {
+        return bignorm(context.runtime, value.shiftRight((int) shift));
     }
 
     /** rb_big_aref
