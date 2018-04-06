@@ -540,6 +540,14 @@ public class RubyBigDecimal extends RubyNumeric {
         char[] str = arg.decodeString().toCharArray();
         int s = 0; int e = str.length - 1;
 
+        if (e == 0) {
+            switch (str[0]) {
+                case '0': case '1': case '2': case '3': case '4':
+                case '5': case '6': case '7': case '8': case '9':
+                    return new RubyBigDecimal(context.runtime, recv, BigDecimal.valueOf(str[0] - '0'));
+            }
+        }
+
         // 0. toString().trim() :
         while (s <= e && str[s] <= ' ') s++; // l-trim
         while (s <= e && str[e] <= ' ') e--; // r-trim
