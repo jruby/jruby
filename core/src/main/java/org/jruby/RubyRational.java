@@ -1235,12 +1235,21 @@ public class RubyRational extends RubyNumeric {
         return num.hashCode() ^ den.hashCode();
     }
 
+    @Override
+    public IRubyObject to_s() {
+        return to_s(getRuntime());
+    }
+
     /** nurat_to_s
      * 
      */
     @JRubyMethod(name = "to_s")
     public RubyString to_s(ThreadContext context) {
-        RubyString str = RubyString.newString(context.runtime, new ByteList(10), USASCIIEncoding.INSTANCE);
+        return to_s(context.runtime);
+    }
+
+    private RubyString to_s(final Ruby runtime) {
+        RubyString str = RubyString.newString(runtime, new ByteList(10), USASCIIEncoding.INSTANCE);
         str.append(num.to_s());
         str.cat((byte)'/');
         str.append(den.to_s());
