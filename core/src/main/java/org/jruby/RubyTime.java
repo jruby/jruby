@@ -419,10 +419,25 @@ public class RubyTime extends RubyObject {
         return timeClass;
     }
 
+    /** Set the 4 to 9 decimal places of the time.
+     *
+     * Note that {@code nsec} means the 4 to 9 decimal places, not entire the fraction part till nano.
+     * For example, 123456 for {@code nsec} means {@code .000123456}, not {@code .123456000}.
+     *
+     * @param nsec the 4 to 9 decimal places to set
+     */
     public void setNSec(long nsec) {
         this.nsec = nsec;
     }
 
+    /** Get the 4 to 9 decimal places of the time.
+     *
+     * Note that it returns the 4 to 9 decimal places, not entire the fraction part till nano.
+     * For example for an epoch second {@code 1500000000.123456789}, it returns {@code 456789},
+     * not {@code 123456789}.
+     *
+     * @return the 4 to 9 decimal places of the time
+     */
     public long getNSec() {
         return nsec;
     }
@@ -457,6 +472,19 @@ public class RubyTime extends RubyObject {
         return new RubyTime(runtime, runtime.getTime(), dt);
     }
 
+    /** Create new Time.
+     *
+     * Note that {@code dt} of {@code org.joda.time.DateTime} represents the integer part and
+     * the fraction part to milliseconds, and {@code nsec} means the 4 to 9 decimal places.
+     *
+     * For example, {@code RubyTime.newTime(rt, new DateTime(987000), 345678)} creates an epoch
+     * second of {@code 987.000345678}, not {@code 987000.345678}.
+     *
+     * @param runtime the Ruby runtime
+     * @param dt the integer part and the fraction part in milliseconds
+     * @param nsec the 4 to 9 decimal places of the time
+     * @return the new Time
+     */
     public static RubyTime newTime(Ruby runtime, DateTime dt, long nsec) {
         RubyTime t = new RubyTime(runtime, runtime.getTime(), dt);
         t.setNSec(nsec);
@@ -829,6 +857,13 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(getTimeInMillis() / 1000);
     }
 
+    /** Get the fraction part of the time in nanosecond.
+     *
+     * Note that it returns entire the fraction part of the time in nanosecond, unlike
+     * {@code RubyTime#getNSec}. This method represents Ruby's {@code nsec} method.
+     *
+     * @return the fractional part of the time in nanosecond
+     */
     @JRubyMethod(name = {"nsec", "tv_nsec"})
     public RubyInteger nsec() {
         return getRuntime().newFixnum((getTimeInMillis() % 1000) * 1000000 + nsec);
