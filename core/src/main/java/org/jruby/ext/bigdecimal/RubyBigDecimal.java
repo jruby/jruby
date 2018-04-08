@@ -535,7 +535,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if (e == 0) {
             switch (str[0]) {
-                case '0': case '1': case '2': case '3': case '4':
+                case '0':
+                    return newZero(context.runtime, 1);
+                case '1': case '2': case '3': case '4':
                 case '5': case '6': case '7': case '8': case '9':
                     return new RubyBigDecimal(context.runtime, recv, BigDecimal.valueOf(str[0] - '0'));
             }
@@ -625,7 +627,7 @@ public class RubyBigDecimal extends RubyNumeric {
         catch (NumberFormatException ex) {
             if (isOverflowExceptionMode(context.runtime)) throw context.runtime.newFloatDomainError("exponent overflow");
 
-            decimal = new BigDecimal(0);
+            decimal = BigDecimal.ZERO;
         }
 
         // MRI behavior: -0 and +0 are two different things
