@@ -457,32 +457,28 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newShared(context.runtime).empty_p(context);
     }
 
-    @JRubyMethod
-    public IRubyObject upcase(ThreadContext context) {
+    @JRubyMethod(rest = true)
+    public IRubyObject upcase(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-
-        return newSymbol(runtime, newShared(runtime).upcase19(context).getByteList());
+        return newSymbol(runtime, newShared(runtime).upcase19(context, args).getByteList());
     }
 
-    @JRubyMethod
-    public IRubyObject downcase(ThreadContext context) {
+    @JRubyMethod(rest = true)
+    public IRubyObject downcase(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-
-        return newSymbol(runtime, newShared(runtime).downcase(context).getByteList());
+        return newSymbol(runtime, newShared(runtime).downcase(context, args).getByteList());
     }
 
-    @JRubyMethod
-    public IRubyObject capitalize(ThreadContext context) {
+    @JRubyMethod(rest = true)
+    public IRubyObject capitalize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-
-        return newSymbol(runtime, ((RubyString) newShared(runtime).capitalize19(context)).getByteList());
+        return newSymbol(runtime, ((RubyString) newShared(runtime).capitalize19(context, args)).getByteList());
     }
 
-    @JRubyMethod
-    public IRubyObject swapcase(ThreadContext context) {
+    @JRubyMethod(rest = true)
+    public IRubyObject swapcase(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-
-        return newSymbol(runtime, newShared(runtime).swapcase19(context).getByteList());
+        return newSymbol(runtime, newShared(runtime).swapcase19(context, args).getByteList());
     }
 
     @JRubyMethod
