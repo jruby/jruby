@@ -436,19 +436,25 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public static RubyBigDecimal getVpRubyObjectWithPrec19Inner(ThreadContext context, RubyRational value, RoundingMode roundingMode) {
-        BigDecimal numerator = BigDecimal.valueOf(RubyNumeric.num2long(value.numerator(context)));
-        BigDecimal denominator = BigDecimal.valueOf(RubyNumeric.num2long(value.denominator(context)));
+        BigDecimal numerator = toBigDecimal(value.getNumerator());
+        BigDecimal denominator = toBigDecimal(value.getDenominator());
 
-        int len = numerator.precision() + denominator.precision();
-        int pow = len / 4;
+        int len = numerator.precision() + denominator.precision(); // 0
+        int pow = len / 4; // 0
         MathContext mathContext = new MathContext((pow + 1) * 4, roundingMode);
 
         return new RubyBigDecimal(context.runtime, numerator.divide(denominator, mathContext));
     }
 
-    private static RubyBigDecimal getVpValueWithPrec(ThreadContext context, IRubyObject value, long precision, boolean must) {
+    private static BigDecimal toBigDecimal(final RubyInteger value) {
+        if (value instanceof RubyFixnum) {
+            return BigDecimal.valueOf(RubyNumeric.num2long(value));
+        }
+        return new BigDecimal(value.getBigIntegerValue());
+    }
+
+    private static RubyBigDecimal getVpValue19(ThreadContext context, IRubyObject value, boolean must) {
         if (value instanceof RubyFloat) {
-            if (precision > Long.MAX_VALUE) return cannotBeCoerced(context, value, must);
             double doubleValue = ((RubyFloat) value).getDoubleValue();
 
             if (Double.isInfinite(doubleValue)) {
@@ -460,24 +466,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
             return new RubyBigDecimal(context.runtime, BigDecimal.valueOf(doubleValue));
         }
-        else if (value instanceof RubyRational) {
-            if (precision < 0) {
-                if (must) {
-                    throw context.runtime.newArgumentError(value.getMetaClass().getBaseName() + " can't be coerced into BigDecimal without a precision");
-                }
-                return null;
-            }
-
+        if (value instanceof RubyRational) {
             return getVpRubyObjectWithPrecInner(context, (RubyRational) value);
         }
 
         return getVpValue(context, value, must);
-    }
-
-    private static RubyBigDecimal getVpValue19(ThreadContext context, IRubyObject v, boolean must) {
-        long precision = (v instanceof RubyFloat || v instanceof RubyRational) ? 0 : -1;
-
-        return getVpValueWithPrec(context, v, precision, must);
     }
 
     private static RubyBigDecimal getVpValue(ThreadContext context, IRubyObject value, boolean must) {
@@ -749,11 +742,11 @@ public class RubyBigDecimal extends RubyNumeric {
         return setResult(0);
     }
 
-    private RubyBigDecimal setResult(int scale) {
-        int prec = RubyFixnum.fix2int(getRuntime().getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit"));
-        int prec2 = (scale == 0) ? prec : scale;
-        if (prec2 > 0 && this.value.scale() > (prec2-getExponent())) {
-            this.value = this.value.setScale(prec2-getExponent(), BigDecimal.ROUND_HALF_UP);
+    private RubyBigDecimal setResult(final int scale) {
+        int prec = (scale == 0) ? RubyFixnum.fix2int(vpPrecLimit(getRuntime())) : scale;
+        int exponent;
+        if (prec > 0 && this.value.scale() > (prec - (exponent = getExponent()))) {
+            this.value = this.value.setScale(prec - exponent, BigDecimal.ROUND_HALF_UP);
         }
         return this;
     }
@@ -1059,7 +1052,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(ThreadContext context, IRubyObject b) {
-        return subInternal(context, getVpValue19(context, b, true), b, RubyInteger.int2fix(getRuntime(),0));
+        return subInternal(context, getVpValue19(context, b, true), b, RubyFixnum.zero(context.runtime));
     }
 
     @Deprecated
