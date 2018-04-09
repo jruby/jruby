@@ -2449,23 +2449,22 @@ public final class StringSupport {
 
     private static final class MappingBuffer {
         MappingBuffer next;
-        byte[] bytes;
+        final byte[] bytes;
         int used;
 
         MappingBuffer() {
+            bytes = null;
         }
 
         MappingBuffer(int size) {
             bytes = new byte[size];
         }
-
     }
 
     private static final int CASE_MAPPING_ADDITIONAL_LENGTH = 20;
 
-    public static ByteList caseMap(Ruby runtime, ByteList src, IntHolder flags) {
+    public static ByteList caseMap(Ruby runtime, ByteList src, IntHolder flags, Encoding enc) {
         IntHolder pp = new IntHolder();
-        Encoding enc = src.getEncoding();
         pp.value = src.getBegin();
         int end = src.getRealSize() + pp.value;
         byte[]bytes = src.getUnsafeBytes();
@@ -2501,20 +2500,16 @@ public final class StringSupport {
         return tgt;
     }
 
-    public static int asciiOnlyCaseMap(Ruby runtime, RubyString source, int flags, Encoding enc) {
-        ByteList value = source.getByteList();
-        if (value.getRealSize() == 0) return flags;
+    public static void asciiOnlyCaseMap(Ruby runtime, ByteList value, IntHolder flags, Encoding enc) {
+        if (value.getRealSize() == 0) return;
         int s = value.getBegin();
         int end = s + value.getRealSize();
         byte[]bytes = value.getUnsafeBytes();
 
-        IntHolder flagsP = new IntHolder();
-        flagsP.value = flags;
         IntHolder pp = new IntHolder();
         pp.value = s;
-        int len = ASCIIEncoding.INSTANCE.caseMap(flagsP, bytes, pp, end, bytes, s, end);
+        int len = ASCIIEncoding.INSTANCE.caseMap(flags, bytes, pp, end, bytes, s, end);
         if (len < 0) throw runtime.newArgumentError("input string invalid");
-        return flagsP.value;
     }
 
     public static int encCoderangeClean(int cr) {

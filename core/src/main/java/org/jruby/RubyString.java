@@ -1793,6 +1793,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return upcase_bang19(context, RubyObject.NULL_ARRAY);
     }
 
+    private int caseMap(Ruby runtime, int flags, Encoding enc) {
+        IntHolder flagsP = new IntHolder();
+        flagsP.value = flags;
+        if ((flags & Config.CASE_ASCII_ONLY) != 0) {
+            StringSupport.asciiOnlyCaseMap(runtime, value, flagsP, enc);
+        } else {
+            value = StringSupport.caseMap(runtime, value, flagsP, enc);
+        }
+        return flagsP.value;
+    }
+
     @JRubyMethod(name = "upcase", rest = true)
     public RubyString upcase19(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime);
@@ -1820,13 +1831,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 }
                 s++;
             }
-        } else if ((flags & Config.CASE_ASCII_ONLY) != 0) {
-            flags = StringSupport.asciiOnlyCaseMap(runtime, this, flags, enc);
         } else {
-            IntHolder flagsP = new IntHolder();
-            flagsP.value = flags;
-            value = StringSupport.caseMap(runtime, value, flagsP);
-            flags = flagsP.value;
+            flags = caseMap(runtime, flags, enc);
         }
 
         return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
@@ -1881,13 +1887,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 }
                 s++;
             }
-        } else if ((flags & Config.CASE_ASCII_ONLY) != 0) {
-            flags = StringSupport.asciiOnlyCaseMap(runtime, this, flags, enc);
         } else {
-            IntHolder flagsP = new IntHolder();
-            flagsP.value = flags;
-            value = StringSupport.caseMap(runtime, value, flagsP);
-            flags = flagsP.value;
+            flags = caseMap(runtime, flags, enc);
         }
 
         return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
@@ -1926,15 +1927,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
 
-        if ((flags & Config.CASE_ASCII_ONLY) != 0) {
-            StringSupport.asciiOnlyCaseMap(runtime, this, flags, enc);
-        } else {
-            IntHolder flagsP = new IntHolder();
-            flagsP.value = flags;
-            value = StringSupport.caseMap(runtime, value, flagsP);
-            flags = flagsP.value;
-        }
-
+        flags = caseMap(runtime, flags, enc);
         return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
     }
 
@@ -1977,15 +1970,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         modifyAndKeepCodeRange();
 
-        if ((flags & Config.CASE_ASCII_ONLY) != 0) {
-            StringSupport.asciiOnlyCaseMap(runtime, this, flags, enc);
-        } else {
-            IntHolder flagsP = new IntHolder();
-            flagsP.value = flags;
-            value = StringSupport.caseMap(runtime, value, flagsP);
-            flags = flagsP.value;
-        }
-
+        flags = caseMap(runtime, flags, enc);
         return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
     }
 
