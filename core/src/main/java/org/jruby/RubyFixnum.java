@@ -1317,6 +1317,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject to_f(ThreadContext context) {
+        return RubyFloat.newFloat(context.runtime, (double) value);
+    }
+
+    @Override
+    public IRubyObject to_f() {
         return RubyFloat.newFloat(getRuntime(), (double) value);
     }
 

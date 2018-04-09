@@ -1033,6 +1033,12 @@ public class RubyBignum extends RubyInteger {
         return RubyFloat.newFloat(context.runtime, getDoubleValue());
     }
 
+    @Override
+    public IRubyObject to_f() {
+        return RubyFloat.newFloat(getRuntime(), getDoubleValue());
+    }
+
+    @Deprecated
     public IRubyObject abs() {
         return abs(getRuntime().getCurrentContext());
     }
