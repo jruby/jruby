@@ -2409,7 +2409,7 @@ public final class StringSupport {
         return -1;
     }
 
-    public static int checkCaseOptions(Ruby runtime, IRubyObject[]args, int flags) {
+    public static int checkCaseMapOptions(Ruby runtime, IRubyObject[]args, int flags) {
         if (args.length == 0) return flags;
         if (args.length > 2) throw runtime.newArgumentError("too many options");
 

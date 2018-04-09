@@ -1815,7 +1815,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "upcase!", rest = true)
     public IRubyObject upcase_bang19(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        int flags = StringSupport.checkCaseOptions(runtime, args, Config.CASE_UPCASE);
+        int flags = StringSupport.checkCaseMapOptions(runtime, args, Config.CASE_UPCASE);
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
 
@@ -1871,7 +1871,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "downcase!", rest = true)
     public IRubyObject downcase_bang(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        int flags = StringSupport.checkCaseOptions(runtime, args, Config.CASE_DOWNCASE);
+        int flags = StringSupport.checkCaseMapOptions(runtime, args, Config.CASE_DOWNCASE);
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
 
@@ -1924,7 +1924,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "swapcase!", rest = true)
     public IRubyObject swapcase_bang19(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        int flags = StringSupport.checkCaseOptions(runtime, args, Config.CASE_UPCASE | Config.CASE_DOWNCASE);
+        int flags = StringSupport.checkCaseMapOptions(runtime, args, Config.CASE_UPCASE | Config.CASE_DOWNCASE);
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
 
@@ -1961,7 +1961,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "capitalize!", rest = true)
     public IRubyObject capitalize_bang19(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        int flags = StringSupport.checkCaseOptions(runtime, args, Config.CASE_UPCASE | Config.CASE_TITLECASE);
+        int flags = StringSupport.checkCaseMapOptions(runtime, args, Config.CASE_UPCASE | Config.CASE_TITLECASE);
         Encoding enc = checkDummyEncoding();
 
         if (value.getRealSize() == 0) {
