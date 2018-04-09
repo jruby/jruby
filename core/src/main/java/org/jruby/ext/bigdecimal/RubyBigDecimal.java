@@ -126,7 +126,6 @@ public class RubyBigDecimal extends RubyNumeric {
     public final static int EXCEPTION_NaN = 2;
 
     // Static constants
-    private static final BigDecimal TWO = new BigDecimal(2);
     private static final double SQRT_10 = 3.162277660168379332;
 
     public static RubyClass createBigDecimal(Ruby runtime) {
@@ -151,8 +150,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private boolean isNaN;
-    private int infinitySign;
-    private int zeroSign;
+    private int infinitySign; // 0 (for finite), -1, +1
+    private int zeroSign; // -1, +1 (if zero, otherwise 0)
     private BigDecimal value;
 
     public BigDecimal getValue() {
@@ -184,11 +183,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, int infinitySign) {
-        super(runtime, runtime.getClass("BigDecimal"));
-        this.isNaN = false;
-        this.infinitySign = infinitySign;
-        this.zeroSign = 0;
-        this.value = value;
+        this(runtime, value, infinitySign, 0);
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, int infinitySign, int zeroSign) {
@@ -386,13 +381,9 @@ public class RubyBigDecimal extends RubyNumeric {
         throw runtime.newTypeError("first argument for BigDecimal#mode invalid");
     }
 
-    private static RubyModule bigDecimal(Ruby runtime) {
-        return runtime.getClass("BigDecimal");
-    }
-
     // The Fixnum cast should be fine because these are internal variables and user code cannot change them.
     private static long bigDecimalVar(Ruby runtime, String variableName) {
-        return ((RubyFixnum) bigDecimal(runtime).searchInternalModuleVariable(variableName)).getLongValue();
+        return ((RubyFixnum) runtime.getClass("BigDecimal").searchInternalModuleVariable(variableName)).getLongValue();
     }
 
     private static RoundingMode getRoundingMode(Ruby runtime) {
@@ -740,7 +731,7 @@ public class RubyBigDecimal extends RubyNumeric {
         if ( isInfinityExceptionMode(runtime) ) {
             throw runtime.newFloatDomainError("Computation results to 'Infinity'");
         }
-        return new RubyBigDecimal(runtime, BigDecimal.ZERO, sign < 0 ? -1 : 1);
+        return new RubyBigDecimal(runtime, BigDecimal.ZERO, sign < 0 ? -1 : 1, 0);
     }
 
     private RubyBigDecimal setResult() {
@@ -883,14 +874,14 @@ public class RubyBigDecimal extends RubyNumeric {
             if (infinitySign >= 0) return newZero(context.runtime, 0);
 
             // (-Infinity) ** (-even_integer) -> +0 AND (-Infinity) ** (-odd_integer) -> -0
-            if (Numeric.f_integer_p(context, exp)) return newZero(context.runtime, is_even(exp) ? 1 : -1);
+            if (Numeric.f_integer_p(context, exp)) return newZero(context.runtime, isEven(exp) ? 1 : -1);
 
             return newZero(context.runtime, -1); // (-Infinity) ** (-non_integer) -> -0
         }
 
         if (infinitySign >= 0) return newInfinity(context.runtime, 1);
 
-        if (Numeric.f_integer_p(context, exp)) return newInfinity(context.runtime, is_even(exp) ? 1 : -1);
+        if (Numeric.f_integer_p(context, exp)) return newInfinity(context.runtime, isEven(exp) ? 1 : -1);
 
         throw context.runtime.newMathDomainError("a non-integral exponent for a negative base");
     }
@@ -1945,6 +1936,8 @@ public class RubyBigDecimal extends RubyNumeric {
           return x.round(rootMC);        // return small prec roots without iterations
       }
 
+      final BigDecimal TWO = BigDecimal.valueOf(2);
+
       // Initial v - the reciprocal
       BigDecimal v = BigDecimal.ONE.divide(TWO.multiply(x), nMC);        // v0 = 1/(2*x)
 
@@ -1990,10 +1983,11 @@ public class RubyBigDecimal extends RubyNumeric {
         return infinitySign == -1 ? "-Infinity" : "Infinity";
     }
 
-    private static boolean is_even(final RubyNumeric x) {
-        if (x instanceof RubyFixnum) return RubyNumeric.fix2long((RubyFixnum) x) % 2 == 0;
-        if (x instanceof RubyBignum) return RubyBignum.big2long((RubyBignum) x) % 2 == 0;
-
+    private static boolean isEven(final RubyNumeric x) {
+        if (x instanceof RubyFixnum) return (((RubyFixnum) x).getLongValue() & 1) == 0;
+        if (x instanceof RubyBignum) {
+            return ((RubyBignum) x).getBigIntegerValue().testBit(0) == false; // 0-th bit -> 0
+        }
         return false;
     }
 
