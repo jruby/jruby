@@ -909,6 +909,16 @@ public class RubyBignum extends RubyInteger {
         return bignorm(context.runtime, value.shiftRight((int) shift));
     }
 
+    @Override
+    public RubyBoolean odd_p(ThreadContext context) {
+        return value.testBit(0) ? context.tru : context.fals;
+    }
+
+    @Override
+    public RubyBoolean even_p(ThreadContext context) {
+        return value.testBit(0) ? context.fals : context.tru;
+    }
+
     /** rb_big_aref
      *
      */
