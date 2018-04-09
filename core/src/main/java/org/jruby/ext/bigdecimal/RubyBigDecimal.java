@@ -839,12 +839,11 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyBigDecimal multInternal(final Ruby runtime, RubyBigDecimal val, IRubyObject n) {
-        int digits = RubyNumeric.fix2int(n);
-
-        if (isNaN() || val.isNaN()) return newNaN(runtime);
-        if ((isInfinity() && val.isZero()) || (isZero() && val.isInfinity())) return newNaN(runtime);
+        if ( isNaN() || val.isNaN() ) return newNaN(runtime);
 
         if ( isZero() || val.isZero() ) {
+            if ((isInfinity() && val.isZero()) || (isZero() && val.isInfinity())) return newNaN(runtime);
+
             int sign1 = isZero()? zeroSign : value.signum();
             int sign2 = val.isZero() ?  val.zeroSign : val.value.signum();
             return newZero(runtime, sign1 * sign2);
@@ -856,11 +855,9 @@ public class RubyBigDecimal extends RubyNumeric {
             return newInfinity(runtime, sign1 * sign2);
         }
 
+        final int digits = RubyNumeric.fix2int(n);
         BigDecimal res = value.multiply(val.value);
-        // FIXME: rounding mode should not be hard-coded. See #mode.
-        if (res.precision() > digits) res = res.round(new MathContext(digits,  RoundingMode.HALF_UP));
-
-        return new RubyBigDecimal(runtime, res).setResult();
+        return new RubyBigDecimal(runtime, res).setResult(digits);
     }
 
     @Deprecated
@@ -991,8 +988,8 @@ public class RubyBigDecimal extends RubyNumeric {
         final Ruby runtime = context.runtime;
         int prec = getPositiveInt(context, digits);
 
-        RoundingMode roundMode = getRoundingMode(runtime);
-        return new RubyBigDecimal(runtime, value.add(val.value, new MathContext(prec, roundMode)));
+        MathContext mathContext = new MathContext(prec, getRoundingMode(runtime));
+        return new RubyBigDecimal(runtime, value.add(val.value, mathContext)).setResult(prec);
     }
 
     private static int getPositiveInt(ThreadContext context, IRubyObject arg) {
