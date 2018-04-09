@@ -577,13 +577,17 @@ public class Numeric {
     }
 
     public static long i_ilog2(ThreadContext context, IRubyObject x) {
-        long q = (sites(context).size.call(context, x, x).convertToInteger().getLongValue() - 8) * 8 + 1;
+        return i_ilog2(context, x.convertToInteger());
+    }
+
+    public static long i_ilog2(ThreadContext context, RubyInteger x) {
+        long q = (x.size(context).convertToInteger().getLongValue() - 8) * 8 + 1;
 
         if (q > 0) {
-            x = f_rshift(context, x, RubyFixnum.newFixnum(context.runtime, q));
+            x = x.op_rshift(context, q);
         }
 
-        long fx = x.convertToInteger().getLongValue();
+        long fx = x.getLongValue();
         long r = -1;
 
         while (fx != 0) {

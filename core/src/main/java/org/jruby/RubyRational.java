@@ -1139,14 +1139,14 @@ public class RubyRational extends RubyNumeric {
         return getDoubleValue(getRuntime().getCurrentContext());
     }
 
-    private static long ML = (long)(Math.log(Double.MAX_VALUE) / Math.log(2.0) - 1);
+    private static final long ML = (long)(Math.log(Double.MAX_VALUE) / Math.log(2.0) - 1);
 
     public double getDoubleValue(ThreadContext context) {
-        Ruby runtime = context.runtime;
+
         if (f_zero_p(context, num)) return 0;
 
-        IRubyObject myNum = this.num;
-        IRubyObject myDen = this.den;
+        RubyInteger myNum = this.num;
+        RubyInteger myDen = this.den;
 
         boolean minus = false;
         if (f_negative_p(context, myNum)) {
@@ -1160,19 +1160,19 @@ public class RubyRational extends RubyNumeric {
         long ne = 0;
         if (nl > ML) {
             ne = nl - ML;
-            myNum = f_rshift(context, myNum, RubyFixnum.newFixnum(runtime, ne));
+            myNum = myNum.op_rshift(context, ne);
         }
 
         long de = 0;
         if (dl > ML) {
             de = dl - ML;
-            myDen = f_rshift(context, myDen, RubyFixnum.newFixnum(runtime, de));
+            myDen = myDen.op_rshift(context, de);
         }
 
         long e = ne - de;
 
         if (e > 1023 || e < -1022) {
-            runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
+            context.runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
             return e > 0 ? Double.MAX_VALUE : 0;
         }
 
@@ -1183,7 +1183,7 @@ public class RubyRational extends RubyNumeric {
         f = ldexp(f, e);
 
         if (Double.isInfinite(f) || Double.isNaN(f)) {
-            runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
+            context.runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
         }
 
         return f;
