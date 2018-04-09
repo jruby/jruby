@@ -5438,14 +5438,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (block.isGiven()) {
             if (wantarray) {
-                // this code should be live in 3.0
-                if (false) { // #if STRING_ENUMERATORS_WANTARRAY
-                    runtime.getWarnings().warn("given block not used");
-                    ary = RubyArray.newArray(runtime, str.strLength());
-                } else {
-                    runtime.getWarnings().warning("passing a block to String#chars is deprecated");
-                    wantarray = false;
-                }
+                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                wantarray = false;
             }
         }
         else {
@@ -5507,14 +5501,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (block.isGiven()) {
             if (wantarray) {
-                // this code should be live in 3.0
-                if (false) { // #if STRING_ENUMERATORS_WANTARRAY
-                    runtime.getWarnings().warn("given block not used");
-                    ary = RubyArray.newArray(runtime, str.length().getLongValue());
-                } else {
-                    runtime.getWarnings().warning("passing a block to String#codepoints is deprecated");
-                    wantarray = false;
-                }
+                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                wantarray = false;
             }
         }
         else {
@@ -5547,14 +5535,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (block.isGiven()) {
             if (wantarray) {
-                // this code should be live in 3.0
-                if (false) { // #if STRING_ENUMERATORS_WANTARRAY
-                    runtime.getWarnings().warn("given block not used");
-                    ary = RubyArray.newArray(runtime);
-                } else {
-                    runtime.getWarnings().warning("passing a block to String#bytes is deprecated");
-                    wantarray = false;
-                }
+                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                wantarray = false;
             }
         }
         else {
@@ -5625,14 +5607,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (block.isGiven()) {
             if (wantarray) {
-                // this code should be live in 3.0
-                if (false) {
-                    runtime.getWarnings().warn("given block not used");
-                    ary = RubyArray.newArray(runtime);
-                } else {
-                    runtime.getWarnings().warning("passing a block to String#grapheme_clusters is deprecated");
-                    wantarray = false;
-                }
+                runtime.getWarnings().warning("passing a block to String#" + name + " is deprecated");
+                wantarray = false;
             }
         } else {
             if (wantarray)
