@@ -3,8 +3,22 @@ require 'bigdecimal'
 
 class TestBigDecimal < Test::Unit::TestCase
 
-  def test_bad_to_s_format_strings
-    assert_equal("0.23", BigDecimal.new("0.23").to_s("F"))
+  def test_to_s
+    assert_equal("0.0", BigDecimal.new('0.0').to_s)
+    assert_equal("0.11111111111e0", BigDecimal.new('0.11111111111').to_s)
+    assert_equal("0.0", BigDecimal.new('0').to_s)
+    assert_equal("0.1e-9", BigDecimal.new("1.0e-10").to_s)
+  end
+
+  def test_to_java
+    # assert_equal java.lang.Long, 1000.to_java.class
+
+    assert_equal java.math.BigDecimal, BigDecimal.new('1000.8').to_java.class
+    assert_equal java.lang.Integer, BigDecimal.new('0.0').to_java(:int).class
+
+    number = java.lang.Number
+    assert_equal java.math.BigDecimal.new('8.0111'), BigDecimal.new('8.0111').to_java(number)
+    assert_equal java.lang.Long, 1000.to_java(number).class
   end
 
   def test_no_singleton_methods_on_bigdecimal

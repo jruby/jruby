@@ -1878,7 +1878,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Override
     public <T> T toJava(Class<T> target) {
-        if (target == BigDecimal.class) {
+        if (target == BigDecimal.class || target == Number.class) {
             return (T) value;
         }
         return super.toJava(target);
