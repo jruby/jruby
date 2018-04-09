@@ -1635,9 +1635,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Encoding enc = StringSupport.areCompatible(this, otherStr);
         if (enc == null) return context.nil;
 
-        RubyString downcasedString = this.downcase(context, RubyObject.NULL_ARRAY);
-        RubyString otherDowncasedString = otherStr.downcase(context, RubyObject.NULL_ARRAY);
-        return downcasedString.equals(otherDowncasedString) ? context.runtime.getTrue() : context.runtime.getFalse();
+        IRubyObject[] args = new IRubyObject[] {runtime.newSymbol("fold")};
+        RubyString downcasedString = this.downcase(context, args);
+        RubyString otherDowncasedString = otherStr.downcase(context, args);
+        return downcasedString.equals(otherDowncasedString) ? runtime.getTrue() : runtime.getFalse();
     }
 
     /** rb_str_match
