@@ -283,7 +283,7 @@ public class RubyBignum extends RubyInteger {
             BigInteger exp = BigInteger.TEN.pow(posdigits);
             BigInteger mod = self.mod(exp);
             BigInteger res = self;
-            if (mod.compareTo(BigInteger.ZERO) != 0) {
+            if (mod.signum() != 0) {
                 res = self.add( exp.subtract(mod) );// self + (exp - (mod));
             }
             return newBignum(context.runtime, res);
@@ -348,21 +348,21 @@ public class RubyBignum extends RubyInteger {
             bigBase = long2big( ((RubyFixnum) base).getLongValue() );
         }
 
-        if (bigBase.compareTo(BigInteger.ZERO) == -1) {
+        if (bigBase.signum() == -1) {
             throw runtime.newArgumentError("negative radix");
         }
-        if (bigBase.compareTo(new BigInteger("2")) == -1) {
+        if (bigBase.compareTo(BigInteger.valueOf(2)) == -1) {
             throw runtime.newArgumentError("invalid radix: " + bigBase);
         }
 
         RubyArray res = RubyArray.newArray(context.runtime, 0);
 
-        if (self.compareTo(BigInteger.ZERO) == 0) {
+        if (self.signum() == 0) {
             res.append(RubyFixnum.newFixnum(context.getRuntime(), 0));
             return res;
         }
 
-        while (self.compareTo(BigInteger.ZERO) > 0) {
+        while (self.signum() > 0) {
             BigInteger q = self.mod(bigBase);
             res.append(RubyBignum.newBignum(context.getRuntime(), q));
             self = self.divide(bigBase);
@@ -1108,7 +1108,7 @@ public class RubyBignum extends RubyInteger {
         byte[] digits = new byte[shortLength * 2 + 1];
 
         for (int i = digits.length - 1; i >= 1; i--) {
-                digits[i] = input.readSignedByte();
+            digits[i] = input.readSignedByte();
         }
 
         BigInteger value = new BigInteger(digits);
