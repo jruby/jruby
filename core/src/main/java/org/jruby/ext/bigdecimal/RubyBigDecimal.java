@@ -1110,16 +1110,16 @@ public class RubyBigDecimal extends RubyNumeric {
         return quoImpl(context, val);
     }
 
-    private RubyBigDecimal quoImpl(ThreadContext context, RubyBigDecimal val) {
+    private RubyBigDecimal quoImpl(ThreadContext context, RubyBigDecimal that) {
         // regular division with some default precision
         // proper algorithm to set the precision
         // the precision is multiple of 4
         // and the precision is larger than len * 2
-        int len = value.precision() + val.value.precision();
+        int len = this.value.precision() + that.value.precision();
         int scale = (len / 4 + 1) * 4 * 2;
 
         MathContext mathContext = new MathContext(scale, getRoundingMode(context.runtime));
-        return new RubyBigDecimal(context.runtime, value.divide(val.value, mathContext)).setResult(scale);
+        return new RubyBigDecimal(context.runtime, this.value.divide(that.value, mathContext)).setResult();
     }
 
     @Deprecated
@@ -1727,15 +1727,21 @@ public class RubyBigDecimal extends RubyNumeric {
         return value.abs().unscaledValue().toString();
     }
 
-    private static String sign(String arg, int signum) {
-        return signum == -1 ? "-" : (signum == 1 ? (posSign(arg) ? (posSpace(arg) ? " " : "+") : "") : "");
+    private static StringBuilder appendSign(final StringBuilder buff, final String str, int signum) {
+        if (signum == -1) buff.append('-');
+        else if (signum == 1) {
+            if (posSign(str)) {
+                buff.append(posSpace(str) ? ' ' : '+');
+            }
+        }
+        return buff;
     }
 
     private CharSequence engineeringValue(final String arg) {
         final String s = removeTrailingZeroes(unscaledValue());
 
         StringBuilder build = new StringBuilder();
-        build.append( sign(arg, value.signum()) ).append("0.");
+        appendSign(build, arg, value.signum()).append('0').append('.');
 
         final int groups = groups(arg);
         if (groups == 0) {
@@ -1759,7 +1765,7 @@ public class RubyBigDecimal extends RubyNumeric {
         final String after = values.size() > 1 ? values.get(1) : "0";
 
         StringBuilder build = new StringBuilder();
-        build.append( sign(arg, value.signum()) );
+        appendSign(build, arg, value.signum());
 
         final int groups = groups(arg);
         if (groups == 0) {
