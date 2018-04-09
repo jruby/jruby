@@ -1785,6 +1785,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return upcase_bang19(context, RubyObject.NULL_ARRAY);
     }
 
+    public RubyString upcase19(ThreadContext context) {
+        return upcase19(context, RubyObject.NULL_ARRAY);
+    }
+
+    public IRubyObject upcase_bang19(ThreadContext context) {
+        return upcase_bang19(context, RubyObject.NULL_ARRAY);
+    }
+
     @JRubyMethod(name = "upcase", rest = true)
     public RubyString upcase19(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime);
@@ -1831,6 +1839,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @Deprecated
     public IRubyObject downcase_bang19(ThreadContext context) {
+        return downcase_bang(context, RubyObject.NULL_ARRAY);
+    }
+
+    public RubyString downcase(ThreadContext context) {
+        return downcase(context, RubyObject.NULL_ARRAY);
+    }
+
+    public IRubyObject downcase_bang(ThreadContext context) {
         return downcase_bang(context, RubyObject.NULL_ARRAY);
     }
 
@@ -1888,6 +1904,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return swapcase_bang19(context, RubyObject.NULL_ARRAY);
     }
 
+    public RubyString swapcase19(ThreadContext context) {
+        return swapcase19(context, RubyObject.NULL_ARRAY);
+    }
+
+    public IRubyObject swapcase_bang19(ThreadContext context) {
+        return swapcase_bang19(context, RubyObject.NULL_ARRAY);
+    }
+
     @JRubyMethod(name = "swapcase", rest = true)
     public RubyString swapcase19(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime);
@@ -1922,6 +1946,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public IRubyObject capitalize_bang(ThreadContext context) {
+        return capitalize_bang19(context, RubyObject.NULL_ARRAY);
+    }
+
+    public IRubyObject capitalize19(ThreadContext context) {
+        return capitalize19(context, RubyObject.NULL_ARRAY);
+    }
+
+    public IRubyObject capitalize_bang19(ThreadContext context) {
         return capitalize_bang19(context, RubyObject.NULL_ARRAY);
     }
 

@@ -457,10 +457,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newShared(context.runtime).empty_p(context);
     }
 
+    public IRubyObject upcase(ThreadContext context) {
+        return upcase(context, RubyObject.NULL_ARRAY);
+    }
+
     @JRubyMethod(rest = true)
     public IRubyObject upcase(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         return newSymbol(runtime, newShared(runtime).upcase19(context, args).getByteList());
+    }
+
+    public IRubyObject downcase(ThreadContext context) {
+        return downcase(context, RubyObject.NULL_ARRAY);
     }
 
     @JRubyMethod(rest = true)
@@ -469,10 +477,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newSymbol(runtime, newShared(runtime).downcase(context, args).getByteList());
     }
 
+    public IRubyObject capitalize(ThreadContext context) {
+        return capitalize(context, RubyObject.NULL_ARRAY);
+    }
+
     @JRubyMethod(rest = true)
     public IRubyObject capitalize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         return newSymbol(runtime, ((RubyString) newShared(runtime).capitalize19(context, args)).getByteList());
+    }
+
+    public IRubyObject swapcase(ThreadContext context) {
+        return swapcase(context, RubyObject.NULL_ARRAY);
     }
 
     @JRubyMethod(rest = true)
