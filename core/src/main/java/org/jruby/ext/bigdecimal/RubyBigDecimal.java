@@ -126,6 +126,15 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyConstant
     public final static int EXCEPTION_NaN = 2;
 
+    // (MRI-like) internals
+
+    private static final short VP_DOUBLE_FIG = 16;
+
+    // #elif SIZEOF_BDIGITS >= 4
+    // # define RMPD_COMPONENT_FIGURES 9
+    private static final short RMPD_COMPONENT_FIGURES = 9;
+    private static final short BASE_FIG = RMPD_COMPONENT_FIGURES;
+
     // Static constants
     private static final double SQRT_10 = 3.162277660168379332;
 
@@ -266,7 +275,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(meta = true)
     public static IRubyObject double_fig(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newFixnum(20);
+        return context.runtime.newFixnum(VP_DOUBLE_FIG);
     }
 
     /**
@@ -1638,14 +1647,19 @@ public class RubyBigDecimal extends RubyNumeric {
         if ((isInfinity() && infinitySign < 0) || value.signum() < 0) throw runtime.newFloatDomainError("sqrt of negative value");
         if (isInfinity() && infinitySign > 0) return newInfinity(runtime, 1);
 
-        // NOTE: MRI's sqrt precision is limited by 100,
-        // but we allow values more than 100.
-        int n = RubyNumeric.fix2int(arg);
-        if (n < 0) throw runtime.newArgumentError("argument must be positive");
-
-        n += 4; // just in case, add a bit of extra precision
+        // NOTE: MRI's sqrt precision is limited by 100, but we allow values more than 100.
+        int n = getPrecisionInt(runtime, arg) + VP_DOUBLE_FIG + BASE_FIG;
+        //int mx = value.precision() * (BASE_FIG + 1);
+        //if (mx <= n) mx = n;
 
         return new RubyBigDecimal(runtime, bigSqrt(value, new MathContext(n, RoundingMode.HALF_UP))).setResult();
+    }
+
+    // MRI: GetPrecisionInt(VALUE v)
+    private static int getPrecisionInt(final Ruby runtime, final IRubyObject v) {
+        int n = RubyNumeric.num2int(v);
+        if (n < 0) throw runtime.newArgumentError("negative precision");
+        return n;
     }
 
     @JRubyMethod
