@@ -1,20 +1,17 @@
 package org.jruby.util.io;
 
 import com.headius.modulator.Modulator;
-import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
-import jnr.enxio.channels.NativeSocketChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
+import org.jruby.util.collections.NonBlockingHashMapLong;
 
 import java.io.FileDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.channels.Channel;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -128,7 +125,7 @@ public class FilenoUtil {
 
     public static final int FIRST_FAKE_FD = 100000;
     protected final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
-    private final Map<Integer, ChannelFD> filenoMap = new ConcurrentHashMap<Integer, ChannelFD>();
+    private final NonBlockingHashMapLong<ChannelFD> filenoMap = new NonBlockingHashMapLong<ChannelFD>();
     private final POSIX posix;
 
     private static class ReflectiveAccess {
