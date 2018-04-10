@@ -381,4 +381,36 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_raise(ArgumentError) { BigDecimal("0E") }
   end
 
+  def test_div_returns_integer_by_default
+    res = BigDecimal('10.111').div 3
+    assert res.eql?(3)
+    res = BigDecimal('1_000_000_000_000_000_000_000_000.99').div 1.to_r/3
+    assert_equal 3_000_000_000_000_000_000_000_002, res
+    assert_equal Integer, res.class
+    res = BigDecimal('1_000_000_000_000_000_000_000_009.99').div 1_000.0
+    assert res.eql?(1_000_000_000_000_000_000_000)
+    res = BigDecimal('1_000_000_000_000_000_000_000_009.99').div 1_000.1
+    assert_equal 999900009999000099990, res
+  end
+
+  def test_zero_p # from MRI test_bigdecimal.rb
+    # BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, false)
+    # BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false)
+
+    assert_equal(true, BigDecimal("0").zero?)
+    assert_equal(true, BigDecimal("-0").zero?)
+    assert_equal(false, BigDecimal("1").zero?)
+    #assert_equal(true, BigDecimal("0E200000000000000").zero?)
+    assert_equal(false, BigDecimal("Infinity").zero?)
+    assert_equal(false, BigDecimal("-Infinity").zero?)
+    assert_equal(false, BigDecimal("NaN").zero?)
+  end
+
+  def test_power_of_three # from MRI test_bigdecimal.rb
+    x = BigDecimal(3)
+    assert_equal(81, x ** 4)
+    #assert_equal(1.quo(81), x ** -4)
+    assert_in_delta(1.0/81, x ** -4)
+  end
+
 end
