@@ -998,7 +998,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return callCoerced(context, sites(context).op_plus, b, true);
         }
 
-        RubyBigDecimal res = handleAddSpecialValues(context, val);
+        RubyBigDecimal res = addSpecialCases(context, val);
         if ( res != null ) return res;
 
         final Ruby runtime = context.runtime;
@@ -1019,18 +1019,24 @@ public class RubyBigDecimal extends RubyNumeric {
         throw context.runtime.newTypeError(arg, context.runtime.getFixnum());
     }
 
-    private RubyBigDecimal handleAddSpecialValues(ThreadContext context, RubyBigDecimal val) {
+    private RubyBigDecimal addSpecialCases(ThreadContext context, RubyBigDecimal val) {
         if (isNaN() || val.isNaN) {
             return newNaN(context.runtime);
         }
+        if (isZero()) {
+            if (val.isZero()) {
+                return newZero(context.runtime, zeroSign == val.zeroSign ? zeroSign : 1);
+            }
+            if (val.isInfinity()) {
+                return newInfinity(context.runtime, val.infinitySign);
+            }
+            return new RubyBigDecimal(context.runtime, val.value);
+        }
 
         int sign = infinitySign * val.infinitySign;
-        if (sign > 0) {
-            return isInfinity() ? this : val;
-        }
-        if (sign < 0) {
-            return newNaN(context.runtime);
-        }
+
+        if (sign > 0) return newInfinity(context.runtime, infinitySign);
+        if (sign < 0) return newNaN(context.runtime);
         if (sign == 0) {
             sign = infinitySign + val.infinitySign;
             if (sign != 0) {
@@ -1058,7 +1064,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(ThreadContext context, IRubyObject b) {
-        return subInternal(context, getVpValue19(context, b, true), b, RubyFixnum.zero(context.runtime));
+        return subInternal(context, getVpValue19(context, b, true), b, 0);
     }
 
     @Deprecated
@@ -1068,7 +1074,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "sub", required = 2)
     public IRubyObject sub2(ThreadContext context, IRubyObject b, IRubyObject n) {
-        return subInternal(context, getVpValue19(context, b, false), b, n);
+        return subInternal(context, getVpValue19(context, b, false), b, getPositiveInt(context, n));
     }
 
     @Deprecated
@@ -1076,25 +1082,26 @@ public class RubyBigDecimal extends RubyNumeric {
         return sub2(context, b, n);
     }
 
-    private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject n) {
+    private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, int prec) {
         if (val == null) return callCoerced(context, sites(context).op_minus, b);
-        int prec = getPositiveInt(context, n);
-        RubyBigDecimal res = handleMinusSpecialValues(context, val);
+        RubyBigDecimal res = subSpecialCases(context, val);
         return res != null ? res : new RubyBigDecimal(context.runtime, value.subtract(val.value)).setResult(prec);
     }
 
-    private RubyBigDecimal handleMinusSpecialValues(ThreadContext context, RubyBigDecimal val) {
+    private RubyBigDecimal subSpecialCases(ThreadContext context, RubyBigDecimal val) {
         if (isNaN() || val.isNaN()) {
             return newNaN(context.runtime);
         }
+        if (isZero()) {
+            if (val.isZero()) return newZero(context.runtime, zeroSign * val.zeroSign);
+            if (val.isInfinity()) return newInfinity(context.runtime, val.infinitySign * -1);
+            return new RubyBigDecimal(context.runtime, val.value.negate());
+        }
 
         int sign = infinitySign * val.infinitySign;
-        if (sign > 0) {
-            return newNaN(context.runtime);
-        }
-        if (sign < 0) {
-            return this;
-        }
+
+        if (sign > 0) return newNaN(context.runtime);
+        if (sign < 0) return newInfinity(context.runtime, infinitySign);
         if (sign == 0) {
             if (isInfinity()) {
                 return this;
