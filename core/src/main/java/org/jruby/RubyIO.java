@@ -4186,8 +4186,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO io1 = null;
         RubyIO io2 = null;
 
-        RubyString read = null;
-
         if (args.length >= 3) {
             length = args[2].convertToInteger();
             if (args.length == 4) {
@@ -4230,12 +4228,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 io2.setAutoclose(false);
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
-            }
-
-            if (io1 == null) {
-                IRubyObject size = io2.write(context, read);
-                io2.flush(context);
-                return size;
             }
 
             io2 = io2.GetWriteIO();
