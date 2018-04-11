@@ -4,38 +4,33 @@ require 'bigdecimal'
 class TestBigDecimal < Test::Unit::TestCase
 
   def test_to_s
-    assert_equal("0.0", BigDecimal.new('0.0').to_s)
-    assert_equal("0.11111111111e0", BigDecimal.new('0.11111111111').to_s)
-    assert_equal("0.0", BigDecimal.new('0').to_s)
-    assert_equal("0.1e-9", BigDecimal.new("1.0e-10").to_s)
+    assert_equal("0.0", BigDecimal('0.0').to_s)
+    assert_equal("0.11111111111e0", BigDecimal('0.11111111111').to_s)
+    assert_equal("0.0", BigDecimal('0').to_s)
+    assert_equal("0.1e-9", BigDecimal("1.0e-10").to_s)
   end
 
   def test_to_java
     # assert_equal java.lang.Long, 1000.to_java.class
 
-    assert_equal java.math.BigDecimal, BigDecimal.new('1000.8').to_java.class
-    assert_equal java.lang.Integer, BigDecimal.new('0.0').to_java(:int).class
+    assert_equal java.math.BigDecimal, BigDecimal('1000.8').to_java.class
+    assert_equal java.lang.Integer, BigDecimal('0.0').to_java(:int).class
 
     number = java.lang.Number
-    assert_equal java.math.BigDecimal.new('8.0111'), BigDecimal.new('8.0111').to_java(number)
+    assert_equal java.math.BigDecimal.new('8.0111'), BigDecimal('8.0111').to_java(number)
     assert_equal java.lang.Long, 1000.to_java(number).class
   end
 
   def test_no_singleton_methods_on_bigdecimal
-    num = BigDecimal.new("0.001")
+    num = BigDecimal("0.001")
     assert_raise(TypeError) { class << num ; def amethod ; end ; end }
     assert_raise(TypeError) { def num.amethod ; end }
   end
 
   def test_can_instantiate_big_decimal
-    assert_nothing_raised { BigDecimal.new("4") }
-    assert_nothing_raised { BigDecimal.new("3.14159") }
-    BigDecimal.new("1")
-  end
-
-  def test_can_implicitly_instantiate_big_decimal
     assert_nothing_raised { BigDecimal("4") }
     assert_nothing_raised { BigDecimal("3.14159") }
+    BigDecimal.new("1")
   end
 
   class X
@@ -51,7 +46,7 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_cmp
     begin
-      BigDecimal.new('10') < "foo"
+      BigDecimal('10') < "foo"
     rescue ArgumentError => e
       assert_equal 'comparison of BigDecimal with String failed', e.message
     else
@@ -59,7 +54,7 @@ class TestBigDecimal < Test::Unit::TestCase
     end
 
     begin
-      BigDecimal.new('10') >= nil
+      BigDecimal('10') >= nil
     rescue ArgumentError => e
       assert_equal 'comparison of BigDecimal with nil failed', e.message
     else
@@ -84,7 +79,7 @@ class TestBigDecimal < Test::Unit::TestCase
   def test_coerce_div_mul
     require 'bigdecimal/util'
 
-    assert_equal 33, BigDecimal.new('10') * MyNum.new
+    assert_equal 33, BigDecimal(10) * MyNum.new
     assert_equal 99, 10.0 / MyNum.new
     assert_equal 99, 10.0.to_d / MyNum.new
   end
@@ -94,11 +89,11 @@ class TestBigDecimal < Test::Unit::TestCase
 
   class Function
     def initialize()
-      @zero = BigDecimal::new("0.0")
-      @one  = BigDecimal::new("1.0")
-      @two  = BigDecimal::new("2.0")
-      @ten  = BigDecimal::new("10.0")
-      @eps  = BigDecimal::new("1.0e-16")
+      @zero = BigDecimal("0.0")
+      @one  = BigDecimal("1.0")
+      @two  = BigDecimal("2.0")
+      @ten  = BigDecimal("10.0")
+      @eps  = BigDecimal("1.0e-16")
     end
     def zero;@zero;end
     def one ;@one ;end
@@ -164,8 +159,8 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal 1.0+one, 2.0
     assert_equal 1.0-one, 0.0
 
-    assert_equal("1.0", BigDecimal.new('1.0').to_s('F'))
-    assert_equal("0.0", BigDecimal.new('0.0').to_s)
+    assert_equal("1.0", BigDecimal('1.0').to_s('F'))
+    assert_equal("0.0", BigDecimal('0.0').to_s)
 
     assert_equal(BigDecimal("2"), BigDecimal("1.5").round)
     assert_equal(BigDecimal("15"), BigDecimal("15").round)
@@ -187,7 +182,7 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_round_nan
-    nan = BigDecimal.new('NaN')
+    nan = BigDecimal('NaN')
     assert nan.round(0).nan?
     assert nan.round(2).nan?
   end
@@ -289,26 +284,26 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_marshaling
     f = 123.456
-    bd = BigDecimal.new(f.to_s)
+    bd = BigDecimal(f.to_s)
     bd_serialized = Marshal.dump(bd)
     assert_equal f, Marshal.restore(bd_serialized).to_f
   end
 
   #JRUBY-2272
   def test_marshal_regression
-    assert_equal BigDecimal('0.0'), Marshal.load(Marshal.dump(BigDecimal.new('0.0')))
+    assert_equal BigDecimal('0.0'), Marshal.load(Marshal.dump(BigDecimal('0.0')))
   end
 
   def test_large_bigdecimal_to_f
-    pos_inf = BigDecimal.new("5E69999999").to_f
+    pos_inf = BigDecimal("5E69999999").to_f
     assert pos_inf.infinite?
     assert pos_inf > 0
-    assert_equal nil, BigDecimal.new("0E69999999").infinite?
-    assert BigDecimal.new("0E69999999").to_f < Float::EPSILON
-    neg_inf = BigDecimal.new("-5E69999999").to_f
+    assert_equal nil, BigDecimal("0E69999999").infinite?
+    assert BigDecimal("0E69999999").to_f < Float::EPSILON
+    neg_inf = BigDecimal("-5E69999999").to_f
     assert neg_inf.infinite?
     assert neg_inf < 0
-    assert BigDecimal.new("5E-69999999").to_f < Float::EPSILON
+    assert BigDecimal("5E-69999999").to_f < Float::EPSILON
   end
 
   def test_infinity
@@ -329,11 +324,11 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_div_by_float_precision
     # GH-644
-    a = BigDecimal.new(11023) / 2.2046
+    a = BigDecimal(11023) / 2.2046
     assert_equal 5_000, a.to_f
 
     # GH-648
-    b = BigDecimal.new(1.05, 10) / 1.48
+    b = BigDecimal(1.05, 10) / 1.48
     assert (b.to_f - 0.7094594594594595) < Float::EPSILON
   end
 
@@ -343,40 +338,40 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_new_
-    num = BigDecimal.new("666666.22E4444")
+    num = BigDecimal("666666.22E4444")
 
-    assert_equal num, BigDecimal.new("666_666.22E4444")
-    assert_equal num, BigDecimal.new("666_666.22_E4_4_4_4")
-    assert_equal num, BigDecimal.new("6_6_6__666_.2__2___E_444__4_")
+    assert_equal num, BigDecimal("666_666.22E4444")
+    assert_equal num, BigDecimal("666_666.22_E4_4_4_4")
+    assert_equal num, BigDecimal("6_6_6__666_.2__2___E_444__4_")
   end
 
   def test_tail_junk # GH-3527
-    b = BigDecimal.new("5-6")
+    b = BigDecimal("5-6")
     assert_equal BigDecimal('5'), b
-    b = BigDecimal.new("100+42")
+    b = BigDecimal("100+42")
     assert_equal 100, b.to_i
   end
 
   def test_tail_junk2
-    b = BigDecimal.new("+55555x6")
+    b = BigDecimal("+55555x6")
     assert_equal 55555, b
-    b = BigDecimal.new("-10000.5,9")
+    b = BigDecimal("-10000.5,9")
     assert_equal -10000.5, b
 
-    b = BigDecimal.new("+55555d-66E")
+    b = BigDecimal("+55555d-66E")
     assert_equal BigDecimal('55555e-66'), b
   end
 
   def test_tail_junk_invalid
     begin
-      BigDecimal.new("42E")
+      BigDecimal("42E")
       fail 'expected-to-raise'
     rescue ArgumentError => ex
       assert_equal 'invalid value for BigDecimal(): "42E"', ex.message
     end
 
-    assert_raise(ArgumentError) { BigDecimal.new("2E+") }
-    assert_raise(ArgumentError) { BigDecimal.new("1E-") }
+    assert_raise(ArgumentError) { BigDecimal("2E+") }
+    assert_raise(ArgumentError) { BigDecimal("1E-") }
     assert_raise(ArgumentError) { BigDecimal("1E+") }
     assert_raise(ArgumentError) { BigDecimal("0E") }
   end

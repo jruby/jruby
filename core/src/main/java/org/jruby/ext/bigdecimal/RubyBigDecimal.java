@@ -56,6 +56,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -65,6 +66,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
@@ -126,6 +128,8 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyConstant
     public final static int EXCEPTION_NaN = 2;
 
+    private static final ByteList VERSION = ByteList.create("1.3.4");
+
     // (MRI-like) internals
 
     private static final short VP_DOUBLE_FIG = 16;
@@ -140,6 +144,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     public static RubyClass createBigDecimal(Ruby runtime) {
         RubyClass bigDecimal = runtime.defineClass("BigDecimal", runtime.getNumeric(), ALLOCATOR);
+
+        bigDecimal.setConstant("VERSION", RubyString.newStringShared(runtime, VERSION));
 
         runtime.getKernel().defineAnnotatedMethods(BigDecimalKernelMethods.class);
 
@@ -253,7 +259,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(meta = true)
     public static IRubyObject ver(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newString("1.0.1");
+        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.ver is deprecated; use BigDecimal::VERSION instead");
+        return RubyString.newStringShared(context.runtime, VERSION);
     }
 
     @JRubyMethod
@@ -690,7 +697,19 @@ public class RubyBigDecimal extends RubyNumeric {
         throw new IllegalArgumentException("unexpected argument count: " + args.length);
     }
 
+    @Deprecated // no to be used in user-lang
     @JRubyMethod(name = "new", meta = true)
+    public static RubyBigDecimal new_(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated");
+        return newInstance(context, recv, arg);
+    }
+
+    @Deprecated // no to be used in user-lang
+    @JRubyMethod(name = "new", meta = true)
+    public static RubyBigDecimal new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
+        return newInstance(context, recv, arg, mathArg);
+    }
+
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         switch (((RubyBasicObject) arg).getNativeClassIndex()) {
             case RATIONAL:
@@ -709,7 +728,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return newInstance(context, (RubyClass) recv, arg.convertToString(), MathContext.UNLIMITED);
     }
 
-    @JRubyMethod(name = "new", meta = true)
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
         int digits = (int) mathArg.convertToInteger().getLongValue();
         if (digits < 0) throw context.runtime.newArgumentError("argument must be positive");

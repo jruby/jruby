@@ -1117,7 +1117,11 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "nan?")
     public IRubyObject nan_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Double.isNaN(value));
+        return RubyBoolean.newBoolean(getRuntime(), isNaN());
+    }
+
+    public boolean isNaN() {
+        return Double.isNaN(value);
     }
 
     /** flo_is_infinite_p
@@ -1129,6 +1133,10 @@ public class RubyFloat extends RubyNumeric {
             return RubyFixnum.newFixnum(getRuntime(), value < 0 ? -1 : 1);
         }
         return getRuntime().getNil();
+    }
+
+    public boolean isInfinite() {
+        return Double.isInfinite(value);
     }
 
     /** flo_is_finite_p
