@@ -293,7 +293,7 @@ public class RubyBigDecimal extends RubyNumeric {
     public static IRubyObject limit(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         IRubyObject old = limit(context, recv);
 
-        if (arg.isNil()) return old;
+        if (arg == context.nil) return old;
         if (!(arg instanceof RubyFixnum)) throw context.runtime.newTypeError(arg, context.runtime.getFixnum());
         if (0 > ((RubyFixnum)arg).getLongValue()) throw context.runtime.newArgumentError("argument must be positive");
 
@@ -515,12 +515,17 @@ public class RubyBigDecimal extends RubyNumeric {
         // precision can be no more than float digits
         if (mathContext.getPrecision() > RubyFloat.DIG + 1) throw runtime.newArgumentError("precision too large");
 
-        double dblVal = arg.getDoubleValue();
+        RubyBigDecimal res = newFloatSpecialCases(runtime, arg);
+        if (res != null) return res;
 
-        if (Double.isNaN(dblVal)) return newNaN(runtime);
-        if (Double.isInfinite(dblVal)) return newInfinity(runtime, dblVal == Double.POSITIVE_INFINITY ? 1 : -1);
+        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(arg.getDoubleValue(), mathContext));
+    }
 
-        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(dblVal, mathContext));
+    private static RubyBigDecimal newFloatSpecialCases(Ruby runtime, RubyFloat val) {
+        if (val.isNaN()) return newNaN(runtime);
+        if (val.isInfinite()) return newInfinity(runtime, val.getDoubleValue() == Double.POSITIVE_INFINITY ? 1 : -1);
+        if (val.isZero()) return newZero(runtime, val.getDoubleValue() == -0.0 ? -1 : 1);
+        return null;
     }
 
     private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyBignum arg, MathContext mathContext) {
@@ -691,6 +696,8 @@ public class RubyBigDecimal extends RubyNumeric {
             case RATIONAL:
                 throw context.runtime.newArgumentError("can't omit precision for a Rational.");
             case FLOAT:
+                RubyBigDecimal res = newFloatSpecialCases(context.runtime, (RubyFloat) arg);
+                if (res != null) return res;
                 throw context.runtime.newArgumentError("can't omit precision for a Float.");
             case FIXNUM:
                 return newInstance(context.runtime, recv, (RubyFixnum) arg, MathContext.UNLIMITED);
