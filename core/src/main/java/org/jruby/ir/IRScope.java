@@ -3,6 +3,7 @@ package org.jruby.ir;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -115,7 +116,7 @@ public abstract class IRScope implements ParseResult {
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
 
-    Map<ByteList, LocalVariable> localVars;
+    Map<RubySymbol, LocalVariable> localVars;
 
     EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
 
@@ -244,7 +245,7 @@ public abstract class IRScope implements ParseResult {
 
         flip.append(allocateNextPrefixedName("%flip"));
 
-        return getLocalVariable(flip , 0);
+        return getLocalVariable(getManager().getRuntime().newSymbol(flip) , 0);
     }
 
     public Label getNewLabel(String prefix) {
@@ -826,7 +827,7 @@ public abstract class IRScope implements ParseResult {
      * Get the local variables for this scope.
      * This should only be used by persistence layer.
      */
-    public Map<ByteList, LocalVariable> getLocalVariables() {
+    public Map<RubySymbol, LocalVariable> getLocalVariables() {
         return localVars;
     }
 
@@ -841,7 +842,7 @@ public abstract class IRScope implements ParseResult {
      * Set the local variables for this scope. This should only be used by persistence layer.
      */
     // FIXME: Consider making constructor for persistence to pass in all of this stuff
-    public void setLocalVariables(Map<ByteList, LocalVariable> variables) {
+    public void setLocalVariables(Map<RubySymbol, LocalVariable> variables) {
         this.localVars = variables;
     }
 
@@ -849,11 +850,11 @@ public abstract class IRScope implements ParseResult {
         nextVarIndex = indices;
     }
 
-    public LocalVariable lookupExistingLVar(ByteList name) {
+    public LocalVariable lookupExistingLVar(RubySymbol name) {
         return localVars.get(name);
     }
 
-    protected LocalVariable findExistingLocalVariable(ByteList name, int depth) {
+    protected LocalVariable findExistingLocalVariable(RubySymbol name, int depth) {
         return localVars.get(name);
     }
 
@@ -862,7 +863,7 @@ public abstract class IRScope implements ParseResult {
      * only check current depth.  Blocks/Closures override this because they
      * have special nesting rules.
      */
-    public LocalVariable getLocalVariable(ByteList name, int scopeDepth) {
+    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
             lvar = getNewLocalVariable(name, scopeDepth);
@@ -873,9 +874,9 @@ public abstract class IRScope implements ParseResult {
         return lvar;
     }
 
-    public LocalVariable getNewLocalVariable(ByteList name, int scopeDepth) {
+    public LocalVariable getNewLocalVariable(RubySymbol name, int scopeDepth) {
         assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
-        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name.toString()));
+        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name.idString()));
         localVars.put(name, lvar);
         return lvar;
     }
@@ -886,7 +887,7 @@ public abstract class IRScope implements ParseResult {
 
     public TemporaryLocalVariable getNewTemporaryVariableFor(LocalVariable var) {
         temporaryVariableIndex++;
-        return new TemporaryLocalReplacementVariable(var.getName(), temporaryVariableIndex);
+        return new TemporaryLocalReplacementVariable(var.getId(), temporaryVariableIndex);
     }
 
     public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
@@ -972,7 +973,7 @@ public abstract class IRScope implements ParseResult {
 
             newName.append(lv.getName().getBytes());
 
-            return getLocalVariable(newName, lv.getScopeDepth());
+            return getLocalVariable(getManager().getRuntime().newSymbol(newName), lv.getScopeDepth());
         } else {
             return createTemporaryVariable();
         }

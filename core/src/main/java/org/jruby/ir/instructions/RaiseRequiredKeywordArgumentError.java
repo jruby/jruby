@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -10,23 +11,22 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 // FIXME: Consider making argument error a single more generic instruction and combining with RaiseArgumentError
 public class RaiseRequiredKeywordArgumentError extends NoOperandInstr implements FixedArityInstr {
-    private ByteList name;
+    private RubySymbol name;
 
-    public RaiseRequiredKeywordArgumentError(ByteList name) {
+    public RaiseRequiredKeywordArgumentError(RubySymbol name) {
         super(Operation.RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR);
 
         this.name = name;
     }
 
-    public String getName() {
-        return name.toString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteName() {
+    public RubySymbol getName() {
         return name;
     }
 
@@ -38,11 +38,11 @@ public class RaiseRequiredKeywordArgumentError extends NoOperandInstr implements
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getByteName());
+        e.encode(getName());
     }
 
     public static RaiseRequiredKeywordArgumentError decode(IRReaderDecoder d) {
-        return new RaiseRequiredKeywordArgumentError(d.decodeByteList());
+        return new RaiseRequiredKeywordArgumentError(d.decodeSymbol());
     }
 
     @Override

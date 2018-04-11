@@ -8,6 +8,7 @@ package org.jruby.ir.persistence;
 
 import org.jruby.EvalType;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.ClosureLocalVariable;
@@ -114,11 +115,11 @@ public class IRReader implements IRPersistenceValues {
         return new KeyValuePair<>(scope, instructionsOffset);
     }
 
-    private static Map<ByteList, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
+    private static Map<RubySymbol, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
         int size = decoder.decodeInt();
-        Map<ByteList, LocalVariable> localVariables = new HashMap(size);
+        Map<RubySymbol, LocalVariable> localVariables = new HashMap(size);
         for (int i = 0; i < size; i++) {
-            ByteList name = decoder.decodeByteList();
+            RubySymbol name = decoder.decodeSymbol();
             int offset = decoder.decodeInt();
 
             localVariables.put(name, scope instanceof IRClosure ?

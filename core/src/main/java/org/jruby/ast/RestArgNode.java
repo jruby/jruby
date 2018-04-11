@@ -46,6 +46,12 @@ public class RestArgNode extends ArgumentNode implements INameNode {
         this(argNode.getPosition(), argNode.getSymbolName(), argNode.getIndex());
     }
 
+    public boolean isAnonymous() {
+        RubySymbol argName = getSymbolName();
+
+        return argName == null || argName.getBytes().realSize() == 0;
+    }
+
     @Override
     public NodeType getNodeType() {
         return NodeType.RESTARG;

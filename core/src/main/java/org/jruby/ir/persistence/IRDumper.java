@@ -6,6 +6,7 @@
 
 package org.jruby.ir.persistence;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -56,7 +57,6 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.runtime.Signature;
-import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
@@ -102,12 +102,12 @@ public class IRDumper extends IRVisitor {
             println(ic.getStaticScope().getSignature());
         }
 
-        Map<ByteList, LocalVariable> localVariables = ic.getScope().getLocalVariables();
+        Map<RubySymbol, LocalVariable> localVariables = ic.getScope().getLocalVariables();
 
         if (localVariables != null && !localVariables.isEmpty()) {
             println("declared variables");
 
-            for (Map.Entry<ByteList, LocalVariable> entry : localVariables.entrySet()) {
+            for (Map.Entry<RubySymbol, LocalVariable> entry : localVariables.entrySet()) {
                 println(ansiStr(VARIABLE_COLOR, "  " + entry.getValue().toString()));
             }
         }
@@ -210,7 +210,8 @@ public class IRDumper extends IRVisitor {
 
         if (instr instanceof ResultInstr) {
             Variable result = ((ResultInstr) instr).getResult();
-            String sigilName = (result instanceof LocalVariable) ? "*" + result.getName() : result.getName();
+            // FIXME: bytelist_love - use getName and stringbuilder.
+            String sigilName = (result instanceof LocalVariable) ? "*" + result.getId() : result.getId();
 
             printf(varFormat, sigilName);
         } else {
@@ -225,7 +226,7 @@ public class IRDumper extends IRVisitor {
     public int getLongestVariable(int longest, ResultInstr i) {
         Variable result = i.getResult();
 
-        longest = Math.max(longest, result.getName().length() + ((result instanceof LocalVariable) ? 1 : 0));
+        longest = Math.max(longest, result.getId().length() + ((result instanceof LocalVariable) ? 1 : 0));
         return longest;
     }
 
@@ -327,7 +328,7 @@ public class IRDumper extends IRVisitor {
     public void SValue(SValue svalue) { visit(svalue.getArray()); }
     public void Symbol(Symbol symbol) { print(symbol.getBytes()); }
     public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getByteName().toString()); }
-    public void TemporaryVariable(TemporaryVariable temporaryvariable) { print(temporaryvariable.getName()); }
+    public void TemporaryVariable(TemporaryVariable temporaryvariable) { print(temporaryvariable.getId()); }
     public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { TemporaryVariable(temporarylocalvariable); }
     public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) { TemporaryVariable(temporaryfloatvariable); }
     public void TemporaryFixnumVariable(TemporaryFixnumVariable temporaryfixnumvariable) { TemporaryVariable(temporaryfixnumvariable); }

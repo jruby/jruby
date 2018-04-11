@@ -1023,13 +1023,14 @@ public class IRRuntimeHelpers {
         return result;
     }
 
-    @Deprecated
-    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String argName, boolean acceptsKeywordArgument) {
+    // FIXME: bytelist_love - JIT still uses this and we use id string to retrieve symbol but JIT can maybe reify a symbol
+    // and then we can eliminate this method.
+    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String id, boolean acceptsKeywordArgument) {
         RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
 
         if (keywordArguments == null) return UndefinedValue.UNDEFINED;
 
-        RubySymbol keywordName = context.runtime.newSymbol(argName);
+        RubySymbol keywordName = context.runtime.newSymbol(id);
 
         if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
 
@@ -1038,18 +1039,16 @@ public class IRRuntimeHelpers {
         return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
     }
 
-    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, ByteList argName, boolean acceptsKeywordArgument) {
+    public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, RubySymbol key, boolean acceptsKeywordArgument) {
         RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
 
         if (keywordArguments == null) return UndefinedValue.UNDEFINED;
 
-        RubySymbol keywordName = context.runtime.newSymbol(argName);
-
-        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
+        if (keywordArguments.fastARef(key) == null) return UndefinedValue.UNDEFINED;
 
         // SSS FIXME: Can we use an internal delete here?
         // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
-        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
+        return keywordArguments.delete(context, key, Block.NULL_BLOCK);
     }
 
     public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
@@ -1058,17 +1057,12 @@ public class IRRuntimeHelpers {
         return keywordArguments == null ? RubyHash.newSmallHash(context.runtime) : keywordArguments;
     }
 
-    public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String varName) {
-        IRubyObject val;
-        if (matchRes.isNil()) {
-            val = context.nil;
-        } else {
-            IRubyObject backref = context.getBackRef();
-            int n = ((RubyMatchData)backref).getNameToBackrefNumber(varName);
-            val = RubyRegexp.nth_match(n, backref);
-        }
+    public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String id) {
+        if (matchRes.isNil()) return context.nil;
 
-        return val;
+        IRubyObject backref = context.getBackRef();
+
+        return RubyRegexp.nth_match(((RubyMatchData) backref).getNameToBackrefNumber(id), backref);
     }
 
     @JIT // for JVM6

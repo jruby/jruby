@@ -315,7 +315,7 @@ public class IRBuilder {
         return needsCodeCoverage || parent != null && parent.needsCodeCoverage();
     }
 
-    public void addArgumentDescription(ArgumentType type, ByteList name) {
+    public void addArgumentDescription(ArgumentType type, RubySymbol name) {
         if (argumentDescriptions == null) argumentDescriptions = new ArrayList<>();
 
         argumentDescriptions.add(type);
@@ -424,7 +424,7 @@ public class IRBuilder {
             case COLON3NODE: return buildColon3((Colon3Node) node);
             case COMPLEXNODE: return buildComplex((ComplexNode) node);
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node);
-            case CONSTNODE: return searchConst(((ConstNode) node).getByteName());
+            case CONSTNODE: return searchConst(((ConstNode) node).getSymbolName());
             case DASGNNODE: return buildDAsgn((DAsgnNode) node);
             case DEFINEDNODE: return buildGetDefinition(((DefinedNode) node).getExpressionNode());
             case DEFNNODE: return buildDefn((MethodDefNode) node);
@@ -693,7 +693,7 @@ public class IRBuilder {
             case DASGNNODE: {
                 DAsgnNode variable = (DAsgnNode) node;
                 int depth = variable.getDepth();
-                addInstr(new CopyInstr(getLocalVariable(variable.getByteName(), depth), rhsVal));
+                addInstr(new CopyInstr(getLocalVariable(variable.getSymbolName(), depth), rhsVal));
                 break;
             }
             case GLOBALASGNNODE:
@@ -706,7 +706,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-                addInstr(new CopyInstr(getLocalVariable(localVariable.getByteName(), depth), rhsVal));
+                addInstr(new CopyInstr(getLocalVariable(localVariable.getSymbolName(), depth), rhsVal));
                 break;
             }
             case ZEROARGNODE:
@@ -722,7 +722,7 @@ public class IRBuilder {
         }
     }
 
-    protected LocalVariable getBlockArgVariable(ByteList name, int depth) {
+    protected LocalVariable getBlockArgVariable(RubySymbol name, int depth) {
         if (!(scope instanceof IRFor)) throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
 
         return getLocalVariable(name, depth);
@@ -772,7 +772,7 @@ public class IRBuilder {
                 break;
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                v = getBlockArgVariable(dynamicAsgn.getByteName(), dynamicAsgn.getDepth());
+                v = getBlockArgVariable(dynamicAsgn.getSymbolName(), dynamicAsgn.getDepth());
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
                 break;
             }
@@ -799,7 +799,7 @@ public class IRBuilder {
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
-                v = getBlockArgVariable(localVariable.getByteName(), localVariable.getDepth());
+                v = getBlockArgVariable(localVariable.getSymbolName(), localVariable.getDepth());
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
                 break;
             }
@@ -1396,7 +1396,7 @@ public class IRBuilder {
     // @@c
     public Operand buildClassVar(ClassVarNode node) {
         Variable ret = createTemporaryVariable();
-        addInstr(new GetClassVariableInstr(ret, classVarDefinitionContainer(), node.getByteName()));
+        addInstr(new GetClassVariableInstr(ret, classVarDefinitionContainer(), node.getSymbolName()));
         return ret;
     }
 
@@ -1508,11 +1508,11 @@ public class IRBuilder {
         return putConstant((Colon3Node) constNode, value);
     }
 
-    private Operand searchModuleForConst(Operand startingModule, ByteList name) {
+    private Operand searchModuleForConst(Operand startingModule, RubySymbol name) {
         return addResultInstr(new SearchModuleForConstInstr(createTemporaryVariable(), startingModule, name, true));
     }
 
-    private Operand searchConst(ByteList name) {
+    private Operand searchConst(RubySymbol name) {
         return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, startingSearchScope(), false));
     }
 
@@ -1520,14 +1520,14 @@ public class IRBuilder {
         Node lhs = colon2.getLeftNode();
 
         // Colon2ImplicitNode - (module|class) Foo.  Weird, but it is a wrinkle of AST inheritance.
-        if (lhs == null) return searchConst(colon2.getByteName());
+        if (lhs == null) return searchConst(colon2.getSymbolName());
 
         // Colon2ConstNode (Left::name)
-        return searchModuleForConst(build(lhs), colon2.getByteName());
+        return searchModuleForConst(build(lhs), colon2.getSymbolName());
     }
 
     public Operand buildColon3(Colon3Node node) {
-        return searchModuleForConst(new ObjectClass(), node.getByteName());
+        return searchModuleForConst(new ObjectClass(), node.getSymbolName());
     }
 
     public Operand buildComplex(ComplexNode node) {
@@ -1984,7 +1984,7 @@ public class IRBuilder {
         // assignments to block variables within a block.  As far as the IR is concerned,
         // this is just a simple copy
         int depth = dasgnNode.getDepth();
-        Variable arg = getLocalVariable(dasgnNode.getByteName(), depth);
+        Variable arg = getLocalVariable(dasgnNode.getSymbolName(), depth);
         Operand  value = build(dasgnNode.getValueNode());
 
         // no use copying a variable to itself
@@ -2061,8 +2061,11 @@ public class IRBuilder {
         } else {
             argDesc = new ArgumentDescriptor[argumentDescriptions.size() / 2];
             for (int i = 0; i < argumentDescriptions.size(); i += 2) {
-                argDesc[i / 2] = new ArgumentDescriptor((ArgumentType) argumentDescriptions.get(i),
-                        (ByteList) argumentDescriptions.get(i+1));
+                ArgumentType type = (ArgumentType) argumentDescriptions.get(i);
+                // FIXME: bytelist_love we should probably push symbol through here instead of bytelsit?
+                RubySymbol symbol = (RubySymbol) argumentDescriptions.get(i+1);
+                ByteList name = symbol == null ? null : symbol.getBytes();
+                argDesc[i / 2] = new ArgumentDescriptor(type, name);
             }
         }
 
@@ -2079,17 +2082,17 @@ public class IRBuilder {
     public Operand buildDefn(MethodDefNode node) { // Instance method
         IRMethod method = defineNewMethod(node, true);
         addInstr(new DefineInstanceMethodInstr(method));
-        return new Symbol(method.getByteName());
+        return new Symbol(node.getSymbolName());
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
         Operand container =  build(node.getReceiverNode());
         IRMethod method = defineNewMethod(node, false);
         addInstr(new DefineClassMethodInstr(container, method));
-        return new Symbol(method.getByteName());
+        return new Symbol(node.getSymbolName());
     }
 
-    protected LocalVariable getArgVariable(ByteList name, int depth) {
+    protected LocalVariable getArgVariable(RubySymbol name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
         return scope instanceof IRFor ? getLocalVariable(name, depth) : getNewLocalVariable(name, 0);
     }
@@ -2108,8 +2111,8 @@ public class IRBuilder {
      * '_' we create temporary variables in the case the scope has a zsuper in it.  If so, then the zsuper
      * call will slurp those temps up as it's parameters so it can properly set up the call.
      */
-    private Variable argumentResult(ByteList name) {
-        boolean isUnderscore = name.realSize() == 1 && name.charAt(0) == '_';
+    private Variable argumentResult(RubySymbol name) {
+        boolean isUnderscore = name.getBytes().realSize() == 1 && name.getBytes().charAt(0) == '_';
 
         if (isUnderscore && underscoreVariableSeen) {
             return createTemporaryVariable();
@@ -2122,7 +2125,7 @@ public class IRBuilder {
     public void receiveRequiredArg(Node node, int argIndex, Signature signature) {
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
-                ByteList argName = ((ArgumentNode)node).getByteName();
+                RubySymbol argName = ((ArgumentNode)node).getSymbolName();
 
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, argName);
 
@@ -2183,7 +2186,7 @@ public class IRBuilder {
                 // We fall through or jump to variableAssigned once we know we have a valid value in place.
                 Label variableAssigned = getNewLabel();
                 OptArgNode optArg = (OptArgNode)args[optIndex + j];
-                ByteList argName = optArg.getByteName();
+                RubySymbol argName = optArg.getSymbolName();
                 Variable argVar = argumentResult(argName);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
@@ -2204,13 +2207,14 @@ public class IRBuilder {
             // Consider: def foo(*); .. ; end
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
-            ByteList argName = argsNode.getRestArgNode().getByteName();
+            RestArgNode restArgNode = argsNode.getRestArgNode();
             if (scope instanceof IRMethod) {
-                addArgumentDescription(
-                        argName == null || argName.length() == 0 ? ArgumentType.anonrest : ArgumentType.rest,
-                        argName);
+                addArgumentDescription(restArgNode.isAnonymous() ?
+                        ArgumentType.anonrest : ArgumentType.rest, restArgNode.getSymbolName());
             }
-            argName = (argName == null || argName.realSize() == 0) ? CommonByteLists.STAR : argName;
+
+            RubySymbol argName =  restArgNode.isAnonymous() ?
+                    scope.getManager().getRuntime().newSymbol(CommonByteLists.STAR) : restArgNode.getSymbolName();
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
@@ -2236,7 +2240,7 @@ public class IRBuilder {
         // reify to Proc if we have a block arg
         BlockArgNode blockArg = argsNode.getBlock();
         if (blockArg != null) {
-            ByteList argName = blockArg.getByteName();
+            RubySymbol argName = blockArg.getSymbolName();
             Variable blockVar = argumentResult(argName);
             if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, argName);
             Variable tmp = createTemporaryVariable();
@@ -2282,11 +2286,11 @@ public class IRBuilder {
             for (int i = 0; i < keywordsCount; i++) {
                 KeywordArgNode kwarg = (KeywordArgNode) args[keywordIndex + i];
                 AssignableNode kasgn = kwarg.getAssignable();
-                ByteList argName = ((INameNode) kasgn).getByteName();
-                Variable av = getNewLocalVariable(argName, 0);
+                RubySymbol key = ((INameNode) kasgn).getSymbolName();
+                Variable av = getNewLocalVariable(key, 0);
                 Label l = getNewLabel();
-                if (scope instanceof IRMethod) addKeyArgDesc(kasgn, argName);
-                addInstr(new ReceiveKeywordArgInstr(av, argName, required));
+                if (scope instanceof IRMethod) addKeyArgDesc(kasgn, key);
+                addInstr(new ReceiveKeywordArgInstr(av, key, required));
                 addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
 
                 // Required kwargs have no value and check_arity will throw if they are not provided.
@@ -2294,7 +2298,7 @@ public class IRBuilder {
                     addInstr(new CopyInstr(av, buildNil())); // wipe out undefined value with nil
                     build(kasgn);
                 } else {
-                    addInstr(new RaiseRequiredKeywordArgumentError(argName));
+                    addInstr(new RaiseRequiredKeywordArgumentError(key));
                 }
                 addInstr(new LabelInstr(l));
             }
@@ -2303,14 +2307,14 @@ public class IRBuilder {
         // 2.0 keyword rest arg
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
         if (keyRest != null) {
-            ByteList argName = keyRest.getByteName();
+            RubySymbol key = keyRest.getSymbolName();
             ArgumentType type = ArgumentType.keyrest;
 
             // anonymous keyrest
-            if (argName == null || argName.length() == 0) type = ArgumentType.anonkeyrest;
+            if (key == null || key.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
 
-            Variable av = getNewLocalVariable(argName, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(type, argName);
+            Variable av = getNewLocalVariable(key, 0);
+            if (scope instanceof IRMethod) addArgumentDescription(type, key);
             addInstr(new ReceiveKeywordRestArgInstr(av, required));
         }
 
@@ -2318,11 +2322,11 @@ public class IRBuilder {
         receiveBlockArg(argsNode);
     }
 
-    private void addKeyArgDesc(AssignableNode kasgn, ByteList argName) {
+    private void addKeyArgDesc(AssignableNode kasgn, RubySymbol key) {
         if (isRequiredKeywordArgumentValue(kasgn)) {
-            addArgumentDescription(ArgumentType.keyreq, argName);
+            addArgumentDescription(ArgumentType.keyreq, key);
         } else {
-            addArgumentDescription(ArgumentType.key, argName);
+            addArgumentDescription(ArgumentType.key, key);
         }
     }
 
@@ -2336,14 +2340,14 @@ public class IRBuilder {
         switch (node.getNodeType()) {
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                v = getArgVariable(dynamicAsgn.getByteName(), dynamicAsgn.getDepth());
+                v = getArgVariable(dynamicAsgn.getSymbolName(), dynamicAsgn.getDepth());
                 if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
                 else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
                 break;
             }
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
-                v = getArgVariable(localVariable.getByteName(), localVariable.getDepth());
+                v = getArgVariable(localVariable.getSymbolName(), localVariable.getDepth());
                 if (isSplat) addInstr(new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
                 else addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
                 break;
@@ -2516,7 +2520,7 @@ public class IRBuilder {
     }
 
     public Operand buildDVar(DVarNode node) {
-        return getLocalVariable(node.getByteName(), node.getDepth());
+        return getLocalVariable(node.getSymbolName(), node.getDepth());
     }
 
     public Operand buildDXStr(Variable result, DXStrNode dstrNode) {
@@ -3005,7 +3009,7 @@ public class IRBuilder {
     }
 
     public Operand buildInstVar(InstVarNode node) {
-        return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getByteName()));
+        return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getSymbolName()));
     }
 
     private InterpreterContext buildIterInner(IterNode iterNode) {
@@ -3046,7 +3050,7 @@ public class IRBuilder {
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
-        Variable variable  = getLocalVariable(localAsgnNode.getByteName(), localAsgnNode.getDepth());
+        Variable variable  = getLocalVariable(localAsgnNode.getSymbolName(), localAsgnNode.getDepth());
         Operand value = build(variable, localAsgnNode.getValueNode());
 
         // no use copying a variable to itself
@@ -3080,7 +3084,7 @@ public class IRBuilder {
     }
 
     public Operand buildLocalVar(LocalVarNode node) {
-        return getLocalVariable(node.getByteName(), node.getDepth());
+        return getLocalVariable(node.getSymbolName(), node.getDepth());
     }
 
     public Operand buildMatch(Variable result, MatchNode matchNode) {
@@ -3109,7 +3113,7 @@ public class IRBuilder {
                 int offset = slot & 0xffff;
 
                 // For now, we'll continue to implicitly reference "$~"
-                ByteList var = manager.runtime.newSymbol(getVarNameFromScopeTree(scope, depth, offset)).getBytes();
+                RubySymbol var = manager.runtime.newSymbol(getVarNameFromScopeTree(scope, depth, offset));
                 addInstr(new SetCapturedVarInstr(getLocalVariable(var, depth), result, var));
             }
         }
@@ -3261,16 +3265,16 @@ public class IRBuilder {
 
     private Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
         Variable leftModule = createTemporaryVariable();
-        ByteList name;
+        RubySymbol name;
 
         if (lhs instanceof Colon2Node) {
             Colon2Node colon2Node = (Colon2Node) lhs;
-            name = colon2Node.getByteName();
+            name = colon2Node.getSymbolName();
             Operand leftValue = build(colon2Node.getLeftNode());
             copy(leftModule, leftValue);
         } else { // colon3
             copy(leftModule, new ObjectClass());
-            name = ((Colon3Node) lhs).getByteName();
+            name = ((Colon3Node) lhs).getSymbolName();
         }
 
         addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
@@ -3852,8 +3856,7 @@ public class IRBuilder {
 
     public Operand buildSymbol(SymbolNode node) {
         // Since symbols are interned objects, no need to copyAndReturnValue(...)
-        // SSS FIXME: Premature opt?
-        return new Symbol(node.getBytes());
+        return new Symbol(node.getSymbolName());
     }
 
     public Operand buildTrue() {
@@ -4103,11 +4106,11 @@ public class IRBuilder {
         return scope.createTemporaryVariable();
     }
 
-    public LocalVariable getLocalVariable(ByteList name, int scopeDepth) {
+    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
         return scope.getLocalVariable(name, scopeDepth);
     }
 
-    public LocalVariable getNewLocalVariable(ByteList name, int scopeDepth) {
+    public LocalVariable getNewLocalVariable(RubySymbol name, int scopeDepth) {
         return scope.getNewLocalVariable(name, scopeDepth);
     }
 
@@ -4155,10 +4158,10 @@ public class IRBuilder {
     private static void extractCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
         if (instr instanceof ReceiveKeywordRestArgInstr) {
             // Always add the keyword rest arg to the beginning
-            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
+            keywordArgs.add(0, new KeyValuePair<>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
         } else if (instr instanceof ReceiveKeywordArgInstr) {
-            ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr) instr;
-            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName), rkai.getResult()));
+            ReceiveKeywordArgInstr receiveKwargInstr = (ReceiveKeywordArgInstr) instr;
+            keywordArgs.add(new KeyValuePair<>(new Symbol(receiveKwargInstr.getKey()), receiveKwargInstr.getResult()));
         } else if (instr instanceof ReceiveRestArgInstr) {
             callArgs.add(new Splat(((ReceiveRestArgInstr) instr).getResult()));
         } else if (instr instanceof ReceiveArgBase) {

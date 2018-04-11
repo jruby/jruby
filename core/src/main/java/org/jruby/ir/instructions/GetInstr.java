@@ -1,29 +1,29 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRWriterEncoder;
-import org.jruby.util.ByteList;
 
 // Represents result = source.ref or result = source where source is not a stack variable
 public abstract class GetInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private final ByteList ref;
+    private final RubySymbol name;
 
-    public GetInstr(Operation op, Variable result, Operand source, ByteList ref) {
+    public GetInstr(Operation op, Variable result, Operand source, RubySymbol name) {
         super(op, result, source);
 
         assert result != null: getClass().getSimpleName() + " result is null";
 
-        this.ref = ref;
+        this.name = name;
     }
 
-    public String getRef() {
-        return ref.toString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteRef() {
-        return ref;
+    public RubySymbol getName() {
+        return name;
     }
 
     public Operand getSource() {
@@ -34,11 +34,11 @@ public abstract class GetInstr extends OneOperandResultBaseInstr implements Fixe
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getSource());
-        e.encode(getRef());
+        e.encode(getId());
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"name: " + ref};
+        return new String[] {"name: " + getName()};
     }
 }

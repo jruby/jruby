@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.DefNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ir.instructions.*;
@@ -234,7 +235,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    protected LocalVariable findExistingLocalVariable(ByteList name, int scopeDepth) {
+    protected LocalVariable findExistingLocalVariable(RubySymbol name, int scopeDepth) {
         LocalVariable lvar = lookupExistingLVar(name);
         if (lvar != null) return lvar;
 
@@ -249,7 +250,7 @@ public class IRClosure extends IRScope {
         return lvar;
     }
 
-    public LocalVariable getNewLocalVariable(ByteList name, int depth) {
+    public LocalVariable getNewLocalVariable(RubySymbol name, int depth) {
         if (depth == 0 && !(this instanceof IRFor)) {
             LocalVariable lvar = new ClosureLocalVariable(name, 0, getStaticScope().addVariableThisScope(name.toString()));
             localVars.put(name, lvar);
@@ -276,7 +277,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public LocalVariable getLocalVariable(ByteList name, int depth) {
+    public LocalVariable getLocalVariable(RubySymbol name, int depth) {
         // AST doesn't seem to be implementing shadowing properly and sometimes
         // has the wrong depths which screws up variable access. So, we implement
         // shadowing here by searching for an existing local var from depth 0 and upwards.

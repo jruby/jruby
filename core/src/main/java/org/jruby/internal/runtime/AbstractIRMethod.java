@@ -112,7 +112,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
             for (Instr i : context.getInstructions()) {
                 switch (i.getOperation()) {
                     case GET_FIELD:
-                        ivarNames.add(((GetFieldInstr) i).getRef());
+                        ivarNames.add(((GetFieldInstr) i).getId());
                         break;
                     case PUT_FIELD:
                         ivarNames.add(((PutFieldInstr) i).getId());

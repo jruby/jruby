@@ -27,8 +27,7 @@ public class TemporaryCurrentModuleVariable extends TemporaryLocalVariable {
         return TemporaryVariableType.CURRENT_MODULE;
     }
 
-    @Override
-    public String getName() {
+    public String getId() {
         return "%current_module";
     }
 

@@ -1,6 +1,5 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -24,7 +23,7 @@ public class TemporaryLocalVariable extends TemporaryVariable {
         this.offset = offset;
     }
 
-    public String getName() {
+    public String getId() {
         return getPrefix() + offset;
     }
 

@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -8,15 +9,14 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 public class LocalVariable extends Variable implements DepthCloneable {
-    protected final ByteList name;
+    protected final RubySymbol name;
     protected final int scopeDepth;
     protected final int offset;
     protected final int hcode;
 
-    public LocalVariable(ByteList name, int scopeDepth, int location) {
+    public LocalVariable(RubySymbol name, int scopeDepth, int location) {
         super();
         this.name = name;
         this.scopeDepth = scopeDepth;
@@ -46,11 +46,11 @@ public class LocalVariable extends Variable implements DepthCloneable {
     }
 
     @Override
-    public String getName() {
-        return getByteName().toString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteName() {
+    public RubySymbol getName() {
         return name;
     }
 
@@ -99,13 +99,13 @@ public class LocalVariable extends Variable implements DepthCloneable {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getByteName());
+        e.encode(getName());
         e.encode(getScopeDepth());
         // We do not encode location because we rebuild lvars from IRScope when being rebuilt
     }
 
     public static LocalVariable decode(IRReaderDecoder d) {
-        return d.getCurrentScope().getLocalVariable(d.decodeByteList(), d.decodeInt());
+        return d.getCurrentScope().getLocalVariable(d.decodeSymbol(), d.decodeInt());
     }
 
     @Override

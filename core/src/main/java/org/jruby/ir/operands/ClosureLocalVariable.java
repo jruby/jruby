@@ -1,10 +1,9 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.IRClosure;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
-import org.jruby.util.ByteList;
 
 /**
  * This represents a non-temporary variable used in a closure
@@ -19,7 +18,7 @@ public class ClosureLocalVariable extends LocalVariable {
     // Can only transition in one direction (from true to false)
     private boolean definedLocally;
 
-    public ClosureLocalVariable(ByteList name, int scopeDepth, int location) {
+    public ClosureLocalVariable(RubySymbol name, int scopeDepth, int location) {
         super(name, scopeDepth, location);
         this.definedLocally = true;
     }

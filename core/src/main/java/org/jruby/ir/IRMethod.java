@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.DefNode;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
@@ -59,13 +60,13 @@ public class IRMethod extends IRScope {
     }
 
     @Override
-    protected LocalVariable findExistingLocalVariable(ByteList name, int scopeDepth) {
+    protected LocalVariable findExistingLocalVariable(RubySymbol name, int scopeDepth) {
         assert scopeDepth == 0: "Local variable depth in IRMethod should always be zero (" + name + " had depth of " + scopeDepth + ")";
         return localVars.get(name);
     }
 
     @Override
-    public LocalVariable getLocalVariable(ByteList name, int scopeDepth) {
+    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
         return lvar;

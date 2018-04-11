@@ -147,7 +147,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                 if (result == null) {
                     if (context.runtime.isVerbose()) {
                         context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED,
-                                str(context.runtime, "instance variable ", ids(context.runtime, gfi.getRef()), " not initialized"));
+                                str(context.runtime, "instance variable ", ids(context.runtime, gfi.getId()), " not initialized"));
                     }
                     result = context.nil;
                 }

@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
@@ -13,50 +14,49 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 public class SetCapturedVarInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    private final ByteList varName;
+    private final RubySymbol variableName;
 
-    public SetCapturedVarInstr(Variable result, Operand match2Result, ByteList varName) {
+    public SetCapturedVarInstr(Variable result, Operand match2Result, RubySymbol variableName) {
         super(Operation.SET_CAPTURED_VAR, result, match2Result);
 
         assert result != null: "SetCapturedVarInstr result is null";
 
-        this.varName = varName;
+        this.variableName = variableName;
     }
 
     public Operand getMatch2Result() {
         return getOperand1();
     }
 
-    public String getVarName() {
-        return varName.toString();
+    public String getId() {
+        return variableName.idString();
     }
 
-    public ByteList getVarByteName() {
-        return varName;
+    public RubySymbol getName() {
+        return variableName;
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + varName };
+        return new String[] { "name: " + getName() };
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new SetCapturedVarInstr(ii.getRenamedVariable(result), getMatch2Result().cloneForInlining(ii), varName);
+        return new SetCapturedVarInstr(ii.getRenamedVariable(result), getMatch2Result().cloneForInlining(ii), getName());
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getMatch2Result());
-        e.encode(getVarName());
+        e.encode(getId());
     }
 
     public static SetCapturedVarInstr decode(IRReaderDecoder d) {
-        return new SetCapturedVarInstr(d.decodeVariable(), d.decodeOperand(), d.decodeByteList());
+        return new SetCapturedVarInstr(d.decodeVariable(), d.decodeOperand(), d.decodeSymbol());
     }
 
     @Interp
@@ -64,7 +64,7 @@ public class SetCapturedVarInstr extends OneOperandResultBaseInstr implements Fi
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject matchRes = (IRubyObject) getMatch2Result().retrieve(context, self, currScope, currDynScope, temp);
         // FIXME: Add ByteList helper
-        return IRRuntimeHelpers.setCapturedVar(context, matchRes, varName.toString());
+        return IRRuntimeHelpers.setCapturedVar(context, matchRes, getId());
     }
 
     @Override

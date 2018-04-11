@@ -155,7 +155,7 @@ public class InlineCloneInfo extends CloneInfo {
             if (v instanceof LocalVariable) {
                 LocalVariable lv = (LocalVariable) v;
                 int depth = lv.getScopeDepth();
-                return getHostScope().getLocalVariable(lv.getByteName(), depth > 1 ? depth - 1 : 0);
+                return getHostScope().getLocalVariable(lv.getName(), depth > 1 ? depth - 1 : 0);
             }
 
             return getHostScope().createTemporaryVariable();

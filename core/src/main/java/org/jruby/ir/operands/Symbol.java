@@ -10,16 +10,17 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
 public class Symbol extends ImmutableLiteral implements Stringable {
-    public static final Symbol KW_REST_ARG_DUMMY = new Symbol(new ByteList());
+    public static final Symbol KW_REST_ARG_DUMMY = new Symbol(null);
 
-    private final ByteList bytes;
+    private final RubySymbol symbol;
 
-    public Symbol(ByteList bytes) {
-        this.bytes = bytes;
+    public Symbol(RubySymbol symbol) {
+        this.symbol = symbol;
     }
 
     public boolean equals(Object other) {
-        return other instanceof Symbol && bytes.equals(((Symbol) other).bytes);
+        return other instanceof Symbol &&
+                (this == KW_REST_ARG_DUMMY && other == KW_REST_ARG_DUMMY || symbol.equals(((Symbol) other).symbol));
     }
 
     @Override
@@ -28,14 +29,18 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     }
 
     public ByteList getBytes() {
-        return bytes;
+        return symbol.getBytes();
     }
 
-    public String getString() { return RubyString.byteListToString(bytes); }
+    public RubySymbol getSymbol() {
+        return symbol;
+    }
+
+    public String getString() { return symbol.idString(); }
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return RubySymbol.newSymbol(context.runtime, bytes);
+        return symbol;
     }
 
     @Override
@@ -44,7 +49,7 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     }
 
     public Encoding getEncoding() {
-        return bytes.getEncoding();
+        return symbol.getEncoding();
     }
 
     @Override
@@ -60,7 +65,7 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     }
 
     public static Symbol decode(IRReaderDecoder d) {
-        return new Symbol(d.decodeByteList());
+        return new Symbol(d.decodeSymbol());
     }
 
     @Override

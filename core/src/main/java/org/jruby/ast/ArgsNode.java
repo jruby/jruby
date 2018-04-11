@@ -58,7 +58,7 @@ public class ArgsNode extends Node {
     private short postIndex;
     private short keywordsIndex;
 
-    protected final ArgumentNode restArgNode;
+    protected final RestArgNode restArgNode;
     private final KeywordRestArgNode keyRest;
     private final BlockArgNode blockArgNode;
 
@@ -192,7 +192,7 @@ public class ArgsNode extends Node {
      * Gets the restArgNode.
      * @return Returns an ArgumentNode
      */
-    public ArgumentNode getRestArgNode() {
+    public RestArgNode getRestArgNode() {
         return restArgNode;
     }
 
