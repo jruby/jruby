@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -10,16 +11,15 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 public class PutConstInstr extends PutInstr implements FixedArityInstr {
-    public PutConstInstr(Operand scopeOrObj, ByteList constName, Operand val) {
-        super(Operation.PUT_CONST, scopeOrObj, constName, val);
+    public PutConstInstr(Operand scopeOrObj, RubySymbol constantName, Operand val) {
+        super(Operation.PUT_CONST, scopeOrObj, constantName, val);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new PutConstInstr(getTarget().cloneForInlining(ii), ref, getValue().cloneForInlining(ii));
+        return new PutConstInstr(getTarget().cloneForInlining(ii), getName(), getValue().cloneForInlining(ii));
     }
 
     @Override
@@ -29,12 +29,12 @@ public class PutConstInstr extends PutInstr implements FixedArityInstr {
 
         assert module != null : "MODULE should always be something";
 
-        module.setConstant(getRef(), value);
+        module.setConstant(getId(), value);
         return null;
     }
 
     public static PutConstInstr decode(IRReaderDecoder d) {
-        return new PutConstInstr(d.decodeOperand(), d.decodeByteList(), d.decodeOperand());
+        return new PutConstInstr(d.decodeOperand(), d.decodeSymbol(), d.decodeOperand());
     }
 
     @Override

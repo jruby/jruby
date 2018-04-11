@@ -1,26 +1,26 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRWriterEncoder;
-import org.jruby.util.ByteList;
 
 // Represents target.ref = value or target = value where target is not a stack variable
 public abstract class PutInstr extends TwoOperandInstr implements FixedArityInstr {
-    protected ByteList ref;
+    protected RubySymbol name;
 
-    public PutInstr(Operation op, Operand target, ByteList ref, Operand value) {
+    public PutInstr(Operation op, Operand target, RubySymbol name, Operand value) {
         super(op, target, value);
 
-        this.ref = ref;
+        this.name = name;
     }
 
-    public String getRef() {
-        return ref.toString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteRef() {
-        return ref;
+    public RubySymbol getName() {
+        return name;
     }
 
     public Operand getTarget() {
@@ -35,12 +35,12 @@ public abstract class PutInstr extends TwoOperandInstr implements FixedArityInst
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getTarget());
-        e.encode(getByteRef());
+        e.encode(getName());
         e.encode(getValue());
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"name: " + ref};
+        return new String[] {"name: " + name};
     }
 }

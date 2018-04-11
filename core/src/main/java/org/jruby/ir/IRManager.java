@@ -79,6 +79,10 @@ public class IRManager {
         if (RubyInstanceConfig.IR_DEBUG_IGV != null) instrsListener = new IGVInstrListener();
     }
 
+    public Ruby getRuntime() {
+        return runtime;
+    }
+
     public boolean isDryRun() {
         return dryRun;
     }

@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyClass;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -11,18 +12,17 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
-import org.jruby.util.ByteList;
 
 public class PutFieldInstr extends PutInstr implements FixedArityInstr {
     private transient VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
-    public PutFieldInstr(Operand obj, ByteList fieldName, Operand value) {
+    public PutFieldInstr(Operand obj, RubySymbol fieldName, Operand value) {
         super(Operation.PUT_FIELD, obj, fieldName, value);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new PutFieldInstr(getTarget().cloneForInlining(ii), ref, getValue().cloneForInlining(ii));
+        return new PutFieldInstr(getTarget().cloneForInlining(ii), getName(), getValue().cloneForInlining(ii));
     }
 
     public VariableAccessor getAccessor(IRubyObject o) {
@@ -30,7 +30,7 @@ public class PutFieldInstr extends PutInstr implements FixedArityInstr {
         VariableAccessor localAccessor = accessor;
 
         if (localAccessor.getClassId() != cls.hashCode()) {
-            localAccessor = cls.getVariableAccessorForWrite(getRef());
+            localAccessor = cls.getVariableAccessorForWrite(getId());
             accessor = localAccessor;
         }
         return localAccessor;
@@ -48,7 +48,7 @@ public class PutFieldInstr extends PutInstr implements FixedArityInstr {
     }
 
     public static PutFieldInstr decode(IRReaderDecoder d) {
-        return new PutFieldInstr(d.decodeOperand(), d.decodeByteList(), d.decodeOperand());
+        return new PutFieldInstr(d.decodeOperand(), d.decodeSymbol(), d.decodeOperand());
     }
 
     @Override

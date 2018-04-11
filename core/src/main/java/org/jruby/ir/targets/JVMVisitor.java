@@ -1759,7 +1759,7 @@ public class JVMVisitor extends IRVisitor {
         // hmm.
         jvmAdapter().checkcast(p(RubyModule.class));
         jvmAdapter().swap();
-        jvmAdapter().ldc(putclassvariableinstr.getRef());
+        jvmAdapter().ldc(putclassvariableinstr.getId());
         jvmAdapter().swap();
         jvmAdapter().invokevirtual(p(RubyModule.class), "setClassVar", sig(IRubyObject.class, String.class, IRubyObject.class));
         jvmAdapter().pop();
@@ -1770,7 +1770,7 @@ public class JVMVisitor extends IRVisitor {
         IRBytecodeAdapter m = jvmMethod();
         visit(putconstinstr.getTarget());
         m.adapter.checkcast(p(RubyModule.class));
-        m.adapter.ldc(putconstinstr.getRef());
+        m.adapter.ldc(putconstinstr.getId());
         visit(putconstinstr.getValue());
         m.adapter.invokevirtual(p(RubyModule.class), "setConstant", sig(IRubyObject.class, String.class, IRubyObject.class));
         m.adapter.pop();
@@ -1780,7 +1780,7 @@ public class JVMVisitor extends IRVisitor {
     public void PutFieldInstr(PutFieldInstr putfieldinstr) {
         visit(putfieldinstr.getTarget());
         visit(putfieldinstr.getValue());
-        jvmMethod().putField(putfieldinstr.getRef());
+        jvmMethod().putField(putfieldinstr.getId());
     }
 
     @Override

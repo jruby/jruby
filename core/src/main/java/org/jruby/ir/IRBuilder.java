@@ -2,6 +2,7 @@ package org.jruby.ir;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
@@ -684,7 +685,7 @@ public class IRBuilder {
                 buildAttrAssignAssignment(node, rhsVal);
                 break;
             case CLASSVARASGNNODE:
-                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getByteName(), rhsVal));
+                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getSymbolName(), rhsVal));
                 break;
             case CONSTDECLNODE:
                 buildConstDeclAssignment((ConstDeclNode) node, rhsVal);
@@ -700,7 +701,7 @@ public class IRBuilder {
                 break;
             case INSTASGNNODE:
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getByteName(), rhsVal));
+                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getSymbolName(), rhsVal));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -778,7 +779,7 @@ public class IRBuilder {
             case CLASSVARASGNNODE:
                 v = createTemporaryVariable();
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
-                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getByteName(), v));
+                addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getSymbolName(), v));
                 break;
             case CONSTDECLNODE:
                 v = createTemporaryVariable();
@@ -794,7 +795,7 @@ public class IRBuilder {
                 v = createTemporaryVariable();
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getByteName(), v));
+                addInstr(new PutFieldInstr(buildSelf(), ((InstAsgnNode)node).getSymbolName(), v));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -1413,7 +1414,7 @@ public class IRBuilder {
     // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode) {
         Operand val = build(classVarAsgnNode.getValueNode());
-        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getByteName(), val));
+        addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), classVarAsgnNode.getSymbolName(), val));
         return val;
     }
 
@@ -1473,7 +1474,7 @@ public class IRBuilder {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            return putConstant(constDeclNode.getByteName(), value);
+            return putConstant(constDeclNode.getSymbolName(), value);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             return putConstant((Colon2Node) constNode, value);
         } else { // colon3, assign in Object
@@ -1481,20 +1482,20 @@ public class IRBuilder {
         }
     }
 
-    private Operand putConstant(ByteList name, Operand value) {
+    private Operand putConstant(RubySymbol name, Operand value) {
         addInstr(new PutConstInstr(findContainerModule(), name, value));
 
         return value;
     }
 
     private Operand putConstant(Colon3Node node, Operand value) {
-        addInstr(new PutConstInstr(new ObjectClass(), node.getByteName(), value));
+        addInstr(new PutConstInstr(new ObjectClass(), node.getSymbolName(), value));
 
         return value;
     }
 
     private Operand putConstant(Colon2Node node, Operand value) {
-        addInstr(new PutConstInstr(build(node.getLeftNode()), node.getByteName(), value));
+        addInstr(new PutConstInstr(build(node.getLeftNode()), node.getSymbolName(), value));
 
         return value;
     }
@@ -2999,7 +3000,7 @@ public class IRBuilder {
     public Operand buildInstAsgn(final InstAsgnNode instAsgnNode) {
         Operand val = build(instAsgnNode.getValueNode());
         // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-        addInstr(new PutFieldInstr(buildSelf(), instAsgnNode.getByteName(), val));
+        addInstr(new PutFieldInstr(buildSelf(), instAsgnNode.getSymbolName(), val));
         return val;
     }
 
@@ -3285,7 +3286,7 @@ public class IRBuilder {
             addInstr(BNEInstr.create(done, result, UndefinedValue.UNDEFINED));
             Operand rhsValue = build(node.getSecondNode());
             copy(result, rhsValue);
-            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getByteName(), rhsValue));
+            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getSymbolName(), rhsValue));
             addInstr(new LabelInstr(done));
             return result;
         } else if (node.isAnd()) {
@@ -3295,7 +3296,7 @@ public class IRBuilder {
             addInstr(new BFalseInstr(done, result));
             Operand rhsValue = build(node.getSecondNode());
             copy(result, rhsValue);
-            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getByteName(), rhsValue));
+            addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getSymbolName(), rhsValue));
             addInstr(new LabelInstr(done));
             return result;
         }
