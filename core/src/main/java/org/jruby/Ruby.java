@@ -2872,6 +2872,18 @@ public final class Ruby implements Constantizable {
         }
     }
 
+    public void printError(Throwable t) {
+        if (t instanceof RaiseException) {
+            printError(((RaiseException) t).getException());
+        }
+        PrintStream errorStream = getErrorStream();
+        try {
+            t.printStackTrace(errorStream);
+        } catch (Exception e) {
+            t.printStackTrace(System.err);
+        }
+    }
+
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
         ThreadContext context = getCurrentContext();

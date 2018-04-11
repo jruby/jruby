@@ -133,7 +133,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * it here to continue propagating it while handling thread shutdown
      * logic and abort_on_exception.
      */
-    private volatile RaiseException exitingException;
+    private volatile Throwable exitingException;
 
     /** The ThreadGroup to which this thread belongs */
     private volatile RubyThreadGroup threadGroup;
@@ -1072,10 +1072,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         if (exitingException != null) {
-            // Set $! in the current thread before exiting
-            runtime.getGlobalVariables().set("$!", (IRubyObject)exitingException.getException());
-            throw exitingException;
-
+            if (exitingException instanceof RaiseException) {
+                RaiseException raiseException = (RaiseException) exitingException;
+                // Set $! in the current thread before exiting
+                runtime.getGlobalVariables().set("$!", (IRubyObject) raiseException.getException());
+            } else {
+                runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exitingException));
+            }
+            Helpers.throwException(exitingException);
         }
 
         // check events before leaving
@@ -1626,44 +1630,36 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void exceptionRaised(RaiseException exception) {
-        assert isCurrent();
-
-        RubyException rubyException = exception.getException();
-        Ruby runtime = rubyException.getRuntime();
-        if (runtime.getSystemExit().isInstance(rubyException)) {
-            runtime.getThreadService().getMainThread().raise(rubyException);
-        }
-        else if (abortOnException(runtime)) {
-            runtime.getThreadService().getMainThread().raise(rubyException);
-            return;
-        }
-        else if (runtime.isDebug()) {
-            runtime.printError(exception.getException());
-        }
-        exitingException = exception;
+        exceptionRaised((Throwable) exception);
     }
 
     /**
-     * For handling all non-Ruby exceptions bubbling out of threads
-     * @param exception
+     * For handling all exceptions bubbling out of threads
+     * @param throwable
      */
-    @SuppressWarnings("deprecation")
-    public void exceptionRaised(Throwable exception) {
-        if (exception instanceof RaiseException) {
-            exceptionRaised((RaiseException)exception);
-            return;
-        }
+    public void exceptionRaised(Throwable throwable) {
+        Ruby runtime = getRuntime();
 
         assert isCurrent();
 
-        Ruby runtime = getRuntime();
-        if (abortOnException(runtime) && exception instanceof Error) {
-            // re-propagate on main thread
-            runtime.getThreadService().getMainThread().raise(JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
+        IRubyObject rubyException;
+
+        if (throwable instanceof RaiseException) {
+            RaiseException exception = (RaiseException) throwable;
+            rubyException = exception.getException();
         } else {
-            // just rethrow on this thread, let system handlers report it
-            Helpers.throwException(exception);
+            rubyException = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
         }
+
+        if (runtime.getSystemExit().isInstance(rubyException)) {
+            runtime.getThreadService().getMainThread().raise(rubyException);
+        } else if (abortOnException(runtime)) {
+            runtime.getThreadService().getMainThread().raise(rubyException);
+        } else if (runtime.isDebug()) {
+            runtime.printError(throwable);
+        }
+
+        exitingException = throwable;
     }
 
     private boolean abortOnException(Ruby runtime) {
