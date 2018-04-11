@@ -251,7 +251,7 @@ public class RubyZlib {
         return recv.getRuntime().newFixnum(result);
     }
 
-    @JRubyMethod
+    @JRubyMethod(module = true)
     public static IRubyObject inflate(ThreadContext context, IRubyObject recv, IRubyObject string) {
         return JZlibInflate.s_inflate(context, recv, string);
     }
