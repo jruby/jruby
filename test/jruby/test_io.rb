@@ -580,4 +580,32 @@ class TestIO < Test::Unit::TestCase
     assert_equal 'ab', stringio.gets(nil, 2)
   end
 
+  # jruby/jruby#4796
+  def test_io_copy_stream_does_not_leak_io_like_objects
+    in_stream = Tempfile.new('4796')
+    in_stream.write('1234567890')
+    in_stream.rewind
+    
+    out_stream = Object.new
+    def out_stream.write(stuff)
+      stuff.length
+    end
+    def out_stream.read(*n)
+      nil
+    end
+
+    fu = JRuby.runtime.fileno_util
+
+    before = fu.number_of_wrappers
+
+    100.times do
+      IO.copy_stream(in_stream, out_stream)
+      IO.copy_stream(out_stream, in_stream)
+    end
+
+    after = fu.number_of_wrappers
+
+    assert_equal before, after, "no wrappers should have been registered"
+  end
+
 end

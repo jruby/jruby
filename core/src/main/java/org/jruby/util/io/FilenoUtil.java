@@ -84,6 +84,7 @@ public class FilenoUtil {
         filenoMap.remove(fileno);
     }
 
+    // Used by testing. See test/jruby/test_io.rb, test_io_copy_stream_does_not_leak_io_like_objects
     public int getNumberOfWrappers() {
         return filenoMap.size();
     }
