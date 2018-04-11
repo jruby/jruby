@@ -35,6 +35,7 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -100,15 +101,9 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyConstant
     public final static int SIGN_POSITIVE_INFINITE = 3;
     @JRubyConstant
-    public final static int EXCEPTION_OVERFLOW = 1; // Note: This is same as EXCEPTION_INFINITY in MRI now
-    @JRubyConstant
     public final static int SIGN_POSITIVE_ZERO = 1;
     @JRubyConstant
-    public final static int EXCEPTION_ALL = 255;
-    @JRubyConstant
     public final static int SIGN_NEGATIVE_FINITE = -2;
-    @JRubyConstant
-    public final static int EXCEPTION_UNDERFLOW = 4;
     @JRubyConstant
     public final static int SIGN_NaN = 0;
     @JRubyConstant
@@ -118,15 +113,22 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyConstant
     public final static int SIGN_POSITIVE_FINITE = 2;
     @JRubyConstant
-    public final static int EXCEPTION_INFINITY = 1;
-    @JRubyConstant
     public final static int SIGN_NEGATIVE_INFINITE = -3;
     @JRubyConstant
-    public final static int EXCEPTION_ZERODIVIDE = 1;
-    @JRubyConstant
     public final static int SIGN_NEGATIVE_ZERO = -1;
+
+    @JRubyConstant
+    public final static int EXCEPTION_INFINITY = 1;
+    @JRubyConstant
+    public final static int EXCEPTION_OVERFLOW = 1; // Note: This is same as EXCEPTION_INFINITY in MRI now
     @JRubyConstant
     public final static int EXCEPTION_NaN = 2;
+    @JRubyConstant
+    public final static int EXCEPTION_UNDERFLOW = 4;
+    @JRubyConstant
+    public final static int EXCEPTION_ZERODIVIDE = 16;
+    @JRubyConstant
+    public final static int EXCEPTION_ALL = 255;
 
     private static final ByteList VERSION = ByteList.create("1.3.4");
 
@@ -417,6 +419,14 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private static boolean isOverflowExceptionMode(Ruby runtime) {
         return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_OVERFLOW) != 0;
+    }
+
+    private static boolean isUnderflowExceptionMode(Ruby runtime) {
+        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_UNDERFLOW) != 0;
+    }
+
+    private static boolean isZeroDivideExceptionMode(Ruby runtime) {
+        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_ZERODIVIDE) != 0;
     }
 
     private static RubyBigDecimal cannotBeCoerced(ThreadContext context, IRubyObject value, boolean must) {
@@ -862,7 +872,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "*", required = 1)
     public IRubyObject op_mul(ThreadContext context, IRubyObject arg) {
-        return mult2(context, arg, vpPrecLimit(context.runtime));
+        RubyBigDecimal val = getVpValue19(context, arg, false);
+        if (val == null) return callCoerced(context, sites(context).op_times, arg, true);
+        return multImpl(context.runtime, val);
     }
 
     @Deprecated
@@ -872,14 +884,20 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "mult", required = 2)
     public IRubyObject mult2(ThreadContext context, IRubyObject b, IRubyObject n) {
+        final int mx = getPrecisionInt(context.runtime, n);
+        if (mx == 0) return op_mul(context, b);
+
         RubyBigDecimal val = getVpValue19(context, b, false);
         if (val == null) { // TODO: what about n arg?
             return callCoerced(context, sites(context).op_times, b, true);
         }
-        return multInternal(context.runtime, val, n);
+
+        RubyBigDecimal res = multImpl(context.runtime, val);
+        res.setResult(mx);
+        return res;
     }
 
-    private RubyBigDecimal multInternal(final Ruby runtime, RubyBigDecimal val, IRubyObject n) {
+    private RubyBigDecimal multImpl(final Ruby runtime, RubyBigDecimal val) {
         if ( isNaN() || val.isNaN() ) return newNaN(runtime);
 
         if ( isZero() || val.isZero() ) {
@@ -896,9 +914,32 @@ public class RubyBigDecimal extends RubyNumeric {
             return newInfinity(runtime, sign1 * sign2);
         }
 
-        final int digits = RubyNumeric.fix2int(n);
-        BigDecimal res = value.multiply(val.value);
-        return new RubyBigDecimal(runtime, res).setResult(digits);
+        int mx = value.precision() + val.value.precision();
+
+        MathContext mathContext = new MathContext(mx, getRoundingMode(runtime));
+        BigDecimal result;
+        try {
+            result = value.multiply(val.value, mathContext);
+        }
+        catch (ArithmeticException ex) {
+            return checkOverUnderFlow(runtime, ex);
+        }
+        return new RubyBigDecimal(runtime, result).setResult(0);
+    }
+
+    private static RubyBigDecimal checkOverUnderFlow(final Ruby runtime, final ArithmeticException ex) {
+        String message = ex.getMessage();
+        if (message == null) message = "";
+        message = message.toLowerCase(Locale.ENGLISH);
+        if (message.contains("underflow")) {
+            if (isUnderflowExceptionMode(runtime)) throw runtime.newFloatDomainError(message);
+            return newZero(runtime, 1);
+        }
+        if (message.contains("overflow")) {
+            if (isOverflowExceptionMode(runtime)) throw runtime.newFloatDomainError(message);
+            return newInfinity(runtime, 1); // TODO sign?
+        }
+        throw runtime.newFloatDomainError(message);
     }
 
     @Deprecated
@@ -1246,6 +1287,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if (val.isZero()) {
             if (isZero()) return newNaN(context.runtime);
+            if (isZeroDivideExceptionMode(context.runtime)) {
+                throw context.runtime.newFloatDomainError("Divide by zero");
+            }
             int sign1 = isInfinity() ? infinitySign : value.signum();
             return newInfinity(context.runtime, sign1 * val.zeroSign);
         }
@@ -1695,19 +1739,41 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod
-    public IRubyObject to_f() {
-        if (isNaN()) return RubyFloat.newFloat(getRuntime(), Double.NaN);
-        if (isInfinity()) return RubyFloat.newFloat(getRuntime(), infinitySign < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
-        if (isZero()) return RubyFloat.newFloat(getRuntime(), zeroSign < 0 ? -0.0 : 0.0);
-        if (-value.scale() <= RubyFloat.MAX_10_EXP) return RubyFloat.newFloat(getRuntime(), SafeDoubleParser.doubleValue(value));
+    public IRubyObject to_f() { return toFloat(getRuntime(), true); }
 
-        switch (value.signum()) {
-            case -1: return RubyFloat.newFloat(getRuntime(), Double.NEGATIVE_INFINITY);
-            case 0: return RubyFloat.newFloat(getRuntime(), 0);
-            case 1: return RubyFloat.newFloat(getRuntime(), Double.POSITIVE_INFINITY);
+    private RubyFloat toFloat(final Ruby runtime, final boolean checkFlow) {
+        if (isNaN()) return RubyFloat.newFloat(runtime, Double.NaN);
+        if (isInfinity()) return RubyFloat.newFloat(runtime, infinitySign < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
+        if (isZero()) return RubyFloat.newFloat(runtime, zeroSign < 0 ? -0.0 : 0.0);
+
+        if (-value.scale() <= RubyFloat.MAX_10_EXP) {
+            return RubyFloat.newFloat(runtime, SafeDoubleParser.doubleValue(value));
         }
 
-        throw getRuntime().newArgumentError("signum of this rational is invalid: " + value.signum());
+        switch (value.signum()) {
+            case -1:
+                if (checkFlow && isOverflowExceptionMode(runtime)) {
+                    throw runtime.newFloatDomainError("BigDecimal to Float conversion");
+                }
+                return RubyFloat.newFloat(getRuntime(), Double.NEGATIVE_INFINITY);
+            case 0:
+                if (checkFlow && isUnderflowExceptionMode(runtime)) {
+                    throw runtime.newFloatDomainError("BigDecimal to Float conversion");
+                }
+                return RubyFloat.newFloat(getRuntime(), 0);
+            case 1:
+                if (checkFlow && isOverflowExceptionMode(runtime)) {
+                    throw runtime.newFloatDomainError("BigDecimal to Float conversion");
+                }
+                return RubyFloat.newFloat(getRuntime(), Double.POSITIVE_INFINITY);
+            default :
+                throw new AssertionError("invalid signum: " + value.signum() + " for BigDecimal " + this);
+        }
+    }
+
+    @Override
+    public RubyFloat convertToFloat() {
+        return toFloat(getRuntime(), false);
     }
 
     public final IRubyObject to_int() {
@@ -1729,6 +1795,11 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
+    @Override
+    public RubyInteger convertToInteger() {
+        return to_int(getRuntime());
+    }
+
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         checkFloatDomain();
@@ -1737,7 +1808,7 @@ public class RubyBigDecimal extends RubyNumeric {
         BigInteger numerator = value.scaleByPowerOfTen(scale).toBigInteger();
         BigInteger denominator = BigInteger.TEN.pow(scale);
 
-        return RubyRational.newInstance(context, context.runtime.getRational(), RubyBignum.newBignum(context.runtime, numerator), RubyBignum.newBignum(context.runtime, denominator));
+        return RubyRational.newInstance(context, RubyBignum.newBignum(context.runtime, numerator), RubyBignum.newBignum(context.runtime, denominator));
     }
 
     @Deprecated // not-used
