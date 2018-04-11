@@ -158,8 +158,9 @@ public class RubyBigDecimal extends RubyNumeric {
         bigDecimal.defineAnnotatedMethods(RubyBigDecimal.class);
         bigDecimal.defineAnnotatedConstants(RubyBigDecimal.class);
 
-        RubyModule bigMath = runtime.defineModule("BigMath");
-        // TODO: BigMath.exp and BigMath.pow in native code
+        //RubyModule bigMath = runtime.defineModule("BigMath");
+        // NOTE: BigMath.exp and BigMath.pow should be implemented as native
+        // for now @see jruby/bigdecimal.rb
 
         bigDecimal.defineConstant("NAN", newNaN(runtime));
         bigDecimal.defineConstant("INFINITY", newInfinity(runtime, 1));
