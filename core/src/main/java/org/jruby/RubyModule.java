@@ -167,9 +167,8 @@ public class RubyModule extends RubyObject {
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule) throws RaiseException {
         // Module methods can always be transplanted
-        if (originModule.isModule()) return;
-
-        if (!this.hasModuleInHierarchy(originModule)) {
+        if (!originModule.isModule() &&
+                !this.hasModuleInHierarchy(originModule)) {
             if (originModule instanceof MetaClass) {
                 throw context.runtime.newTypeError("can't bind singleton method to a different class");
             } else {
@@ -2038,7 +2037,7 @@ public class RubyModule extends RubyObject {
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
 
-            checkValidBindTargetFrom(context, (RubyModule)method.owner(context));
+            checkValidBindTargetFrom(context, (RubyModule) method.owner(context));
 
             newMethod = method.getMethod().dup();
             newMethod.setImplementationClass(this);

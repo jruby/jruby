@@ -4206,7 +4206,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         RubyIO io1 = null;
         RubyIO io2 = null;
 
-        RubyString read = null;
+        Channel channel1 = null;
+        Channel channel2 = null;
 
         if (args.length >= 3) {
             length = args[2].convertToInteger();
@@ -4217,106 +4218,130 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         IOSites sites = sites(context);
 
-        boolean close1 = false;
-        boolean close2 = false;
+        // whether we were given an IO or had to produce a channel locally in some other way
+        boolean userProvidedReadIO = false;
+
+        // whether we constructed, and should close, the indicated IO
+        boolean local1 = false;
+        boolean local2 = false;
+
         try {
             if (arg1 instanceof RubyString) {
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{arg1}, Block.NULL_BLOCK);
-                close1 = true;
+                local1 = true;
             } else if (arg1 instanceof RubyIO) {
                 io1 = (RubyIO) arg1;
+                userProvidedReadIO = true;
             } else if (sites.to_path_checked1.respond_to_X.respondsTo(context, arg1, arg1)) {
                 RubyString path = (RubyString) TypeConverter.convertToType(context, arg1, runtime.getString(), sites.to_path_checked1);
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path}, Block.NULL_BLOCK);
-                close1 = true;
+                local1 = true;
             } else if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
-                io1 = newIO(runtime, new IOChannel.IOReadableByteChannel(arg1));
-                io1.setAutoclose(false);
+                channel1 = new IOChannel.IOReadableByteChannel(arg1);
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
             }
 
+            // for instance IO, just use its channel
+            if (io1 instanceof RubyIO) {
+                io1.openFile.checkReadable(context);
+                channel1 = io1.getChannel();
+            }
+
             if (arg2 instanceof RubyString) {
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{arg2, runtime.newString("w")}, Block.NULL_BLOCK);
-                close2 = true;
+                local2 = true;
             } else if (arg2 instanceof RubyIO) {
                 io2 = (RubyIO) arg2;
             } else if (sites.to_path_checked2.respond_to_X.respondsTo(context, arg2, arg2)) {
                 RubyString path = (RubyString) TypeConverter.convertToType(context, arg2, runtime.getString(), sites.to_path_checked2);
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newString("w")}, Block.NULL_BLOCK);
-                close2 = true;
+                local2 = true;
             } else if (sites.respond_to_write.respondsTo(context, arg2, arg2, true)) {
-                io2 = newIO(runtime, new IOChannel.IOWritableByteChannel(arg2));
-                io2.setAutoclose(false);
+                channel2 = new IOChannel.IOWritableByteChannel(arg2);
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
             }
 
-            if (io1 == null) {
-                IRubyObject size = io2.write(context, read);
+            // for instanceof IO, just use its write channel
+            if (io2 instanceof RubyIO) {
+                io2 = io2.GetWriteIO();
+                io2.openFile.checkWritable(context);
                 io2.flush(context);
-                return size;
+                channel2 = io2.getChannel();
             }
 
-            io2 = io2.GetWriteIO();
+            if (!(channel1 instanceof ReadableByteChannel)) throw runtime.newIOError("from IO is not readable");
+            if (!(channel2 instanceof WritableByteChannel)) throw runtime.newIOError("to IO is not writable");
 
-            if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
-            if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
+            boolean locked = false;
+            OpenFile fptr1 = null;
 
-            io2.flush(context);
+            // attempt to preserve position of original and lock user IO for duration of copy
+            if (userProvidedReadIO) {
+                fptr1 = io1.getOpenFileChecked();
 
-            // attempt to preserve position of original
-            OpenFile fptr = io1.getOpenFileChecked();
+                locked = fptr1.lock();
+            }
 
-            boolean locked = fptr.lock();
             try {
-                long pos = fptr.tell(context);
+                long pos = 0;
                 long size = 0;
 
+                if (userProvidedReadIO) {
+                    pos = fptr1.tell(context);
+                }
+
                 try {
-                    if (io1.openFile.fileChannel() == null) {
-                        long remaining = length == null ? -1 : length.getLongValue();
-                        long position = offset == null ? -1 : offset.getLongValue();
-                        if (io2.openFile.fileChannel() == null) {
-                            ReadableByteChannel from = io1.openFile.readChannel();
-                            WritableByteChannel to = io2.openFile.writeChannel();
-
-                            size = transfer(context, from, to, remaining, position);
-                        } else {
-                            ReadableByteChannel from = io1.openFile.readChannel();
-                            FileChannel to = io2.openFile.fileChannel();
-
-                            size = transfer(context, from, to, remaining, position);
-                        }
-                    } else {
-                        FileChannel from = io1.openFile.fileChannel();
-                        WritableByteChannel to = io2.openFile.writeChannel();
+                    if ((channel1 instanceof FileChannel)) {
+                        FileChannel from = (FileChannel) channel1;
+                        WritableByteChannel to = (WritableByteChannel) channel2;
                         long remaining = length == null ? from.size() : length.getLongValue();
                         long position = offset == null ? from.position() : offset.getLongValue();
 
                         size = transfer(from, to, remaining, position);
+                    } else {
+                        long remaining = length == null ? -1 : length.getLongValue();
+                        long position = offset == null ? -1 : offset.getLongValue();
+                        if ((channel2 instanceof FileChannel)) {
+                            ReadableByteChannel from = (ReadableByteChannel) channel1;
+                            FileChannel to = (FileChannel) channel2;
+
+                            size = transfer(context, from, to, remaining, position);
+                        } else {
+                            ReadableByteChannel from = (ReadableByteChannel) channel1;
+                            WritableByteChannel to = (WritableByteChannel) channel2;
+
+                            size = transfer(context, from, to, remaining, position);
+                        }
                     }
 
                     return context.runtime.newFixnum(size);
                 } catch (IOException ioe) {
+                    ioe.printStackTrace();
                     throw runtime.newIOErrorFromException(ioe);
                 } finally {
-                    if (offset != null) {
-                        fptr.seek(context, pos, PosixShim.SEEK_SET);
-                    } else {
-                        fptr.seek(context, pos + size, PosixShim.SEEK_SET);
+                    if (userProvidedReadIO) {
+                        if (offset != null) {
+                            fptr1.seek(context, pos, PosixShim.SEEK_SET);
+                        } else {
+                            fptr1.seek(context, pos + size, PosixShim.SEEK_SET);
+                        }
                     }
                 }
             } finally {
-                if (locked) fptr.unlock();
+                if (userProvidedReadIO && locked) fptr1.unlock();
             }
         } finally {
-            if (close1 && io1 != null) {
+
+            // Clean up locally-created IO objects
+            if (local1) {
                 try {io1.close();} catch (Exception e) {}
             }
-            if (close2 && io2 != null) {
+            if (local2) {
                 try {io2.close();} catch (Exception e) {}
             }
+
         }
     }
 

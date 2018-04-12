@@ -373,34 +373,7 @@ public class RubyTime extends RubyObject {
     private static final ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            DateTimeZone dtz = getLocalTimeZone(runtime);
-            long msecs;
-            long nsecs;
-            POSIX posix = runtime.getPosix();
-            if (posix.isNative()) {
-                // FIXME: we should have a pure Java fallback in jnr-posix and Windows is missing gettimeofday impl
-                try {
-                    Timeval tv = posix.allocateTimeval();
-                    posix.gettimeofday(tv);
-
-                    long secs = tv.sec();
-                    long usecs = tv.usec();
-
-                    msecs = secs * 1000 + (usecs / 1000);
-                    nsecs = usecs % 1000 * 1000;
-                } catch (RaiseException notImplementedError) {
-                    msecs = System.currentTimeMillis();
-                    nsecs = 0;
-                }
-            } else {
-                msecs = System.currentTimeMillis();
-                nsecs = 0;
-            }
-            DateTime dt = new DateTime(msecs, dtz);
-            RubyTime rt =  new RubyTime(runtime, klass, dt);
-            rt.setNSec(nsecs);
-
-            return rt;
+            return new RubyTime(runtime, klass);
         }
     };
 
@@ -1109,11 +1082,6 @@ public class RubyTime extends RubyObject {
         return string;
     }
 
-    @JRubyMethod(visibility = PRIVATE)
-    public IRubyObject initialize(Block block) {
-        return this;
-    }
-
     @JRubyMethod(optional = 1)
     public RubyTime round(ThreadContext context, IRubyObject[] args) {
         int ndigits = args.length == 0 ? 0 : RubyNumeric.num2int(args[0]);
@@ -1153,9 +1121,6 @@ public class RubyTime extends RubyObject {
         return newInstance(context, recv);
     }
 
-    /**
-     * @see #newInstance(ThreadContext, IRubyObject, IRubyObject[])
-     */
     @JRubyMethod(name = "now", meta = true)
     public static RubyTime newInstance(ThreadContext context, IRubyObject recv) {
         RubyTime obj = (RubyTime) ((RubyClass) recv).allocate();
@@ -1223,8 +1188,6 @@ public class RubyTime extends RubyObject {
 
             time.setNSec(nanosecs);
         }
-
-        time.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, time);
 
         return time;
     }
@@ -1299,60 +1262,76 @@ public class RubyTime extends RubyObject {
         time.setNSec(nanosecs % 1000000);
         time.dt = time.dt.withMillis(millisecs + nanosecOverflow);
 
-        time.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, time);
-
         return time;
     }
 
     @JRubyMethod(name = {"local", "mktime"}, required = 1, optional = 9, meta = true)
     public static RubyTime local(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return createTime(context, (RubyClass) recv, args, false, false);
+        return ((RubyTime) ((RubyClass) recv).allocate()).initTime(context, args, false, false);
     }
 
-    @Deprecated
-    public static RubyTime new_local(IRubyObject recv, IRubyObject[] args) {
-        return createTime(recv.getRuntime().getCurrentContext(), (RubyClass) recv, args, false, false);
-    }
+    @JRubyMethod(name = "initialize", optional = 7, visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
 
-    @JRubyMethod(name = "new", optional = 7, meta = true)
-    public static RubyTime newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length == 0) return newInstance(context, recv);
+        if (args.length == 0) {
+            DateTimeZone dtz = getLocalTimeZone(runtime);
+            long msecs;
+            long nsecs;
+            POSIX posix = runtime.getPosix();
+            if (posix.isNative()) {
+                // FIXME: we should have a pure Java fallback in jnr-posix and Windows is missing gettimeofday impl
+                try {
+                    Timeval tv = posix.allocateTimeval();
+                    posix.gettimeofday(tv);
+
+                    long secs = tv.sec();
+                    long usecs = tv.usec();
+
+                    msecs = secs * 1000 + (usecs / 1000);
+                    nsecs = usecs % 1000 * 1000;
+                } catch (RaiseException notImplementedError) {
+                    msecs = System.currentTimeMillis();
+                    nsecs = 0;
+                }
+            } else {
+                msecs = System.currentTimeMillis();
+                nsecs = 0;
+            }
+            DateTime dt = new DateTime(msecs, dtz);
+            this.dt = dt;
+            this.setNSec(nsecs);
+
+            return context.nil;
+        }
 
         if (args.length == 7) {
-            Ruby runtime = context.runtime;
-
             // 7th argument can be the symbol :dst instead of an offset, so needs to be special cased
-            boolean dst = (args[6] instanceof RubySymbol) && ((RubySymbol) args[6]).asJavaString().equals("dst");
+            final RubySymbol dstSymbol = RubySymbol.newSymbol(runtime, "dst");
+            boolean receivedDstSymbolAsArgument = (args[6].op_equal(context, dstSymbol)).isTrue();
+
+            final RubyBoolean isDst = RubyBoolean.newBoolean(runtime, receivedDstSymbolAsArgument);
 
             // Convert the 7-argument form of Time.new into the 10-argument form of Time.local:
-            args = new IRubyObject[] {
+            args = new IRubyObject[]{
                     args[5],          // seconds
                     args[4],          // minutes
                     args[3],          // hours
                     args[2],          // day
                     args[1],          // month
                     args[0],          // year
-                    context.nil,      // weekday
-                    context.nil,      // day of year
-                    RubyBoolean.newBoolean(runtime, dst), // is DST?
-                    args[6] };        // UTC offset
+                    context.nil, // weekday
+                    context.nil, // day of year
+                    isDst,            // is DST?
+                    args[6]};         // UTC offset
         }
-        return createTime(context, (RubyClass) recv, args, false, true);
-    }
 
-    @Deprecated
-    public static IRubyObject new19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return newInstance(context, recv, args);
+        return initTime(context, args, false, true);
     }
 
     @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, meta = true)
     public static RubyTime utc(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return createTime(context, (RubyClass) recv, args, true, false);
-    }
-
-    @Deprecated
-    public static RubyTime new_utc(IRubyObject recv, IRubyObject[] args) {
-        return createTime(recv.getRuntime().getCurrentContext(), (RubyClass) recv, args, true, false);
+        return ((RubyTime) ((RubyClass) recv).allocate()).initTime(context, args, true, false);
     }
 
     @Deprecated
@@ -1507,7 +1486,7 @@ public class RubyTime extends RubyObject {
 
     private static final int ARG_SIZE = 7;
 
-    private static RubyTime createTime(ThreadContext context, RubyClass klass, IRubyObject[] args, boolean gmt, boolean utcOffset) {
+    private RubyTime initTime(ThreadContext context, IRubyObject[] args, boolean gmt, boolean utcOffset) {
         Ruby runtime = context.runtime;
         int len = ARG_SIZE;
         boolean isDst = false;
@@ -1621,17 +1600,16 @@ public class RubyTime extends RubyObject {
             throw runtime.newArgumentError("time out of range");
         }
 
-        RubyTime time = new RubyTime(runtime, klass, dt);
         // Ignores usec if 8 args (for compatibility with parse-date) or if not supplied.
         if (args.length != 8 && args[6] != context.nil) {
             if (args[6] instanceof RubyRational) {
                 RubyRational nsec = (RubyRational) ((RubyRational) args[6]).op_mul(context, runtime.newFixnum(1000));
                 long tmpNanos = (long) nsec.getDoubleValue(context);
-                time.dt = dt.withMillis(dt.getMillis() + (tmpNanos / 1_000_000));
+                dt = dt.withMillis(dt.getMillis() + (tmpNanos / 1_000_000));
                 nanos = tmpNanos % 1_000_000;
             } else if (args[6] instanceof RubyFloat) {
                 double micros = ((RubyFloat) args[6]).getDoubleValue();
-                time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
+                dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
                 nanos = (long) Math.rint((micros * 1000) % 1_000_000);
             } else {
                 int usec = i_args4 % 1000;
@@ -1641,16 +1619,18 @@ public class RubyTime extends RubyObject {
                     msec -= 1;
                     usec += 1000;
                 }
-                time.dt = dt.withMillis(dt.getMillis() + msec);
-                time.setUSec(usec);
+                dt = dt.withMillis(dt.getMillis() + msec);
+                this.setUSec(usec);
             }
         }
 
-        if (nanos != 0) time.setNSec(nanos);
+        this.dt = dt;
 
-        time.callInit(IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-        time.setIsTzRelative(setTzRelative);
-        return time;
+        if (nanos != 0) this.setNSec(nanos);
+
+        this.setIsTzRelative(setTzRelative);
+
+        return this;
     }
 
     private static int argToInt(final ThreadContext context, IRubyObject[] args, final int i, final int def) {
@@ -1701,5 +1681,20 @@ public class RubyTime extends RubyObject {
 
     private static TimeSites sites(ThreadContext context) {
         return context.sites.Time;
+    }
+
+    @Deprecated
+    public static RubyTime new_local(IRubyObject recv, IRubyObject[] args) {
+        return ((RubyTime) ((RubyClass) recv).allocate()).initTime(recv.getRuntime().getCurrentContext(), args, false, false);
+    }
+
+    @Deprecated
+    public static RubyTime new_utc(IRubyObject recv, IRubyObject[] args) {
+        return ((RubyTime) ((RubyClass) recv).allocate()).initTime(recv.getRuntime().getCurrentContext(), args, true, false);
+    }
+
+    @Deprecated
+    public static IRubyObject new19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return ((RubyClass) recv).allocate().callMethod(context, "initialize", args);
     }
 }
