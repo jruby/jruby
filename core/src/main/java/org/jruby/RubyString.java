@@ -4272,7 +4272,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject delete_prefix_bang(ThreadContext context, IRubyObject arg) {
         modifyCheck();
         RubyString result = (RubyString) delete_prefix(context, arg);
-        if (equals(result)) return context.runtime.getNil();
+        if (equals(result)) return context.nil;
         replaceInternal19(0, this.strLength(), result);
         return this;
     }
@@ -4281,7 +4281,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject delete_suffix_bang(ThreadContext context, IRubyObject arg) {
         modifyCheck();
         RubyString result = (RubyString) delete_suffix(context, arg);
-        if (equals(result)) return context.runtime.getNil();
+        if (equals(result)) return context.nil;
         replaceInternal19(0, this.strLength(), result);
         return this;
     }

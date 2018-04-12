@@ -2129,9 +2129,9 @@ public class RubyHash extends RubyObject implements Map {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
                 IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
                 if (pattern.callMethod(context, "===", newAssoc).isTrue())
-                    return context.runtime.getTrue();
+                    return context.tru;
             }
-            return context.runtime.getFalse();
+            return context.fals;
         } finally {
             iteratorExit();
         }
