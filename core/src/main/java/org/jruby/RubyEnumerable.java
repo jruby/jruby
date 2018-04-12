@@ -48,6 +48,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.TypeConverter;
 
@@ -1055,9 +1056,10 @@ public class RubyEnumerable {
         final IRubyObject result[] = new IRubyObject[] { init };
 
         callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
+            final NormalCachingCallSite site = new NormalCachingCallSite(methodId);
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                 IRubyObject larg = packEnumValues(ctx, largs);
-                result[0] = result[0] == null ? larg : result[0].callMethod(ctx, methodId, larg);
+                result[0] = result[0] == null ? larg : site.call(ctx, self, result[0], larg);
                 return ctx.nil;
             }
         });
