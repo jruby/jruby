@@ -14,6 +14,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     expect(thread.status).to eq('sleep')
+    thread.kill rescue nil
   end
 
   it "should be 'sleep' while blocking gets(rs)" do
@@ -22,6 +23,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     expect(thread.status).to eq('sleep')
+    thread.kill rescue nil
   end
 
   it "should be 'sleep' while blocking eof?" do
@@ -30,6 +32,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     expect(thread.status).to eq('sleep')
+    thread.kill rescue nil
   end
 
   it "should be 'sleep' while blocking getc" do
@@ -38,6 +41,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     expect(thread.status).to eq('sleep')
+    thread.kill rescue nil
   end
 
   it "should be 'sleep' while blocking readlines" do
@@ -46,6 +50,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     expect(thread.status).to eq('sleep')
+    thread.kill rescue nil
   end
 
   it "should be 'sleep' while blocking read" do
@@ -54,6 +59,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     expect(thread.status).to eq('sleep')
+    thread.kill rescue nil
   end
 
   it "should be 'sleep' while blocking read(n)" do
@@ -62,6 +68,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     expect(thread.status).to eq('sleep')
+    thread.kill rescue nil
   end
 
   it "should be 'sleep' while blocking readpartial" do
@@ -70,6 +77,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     expect(thread.status).to eq('sleep')
+    thread.kill rescue nil
   end
 
   it "should be 'sleep' while blocking sysread" do
@@ -78,6 +86,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     expect(thread.status).to eq('sleep')
+    thread.kill rescue nil
   end
 
   # See JRUBY-5122 spec for the reason of this value
@@ -94,9 +103,11 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     if blocked
       expect(thread.status).to eq('sleep')
     else
-      # it's OK since write is not blocked. we cannot test this behavior for such case.
-      expect(thread.status).to eq(false)
+      # It's OK since write is not blocked. we cannot test this behavior for such case.
+      # Thread may be dying and report status dead.
+      expect([false, "dead"]).to include(thread.status)
     end
+    thread.kill rescue nil
   end
 
   it "should be 'sleep' while blocking syswrite" do
@@ -110,14 +121,16 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     if blocked
       expect(thread.status).to eq('sleep')
     else
-      # it's OK since write is not blocked. we cannot test this behavior for such case.
-      expect(thread.status).to eq(false)
+      # It's OK since write is not blocked. we cannot test this behavior for such case.
+      # Thread may be dying and report status dead.
+      expect([false, "dead"]).to include(thread.status)
     end
+    thread.kill rescue nil
   end
 
   def wait_block(thread)
     begin
-      timeout(2) do
+      Timeout.timeout(2) do
         sleep 0.1 while (thread.status != false && thread.status != 'sleep')
       end
     rescue Timeout::Error
