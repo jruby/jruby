@@ -160,8 +160,9 @@ public class JavaSites {
         public final CallSite div = new FunctionalCachingCallSite("div");
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite op_mod = new FunctionalCachingCallSite("%");
-        public final CallSite op_lt = new FunctionalCachingCallSite("<");
-        public final CallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CachingCallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CheckedSites op_gt_checked = new CheckedSites(">");
         public final CallSite op_uminus = new FunctionalCachingCallSite("-@");
         public final CallSite zero = new FunctionalCachingCallSite("zero?");
         public final CallSite op_equals = new FunctionalCachingCallSite("==");
