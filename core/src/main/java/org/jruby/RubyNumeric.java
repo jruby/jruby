@@ -1131,6 +1131,7 @@ public class RubyNumeric extends RubyObject {
             if (diff == 0) {
                 return RubyFloat.newFloat(runtime, Double.POSITIVE_INFINITY);
             }
+            // overflow checking
             long toLong = ((RubyFixnum) to).getLongValue();
             long fromLong = ((RubyFixnum) from).getLongValue();
             delta = toLong - fromLong;
@@ -1146,6 +1147,7 @@ public class RubyNumeric extends RubyObject {
                     return runtime.newFixnum(0);
                 }
 
+                // overflow checking
                 long steps = delta / diff;
                 long stepSize = steps + 1;
                 if (stepSize != Long.MIN_VALUE) {
