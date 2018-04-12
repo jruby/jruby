@@ -262,27 +262,29 @@ public class RubyEnumerable {
             @Override
             public IRubyObject size(IRubyObject[] args) {
                 Ruby runtime = context.runtime;
+                long mul = 0;
                 IRubyObject n = runtime.getNil();
-                IRubyObject size = enumSizeFn(context, self).size(args);
-
-                if (size == null || size.isNil()) {
-                    return runtime.getNil();
-                }
 
                 if (args != null && args.length > 0) {
                     n = args[0];
+                    if (!n.isNil()) mul = n.convertToInteger().getLongValue();
+                }
+
+                IRubyObject size = enumSizeFn(context, self).size(args);
+                if (size == null || size.isNil() || size.equals(RubyFixnum.zero(runtime))) {
+                    return size;
                 }
 
                 if (n == null || n.isNil()) {
                     return RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
                 }
 
-                long multiple = RubyNumeric.num2long(n);
-                if (multiple <= 0) {
+                if (mul <= 0) {
                     return RubyFixnum.zero(runtime);
                 }
 
-                return size.callMethod(context, "*", RubyFixnum.newFixnum(runtime, multiple));
+                n = RubyFixnum.newFixnum(runtime, mul);
+                return size.callMethod(context, "*", n);
             }
         };
     }
