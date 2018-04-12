@@ -92,6 +92,7 @@ import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1100,7 +1101,7 @@ public class RubyClass extends RubyModule {
     }
 
     public Collection<RubyClass> subclasses(boolean includeDescendants) {
-        Set<RubyClass> subclasses = this.subclasses;
+        Map<RubyClass, Object> subclasses = this.subclasses;
         if (subclasses != null) {
             Collection<RubyClass> mine = new ArrayList<>();
             subclassesInner(mine, includeDescendants);
@@ -1111,11 +1112,12 @@ public class RubyClass extends RubyModule {
     }
 
     private void subclassesInner(Collection<RubyClass> mine, boolean includeDescendants) {
-        Set<RubyClass> subclasses = this.subclasses;
+        Map<RubyClass, Object> subclasses = this.subclasses;
         if (subclasses != null) {
-            mine.addAll(subclasses);
+            Set<RubyClass> keys = subclasses.keySet();
+            mine.addAll(keys);
             if (includeDescendants) {
-                for (RubyClass klass: subclasses) {
+                for (RubyClass klass: keys) {
                     klass.subclassesInner(mine, includeDescendants);
                 }
             }
@@ -1132,18 +1134,18 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to add
      */
     public void addSubclass(RubyClass subclass) {
-        Set<RubyClass> subclasses = this.subclasses;
+        Map<RubyClass, Object> subclasses = this.subclasses;
         if (subclasses == null) {
             // check again
             synchronized (this) {
                 subclasses = this.subclasses;
                 if (subclasses == null) {
-                    this.subclasses = subclasses = Collections.synchronizedSet(new WeakHashSet<RubyClass>(4));
+                    this.subclasses = subclasses = new ConcurrentWeakHashMap<>(4, 0.75f, 1);
                 }
             }
         }
 
-        subclasses.add(subclass);
+        subclasses.put(subclass, NEVER);
     }
 
     /**
@@ -1152,7 +1154,7 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to remove
      */
     public void removeSubclass(RubyClass subclass) {
-        Set<RubyClass> subclasses = this.subclasses;
+        Map<RubyClass, Object> subclasses = this.subclasses;
         if (subclasses == null) return;
 
         subclasses.remove(subclass);
@@ -1165,20 +1167,20 @@ public class RubyClass extends RubyModule {
      * @param newSubclass The subclass to replace it with
      */
     public void replaceSubclass(RubyClass subclass, RubyClass newSubclass) {
-        Set<RubyClass> subclasses = this.subclasses;
+        Map<RubyClass, Object> subclasses = this.subclasses;
         if (subclasses == null) return;
 
         subclasses.remove(subclass);
-        subclasses.add(newSubclass);
+        subclasses.put(newSubclass, NEVER);
     }
 
     @Override
     public void becomeSynchronized() {
         // make this class and all subclasses sync
         super.becomeSynchronized();
-        Set<RubyClass> subclasses = this.subclasses;
+        Map<RubyClass, Object> subclasses = this.subclasses;
         if (subclasses != null) {
-            for (RubyClass subclass : subclasses) subclass.becomeSynchronized();
+            for (RubyClass subclass : subclasses.keySet()) subclass.becomeSynchronized();
         }
     }
 
@@ -1198,9 +1200,9 @@ public class RubyClass extends RubyModule {
     public void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
 
-        Set<RubyClass> subclasses = this.subclasses;
+        Map<RubyClass, Object> subclasses = this.subclasses;
         if (subclasses != null) {
-            for (RubyClass subclass : subclasses) subclass.invalidateCacheDescendants();
+            for (RubyClass subclass : subclasses.keySet()) subclass.invalidateCacheDescendants();
         }
     }
 
@@ -1211,12 +1213,12 @@ public class RubyClass extends RubyModule {
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) cachedMethods.clear();
 
-        Set<RubyClass> subclasses = this.subclasses;
+        Map<RubyClass, Object> subclasses = this.subclasses;
         // no subclasses, don't bother with lock and iteration
         if (subclasses == null || subclasses.isEmpty()) return;
 
         // cascade into subclasses
-        for (RubyClass subclass : subclasses) subclass.addInvalidatorsAndFlush(invalidators);
+        for (RubyClass subclass : subclasses.keySet()) subclass.addInvalidatorsAndFlush(invalidators);
     }
 
     public final Ruby getClassRuntime() {
@@ -2329,7 +2331,7 @@ public class RubyClass extends RubyModule {
     protected final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
-    private volatile Set<RubyClass> subclasses;
+    private volatile Map<RubyClass, Object> subclasses;
     public static final int CS_IDX_INITIALIZE = 0;
     public enum CS_NAMES {
         INITIALIZE("initialize");
