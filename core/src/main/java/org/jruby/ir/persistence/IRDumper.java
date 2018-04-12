@@ -327,7 +327,7 @@ public class IRDumper extends IRVisitor {
     public void StringLiteral(StringLiteral stringliteral) { print(stringliteral.getByteList()); }
     public void SValue(SValue svalue) { visit(svalue.getArray()); }
     public void Symbol(Symbol symbol) { print(symbol.getBytes()); }
-    public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getByteName().toString()); }
+    public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getName().toString()); }
     public void TemporaryVariable(TemporaryVariable temporaryvariable) { print(temporaryvariable.getId()); }
     public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { TemporaryVariable(temporarylocalvariable); }
     public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) { TemporaryVariable(temporaryfloatvariable); }

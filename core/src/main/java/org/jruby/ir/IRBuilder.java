@@ -1575,7 +1575,8 @@ public class IRBuilder {
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         addInstr(new LabelInstr(rescueLabel));
         addInstr(new ReceiveRubyExceptionInstr(exc));
-        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), CommonByteLists.EXCEPTION));
+        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(),
+                manager.runtime.newSymbol(CommonByteLists.EXCEPTION)));
         outputExceptionCheck(excType, exc, caughtLabel);
 
         // Fall-through when the exc !== Exception; rethrow 'exc'
@@ -1734,7 +1735,7 @@ public class IRBuilder {
             Label defLabel = getNewLabel();
             Label doneLabel = getNewLabel();
             Variable tmpVar  = createTemporaryVariable();
-            ByteList constName = ((ConstNode) node).getByteName();
+            RubySymbol constName = ((ConstNode) node).getSymbolName();
             addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), constName));
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
@@ -1829,7 +1830,7 @@ public class IRBuilder {
                             IS_DEFINED_METHOD,
                             new Operand[]{
                                     buildSelf(),
-                                    new FrozenString(((FCallNode) node).getByteName()),
+                                    new Symbol(((FCallNode) node).getSymbolName()),
                                     manager.getFalse(),
                                     new FrozenString(DefinedMessage.METHOD.getText())
                             }
@@ -1855,7 +1856,7 @@ public class IRBuilder {
                                     IS_DEFINED_CALL,
                                     new Operand[]{
                                             build(callNode.getReceiverNode()),
-                                            new StringLiteral(callNode.getByteName()),
+                                            new Symbol(callNode.getSymbolName()),
                                             new FrozenString(DefinedMessage.METHOD.getText())
                                     }
                             )
@@ -2720,7 +2721,7 @@ public class IRBuilder {
             case BLOCKPASSNODE:
                 Node bodyNode = ((BlockPassNode)node).getBodyNode();
                 return bodyNode instanceof SymbolNode ?
-                        new SymbolProc(((SymbolNode)bodyNode).getByteName()) : build(bodyNode);
+                        new SymbolProc(((SymbolNode)bodyNode).getSymbolName()) : build(bodyNode);
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
         }
@@ -2777,7 +2778,8 @@ public class IRBuilder {
         // for JIT/AOT.  Also it means needing to grow the size of any heap scope for variables.
         if (nearestNonClosureBuilder == null) {
             Variable excType = createTemporaryVariable();
-            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), CommonByteLists.NOT_IMPLEMENTED_ERROR));
+            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(),
+                    manager.runtime.newSymbol(CommonByteLists.NOT_IMPLEMENTED_ERROR)));
             Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), CommonByteLists.NEW,
                     excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
             addInstr(new ThrowExceptionInstr(exc));

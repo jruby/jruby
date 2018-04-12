@@ -1397,7 +1397,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(inheritancesearchconstinstr.getCurrentModule());
 
-        jvmMethod().inheritanceSearchConst(inheritancesearchconstinstr.getConstName(), false);
+        jvmMethod().inheritanceSearchConst(inheritancesearchconstinstr.getId(), false);
         jvmStoreLocal(inheritancesearchconstinstr.getResult());
     }
 
@@ -1475,7 +1475,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(lexicalsearchconstinstr.getDefiningScope());
 
-        jvmMethod().lexicalSearchConst(lexicalsearchconstinstr.getConstName());
+        jvmMethod().lexicalSearchConst(lexicalsearchconstinstr.getId());
 
         jvmStoreLocal(lexicalsearchconstinstr.getResult());
     }
@@ -2583,7 +2583,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void SymbolProc(SymbolProc symbolproc) {
-        jvmMethod().pushSymbolProc(symbolproc.getByteName());
+        // FIXME: bytelist_love - we can also do getId() is we will just cache lookup for symbol?
+        jvmMethod().pushSymbolProc(symbolproc.getName().getBytes());
     }
 
     @Override

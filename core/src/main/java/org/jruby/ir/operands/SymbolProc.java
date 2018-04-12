@@ -1,12 +1,11 @@
 package org.jruby.ir.operands;
 
-import org.jcodings.Encoding;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.util.ByteList;
 
 /**
  * A literal representing proc'ified symbols, as in &:foo.
@@ -14,9 +13,9 @@ import org.jruby.util.ByteList;
  * Used to cache a unique and constant proc at the use site to reduce allocation and improve caching.
  */
 public class SymbolProc extends ImmutableLiteral {
-    private final ByteList name;
+    private final RubySymbol name;
 
-    public SymbolProc(ByteList name) {
+    public SymbolProc(RubySymbol name) {
         super();
 
         this.name = name;
@@ -29,7 +28,7 @@ public class SymbolProc extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return IRRuntimeHelpers.newSymbolProc(context, name);
+        return IRRuntimeHelpers.newSymbolProc(context, getName());
     }
 
     @Override
@@ -47,11 +46,11 @@ public class SymbolProc extends ImmutableLiteral {
         visitor.SymbolProc(this);
     }
 
-    public String getName() {
-        return name.toString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteName() {
+    public RubySymbol getName() {
         return name;
     }
 
@@ -62,7 +61,7 @@ public class SymbolProc extends ImmutableLiteral {
     }
 
     public static SymbolProc decode(IRReaderDecoder d) {
-        return new SymbolProc(d.decodeByteList());
+        return new SymbolProc(d.decodeSymbol());
     }
 
     @Override
