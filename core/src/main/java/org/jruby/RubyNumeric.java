@@ -720,8 +720,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        if (getClass() != other.getClass()) return context.runtime.getFalse();
-        return equalInternal(context, this, other) ? context.runtime.getTrue() : context.runtime.getFalse();
+        if (getClass() != other.getClass()) return context.fals;
+        return equalInternal(context, this, other) ? context.tru : context.fals;
     }
 
     /** num_quo
@@ -1225,7 +1225,7 @@ public class RubyNumeric extends RubyObject {
      */
     protected final IRubyObject op_num_equal(ThreadContext context, IRubyObject other) {
         // it won't hurt fixnums
-        if (this == other)  return context.runtime.getTrue();
+        if (this == other)  return context.tru;
 
         return numFuncall(context, other, sites(context).op_equals, this);
     }
@@ -1396,12 +1396,12 @@ public class RubyNumeric extends RubyObject {
 
     @JRubyMethod(name = "finite?")
     public IRubyObject finite_p(ThreadContext context) {
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     @JRubyMethod(name = "infinite?")
     public IRubyObject infinite_p(ThreadContext context) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "clone", required = 0, optional = 1)

@@ -286,7 +286,7 @@ public class RubyDigest {
         /* instance methods that may be overridden */
         @JRubyMethod(name = "==", required = 1)
         public static IRubyObject op_equal(ThreadContext context, IRubyObject self, IRubyObject oth) {
-            if(oth.isNil()) return context.runtime.getFalse();
+            if(oth.isNil()) return context.fals;
 
             RubyString str1, str2;
             RubyModule instance = (RubyModule)context.runtime.getModule("Digest").getConstantAt("Instance");
@@ -298,7 +298,7 @@ public class RubyDigest {
                 str2 = oth.convertToString();
             }
             boolean ret = str1.bytesize().eql(str2.bytesize()) && (str1.eql(str2));
-            return ret ? context.runtime.getTrue() : context.runtime.getFalse();
+            return ret ? context.tru : context.fals;
         }
 
         @JRubyMethod()

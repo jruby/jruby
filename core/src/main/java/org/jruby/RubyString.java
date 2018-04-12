@@ -1638,7 +1638,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         IRubyObject[] args = new IRubyObject[] {runtime.newSymbol("fold")};
         RubyString downcasedString = this.downcase(context, args);
         RubyString otherDowncasedString = otherStr.downcase(context, args);
-        return downcasedString.equals(otherDowncasedString) ? runtime.getTrue() : runtime.getFalse();
+        return downcasedString.equals(otherDowncasedString) ? context.tru : context.fals;
     }
 
     /** rb_str_match
@@ -2483,7 +2483,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
-        return isEmpty() ? context.runtime.getTrue() : context.runtime.getFalse();
+        return isEmpty() ? context.tru : context.fals;
     }
 
     public boolean isEmpty() {
@@ -4313,20 +4313,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "end_with?")
     public IRubyObject end_with_p(ThreadContext context) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "end_with?")
     public IRubyObject end_with_p(ThreadContext context, IRubyObject arg) {
-        return end_with_pCommon(arg) ? context.runtime.getTrue() : context.runtime.getFalse();
+        return end_with_pCommon(arg) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "end_with?", rest = true)
     public IRubyObject end_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
-            if (end_with_pCommon(args[i])) return context.runtime.getTrue();
+            if (end_with_pCommon(args[i])) return context.tru;
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     // MRI: rb_str_end_with, loop body

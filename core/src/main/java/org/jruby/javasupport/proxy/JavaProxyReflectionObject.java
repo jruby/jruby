@@ -65,7 +65,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
             if ( ! ( wrappedObj instanceof JavaObject ) ) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
             obj = (IRubyObject) wrappedObj;
         }
@@ -80,12 +80,12 @@ public class JavaProxyReflectionObject extends RubyObject {
     @Override
     @JRubyMethod(name = "equal?")
     public RubyBoolean op_equal(final ThreadContext context, IRubyObject obj) {
-        if ( this == obj ) return context.runtime.getTrue();
+        if ( this == obj ) return context.tru;
 
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
             if ( ! ( wrappedObj instanceof JavaObject ) ) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
             obj = (IRubyObject) wrappedObj;
         }

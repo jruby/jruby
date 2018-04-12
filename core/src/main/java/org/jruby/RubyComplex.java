@@ -769,7 +769,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "real?")
     @Override
     public IRubyObject real_p(ThreadContext context) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @Override
@@ -780,7 +780,7 @@ public class RubyComplex extends RubyNumeric {
      */
     // @JRubyMethod(name = "complex?")
     public IRubyObject complex_p(ThreadContext context) {
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     /** nucomp_exact_p

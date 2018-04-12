@@ -103,7 +103,7 @@ public class RubyException extends RubyObject {
             Object object = ((ConcreteJavaProxy)other).getObject();
             if (object instanceof Throwable && !(object instanceof FlowControlException)) {
                 if (recv == runtime.getException() || object instanceof java.lang.Exception) {
-                    return context.runtime.getTrue();
+                    return context.tru;
                 }
             }
         }
@@ -273,7 +273,7 @@ public class RubyException extends RubyObject {
     @Override
     @JRubyMethod(name = "==")
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        if (this == other) return context.runtime.getTrue();
+        if (this == other) return context.tru;
 
         boolean equal = context.runtime.getException().isInstance(other) &&
                 getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&

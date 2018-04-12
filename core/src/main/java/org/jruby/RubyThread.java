@@ -766,7 +766,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "pending_interrupt?", optional = 1)
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
         if (pendingInterruptQueue.isEmpty()) {
-            return context.runtime.getFalse();
+            return context.fals;
         } else {
             if (args.length == 1) {
                 IRubyObject err = args[0];
@@ -774,12 +774,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     throw context.runtime.newTypeError("class or module required for rescue clause");
                 }
                 if (pendingInterruptInclude(err)) {
-                    return context.runtime.getTrue();
+                    return context.tru;
                 } else {
-                    return context.runtime.getFalse();
+                    return context.fals;
                 }
             } else {
-                return context.runtime.getTrue();
+                return context.tru;
             }
         }
     }

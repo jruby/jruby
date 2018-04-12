@@ -619,7 +619,7 @@ public class RubyRandom extends RubyObject {
     @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         if (!getType().equals(obj.getType())) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         return context.runtime.newBoolean(random.equals(((RubyRandom) obj).random));
     }

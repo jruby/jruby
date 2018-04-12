@@ -614,7 +614,7 @@ public class RubyTime extends RubyObject {
             return context.runtime.newBoolean(cmp((RubyTime) other) == 0);
         }
         if (other == context.nil) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
 
         return RubyComparable.op_equal(context, this, other);
@@ -763,7 +763,7 @@ public class RubyTime extends RubyObject {
             return context.runtime.newBoolean(RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
         }
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "<=>", required = 1)

@@ -711,7 +711,7 @@ public class Helpers {
             IRubyObject result = isExceptionHandled(currentException, exceptions[i], context);
             if (result.isTrue()) return result;
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject exception, ThreadContext context) {
@@ -802,16 +802,16 @@ public class Helpers {
         } else {
             if (throwables.length == 0) {
                 // no rescue means StandardError, which rescues Java exceptions
-                return context.runtime.getTrue();
+                return context.tru;
             } else {
                 for (int i = 0; i < throwables.length; i++) {
                     if (checkJavaException(currentThrowable, throwables[i], context)) {
-                        return context.runtime.getTrue();
+                        return context.tru;
                     }
                 }
             }
 
-            return context.runtime.getFalse();
+            return context.fals;
         }
     }
 
@@ -825,10 +825,10 @@ public class Helpers {
             return isExceptionHandled(((RaiseException) currentThrowable).getException(), throwable, context);
         } else {
             if (checkJavaException(currentThrowable, throwable, context)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
 
-            return context.runtime.getFalse();
+            return context.fals;
         }
     }
 
@@ -842,13 +842,13 @@ public class Helpers {
             return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwable0, throwable1, context);
         } else {
             if (checkJavaException(currentThrowable, throwable0, context)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
             if (checkJavaException(currentThrowable, throwable1, context)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
 
-            return context.runtime.getFalse();
+            return context.fals;
         }
     }
 
@@ -862,16 +862,16 @@ public class Helpers {
             return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwable0, throwable1, throwable2, context);
         } else {
             if (checkJavaException(currentThrowable, throwable0, context)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
             if (checkJavaException(currentThrowable, throwable1, context)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
             if (checkJavaException(currentThrowable, throwable2, context)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
 
-            return context.runtime.getFalse();
+            return context.fals;
         }
     }
 
@@ -902,7 +902,7 @@ public class Helpers {
     }
 
     public static void clearErrorInfo(ThreadContext context) {
-        context.setErrorInfo(context.runtime.getNil());
+        context.setErrorInfo(context.nil);
     }
 
     public static void checkSuperDisabledOrOutOfMethod(ThreadContext context) {
@@ -2227,7 +2227,7 @@ public class Helpers {
         }
 
         if (receiver.callMethod(context, "respond_to_missing?",
-            new IRubyObject[]{context.runtime.newSymbol(name), context.runtime.getFalse()}).isTrue()) {
+            new IRubyObject[]{context.runtime.newSymbol(name), context.fals}).isTrue()) {
             return definedMessage;
         }
         return null;

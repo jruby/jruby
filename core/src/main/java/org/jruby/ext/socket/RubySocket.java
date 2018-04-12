@@ -712,7 +712,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @Override
     public RubyBoolean closed_p(ThreadContext context) {
-        if (getOpenFile() == null) return context.runtime.getFalse();
+        if (getOpenFile() == null) return context.fals;
 
         return super.closed_p(context);
     }

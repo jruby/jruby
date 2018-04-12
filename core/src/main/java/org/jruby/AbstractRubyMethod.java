@@ -145,10 +145,10 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
     }
 
     protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
-        if (superClass == null) return context.runtime.getNil();
+        if (superClass == null) return context.nil;
 
         DynamicMethod newMethod = superClass.searchMethod(methodName);
-        if (newMethod == UndefinedMethod.INSTANCE) return context.runtime.getNil();
+        if (newMethod == UndefinedMethod.INSTANCE) return context.nil;
 
         if (receiver == null) {
             return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, newMethod);

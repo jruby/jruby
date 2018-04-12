@@ -565,6 +565,6 @@ public class RubyFileStat extends RubyObject {
             return RubyNumeric.int2fix(context.runtime,
                     (stat.mode() & (S_IRUGO | S_IWUGO | S_IXUGO) ));
         }
-        return context.runtime.getNil();
+        return context.nil;
     }
 }

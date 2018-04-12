@@ -1187,7 +1187,7 @@ public final class StructLayout extends Type {
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
             MemoryIO io = ptr.getMemoryIO().getMemoryIO(m.getOffset(ptr));
             if (io == null || io.isNull()) {
-                return context.runtime.getNil();
+                return context.nil;
             }
 
             return RubyString.newStringNoCopy(context.runtime, io.getZeroTerminatedByteArray(0));

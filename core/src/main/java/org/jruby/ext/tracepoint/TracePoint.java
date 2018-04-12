@@ -93,7 +93,7 @@ public class TracePoint extends RubyObject {
                 inside = true;
 
                 if (file == null) file = "(ruby)";
-                if (type == null) type = context.runtime.getFalse();
+                if (type == null) type = context.fals;
 
                 IRubyObject binding;
                 if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {

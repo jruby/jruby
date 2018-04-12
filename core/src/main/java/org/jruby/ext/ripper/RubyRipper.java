@@ -288,14 +288,14 @@ public class RubyRipper extends RubyObject {
         filename = filenameAsString(context, file).dup();
         parser = new RipperParser(context, this, source(context, src, filename.asJavaString(), lineAsInt(context, line)));
          
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod
     public IRubyObject column(ThreadContext context) {
         if (!parser.hasStarted()) throw context.runtime.newArgumentError("method called for uninitialized object");
             
-        if (!parseStarted) return context.runtime.getNil();
+        if (!parseStarted) return context.nil;
         
         return context.runtime.newFixnum(parser.getColumn());
     }
@@ -346,7 +346,7 @@ public class RubyRipper extends RubyObject {
         } catch (SyntaxException e) {
             
         }
-        return context.runtime.getNil();
+        return context.nil;
     }    
 
     @JRubyMethod

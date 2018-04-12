@@ -162,14 +162,14 @@ public final class Enum extends RubyObject {
     public final IRubyObject find(ThreadContext context, IRubyObject query) {
         if (query instanceof RubySymbol) {
             IRubyObject value = kv_map.fastARef(query);
-            return value != null ? value : context.runtime.getNil();
+            return value != null ? value : context.nil;
 
         } else if (query instanceof RubyInteger) {
             RubySymbol symbol = valueToSymbol.get((Long)((RubyInteger) query).getLongValue());
-            return symbol != null ? symbol : context.runtime.getNil();
+            return symbol != null ? symbol : context.nil;
 
         } else {
-            return context.runtime.getNil();
+            return context.nil;
         }
     }
 
@@ -229,6 +229,6 @@ public final class Enum extends RubyObject {
 
     @JRubyMethod(name = "reference_required?")
     public IRubyObject reference_required_p(ThreadContext context) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 }

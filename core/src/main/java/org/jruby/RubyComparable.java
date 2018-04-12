@@ -129,7 +129,7 @@ public class RubyComparable {
     private static final ThreadContext.RecursiveFunctionEx DEFAULT_INVCMP = new ThreadContext.RecursiveFunctionEx<IRubyObject>() {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject recv, IRubyObject other, boolean recur) {
-            if (recur || !sites(context).respond_to_op_cmp.respondsTo(context, other, other)) return context.runtime.getNil();
+            if (recur || !sites(context).respond_to_op_cmp.respondsTo(context, other, other)) return context.nil;
             return sites(context).op_cmp.call(context, other, other, recv);
         }
     };
@@ -154,7 +154,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "==", required = 1)
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        return callCmpMethod(context, recv, other, context.runtime.getFalse());
+        return callCmpMethod(context, recv, other, context.fals);
     }
 
     @Deprecated

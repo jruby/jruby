@@ -311,9 +311,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
             boolean patternGiven = args.length > 0;
 
-            if (isEmpty()) return context.runtime.getFalse();
+            if (isEmpty()) return context.fals;
 
-            if (!block.isGiven() && !patternGiven) return context.runtime.getTrue();
+            if (!block.isGiven() && !patternGiven) return context.tru;
             if (patternGiven) return any_p_p(context, args[0]);
 
             if (block.getSignature().arityValue() > 1) {

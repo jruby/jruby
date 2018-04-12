@@ -181,7 +181,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod(name = "&", required = 1)
     public static RubyBoolean op_and(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
     
     /** nil_or

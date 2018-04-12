@@ -143,7 +143,7 @@ public class CallbackInfo extends Type {
             return new CallbackInfo(context.runtime, (RubyClass) klass,
                     (Type) returnType, nativeParamTypes, stdcall);
         } catch (UnsatisfiedLinkError ex) {
-            return context.runtime.getNil();
+            return context.nil;
         }
     }
     
