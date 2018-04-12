@@ -34,6 +34,7 @@ package org.jruby.ast.util;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyHash;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
@@ -119,7 +120,7 @@ public final class ArgsUtil {
             if (options.containsKey(keySym)) {
                 ret[index] = options.fastARef(keySym);
             } else {
-                ret[index] = context.nil;
+                ret[index] = RubyBasicObject.UNDEF;
             }
             index++;
             validKeySet.add(keySym);

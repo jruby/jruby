@@ -4163,7 +4163,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
             if (!hash.isNil()) {
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "random");
-                if (!rets[0].isNil()) randgen = rets[0];
+                if (rets[0] != UNDEF) randgen = rets[0];
             }
         }
         int i = realLength;
@@ -4204,7 +4204,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
                 if (!hash.isNil()) {
                     IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "random");
-                    if (!rets[0].isNil()) randgen = rets[0];
+                    if (rets[0] != UNDEF) randgen = rets[0];
                     args = ArraySupport.newCopy(args, args.length - 1);
                 }
             }
