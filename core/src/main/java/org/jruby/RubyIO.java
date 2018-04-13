@@ -4626,11 +4626,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
-    // MRI: check_exec_env, w/ check_exec_env_i body in-line
-    public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash) {
-        return PopenExecutor.checkExecEnv(context, hash);
-    }
-
     /**
      * Try for around 1s to destroy the child process. This is to work around
      * issues on some JVMs where if you try to destroy the process too quickly
