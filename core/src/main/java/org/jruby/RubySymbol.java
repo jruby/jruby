@@ -457,44 +457,76 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newShared(context.runtime).empty_p(context);
     }
 
+    @JRubyMethod
     public IRubyObject upcase(ThreadContext context) {
-        return upcase(context, RubyObject.NULL_ARRAY);
-    }
-
-    @JRubyMethod(rest = true)
-    public IRubyObject upcase(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).upcase19(context, args).getByteList());
+        return newSymbol(runtime, newShared(runtime).upcase(context).getByteList());
     }
 
+    @JRubyMethod
+    public IRubyObject upcase(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+        return newSymbol(runtime, newShared(runtime).upcase(context, arg).getByteList());
+    }
+
+    @JRubyMethod
+    public IRubyObject upcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+        return newSymbol(runtime, newShared(runtime).upcase(context, arg0, arg1).getByteList());
+    }
+
+    @JRubyMethod
     public IRubyObject downcase(ThreadContext context) {
-        return downcase(context, RubyObject.NULL_ARRAY);
-    }
-
-    @JRubyMethod(rest = true)
-    public IRubyObject downcase(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).downcase(context, args).getByteList());
+        return newSymbol(runtime, newShared(runtime).downcase(context).getByteList());
     }
 
-    public IRubyObject capitalize(ThreadContext context) {
-        return capitalize(context, RubyObject.NULL_ARRAY);
-    }
-
-    @JRubyMethod(rest = true)
-    public IRubyObject capitalize(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject downcase(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        return newSymbol(runtime, ((RubyString) newShared(runtime).capitalize19(context, args)).getByteList());
+        return newSymbol(runtime, newShared(runtime).downcase(context, arg).getByteList());
     }
 
+    @JRubyMethod
+    public IRubyObject downcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+        return newSymbol(runtime, newShared(runtime).downcase(context, arg0, arg1).getByteList());
+    }
+
+    @JRubyMethod
     public IRubyObject swapcase(ThreadContext context) {
-        return swapcase(context, RubyObject.NULL_ARRAY);
+        Ruby runtime = context.runtime;
+        return newSymbol(runtime, newShared(runtime).swapcase(context).getByteList());
     }
 
-    @JRubyMethod(rest = true)
-    public IRubyObject swapcase(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject swapcase(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).swapcase19(context, args).getByteList());
+        return newSymbol(runtime, newShared(runtime).swapcase(context, arg).getByteList());
+    }
+
+    @JRubyMethod
+    public IRubyObject swapcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+        return newSymbol(runtime, newShared(runtime).swapcase(context, arg0, arg1).getByteList());
+    }
+
+    @JRubyMethod
+    public IRubyObject capitalize(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        return newSymbol(runtime, newShared(runtime).capitalize(context).getByteList());
+    }
+
+    @JRubyMethod
+    public IRubyObject capitalize(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+        return newSymbol(runtime, newShared(runtime).capitalize(context, arg).getByteList());
+    }
+
+    @JRubyMethod
+    public IRubyObject capitalize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+        return newSymbol(runtime, newShared(runtime).capitalize(context, arg0, arg1).getByteList());
     }
 
     @JRubyMethod

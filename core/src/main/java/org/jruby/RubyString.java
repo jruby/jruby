@@ -1608,20 +1608,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (enc == null) return context.nil;
 
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
-            return RubyFixnum.newFixnum(context.runtime, value.caseInsensitiveCmp(otherStr.value));
+            return RubyFixnum.newFixnum(runtime, value.caseInsensitiveCmp(otherStr.value));
         }
 
         final int ret = StringSupport.multiByteCasecmp(enc, value, otherStr.value);
 
-        if (ret < 0) {
-            return RubyFixnum.minus_one(context.runtime);
-        }
-
-        if (ret > 0) {
-            return RubyFixnum.one(context.runtime);
-        }
-
-        return RubyFixnum.zero(context.runtime);
+        if (ret < 0) return RubyFixnum.minus_one(runtime);
+        if (ret > 0) return RubyFixnum.one(runtime);
+        return RubyFixnum.zero(runtime);
     }
 
     @JRubyMethod(name = "casecmp?")
@@ -1635,10 +1629,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Encoding enc = StringSupport.areCompatible(this, otherStr);
         if (enc == null) return context.nil;
 
-        IRubyObject[] args = new IRubyObject[] {runtime.newSymbol("fold")};
-        RubyString downcasedString = this.downcase(context, args);
-        RubyString otherDowncasedString = otherStr.downcase(context, args);
-        return downcasedString.equals(otherDowncasedString) ? context.tru : context.fals;
+        int flags = Config.CASE_FOLD;
+        RubyString down = this.strDup(runtime);
+        down.downcase_bang(context, flags);
+        RubyString otherDown = otherStr.strDup(runtime);
+        otherDown.downcase_bang(context, flags);
+        return down.equals(otherDown) ? context.tru : context.fals;
     }
 
     /** rb_str_match
@@ -1773,27 +1769,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return runtime.getFalse();
     }
 
-    /** rb_str_upcase / rb_str_upcase_bang
-     *
-     */
-    @Deprecated
-    public RubyString upcase(ThreadContext context) {
-        return upcase19(context, RubyObject.NULL_ARRAY);
-    }
-
-    @Deprecated
-    public IRubyObject upcase_bang(ThreadContext context) {
-        return upcase_bang19(context, RubyObject.NULL_ARRAY);
-    }
-
-    public RubyString upcase19(ThreadContext context) {
-        return upcase19(context, RubyObject.NULL_ARRAY);
-    }
-
-    public IRubyObject upcase_bang19(ThreadContext context) {
-        return upcase_bang19(context, RubyObject.NULL_ARRAY);
-    }
-
     private int caseMap(Ruby runtime, int flags, Encoding enc) {
         IntHolder flagsP = new IntHolder();
         flagsP.value = flags;
@@ -1805,20 +1780,59 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return flagsP.value;
     }
 
-    @JRubyMethod(name = "upcase", rest = true)
-    public RubyString upcase19(ThreadContext context, IRubyObject[] args) {
+    /** rb_str_upcase / rb_str_upcase_bang
+     *
+     */
+    @Deprecated
+    public RubyString upcase19(ThreadContext context) {
+        return upcase(context);
+    }
+
+    @Deprecated
+    public IRubyObject upcase_bang19(ThreadContext context) {
+        return upcase_bang(context);
+    }
+
+    @JRubyMethod(name = "upcase")
+    public RubyString upcase(ThreadContext context) {
         RubyString str = strDup(context.runtime);
-        str.upcase_bang19(context, args);
+        str.upcase_bang(context);
         return str;
     }
 
-    @JRubyMethod(name = "upcase!", rest = true)
-    public IRubyObject upcase_bang19(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "upcase")
+    public RubyString upcase(ThreadContext context, IRubyObject arg) {
+        RubyString str = strDup(context.runtime);
+        str.upcase_bang(context, arg);
+        return str;
+    }
+
+    @JRubyMethod(name = "upcase")
+    public RubyString upcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        RubyString str = strDup(context.runtime);
+        str.upcase_bang(context, arg0, arg1);
+        return str;
+    }
+
+    @JRubyMethod(name = "upcase!")
+    public IRubyObject upcase_bang(ThreadContext context) {
+        return upcase_bang(context, Config.CASE_UPCASE);
+    }
+
+    @JRubyMethod(name = "upcase!")
+    public IRubyObject upcase_bang(ThreadContext context, IRubyObject arg) {
+        return upcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg, Config.CASE_UPCASE));
+    }
+
+    @JRubyMethod(name = "upcase!")
+    public IRubyObject upcase_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return upcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg0, arg1, Config.CASE_UPCASE));
+    }
+
+    private IRubyObject upcase_bang(ThreadContext context, int flags) {
         Ruby runtime = context.runtime;
-        int flags = StringSupport.checkCaseMapOptions(runtime, args, Config.CASE_UPCASE);
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
-
         if (((flags & Config.CASE_ASCII_ONLY) != 0 && (enc.isUTF8() || enc.maxLength() == 1)) ||
                 (flags & Config.CASE_FOLD_TURKISH_AZERI) == 0 && getCodeRange() == CR_7BIT) {
             int s = value.getBegin();
@@ -1839,42 +1853,60 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
     }
 
+    /** rb_str_downcase / rb_str_downcase_bang
+    *
+    */
+
     @Deprecated
     public RubyString downcase19(ThreadContext context) {
-        return downcase(context, RubyObject.NULL_ARRAY);
+        return downcase(context);
     }
 
     @Deprecated
     public IRubyObject downcase_bang19(ThreadContext context) {
-        return downcase_bang(context, RubyObject.NULL_ARRAY);
+        return downcase_bang(context);
     }
 
+    @JRubyMethod(name = "downcase")
     public RubyString downcase(ThreadContext context) {
-        return downcase(context, RubyObject.NULL_ARRAY);
-    }
-
-    public IRubyObject downcase_bang(ThreadContext context) {
-        return downcase_bang(context, RubyObject.NULL_ARRAY);
-    }
-
-    /** rb_str_downcase / rb_str_downcase_bang
-     *
-     */
-
-    @JRubyMethod(name = "downcase", rest = true)
-    public RubyString downcase(ThreadContext context, IRubyObject[] args) {
         RubyString str = strDup(context.runtime);
-        str.downcase_bang(context, args);
+        str.downcase_bang(context);
         return str;
     }
 
-    @JRubyMethod(name = "downcase!", rest = true)
-    public IRubyObject downcase_bang(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "downcase")
+    public RubyString downcase(ThreadContext context, IRubyObject arg) {
+        RubyString str = strDup(context.runtime);
+        str.downcase_bang(context, arg);
+        return str;
+    }
+
+    @JRubyMethod(name = "downcase")
+    public RubyString downcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        RubyString str = strDup(context.runtime);
+        str.downcase_bang(context, arg0, arg1);
+        return str;
+    }
+
+    @JRubyMethod(name = "downcase!")
+    public IRubyObject downcase_bang(ThreadContext context) {
+        return downcase_bang(context, Config.CASE_DOWNCASE);
+    }
+
+    @JRubyMethod(name = "downcase!")
+    public IRubyObject downcase_bang(ThreadContext context, IRubyObject arg) {
+        return upcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg, Config.CASE_DOWNCASE));
+    }
+
+    @JRubyMethod(name = "downcase!")
+    public IRubyObject downcase_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return upcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg0, arg1, Config.CASE_DOWNCASE));
+    }
+
+    private IRubyObject downcase_bang(ThreadContext context, int flags) {
         Ruby runtime = context.runtime;
-        int flags = StringSupport.checkCaseMapOptions(runtime, args, Config.CASE_DOWNCASE);
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
-
         if (((flags & Config.CASE_ASCII_ONLY) != 0 && (enc.isUTF8() || enc.maxLength() == 1)) ||
                 (flags & Config.CASE_FOLD_TURKISH_AZERI) == 0 && getCodeRange() == CR_7BIT) {
             int s = value.getBegin();
@@ -1898,36 +1930,56 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_swapcase / rb_str_swapcase_bang
      *
      */
-    public RubyString swapcase(ThreadContext context) {
-        return swapcase19(context, RubyObject.NULL_ARRAY);
-    }
-
-    public IRubyObject swapcase_bang(ThreadContext context) {
-        return swapcase_bang19(context, RubyObject.NULL_ARRAY);
-    }
-
+    @Deprecated
     public RubyString swapcase19(ThreadContext context) {
-        return swapcase19(context, RubyObject.NULL_ARRAY);
+        return swapcase(context);
     }
 
+    @Deprecated
     public IRubyObject swapcase_bang19(ThreadContext context) {
-        return swapcase_bang19(context, RubyObject.NULL_ARRAY);
+        return swapcase_bang(context);
     }
 
-    @JRubyMethod(name = "swapcase", rest = true)
-    public RubyString swapcase19(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "swapcase")
+    public RubyString swapcase(ThreadContext context) {
         RubyString str = strDup(context.runtime);
-        str.swapcase_bang19(context, args);
+        str.swapcase_bang(context);
         return str;
     }
 
-    @JRubyMethod(name = "swapcase!", rest = true)
-    public IRubyObject swapcase_bang19(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "swapcase")
+    public RubyString swapcase(ThreadContext context, IRubyObject arg) {
+        RubyString str = strDup(context.runtime);
+        str.swapcase_bang(context, arg);
+        return str;
+    }
+
+    @JRubyMethod(name = "swapcase")
+    public RubyString swapcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        RubyString str = strDup(context.runtime);
+        str.swapcase_bang(context, arg0, arg1);
+        return str;
+    }
+
+    @JRubyMethod(name = "swapcase!")
+    public IRubyObject swapcase_bang(ThreadContext context) {
+        return swapcase_bang(context, Config.CASE_UPCASE | Config.CASE_DOWNCASE);
+    }
+
+    @JRubyMethod(name = "swapcase!")
+    public IRubyObject swapcase_bang(ThreadContext context, IRubyObject arg) {
+        return swapcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg, Config.CASE_UPCASE | Config.CASE_DOWNCASE));
+    }
+
+    @JRubyMethod(name = "swapcase!")
+    public IRubyObject swapcase_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return swapcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg0, arg1, Config.CASE_UPCASE | Config.CASE_DOWNCASE));
+    }
+
+    private IRubyObject swapcase_bang(ThreadContext context, int flags) {
         Ruby runtime = context.runtime;
-        int flags = StringSupport.checkCaseMapOptions(runtime, args, Config.CASE_UPCASE | Config.CASE_DOWNCASE);
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
-
         flags = caseMap(runtime, flags, enc);
         return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
     }
@@ -1935,41 +1987,61 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_capitalize / rb_str_capitalize_bang
     *
     */
-    public IRubyObject capitalize(ThreadContext context) {
-        return capitalize19(context, RubyObject.NULL_ARRAY);
-    }
-
-    public IRubyObject capitalize_bang(ThreadContext context) {
-        return capitalize_bang19(context, RubyObject.NULL_ARRAY);
-    }
-
+    @Deprecated
     public IRubyObject capitalize19(ThreadContext context) {
-        return capitalize19(context, RubyObject.NULL_ARRAY);
+        return capitalize(context);
     }
 
+    @Deprecated
     public IRubyObject capitalize_bang19(ThreadContext context) {
-        return capitalize_bang19(context, RubyObject.NULL_ARRAY);
+        return capitalize_bang(context);
     }
 
-    @JRubyMethod(name = "capitalize", rest = true)
-    public IRubyObject capitalize19(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "capitalize")
+    public RubyString capitalize(ThreadContext context) {
         RubyString str = strDup(context.runtime);
-        str.capitalize_bang19(context, args);
+        str.capitalize_bang(context);
         return str;
     }
 
-    @JRubyMethod(name = "capitalize!", rest = true)
-    public IRubyObject capitalize_bang19(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "capitalize")
+    public RubyString capitalize(ThreadContext context, IRubyObject arg) {
+        RubyString str = strDup(context.runtime);
+        str.capitalize_bang(context, arg);
+        return str;
+    }
+
+    @JRubyMethod(name = "capitalize")
+    public RubyString capitalize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        RubyString str = strDup(context.runtime);
+        str.capitalize_bang(context, arg0, arg1);
+        return str;
+    }
+
+    @JRubyMethod(name = "capitalize!")
+    public IRubyObject capitalize_bang(ThreadContext context) {
+        return capitalize_bang(context, Config.CASE_UPCASE | Config.CASE_TITLECASE);
+    }
+
+    @JRubyMethod(name = "capitalize!")
+    public IRubyObject capitalize_bang(ThreadContext context, IRubyObject arg) {
+        return capitalize_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg, Config.CASE_UPCASE | Config.CASE_TITLECASE));
+    }
+
+    @JRubyMethod(name = "capitalize!")
+    public IRubyObject capitalize_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return capitalize_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg0, arg1, Config.CASE_UPCASE | Config.CASE_TITLECASE));
+    }
+
+    private IRubyObject capitalize_bang(ThreadContext context, int flags) {
         Ruby runtime = context.runtime;
-        int flags = StringSupport.checkCaseMapOptions(runtime, args, Config.CASE_UPCASE | Config.CASE_TITLECASE);
+        modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
 
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
         }
-
-        modifyAndKeepCodeRange();
 
         flags = caseMap(runtime, flags, enc);
         return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;

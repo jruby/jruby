@@ -46,6 +46,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -2409,38 +2410,43 @@ public final class StringSupport {
         return -1;
     }
 
-    public static int checkCaseMapOptions(Ruby runtime, IRubyObject[]args, int flags) {
-        if (args.length == 0) return flags;
-        if (args.length > 2) throw runtime.newArgumentError("too many options");
+    public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, IRubyObject arg1, int flags) {
+        RubySymbol turkic = runtime.newSymbol("turkic");
+        RubySymbol lithuanian = runtime.newSymbol("lithuanian");
 
-        if (args[0] == runtime.newSymbol("turkic")) {
+        if (arg0.equals(turkic)) {
             flags |= Config.CASE_FOLD_TURKISH_AZERI;
-            if (args.length == 2) {
-                if (args[1] == runtime.newSymbol("lithuanian")) {
-                    flags |= Config.CASE_FOLD_LITHUANIAN;
-                } else {
-                    throw runtime.newArgumentError("invalid second option");
-                }
+            if (arg1.equals(lithuanian)) {
+                flags |= Config.CASE_FOLD_LITHUANIAN;
+            } else {
+                throw runtime.newArgumentError("invalid second option");
             }
-        } else if (args[0] == runtime.newSymbol("lithuanian")) {
+        } else if (arg0.equals(lithuanian)) {
             flags |= Config.CASE_FOLD_LITHUANIAN;
-            if (args.length == 2) {
-                if (args[1] == runtime.newSymbol("turkic")) {
-                    flags |= Config.CASE_FOLD_TURKISH_AZERI;
-                } else {
-                    throw runtime.newArgumentError("invalid second option");
-                }
+            if (arg1.equals(turkic)) {
+                flags |= Config.CASE_FOLD_TURKISH_AZERI;
+            } else {
+                throw runtime.newArgumentError("invalid second option");
             }
-        } else if (args.length > 1) {
-            throw runtime.newArgumentError("too many options");
-        } else if (args[0] == runtime.newSymbol("ascii")) {
+        } else {
+            throw runtime.newArgumentError("invalid option");
+        }
+        return flags;
+    }
+
+    public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, int flags) {
+        if (arg0.equals(runtime.newSymbol("ascii"))) {
             flags |= Config.CASE_ASCII_ONLY;
-        } else if (args[0] == runtime.newSymbol("fold")) {
+        } else if (arg0.equals(runtime.newSymbol("fold"))) {
             if ((flags & (Config.CASE_UPCASE | Config.CASE_DOWNCASE)) == Config.CASE_DOWNCASE) {
                 flags ^= Config.CASE_FOLD | Config.CASE_DOWNCASE;
             } else {
                 throw runtime.newArgumentError("option :fold only allowed for downcasing");
             }
+        } else if (arg0.equals(runtime.newSymbol("turkic"))) {
+            flags |= Config.CASE_FOLD_TURKISH_AZERI;
+        } else if (arg0.equals(runtime.newSymbol("lithuanian"))) {
+            flags |= Config.CASE_FOLD_LITHUANIAN;
         } else {
             throw runtime.newArgumentError("invalid option");
         }
