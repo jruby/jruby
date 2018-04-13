@@ -1895,12 +1895,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "downcase!")
     public IRubyObject downcase_bang(ThreadContext context, IRubyObject arg) {
-        return upcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg, Config.CASE_DOWNCASE));
+        return downcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg, Config.CASE_DOWNCASE));
     }
 
     @JRubyMethod(name = "downcase!")
     public IRubyObject downcase_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return upcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg0, arg1, Config.CASE_DOWNCASE));
+        return downcase_bang(context, StringSupport.checkCaseMapOptions(context.runtime, arg0, arg1, Config.CASE_DOWNCASE));
     }
 
     private IRubyObject downcase_bang(ThreadContext context, int flags) {
