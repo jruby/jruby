@@ -69,10 +69,6 @@ public class VCallNode extends Node implements INameNode {
      * Gets the methodName.
      * @return Returns a String
      */
-    public String getId() {
-        return name.idString();
-    }
-
     public RubySymbol getName() {
         return name;
     }

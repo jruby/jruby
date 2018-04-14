@@ -70,10 +70,6 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
 	 * name is the constant Name, it normally starts with a Capital
      * @return name
      */
-    public String getId() {
-    	return name == null ? constNode.getId() : name.asJavaString();
-    }
-
     public RubySymbol getName() {
         return name == null ? constNode.getName() : name;
     }

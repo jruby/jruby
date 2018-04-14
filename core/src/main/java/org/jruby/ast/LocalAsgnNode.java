@@ -71,10 +71,6 @@ public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedN
     /**
      * Name of the local assignment.
      **/
-    public String getId() {
-        return name.idString();
-    }
-
     public RubySymbol getName() {
         return name;
     }

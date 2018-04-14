@@ -299,7 +299,7 @@ public class IRDumper extends IRVisitor {
     public void UnboxedFixnum(UnboxedFixnum fixnum) { print(fixnum.getValue()); }
     public void Float(org.jruby.ir.operands.Float flote) { print(flote.getValue()); }
     public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) { print(flote.getValue()); }
-    public void GlobalVariable(GlobalVariable globalvariable) { print(globalvariable.getName()); }
+    public void GlobalVariable(GlobalVariable globalvariable) { print(globalvariable.getId()); }
     public void Hash(Hash hash) {
         List<KeyValuePair<Operand, Operand>> pairs = hash.getPairs();
         boolean comma = false;
@@ -315,7 +315,7 @@ public class IRDumper extends IRVisitor {
     public void Label(Label label) { print(label.toString()); }
     public void LocalVariable(LocalVariable localvariable) { print(localvariable.getName()); }
     public void Nil(Nil nil) { }
-    public void NthRef(NthRef nthref) { print(nthref.getName()); }
+    public void NthRef(NthRef nthref) { print(nthref.getId()); }
     public void NullBlock(NullBlock nullblock) { }
     public void ObjectClass(ObjectClass objectclass) { }
     public void Rational(Rational rational) { print(rational.getNumerator() + "/" + rational.getDenominator()); }

@@ -224,7 +224,7 @@ public class IRBuilder {
             if (savedGlobalException != null) {
                 // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
                 if (!needsBacktrace) builder.addInstr(builder.manager.needsBacktrace(true));
-                builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+                builder.addInstr(new PutGlobalVarInstr(builder.symbol("$!"), savedGlobalException));
             }
 
             // Sometimes we process a rescue and it hits something like non-local flow like a 'next' and
@@ -697,7 +697,7 @@ public class IRBuilder {
                 break;
             }
             case GLOBALASGNNODE:
-                addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getId(), rhsVal));
+                addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), rhsVal));
                 break;
             case INSTASGNNODE:
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
@@ -789,7 +789,7 @@ public class IRBuilder {
             case GLOBALASGNNODE:
                 v = createTemporaryVariable();
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
-                addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getId(), v));
+                addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), v));
                 break;
             case INSTASGNNODE:
                 v = createTemporaryVariable();
@@ -1117,7 +1117,7 @@ public class IRBuilder {
     private void determineIfProcNew(Node receiverNode, RubySymbol name, CallInstr callInstr) {
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if (CommonByteLists.NEW_METHOD.equals(name.getBytes()) &&
-                receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getId().equals("Proc")) {
+                receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().idString().equals("Proc")) {
             callInstr.setProcNew(true);
         }
     }
@@ -1648,7 +1648,7 @@ public class IRBuilder {
                             createTemporaryVariable(),
                             IS_DEFINED_GLOBAL,
                             new Operand[] {
-                                    new FrozenString(((GlobalVarNode) node).getId()),
+                                    new FrozenString(((GlobalVarNode) node).getName()),
                                     new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())
                             }
                     )
@@ -1672,7 +1672,7 @@ public class IRBuilder {
                             IS_DEFINED_INSTANCE_VAR,
                             new Operand[] {
                                     buildSelf(),
-                                    new FrozenString(((InstVarNode) node).getId()),
+                                    new FrozenString(((InstVarNode) node).getName()),
                                     new FrozenString(DefinedMessage.INSTANCE_VARIABLE.getText())
                             }
                     )
@@ -1684,7 +1684,7 @@ public class IRBuilder {
                             IS_DEFINED_CLASS_VAR,
                             new Operand[]{
                                     classVarDefinitionContainer(),
-                                    new FrozenString(((ClassVarNode) node).getId()),
+                                    new FrozenString(((ClassVarNode) node).getName()),
                                     new FrozenString(DefinedMessage.CLASS_VARIABLE.getText())
                             }
                     )
@@ -1712,7 +1712,7 @@ public class IRBuilder {
                             IS_DEFINED_METHOD,
                             new Operand[] {
                                     buildSelf(),
-                                    new FrozenString(((VCallNode) node).getName().getBytes()),
+                                    new FrozenString(((VCallNode) node).getName()),
                                     manager.getFalse(),
                                     new FrozenString(DefinedMessage.METHOD.getText())
                             }
@@ -1754,7 +1754,7 @@ public class IRBuilder {
             // This runtime library would be used both by the interpreter & the compiled code!
 
             final Colon3Node colon = (Colon3Node) node;
-            final String name = colon.getId();
+            final RubySymbol name = colon.getName();
             final Variable errInfo = createTemporaryVariable();
 
             // store previous exception for restoration if we rescue something
@@ -2579,7 +2579,7 @@ public class IRBuilder {
     public Operand buildEnsureInternal(Node ensureBodyNode, Node ensurerNode) {
         // Save $!
         final Variable savedGlobalException = createTemporaryVariable();
-        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
+        addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
 
         // ------------ Build the body of the ensure block ------------
         //
@@ -2888,14 +2888,14 @@ public class IRBuilder {
 
     public Operand buildGlobalAsgn(GlobalAsgnNode globalAsgnNode) {
         Operand value = build(globalAsgnNode.getValueNode());
-        addInstr(new PutGlobalVarInstr(globalAsgnNode.getId(), value));
+        addInstr(new PutGlobalVarInstr(globalAsgnNode.getName(), value));
         return value;
     }
 
     public Operand buildGlobalVar(Variable result, GlobalVarNode node) {
         if (result == null) result = createTemporaryVariable();
 
-        return addResultInstr(new GetGlobalVariableInstr(result, node.getId()));
+        return addResultInstr(new GetGlobalVariableInstr(result, node.getName()));
     }
 
     public Operand buildHash(HashNode hashNode) {
@@ -3093,7 +3093,7 @@ public class IRBuilder {
         Operand regexp = build(matchNode.getRegexpNode());
 
         Variable tempLastLine = createTemporaryVariable();
-        addResultInstr(new GetGlobalVariableInstr(tempLastLine, "$_"));
+        addResultInstr(new GetGlobalVariableInstr(tempLastLine, symbol("$_")));
 
         if (result == null) result = createTemporaryVariable();
         return addResultInstr(new MatchInstr(scope, result, regexp, tempLastLine));
@@ -3194,7 +3194,7 @@ public class IRBuilder {
     }
 
     public Operand buildNthRef(NthRefNode nthRefNode) {
-        return copyAndReturnValue(new NthRef(nthRefNode.getMatchNumber()));
+        return copyAndReturnValue(new NthRef(scope, nthRefNode.getMatchNumber()));
     }
 
     public Operand buildNil() {
@@ -3541,7 +3541,7 @@ public class IRBuilder {
 
         // This optimization omits backtrace info for the exception getting rescued so we cannot
         // optimize the exception variable.
-        if (body instanceof GlobalVarNode && ((GlobalVarNode) body).getId().equals("$!")) return false;
+        if (body instanceof GlobalVarNode && ((GlobalVarNode) body).getName().idString().equals("$!")) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
@@ -3705,7 +3705,7 @@ public class IRBuilder {
             addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block
             RescueBlockInfo rbi = activeRescueBlockStack.peek();
-            addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
+            addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
             addInstr(new JumpInstr(rbi.entryLabel));
             // Retries effectively create a loop
             scope.setHasLoopsFlag();
@@ -4131,6 +4131,11 @@ public class IRBuilder {
 
     public void initFlipStateVariable(Variable v, Operand initState) {
         addInstrAtBeginning(new CopyInstr(v, initState));
+
+    }
+
+    private RubySymbol symbol(String id) {
+        return manager.runtime.newSymbol(id);
     }
 
     private RubySymbol symbol(ByteList bytelist) {

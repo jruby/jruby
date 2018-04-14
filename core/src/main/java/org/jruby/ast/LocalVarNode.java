@@ -91,10 +91,6 @@ public class LocalVarNode extends Node implements INameNode, IScopedNode, SideEf
      * 
      * @return the name of the variable
      */
-    public String getId() {
-        return name.idString();
-    }
-
     public RubySymbol getName() {
         return name;
     }

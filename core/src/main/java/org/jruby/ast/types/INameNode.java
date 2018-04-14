@@ -30,6 +30,5 @@ package org.jruby.ast.types;
 import org.jruby.RubySymbol;
 
 public interface INameNode {
-    String getId();
     RubySymbol getName();
 }

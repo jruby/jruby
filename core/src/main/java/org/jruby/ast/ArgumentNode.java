@@ -79,11 +79,6 @@ public class ArgumentNode extends Node implements INameNode {
         return location & 0xffff;
     }
 
-    // FIXME: bytelist_love: unnamedrestarg passing null causes this.
-    public String getId() {
-        return identifier == null ? null : identifier.idString();
-    }
-
     public RubySymbol getName() {
         return identifier;
     }

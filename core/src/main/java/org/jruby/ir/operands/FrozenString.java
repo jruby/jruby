@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -41,6 +42,10 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
         this.string = string;
         this.file = file;
         this.line = line;
+    }
+
+    public FrozenString(RubySymbol symbol) {
+        this(symbol.idString(), symbol.getBytes());
     }
 
     public FrozenString(ByteList bytelist) {

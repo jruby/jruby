@@ -76,11 +76,6 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
      * name is the name of the method called
      * @return name
      */
-    public String getId() {
-        return name.idString();
-    }
-
-
     public RubySymbol getName() {
         return name;
     }

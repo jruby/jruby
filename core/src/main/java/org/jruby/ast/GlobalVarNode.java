@@ -65,10 +65,6 @@ public class GlobalVarNode extends Node implements INameNode, SideEffectFree {
      * Gets the name.
      * @return Returns a String
      */
-    public String getId() {
-        return name.idString();
-    }
-
     public RubySymbol getName() {
         return name;
     }

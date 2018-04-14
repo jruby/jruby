@@ -68,10 +68,6 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
      * Gets the name.
      * @return Returns a String
      */
-    public String getId() {
-        return name.asJavaString();
-    }
-
     public RubySymbol getName() {
         return name;
     }

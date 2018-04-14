@@ -90,10 +90,6 @@ public class DVarNode extends Node implements INameNode, IScopedNode, SideEffect
      * Gets the name.
      * @return Returns a String
      */
-    public String getId() {
-        return name.idString();
-    }
-
     public RubySymbol getName() {
         return name;
     }

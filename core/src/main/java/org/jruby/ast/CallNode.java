@@ -111,10 +111,6 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
 	 * name is the name of the method called
      * @return name
      */
-    public String getId() {
-        return name.idString();
-    }
-
     public RubySymbol getName() {
         return name;
     }

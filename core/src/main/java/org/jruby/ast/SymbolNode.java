@@ -57,7 +57,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
     public boolean equals(Object other) {
         return other instanceof SymbolNode &&
                 name.equals(((SymbolNode) other).name) &&
-                name.getEncoding() == ((SymbolNode) other).getEncoding();
+                name.getEncoding() == ((SymbolNode) other).name.getEncoding();
     }
 
     public NodeType getNodeType() {
@@ -72,14 +72,6 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
      * Gets the name.
      * @return Returns a String
      */
-    public String getId() {
-        return name.idString();
-    }
-
-    public Encoding getEncoding() {
-        return name.getEncoding();
-    }
-
     public RubySymbol getName() {
         return name;
     }

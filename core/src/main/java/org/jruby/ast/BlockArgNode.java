@@ -80,10 +80,6 @@ public class BlockArgNode extends Node implements INameNode {
      * 
      * @return it's name
      */
-    public String getId() {
-        return name.idString();
-    }
-
     public RubySymbol getName() {
         return name;
     }

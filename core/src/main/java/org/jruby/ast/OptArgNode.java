@@ -64,10 +64,6 @@ public class OptArgNode extends Node implements INameNode {
         return Node.createList(value);
     }
 
-    public String getId() {
-        return ((INameNode) value).getId();
-    }
-
     public RubySymbol getName() {
         return ((INameNode) value).getName();
     }
