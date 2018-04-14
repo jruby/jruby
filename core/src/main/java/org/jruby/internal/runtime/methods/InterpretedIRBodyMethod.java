@@ -46,8 +46,8 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
 
         try {
             switch (method.getScopeType()) {
-                case MODULE_BODY: return INTERPRET_MODULE(ic, context, self, clazz, method.getName(), block);
-                case CLASS_BODY: return INTERPRET_CLASS(ic, context, self, clazz, method.getName(), block);
+                case MODULE_BODY: return INTERPRET_MODULE(ic, context, self, clazz, method.getId(), block);
+                case CLASS_BODY: return INTERPRET_CLASS(ic, context, self, clazz, method.getId(), block);
                 case METACLASS_BODY: return INTERPRET_METACLASS(ic, context, self, clazz, "singleton class", block);
                 default: throw new RuntimeException("invalid body method type: " + method);
             }

@@ -1361,7 +1361,7 @@ public class IRRuntimeHelpers {
             throw context.runtime.newTypeError("no outer class/module");
         }
 
-        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(irModule.getName());
+        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(irModule.getId());
         irModule.getStaticScope().setModule(newRubyModule);
         return newRubyModule;
     }
@@ -1399,7 +1399,7 @@ public class IRRuntimeHelpers {
                 sc = (RubyClass) superClass;
             }
 
-            newRubyClass = ((RubyModule)container).defineOrGetClassUnder(irClassBody.getName(), sc);
+            newRubyClass = ((RubyModule)container).defineOrGetClassUnder(irClassBody.getId(), sc);
         }
 
         irClassBody.getStaticScope().setModule(newRubyClass);
@@ -1408,7 +1408,7 @@ public class IRRuntimeHelpers {
 
     @Interp
     public static void defInterpretedClassMethod(ThreadContext context, IRScope method, IRubyObject obj) {
-        RubySymbol methodName = RubySymbol.newHardSymbol(context.runtime, method.getByteName());
+        RubySymbol methodName = method.getName();
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
         DynamicMethod newMethod;
@@ -1424,7 +1424,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, IRScope method, IRubyObject obj) {
-        RubySymbol methodName = RubySymbol.newHardSymbol(context.runtime, method.getByteName());
+        RubySymbol methodName = method.getName();
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
@@ -1439,17 +1439,14 @@ public class IRRuntimeHelpers {
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
-        // FIXME: needs checkID and proper encoding to force hard symbol
-        rubyClass.addMethod(method.getName(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
-        if (!rubyClass.isRefinement()) {
-            // FIXME: needs checkID and proper encoding to force hard symbol
-            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
-        }
+        rubyClass.addMethod(method.getId(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
+
+        if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", method.getName());
     }
 
     private static RubyClass checkClassForDef(ThreadContext context, IRScope method, IRubyObject obj) {
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol || obj instanceof RubyFloat) {
-            throw context.runtime.newTypeError("can't define singleton method \"" + method.getName() + "\" for " + obj.getMetaClass().getBaseName());
+            throw context.runtime.newTypeError(str(context.runtime, "can't define singleton method \"", method.getName(), "\" for ", obj.getMetaClass().rubyBaseName()));
         }
 
         // if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
@@ -1460,7 +1457,7 @@ public class IRRuntimeHelpers {
     @Interp
     public static void defInterpretedInstanceMethod(ThreadContext context, IRScope method, DynamicScope currDynScope, IRubyObject self) {
         Ruby runtime = context.runtime;
-        RubySymbol methodName = RubySymbol.newHardSymbol(runtime, method.getByteName());
+        RubySymbol methodName = method.getName();
         RubyModule rubyClass = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
@@ -1479,7 +1476,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle handle, IRScope method, DynamicScope currDynScope, IRubyObject self) {
         Ruby runtime = context.runtime;
-        RubySymbol methodName = RubySymbol.newHardSymbol(runtime, method.getByteName());
+        RubySymbol methodName = method.getName();
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
@@ -1494,7 +1491,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, DynamicScope currDynScope, IRubyObject self) {
         Ruby runtime = context.runtime;
-        RubySymbol methodName = RubySymbol.newHardSymbol(runtime, method.getByteName());
+        RubySymbol methodName = method.getName();
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();

@@ -66,7 +66,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         if (IRRuntimeHelpers.shouldPrintIR(runtime)) {
             ByteArrayOutputStream baos = IRDumper.printIR(irScope, false);
 
-            LOG.info("Printing simple IR for " + irScope.getName() + ":\n" + new String(baos.toByteArray()));
+            LOG.info("Printing simple IR for " + irScope.getId() + ":\n" + new String(baos.toByteArray()));
         }
 
         ThreadContext context = runtime.getCurrentContext();

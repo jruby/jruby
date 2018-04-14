@@ -1,10 +1,10 @@
 package org.jruby.ir;
 
+import org.jruby.RubySymbol;
 import org.jruby.parser.StaticScope;
-import org.jruby.util.ByteList;
 
 public class IRModuleBody extends IRScope {
-    public IRModuleBody(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber, StaticScope staticScope) {
+    public IRModuleBody(IRManager manager, IRScope lexicalParent, RubySymbol name, int lineNumber, StaticScope staticScope) {
         super(manager, lexicalParent, name, lineNumber, staticScope);
 
         if (!getManager().isDryRun()) {

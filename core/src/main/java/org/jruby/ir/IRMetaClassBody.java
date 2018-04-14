@@ -1,10 +1,10 @@
 package org.jruby.ir;
 
+import org.jruby.RubySymbol;
 import org.jruby.parser.StaticScope;
-import org.jruby.util.ByteList;
 
 public class IRMetaClassBody extends IRClassBody {
-    public IRMetaClassBody(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber, StaticScope scope) {
+    public IRMetaClassBody(IRManager manager, IRScope lexicalParent, RubySymbol name, int lineNumber, StaticScope scope) {
         super(manager, lexicalParent, name, lineNumber, scope);
     }
 

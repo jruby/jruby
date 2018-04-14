@@ -33,7 +33,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     private MethodData methodData;
 
     public AbstractIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        super(implementationClass, visibility, method.getName());
+        super(implementationClass, visibility, method.getId());
         this.method = method;
         this.staticScope = method.getStaticScope();
         this.staticScope.determineModule();
@@ -119,7 +119,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
                         break;
                 }
             }
-            methodData = new MethodData(method.getName(), method.getFileName(), ivarNames);
+            methodData = new MethodData(method.getId(), method.getFileName(), ivarNames);
         }
 
         return methodData;

@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -32,14 +33,14 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
 public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
-    private final String scopeName; // Primarily a debugging aid
+    private final RubySymbol scopeName; // Primarily a debugging aid
 
-    public BreakInstr(Operand returnValue, String scopeName) {
+    public BreakInstr(Operand returnValue, RubySymbol scopeName) {
         super(Operation.BREAK, returnValue);
         this.scopeName = scopeName;
     }
 
-    public String getScopeName() {
+    public RubySymbol getScopeName() {
         return scopeName;
     }
 
@@ -102,7 +103,7 @@ public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
     }
 
     public static BreakInstr decode(IRReaderDecoder d) {
-        return new BreakInstr(d.decodeOperand(), d.decodeString());
+        return new BreakInstr(d.decodeOperand(), d.decodeSymbol());
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.EnumSet;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -42,7 +43,7 @@ public class IRManager {
     private final static ByteList OBJECT = new ByteList(new byte[] {'O', 'b', 'j', 'e', 'c', 't'});
 
     private int dummyMetaClassCount = 0;
-    private final IRModuleBody object = new IRClassBody(this, null, OBJECT, 0, null);
+    private final IRModuleBody object;
     private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
@@ -71,6 +72,7 @@ public class IRManager {
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
         this.config = config;
+        object = new IRClassBody(this, null, runtime.newSymbol(OBJECT), 0, null);
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_BUILD_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
         jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_JIT_PASSES, DEFAULT_JIT_PASSES);
@@ -239,8 +241,8 @@ public class IRManager {
         if (irScopeListener.equals(listener)) irScopeListener = null;
     }
 
-    public String getMetaClassName() {
-        return "<DUMMY_MC:" + dummyMetaClassCount++ + ">";
+    public RubySymbol getMetaClassName() {
+        return runtime.newSymbol("<DUMMY_MC:" + dummyMetaClassCount++ + ">");
     }
 
     private TemporaryLocalVariable[] temporaryLocalVariables = new TemporaryLocalVariable[1600];

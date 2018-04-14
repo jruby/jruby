@@ -1,13 +1,12 @@
 package org.jruby.ir;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +15,10 @@ import java.util.concurrent.Callable;
 public class IRScriptBody extends IRScope {
     private List<IRClosure> beginBlocks;
     private DynamicScope toplevelScope;
-    private ByteList fileName;
+    // FIXME: bytelist_love - This is pretty weird...look at how we use getName in this and consider alternative.
+    private RubySymbol fileName;
 
-    public IRScriptBody(IRManager manager, ByteList sourceName, StaticScope staticScope) {
+    public IRScriptBody(IRManager manager, RubySymbol sourceName, StaticScope staticScope) {
         super(manager, null, sourceName, 0, staticScope);
         this.toplevelScope = null;
         this.fileName = sourceName;
@@ -87,14 +87,13 @@ public class IRScriptBody extends IRScope {
         return true;
     }
 
-    // FIXME: This should be ByteList
     @Override
     public void setFileName(String fileName) {
-        this.fileName = new ByteList(fileName.getBytes());
+        this.fileName = getManager().runtime.newSymbol(fileName);
     }
 
     @Override
     public String getFileName() {
-        return StringSupport.byteListAsString(fileName);
+        return fileName.asJavaString();
     }
 }

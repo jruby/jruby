@@ -2122,8 +2122,7 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject defineMethodFromBlock(ThreadContext context, IRubyObject arg0, Block block, Visibility visibility) {
         final Ruby runtime = context.runtime;
-        RubySymbol nameSym = TypeConverter.checkID(arg0);
-        String name = nameSym.toString();
+        RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
         if (!block.isGiven()) {
@@ -2142,7 +2141,7 @@ public class RubyModule extends RubyObject {
             if (method != null) {
                 newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
                 Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
-                return nameSym;
+                return name;
             }
         }
 
@@ -2152,11 +2151,11 @@ public class RubyModule extends RubyObject {
         // a normal block passed to define_method changes to do arity checking; make it a lambda
         proc.getBlock().type = Block.Type.LAMBDA;
 
-        newMethod = createProcMethod(name, visibility, proc);
+        newMethod = createProcMethod(name.idString(), visibility, proc);
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
-        return nameSym;
+        return name;
     }
 
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
@@ -2168,15 +2167,14 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject defineMethodFromCallable(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Visibility visibility) {
         final Ruby runtime = context.runtime;
-        RubySymbol nameSym = TypeConverter.checkID(arg0);
-        String name = nameSym.toString();
+        RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
 
-            newMethod = createProcMethod(name, visibility, proc);
+            newMethod = createProcMethod(name.idString(), visibility, proc);
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
 
@@ -2191,7 +2189,7 @@ public class RubyModule extends RubyObject {
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
-        return nameSym;
+        return name;
     }
 
     @Deprecated

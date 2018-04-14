@@ -7,7 +7,6 @@ import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.util.ByteList;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
@@ -17,7 +16,7 @@ public class IRMethod extends IRScope {
 
     private DefNode defn;
 
-    public IRMethod(IRManager manager, IRScope lexicalParent, DefNode defn, ByteList name,
+    public IRMethod(IRManager manager, IRScope lexicalParent, DefNode defn, RubySymbol name,
             boolean isInstanceMethod, int lineNumber, StaticScope staticScope, boolean needsCodeCoverage) {
         super(manager, lexicalParent, name, lineNumber, staticScope);
 

@@ -90,7 +90,7 @@ public class IRDumper extends IRVisitor {
     }
 
     public void visit(IRScope scope, boolean full, boolean recurse) {
-        println("begin " + scope.getScopeType().name() + "<" + scope.getName() + ">");
+        println("begin " + scope.getScopeType().name() + "<" + scope.getId() + ">");
 
         InterpreterContext ic = full ? scope.getFullInterpreterContext() : scope.getInterpreterContext();
 
@@ -335,7 +335,7 @@ public class IRDumper extends IRVisitor {
     public void TemporaryBooleanVariable(TemporaryBooleanVariable temporarybooleanvariable) { TemporaryVariable(temporarybooleanvariable); }
     public void UndefinedValue(UndefinedValue undefinedvalue) {  }
     public void UnexecutableNil(UnexecutableNil unexecutablenil) {  }
-    public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) { print(wrappedirclosure.getClosure().getName()); }
+    public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) { print(wrappedirclosure.getClosure().getId()); }
 
     private static Object get(Field f, Instr i) {
         try {

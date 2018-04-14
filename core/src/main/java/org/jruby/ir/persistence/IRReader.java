@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
 /**
@@ -78,7 +77,7 @@ public class IRReader implements IRPersistenceValues {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRScopeType = " + type);
-        ByteList name = decoder.decodeByteList();
+        RubySymbol name = decoder.decodeSymbol();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("NAME = " + name);
         int line = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
@@ -147,14 +146,14 @@ public class IRReader implements IRPersistenceValues {
         return scope;
     }
 
-    public static IRScope createScope(IRManager manager, IRScopeType type, ByteList name, int line,
+    public static IRScope createScope(IRManager manager, IRScopeType type, RubySymbol name, int line,
                                       IRScope lexicalParent, Signature signature, StaticScope staticScope) {
 
         switch (type) {
         case CLASS_BODY:
             return new IRClassBody(manager, lexicalParent, name, line, staticScope);
         case METACLASS_BODY:
-            return new IRMetaClassBody(manager, lexicalParent, new ByteList(manager.getMetaClassName().getBytes()), line, staticScope);
+            return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
         case INSTANCE_METHOD:
             return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope, false);
         case CLASS_METHOD:

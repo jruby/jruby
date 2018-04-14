@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -72,7 +71,7 @@ public abstract class IRScope implements ParseResult {
     private int scopeId;
 
     /** Name */
-    private ByteList name;
+    private RubySymbol name;
 
     /** Starting line for this scope's definition */
     private final int lineNumber;
@@ -152,7 +151,7 @@ public abstract class IRScope implements ParseResult {
         setupLexicalContainment();
     }
 
-    public IRScope(IRManager manager, IRScope lexicalParent, ByteList name,
+    public IRScope(IRManager manager, IRScope lexicalParent, RubySymbol name,
             int lineNumber, StaticScope staticScope) {
         this.manager = manager;
         this.lexicalParent = lexicalParent;
@@ -345,15 +344,15 @@ public abstract class IRScope implements ParseResult {
         return n;
     }
 
-    public String getName() {
-        return name.toString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteName() {
+    public RubySymbol getName() {
         return name;
     }
 
-    public void setByteName(ByteList name) {
+    public void setName(RubySymbol name) {
         this.name = name;
     }
 
@@ -597,10 +596,11 @@ public abstract class IRScope implements ParseResult {
         return fullInterpreterContext;
     }
 
+    // FIXME: bytelist_love - we should consider RubyString here if we care for proper printing (used for debugging).
     public String getFullyQualifiedName() {
-        if (getLexicalParent() == null) return getName();
+        if (getLexicalParent() == null) return getId();
 
-        return getLexicalParent().getFullyQualifiedName() + "::" + getName();
+        return getLexicalParent().getFullyQualifiedName() + "::" + getId();
     }
 
     public IGVDumper dumpToIGV() {
@@ -782,7 +782,7 @@ public abstract class IRScope implements ParseResult {
 
     @Override
     public String toString() {
-        return String.valueOf(getScopeType()) + ' ' + getName() + '[' + getFileName() + ':' + getLineNumber() + ']';
+        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFileName() + ':' + getLineNumber() + ']';
     }
 
     public String debugOutput() {

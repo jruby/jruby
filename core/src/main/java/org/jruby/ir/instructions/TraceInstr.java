@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -13,8 +14,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.util.EnumSet;
 
@@ -25,11 +24,11 @@ import java.util.EnumSet;
  */
 public class TraceInstr extends NoOperandInstr {
     private final RubyEvent event;
-    private final ByteList name;
+    private final RubySymbol name;
     private final String filename;
     private final int linenumber;
 
-    public TraceInstr(RubyEvent event, ByteList name, String filename, int linenumber) {
+    public TraceInstr(RubyEvent event, RubySymbol name, String filename, int linenumber) {
         super(Operation.TRACE);
 
         this.event = event;
@@ -48,7 +47,7 @@ public class TraceInstr extends NoOperandInstr {
     }
 
     public String getName() {
-        return name == null ? null : StringSupport.byteListAsString(name);
+        return name == null ? null : name.idString();
     }
 
     public String getFilename() {
@@ -74,7 +73,7 @@ public class TraceInstr extends NoOperandInstr {
     }
 
     public static TraceInstr decode(IRReaderDecoder d) {
-        return new TraceInstr(d.decodeRubyEvent(), d.decodeByteList(), d.decodeString(), d.decodeInt());
+        return new TraceInstr(d.decodeRubyEvent(), d.decodeSymbol(), d.decodeString(), d.decodeInt());
     }
 
     @Override

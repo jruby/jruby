@@ -63,7 +63,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
         } catch (NotCompilableException nce) {
             throw nce;
         } catch (Throwable t) {
-            throw new NotCompilableException("failed to compile script " + scope.getName(), t);
+            throw new NotCompilableException("failed to compile script " + scope.getId(), t);
         }
 
         final MethodHandle compiledHandle = _compiledHandle;

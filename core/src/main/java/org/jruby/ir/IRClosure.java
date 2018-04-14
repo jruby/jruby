@@ -59,18 +59,18 @@ public class IRClosure extends IRScope {
         this.closureId = lexicalParent.getNextClosureId();
         ByteList name = prefix.dup();
         name.append(Integer.toString(closureId).getBytes());
-        setByteName(name);
+        setName(manager.getRuntime().newSymbol(name));
         this.body = null;
     }
 
     /** Used by cloning code */
     /* Inlining generates a new name and id and basic cloning will reuse the originals name */
-    protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName) {
+    protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, RubySymbol fullName) {
         super(c, lexicalParent);
         this.closureId = closureId;
-        super.setByteName(fullName);
-        this.startLabel = getNewLabel(getName() + "_START");
-        this.endLabel = getNewLabel(getName() + "_END");
+        super.setName(fullName);
+        this.startLabel = getNewLabel(getId() + "_START");
+        this.endLabel = getNewLabel(getId() + "_END");
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
@@ -195,7 +195,7 @@ public class IRClosure extends IRScope {
     }
 
     public String toStringBody() {
-        return new StringBuilder(getName()).append(" = {\n").append(toStringInstrs()).append("\n}\n\n").toString();
+        return new StringBuilder(getId()).append(" = {\n").append(toStringInstrs()).append("\n}\n\n").toString();
     }
 
     public BlockBody getBlockBody() {
@@ -213,7 +213,7 @@ public class IRClosure extends IRScope {
     }
 
     // FIXME: this is needs to be ByteList
-    public IRMethod convertToMethod(String name) {
+    public IRMethod convertToMethod(RubySymbol name) {
         // We want variable scoping to be the same as a method and not see outside itself.
         if (source == null ||
             getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) ||  // Built methods cannot search down past method scope
@@ -227,7 +227,7 @@ public class IRClosure extends IRScope {
         source = null;
 
         // FIXME: This should be bytelist from param vs being made (see above).
-        return new IRMethod(getManager(), getLexicalParent(), def, new ByteList(name.getBytes()), true,  getLineNumber(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
+        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLineNumber(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
     }
 
     public void setSource(IterNode iter) {
@@ -352,13 +352,13 @@ public class IRClosure extends IRScope {
         IRScope lexicalParent = ii.getScope();
 
         if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo)ii).isEnsureBlockCloneMode()) {
-            clonedClosure = new IRClosure(this, lexicalParent, closureId, getByteName());
+            clonedClosure = new IRClosure(this, lexicalParent, closureId, getName());
         } else {
             int id = lexicalParent.getNextClosureId();
-            ByteList fullName = lexicalParent.getByteName().dup();
+            ByteList fullName = lexicalParent.getName().getBytes().dup();
             fullName.append(CLOSURE_CLONE);
             fullName.append(new Integer(id).toString().getBytes());
-            clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
+            clonedClosure = new IRClosure(this, lexicalParent, id, getManager().runtime.newSymbol(fullName));
         }
 
         // WrappedIRClosure should always have a single unique IRClosure in them so we should
@@ -369,12 +369,12 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public void setByteName(ByteList name) {
-        ByteList newName = getLexicalParent().getByteName().dup();
+    public void setName(RubySymbol name) {
+        ByteList newName = getLexicalParent().getName().getBytes().dup();
 
-        newName.append(name);
+        newName.append(name.getBytes());
 
-        super.setByteName(newName);
+        super.setName(getManager().getRuntime().newSymbol(newName));
     }
 
     public Signature getSignature() {

@@ -295,7 +295,7 @@ public class JRubyLibrary implements Library {
         // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
         return CompiledScript.newInstance(context, new IRubyObject[] {
                 filename,
-                runtime.newString(scope.getName()),
+                scope.getName(),
                 content,
                 Java.getInstance(runtime, bytes)
         }, Block.NULL_BLOCK);

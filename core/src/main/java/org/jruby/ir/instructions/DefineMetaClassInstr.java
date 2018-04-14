@@ -45,7 +45,7 @@ public class DefineMetaClassInstr extends OneOperandResultBaseInstr implements F
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"name: " + metaClassBody.getName() };
+        return new String[] {"name: " + metaClassBody.getId() };
     }
 
     @Override

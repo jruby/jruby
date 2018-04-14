@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
@@ -23,7 +24,7 @@ public class IRFor extends IRClosure {
     }
 
     /** Used by cloning code */
-    private IRFor(IRClosure c, IRScope lexicalParent, int id, ByteList fullName) {
+    private IRFor(IRClosure c, IRScope lexicalParent, int id, RubySymbol fullName) {
         super(c, lexicalParent, id, fullName);
     }
 
@@ -40,13 +41,13 @@ public class IRFor extends IRClosure {
         IRScope lexicalParent = ii.getScope();
 
         if (ii instanceof SimpleCloneInfo) {
-            clonedClosure = new IRFor(this, lexicalParent, closureId, getByteName());
+            clonedClosure = new IRFor(this, lexicalParent, closureId, getName());
         } else {
             int id = lexicalParent.getNextClosureId();
-            ByteList fullName = lexicalParent.getByteName().dup();
+            ByteList fullName = lexicalParent.getName().getBytes().dup();
             fullName.append(FOR_LOOP_CLONE);
             fullName.append(Integer.toString(id).getBytes());
-            clonedClosure = new IRFor(this, lexicalParent, id, fullName);
+            clonedClosure = new IRFor(this, lexicalParent, id, getManager().getRuntime().newSymbol(fullName));
         }
 
         return cloneForInlining(ii, clonedClosure);

@@ -1368,7 +1368,7 @@ public class IRBuilder {
         Node superNode = classNode.getSuperNode();
         Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? null : build(superNode);
-        ByteList className = cpath.getByteName();
+        RubySymbol className = cpath.getSymbolName();
         Operand container = getContainerFromCPath(cpath);
         IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope());
         Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
@@ -1384,7 +1384,7 @@ public class IRBuilder {
     public Operand buildSClass(SClassNode sclassNode) {
         Operand receiver = build(sclassNode.getReceiverNode());
         // FIXME: metaclass name should be a bytelist
-        IRModuleBody body = new IRMetaClassBody(manager, scope, new ByteList(manager.getMetaClassName().getBytes()), sclassNode.getLine(), sclassNode.getScope());
+        IRModuleBody body = new IRMetaClassBody(manager, scope, manager.getMetaClassName(), sclassNode.getLine(), sclassNode.getScope());
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(createTemporaryVariable(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
@@ -1904,7 +1904,7 @@ public class IRBuilder {
                                     IS_DEFINED_METHOD,
                                     new Operand[] {
                                             receiver,
-                                            new StringLiteral(attrAssign.getByteName()),
+                                            new Symbol(attrAssign.getSymbolName()),
                                             manager.getTrue(),
                                             new FrozenString(DefinedMessage.METHOD.getText())
                                     }
@@ -2026,7 +2026,7 @@ public class IRBuilder {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
             addInstr(manager.newLineNumber(scope.getLineNumber()));
-            addInstr(new TraceInstr(RubyEvent.CALL, getByteName(), getFileName(), scope.getLineNumber()));
+            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
         }
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -2047,7 +2047,7 @@ public class IRBuilder {
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new LineNumberInstr(defNode.getEndLine()));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getByteName(), getFileName(), defNode.getEndLine()));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));
@@ -2076,7 +2076,7 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getByteName(), isInstanceMethod, defNode.getLine(),
+        return new IRMethod(manager, scope, defNode, defNode.getSymbolName(), isInstanceMethod, defNode.getLine(),
                 defNode.getScope(), needsCodeCoverage());
     }
 
@@ -3158,7 +3158,7 @@ public class IRBuilder {
 
     public Operand buildModule(ModuleNode moduleNode) {
         Colon3Node cpath = moduleNode.getCPath();
-        ByteList moduleName = cpath.getByteName();
+        RubySymbol moduleName = cpath.getSymbolName();
         Operand container = getContainerFromCPath(cpath);
         IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope());
         Variable moduleVar = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
@@ -3735,7 +3735,8 @@ public class IRBuilder {
             // 4. eval/for (return) [static]
             boolean definedWithinMethod = scope.getNearestMethod() != null;
             if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) addInstr(new CheckForLJEInstr(definedWithinMethod));
-            addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getName() : "--none--" ));
+            addInstr(new NonlocalReturnInstr(retVal,
+                    definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
@@ -3746,7 +3747,7 @@ public class IRBuilder {
             retVal = processEnsureRescueBlocks(retVal);
 
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.RETURN, getByteName(), getFileName(), returnNode.getLine()));
+                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine()));
             }
 
             addInstr(new ReturnInstr(retVal));
@@ -3773,7 +3774,7 @@ public class IRBuilder {
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
         // FIXME: This filename should switch to ByteList
-        IRScriptBody script = new IRScriptBody(manager, new ByteList(rootNode.getFile().getBytes()), rootNode.getStaticScope());
+        IRScriptBody script = new IRScriptBody(manager, manager.runtime.newSymbol(rootNode.getFile()), rootNode.getStaticScope());
 
         return topIRBuilder(manager, script).buildRootInner(rootNode);
     }
@@ -3823,9 +3824,9 @@ public class IRBuilder {
         Variable ret = createTemporaryVariable();
         if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody) {
             if (((IRMethod) scope).isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(ret, scope.getCurrentModuleVariable(), getByteName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new InstanceSuperInstr(ret, scope.getCurrentModuleVariable(), getName().getBytes(), args, block, scope.maybeUsingRefinements());
             } else {
-                superInstr = new ClassSuperInstr(ret, scope.getCurrentModuleVariable(), getByteName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new ClassSuperInstr(ret, scope.getCurrentModuleVariable(), getName().getBytes(), args, block, scope.maybeUsingRefinements());
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
@@ -4098,10 +4099,10 @@ public class IRBuilder {
         return scope.allocateInterpreterContext(instructions);
     }
 
-    private ByteList methodNameFor() {
+    private RubySymbol methodNameFor() {
         IRScope method = scope.getNearestMethod();
 
-        return method == null ? null : method.getByteName();
+        return method == null ? null : method.getName();
     }
 
     private TemporaryVariable createTemporaryVariable() {
@@ -4116,8 +4117,8 @@ public class IRBuilder {
         return scope.getNewLocalVariable(name, scopeDepth);
     }
 
-    public ByteList getByteName() {
-        return scope.getByteName();
+    public RubySymbol getName() {
+        return scope.getName();
     }
 
     private Label getNewLabel() {
@@ -4160,10 +4161,10 @@ public class IRBuilder {
     private static void extractCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
         if (instr instanceof ReceiveKeywordRestArgInstr) {
             // Always add the keyword rest arg to the beginning
-            keywordArgs.add(0, new KeyValuePair<>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
+            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
         } else if (instr instanceof ReceiveKeywordArgInstr) {
             ReceiveKeywordArgInstr receiveKwargInstr = (ReceiveKeywordArgInstr) instr;
-            keywordArgs.add(new KeyValuePair<>(new Symbol(receiveKwargInstr.getKey()), receiveKwargInstr.getResult()));
+            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(receiveKwargInstr.getKey()), receiveKwargInstr.getResult()));
         } else if (instr instanceof ReceiveRestArgInstr) {
             callArgs.add(new Splat(((ReceiveRestArgInstr) instr).getResult()));
         } else if (instr instanceof ReceiveArgBase) {
