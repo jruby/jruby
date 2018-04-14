@@ -2215,18 +2215,21 @@ public final class StringSupport {
                 oc = preciseCodePoint(enc, obytes, op, oend);
             }
 
-            int cl, ocl;
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c) && Encoding.isAscii(oc)) {
-                byte uc = AsciiTables.ToUpperCaseTable[c];
-                byte uoc = AsciiTables.ToUpperCaseTable[oc];
-                if (uc != uoc) {
-                    return uc < uoc ? -1 : 1;
+            final int cl, ocl;
+            if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
+                int dc = AsciiTables.ToUpperCaseTable[c];
+                int odc = AsciiTables.ToUpperCaseTable[oc];
+                if (dc != odc) return dc < odc ? -1 : 1;
+
+                if (enc.isAsciiCompatible()) {
+                    cl = ocl = 1;
+                } else {
+                    cl = preciseLength(enc, bytes, p, end);
+                    ocl = preciseLength(enc, obytes, op, oend);
                 }
-                cl = ocl = 1;
             } else {
                 cl = length(enc, bytes, p, end);
                 ocl = length(enc, obytes, op, oend);
-                // TODO: opt for 2 and 3 ?
                 int ret = caseCmp(bytes, p, obytes, op, cl < ocl ? cl : ocl);
                 if (ret != 0) return ret < 0 ? -1 : 1;
                 if (cl != ocl) return cl < ocl ? -1 : 1;
