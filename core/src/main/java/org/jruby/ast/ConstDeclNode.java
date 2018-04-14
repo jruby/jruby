@@ -37,7 +37,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * Declaration (and assignment) of a Constant.
@@ -71,16 +70,12 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
 	 * name is the constant Name, it normally starts with a Capital
      * @return name
      */
-    public String getName() {
-    	return name == null ? constNode.getName() : name.asJavaString();
+    public String getId() {
+    	return name == null ? constNode.getId() : name.asJavaString();
     }
 
-    public ByteList getByteName() {
-        return name == null ? constNode.getByteName() : name.getBytes();
-    }
-
-    public RubySymbol getSymbolName() {
-        return name == null ? constNode.getSymbolName() : name;
+    public RubySymbol getName() {
+        return name == null ? constNode.getName() : name;
     }
 
     /**

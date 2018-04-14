@@ -37,7 +37,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * Access a dynamic variable (e.g. block scope local variable).
@@ -91,15 +90,11 @@ public class DVarNode extends Node implements INameNode, IScopedNode, SideEffect
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
-        return name.asJavaString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteName() {
-        return name.getBytes();
-    }
-
-    public RubySymbol getSymbolName() {
+    public RubySymbol getName() {
         return name;
     }
     

@@ -34,7 +34,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * Node that represents an assignment of either an array element or attribute.
@@ -77,16 +76,12 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
      * name is the name of the method called
      * @return name
      */
-    public String getName() {
-        return name.asJavaString();
-    }
-
-    public ByteList getByteName() {
-        return name.getBytes();
+    public String getId() {
+        return name.idString();
     }
 
 
-    public RubySymbol getSymbolName() {
+    public RubySymbol getName() {
         return name;
     }
     /**

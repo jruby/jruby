@@ -76,7 +76,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
      */
     @Override
     public Void visitInstAsgnNode(InstAsgnNode iVisited) {
-        foundVariables.add(iVisited.getName());
+        foundVariables.add(iVisited.getId());
         List<Node> nodes = iVisited.childNodes();
         for (int i = 0; i < nodes.size(); i++) {
             Node node = nodes.get(i);
@@ -93,7 +93,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
      */
     @Override
     public Void visitInstVarNode(InstVarNode iVisited) {
-        foundVariables.add(iVisited.getName());
+        foundVariables.add(iVisited.getId());
         List<Node> nodes = iVisited.childNodes();
         for (int i = 0; i < nodes.size(); i++) {
             Node node = nodes.get(i);

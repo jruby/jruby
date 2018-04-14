@@ -40,11 +40,11 @@ public class UnnamedRestArgNode extends RestArgNode {
     }
 
     public boolean isStar() {
-        return getSymbolName() != null;
+        return getName() != null;
     }
 
     @Override
-    public String getName() {
-        return isStar() ? super.getName() : null;
+    public String getId() {
+        return isStar() ? super.getId() : null;
     }
 }

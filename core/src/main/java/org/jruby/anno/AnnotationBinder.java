@@ -528,7 +528,7 @@ public class AnnotationBinder extends AbstractProcessor {
 
         if (aliases.length > 0) {
             for (String alias : aliases) {
-                // type.putAlias(alias, aliasedMethod, baseName); /* baseName == method.getName() */
+                // type.putAlias(alias, aliasedMethod, baseName); /* baseName == method.getId() */
                 out.println("        " + classVar + ".putAlias(\"" + alias + "\", aliasedMethod, \"" + baseName + "\");");
             }
         }

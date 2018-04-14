@@ -41,7 +41,6 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * Represents a symbol (:symbol_name).
@@ -73,27 +72,19 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
-        return name.asJavaString();
+    public String getId() {
+        return name.idString();
     }
 
     public Encoding getEncoding() {
         return name.getEncoding();
     }
 
-    public ByteList getByteName() {
-        return name.getBytes();
-    }
-
-    public RubySymbol getSymbolName() {
+    public RubySymbol getName() {
         return name;
     }
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    public ByteList getBytes() {
-        return name.getBytes();
     }
 }

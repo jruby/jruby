@@ -5380,14 +5380,14 @@ states[587] = new ParserState() {
 states[588] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     lexer.setCurrentArg(null);
-                    yyVal = new OptArgNode(support.getPosition(((Node)yyVals[0+yyTop])), support.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop]).getByteName(), ((Node)yyVals[0+yyTop])));
+                    yyVal = new OptArgNode(support.getPosition(((Node)yyVals[0+yyTop])), support.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop]).getName().getBytes(), ((Node)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[589] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     lexer.setCurrentArg(null);
-                    yyVal = new OptArgNode(support.getPosition(((Node)yyVals[0+yyTop])), support.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop]).getByteName(), ((Node)yyVals[0+yyTop])));
+                    yyVal = new OptArgNode(support.getPosition(((Node)yyVals[0+yyTop])), support.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop]).getName().getBytes(), ((Node)yyVals[0+yyTop])));
     return yyVal;
   }
 };

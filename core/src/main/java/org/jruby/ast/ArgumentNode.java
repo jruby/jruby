@@ -34,7 +34,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * Simple Node for named entities.  Things like the name of a method will make a node
@@ -81,15 +80,11 @@ public class ArgumentNode extends Node implements INameNode {
     }
 
     // FIXME: bytelist_love: unnamedrestarg passing null causes this.
-    public String getName() {
-        return identifier == null ? null : identifier.asJavaString();
+    public String getId() {
+        return identifier == null ? null : identifier.idString();
     }
 
-    public ByteList getByteName() {
-        return identifier == null ? null : identifier.getBytes();
-    }
-
-    public RubySymbol getSymbolName() {
+    public RubySymbol getName() {
         return identifier;
     }
 

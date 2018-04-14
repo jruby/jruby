@@ -570,7 +570,7 @@ public class RubyModule extends RubyObject {
      *
      * @return a properly encoded class name.
      *
-     * Note: getName() is only really valid for ASCII values.  This should be favored over using it.
+     * Note: getId() is only really valid for ASCII values.  This should be favored over using it.
      */
     public RubyString rubyName() {
         return cachedRubyName != null ? cachedRubyName : calculateRubyName();

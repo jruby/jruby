@@ -140,23 +140,23 @@ public class ParserSupport {
         switch (node.getNodeType()) {
         case DASGNNODE: // LOCALVAR
         case LOCALASGNNODE:
-            RubySymbol name = ((INameNode) node).getSymbolName();
+            RubySymbol name = ((INameNode) node).getName();
             if (name.equals(lexer.getCurrentArg())) {
                 warn(ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
             }
             return currentScope.declare(node.getPosition(), name);
         case CONSTDECLNODE: // CONSTANT
-            return new ConstNode(node.getPosition(), ((INameNode) node).getSymbolName());
+            return new ConstNode(node.getPosition(), ((INameNode) node).getName());
         case INSTASGNNODE: // INSTANCE VARIABLE
-            return new InstVarNode(node.getPosition(), ((INameNode) node).getSymbolName());
+            return new InstVarNode(node.getPosition(), ((INameNode) node).getName());
         case CLASSVARDECLNODE:
         case CLASSVARASGNNODE:
-            return new ClassVarNode(node.getPosition(), ((INameNode) node).getSymbolName());
+            return new ClassVarNode(node.getPosition(), ((INameNode) node).getName());
         case GLOBALASGNNODE:
-            return new GlobalVarNode(node.getPosition(), ((INameNode) node).getSymbolName());
+            return new GlobalVarNode(node.getPosition(), ((INameNode) node).getName());
         }
 
-        getterIdentifierError(node.getPosition(), ((INameNode) node).getSymbolName());
+        getterIdentifierError(node.getPosition(), ((INameNode) node).getName());
         return null;
     }
 
@@ -490,7 +490,7 @@ public class ParserSupport {
             
             switch (node.getNodeType()) {
             case CALLNODE: {
-                ByteList name = ((CallNode) node).getByteName();
+                ByteList name = ((CallNode) node).getName().getBytes();
                 int length = name.realSize();
 
                 if (length > 3) {

@@ -37,7 +37,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * Global scope node (::FooBar).  This is used to gain access to the global scope (that of the 
@@ -71,15 +70,11 @@ public class Colon3Node extends Node implements INameNode {
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
-        return name.asJavaString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteName() {
-        return name.getBytes();
-    }
-
-    public RubySymbol getSymbolName() {
+    public RubySymbol getName() {
         return name;
     }
     

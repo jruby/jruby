@@ -1046,7 +1046,7 @@ public class LoadService {
 //            if (runtime.getInstanceConfig().isCextEnabled()) {
 //                return new CExtension(resource);
 //            } else {
-//                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
+//                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getId() + "'", resource.getId());
 //            }
             throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
         } else if (file.endsWith(".jar")) {

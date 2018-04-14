@@ -174,7 +174,7 @@ public class RaiseException extends JumpException {
     @Deprecated
     public RaiseException(Throwable cause, org.jruby.NativeException nativeException) {
         super(nativeException.getMessageAsJavaString(), cause);
-        providedMessage = super.getMessage(); // cause.getClass().getName() + ": " + message
+        providedMessage = super.getMessage(); // cause.getClass().getId() + ": " + message
         setException(nativeException);
         preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
         setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));

@@ -289,7 +289,7 @@ public class JRubyEngineFactoryTest {
         Object command = engine.eval("$command = this.java_method :append, [java.lang.String]");
 
         assertTrue( command instanceof org.jruby.RubyMethod );
-        //assertEquals( "append", ((Method) command).getName() );
+        //assertEquals( "append", ((Method) command).getId() );
         //assertEquals( String.class, ((Method) command).getParameterTypes()[0] );
 
         Object result = engine.eval(

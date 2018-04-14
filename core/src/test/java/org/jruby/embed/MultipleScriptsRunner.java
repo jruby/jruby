@@ -114,7 +114,7 @@ public class MultipleScriptsRunner {
                     list.add(filename);
                 }
             } else if (file.isDirectory()) {
-                //String nextDir = testDir + "/" + file.getName();
+                //String nextDir = testDir + "/" + file.getId();
                 //getRubyFileNames(nextDir, filenames);
             }
         }

@@ -210,7 +210,7 @@ public class IRDumper extends IRVisitor {
 
         if (instr instanceof ResultInstr) {
             Variable result = ((ResultInstr) instr).getResult();
-            // FIXME: bytelist_love - use getName and stringbuilder.
+            // FIXME: bytelist_love - use getId and stringbuilder.
             String sigilName = (result instanceof LocalVariable) ? "*" + result.getId() : result.getId();
 
             printf(varFormat, sigilName);

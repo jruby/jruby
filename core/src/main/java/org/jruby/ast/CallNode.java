@@ -38,7 +38,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * A method or operator call.
@@ -112,15 +111,11 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
 	 * name is the name of the method called
      * @return name
      */
-    public String getName() {
-        return name.asJavaString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteName() {
-        return name.getBytes();
-    }
-
-    public RubySymbol getSymbolName() {
+    public RubySymbol getName() {
         return name;
     }
 

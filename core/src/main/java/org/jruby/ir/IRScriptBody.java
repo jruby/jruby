@@ -15,7 +15,7 @@ import java.util.concurrent.Callable;
 public class IRScriptBody extends IRScope {
     private List<IRClosure> beginBlocks;
     private DynamicScope toplevelScope;
-    // FIXME: bytelist_love - This is pretty weird...look at how we use getName in this and consider alternative.
+    // FIXME: bytelist_love - This is pretty weird...look at how we use getId in this and consider alternative.
     private RubySymbol fileName;
 
     public IRScriptBody(IRManager manager, RubySymbol sourceName, StaticScope staticScope) {

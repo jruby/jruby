@@ -2083,7 +2083,7 @@ public class Helpers {
                 if (args[i] instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) args[i]).getByteName()));
+                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) args[i]).getName().getBytes()));
                 }
             }
         }
@@ -2096,7 +2096,7 @@ public class Helpers {
             for (int i = 0; i < optCount; i++) {
                 Node optNode = args[optIndex + i];
                 if (optNode instanceof INameNode) {
-                    descs.add(new ArgumentDescriptor(ArgumentType.opt, ((INameNode) optNode).getByteName()));
+                    descs.add(new ArgumentDescriptor(ArgumentType.opt, ((INameNode) optNode).getName().getBytes()));
                 } else {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonopt));
                 }
@@ -2108,7 +2108,7 @@ public class Helpers {
             if (restArg instanceof UnnamedRestArgNode) {
                 if (((UnnamedRestArgNode) restArg).isStar()) descs.add(new ArgumentDescriptor(ArgumentType.anonrest));
             } else {
-                descs.add(new ArgumentDescriptor(ArgumentType.rest, restArg.getByteName()));
+                descs.add(new ArgumentDescriptor(ArgumentType.rest, restArg.getName().getBytes()));
             }
         }
 
@@ -2120,7 +2120,7 @@ public class Helpers {
                 if (postNode instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode)postNode).getByteName()));
+                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode)postNode).getName().getBytes()));
                 }
             }
         }
@@ -2132,18 +2132,18 @@ public class Helpers {
                 Node keyWordNode = args[keywordsIndex + i];
                 for (Node asgnNode : keyWordNode.childNodes()) {
                     ArgumentType type = isRequiredKeywordArgumentValueNode(asgnNode) ? ArgumentType.keyreq : ArgumentType.key;
-                    descs.add(new ArgumentDescriptor(type, ((INameNode) asgnNode).getByteName()));
+                    descs.add(new ArgumentDescriptor(type, ((INameNode) asgnNode).getName().getBytes()));
                 }
             }
         }
 
         if (argsNode.getKeyRest() != null) {
-            ByteList argName = argsNode.getKeyRest().getByteName();
+            ByteList argName = argsNode.getKeyRest().getName().getBytes();
             // FIXME: Should a argName of "" really get saved that way here?
             ArgumentType type = argName == null || argName.length() == 0 ? ArgumentType.anonkeyrest : ArgumentType.keyrest;
             descs.add(new ArgumentDescriptor(type, argName));
         }
-        if (argsNode.getBlock() != null) descs.add(new ArgumentDescriptor(ArgumentType.block, argsNode.getBlock().getByteName()));
+        if (argsNode.getBlock() != null) descs.add(new ArgumentDescriptor(ArgumentType.block, argsNode.getBlock().getName().getBytes()));
 
         return descs.toArray(new ArgumentDescriptor[descs.size()]);
     }

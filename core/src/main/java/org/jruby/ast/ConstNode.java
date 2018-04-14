@@ -37,7 +37,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * The access to a Constant.
@@ -66,15 +65,11 @@ public class ConstNode extends Node implements INameNode {
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
-        return name.asJavaString();
+    public String getId() {
+        return name.idString();
     }
 
-    public ByteList getByteName() {
-        return name.getBytes();
-    }
-
-    public RubySymbol getSymbolName() {
+    public RubySymbol getName() {
         return name;
     }
     

@@ -43,11 +43,11 @@ public class RestArgNode extends ArgumentNode implements INameNode {
 
     // 1.9 only - lvar assign logic returns an Argument node
     public RestArgNode(ArgumentNode argNode) {
-        this(argNode.getPosition(), argNode.getSymbolName(), argNode.getIndex());
+        this(argNode.getPosition(), argNode.getName(), argNode.getIndex());
     }
 
     public boolean isAnonymous() {
-        RubySymbol argName = getSymbolName();
+        RubySymbol argName = getName();
 
         return argName == null || argName.getBytes().realSize() == 0;
     }

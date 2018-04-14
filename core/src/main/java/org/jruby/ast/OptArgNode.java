@@ -33,7 +33,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  *
@@ -65,15 +64,11 @@ public class OptArgNode extends Node implements INameNode {
         return Node.createList(value);
     }
 
-    public String getName() {
+    public String getId() {
+        return ((INameNode) value).getId();
+    }
+
+    public RubySymbol getName() {
         return ((INameNode) value).getName();
-    }
-
-    public ByteList getByteName() {
-        return ((INameNode) value).getByteName();
-    }
-
-    public RubySymbol getSymbolName() {
-        return ((INameNode) value).getSymbolName();
     }
 }
