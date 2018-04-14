@@ -253,7 +253,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             // Process calls specially -- these are what we want to optimize!
             if (i instanceof CallBase && o == null) {
                 CallBase c = (CallBase)i;
-                String   m = c.getName();
+                String   m = c.getId();
                 Operand  r = c.getReceiver();
                 if (dst != null && c.getArgsCount() == 1 && problem.isUnboxableMethod(m)) {
                     Operand a = c.getArg1();
@@ -618,7 +618,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                     if (i instanceof CallBase && o == null) {
                         CallBase c = (CallBase)i;
-                        String   m = c.getName();
+                        String   m = c.getId();
                         Operand  r = c.getReceiver();
                         if (dst != null && c.getArgsCount() == 1 && problem.isUnboxableMethod(m)) {
                             Operand a = c.getArg1();

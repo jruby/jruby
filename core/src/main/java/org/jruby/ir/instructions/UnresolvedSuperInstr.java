@@ -23,14 +23,14 @@ public class UnresolvedSuperInstr extends CallInstr {
             new ByteList(new byte[] {'-', 'u', 'n', 'k', 'n', 'o', 'w', 'n', '-', 's', 'u', 'p', 'e', 'r', '-', 't', 'a', 'r', 'g', 'e', 't', '-'});
 
     // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
-    public UnresolvedSuperInstr(Operation op, Variable result, Operand receiver, Operand[] args, Operand closure,
+    public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args, Operand closure,
                                 boolean isPotentiallyRefined) {
-        super(op, CallType.SUPER, result, UNKNOWN_SUPER_TARGET, receiver, args, closure, isPotentiallyRefined);
+        super(op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(UNKNOWN_SUPER_TARGET), receiver, args, closure, isPotentiallyRefined);
     }
 
-    public UnresolvedSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure,
+    public UnresolvedSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure,
                                 boolean isPotentiallyRefined) {
-        this(Operation.UNRESOLVED_SUPER, result, receiver, args, closure, isPotentiallyRefined);
+        this(scope, Operation.UNRESOLVED_SUPER, result, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class UnresolvedSuperInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new UnresolvedSuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
+        return new UnresolvedSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
@@ -69,7 +69,7 @@ public class UnresolvedSuperInstr extends CallInstr {
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
 
-        return new UnresolvedSuperInstr(d.decodeVariable(), receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return new UnresolvedSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
 
     // We cannot convert this into a NoCallResultInstr

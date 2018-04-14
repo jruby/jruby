@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions.specialized;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.NoResultCallInstr;
@@ -10,17 +11,16 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 public class OneOperandArgNoBlockNoResultCallInstr extends NoResultCallInstr {
-    public OneOperandArgNoBlockNoResultCallInstr(CallType callType, ByteList name, Operand receiver, Operand[] args,
+    public OneOperandArgNoBlockNoResultCallInstr(CallType callType, RubySymbol name, Operand receiver, Operand[] args,
                                                  Operand closure, boolean isPotentiallyRefined) {
         super(Operation.NORESULT_CALL_1O, callType, name, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneOperandArgNoBlockNoResultCallInstr(getCallType(), getByteName(), getReceiver().cloneForInlining(ii),
+        return new OneOperandArgNoBlockNoResultCallInstr(getCallType(), getName(), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 

@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions.specialized;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
@@ -11,17 +12,16 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
-    public ZeroOperandArgNoBlockCallInstr(CallType callType, Variable result, ByteList name, Operand receiver,
+    public ZeroOperandArgNoBlockCallInstr(CallType callType, Variable result, RubySymbol name, Operand receiver,
                                           Operand[] args, boolean isPotentiallyRefined) {
         super(Operation.CALL_0O, callType, result, name, receiver, args, null, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ZeroOperandArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getByteName(),
+        return new ZeroOperandArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined());
     }
 
