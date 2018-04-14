@@ -2015,7 +2015,7 @@ public class IRRuntimeHelpers {
         return site.call(context, caller, target, keyStr.strDup(context.runtime));
     }
 
-    public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, ByteList methodName) {
+    public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, String methodId) {
         Map<RubyClass, RubyModule> refinements;
         RubyModule refinement;
         DynamicMethod method = null;
@@ -2036,7 +2036,7 @@ public class IRRuntimeHelpers {
 
                     if (refinement != null) {
 
-                        DynamicMethod maybeMethod = refinement.searchMethod(methodName);
+                        DynamicMethod maybeMethod = refinement.searchMethod(methodId);
 
                         if (!maybeMethod.isUndefined()) {
                             method = maybeMethod;

@@ -2536,55 +2536,6 @@ public final class StringSupport {
         return (cr ^ (cr >> 1)) & CR_7BIT;
     }
 
-    /**
-     * This is a far from perfect method in that it will totally choke on anything not UTF-8.
-     * However virtually nothing which was represented internally as a String would work with
-     * any String which was not UTF-8 (and in some cases 7-bit ASCII).
-     *
-     * Note: Do not use unless you are core developer or at least acknowledge the issues with
-     * this method.
-     */
-    @Deprecated
-    public static ByteList stringAsByteList(String string) {
-        if (string == null) return null; // For UnnamedRestArgNode
-        return ByteList.create(string);
-    }
-
-    /**
-     * This is a far from perfect method in that it will totally choke on anything not UTF-8.
-     * However virtually nothing which was represented internally as a String would work with
-     * any String which was not UTF-8 (and in some cases 7-bit ASCII).
-     *
-     * Note: Do not use unless you are core developer or at least acknowledge the issues with
-     * this method.
-     */
-    @Deprecated
-    public static ByteList[] stringsAsByteLists(String[] strings) {
-        ByteList[] newList = new ByteList[strings.length];
-
-        for (int i = 0; i < strings.length; i++) {
-            newList[i] = stringAsByteList(strings[i]);
-        }
-
-        return newList;
-    }
-
-    public static ByteList stringAsUTF8ByteList(String string) {
-        if (string == null) return null;
-
-        return new ByteList(string.getBytes(), UTF8Encoding.INSTANCE);
-    }
-
-    public static List<ByteList> stringsAsUTF8ByteList(List<String> strings) {
-        List<ByteList> bytelists = new ArrayList<>();
-
-        for (String string: strings) {
-            bytelists.add(stringAsUTF8ByteList(string));
-        }
-
-        return bytelists;
-    }
-
     public static String byteListAsString(ByteList bytes) {
         try {
             Charset charset = bytes.getEncoding().getCharset();
@@ -2592,10 +2543,6 @@ public final class StringSupport {
         } catch (UnsupportedCharsetException e) {}
 
         return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-    }
-
-    public static String bytelistAsBinaryString(ByteList bytelist) {
-        return new String(bytelist.unsafeBytes(), bytelist.begin(), bytelist.realSize(), ASCIIEncoding.INSTANCE.getCharset());
     }
 
     @Deprecated

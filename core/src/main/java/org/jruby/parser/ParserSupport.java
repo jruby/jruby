@@ -64,6 +64,8 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.lexer.LexingCommon.*;
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /** 
  *
@@ -1344,19 +1346,20 @@ public class ParserSupport {
     private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
         RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
-        ByteList[] names = pattern.getByteNames();
+        String[] names = pattern.getNames();
         int length = names.length;
         List<Integer> locals = new ArrayList<Integer>();
         StaticScope scope = getCurrentScope();
 
         for (int i = 0; i < length; i++) {
             if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
-                String id = ID(names[i]);
+                String id = names[i];
                 int slot = scope.isDefined(id);
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn
                     if (warnings.isVerbose() && !scope.isNamedCapture(slot)) {
-                        warn(ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), "named capture conflicts a local variable - " + StringSupport.byteListAsString(names[i]));
+                        Ruby runtime = getConfiguration().getRuntime();
+                        warn(ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), str(runtime, "named capture conflicts a local variable - " , ids(runtime, names[i])));
                     }
                     locals.add(slot);
                 } else {

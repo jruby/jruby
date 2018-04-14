@@ -69,6 +69,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import static org.jruby.RubyModule.undefinedMethodMessage;
+import static org.jruby.util.RubyStringBuilder.ids;
 
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject", include = "Comparable")
 public class JavaClass extends JavaObject {
@@ -634,7 +635,7 @@ public class JavaClass extends JavaObject {
             return new JavaMethod(runtime, method);
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
+            throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass().getName()), false), methodName);
         }
     }
 
@@ -651,7 +652,7 @@ public class JavaClass extends JavaObject {
             return new JavaMethod(runtime, method);
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
+            throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass().getName()), false), methodName);
         }
     }
 
@@ -668,7 +669,7 @@ public class JavaClass extends JavaObject {
 
         if ( callable != null ) return callable;
 
-        throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass().getName(), false), methodName);
+        throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass().getName()), false), methodName);
     }
 
     public static JavaCallable getMatchingCallable(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {

@@ -2337,7 +2337,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     final IRubyObject methodsImpl(ThreadContext context, final boolean all) {
         final RubyArray methods = RubyArray.newArray(context.runtime);
-        final Set<ByteList> seen = new HashSet<>();
+        final Set<String> seen = new HashSet<>();
 
         RubyClass metaClass = getMetaClass();
         if (metaClass.isSingleton()) {
@@ -2461,7 +2461,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         if (klass.isSingleton()) {
             Set<RubySymbol> names = new HashSet<>();
-            for (Map.Entry<ByteList, DynamicMethod> entry : klass.getMethods().entrySet()) {
+            for (Map.Entry<String, DynamicMethod> entry : klass.getMethods().entrySet()) {
                 if (entry.getValue().getVisibility() == PRIVATE) continue;
                 // TODO: needs to use method_entry_i logic from MRI
                 names.add(runtime.newSymbol(entry.getKey()));
@@ -2471,7 +2471,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 klass = klass.getSuperClass();
                 while (klass != null && (klass.isSingleton() || klass.isIncluded())) {
                     if (klass != origin) {
-                        for (Map.Entry<ByteList, DynamicMethod> entry : klass.getMethods().entrySet()) {
+                        for (Map.Entry<String, DynamicMethod> entry : klass.getMethods().entrySet()) {
                             if (entry.getValue().getVisibility() == PRIVATE) continue;
                             // TODO: needs to use method_entry_i logic from MRI
                             names.add(runtime.newSymbol(entry.getKey()));

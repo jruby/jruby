@@ -44,19 +44,12 @@ import org.jruby.util.StringSupport;
 public class AliasMethod extends DynamicMethod {
     private DynamicMethod oldMethod;
 
-    // FIXME: bytelist_love: I believe these oldNames should be 8859_1/id Strings.
     /**
      * For some java native methods it is convenient to pass in a String instead
      * of a ByteList.
      */ 
     public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, String oldName) {
         super(implementationClass, oldMethod.getVisibility(), oldName);
-
-        this.oldMethod = oldMethod;
-    }
-
-    public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, ByteList oldName) {
-        super(implementationClass, oldMethod.getVisibility(), StringSupport.byteListAsString(oldName));
 
         this.oldMethod = oldMethod;
     }

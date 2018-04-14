@@ -87,12 +87,10 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ArraySupport;
-import org.jruby.util.ByteList;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.StringSupport;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1556,22 +1554,19 @@ public class RubyClass extends RubyModule {
             final Set<String> instanceMethods = new HashSet<String>(getMethods().size());
 
             // define instance methods
-            for (Map.Entry<ByteList, DynamicMethod> methodEntry : getMethods().entrySet()) {
-                final ByteList name = methodEntry.getKey();
-                // Since we are reifying to a Java type we should be using method names which are representable
-                // as a Java charset.  If this is not the case we should add some error check or skip those entries?
-                String methodName = StringSupport.byteListAsString(name);
+            for (Map.Entry<String, DynamicMethod> methodEntry : getMethods().entrySet()) {
+                final String id = methodEntry.getKey();
 
-                if (!JavaNameMangler.willMethodMangleOk(methodName)) {
-                    LOG.debug("{} method: '{}' won't be part of reified Java class", getName(), methodName);
+                if (!JavaNameMangler.willMethodMangleOk(id)) {
+                    LOG.debug("{} method: '{}' won't be part of reified Java class", getName(), id);
                     continue;
                 }
 
-                String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
+                String javaMethodName = JavaNameMangler.mangleMethodName(id);
 
-                Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(methodName);
-                List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(methodName);
-                Class[] methodSignature = getMethodSignatures().get(methodName);
+                Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(id);
+                List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(id);
+                Class[] methodSignature = getMethodSignatures().get(id);
 
                 final String signature;
                 if (methodSignature == null) { // non-signature signature with just IRubyObject
@@ -1583,7 +1578,7 @@ public class RubyClass extends RubyModule {
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                             m.aload(0);
-                            m.ldc(methodName);
+                            m.ldc(id);
                             m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
                             break;
                         case 1:
@@ -1592,7 +1587,7 @@ public class RubyClass extends RubyModule {
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                             m.aload(0);
-                            m.ldc(methodName);
+                            m.ldc(id);
                             m.aload(1); // IRubyObject arg1
                             m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject.class));
                             break;
@@ -1610,7 +1605,7 @@ public class RubyClass extends RubyModule {
                                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                                 m.aload(0);
-                                m.ldc(methodName);
+                                m.ldc(id);
 
                                 // generate an IRubyObject[] for the method arguments :
                                 m.pushInt(paramCount);
@@ -1629,7 +1624,7 @@ public class RubyClass extends RubyModule {
                                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                                 m.aload(0);
-                                m.ldc(methodName);
+                                m.ldc(id);
                                 m.aload(1); // IRubyObject[] arg1
                             }
                             m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
@@ -1646,7 +1641,7 @@ public class RubyClass extends RubyModule {
 
                     signature = sig(methodSignature[0], params);
                     int mod = ACC_PUBLIC;
-                    if ( isVarArgsSignature(methodName, methodSignature) ) mod |= ACC_VARARGS;
+                    if ( isVarArgsSignature(id, methodSignature) ) mod |= ACC_VARARGS;
                     m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
@@ -1654,14 +1649,14 @@ public class RubyClass extends RubyModule {
                     m.astore(rubyIndex);
 
                     m.aload(0); // self
-                    m.ldc(methodName); // method name
+                    m.ldc(id); // method name
                     RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
                     m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
 
                     RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
                 }
 
-                if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), methodName, javaName, javaMethodName + signature);
+                if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), id, javaName, javaMethodName + signature);
 
                 instanceMethods.add(javaMethodName + signature);
 
@@ -1669,19 +1664,16 @@ public class RubyClass extends RubyModule {
             }
 
             // define class/static methods
-            for (Map.Entry<ByteList,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
-                ByteList name = methodEntry.getKey();
-                // Since we are reifying to a Java type we should be using method names which are representable
-                // as a Java charset.  If this is not the case we should add some error check or skip those entries?
-                String methodName = StringSupport.byteListAsString(name);
+            for (Map.Entry<String, DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
+                String id = methodEntry.getKey();
 
-                if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
+                if (!JavaNameMangler.willMethodMangleOk(id)) continue;
 
-                String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
+                String javaMethodName = JavaNameMangler.mangleMethodName(id);
 
-                Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(methodName);
-                List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(methodName);
-                Class[] methodSignature = getMetaClass().getMethodSignatures().get(methodName);
+                Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(id);
+                List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(id);
+                Class[] methodSignature = getMetaClass().getMethodSignatures().get(id);
 
                 String signature;
                 if (methodSignature == null) {
@@ -1696,7 +1688,7 @@ public class RubyClass extends RubyModule {
 
                             m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
                             //m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
-                            m.ldc(methodName);
+                            m.ldc(id);
                             m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
                             break;
                         default:
@@ -1706,7 +1698,7 @@ public class RubyClass extends RubyModule {
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                             m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                            m.ldc(methodName);
+                            m.ldc(id);
                             m.aload(0);
                             m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
                     }
@@ -1730,14 +1722,14 @@ public class RubyClass extends RubyModule {
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
 
-                    m.ldc(methodName); // method name
+                    m.ldc(id); // method name
                     RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
                     m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
 
                     RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
                 }
 
-                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), methodName, javaName, javaMethodName + signature);
+                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), id, javaName, javaMethodName + signature);
 
                 m.end();
             }

@@ -41,7 +41,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
-import org.jruby.util.ByteList;
 
 /**
  * This class is used to provide an intermediate superclass for modules and classes that include
@@ -82,7 +81,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    public void addMethod(String name, DynamicMethod method) {
+    public void addMethod(String id, DynamicMethod method) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
@@ -106,12 +105,12 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    public Map<ByteList, DynamicMethod> getMethods() {
+    public Map<String, DynamicMethod> getMethods() {
         return origin.getMethods();
     }
 
     @Override
-    public Map<ByteList, DynamicMethod> getMethodsForWrite() {
+    public Map<String, DynamicMethod> getMethodsForWrite() {
         return origin.getMethodsForWrite();
     }
 
@@ -208,25 +207,25 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    protected DynamicMethod searchMethodCommon(ByteList name) {
+    protected DynamicMethod searchMethodCommon(String id) {
         // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
         RubyModule module = origin;
         RubyModule methodLoc = origin.getMethodLocation();
 
         for (; module != methodLoc; module = module.getSuperClass()) {
-            DynamicMethod method = module.getMethods().get(name);
+            DynamicMethod method = module.getMethods().get(id);
             if (method != null) return method.isNull() ? null : method;
         }
 
         // one last search for method location
-        DynamicMethod method = module.getMethods().get(name);
+        DynamicMethod method = module.getMethods().get(id);
         if (method != null) return method.isNull() ? null : method;
 
         return null;
     }
 
     @Override
-    protected void addMethodSymbols(Ruby runtime, Set<ByteList> seen, RubyArray ary, boolean not, Visibility visibility) {
+    protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
         // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
         RubyModule module = origin;
         RubyModule methodLoc = origin.getMethodLocation();

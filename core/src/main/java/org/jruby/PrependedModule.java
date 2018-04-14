@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.util.ByteList;
 
 /**
  * This class is used as an intermediate superclass for Module#prepend
@@ -47,7 +46,7 @@ public class PrependedModule extends IncludedModule {
         methods = origin.methods;
         origin.methods = new ConcurrentHashMap<>(0, 0.9f, 1);
         origin.methodLocation = this;
-        for (Map.Entry<ByteList, DynamicMethod> entry : methods.entrySet()) {
+        for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
             method.setImplementationClass(this);
             method.setDefinedClass(origin);
@@ -55,8 +54,8 @@ public class PrependedModule extends IncludedModule {
     }
 
     @Override
-    public void addMethod(String name, DynamicMethod method) {
-        super.addMethod(name, method);
+    public void addMethod(String id, DynamicMethod method) {
+        super.addMethod(id, method);
         method.setDefinedClass(origin);
     }
 

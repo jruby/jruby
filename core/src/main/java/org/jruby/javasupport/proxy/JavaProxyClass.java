@@ -663,15 +663,13 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
                 if (methodNames == null) {
                     // lock in the overridden methods for the new class, and any as-yet uninstantiated ancestor class.
-                    Map<ByteList, DynamicMethod> methods;
+                    Map<String, DynamicMethod> methods;
                     synchronized(methods = ancestor.getMethods()) {
                         methodNames = new ArrayList<>(methods.size());
-                        for (ByteList methodName: methods.keySet()) {
-                            String name = methodName.toString(); // plain is ok here since we only care about 7bit names.
-
-                            if ( ! isExcludedMethod(name) ) {
-                                names.add(name);
-                                methodNames.add(name);
+                        for (String id: methods.keySet()) {
+                            if (! isExcludedMethod(id)) {
+                                names.add(id);
+                                methodNames.add(id);
                             }
                         }
                     }
@@ -680,14 +678,10 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                     names.addAll(methodNames);
                 }
             } else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
-                Map<ByteList, DynamicMethod> methods;
+                Map<String, DynamicMethod> methods;
                 synchronized(methods = ancestor.getMethods()) {
-                    for (ByteList methodName: methods.keySet()) {
-                        String name = methodName.toString(); // plain is ok here since we only care about 7bit names.
-
-                        if ( ! isExcludedMethod(name) ) {
-                            names.add(name);
-                        }
+                    for (String id: methods.keySet()) {
+                        if (! isExcludedMethod(id)) names.add(id);
                     }
                 }
             }

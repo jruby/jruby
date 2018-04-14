@@ -61,6 +61,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
+import static org.jruby.util.RubyStringBuilder.ids;
 
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
@@ -131,7 +132,7 @@ public class JavaMethod extends JavaCallable {
             return create(runtime, javaClass.getMethod(methodName, argumentTypes));
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass.getName(), false), methodName);
+            throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
         }
     }
 
@@ -141,7 +142,7 @@ public class JavaMethod extends JavaCallable {
             return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError(undefinedMethodMessage(methodName, javaClass.getName(), false), methodName);
+            throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
         }
     }
 
