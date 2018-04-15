@@ -447,8 +447,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                 frameWrites = ALL;
             }
         } else {
-            frameReads = MethodIndex.METHOD_FRAME_READS.getOrDefault(getName(), Collections.EMPTY_SET);
-            frameWrites = MethodIndex.METHOD_FRAME_WRITES.getOrDefault(getName(), Collections.EMPTY_SET);
+            frameReads = MethodIndex.METHOD_FRAME_READS.getOrDefault(getId(), Collections.EMPTY_SET);
+            frameWrites = MethodIndex.METHOD_FRAME_WRITES.getOrDefault(getId(), Collections.EMPTY_SET);
         }
     }
 
