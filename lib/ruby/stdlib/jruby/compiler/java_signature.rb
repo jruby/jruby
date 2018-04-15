@@ -15,7 +15,7 @@ module JRuby
     end
 
     def name
-      @ast.name
+      @ast.name.id_string
     end
 
     def as_java_type(string); self.class.as_java_type(string)  end

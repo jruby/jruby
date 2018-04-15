@@ -189,6 +189,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public List<Instr> decodeInstructionsAt(IRScope scope, int offset) {
+        currentScope = scope;
         vars = new HashMap<>();
         buf.position(offset);
 

@@ -106,11 +106,11 @@ public class IRReader implements IRPersistenceValues {
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
         scope.setLabelIndices(indices);
 
-        decoder.addScope(scope);
-
         // FIXME: This is odd, but ClosureLocalVariable wants it's defining closure...feels wrong.
         // But because of this we have to push decoding lvars to the end of the scope info.
         scope.setLocalVariables(decodeScopeLocalVariables(decoder, scope));
+
+        decoder.addScope(scope);
 
         int instructionsOffset = decoder.decodeInt();
 
@@ -121,7 +121,7 @@ public class IRReader implements IRPersistenceValues {
         int size = decoder.decodeInt();
         Map<RubySymbol, LocalVariable> localVariables = new HashMap(size);
         for (int i = 0; i < size; i++) {
-            RubySymbol name = decoder.decodeSymbol();
+            RubySymbol name = scope.getManager().getRuntime().newSymbol(decoder.decodeByteList());
             int offset = decoder.decodeInt();
 
             localVariables.put(name, scope instanceof IRClosure ?

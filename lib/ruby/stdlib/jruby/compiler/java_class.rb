@@ -34,7 +34,7 @@ module JRuby::Compiler
 
   module VisitorBuilder
     def visit(name, &block)
-      define_method :"visit_#{name}_node" do |node|
+      define_method :"visit_#{name.to_s}_node" do |node|
         log "visit: #{node.node_type} - #{node}"
         with_node(node) { instance_eval(&block) }
       end
@@ -98,7 +98,7 @@ module JRuby::Compiler
 
     def add_interface(*ifc_nodes)
       ifc_nodes.
-        map {|ifc| defined?(ifc.name) ? ifc.name : ifc.value}.
+        map {|ifc| defined?(ifc.name) ? ifc.name.to_s : ifc.value}.
         each {|ifc| current_class.add_interface(ifc)}
     end
 
@@ -200,7 +200,7 @@ module JRuby::Compiler
     end
 
     def name_or_value(node)
-      return node.name if defined? node.name
+      return node.name.to_s if defined? node.name
       return node.value if defined? node.value
       raise "unknown node: #{node.inspect}"
     end
@@ -229,51 +229,51 @@ module JRuby::Compiler
         current_method.java_signature = build_args_signature(node.pre)
       end
       node.pre && node.pre.child_nodes.each do |pre_arg|
-        current_method.args << pre_arg.name
+        current_method.args << pre_arg.name.to_s
       end
       node.opt_args && node.opt_args.child_nodes.each do |pre_arg|
-        current_method.args << pre_arg.name
+        current_method.args << pre_arg.name.to_s
       end
       node.post && node.post.child_nodes.each do |post_arg|
-        current_method.args << post_arg.name
+        current_method.args << post_arg.name.to_s
       end
       if node.has_rest_arg
-        current_method.args << node.rest_arg_node.name
+        current_method.args << node.rest_arg_node.name.to_s
       end
       if node.block
-        current_method.args << node.block.name
+        current_method.args << node.block.name.to_s
       end
 
       # if method still has no signature, generate one
       unless current_method.java_signature
         args_string = current_method.args.map { |arg| "Object #{arg}" }.join(',')
-        sig_string = "Object #{current_method.name}(#{args_string})"
+        sig_string = "Object #{current_method.name.to_s}(#{args_string})"
         current_method.java_signature = build_signature(sig_string)
       end
     end
 
     visit :class do
-      new_class(node.cpath.name)
+      new_class(node.cpath.name.to_s)
       node.body_node.accept(self)
       pop_class
     end
 
     visit :defn do
       next if @class_stack.empty?
-      new_method(node.name)
+      new_method(node.name.to_s)
       node.args_node.accept(self)
       pop_method
     end
 
     visit :defs do
       next if @class_stack.empty?
-      new_static_method(node.name)
+      new_static_method(node.name.to_s)
       node.args_node.accept(self)
       pop_method
     end
 
     visit :fcall do
-      case node.name
+      case node.name.to_s
       when 'java_import'
         add_imports node.args_node.child_nodes
       when 'java_signature'
@@ -298,7 +298,7 @@ module JRuby::Compiler
     end
 
     visit :vcall do
-      case node.name
+      case node.name.to_s
       when 'private' # visibility modifier without args
         set_method_visibility :private
       when 'protected'
@@ -390,7 +390,7 @@ module JRuby::Compiler
     attr_accessor :methods, :fields, :annotations, :interfaces, :requires, :package, :sourcefile
 
     def has_constructor?
-      !!methods.find { |method| constructor?(method.name, method.java_signature) }
+      !!methods.find { |method| constructor?(method.name.to_s, method.java_signature) }
     end
 
     def new_field(java_signature, annotations = [])
@@ -413,22 +413,22 @@ module JRuby::Compiler
 
     def private_method(name)
       return if name.to_s.eql?('initialize')
-      method = methods.find { |method| method.name == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method = methods.find { |method| method.name.to_s == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
       method.visibility = :private
     end
 
     def protected_method(name)
-      method = methods.find { |method| method.name == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method = methods.find { |method| method.name.to_s == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
       method.visibility = :protected
     end
 
     def public_method(name)
-      method = methods.find { |method| method.name == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method = methods.find { |method| method.name.to_s == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
       method.visibility = :public
     end
 
     def constructor?(name, java_signature = nil)
-      name.eql?('initialize') || java_signature.is_a?(ConstructorSignatureNode)
+      name.to_s.eql?('initialize') || java_signature.is_a?(ConstructorSignatureNode)
     end
     private :constructor?
 
@@ -445,9 +445,9 @@ module JRuby::Compiler
       return <<JAVA
     static {
 #{requires_string}
-        RubyClass metaclass = __ruby__.getClass(\"#{name}\");
-        if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
-        metaclass.setRubyStaticAllocator(#{name}.class);
+        RubyClass metaclass = __ruby__.getClass(\"#{name.to_s}\");
+        if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name.to_s}\");
+        metaclass.setRubyStaticAllocator(#{name.to_s}.class);
         __metaclass__ = metaclass;
     }
 JAVA
@@ -493,7 +493,7 @@ JAVA
      * @param ruby The JRuby instance this object will belong to
      * @param metaclass The RubyClass representing the Ruby class of this object
      */
-    private #{name}(Ruby ruby, RubyClass metaclass) {
+    private #{name.to_s}(Ruby ruby, RubyClass metaclass) {
         super(ruby, metaclass);
     }
 
@@ -505,7 +505,7 @@ JAVA
      * @param metaclass The RubyClass representing the Ruby class of this object
      */
     public static IRubyObject __allocate__(Ruby ruby, RubyClass metaClass) {
-        return new #{name}(ruby, metaClass);
+        return new #{name.to_s}(ruby, metaClass);
     }
 JAVA
 
@@ -517,7 +517,7 @@ JAVA
      * Ruby and RubyClass instances assocated with this class, and then invokes the
      * no-argument 'initialize' method in Ruby.
      */
-    public #{name}() {
+    public #{name.to_s}() {
         this(__ruby__, __metaclass__);
         Helpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
     }
@@ -534,7 +534,7 @@ JAVA
 #{imports_string}
 
 #{annotations_string}
-public class #{name} extends RubyObject #{interface_string} {
+public class #{name.to_s} extends RubyObject #{interface_string} {
     private static final Ruby __ruby__ = Ruby.getGlobalRuntime();
     private static final RubyClass __metaclass__;
 
@@ -595,7 +595,7 @@ JAVA
       declarator_string do
         <<-JAVA
 #{conversion_string(var_names)}
-        IRubyObject ruby_result = Helpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
+        IRubyObject ruby_result = Helpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name.to_s}\"#{passed_args});
         #{return_string}
         JAVA
       end
@@ -655,7 +655,7 @@ JAVA
 
       i = 0
       @typed_args = java_signature.parameters.map do |a|
-        type = a.type.name
+        type = a.type.name.to_s
         if a.variable_name
           var_name = a.variable_name
         else
@@ -717,7 +717,7 @@ JAVA
     private
 
     def has_java_signature!
-      raise "no java_signature has been set for method #{name}" unless java_signature
+      raise "no java_signature has been set for method #{name.to_s}" unless java_signature
     end
 
   end

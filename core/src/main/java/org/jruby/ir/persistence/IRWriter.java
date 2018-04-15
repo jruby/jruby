@@ -103,10 +103,13 @@ public class IRWriter {
     // FIXME: I hacked around our lvar types for now but this hsould be done in a less ad-hoc fashion.
     private static void persistLocalVariables(IRScope scope, IRWriterEncoder file) {
         Map<RubySymbol, LocalVariable> localVariables = scope.getLocalVariables();
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("PERSISTING LVARS (" + localVariables.size() + ")");
         file.encode(localVariables.size());
         for (RubySymbol name: localVariables.keySet()) {
             file.encode(name);
-            file.encode(localVariables.get(name).getOffset()); // No need to write depth..it is zero.
+            int offset = localVariables.get(name).getOffset();
+            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("    NAME: " + name + "(0:" + offset + ")");
+            file.encode(offset); // No need to write depth..it is zero.
         }
     }
 
