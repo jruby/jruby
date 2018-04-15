@@ -1983,7 +1983,7 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadContext();
                 jvmMethod().loadSelf();
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmAdapter().ldc(((StringLiteral) runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Stringable) runtimehelpercall.getArgs()[1]).getString());
                 visit(runtimehelpercall.getArgs()[2]);
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedCall", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
