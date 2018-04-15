@@ -798,14 +798,25 @@ public class RubyBigDecimal extends RubyNumeric {
         int exponent;
         if (prec > 0 && this.value.scale() > (prec - (exponent = getExponent()))) {
             this.value = this.value.setScale(prec - exponent, BigDecimal.ROUND_HALF_UP);
+            this.absStripTrailingZeros = null;
         }
         return this;
+    }
+
+    private transient BigDecimal absStripTrailingZeros; // cached re-used 'normalized' value
+
+    private BigDecimal absStripTrailingZeros() {
+        BigDecimal absStripTrailingZeros = this.absStripTrailingZeros;
+        if (absStripTrailingZeros == null) {
+            return this.absStripTrailingZeros = value.abs().stripTrailingZeros();
+        }
+        return absStripTrailingZeros;
     }
 
     @Override
     @JRubyMethod
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(value.stripTrailingZeros().hashCode());
+        return getRuntime().newFixnum(absStripTrailingZeros().hashCode() * value.signum());
     }
 
     @Override
@@ -1716,19 +1727,17 @@ public class RubyBigDecimal extends RubyNumeric {
 
     // it doesn't handle special cases
     private String getSignificantDigits() {
-        // TODO: no need to calculate every time.
-        return value.abs().stripTrailingZeros().unscaledValue().toString();
+        return absStripTrailingZeros().unscaledValue().toString();
     }
 
     private String getAllDigits() {
-        // TODO: no need to calculate every time.
-        return value.abs().unscaledValue().toString();
+        return value.unscaledValue().abs().toString();
     }
 
     private int getExponent() {
         if (isZero() || isNaN() || isInfinity()) return 0;
 
-        BigDecimal val = value.abs().stripTrailingZeros();
+        BigDecimal val = absStripTrailingZeros();
         return val.precision() - val.scale();
     }
 
@@ -1919,7 +1928,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private CharSequence floatingPointValue(final String arg) {
-        List<String> values = StringSupport.split(value.abs().stripTrailingZeros().toPlainString(), '.');
+        List<String> values = StringSupport.split(absStripTrailingZeros().toPlainString(), '.');
         final String whole = values.size() > 0 ? values.get(0) : "0";
         final String after = values.size() > 1 ? values.get(1) : "0";
 
