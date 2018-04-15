@@ -152,6 +152,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public void addScope(IRScope scope) {
         scopes.add(scope);
+        currentScope = scope;
     }
 
     @Override
@@ -188,7 +189,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public List<Instr> decodeInstructionsAt(IRScope scope, int offset) {
-        currentScope = scope;
         vars = new HashMap<>();
         buf.position(offset);
 

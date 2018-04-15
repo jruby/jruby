@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
 /**
@@ -77,7 +78,9 @@ public class IRReader implements IRPersistenceValues {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRScopeType = " + type);
-        RubySymbol name = decoder.decodeSymbol();
+        // Wackiness we decode as bytelist when we encoded as symbol because currentScope is not defined yet on first
+        // name of first scope.  We will use manager in this method to finish the job in constructing our symbol.
+        ByteList name = decoder.decodeByteList();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("NAME = " + name);
         int line = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
@@ -97,17 +100,17 @@ public class IRReader implements IRPersistenceValues {
         // FIXME: It seems wrong we have static scope + local vars both being persisted.  They must have the same values
         // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
-        IRScope scope = createScope(manager, type, name, line, parent, signature, staticScope);
+        IRScope scope = createScope(manager, type, manager.runtime.newSymbol(name), line, parent, signature, staticScope);
 
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
         scope.setLabelIndices(indices);
 
+        decoder.addScope(scope);
+
         // FIXME: This is odd, but ClosureLocalVariable wants it's defining closure...feels wrong.
         // But because of this we have to push decoding lvars to the end of the scope info.
         scope.setLocalVariables(decodeScopeLocalVariables(decoder, scope));
-
-        decoder.addScope(scope);
 
         int instructionsOffset = decoder.decodeInt();
 
