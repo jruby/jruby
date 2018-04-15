@@ -1718,7 +1718,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RaiseRequiredKeywordArgumentErrorInstr(RaiseRequiredKeywordArgumentError instr) {
         jvmMethod().loadContext();
-        jvmAdapter().ldc(instr.getName());
+        jvmAdapter().ldc(instr.getId());
         jvmMethod().invokeIRHelper("newRequiredKeywordArgumentError", sig(RaiseException.class, ThreadContext.class, String.class));
         jvmAdapter().athrow();
     }
