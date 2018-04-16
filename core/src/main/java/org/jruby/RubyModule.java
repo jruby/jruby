@@ -1871,7 +1871,7 @@ public class RubyModule extends RubyObject {
     }
 
     private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
-        String internedIdentifier = identifier.toString();
+        String internedIdentifier = identifier.idString();
 
         final Ruby runtime = context.runtime;
 
@@ -1884,17 +1884,14 @@ public class RubyModule extends RubyObject {
             throw runtime.newNameError("invalid attribute name", internedIdentifier);
         }
 
-        // FIXME: This only works if identifier's encoding is ASCII-compatible
-        final String variableName = TypeConverter.checkID(runtime, '@' + internedIdentifier).toString();
+        final String variableName = identifier.asInstanceVariable().idString();
         if (readable) {
             addMethod(internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
         }
         if (writeable) {
-            // FIXME: This only works if identifier's encoding is ASCII-compatible
-            identifier = TypeConverter.checkID(runtime, internedIdentifier + '=');
-            internedIdentifier = identifier.toString();
-            addMethod(internedIdentifier, new AttrWriterMethod(methodLocation, visibility, variableName));
+            identifier = identifier.asAccessor();
+            addMethod(identifier.idString(), new AttrWriterMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
         }
     }

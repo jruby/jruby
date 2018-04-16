@@ -180,6 +180,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newIDSymbol(getRuntime(), bytes);
     }
 
+    public RubySymbol asInstanceVariable() {
+        ByteList bytes = getBytes().dup();
+
+        bytes.prepend((byte) '@');
+
+        return newIDSymbol(getRuntime(), bytes);
+    }
+
     /**
      * When we know we need an entry in the symbol table because the provided name will be needed to be
      * accessed as a valid identifier later we can call this.  If there is not already an entry we will
