@@ -369,6 +369,7 @@ public class JavaSites {
     public static class BigDecimalSites {
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
+        public final CallSite op_eql = new FunctionalCachingCallSite("==");
         public final CallSite divmod = new FunctionalCachingCallSite("divmod");
         public final CallSite op_times = new FunctionalCachingCallSite("*");
         public final CallSite div = new FunctionalCachingCallSite("div");
