@@ -1059,20 +1059,29 @@ public class RubyNumeric extends RubyObject {
         long i = from.getLongValue();
         long diff = step.getLongValue();
 
-        // We must avoid integer overflows in "i += step".
         if (inf) {
             for (;; i += diff) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         } else {
+            // We must avoid integer overflows in "i += step".
             long end = ((RubyFixnum) to).getLongValue();
-
             if (desc) {
-                for (; i >= end && i < Long.MAX_VALUE; i += diff) {
+                long tov = Long.MIN_VALUE - diff;
+                if (end > tov) tov = end;
+                for (; i >= tov; i += diff) {
+                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                }
+                if (i >= end) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
                 }
             } else {
-                for (; i <= end && i > Long.MIN_VALUE; i += diff) {
+                long tov = Long.MAX_VALUE - diff;
+                if (end < tov) tov = end;
+                for (; i <= tov; i += diff) {
+                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                }
+                if (i <= end) {
                     block.yield(context, RubyFixnum.newFixnum(runtime, i));
                 }
             }

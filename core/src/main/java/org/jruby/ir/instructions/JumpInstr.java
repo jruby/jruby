@@ -16,6 +16,10 @@ public class JumpInstr extends OneOperandInstr implements FixedArityInstr, JumpT
         return (Label) getOperand1();
     }
 
+    public void setJumpTarget(Label target) {
+        setOperand1(target);
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         return new JumpInstr(ii.getRenamedLabel(getJumpTarget()));

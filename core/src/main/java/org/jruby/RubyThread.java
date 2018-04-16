@@ -64,6 +64,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -1729,6 +1730,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param throwable
      */
     public void exceptionRaised(Throwable throwable) {
+        // if unrescuable (internal exceptions) just re-raise and let it be handled by thread handler
+        if (throwable instanceof Unrescuable) {
+            Helpers.throwException(throwable);
+        }
+
         Ruby runtime = getRuntime();
 
         assert isCurrent();
