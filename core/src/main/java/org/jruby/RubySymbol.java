@@ -228,7 +228,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public boolean validInstanceVariableName() {
         boolean valid = ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
             index == 0 && codepoint == '@' ||
-                    index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
+                    index == 1 && (!encoding.isDigit(codepoint)) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_') ||
+                    index > 1 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
 
         return valid && getBytes().length() >= 2; // FIXME: good enough on length check?  Trying to avoid counter.
     }
