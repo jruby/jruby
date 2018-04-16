@@ -1608,6 +1608,44 @@ EOT
     }
   end
 
+
+  def test_binmode_decode_universal_newline
+    with_tmpdir {
+      generate_file("t.txt", "a\n")
+      assert_raise(ArgumentError) {
+        open("t.txt", "rb", newline: :universal) {}
+      }
+    }
+  end
+
+  def test_default_mode_decode_universal_newline_gets
+    with_tmpdir {
+      generate_file("t.crlf", "a\r\nb\r\nc\r\n")
+      open("t.crlf", "r", newline: :universal) {|f|
+        assert_equal("a\n", f.gets)
+        assert_equal("b\n", f.gets)
+        assert_equal("c\n", f.gets)
+        assert_equal(nil, f.gets)
+      }
+
+      generate_file("t.cr", "a\rb\rc\r")
+      open("t.cr", "r", newline: :universal) {|f|
+        assert_equal("a\n", f.gets)
+        assert_equal("b\n", f.gets)
+        assert_equal("c\n", f.gets)
+        assert_equal(nil, f.gets)
+      }
+
+      generate_file("t.lf", "a\nb\nc\n")
+      open("t.lf", "r", newline: :universal) {|f|
+        assert_equal("a\n", f.gets)
+        assert_equal("b\n", f.gets)
+        assert_equal("c\n", f.gets)
+        assert_equal(nil, f.gets)
+      }
+    }
+  end
+
   def test_read_newline_conversion_with_encoding_conversion
     with_tmpdir {
       generate_file("t.utf8.crlf", "a\r\nb\r\n")
@@ -2128,6 +2166,20 @@ EOT
       }
     }
     assert_nil(enc)
+  end
+
+  def test_bom_non_reading
+    with_tmpdir {
+      enc = nil
+      assert_nothing_raised(IOError) {
+        open("test", "w:bom|utf-8") {|f|
+          enc = f.external_encoding
+          f.print("abc")
+        }
+      }
+      assert_equal(Encoding::UTF_8, enc)
+      assert_equal("abc", File.binread("test"))
+    }
   end
 
   def test_cbuf

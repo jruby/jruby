@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -28,6 +28,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.stringio;
 
 import org.jcodings.Encoding;
@@ -96,7 +97,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     public static RubyClass createStringIOClass(final Ruby runtime) {
         RubyClass stringIOClass = runtime.defineClass(
-                "StringIO", runtime.getClass("Data"), STRINGIO_ALLOCATOR);
+                "StringIO", runtime.getData(), STRINGIO_ALLOCATOR);
 
         stringIOClass.defineAnnotatedMethods(StringIO.class);
         stringIOClass.includeModule(runtime.getEnumerable());
@@ -251,7 +252,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"isatty", "tty?"})
     public IRubyObject strioFalse(ThreadContext context) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = {"pid", "fileno"})
@@ -470,7 +471,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     public IRubyObject getc(ThreadContext context) {
         checkReadable();
 
-        if (isEndOfString()) return context.runtime.getNil();
+        if (isEndOfString()) return context.nil;
 
         StringIOData ptr = this.ptr;
 
@@ -488,7 +489,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     public IRubyObject getbyte(ThreadContext context) {
         checkReadable();
 
-        if (isEndOfString()) return context.runtime.getNil();
+        if (isEndOfString()) return context.nil;
 
         int c;
         StringIOData ptr = this.ptr;
@@ -1028,7 +1029,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "sync")
     public IRubyObject sync(ThreadContext context) {
         checkInitialized();
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     // only here for the fake-out class in org.jruby
@@ -1162,11 +1163,25 @@ public class StringIO extends RubyObject implements EncodingCapable {
     }
 
     // MRI: strio_write
-    @JRubyMethod(name = {"write"}, required = 1)
+    @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
-        checkWritable();
+        Ruby runtime = context.runtime;
+        return RubyFixnum.newFixnum(runtime, stringIOWrite(context, runtime, arg));
+    }
 
-        final Ruby runtime = context.runtime;
+    @JRubyMethod(name = "write", required = 1, rest = true)
+    public IRubyObject write(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        long len = 0;
+        for (IRubyObject arg : args) {
+            len += stringIOWrite(context, runtime, arg);
+        }
+        return RubyFixnum.newFixnum(runtime, len);
+    }
+
+    // MRI: strio_write
+    private long stringIOWrite(ThreadContext context, Ruby runtime, IRubyObject arg) {
+        checkWritable();
 
         RubyString str = arg.asString();
         int len, olen;
@@ -1183,7 +1198,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 str = EncodingUtils.strConvEnc(context, str, encStr, enc);
             }
             len = str.size();
-            if (len == 0) return RubyFixnum.zero(runtime);
+            if (len == 0) return 0;
             checkModifiable();
             olen = ptr.string.size();
             if ((ptr.flags & OpenFile.APPEND) != 0) {
@@ -1201,7 +1216,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             ptr.pos += len;
         }
 
-        return RubyFixnum.newFixnum(runtime, len);
+        return len;
     }
 
     @JRubyMethod

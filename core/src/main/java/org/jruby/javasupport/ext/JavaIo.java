@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport.ext;
 
 import org.jruby.Ruby;
@@ -61,7 +62,7 @@ public abstract class JavaIo {
     private static final class InputStreamToIO extends JavaMethod.JavaMethodZeroOrOne {
 
         InputStreamToIO(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "to_io");
         }
 
         @Override
@@ -85,7 +86,7 @@ public abstract class JavaIo {
     private static final class OutputStreamToIO extends JavaMethod.JavaMethodZeroOrOne {
 
         OutputStreamToIO(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "to_io");
         }
 
         @Override
@@ -109,7 +110,7 @@ public abstract class JavaIo {
     private static final class ChannelToIO extends JavaMethod.JavaMethodZeroOrOne {
 
         ChannelToIO(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "to_io");
         }
 
         @Override

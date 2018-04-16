@@ -20,6 +20,14 @@ case "`uname`" in
   MINGW*) jruby.exe "$@"; exit $?;;
 esac
 
+# ----- Determine how to call expr (jruby/jruby#5091) -------------------------
+# On Alpine linux, expr takes no -- arguments, and 'expr --' echoes '--'.
+_expr_dashed=$(expr -- 2>/dev/null)
+if [ "$_expr_dashed" != '--' ] ; then
+  alias expr="expr --"
+fi
+unset _expr_dashed
+
 # ----- Verify and Set Required Environment Variables -------------------------
 if [ -z "$JAVA_VM" ]; then
   JAVA_VM=-client
@@ -231,11 +239,12 @@ do
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
             elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
-                JAVA_ENCODING=$val
+                JAVA_ENCODING=$val${val:16}
             elif [ "${val:0:20}" = "-Djava.security.egd=" ]; then
-                JAVA_SECURITY_EGD=$val
+                JAVA_SECURITY_EGD=${val:20}
+            else
+                java_args=("${java_args[@]}" "${1:2}")
             fi
-            java_args=("${java_args[@]}" "${1:2}")
         fi
         ;;
      # Pass -X... and -X? search options through
@@ -244,7 +253,7 @@ do
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
         val=${1:2}
-        if expr -- "$val" : '.*[.]' > /dev/null; then
+        if expr "$val" : '.*[.]' > /dev/null; then
           java_args=("${java_args[@]}" "-Djruby.${val}")
         else
           ruby_args=("${ruby_args[@]}" "-X${val}")
@@ -313,6 +322,8 @@ done
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
 if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
   java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
+elif [[ -n "$JAVA_ENCODING" ]]; then
+  java_args=("${java_args[@]}" "-Dfile.encoding=$JAVA_ENCODING")
 fi
 
 # Force OpenJDK-based JVMs to use /dev/urandom for random number generation

@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport;
 
 import org.jruby.IncludedModuleWrapper;
@@ -208,12 +209,12 @@ public class JavaPackage extends RubyModule {
     private IRubyObject respond_to(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
         String name = mname.asJavaString();
 
-        if (getMetaClass().respondsToMethod(name, !includePrivate)) return context.runtime.getTrue();
+        if (getMetaClass().respondsToMethod(name, !includePrivate)) return context.tru;
         /*
         if ( ( name = BlankSlateWrapper.handlesMethod(name) ) != null ) {
             RubyBoolean bound = checkMetaClassBoundMethod(context, name, includePrivate);
             if ( bound != null ) return bound;
-            return context.runtime.getFalse(); // un-bound (removed) method
+            return context.fals; // un-bound (removed) method
         }
         */
 
@@ -229,9 +230,9 @@ public class JavaPackage extends RubyModule {
         DynamicMethod method = getMetaClass().searchMethod(name);
         if ( ! method.isUndefined() && ! method.isNotImplemented() ) {
             if ( ! includePrivate && method.getVisibility() == PRIVATE ) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
-            return context.runtime.getTrue();
+            return context.tru;
         }
         return null;
     }

@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -33,6 +33,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import jnr.constants.platform.OpenFlags;
@@ -42,6 +43,8 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.NotImplementedError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -441,7 +444,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public IRubyObject mtime(ThreadContext context) {
         checkClosed(context);
-        return context.runtime.newFileStat(getPath(), false).mtime();
+        return ((RubyFileStat) stat(context)).mtime();
     }
 
     @JRubyMethod(meta = true)
@@ -451,6 +454,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
+        if ((openFile.getMode() & OpenFile.TMPFILE) != 0) {
+            throw context.runtime.newIOError("File is unnamed (TMPFILE?)");
+        }
+
         final String path = getPath();
         if (path != null) {
             RubyString newPath = context.runtime.newString(path);
@@ -1167,6 +1174,35 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)
+    public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        long[] atimeval = null;
+        long[] mtimeval = null;
+
+        if (args[0] != context.nil || args[1] != context.nil) {
+            atimeval = extractTimespec(context, args[0]);
+            mtimeval = extractTimespec(context, args[1]);
+        }
+
+        for (int i = 2, j = args.length; i < j; i++) {
+            RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
+
+            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
+
+            if (!fileToTouch.exists()) {
+                throw runtime.newErrnoENOENTError(filename.toString());
+            }
+
+            int result = runtime.getPosix().lutimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
+            if (result == -1) {
+                throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+            }
+        }
+
+        return runtime.newFixnum(args.length - 2);
+    }
+
+    @JRubyMethod(required = 2, rest = true, meta = true)
     public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         long[] atimespec = null;
@@ -1186,7 +1222,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
 
-            int result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
+            int result;
+
+            try {
+                result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
+            } catch (NotImplementedError re) {
+                // fall back on utimes
+                result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
+            }
+
             if (result == -1) {
                 throw runtime.newErrnoFromInt(runtime.getPosix().errno());
             }

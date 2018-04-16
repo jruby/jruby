@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport.ext;
 
 import org.jruby.*;
@@ -339,6 +340,15 @@ public abstract class JavaLang {
             return context.runtime.newFloat(val.doubleValue());
         }
 
+        @JRubyMethod(name = "real?")
+        public static IRubyObject real_p(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return context.runtime.newBoolean(val instanceof Integer || val instanceof Long ||
+                                                    val instanceof Short || val instanceof Byte ||
+                                                    val instanceof Float || val instanceof Double ||
+                                                    val instanceof java.math.BigInteger || val instanceof java.math.BigDecimal);
+        }
+
         @JRubyMethod(name = { "to_i", "to_int" })
         public static IRubyObject to_i(final ThreadContext context, final IRubyObject self) {
             java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
@@ -357,6 +367,21 @@ public abstract class JavaLang {
             return context.runtime.newBoolean(val instanceof Integer || val instanceof Long ||
                                                     val instanceof Short || val instanceof Byte ||
                                                     val instanceof java.math.BigInteger);
+        }
+
+        @JRubyMethod(name = "zero?")
+        public static IRubyObject zero_p(final ThreadContext context, final IRubyObject self) {
+            return context.runtime.newBoolean(isZero(self));
+        }
+
+        private static boolean isZero(final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return Double.compare(val.doubleValue(), 0) == 0;
+        }
+
+        @JRubyMethod(name = "nonzero?")
+        public static IRubyObject nonzero_p(final ThreadContext context, final IRubyObject self) {
+            return isZero(self) ? context.nil : self;
         }
 
         @JRubyMethod(name = "coerce")
@@ -609,7 +634,7 @@ public abstract class JavaLang {
     private static final class UByteGet extends JavaMethod.JavaMethodOne {
 
         UByteGet(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "ubyte_get");
         }
 
         @Override
@@ -624,7 +649,7 @@ public abstract class JavaLang {
     private static final class UByteSet extends JavaMethod.JavaMethodTwo {
 
         UByteSet(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "ubyte_set");
         }
 
         @Override

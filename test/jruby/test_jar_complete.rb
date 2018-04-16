@@ -69,7 +69,7 @@ class JarCompleteTest < Test::Unit::TestCase
   end
 
   def test_rubygems_home
-    gem_dir = jruby_complete("-rubygems -e 'puts Gem.dir'").chomp
+    gem_dir = jruby_complete("-e 'puts Gem.dir'").chomp
     assert_equal 'uri:classloader:/META-INF/jruby.home/lib/ruby/gems/shared', gem_dir
   end
 

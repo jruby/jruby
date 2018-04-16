@@ -1,3 +1,4 @@
+exclude :test_absent, "until fixed"
 exclude :test_dup_warn, "temporary failure due to disabling a warning jruby/joni#34"
 exclude :test_invalid_escape_error, "needs investigation"
 exclude :test_invalid_fragment, "needs investigation"

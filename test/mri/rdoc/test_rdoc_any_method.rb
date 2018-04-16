@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require File.expand_path '../xref_test_case', __FILE__
 
 class TestRDocAnyMethod < XrefTestCase
@@ -74,7 +74,7 @@ method(a, b) { |c, d| ... }
 
   def test_markup_code
     tokens = [
-      RDoc::RubyToken::TkCONSTANT. new(0, 0, 0, 'CONSTANT'),
+      { :line_no => 0, :char_no => 0, :kind => :on_const, :text => 'CONSTANT' },
     ]
 
     @c2_a.collect_tokens
@@ -87,6 +87,15 @@ method(a, b) { |c, d| ... }
 
   def test_markup_code_empty
     assert_equal '', @c2_a.markup_code
+  end
+
+  def test_markup_code_with_variable_expansion
+    m = RDoc::AnyMethod.new nil, 'method'
+    m.parent = @c1
+    m.block_params = '"Hello, #{world}", yield_arg'
+    m.params = 'a'
+
+    assert_equal '(a) { |"Hello, #{world}", yield_arg| ... }', m.param_seq
   end
 
   def test_marshal_dump

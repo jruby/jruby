@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -40,11 +40,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
@@ -62,6 +64,7 @@ import org.jruby.runtime.JavaSites.KernelSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
@@ -627,12 +630,12 @@ public class RubyKernel {
 
     @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject isPrivate) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     /** Returns value of $_.
@@ -886,7 +889,7 @@ public class RubyKernel {
             printExceptionSummary(runtime, raise.getException());
         }
 
-        if (forceCause || argc > 0 && raise.getException().cause == UNDEF && cause != raise.getException()) {
+        if (forceCause || argc > 0 && raise.getException().getCause() == UNDEF && cause != raise.getException()) {
             raise.getException().setCause(cause);
         }
 
@@ -1213,9 +1216,50 @@ public class RubyKernel {
     }
 
     @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
-    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject... messages) {
-        for (IRubyObject message : messages) warn(context, recv, message);
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        boolean kwargs = false;
+        int uplevel = -1;
+        if (args.length > 1) {
+            IRubyObject tmp = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
+            if (!tmp.isNil()) {
+                kwargs = true;
+                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, "uplevel");
+                uplevel = RubyNumeric.num2int(rets[0]);
+            }
+        }
+
+        RubyString message = context.runtime.newString();
+        int numberOfMessages = kwargs ? args.length - 1 : args.length;
+
+        if (uplevel >= 0) {
+            RubyStackTraceElement[] elements = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context).getBacktrace(context.runtime);
+
+            // User can ask for level higher than stack
+            if (elements.length <= uplevel + 1) uplevel = 0;
+
+            int index = uplevel + 1;
+            message.catString(elements[index].getFileName() + ":" + (elements[index].getLineNumber()) + " warning: ");
+        }
+
+        for (int i = 0; i < numberOfMessages; i++) {
+            message.append(args[i]);
+            if (i + 1 < numberOfMessages) message.cat('\n');
+
+        }
+
+        if (message.size() > 0) warn(context, recv, message);
+
         return context.nil;
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject yield_self(ThreadContext context, IRubyObject recv, Block block) {
+        if (block.isGiven()) {
+            return block.yield(context, recv);
+        } else {
+            SizeFn enumSizeFn = RubyArray.newArray(context.runtime, context.nil).enumLengthFn();
+            return RubyEnumerator.enumeratorizeWithSize(context, recv, "yield_self", enumSizeFn);
+        }
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)

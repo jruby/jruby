@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,26 +26,17 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "Pathname")
@@ -250,7 +241,7 @@ public class RubyPathname extends RubyObject {
         if (other instanceof RubyPathname) {
             return Helpers.rbEqual(context, getPath(), ((RubyPathname) other).getPath());
         } else {
-            return context.runtime.getFalse();
+            return context.fals;
         }
     }
 
@@ -371,6 +362,40 @@ public class RubyPathname extends RubyObject {
         }
     }
 
+    @JRubyMethod(required = 1, optional = 1)
+    public IRubyObject glob(ThreadContext context, IRubyObject[] _args, Block block) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject[] args = new IRubyObject[3];
+        boolean blockGiven = block.isGiven();
+
+        args[0] = _args[0];
+        if (_args.length == 1) {
+            args[1] = RubyFixnum.zero(runtime);
+        } else {
+            args[1] = _args[1];
+        }
+
+        args[2] = RubyHash.newSmallHash(runtime);
+        ((RubyHash) args[2]).fastASetSmall(runtime.newSymbol("base"), context.runtime.getFile().callMethod(context, "realpath", getPath()));
+
+        JavaSites.PathnameSites sites = sites(context);
+        CallSite glob = sites.glob;
+
+        RubyArray ary;
+        long i;
+        ary = glob.call(context, this, runtime.getDir(), args).convertToArray();
+        CallSite op_plus = sites.op_plus;
+        for (i = 0; i < ary.size(); i++) {
+            IRubyObject elt = ary.eltOk(i);
+            elt = op_plus.call(context, this, this, elt);
+            ary.eltSetOk(i, elt);
+            if (blockGiven) block.yield(context, elt);
+        }
+
+        return blockGiven ? context.nil : ary;
+    }
+
     @JRubyMethod
     public IRubyObject opendir(ThreadContext context, Block block) {
         return context.runtime.getDir().callMethod(context, "open", new IRubyObject[] { getPath()},
@@ -444,5 +469,9 @@ public class RubyPathname extends RubyObject {
             paths.store(i, newInstance(context, clazz, path));
         }
         return paths;
+    }
+
+    private static JavaSites.PathnameSites sites(ThreadContext context) {
+        return context.sites.Pathname;
     }
 }

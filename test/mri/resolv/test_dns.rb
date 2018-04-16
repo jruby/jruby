@@ -3,6 +3,8 @@ require 'test/unit'
 require 'resolv'
 require 'socket'
 require 'tempfile'
+require 'timeout'
+require 'minitest/mock'
 
 class TestResolvDNS < Test::Unit::TestCase
   def setup
@@ -179,6 +181,16 @@ class TestResolvDNS < Test::Unit::TestCase
     end
   end
 
+  def test_resolv_conf_by_command
+    Dir.mktmpdir do |dir|
+      Dir.chdir(dir) do
+        assert_raise(Errno::ENOENT, Errno::EINVAL) do
+          Resolv::DNS::Config.parse_resolv_conf("|echo foo")
+        end
+      end
+    end
+  end
+
   def test_dots_diffences
     name1 = Resolv::DNS::Name.create("example.org")
     name2 = Resolv::DNS::Name.create("ex.ampl.eo.rg")
@@ -205,6 +217,21 @@ class TestResolvDNS < Test::Unit::TestCase
     assert_instance_of Resolv::IPv6, Resolv::IPv6.create('::1:127.0.0.1')
   end
 
+  def test_ipv6_should_be_16
+    ref = '[rubygems:1626]'
+
+    broken_message =
+      "\0\0\0\0\0\0\0\0\0\0\0\1" \
+      "\x03ns2\bdnsimple\x03com\x00" \
+      "\x00\x1C\x00\x01\x00\x02OD" \
+      "\x00\x10$\x00\xCB\x00 I\x00\x01\x00\x00\x00\x00"
+
+    e = assert_raise_with_message(Resolv::DNS::DecodeError, /IPv6 address must be 16 bytes/, ref) do
+      Resolv::DNS::Message.decode broken_message
+    end
+    assert_kind_of(ArgumentError, e.cause)
+  end
+
   def test_too_big_label_address
     n = 2000
     m = Resolv::DNS::Message::MessageEncoder.new {|msg|
@@ -220,5 +247,41 @@ class TestResolvDNS < Test::Unit::TestCase
       }
     }
     assert_operator(2**14, :<, m.to_s.length)
+  end
+
+  def test_timeout_without_leaking_file_descriptors_connected
+    socket = nil
+    bind_random_port = lambda do |udpsock, bind_host="0.0.0.0"|
+      socket = udpsock
+      sleep 3
+    end
+
+    Resolv::DNS.stub(:bind_random_port, bind_random_port) do
+      r = Resolv::DNS.new(nameserver_port: [['127.0.0.1', 53]])
+      begin
+        Timeout.timeout(0.5) { r.getname("8.8.8.8") }
+      rescue Timeout::Error
+      end
+    end
+
+    assert(socket.closed?, "file descriptor leaked")
+  end
+
+  def test_timeout_without_leaking_file_descriptors_unconnected
+    socket = nil
+    bind_random_port = lambda do |udpsock, bind_host="0.0.0.0"|
+      socket = udpsock
+      sleep 3
+    end
+
+    Resolv::DNS.stub(:bind_random_port, bind_random_port) do
+      r = Resolv::DNS.new
+      begin
+        Timeout.timeout(0.5) { r.getname("8.8.8.8") }
+      rescue Timeout::Error
+      end
+    end
+
+    assert(socket.closed?, "file descriptor leaked")
   end
 end

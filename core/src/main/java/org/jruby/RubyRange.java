@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -34,6 +34,7 @@
  * provisions above, a recipient may use your version of this file under the
  * terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.IOException;
@@ -255,12 +256,8 @@ public class RubyRange extends RubyObject {
 
     private void init(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {
-            try {
-                IRubyObject result = invokedynamic(context, begin, MethodNames.OP_CMP, end);
-                if (result.isNil()) {
-                    throw context.runtime.newArgumentError("bad value for range");
-                }
-            } catch (RaiseException re) {
+            IRubyObject result = invokedynamic(context, begin, MethodNames.OP_CMP, end);
+            if (result.isNil()) {
                 throw context.runtime.newArgumentError("bad value for range");
             }
         }
@@ -386,8 +383,8 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject equalityInner(ThreadContext context, IRubyObject other, MethodNames equalityCheck) {
-        if (this == other) return context.runtime.getTrue();
-        if (!(other instanceof RubyRange)) return context.runtime.getFalse();
+        if (this == other) return context.tru;
+        if (!(other instanceof RubyRange)) return context.fals;
 
         RubyRange otherRange = (RubyRange) other;
 
@@ -438,7 +435,7 @@ public class RubyRange extends RubyObject {
         if (result.isNil()) {
             return null;
         }
-        return RubyComparable.cmpint(context, result, a, b) < 0 ? context.runtime.getTrue() : null;
+        return RubyComparable.cmpint(context, result, a, b) < 0 ? context.tru : null;
     }
 
     private static IRubyObject rangeLe(ThreadContext context, IRubyObject a, IRubyObject b) {
@@ -450,7 +447,7 @@ public class RubyRange extends RubyObject {
         if (c == 0) {
             return RubyFixnum.zero(context.runtime);
         }
-        return c < 0 ? context.runtime.getTrue() : null;
+        return c < 0 ? context.tru : null;
     }
 
     private void rangeEach(ThreadContext context, RangeCallBack callback) {
@@ -750,7 +747,7 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(name = "cover?")
     public RubyBoolean cover_p(ThreadContext context, IRubyObject obj) {
         if (rangeLe(context, begin, obj) == null) {
-            return context.runtime.getFalse(); // obj < start...end
+            return context.fals; // obj < start...end
         }
         return context.runtime.newBoolean(isExclusive
                 ? // begin <= obj < end || begin <= obj <= end
@@ -955,6 +952,22 @@ public class RubyRange extends RubyObject {
     public static boolean isRangeLike(ThreadContext context, IRubyObject obj, RespondToCallSite respond_to_begin, RespondToCallSite respond_to_end) {
         return respond_to_begin.respondsTo(context, obj, obj) &&
                 respond_to_end.respondsTo(context, obj, obj);
+    }
+
+    /**
+     * Return true if the given object responds to "begin", "end" and "exclude_end?" methods.
+     *
+     * @param context current context
+     * @param obj possibly range-like object
+     * @param begin_checked checked site for begin
+     * @param end_checked checked site for end
+     * @param exclude_end_checked checked site for exclude_end?
+     * @return
+     */
+    public static boolean isRangeLike(ThreadContext context, IRubyObject obj, JavaSites.CheckedSites begin_checked, JavaSites.CheckedSites end_checked, JavaSites.CheckedSites exclude_end_checked) {
+        return (obj.checkCallMethod(context, begin_checked) != null) &&
+                (obj.checkCallMethod(context, end_checked) != null) &&
+                (obj.checkCallMethod(context, exclude_end_checked) != null);
     }
 
     // MRI: rb_range_beg_len

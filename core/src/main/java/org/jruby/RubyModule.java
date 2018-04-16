@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,6 +35,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import com.headius.invokebinder.Binder;
@@ -76,10 +77,10 @@ import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.NativeCallMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -172,9 +173,8 @@ public class RubyModule extends RubyObject {
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule) throws RaiseException {
         // Module methods can always be transplanted
-        if (originModule.isModule()) return;
-
-        if (!this.hasModuleInHierarchy(originModule)) {
+        if (!originModule.isModule() &&
+                !this.hasModuleInHierarchy(originModule)) {
             if (originModule instanceof MetaClass) {
                 throw context.runtime.newTypeError("can't bind singleton method to a different class");
             } else {
@@ -1242,11 +1242,11 @@ public class RubyModule extends RubyObject {
         // See if module is in chain...Cannot match against itself so start at superClass.
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isSame(moduleToCompare)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
         }
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "singleton_class?")
@@ -1917,7 +1917,7 @@ public class RubyModule extends RubyObject {
             if (this == method.getImplementationClass()) {
                 method.setVisibility(visibility);
             } else {
-                DynamicMethod newMethod = new WrapperMethod(this, method, visibility);
+                DynamicMethod newMethod = new PartialDelegatingMethod(this, method, visibility);
 
                 methodLocation.addMethod(name, newMethod);
             }
@@ -2033,7 +2033,7 @@ public class RubyModule extends RubyObject {
         return newMethod;
     }
 
-    @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "define_method", reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
         Visibility visibility = getCurrentVisibilityForDefineMethod(context);
 
@@ -2083,7 +2083,7 @@ public class RubyModule extends RubyObject {
         return name;
     }
 
-    @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "define_method", reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Visibility visibility = getCurrentVisibilityForDefineMethod(context);
 
@@ -2103,7 +2103,7 @@ public class RubyModule extends RubyObject {
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
 
-            checkValidBindTargetFrom(context, (RubyModule)method.owner(context));
+            checkValidBindTargetFrom(context, (RubyModule) method.owner(context));
 
             newMethod = method.getMethod().dup();
             newMethod.setImplementationClass(this);
@@ -2340,7 +2340,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if(!(other instanceof RubyModule)) return context.runtime.getFalse();
+        if(!(other instanceof RubyModule)) return context.fals;
 
         RubyModule otherModule = (RubyModule) other;
         if(otherModule.isIncluded()) {
@@ -2458,7 +2458,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr
      *
      */
-    @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr", rest = true, reads = VISIBILITY)
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
@@ -2484,7 +2484,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_reader
      *
      */
-    @JRubyMethod(name = "attr_reader", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr_reader", rest = true, reads = VISIBILITY)
     public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
@@ -2499,7 +2499,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_writer
      *
      */
-    @JRubyMethod(name = "attr_writer", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr_writer", rest = true, reads = VISIBILITY)
     public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
@@ -2521,7 +2521,7 @@ public class RubyModule extends RubyObject {
      *  Note: this method should not be called from Java in most cases, since
      *  it depends on Ruby frame state for visibility. Use add[Read/Write]Attribute instead.
      */
-    @JRubyMethod(name = "attr_accessor", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr_accessor", rest = true, reads = VISIBILITY)
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
@@ -2737,12 +2737,12 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "included", required = 1, visibility = PRIVATE)
     public IRubyObject included(ThreadContext context, IRubyObject other) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "extended", required = 1, visibility = PRIVATE)
     public IRubyObject extended(ThreadContext context, IRubyObject other, Block block) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
@@ -2882,22 +2882,22 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "method_added", required = 1, visibility = PRIVATE)
     public IRubyObject method_added(ThreadContext context, IRubyObject nothing) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_removed", required = 1, visibility = PRIVATE)
     public IRubyObject method_removed(ThreadContext context, IRubyObject nothing) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_undefined", required = 1, visibility = PRIVATE)
     public IRubyObject method_undefined(ThreadContext context, IRubyObject nothing) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_defined?", required = 1)
     public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol) {
-        return isMethodBound(symbol.asJavaString(), true) ? context.runtime.getTrue() : context.runtime.getFalse();
+        return isMethodBound(symbol.asJavaString(), true) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "public_method_defined?", required = 1)
@@ -2935,7 +2935,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "alias_method", required = 2, visibility = PRIVATE)
+    @JRubyMethod(name = "alias_method", required = 2)
     public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
         RubySymbol newSym = TypeConverter.checkID(newId);
         RubySymbol oldSym = TypeConverter.checkID(oldId); //  MRI uses rb_to_id but we return existing symbol
@@ -2950,7 +2950,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "undef_method", rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "undef_method", rest = true)
     public RubyModule undef_method(ThreadContext context, IRubyObject[] args) {
         for (int i=0; i<args.length; i++) {
             undef(context, args[i].asJavaString());
@@ -3009,7 +3009,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "remove_method", rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "remove_method", rest = true)
     public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
             removeMethod(context, TypeConverter.checkID(args[i]).idString());
@@ -3224,11 +3224,11 @@ public class RubyModule extends RubyObject {
         RubyModule module = this;
         do {
             if (module.hasClassVariable(internedName)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
         } while ((module = module.getSuperClass()) != null);
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     /** rb_mod_cvar_get
@@ -3426,12 +3426,13 @@ public class RubyModule extends RubyObject {
         if (value != null) { // found it!
             invalidateConstantCache(id);
 
-            if (value == UNDEF) {  // autoload entry
-                removeAutoload(id);
-                return context.nil;
-            }
+            if (value != UNDEF) return value;
 
-            return value;
+            // autoload entry
+            removeAutoload(id);
+            // FIXME: I'm not sure this is right, but the old code returned
+            // the undef, which definitely isn't right...
+            return context.nil;
         }
 
         if (hasConstantInHierarchy(id)) throw cannotRemoveError(id);
@@ -3897,9 +3898,7 @@ public class RubyModule extends RubyObject {
                 if ( value == UNDEF ) return mod.resolveUndefConstant(name);
 
                 if ( mod == objectClass && this != objectClass ) {
-                    String badCName = getName() + "::" + name;
-                    runtime.getWarnings().warn(ID.CONSTANT_BAD_REFERENCE,
-                        "toplevel constant " + name + " referenced by " + badCName);
+                    return null;
                 }
 
                 return value;

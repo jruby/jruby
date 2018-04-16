@@ -69,6 +69,7 @@ module WEBrick
       "jpeg"  => "image/jpeg",
       "jpg"   => "image/jpeg",
       "js"    => "application/javascript",
+      "json"  => "application/json",
       "lha"   => "application/octet-stream",
       "lzh"   => "application/octet-stream",
       "mov"   => "video/quicktime",
@@ -107,6 +108,8 @@ module WEBrick
     # Loads Apache-compatible mime.types in +file+.
 
     def load_mime_types(file)
+      # note: +file+ may be a "| command" for now; some people may
+      # rely on this, but currently we do not use this method by default.
       open(file){ |io|
         hash = Hash.new
         io.each{ |line|

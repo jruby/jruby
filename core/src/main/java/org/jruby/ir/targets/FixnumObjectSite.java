@@ -24,7 +24,11 @@ public class FixnumObjectSite extends LazyObjectSite {
         this.value = value;
     }
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(FixnumObjectSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, long.class));
+    public static final Handle BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(FixnumObjectSite.class),
+            "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, long.class),
+            false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, long value) {
         return new FixnumObjectSite(type, value).bootstrap(lookup);

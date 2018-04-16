@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'test/unit'
 require 'find'
 require 'tmpdir'
@@ -294,6 +294,23 @@ class TestFind < Test::Unit::TestCase
         Find.find("#{d}".encode(utf_8)) {|f| a << [f, f.encoding] }
         assert_equal([[d, utf_8], ["#{d}/a", utf_8], ["#{d}/b", utf_8], ["#{d}/\u{2660}", utf_8]], a)
       end
+    }
+  end
+
+  def test_to_path
+    c = Class.new {
+      def initialize(path)
+        @path = path
+      end
+
+      def to_path
+        @path
+      end
+    }
+    Dir.mktmpdir {|d|
+      a = []
+      Find.find(c.new(d)) {|f| a << f }
+      assert_equal([d], a)
     }
   end
 

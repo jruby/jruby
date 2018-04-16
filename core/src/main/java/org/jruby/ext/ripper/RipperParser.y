@@ -6,7 +6,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -27,6 +27,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.ripper;
 
 import org.jruby.RubyArray;
@@ -58,9 +59,11 @@ public class RipperParser extends RipperParserBase {
   keyword_alias keyword_defined keyword_BEGIN keyword_END keyword__LINE__
   keyword__FILE__ keyword__ENCODING__ keyword_do_lambda
 
-%token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
-%type <IRubyObject> sym symbol operation operation2 operation3 cname fname op
-%type <IRubyObject> f_norm_arg dot_or_colon restarg_mark blkarg_mark
+%token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
+%token <IRubyObject> tCHAR
+%type <IRubyObject> sym symbol operation operation2 operation3 op fname cname 
+%type <IRubyObject> f_norm_arg restarg_mark
+%type <IRubyObject> dot_or_colon blkarg_mark
 %token <IRubyObject> tUPLUS         /* unary+ */
 %token <IRubyObject> tUMINUS        /* unary- */
 %token <IRubyObject> tUMINUS_NUM    /* unary- */
@@ -128,8 +131,7 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> mrhs_arg
 %type <IRubyObject> compstmt bodystmt stmts stmt expr arg primary command
 %type <IRubyObject> stmt_or_begin
-%type <IRubyObject> expr_value primary_value opt_else cases if_tail exc_var
-   // ENEBO: missing call_args2, open_args
+%type <IRubyObject> expr_value primary_value opt_else cases if_tail exc_var rel_expr
 %type <IRubyObject> call_args opt_ensure paren_args superclass
 %type <IRubyObject> command_args var_ref opt_paren_args block_call block_command
 %type <IRubyObject> command_rhs arg_rhs
@@ -139,7 +141,6 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> f_args f_larglist block_param block_param_def opt_block_param
 %type <IRubyObject> f_arglist
 %type <IRubyObject> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
- // ENEBO: missing block_var == for_var, opt_block_var
 %type <IRubyObject> lhs none args
 %type <IRubyObject> qword_list word_list
 %type <RubyArray> f_arg f_optarg
@@ -148,8 +149,6 @@ public class RipperParser extends RipperParserBase {
 %type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
 %type <IRubyObject> f_kw, f_block_kw
 %type <RubyArray> f_block_kwarg, f_kwarg
-
-   // ENEBO: missing when_args
 %type <IRubyObject> assoc_list
 %type <RubyArray> assocs
 %type <IRubyObject> assoc 
@@ -157,14 +156,12 @@ public class RipperParser extends RipperParserBase {
 %type <RubyArray> f_block_optarg
 %type <IRubyObject> opt_block_arg block_arg none_block_pass
 %type <IRubyObject> opt_f_block_arg f_block_arg
-%type <IRubyObject> brace_block do_block cmd_brace_block
-   // ENEBO: missing mhls_entry
+%type <IRubyObject> brace_block do_block cmd_brace_block brace_body do_body
 %type <IRubyObject> mlhs mlhs_basic 
 %type <IRubyObject> opt_rescue
 %type <IRubyObject> var_lhs
 %type <IRubyObject> fsym
 %type <IRubyObject> fitem
-   // ENEBO: begin all new types
 %type <IRubyObject> f_arg_item
 %type <RubyArray> bv_decls
 %type <IRubyObject> opt_bv_decl lambda_body 
@@ -172,18 +169,17 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> mlhs_inner f_block_opt for_var
 %type <IRubyObject> opt_call_args f_marg f_margs
 %type <IRubyObject> bvar
-   // ENEBO: end all new types
-
-%type <IRubyObject> rparen rbracket reswords f_bad_arg
+%type <IRubyObject> reswords f_bad_arg relop
+%type <IRubyObject> rparen rbracket
 %type <IRubyObject> top_compstmt top_stmts top_stmt
 %token <IRubyObject> tSYMBOLS_BEG
 %token <IRubyObject> tQSYMBOLS_BEG
 %token <IRubyObject> tDSTAR
 %token <IRubyObject> tSTRING_DEND
-%type <IRubyObject> kwrest_mark, f_kwrest, f_label
+%type <IRubyObject> kwrest_mark f_kwrest f_label
+%type <IRubyObject> call_op call_op2
 %type <IRubyObject> f_arg_asgn
 %type <IRubyObject> fcall
-%type <IRubyObject> call_op call_op2
 %token <IRubyObject> tLABEL_END, tSTRING_DEND
 
 %type <IRubyObject> do then
@@ -419,14 +415,8 @@ block_command   : block_call
                 }
 
 // :brace_block - [!null]
-cmd_brace_block : tLBRACE_ARG {
-                    p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
-                } opt_block_param compstmt tRCURLY {
-                    $$ = p.dispatch("on_brace_block", $3, $4);
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
-                    p.popCurrentScope();
+cmd_brace_block : tLBRACE_ARG brace_body tRCURLY {
+                    $$ = $2;
                 }
 
 fcall           : operation
@@ -497,7 +487,7 @@ mlhs_basic      : mlhs_head {
                     $$ = p.dispatch("on_mlhs_add_star", $1, $3);
                 }
                 | mlhs_head tSTAR mlhs_node ',' mlhs_post {
-                    $$ = p.dispatch("on_mlhs_add",
+                    $$ = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", $1, $3),
                                     $5);
                 }
@@ -505,7 +495,7 @@ mlhs_basic      : mlhs_head {
                     $$ = p.dispatch("on_mlhs_add_star", $1, null);
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
-                    $$ = p.dispatch("on_mlhs_add",
+                    $$ = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", $1, null),
                                     $4);
                 }
@@ -513,7 +503,7 @@ mlhs_basic      : mlhs_head {
                     $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), $2);
                 }
                 | tSTAR mlhs_node ',' mlhs_post {
-                    $$ = p.dispatch("on_mlhs_add",
+                    $$ = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), $2),
                                     $4);
                 }
@@ -521,7 +511,7 @@ mlhs_basic      : mlhs_head {
                     $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null);
                 }
                 | tSTAR ',' mlhs_post {
-                    $$ = p.dispatch("on_mlhs_add",
+                    $$ = p.dispatch("on_mlhs_add_post",
                                     p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null),
                                     $3);
                 }
@@ -548,37 +538,43 @@ mlhs_post       : mlhs_item {
                 }
 
 mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
-                    $$ = p.assignableIdentifier($1);
+                    $$ = p.assignableIdentifier(p.dispatch("on_var_field", $1));
                 }
                 | tIVAR {
-                    $$ = $1;
+                    $$ = p.dispatch("on_var_field", $1);
                 }
                 | tGVAR {
-                    $$ = $1;
+                    $$ = p.dispatch("on_var_field", $1);
                 }
                 | tCONSTANT {
-                    $$ = p.assignableConstant($1);
+                    $$ = p.assignableConstant(p.dispatch("on_var_field", $1));
                 }
                 | tCVAR {
-                    $$ = $1;
+                    $$ = p.dispatch("on_var_field", $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
-                    p.yyerror("Can't assign to nil");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_self {
-                    p.yyerror("Can't change the value of self");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_true {
-                    p.yyerror("Can't assign to true");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_false {
-                    p.yyerror("Can't assign to false");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__FILE__ {
-                    p.yyerror("Can't assign to __FILE__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__LINE__ {
-                    p.yyerror("Can't assign to __LINE__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__ENCODING__ {
                     p.yyerror("Can't assign to __ENCODING__");
@@ -627,31 +623,38 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = p.dispatch("on_var_field", $1);
                 }
                 | tCONSTANT {
-                    $$ = p.dispatch("on_var_field", p.assignableConstant($1));
+                    $$ = p.assignableConstant(p.dispatch("on_var_field", $1));
                 }
                 | tCVAR {
                     $$ = p.dispatch("on_var_field", $1);
                 } /*mri:user_variable*/
                 | /*mri:keyword_variable*/ keyword_nil {
-                    p.yyerror("Can't assign to nil");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_self {
-                    p.yyerror("Can't change the value of self");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_true {
-                    p.yyerror("Can't assign to true");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword_false {
-                    p.yyerror("Can't assign to false");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__FILE__ {
-                    p.yyerror("Can't assign to __FILE__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__LINE__ {
-                    p.yyerror("Can't assign to __LINE__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 }
                 | keyword__ENCODING__ {
-                    p.yyerror("Can't assign to __ENCODING__");
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                 } /*mri:keyword_variable*/
                 | primary_value '[' opt_call_args rbracket {
                     $$ = p.dispatch("on_aref_field", $1, $3);
@@ -686,7 +689,8 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = val;
                 }
                 | backref {
-                    $$ = p.dispatch("on_assign_error", $1);
+                    $$ = p.dispatch("on_assign_error",
+                                    p.dispatch("on_var_field", $1));
                     p.error();
                 }
 
@@ -850,17 +854,8 @@ arg             : lhs '=' arg_rhs {
                 | arg tCMP arg {
                     $$ = p.dispatch("on_binary", $1, p.intern("<=>"), $3);
                 }
-                | arg tGT arg {
-                    $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
-                }
-                | arg tGEQ arg {
-                    $$ = p.dispatch("on_binary", $1, p.intern(">="), $3);
-                }
-                | arg tLT arg {
-                    $$ = p.dispatch("on_binary", $1, p.intern("<"), $3);
-                }
-                | arg tLEQ arg {
-                    $$ = p.dispatch("on_binary", $1, p.intern("<="), $3);
+                | rel_expr   %prec tCMP {
+                    $$ = $1;
                 }
                 | arg tEQ arg {
                     $$ = p.dispatch("on_binary", $1, p.intern("=="), $3);
@@ -905,6 +900,28 @@ arg             : lhs '=' arg_rhs {
                     $$ = $1;
                 }
 
+relop           : tGT {
+                    $$ = $1;
+                }
+                | tLT  {
+                    $$ = $1;
+                }
+                | tGEQ {
+                     $$ = $1;
+                }
+                | tLEQ {
+                     $$ = $1;
+                }
+
+rel_expr        : arg relop arg   %prec tGT {
+                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+
+                }
+		| rel_expr relop arg   %prec tGT {
+                     p.warning("comparison '" + $2 + "%s' after comparison");
+                     $$ = p.dispatch("on_binary", $1, p.intern(">"), $3);
+                }
+ 
 arg_value       : arg {
                     $$ = $1;
                 }
@@ -1252,7 +1269,7 @@ for_var         : lhs
                 }
 
 f_marg          : f_norm_arg {
-                    $$ = p.dispatch("on_mlhs_paren", $1);
+                    $$ = $1;
                 }
                 | tLPAREN f_margs rparen {
                     $$ = p.dispatch("on_mlhs_paren", $2);
@@ -1273,25 +1290,41 @@ f_margs         : f_marg_list {
                     $$ = p.dispatch("on_mlhs_add_star", $1, $4);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", $1, $4);
+                    $$ = p.dispatch("on_mlhs_add_post", 
+                                    p.dispatch("on_mlhs_add_star", $1, $4),
+                                    $6);
                 }
                 | f_marg_list ',' tSTAR {
                     $$ = p.dispatch("on_mlhs_add_star", $1, null);
                 }
                 | f_marg_list ',' tSTAR ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", $1, $5);
+                    $$ = p.dispatch("on_mlhs_add_post", 
+                                    p.dispatch("on_mlhs_add_star", $1, null),
+                                    $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), $2);
+                    $$ = p.dispatch("on_mlhs_add_star",
+                                    p.dispatch("on_mlhs_new"),
+                                    $2);
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", $2, $4);
+                    $$ = p.dispatch("on_mlhs_add_post", 
+                                    p.dispatch("on_mlhs_add_star",
+                                               p.dispatch("on_mlhs_new"),
+                                               $2),
+                                    $4);
                 }
                 | tSTAR {
-                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null);
+                    $$ = p.dispatch("on_mlhs_add_star",
+                                    p.dispatch("on_mlhs_new"),
+                                    null);
                 }
                 | tSTAR ',' f_marg_list {
-                    $$ = p.dispatch("on_mlhs_add_star", p.dispatch("on_mlhs_new"), null);
+                    $$ = p.dispatch("on_mlhs_add_post", 
+                                    p.dispatch("on_mlhs_add_star",
+                                               p.dispatch("on_mlhs_new"),
+                                               null),
+                                    $3);
                 }
 
 block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
@@ -1436,11 +1469,8 @@ lambda_body     : tLAMBEG compstmt tRCURLY {
                     $$ = $2;
                 }
 
-do_block        : keyword_do_block {
-                    p.pushBlockScope();
-                } opt_block_param compstmt keyword_end {
-                    $$ = p.dispatch("on_do_block", $3, $4);
-                    p.popCurrentScope();
+do_block        : keyword_do_block do_body keyword_end {
+                    $$ = $2;  
                 }
 
 block_call      : command do_block {
@@ -1485,14 +1515,8 @@ method_call     : fcall paren_args {
                     $$ = p.dispatch("on_aref", $1, $3);
                 }
 
-brace_block     : tLCURLY {
-                    p.pushBlockScope();
-                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
-                    p.getCmdArgumentState().reset();
-                } opt_block_param compstmt tRCURLY {
-                    $$ = p.dispatch("on_brace_block", $3, $4);
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
-                    p.popCurrentScope();
+brace_block     : tLCURLY brace_body tRCURLY {
+                    $$ = $2;
                 }
                 | keyword_do {
                     p.pushBlockScope();
@@ -1501,6 +1525,26 @@ brace_block     : tLCURLY {
                 } opt_block_param compstmt keyword_end {
                     $$ = p.dispatch("on_do_block", $3, $4);
                     p.getCmdArgumentState().reset($<Long>2.longValue());
+                    p.popCurrentScope();
+                }
+
+brace_body      : {
+                    p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack()) >> 1;
+                    p.getCmdArgumentState().reset();
+                } opt_block_param compstmt  {
+                    $$ = p.dispatch("on_brace_block", $2, $3);
+                    p.getCmdArgumentState().reset($<Long>1.longValue());
+                    p.popCurrentScope();
+                }
+
+do_body 	: {
+                    p.pushBlockScope();
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
+                    p.getCmdArgumentState().reset();
+                } opt_block_param bodystmt {
+                    $$ = p.dispatch("on_do_block", $2, $3);
+                    p.getCmdArgumentState().reset($<Long>1.longValue());
                     p.popCurrentScope();
                 }
 
@@ -1547,8 +1591,12 @@ strings         : string {
                 }
 
 // [!null]
-string          : tCHAR 
-                | string1
+string          : tCHAR {
+                    $$ = $1;
+                }
+                | string1 {
+                    $$ = $1;
+                }
                 | string string1 {
                     $$ = p.dispatch("on_string_concat", $1, $2);
                 }
@@ -1569,11 +1617,8 @@ regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
                     $$ = p.dispatch("on_regexp_literal", $2, $3);
                 }
 
-words           : tWORDS_BEG ' ' tSTRING_END {
-                    $$ = p.dispatch("on_array", p.dispatch("on_words_new"));
-                }
-                | tWORDS_BEG word_list tSTRING_END {
-                    $$ = p.dispatch("on_array", $2);
+words           : tWORDS_BEG ' ' word_list tSTRING_END {
+                    $$ = p.dispatch("on_array", $3);
                 }
 
 word_list       : /* none */ {
@@ -1590,11 +1635,8 @@ word            : string_content {
                     $$ = p.dispatch("on_word_add", $1, $2);
                 }
 
-symbols         : tSYMBOLS_BEG ' ' tSTRING_END {
-                    $$ = p.dispatch("on_array", p.dispatch("on_symbols_new"));
-                }
-                | tSYMBOLS_BEG symbol_list tSTRING_END {
-                    $$ = p.dispatch("on_array", $2);
+symbols         : tSYMBOLS_BEG ' ' symbol_list tSTRING_END {
+                    $$ = p.dispatch("on_array", $3);
                 }
 
 symbol_list     : /* none */ {
@@ -1604,18 +1646,12 @@ symbol_list     : /* none */ {
                     $$ = p.dispatch("on_symbols_add", $1, $2);
                 }
 
-qwords          : tQWORDS_BEG ' ' tSTRING_END {
-                    $$ = p.dispatch("on_array", p.dispatch("on_qwords_new"));
-                }
-                | tQWORDS_BEG qword_list tSTRING_END {
-                    $$ = p.dispatch("on_array", $2);
+qwords          : tQWORDS_BEG ' ' qword_list tSTRING_END {
+                    $$ = p.dispatch("on_array", $3);
                 }
 
-qsymbols        : tQSYMBOLS_BEG ' ' tSTRING_END {
-                    $$ = p.dispatch("on_array", p.dispatch("on_qsymbols_new"));
-                }
-                | tQSYMBOLS_BEG qsym_list tSTRING_END {
-                    $$ = p.dispatch("on_array", $2);
+qsymbols        : tQSYMBOLS_BEG ' ' qsym_list tSTRING_END {
+                    $$ = p.dispatch("on_array", $3);
                 }
 
 qword_list      : /* none */ {
@@ -1786,7 +1822,7 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = p.dispatch("on_var_field", $1);
                 }
                 | tCONSTANT {
-                    $$ = p.dispatch("on_var_field", p.assignableConstant($1));
+                    $$ = p.assignableConstant(p.dispatch("on_var_field", $1));
                 }
                 | tCVAR {
                     $$ = p.dispatch("on_var_field", $1);
@@ -2002,10 +2038,10 @@ kwrest_mark     : tPOW {
 
 f_kwrest        : kwrest_mark tIDENTIFIER {
                     p.shadowing_lvar($2);
-                    $$ = $2;
+                    $$ = p.dispatch("on_kwrest_param", $2);
                 }
                 | kwrest_mark {
-                    $$ = p.internalId();
+                    $$ = p.dispatch("on_kwrest_param", null);
                 }
 
 f_opt           : f_arg_asgn '=' arg_value {

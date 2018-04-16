@@ -33,12 +33,13 @@ default_gems =
    ImportedGem.new( 'minitest', '${minitest.version}' ),
    ImportedGem.new( 'test-unit', '${test-unit.version}' ),
    ImportedGem.new( 'power_assert', '${power_assert.version}' ),
-   ImportedGem.new( 'psych', '2.2.4' ),
+   ImportedGem.new( 'psych', '3.0.2' ),
    ImportedGem.new( 'json', '${json.version}' ),
    ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
    ImportedGem.new( 'net-telnet', '0.1.1'),
    ImportedGem.new( 'did_you_mean', '1.0.1'),
    ImportedGem.new( 'rake-ant', '1.0.4'),
+   ImportedGem.new( 'ipaddr', '1.2.0'),
   ]
 
 project 'JRuby Lib Setup' do
@@ -62,7 +63,7 @@ project 'JRuby Lib Setup' do
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
-  extension 'org.torquebox.mojo:mavengem-wagon:0.2.2'
+  extension 'org.torquebox.mojo:mavengem-wagon:1.0.1'
 
   repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 

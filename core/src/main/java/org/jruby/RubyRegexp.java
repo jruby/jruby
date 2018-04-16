@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -33,6 +33,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import static org.jruby.anno.FrameField.BACKREF;
@@ -408,29 +409,34 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 pattern.getEncoding() + " regexp with " + strEnc + " string)");
     }
 
-    private Encoding checkEncoding(RubyString str, boolean warn) {
-        if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
-            throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
+    private Encoding prepareEncoding(RubyString str, boolean warn) {
+        Encoding enc = str.getEncoding();
+        int cr = str.scanForCodeRange();
+        if (cr == StringSupport.CR_BROKEN) {
+            throw getRuntime().newArgumentError("invalid byte sequence in " + enc);
         }
         check();
-        Encoding enc = str.getEncoding();
-        if (!enc.isAsciiCompatible()) {
-            if (enc != pattern.getEncoding()) encodingMatchError(getRuntime(), pattern, enc);
+        Encoding patternEnc = pattern.getEncoding();
+        if (patternEnc == enc) {
+        } else if (cr == StringSupport.CR_7BIT && patternEnc == USASCIIEncoding.INSTANCE) {
+            enc = patternEnc;
+        } else if (!enc.isAsciiCompatible()) {
+            encodingMatchError(getRuntime(), pattern, enc);
         } else if (options.isFixed()) {
-            if (enc != pattern.getEncoding() &&
-               (!pattern.getEncoding().isAsciiCompatible() ||
-               str.scanForCodeRange() != StringSupport.CR_7BIT)) encodingMatchError(getRuntime(), pattern, enc);
-            enc = pattern.getEncoding();
+            if (enc != patternEnc &&
+               (!patternEnc.isAsciiCompatible() ||
+               cr != StringSupport.CR_7BIT)) encodingMatchError(getRuntime(), pattern, enc);
+            enc = patternEnc;
         }
-        if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
-            getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
+        if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && cr != StringSupport.CR_7BIT) {
+            getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "historical binary regexp match /.../n against " + enc + " string");
         }
         return enc;
     }
 
     public final Regex preparePattern(RubyString str) {
         // checkEncoding does `check();` no need to here
-        Encoding enc = checkEncoding(str, true);
+        Encoding enc = prepareEncoding(str, true);
         if (enc == pattern.getEncoding()) return pattern;
         return getPreprocessedRegexpFromCache(getRuntime(), this.str, enc, options, RegexpSupport.ErrorMode.PREPROCESS);
     }
@@ -1027,10 +1033,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) {
-            return context.runtime.getTrue();
+            return context.tru;
         }
         if (!(other instanceof RubyRegexp)) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         RubyRegexp otherRegex = (RubyRegexp) other;
 

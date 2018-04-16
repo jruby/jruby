@@ -1,3 +1,1 @@
-fails:Dir.entries returns entries encoded with the specified encoding
-fails:Dir.entries returns entries transcoded to the default internal encoding
 windows:Dir.entries returns entries encoded with the filesystem encoding by default

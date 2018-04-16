@@ -399,7 +399,12 @@ public class TraceType {
         boolean color = console && runtime.getInstanceConfig().getBacktraceColor();
 
         // exception line
-        String message = exception.message(context).toString();
+        String message;
+        try {
+            message = exception.callMethod(context, "message").toString();
+        } catch (org.jruby.exceptions.Exception _) {
+            message = exception.message(context).toString();
+        }
         if (exception.getMetaClass() == runtime.getRuntimeError() && message.length() == 0) {
             message = "No current exception";
         }

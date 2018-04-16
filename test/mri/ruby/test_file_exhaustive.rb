@@ -3,6 +3,7 @@ require "test/unit"
 require "fileutils"
 require "tmpdir"
 require "socket"
+require '-test-/file'
 
 class TestFileExhaustive < Test::Unit::TestCase
   DRIVE = Dir.pwd[%r'\A(?:[a-z]:|//[^/]+/[^/]+)'i]
@@ -572,7 +573,13 @@ class TestFileExhaustive < Test::Unit::TestCase
       t2 = File.open(file) {|f| f.atime}
       assert_kind_of(Time, t1)
       assert_kind_of(Time, t2)
-      assert_equal(t1, t2)
+      # High Sierra's APFS can handle nano-sec precise.
+      # t1 value is difference from t2 on APFS.
+      if Bug::File::Fs.fsname(Dir.tmpdir) == "apfs"
+        assert_equal(t1.to_i, t2.to_i)
+      else
+        assert_equal(t1, t2)
+      end
     end
     assert_raise(Errno::ENOENT) { File.atime(nofile) }
   end
@@ -638,6 +645,34 @@ class TestFileExhaustive < Test::Unit::TestCase
     File.utime(t + 1, t + 2, zerofile)
     assert_equal(t + 1, File.atime(zerofile))
     assert_equal(t + 2, File.mtime(zerofile))
+  end
+
+  def test_utime_symlinkfile
+    return unless symlinkfile
+    t = Time.local(2000)
+    stat = File.lstat(symlinkfile)
+    assert_equal(1, File.utime(t, t, symlinkfile))
+    assert_equal(t, File.stat(regular_file).atime)
+    assert_equal(t, File.stat(regular_file).mtime)
+  end
+
+  def test_lutime
+    return unless File.respond_to?(:lutime)
+    return unless symlinkfile
+
+    r = File.stat(regular_file)
+    t = Time.local(2000)
+    File.lutime(t + 1, t + 2, symlinkfile)
+  rescue NotImplementedError => e
+    skip(e.message)
+  else
+    stat = File.stat(regular_file)
+    assert_equal(r.atime, stat.atime)
+    assert_equal(r.mtime, stat.mtime)
+
+    stat = File.lstat(symlinkfile)
+    assert_equal(t + 1, stat.atime)
+    assert_equal(t + 2, stat.mtime)
   end
 
   def test_hardlink
@@ -744,12 +779,16 @@ class TestFileExhaustive < Test::Unit::TestCase
     when /darwin/
       ["\u{feff}", *"\u{2000}"..."\u{2100}"].each do |c|
         file = regular_file + c
+        full_path = File.expand_path(file)
+        mesg = proc {File.basename(full_path).dump}
         begin
           open(file) {}
         rescue
-          assert_equal(file, File.expand_path(file), c.dump)
+          # High Sierra's APFS cannot use filenames with undefined character
+          next if Bug::File::Fs.fsname(Dir.tmpdir) == "apfs"
+          assert_equal(file, full_path, mesg)
         else
-          assert_equal(regular_file, File.expand_path(file), c.dump)
+          assert_equal(regular_file, full_path, mesg)
         end
       end
     end
@@ -1258,6 +1297,19 @@ class TestFileExhaustive < Test::Unit::TestCase
       end
     end
     assert_raise(Encoding::CompatibilityError, bug7168) {File.join(names)}
+  end
+
+  def test_join_with_changed_separator
+    assert_separately([], "#{<<~"begin;"}\n#{<<~"end;"}")
+    bug = '[ruby-core:79579] [Bug #13223]'
+    begin;
+      class File
+        remove_const :Separator
+        remove_const :SEPARATOR
+      end
+      GC.start
+      assert_equal("hello/world", File.join("hello", "world"), bug)
+    end;
   end
 
   def test_truncate

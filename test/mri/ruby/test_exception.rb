@@ -183,12 +183,12 @@ class TestException < Test::Unit::TestCase
 
   def test_throw_false
     bug12743 = '[ruby-core:77229] [Bug #12743]'
-    e = assert_raise_with_message(UncaughtThrowError, /false/, bug12743) {
-      Thread.start {
+    Thread.start {
+      e = assert_raise_with_message(UncaughtThrowError, /false/, bug12743) {
         throw false
-      }.join
-    }
-    assert_same(false, e.tag, bug12743)
+      }
+      assert_same(false, e.tag, bug12743)
+    }.join
   end
 
   def test_else_no_exception
@@ -354,6 +354,7 @@ class TestException < Test::Unit::TestCase
   def test_thread_signal_location
     _, stderr, _ = EnvUtil.invoke_ruby(%w"--disable-gems -d", <<-RUBY, false, true)
 Thread.start do
+  Thread.current.report_on_exception = false
   begin
     Process.kill(:INT, $$)
   ensure
@@ -604,6 +605,30 @@ end.join
   rescue SystemStackError
   end
 
+  def test_machine_stackoverflow_by_trace
+    assert_normal_exit("#{<<-"begin;"}\n#{<<~"end;"}", timeout: 60)
+    begin;
+      require 'timeout'
+      require 'tracer'
+      class HogeError < StandardError
+        def to_s
+          message.upcase        # disable tailcall optimization
+        end
+      end
+      Tracer.stdout = open(IO::NULL, "w")
+      begin
+        Timeout.timeout(5) do
+          Tracer.on
+          HogeError.new.to_s
+        end
+      rescue Timeout::Error
+        # ok. there are no SEGV or critical error
+      rescue SystemStackError => e
+        # ok.
+      end
+    end;
+  end
+
   def test_cause
     msg = "[Feature #8257]"
     cause = nil
@@ -727,6 +752,8 @@ end.join
       end
     end
     assert_nil(e.cause)
+  ensure
+    y.join
   end
 
   def test_cause_thread_with_cause
@@ -795,6 +822,13 @@ end.join
     assert_equal(orig_error, x)
     assert_equal(orig_error, err.cause)
     assert_nil(orig_error.cause, bug13043)
+  end
+
+  def test_cause_with_frozen_exception
+    exc = ArgumentError.new("foo").freeze
+    assert_raise_with_message(ArgumentError, exc.message) {
+      raise exc, cause: RuntimeError.new("bar")
+    }
   end
 
   def test_anonymous_message
@@ -934,23 +968,23 @@ $stderr = $stdout; raise "\x82\xa0"') do |outs, errs, status|
     end
   end
 
-  def test_warning_warn
+  def capture_warning_warn
     verbose = $VERBOSE
-    warning = nil
+    warning = []
 
     ::Warning.class_eval do
       alias_method :warn2, :warn
       remove_method :warn
 
       define_method(:warn) do |str|
-        warning = str
+        warning << str
       end
     end
 
     $VERBOSE = true
-    a = @a
+    yield
 
-    assert_match(/instance variable @a not initialized/, warning)
+    return warning
   ensure
     $VERBOSE = verbose
 
@@ -959,6 +993,20 @@ $stderr = $stdout; raise "\x82\xa0"') do |outs, errs, status|
       alias_method :warn, :warn2
       remove_method :warn2
     end
+  end
+
+  def test_warning_warn
+    warning = capture_warning_warn {@a}
+    assert_match(/instance variable @a not initialized/, warning[0])
+
+    assert_equal(["a\nz\n"], capture_warning_warn {warn "a\n", "z"})
+    assert_equal([],         capture_warning_warn {warn})
+    assert_equal(["\n"],     capture_warning_warn {warn ""})
+  end
+
+  def test_kernel_warn_uplevel
+    warning = capture_warning_warn {warn("test warning", uplevel: 0)}
+    assert_equal("#{__FILE__}:#{__LINE__-1}: warning: test warning\n", warning[0])
   end
 
   def test_warning_warn_invalid_argument
@@ -971,6 +1019,39 @@ $stderr = $stdout; raise "\x82\xa0"') do |outs, errs, status|
     assert_raise(Encoding::CompatibilityError) do
       ::Warning.warn "\x00a\x00b\x00c".force_encoding("utf-16be")
     end
+  end
+
+  def test_warning_warn_circular_require_backtrace
+    warning = nil
+    path = nil
+    Tempfile.create(%w[circular .rb]) do |t|
+      path = File.realpath(t.path)
+      basename = File.basename(path)
+      t.puts "require '#{basename}'"
+      t.close
+      $LOAD_PATH.push(File.dirname(t))
+      warning = capture_warning_warn {require basename}
+    ensure
+      $LOAD_PATH.pop
+      $LOADED_FEATURES.delete(t)
+    end
+    assert_equal(1, warning.size)
+    assert_match(/circular require/, warning.first)
+    assert_match(/^\tfrom #{Regexp.escape(path)}:1:/, warning.first)
+  end
+
+  def test_warning_warn_super
+    assert_in_out_err(%[-W0], "#{<<~"{#"}\n#{<<~'};'}", [], /instance variable @a not initialized/)
+    {#
+      module Warning
+        def warn(message)
+          super
+        end
+      end
+
+      $VERBOSE = true
+      @a
+    };
   end
 
   def test_undefined_backtrace
@@ -1018,5 +1099,16 @@ $stderr = $stdout; raise "\x82\xa0"') do |outs, errs, status|
         raise RuntimeError, "hello"
       }
     end;
+  end
+
+  def test_full_message
+    test_method = "def foo; raise 'testerror'; end"
+
+    out1, err1, status1 = EnvUtil.invoke_ruby(['-e', "#{test_method}; begin; foo; rescue => e; puts e.full_message; end"], '', true, true)
+    assert(status1.success?)
+    assert(err1.empty?, "expected nothing wrote to $stdout by #long_message")
+
+    _, err2, status1 = EnvUtil.invoke_ruby(['-e', "#{test_method}; begin; foo; end"], '', true, true)
+    assert_equal(err2, out1)
   end
 end

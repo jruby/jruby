@@ -47,7 +47,6 @@
 #   Translation of presentation on Ruby by Masatoshi Seki.
 
 require 'socket'
-require 'thread'
 require 'io/wait'
 require 'weakref'
 require 'drb/eq'
@@ -1508,12 +1507,7 @@ module DRb
       if  Thread.current['DRb'] && Thread.current['DRb']['server'] == self
         Thread.current['DRb']['stop_service'] = true
       else
-        if @protocol.respond_to? :shutdown
-          @protocol.shutdown
-        else
-          [@thread, *@grp.list].each {|thread| thread.kill} # xxx: Thread#kill
-        end
-        @thread.join
+        shutdown
       end
     end
 
@@ -1531,6 +1525,18 @@ module DRb
     end
 
     private
+
+    def shutdown
+      current = Thread.current
+      if @protocol.respond_to? :shutdown
+        @protocol.shutdown
+      else
+        [@thread, *@grp.list].each { |thread|
+          thread.kill unless thread == current # xxx: Thread#kill
+        }
+      end
+      @thread.join unless @thread == current
+    end
 
     ##
     # Starts the DRb main loop in a new thread.
@@ -1714,7 +1720,8 @@ module DRb
           ensure
             client.close unless succ
             if Thread.current['DRb']['stop_service']
-              Thread.new { stop_service }
+              shutdown
+              break
             end
             break unless succ
           end

@@ -6,12 +6,16 @@ import org.jruby.runtime.load.Library;
 
 import java.io.IOException;
 
-/**
- * Assumes kernel will lo
- */
 public class DateLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) throws IOException {
-        RubyClass dateClass = runtime.getClass("Date");
-        dateClass.defineAnnotatedMethods(RubyDate.class);
+
+    public static void load(Ruby runtime) {
+        RubyClass Date = RubyDate.createDateClass(runtime);
+        RubyDateTime.createDateTimeClass(runtime, Date);
+        TimeExt.load(runtime);
     }
+
+    public void load(final Ruby runtime, boolean wrap) throws IOException {
+        DateLibrary.load(runtime);
+    }
+
 }

@@ -1,5 +1,5 @@
 # -*- coding: us-ascii -*-
-# frozen_string_literal: false
+# frozen_string_literal: true
 # = ERB -- Ruby Templating
 #
 # Author:: Masatoshi SEKI
@@ -280,9 +280,9 @@ class ERB
   # ERB#src:
   #
   #   compiler = ERB::Compiler.new('<>')
-  #   compiler.pre_cmd    = ["_erbout=String.new"]
-  #   compiler.put_cmd    = "_erbout.concat"
-  #   compiler.insert_cmd = "_erbout.concat"
+  #   compiler.pre_cmd    = ["_erbout=+''"]
+  #   compiler.put_cmd    = "_erbout.<<"
+  #   compiler.insert_cmd = "_erbout.<<"
   #   compiler.post_cmd   = ["_erbout"]
   #
   #   code, enc = compiler.compile("Got <%= obj %>!\n")
@@ -291,7 +291,7 @@ class ERB
   # <i>Generates</i>:
   #
   #   #coding:UTF-8
-  #   _erbout=String.new; _erbout.concat "Got "; _erbout.concat(( obj ).to_s); _erbout.concat "!\n"; _erbout
+  #   _erbout=+''; _erbout.<<(-"Got "); _erbout.<<(( obj ).to_s); _erbout.<<(-"!\n"); _erbout
   #
   # By default the output is sent to the print method.  For example:
   #
@@ -302,7 +302,7 @@ class ERB
   # <i>Generates</i>:
   #
   #   #coding:UTF-8
-  #   print "Got "; print(( obj ).to_s); print "!\n"
+  #   print(-"Got "); print(( obj ).to_s); print(-"!\n")
   #
   # == Evaluation
   #
@@ -347,10 +347,6 @@ class ERB
       end
       attr_reader :value
       alias :to_s :value
-
-      def empty?
-        @value.empty?
-      end
     end
 
     class Scanner # :nodoc:
@@ -371,11 +367,13 @@ class ERB
         klass.new(src, trim_mode, percent)
       end
 
+      DEFAULT_STAGS = %w(<%% <%= <%# <%).freeze
+      DEFAULT_ETAGS = %w(%%> %>).freeze
       def initialize(src, trim_mode, percent)
         @src = src
         @stag = nil
-        @stags = %w(<%% <%= <%# <%).freeze
-        @etags = %w(%%> %>).freeze
+        @stags = DEFAULT_STAGS
+        @etags = DEFAULT_ETAGS
       end
       attr_accessor :stag
       attr_reader :stags, :etags
@@ -389,13 +387,13 @@ class ERB
         @trim_mode = trim_mode
         @percent = percent
         if @trim_mode == '>'
-          @scan_reg  = /(.*?)(%>\n|#{(stags + etags).join('|')}|\n|\z)/m
+          @scan_reg  = /(.*?)(%>\r?\n|#{(stags + etags).join('|')}|\n|\z)/m
           @scan_line = self.method(:trim_line1)
         elsif @trim_mode == '<>'
-          @scan_reg  = /(.*?)(%>\n|#{(stags + etags).join('|')}|\n|\z)/m
+          @scan_reg  = /(.*?)(%>\r?\n|#{(stags + etags).join('|')}|\n|\z)/m
           @scan_line = self.method(:trim_line2)
         elsif @trim_mode == '-'
-          @scan_reg  = /(.*?)(^[ \t]*<%\-|<%\-|-%>\n|-%>|#{(stags + etags).join('|')}|\z)/m
+          @scan_reg  = /(.*?)(^[ \t]*<%\-|<%\-|-%>\r?\n|-%>|#{(stags + etags).join('|')}|\z)/m
           @scan_line = self.method(:explicit_trim_line)
         else
           @scan_reg  = /(.*?)(#{(stags + etags).join('|')}|\n|\z)/m
@@ -441,7 +439,7 @@ class ERB
         line.scan(@scan_reg) do |tokens|
           tokens.each do |token|
             next if token.empty?
-            if token == "%>\n"
+            if token == "%>\n" || token == "%>\r\n"
               yield('%>')
               yield(:cr)
             else
@@ -457,7 +455,7 @@ class ERB
           tokens.each do |token|
             next if token.empty?
             head = token unless head
-            if token == "%>\n"
+            if token == "%>\n" || token == "%>\r\n"
               yield('%>')
               if is_erb_stag?(head)
                 yield(:cr)
@@ -479,7 +477,7 @@ class ERB
             next if token.empty?
             if @stag.nil? && /[ \t]*<%-/ =~ token
               yield('<%')
-            elsif @stag && token == "-%>\n"
+            elsif @stag && (token == "-%>\n" || token == "-%>\r\n")
               yield('%>')
               yield(:cr)
             elsif @stag && token == '-%>'
@@ -499,25 +497,14 @@ class ERB
 
     Scanner.default_scanner = TrimScanner
 
-    class SimpleScanner < Scanner # :nodoc:
-      def scan
-        @src.scan(/(.*?)(#{(stags + etags).join('|')}|\n|\z)/m) do |tokens|
-          tokens.each do |token|
-            next if token.empty?
-            yield(token)
-          end
-        end
-      end
-    end
-
-    Scanner.regist_scanner(SimpleScanner, nil, false)
-
     begin
       require 'strscan'
-      class SimpleScanner2 < Scanner # :nodoc:
+    rescue LoadError
+    else
+      class SimpleScanner < Scanner # :nodoc:
         def scan
-          stag_reg = /(.*?)(#{stags.join('|')}|\z)/m
-          etag_reg = /(.*?)(#{etags.join('|')}|\z)/m
+          stag_reg = (stags == DEFAULT_STAGS) ? /(.*?)(<%[%=#]?|\z)/m : /(.*?)(#{stags.join('|')}|\z)/m
+          etag_reg = (etags == DEFAULT_ETAGS) ? /(.*?)(%%?>|\z)/m : /(.*?)(#{etags.join('|')}|\z)/m
           scanner = StringScanner.new(@src)
           while ! scanner.eos?
             scanner.scan(@stag ? etag_reg : stag_reg)
@@ -526,7 +513,11 @@ class ERB
           end
         end
       end
-      Scanner.regist_scanner(SimpleScanner2, nil, false)
+      Scanner.register_scanner(SimpleScanner, nil, false)
+
+      # Deprecated. Kept for backward compatibility.
+      SimpleScanner2 = SimpleScanner # :nodoc:
+      deprecate_constant :SimpleScanner2
 
       class ExplicitScanner < Scanner # :nodoc:
         def scan
@@ -542,23 +533,21 @@ class ERB
               yield('<%')
             elsif elem == '-%>'
               yield('%>')
-              yield(:cr) if scanner.scan(/(\n|\z)/)
+              yield(:cr) if scanner.scan(/(\r?\n|\z)/)
             else
               yield(elem)
             end
           end
         end
       end
-      Scanner.regist_scanner(ExplicitScanner, '-', false)
-
-    rescue LoadError
+      Scanner.register_scanner(ExplicitScanner, '-', false)
     end
 
     class Buffer # :nodoc:
       def initialize(compiler, enc=nil, frozen=nil)
         @compiler = compiler
         @line = []
-        @script = ''
+        @script = +''
         @script << "#coding:#{enc}\n" if enc
         @script << "#frozen-string-literal:#{frozen}\n" unless frozen.nil?
         @compiler.pre_cmd.each do |x|
@@ -590,14 +579,14 @@ class ERB
     def content_dump(s) # :nodoc:
       n = s.count("\n")
       if n > 0
-        s.dump + "\n" * n
+        s.dump << "\n" * n
       else
         s.dump
       end
     end
 
     def add_put_cmd(out, content)
-      out.push("#{@put_cmd} #{content_dump(content)}")
+      out.push("#{@put_cmd}(-#{content_dump(content)})")
     end
 
     def add_insert_cmd(out, content)
@@ -613,7 +602,7 @@ class ERB
       magic_comment = detect_magic_comment(s, enc)
       out = Buffer.new(self, *magic_comment)
 
-      self.content = ''
+      self.content = +''
       scanner = make_scanner(s)
       scanner.scan do |token|
         next if token.nil?
@@ -633,7 +622,7 @@ class ERB
       case stag
       when PercentLine
         add_put_cmd(out, content) if content.size > 0
-        self.content = ''
+        self.content = +''
         out.push(stag.to_s)
         out.cr
       when :cr
@@ -641,11 +630,11 @@ class ERB
       when '<%', '<%=', '<%#'
         scanner.stag = stag
         add_put_cmd(out, content) if content.size > 0
-        self.content = ''
+        self.content = +''
       when "\n"
         content << "\n"
         add_put_cmd(out, content)
-        self.content = ''
+        self.content = +''
       when '<%%'
         content << '<%'
       else
@@ -658,7 +647,7 @@ class ERB
       when '%>'
         compile_content(scanner.stag, out)
         scanner.stag = nil
-        self.content = ''
+        self.content = +''
       when '%%>'
         content << '%>'
       else
@@ -867,10 +856,10 @@ class ERB
   # requires the setup of an ERB _compiler_ object.
   #
   def set_eoutvar(compiler, eoutvar = '_erbout')
-    compiler.put_cmd = "#{eoutvar}.concat"
-    compiler.insert_cmd = "#{eoutvar}.concat"
-    compiler.pre_cmd = ["#{eoutvar} = String.new"]
-    compiler.post_cmd = ["#{eoutvar}.force_encoding(__ENCODING__)"]
+    compiler.put_cmd = "#{eoutvar}.<<"
+    compiler.insert_cmd = "#{eoutvar}.<<"
+    compiler.pre_cmd = ["#{eoutvar} = +''"]
+    compiler.post_cmd = [eoutvar]
   end
 
   # Generate results and print them. (see ERB#result)
@@ -897,12 +886,29 @@ class ERB
     end
   end
 
+  # Render a template on a new toplevel binding with local variables specified
+  # by a Hash object.
+  def result_with_hash(hash)
+    b = new_toplevel(hash.keys)
+    hash.each_pair do |key, value|
+      b.local_variable_set(key, value)
+    end
+    result(b)
+  end
+
   ##
   # Returns a new binding each time *near* TOPLEVEL_BINDING for runs that do
   # not specify a binding.
 
-  def new_toplevel
-    TOPLEVEL_BINDING.dup
+  def new_toplevel(vars = nil)
+    b = TOPLEVEL_BINDING
+    if vars
+      vars = vars.select {|v| b.local_variable_defined?(v)}
+      unless vars.empty?
+        return b.eval("tap {|;#{vars.join(',')}| break binding}")
+      end
+    end
+    b.dup
   end
   private :new_toplevel
 
@@ -994,8 +1000,8 @@ class ERB
     #   Programming%20Ruby%3A%20%20The%20Pragmatic%20Programmer%27s%20Guide
     #
     def url_encode(s)
-      s.to_s.b.gsub(/[^a-zA-Z0-9_\-.]/n) { |m|
-        sprintf("%%%02X", m.unpack("C")[0])
+      s.to_s.b.gsub(/[^a-zA-Z0-9_\-.~]/n) { |m|
+        sprintf("%%%02X", m.unpack1("C"))
       }
     end
     alias u url_encode

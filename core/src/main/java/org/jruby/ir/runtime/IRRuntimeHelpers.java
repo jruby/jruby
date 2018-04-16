@@ -442,7 +442,7 @@ public class IRRuntimeHelpers {
                 IRubyObject eqqVal = isUndefValue ? v : callSite.call(context, v, v, value);
                 if (eqqVal.isTrue()) return eqqVal;
             }
-            return context.runtime.getFalse();
+            return context.fals;
         }
         return isUndefValue ? receiver : callSite.call(context, receiver, receiver, value);
     }

@@ -1,6 +1,5 @@
 # frozen_string_literal: false
 require 'test/unit'
-require 'thread'
 require 'tmpdir'
 require 'timeout'
 
@@ -136,7 +135,6 @@ class TestQueue < Test::Unit::TestCase
       total_count = 250
       begin
         assert_normal_exit(<<-"_eom", bug5343, {:timeout => timeout, :chdir=>d})
-          require "thread"
           #{total_count}.times do |i|
             open("test_thr_kill_count", "w") {|f| f.puts i }
             queue = Queue.new
@@ -278,7 +276,7 @@ class TestQueue < Test::Unit::TestCase
     end
 
     q = DumpableQueue.new
-    assert_raise_with_message(TypeError, /internal Array/, bug9674) do
+    assert_raise(TypeError, bug9674) do
       Marshal.dump(q)
     end
   end
@@ -375,7 +373,12 @@ class TestQueue < Test::Unit::TestCase
   def test_blocked_pushers
     q = SizedQueue.new 3
     prod_threads = 6.times.map do |i|
-      thr = Thread.new{q << i}; thr[:pc] = i; thr
+      thr = Thread.new{
+        Thread.current.report_on_exception = false
+        q << i
+      }
+      thr[:pc] = i
+      thr
     end
 
     # wait until some producer threads have finished, and the other 3 are blocked
@@ -415,25 +418,20 @@ class TestQueue < Test::Unit::TestCase
 
   def test_deny_pushers
     [->{Queue.new}, ->{SizedQueue.new 3}].each do |qcreate|
-      prod_threads = nil
       q = qcreate[]
       synq = Queue.new
-      producers_start = Thread.new do
-        prod_threads = 20.times.map do |i|
-          Thread.new{ synq.pop; q << i }
-        end
+      prod_threads = 20.times.map do |i|
+        Thread.new {
+          synq.pop
+          assert_raise(ClosedQueueError) {
+            q << i
+          }
+        }
       end
       q.close
       synq.close # start producer threads
 
-      # wait for all threads to be finished, because of exceptions
-      # NOTE: thr.status will be nil (raised) or false (terminated)
-      sleep 0.01 until prod_threads&.all?{|thr| !thr.status}
-
-      # check that all threads failed to call push
-      prod_threads.each do |thr|
-        assert_kind_of ClosedQueueError, (thr.value rescue $!)
-      end
+      prod_threads.each(&:join)
     end
   end
 
@@ -453,7 +451,10 @@ class TestQueue < Test::Unit::TestCase
   def test_blocked_pushers_empty
     q = SizedQueue.new 3
     prod_threads = 6.times.map do |i|
-      Thread.new{ q << i}
+      Thread.new{
+        Thread.current.report_on_exception = false
+        q << i
+      }
     end
 
     # this ensures that all producer threads call push before close

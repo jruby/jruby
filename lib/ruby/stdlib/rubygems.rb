@@ -10,7 +10,7 @@ require 'rbconfig'
 require 'thread'
 
 module Gem
-  VERSION = "2.6.14.1"
+  VERSION = "2.7.6"
 end
 
 # Must be first since it unloads the prelude from 1.9.2
@@ -39,7 +39,7 @@ require 'rubygems/errors'
 # Further RubyGems documentation can be found at:
 #
 # * {RubyGems Guides}[http://guides.rubygems.org]
-# * {RubyGems API}[http://rubygems.rubyforge.org/rdoc] (also available from
+# * {RubyGems API}[http://www.rubydoc.info/github/rubygems/rubygems] (also available from
 #   <tt>gem server</tt>)
 #
 # == RubyGems Plugins
@@ -47,15 +47,14 @@ require 'rubygems/errors'
 # As of RubyGems 1.3.2, RubyGems will load plugins installed in gems or
 # $LOAD_PATH.  Plugins must be named 'rubygems_plugin' (.rb, .so, etc) and
 # placed at the root of your gem's #require_path.  Plugins are discovered via
-# Gem::find_files then loaded.  Take care when implementing a plugin as your
-# plugin file may be loaded multiple times if multiple versions of your gem
-# are installed.
+# Gem::find_files and then loaded.
 #
-# For an example plugin, see the graph gem which adds a `gem graph` command.
+# For an example plugin, see the {Graph gem}[https://github.com/seattlerb/graph]
+# which adds a `gem graph` command.
 #
 # == RubyGems Defaults, Packaging
 #
-# RubyGems defaults are stored in rubygems/defaults.rb.  If you're packaging
+# RubyGems defaults are stored in lib/rubygems/defaults.rb.  If you're packaging
 # RubyGems or implementing Ruby you can change RubyGems' defaults.
 #
 # For RubyGems packagers, provide lib/rubygems/defaults/operating_system.rb
@@ -65,7 +64,7 @@ require 'rubygems/errors'
 # override any defaults from lib/rubygems/defaults.rb.
 #
 # If you need RubyGems to perform extra work on install or uninstall, your
-# defaults override file can set pre and post install and uninstall hooks.
+# defaults override file can set pre/post install and uninstall hooks.
 # See Gem::pre_install, Gem::pre_uninstall, Gem::post_install,
 # Gem::post_uninstall.
 #
@@ -106,6 +105,8 @@ require 'rubygems/errors'
 #
 # (If your name is missing, PLEASE let us know!)
 #
+# == License
+#
 # See {LICENSE.txt}[rdoc-ref:lib/rubygems/LICENSE.txt] for permissions.
 #
 # Thanks!
@@ -130,6 +131,7 @@ module Gem
 
   GEM_DEP_FILES = %w[
     gem.deps.rb
+    gems.rb
     Gemfile
     Isolate
   ]
@@ -159,7 +161,7 @@ module Gem
   # these are defined in Ruby 1.8.7, hence the need for this convoluted setup.
 
   READ_BINARY_ERRORS = begin
-    read_binary_errors = [Errno::EACCES]
+    read_binary_errors = [Errno::EACCES, Errno::EROFS, Errno::ENOSYS]
     read_binary_errors << Errno::ENOTSUP if Errno.const_defined?(:ENOTSUP)
     read_binary_errors
   end.freeze
@@ -169,10 +171,12 @@ module Gem
   # these are defined in Ruby 1.8.7.
 
   WRITE_BINARY_ERRORS = begin
-    write_binary_errors = []
+    write_binary_errors = [Errno::ENOSYS]
     write_binary_errors << Errno::ENOTSUP if Errno.const_defined?(:ENOTSUP)
     write_binary_errors
   end.freeze
+
+  USE_BUNDLER_FOR_GEMDEPS = !ENV['DONT_USE_BUNDLER_FOR_GEMDEPS'] # :nodoc:
 
   @@win_platform = nil
 
@@ -266,17 +270,22 @@ module Gem
 
     return loaded if loaded && dep.matches_spec?(loaded)
 
-    specs = dep.matching_specs(true)
-
-    raise Gem::GemNotFoundException,
-          "can't find gem #{dep}" if specs.empty?
+    find_specs = proc { dep.matching_specs(true) }
+    if dep.to_s == "bundler (>= 0.a)"
+      specs = Gem::BundlerVersionFinder.without_filtering(&find_specs)
+    else
+      specs = find_specs.call
+    end
 
     specs = specs.find_all { |spec|
       spec.executables.include? exec_name
     } if exec_name
 
     unless spec = specs.first
-      msg = "can't find gem #{name} (#{requirements}) with executable #{exec_name}"
+      msg = "can't find gem #{dep} with executable #{exec_name}"
+      if name == "bundler" && bundler_message = Gem::BundlerVersionFinder.missing_version_message
+        msg = bundler_message
+      end
       raise Gem::GemNotFoundException, msg
     end
 
@@ -297,7 +306,10 @@ module Gem
 
   def self.activate_bin_path name, exec_name, requirement # :nodoc:
     spec = find_spec_for_exe name, exec_name, [requirement]
-    Gem::LOADED_SPECS_MUTEX.synchronize { spec.activate }
+    Gem::LOADED_SPECS_MUTEX.synchronize do
+      spec.activate
+      finish_resolve
+    end
     spec.bin_file exec_name
   end
 
@@ -356,10 +368,14 @@ module Gem
   # package is not available as a gem, return nil.
 
   def self.datadir(gem_name)
-# TODO: deprecate
     spec = @loaded_specs[gem_name]
     return nil if spec.nil?
     spec.datadir
+  end
+
+  class << self
+    extend Gem::Deprecate
+    deprecate :datadir, "spec.datadir", 2016, 10
   end
 
   ##
@@ -594,7 +610,6 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
   # Zlib::GzipReader wrapper that unzips +data+.
 
   def self.gunzip(data)
-    require 'rubygems/util'
     Gem::Util.gunzip data
   end
 
@@ -602,7 +617,6 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
   # Zlib::GzipWriter wrapper that zips +data+.
 
   def self.gzip(data)
-    require 'rubygems/util'
     Gem::Util.gzip data
   end
 
@@ -610,7 +624,6 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
   # A Zlib::Inflate#inflate wrapper
 
   def self.inflate(data)
-    require 'rubygems/util'
     Gem::Util.inflate data
   end
 
@@ -716,9 +729,20 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
 
   ##
   # The file name and line number of the caller of the caller of this method.
+  #
+  # +depth+ is how many layers up the call stack it should go.
+  #
+  # e.g.,
+  #
+  # def a; Gem.location_of_caller; end
+  # a #=> ["x.rb", 2]  # (it'll vary depending on file name and line number)
+  #
+  # def b; c; end
+  # def c; Gem.location_of_caller(2); end
+  # b #=> ["x.rb", 6]  # (it'll vary depending on file name and line number)
 
-  def self.location_of_caller
-    caller[1] =~ /(.*?):(\d+).*?$/i
+  def self.location_of_caller(depth = 1)
+    caller[depth] =~ /(.*?):(\d+).*?$/i
     file = $1
     lineno = $2.to_i
 
@@ -847,19 +871,19 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
   # Safely read a file in binary mode on all platforms.
 
   def self.read_binary(path)
-    open path, 'rb+' do |f|
+    File.open path, 'rb+' do |f|
       f.flock(File::LOCK_EX)
       f.read
     end
   rescue *READ_BINARY_ERRORS
-    open path, 'rb' do |f|
+    File.open path, 'rb' do |f|
       f.read
     end
   rescue Errno::ENOLCK # NFS
     if Thread.main != Thread.current
       raise
     else
-      open path, 'rb' do |f|
+      File.open path, 'rb' do |f|
         f.read
       end
     end
@@ -1149,8 +1173,6 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
     path = path.dup
 
     if path == "-" then
-      require 'rubygems/util'
-
       Gem::Util.traverse_parents Dir.pwd do |directory|
         dep_file = GEM_DEP_FILES.find { |f| File.file?(f) }
 
@@ -1169,18 +1191,36 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
       raise ArgumentError, "Unable to find gem dependencies file at #{path}"
     end
 
-    rs = Gem::RequestSet.new
-    @gemdeps = rs.load_gemdeps path
+    if USE_BUNDLER_FOR_GEMDEPS
 
-    rs.resolve_current.map do |s|
-      sp = s.full_spec
-      sp.activate
-      sp
+      ENV["BUNDLE_GEMFILE"] ||= File.expand_path(path)
+      require 'rubygems/user_interaction'
+      Gem::DefaultUserInteraction.use_ui(ui) do
+        require "bundler"
+        @gemdeps = Bundler.setup
+        Bundler.ui = nil
+        @gemdeps.requested_specs.map(&:to_spec).sort_by(&:name)
+      end
+
+    else
+
+      rs = Gem::RequestSet.new
+      @gemdeps = rs.load_gemdeps path
+
+      rs.resolve_current.map do |s|
+        s.full_spec.tap(&:activate)
+      end
+
     end
-  rescue Gem::LoadError, Gem::UnsatisfiableDependencyError => e
-    warn e.message
-    warn "You may need to `gem install -g` to install missing gems"
-    warn ""
+  rescue => e
+    case e
+    when Gem::LoadError, Gem::UnsatisfiableDependencyError, (defined?(Bundler::GemNotFound) ? Bundler::GemNotFound : Gem::LoadError)
+      warn e.message
+      warn "You may need to `gem install -g` to install missing gems"
+      warn ""
+    else
+      raise
+    end
   end
 
   class << self
@@ -1226,6 +1266,8 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
         prefix_pattern = /^(#{prefix_group})/
       end
 
+      suffix_pattern = /#{Regexp.union(Gem.suffixes)}\z/
+
       spec.files.each do |file|
         if new_format
           file = file.sub(prefix_pattern, "")
@@ -1233,6 +1275,7 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
         end
 
         @path_to_default_spec_map[file] = spec
+        @path_to_default_spec_map[file.sub(suffix_pattern, "")] = spec
       end
     end
 
@@ -1240,11 +1283,7 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
     # Find a Gem::Specification of default gem from +path+
 
     def find_unresolved_default_spec(path)
-      Gem.suffixes.each do |suffix|
-        spec = @path_to_default_spec_map["#{path}#{suffix}"]
-        return spec if spec
-      end
-      nil
+      @path_to_default_spec_map[path]
     end
 
     ##
@@ -1315,6 +1354,7 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
 
   MARSHAL_SPEC_DIR = "quick/Marshal.#{Gem.marshal_version}/"
 
+  autoload :BundlerVersionFinder, 'rubygems/bundler_version_finder'
   autoload :ConfigFile,         'rubygems/config_file'
   autoload :Dependency,         'rubygems/dependency'
   autoload :DependencyList,     'rubygems/dependency_list'
@@ -1330,6 +1370,7 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
   autoload :SourceList,         'rubygems/source_list'
   autoload :SpecFetcher,        'rubygems/spec_fetcher'
   autoload :Specification,      'rubygems/specification'
+  autoload :Util,               'rubygems/util'
   autoload :Version,            'rubygems/version'
 
   require "rubygems/specification"

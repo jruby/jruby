@@ -119,6 +119,21 @@ class TestRubyLiteral < Test::Unit::TestCase
     assert_equal :a3c, :"a#{1+2}c"
   end
 
+  def test_dsymbol_redefined_intern
+    assert_separately([], "#{<<-"begin;"}\n#{<<-'end;'}")
+    begin;
+      class String
+        alias _intern intern
+        def intern
+          "<#{upcase}>"
+        end
+      end
+      mesg = "literal symbol should not be affected by method redefinition"
+      str = "foo"
+      assert_equal(:foo, :"#{str}", mesg)
+    end;
+  end
+
   def test_xstring
     assert_equal "foo\n", `echo foo`
     s = 'foo'
@@ -159,6 +174,20 @@ class TestRubyLiteral < Test::Unit::TestCase
         str = eval("# frozen-string-literal: true x\n""'foo'")
         assert_not_predicate(str, :frozen?)
       end
+    end
+  end
+
+  if defined?(RubyVM::InstructionSequence.compile_option) and
+    RubyVM::InstructionSequence.compile_option.key?(:debug_frozen_string_literal)
+    def test_debug_frozen_string
+      src = 'n = 1; "foo#{n ? "-#{n}" : ""}"'; f = "test.rb"; n = 1
+      opt = {frozen_string_literal: true, debug_frozen_string_literal: true}
+      str = RubyVM::InstructionSequence.compile(src, f, f, n, opt).eval
+      assert_equal("foo-1", str)
+      assert_predicate(str, :frozen?)
+      assert_raise_with_message(FrozenError, /created at #{Regexp.quote(f)}:#{n}/) {
+        str << "x"
+      }
     end
   end
 
@@ -392,6 +421,35 @@ class TestRubyLiteral < Test::Unit::TestCase
       GC.stress = false
       assert_equal(140, h.size)
     end;
+  end
+
+  def test_hash_duplicated_key
+    h = EnvUtil.suppress_warning do
+      eval <<~end
+        # This is a syntax that renders warning at very early stage.
+        # eval used to delay warning, to be suppressible by EnvUtil.
+        {"a" => 100, "b" => 200, "a" => 300, "a" => 400}
+      end
+    end
+    assert_equal(2, h.size)
+    assert_equal(400, h['a'])
+    assert_equal(200, h['b'])
+    assert_nil(h['c'])
+    assert_equal(nil, h.key('300'))
+  end
+
+  def test_hash_frozen_key_id
+    key = "a".freeze
+    h = {key => 100}
+    assert_equal(100, h['a'])
+    assert_same(key, *h.keys)
+  end
+
+  def test_hash_key_tampering
+    key = "a"
+    h = {key => 100}
+    key.upcase!
+    assert_equal(100, h['a'])
   end
 
   def test_range

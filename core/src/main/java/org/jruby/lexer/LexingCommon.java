@@ -866,12 +866,16 @@ public abstract class LexingCommon {
     // When the heredoc identifier specifies <<-EOF that indents before ident. are ok (the '-').
     public static final int STR_FUNC_INDENT=0x20;
     public static final int STR_FUNC_LABEL=0x40;
+    public static final int STR_FUNC_LIST=0x4000;
+    public static final int STR_FUNC_TERM=0x8000;
 
     public static final int str_label = STR_FUNC_LABEL;
     public static final int str_squote = 0;
     public static final int str_dquote = STR_FUNC_EXPAND;
     public static final int str_xquote = STR_FUNC_EXPAND;
     public static final int str_regexp = STR_FUNC_REGEXP | STR_FUNC_ESCAPE | STR_FUNC_EXPAND;
+    public static final int str_sword = STR_FUNC_QWORDS | STR_FUNC_LIST;
+    public static final int str_dword = STR_FUNC_QWORDS | STR_FUNC_EXPAND | STR_FUNC_LIST;
     public static final int str_ssym   = STR_FUNC_SYMBOL;
     public static final int str_dsym   = STR_FUNC_SYMBOL | STR_FUNC_EXPAND;
 
@@ -922,7 +926,7 @@ public abstract class LexingCommon {
         return (isLexState(lex_state, EXPR_LABEL|EXPR_ENDFN) && !commandState) || isARG();
     }
 
-    protected boolean isLabelSuffix() {
+    public boolean isLabelSuffix() {
         return peek(':') && !peek(':', 1);
     }
 

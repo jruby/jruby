@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,15 +29,16 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
-import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -156,6 +157,12 @@ public class RubyMethod extends AbstractRubyMethod {
     }
 
     @Override
+    @JRubyMethod(name = "===", required = 1)
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
+        return method.call(context, receiver, implementationModule, methodName, other, Block.NULL_BLOCK);
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (!(other instanceof RubyMethod)) {
             return false;
@@ -252,7 +259,7 @@ public class RubyMethod extends AbstractRubyMethod {
         RubyModule definedClass;
         RubyModule mklass = originModule;
 
-        if (method instanceof AliasMethod || method instanceof WrapperMethod) {
+        if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
             definedClass = method.getRealMethod().getDefinedClass();
         }
         else {
@@ -319,7 +326,7 @@ public class RubyMethod extends AbstractRubyMethod {
             return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     public String getFilename() {

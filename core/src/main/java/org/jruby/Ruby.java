@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -37,6 +37,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jcodings.specific.UTF8Encoding;
@@ -1393,12 +1394,13 @@ public final class Ruby implements Constantizable {
         trueObject = new RubyBoolean.True(this);
         trueObject.setFrozen(true);
 
-        reportOnException = falseObject;
+        reportOnException = trueObject;
     }
 
     private void initCore() {
         if (profile.allowClass("Data")) {
-            defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+            dataClass = defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+            getObject().deprecateConstant(this, "Data");
         }
 
         RubyComparable.createComparable(this);
@@ -1571,6 +1573,7 @@ public final class Ruby implements Constantizable {
     private void initExceptions() {
         ifAllowed("StandardError",          (ruby) -> standardError = RubyStandardError.define(ruby, exceptionClass));
         ifAllowed("RubyError",              (ruby) -> runtimeError = RubyRuntimeError.define(ruby, standardError));
+        ifAllowed("FrozenError",            (ruby) -> frozenError = RubyFrozenError.define(ruby, runtimeError));
         ifAllowed("IOError",                (ruby) -> ioError = RubyIOError.define(ruby, standardError));
         ifAllowed("ScriptError",            (ruby) -> scriptError = RubyScriptError.define(ruby, exceptionClass));
         ifAllowed("RangeError",             (ruby) -> rangeError = RubyRangeError.define(ruby, standardError));
@@ -2464,6 +2467,10 @@ public final class Ruby implements Constantizable {
         return runtimeError;
     }
 
+    public RubyClass getFrozenError() {
+        return frozenError;
+    }
+
     public RubyClass getIOError() {
         return ioError;
     }
@@ -2818,14 +2825,24 @@ public final class Ruby implements Constantizable {
      * Get the default java.nio.charset.Charset for the current default internal encoding.
      */
     public Charset getDefaultCharset() {
-        Encoding enc = getDefaultInternalEncoding();
-        if (enc == null) {
-            enc = UTF8Encoding.INSTANCE;
-        }
+        Encoding enc = getDefaultEncoding();
 
         Charset charset = EncodingUtils.charsetForEncoding(enc);
 
         return charset;
+    }
+
+    /**
+     * Return the default internal encoding, if set, or UTF-8 by default.
+     *
+     * @return the default encoding used for new Ruby strings
+     */
+    public Encoding getDefaultEncoding() {
+        Encoding enc = getDefaultInternalEncoding();
+        if (enc == null) {
+            enc = UTF8Encoding.INSTANCE;
+        }
+        return enc;
     }
 
     public EncodingService getEncodingService() {
@@ -2903,6 +2920,18 @@ public final class Ruby implements Constantizable {
             errorStream.print(backtrace);
         } catch (Exception e) {
             System.err.print(backtrace);
+        }
+    }
+
+    public void printError(Throwable t) {
+        if (t instanceof RaiseException) {
+            printError(((RaiseException) t).getException());
+        }
+        PrintStream errorStream = getErrorStream();
+        try {
+            t.printStackTrace(errorStream);
+        } catch (Exception e) {
+            t.printStackTrace(System.err);
         }
     }
 
@@ -3797,8 +3826,8 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getSystemCallError(), message);
     }
 
-    public RaiseException newKeyError(String message) {
-        return newRaiseException(getKeyError(), message);
+    public RaiseException newKeyError(String message, IRubyObject recv, IRubyObject key) {
+        return new RubyKeyError(this, getKeyError(), message, recv, key).toThrowable();
     }
 
     public RaiseException newErrnoEINTRError() {
@@ -4096,8 +4125,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newFrozenError(String objectType, boolean runtimeError) {
-        // TODO: Should frozen error have its own distinct class?  If not should more share?
-        return newRaiseException(getRuntimeError(), str(this, "can't modify frozen ", ids(this, objectType)));
+        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", ids(this, objectType)));
     }
 
     public RaiseException newSystemStackError(String message) {
@@ -4787,6 +4815,10 @@ public final class Ruby implements Constantizable {
         return filenoUtil;
     }
 
+    public RubyClass getData() {
+        return dataClass;
+    }
+
     @Deprecated
     private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
         @Override
@@ -4979,14 +5011,14 @@ public final class Ruby implements Constantizable {
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
             fileClass, fileStatClass, ioClass, threadClass, threadGroupClass,
             continuationClass, structClass, tmsStruct, passwdStruct,
-            groupStruct, procStatusClass, exceptionClass, runtimeError, ioError,
+            groupStruct, procStatusClass, exceptionClass, runtimeError, frozenError, ioError,
             scriptError, nameError, nameErrorMessage, noMethodError, signalException,
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
             systemCallError, fatal, interrupt, typeError, argumentError, uncaughtThrowError, indexError, stopIteration,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError, fiberError, randomClass, keyError, locationClass, interruptedRegexpError;
+            invalidByteSequenceError, fiberError, randomClass, keyError, locationClass, interruptedRegexpError, dataClass;
 
     /**
      * All the core modules we keep direct references to, for quick access and
@@ -5262,12 +5294,14 @@ public final class Ruby implements Constantizable {
     // I know of use very few of them.  Even if there are many the size of these lists are modest.
     private final Map<String, List<StrptimeToken>> strptimeFormatCache = new ConcurrentHashMap<>();
 
+    transient RubyString tzVar;
+
     @Deprecated
     private void setNetworkStack() {
         deprecatedNetworkStackProperty();
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     private void deprecatedNetworkStackProperty() {
         if (Options.PREFER_IPV4.load()) {
             LOG.warn("Warning: not setting network stack system property because socket subsystem may already be booted."

@@ -57,7 +57,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class EncodingUtils {
-    public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.UNIVERSAL_NEWLINE_DECORATOR : 0;
+    public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
     public static final int DEFAULT_TEXTMODE = Platform.IS_WINDOWS ? OpenFile.TEXTMODE : 0;
     public static final int TEXTMODE_NEWLINE_DECORATOR_ON_WRITE = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
 
@@ -1608,8 +1608,12 @@ public class EncodingUtils {
             throw runtime.newArgumentError("ASCII incompatible encoding needs binmode");
         }
 
+        if ((fmode & OpenFile.BINMODE) != 0 && (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) != 0) {
+            throw runtime.newArgumentError("newline decorator with binary mode");
+        }
+
         if ((fmode & OpenFile.BINMODE) == 0 && (EncodingUtils.DEFAULT_TEXTMODE != 0 || (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) != 0)) {
-            fmode |= EncodingUtils.DEFAULT_TEXTMODE;
+            fmode |= OpenFile.TEXTMODE;
             fmode_p[0] = fmode;
         } else if (EncodingUtils.DEFAULT_TEXTMODE == 0 && (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {
             fmode &= ~OpenFile.TEXTMODE;
@@ -2023,15 +2027,17 @@ public class EncodingUtils {
     }
 
     // rb_enc_mbcput with Java exception
-    public static void encMbcput(int c, byte[] buf, int p, Encoding enc) {
+    public static int encMbcput(int c, byte[] buf, int p, Encoding enc) {
         int len = enc.codeToMbc(c, buf, p);
         if (len < 0) {
             throw new EncodingException(EncodingError.fromCode(len));
         }
+
+        return len;
     }
 
     // rb_enc_mbcput with Ruby exception
-    public static void encMbcput(ThreadContext context, int c, byte[] buf, int p, Encoding enc) {
+    public static int encMbcput(ThreadContext context, int c, byte[] buf, int p, Encoding enc) {
         int len = enc.codeToMbc(c, buf, p);
 
         // in MRI, this check occurs within some of the individual encoding functions, such as the
@@ -2048,6 +2054,8 @@ public class EncodingUtils {
             }
             throw context.runtime.newEncodingError(EncodingError.fromCode(len).getMessage());
         }
+
+        return len;
     }
 
     // rb_enc_codepoint_len

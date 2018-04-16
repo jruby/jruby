@@ -3,7 +3,7 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * http://www.eclipse.org/legal/epl-v20.html
  */
 package org.jruby.java.dispatch;
 
@@ -13,6 +13,7 @@ import java.util.HashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
 import org.jruby.javasupport.JavaMethod;
+import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -32,6 +33,18 @@ import static org.junit.Assert.*;
  */
 public class CallableSelectorTest {
 
+    private static final CallableSelector.CallableCache DUMMY = new CallableSelector.CallableCache() {
+        @Override
+        public ParameterTypes getSignature(int signatureCode) {
+            return null;
+        }
+
+        @Override
+        public void putSignature(int signatureCode, ParameterTypes callable) {
+
+        }
+    };
+
     @Test
     public void testCallableProcToIfaceMatchIsNotOrderSensitive() throws Exception {
         final Ruby runtime = Ruby.newInstance();
@@ -39,9 +52,8 @@ public class CallableSelectorTest {
         final Method list1 = java.io.File.class.getMethod("listFiles", java.io.FileFilter.class);
         final Method list2 = java.io.File.class.getMethod("listFiles", java.io.FilenameFilter.class);
 
-        HashMap cache;
         JavaMethod[] methods;
-        Binding binding = new Binding(new Frame(), null, new BacktraceElement());
+        Binding binding = Binding.DUMMY;
         JavaMethod result; IRubyObject[] args;
 
         // arity 1 :
@@ -53,28 +65,24 @@ public class CallableSelectorTest {
         };
         RubyProc dummyProc = RubyProc.newProc(runtime, new Block(body1, binding), Block.Type.PROC);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] {
             new JavaMethod(runtime, list1), new JavaMethod(runtime, list2)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list1), result);
 
-        cache = new HashMap<>();
         args = new IRubyObject[] { dummyProc };
-        result = (JavaMethod)CallableSelector.matchingCallableArityN(runtime, cache, methods, args);
+        result = (JavaMethod)CallableSelector.matchingCallableArityN(runtime, DUMMY, methods, args);
         assertEquals(new JavaMethod(runtime, list1), result);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] { // "reverse" method order
             new JavaMethod(runtime, list2), new JavaMethod(runtime, list1)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list1), result);
 
-        cache = new HashMap<>();
         args = new IRubyObject[] { dummyProc };
-        result = (JavaMethod)CallableSelector.matchingCallableArityN(runtime, cache, methods, args);
+        result = (JavaMethod)CallableSelector.matchingCallableArityN(runtime, DUMMY, methods, args);
         assertEquals(new JavaMethod(runtime, list1), result);
 
         // arity 2 :
@@ -86,28 +94,24 @@ public class CallableSelectorTest {
         };
         dummyProc = RubyProc.newProc(runtime, new Block(body2, binding), Block.Type.PROC);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] {
             new JavaMethod(runtime, list1), new JavaMethod(runtime, list2)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list2), result);
 
-        cache = new HashMap<>();
         args = new IRubyObject[] { dummyProc };
-        result = (JavaMethod)CallableSelector.matchingCallableArityN(runtime, cache, methods, args);
+        result = (JavaMethod)CallableSelector.matchingCallableArityN(runtime, DUMMY, methods, args);
         assertEquals(new JavaMethod(runtime, list2), result);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] { // "reverse" method order
             new JavaMethod(runtime, list2), new JavaMethod(runtime, list1)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list2), result);
 
-        cache = new HashMap<>();
         args = new IRubyObject[] { dummyProc };
-        result = (JavaMethod)CallableSelector.matchingCallableArityN(runtime, cache, methods, args);
+        result = (JavaMethod)CallableSelector.matchingCallableArityN(runtime, DUMMY, methods, args);
         assertEquals(new JavaMethod(runtime, list2), result);
 
         // arity -1 :
@@ -119,18 +123,16 @@ public class CallableSelectorTest {
         };
         dummyProc = RubyProc.newProc(runtime, new Block(body_1, binding), Block.Type.PROC);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] {
             new JavaMethod(runtime, list1), new JavaMethod(runtime, list2)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list1), result);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] {
             new JavaMethod(runtime, list2), new JavaMethod(runtime, list1)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list1), result);
 
         // arity -3 :
@@ -142,18 +144,16 @@ public class CallableSelectorTest {
         };
         dummyProc = RubyProc.newProc(runtime, new Block(body_3, binding), Block.Type.PROC);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] {
             new JavaMethod(runtime, list1), new JavaMethod(runtime, list2)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list2), result);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] {
             new JavaMethod(runtime, list2), new JavaMethod(runtime, list1)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list2), result);
 
         // arity -2 :
@@ -165,18 +165,16 @@ public class CallableSelectorTest {
         };
         dummyProc = RubyProc.newProc(runtime, new Block(body_2, binding), Block.Type.PROC);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] {
             new JavaMethod(runtime, list1), new JavaMethod(runtime, list2)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list1), result);
 
-        cache = new HashMap<>();
         methods = new JavaMethod[] {
             new JavaMethod(runtime, list2), new JavaMethod(runtime, list1)
         };
-        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, cache, methods, dummyProc);
+        result = (JavaMethod)CallableSelector.matchingCallableArityOne(runtime, DUMMY, methods, dummyProc);
         assertEquals(new JavaMethod(runtime, list1), result);
 
     }

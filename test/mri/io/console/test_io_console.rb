@@ -188,8 +188,9 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
     skip unless IO.method_defined?("getpass")
     run_pty("p IO.console.getpass('> ')") do |r, w|
       assert_equal("> ", r.readpartial(10))
+      sleep 0.1
       w.print "asdf\n"
-      sleep 1
+      sleep 0.1
       assert_equal("\r\n", r.gets)
       assert_equal("\"asdf\"", r.gets.chomp)
     end
@@ -200,6 +201,7 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
       m.print "a"
       s.iflush
       m.print "b\n"
+      m.flush
       assert_equal("b\n", s.readpartial(10))
     }
   end
@@ -209,6 +211,7 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
       s.print "a"
       s.oflush # oflush may be issued after "a" is already sent.
       s.print "b"
+      s.flush
       assert_include(["b", "ab"], m.readpartial(10))
     }
   end
@@ -218,6 +221,7 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
       m.print "a"
       s.ioflush
       m.print "b\n"
+      m.flush
       assert_equal("b\n", s.readpartial(10))
     }
   end
@@ -227,6 +231,8 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
       s.print "a"
       s.ioflush # ioflush may be issued after "a" is already sent.
       s.print "b"
+      s.flush
+      sleep 0.1
       assert_include(["b", "ab"], m.readpartial(10))
     }
   end
@@ -262,33 +268,7 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
     end
   end
 
-  if IO.console
-    def test_set_winsize_console
-      s = IO.console.winsize
-      assert_kind_of(Array, s)
-      assert_equal(2, s.size)
-      assert_kind_of(Integer, s[0])
-      assert_kind_of(Integer, s[1])
-      assert_nothing_raised(TypeError) {IO.console.winsize = s}
-    end
-
-    def test_close
-      IO.console.close
-      assert_kind_of(IO, IO.console)
-      assert_nothing_raised(IOError) {IO.console.fileno}
-
-      IO.console(:close)
-      assert(IO.console(:tty?))
-    ensure
-      IO.console(:close)
-    end
-
-    def test_sync
-      assert(IO.console.sync, "console should be unbuffered")
-    ensure
-      IO.console(:close)
-    end
-  else
+  unless IO.console
     def test_close
       assert_equal(["true"], run_pty("IO.console.close; p IO.console.fileno >= 0"))
       assert_equal(["true"], run_pty("IO.console(:close); p IO.console(:tty?)"))
@@ -327,6 +307,45 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
     r.close if r
     w.close if w
     Process.wait(pid) if pid
+  end
+end
+
+defined?(IO.console) and TestIO_Console.class_eval do
+  if IO.console
+    def test_get_winsize_console
+      s = IO.console.winsize
+      assert_kind_of(Array, s)
+      assert_equal(2, s.size)
+      assert_kind_of(Integer, s[0])
+      assert_kind_of(Integer, s[1])
+    end
+
+    def test_set_winsize_console
+      s = IO.console.winsize
+      assert_nothing_raised(TypeError) {IO.console.winsize = s}
+      bug = '[ruby-core:82741] [Bug #13888]'
+      IO.console.winsize = [s[0], s[1]+1]
+      assert_equal([s[0], s[1]+1], IO.console.winsize, bug)
+      IO.console.winsize = s
+      assert_equal(s, IO.console.winsize, bug)
+    end
+
+    def test_close
+      IO.console.close
+      assert_kind_of(IO, IO.console)
+      assert_nothing_raised(IOError) {IO.console.fileno}
+
+      IO.console(:close)
+      assert(IO.console(:tty?))
+    ensure
+      IO.console(:close)
+    end
+
+    def test_sync
+      assert(IO.console.sync, "console should be unbuffered")
+    ensure
+      IO.console(:close)
+    end
   end
 end
 

@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -395,7 +395,7 @@ public abstract class DynamicMethod {
     /**
      * Get the "real" method contained within this method. This simply returns
      * self except in cases where a method is wrapped to give it a new
-     * name or new implementation class (AliasMethod, WrapperMethod, ...).
+     * name or new implementation class (AliasMethod, PartialDelegatingMethod, ...).
      *
      * @return The "real" method associated with this one
      */

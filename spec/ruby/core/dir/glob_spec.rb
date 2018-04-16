@@ -122,6 +122,18 @@ describe "Dir.glob" do
     Dir.glob('**/**/**').empty?.should == false
   end
 
+  it "handles simple filename patterns" do
+    Dir.glob('.dotfile').should == ['.dotfile']
+  end
+
+  it "handles simple directory patterns" do
+    Dir.glob('.dotsubdir/').should == ['.dotsubdir/']
+  end
+
+  it "handles simple directory patterns applied to non-directories" do
+    Dir.glob('nondotfile/').should == []
+  end
+
   platform_is_not(:windows) do
     it "matches the literal character '\\' with option File::FNM_NOESCAPE" do
       Dir.mkdir 'foo?bar'
@@ -151,6 +163,16 @@ describe "Dir.glob" do
       ensure
         Dir.rmdir('no_permission')
       end
+    end
+  end
+  
+  ruby_version_is "2.5" do
+    it "accepts base: parameter" do
+      Dir.mkdir 'foo'
+      dir = File.join(@cwd, 'foo')
+      files = %w[a/foo.c c/bar.c].map {|n| File.join(dir, n)}
+      files.each {|n| File.write(n, "")}
+      assert_equal(files, Dir.glob("*/*.c", base: dir))
     end
   end
 end

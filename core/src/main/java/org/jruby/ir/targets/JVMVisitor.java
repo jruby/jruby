@@ -381,7 +381,12 @@ public class JVMVisitor extends IRVisitor {
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false, true);
 
-        Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
+        Handle handle = new Handle(
+                Opcodes.H_INVOKESTATIC,
+                jvm.clsData().clsName,
+                name,
+                sig(signature.type().returnType(), signature.type().parameterArray()),
+                false);
 
         jvm.cls().visitEnd();
         jvm.popclass();
@@ -402,7 +407,12 @@ public class JVMVisitor extends IRVisitor {
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
-        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                jvm.clsData().clsName,
+                name,
+                sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()),
+                false);
     }
 
     protected Handle emitModuleBody(IRModuleBody method) {
@@ -411,7 +421,12 @@ public class JVMVisitor extends IRVisitor {
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false, true);
 
-        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                jvm.clsData().clsName,
+                name,
+                sig(signature.type().returnType(), signature.type().parameterArray()),
+                false);
     }
 
     public void visit(Instr instr) {
@@ -1276,7 +1291,12 @@ public class JVMVisitor extends IRVisitor {
     private String pushHandlesForDef(String variableName, String specificName, IntHashMap<MethodType> signaturesExceptVariable, MethodType variable, String variableOnly, String variableAndSpecific) {
         String defSignature;
 
-        jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, variableName, sig(variable.returnType(), variable.parameterArray())));
+        jvmMethod().pushHandle(new Handle(
+                Opcodes.H_INVOKESTATIC,
+                jvm.clsData().clsName,
+                variableName,
+                sig(variable.returnType(), variable.parameterArray()),
+                false));
 
         if (signaturesExceptVariable.size() == 0) {
             defSignature = variableOnly;
@@ -1284,7 +1304,12 @@ public class JVMVisitor extends IRVisitor {
             defSignature = variableAndSpecific;
 
             for (IntHashMap.Entry<MethodType> entry : signaturesExceptVariable.entrySet()) {
-                jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, specificName, sig(entry.getValue().returnType(), entry.getValue().parameterArray())));
+                jvmMethod().pushHandle(new Handle(
+                        Opcodes.H_INVOKESTATIC,
+                        jvm.clsData().clsName,
+                        specificName,
+                        sig(entry.getValue().returnType(), entry.getValue().parameterArray()),
+                        false));
                 jvmAdapter().pushInt(entry.getKey());
                 break; // FIXME: only supports one arity
             }

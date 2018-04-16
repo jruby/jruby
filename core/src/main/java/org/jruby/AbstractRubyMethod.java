@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,6 +29,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
@@ -105,7 +106,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "owner")
     public IRubyObject owner(ThreadContext context) {
-        return method.getDefinedClass();
+        return method.getRealMethod().getDefinedClass();
     }
 
     @JRubyMethod(name = "source_location")
@@ -144,10 +145,10 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
     }
 
     protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
-        if (superClass == null) return context.runtime.getNil();
+        if (superClass == null) return context.nil;
 
         DynamicMethod newMethod = superClass.searchMethod(methodName);
-        if (newMethod == UndefinedMethod.INSTANCE) return context.runtime.getNil();
+        if (newMethod == UndefinedMethod.INSTANCE) return context.nil;
 
         if (receiver == null) {
             return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, newMethod);

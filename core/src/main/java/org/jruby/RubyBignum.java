@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -31,6 +31,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.IOException;
@@ -275,16 +276,14 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject ceil(ThreadContext context, IRubyObject arg){
         int ndigits = arg.convertToInteger().getIntValue();
         BigInteger self = value;
-        if (ndigits > 0){
-            return convertToFloat();
-        } else if (ndigits == 0){
+        if (ndigits >= 0){
             return this;
         } else {
             int posdigits = Math.abs(ndigits);
             BigInteger exp = BigInteger.TEN.pow(posdigits);
             BigInteger mod = self.mod(exp);
             BigInteger res = self;
-            if (mod.compareTo(BigInteger.ZERO) != 0) {
+            if (mod.signum() != 0) {
                 res = self.add( exp.subtract(mod) );// self + (exp - (mod));
             }
             return newBignum(context.runtime, res);
@@ -298,9 +297,7 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject floor(ThreadContext context, IRubyObject arg){
         int ndigits = arg.convertToInteger().getIntValue();
         BigInteger self = value;
-        if (ndigits > 0){
-            return convertToFloat();
-        } else if (ndigits == 0){
+        if (ndigits >= 0){
             return this;
         } else {
             int posdigits = Math.abs(ndigits);
@@ -351,21 +348,21 @@ public class RubyBignum extends RubyInteger {
             bigBase = long2big( ((RubyFixnum) base).getLongValue() );
         }
 
-        if (bigBase.compareTo(BigInteger.ZERO) == -1) {
+        if (bigBase.signum() == -1) {
             throw runtime.newArgumentError("negative radix");
         }
-        if (bigBase.compareTo(new BigInteger("2")) == -1) {
+        if (bigBase.compareTo(BigInteger.valueOf(2)) == -1) {
             throw runtime.newArgumentError("invalid radix: " + bigBase);
         }
 
         RubyArray res = RubyArray.newArray(context.runtime, 0);
 
-        if (self.compareTo(BigInteger.ZERO) == 0) {
+        if (self.signum() == 0) {
             res.append(RubyFixnum.newFixnum(context.getRuntime(), 0));
             return res;
         }
 
-        while (self.compareTo(BigInteger.ZERO) > 0) {
+        while (self.signum() > 0) {
             BigInteger q = self.mod(bigBase);
             res.append(RubyBignum.newBignum(context.getRuntime(), q));
             self = self.divide(bigBase);
@@ -873,7 +870,12 @@ public class RubyBignum extends RubyInteger {
             other = other.convertToInteger();
         }
 
-        return bignorm(context.runtime, value.shiftLeft((int)shift));
+        return op_lshift(context, shift);
+    }
+
+    @Override
+    public RubyInteger op_lshift(ThreadContext context, long shift) {
+        return bignorm(context.runtime, value.shiftLeft((int) shift));
     }
 
     /** rb_big_rshift
@@ -899,7 +901,22 @@ public class RubyBignum extends RubyInteger {
             other = other.convertToInteger();
         }
 
-        return bignorm(context.runtime, value.shiftRight((int)shift));
+        return op_rshift(context, shift);
+    }
+
+    @Override
+    public RubyInteger op_rshift(ThreadContext context, long shift) {
+        return bignorm(context.runtime, value.shiftRight((int) shift));
+    }
+
+    @Override
+    public RubyBoolean odd_p(ThreadContext context) {
+        return value.testBit(0) ? context.tru : context.fals;
+    }
+
+    @Override
+    public RubyBoolean even_p(ThreadContext context) {
+        return value.testBit(0) ? context.fals : context.tru;
     }
 
     /** rb_big_aref
@@ -982,7 +999,7 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyFloat) {
             double a = ((RubyFloat) other).getDoubleValue();
             if (Double.isNaN(a)) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
             return RubyBoolean.newBoolean(context.runtime, a == big2dbl(this));
         } else {
@@ -1026,6 +1043,12 @@ public class RubyBignum extends RubyInteger {
         return RubyFloat.newFloat(context.runtime, getDoubleValue());
     }
 
+    @Override
+    public IRubyObject to_f() {
+        return RubyFloat.newFloat(getRuntime(), getDoubleValue());
+    }
+
+    @Deprecated
     public IRubyObject abs() {
         return abs(getRuntime().getCurrentContext());
     }
@@ -1054,6 +1077,11 @@ public class RubyBignum extends RubyInteger {
     @Override
     public final boolean isZero() {
         return value.equals(BigInteger.ZERO);
+    }
+
+    @Override
+    public IRubyObject nonzero_p(ThreadContext context) {
+        return isZero() ? context.nil : this;
     }
 
     public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
@@ -1090,7 +1118,7 @@ public class RubyBignum extends RubyInteger {
         byte[] digits = new byte[shortLength * 2 + 1];
 
         for (int i = digits.length - 1; i >= 1; i--) {
-                digits[i] = input.readSignedByte();
+            digits[i] = input.readSignedByte();
         }
 
         BigInteger value = new BigInteger(digits);
@@ -1199,6 +1227,39 @@ public class RubyBignum extends RubyInteger {
     public RubyRational convertToRational() {
         final Ruby runtime = getRuntime();
         return RubyRational.newRationalRaw(runtime, this, RubyFixnum.one(runtime));
+    }
+
+    // MRI: rb_int_s_isqrt, Fixnum portion
+    @Override
+    public IRubyObject sqrt(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        // TODO: this not exactly the same as MRI
+
+        if (isNegative()) {
+            throw runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        }
+        return bignorm(runtime, sqrt(value));
+    }
+
+    /**
+     * A simple public-domain iterative BigInteger sqrt.
+     *
+     * @param x
+     * @return
+     */
+    public static BigInteger sqrt(BigInteger x) {
+        BigInteger div = BigInteger.ZERO.setBit(x.bitLength()/2);
+        BigInteger div2 = div;
+        // Loop until we hit the same value twice in a row, or wind
+        // up alternating.
+        for(;;) {
+            BigInteger y = div.add(x.divide(div)).shiftRight(1);
+            if (y.equals(div) || y.equals(div2))
+                return y;
+            div2 = div;
+            div = y;
+        }
     }
 
     private static JavaSites.BignumSites sites(ThreadContext context) {

@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,6 +35,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.IOException;
@@ -952,27 +953,35 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return obj.getRuntime().newArray(obj);
     }
 
-    /** rb_ary_splice
-     *
-     */
-    private final void splice(long beg, long len, IRubyObject rpl, boolean oneNine) {
-        if (len < 0) throw getRuntime().newIndexError("negative length (" + len + ")");
-        if (beg < 0 && (beg += realLength) < 0) throw getRuntime().newIndexError("index " + (beg - realLength) + " out of array");
+    private void splice(final Ruby runtime, int beg, int len, IRubyObject rpl) {
+        if (len < 0) throw runtime.newIndexError("negative length (" + len + ")");
+        if (beg < 0 && (beg += realLength) < 0)
+            throw runtime.newIndexError("index " + (beg - realLength) + " out of array");
 
         final RubyArray rplArr;
         final int rlen;
 
-        if (rpl == null || (rpl.isNil() && !oneNine)) {
+        if (rpl == null) {
             rplArr = null;
             rlen = 0;
         } else if (rpl.isNil()) {
             // 1.9 replaces with nil
-            rplArr = newArray(getRuntime(), rpl);
+            rplArr = newArray(runtime, rpl);
             rlen = 1;
         } else {
             rplArr = aryToAry(rpl);
             rlen = rplArr.realLength;
         }
+
+        splice(runtime, beg, len, rplArr, rlen);
+    }
+
+    /** rb_ary_splice
+     *
+     */
+    private void splice(final Ruby runtime, int beg, int len, final RubyArray rplArr, final int rlen) {
+        if (len < 0) throw runtime.newIndexError("negative length (" + len + ")");
+        if (beg < 0 && (beg += realLength) < 0) throw runtime.newIndexError("index " + (beg - realLength) + " out of array");
 
         unpack();
         modify();
@@ -980,26 +989,26 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int valuesLength = values.length - begin;
         if (beg >= realLength) {
             len = beg + rlen;
-            if (len >= valuesLength) spliceRealloc((int)len, valuesLength);
+            if (len >= valuesLength) spliceRealloc(len, valuesLength);
             try {
-                Helpers.fillNil(values, begin + realLength, begin + ((int) beg), getRuntime());
+                Helpers.fillNil(values, begin + realLength, begin + beg, runtime);
             } catch (ArrayIndexOutOfBoundsException e) {
-                throw concurrentModification(getRuntime(), e);
+                throw concurrentModification(runtime, e);
             }
-            realLength = (int) len;
+            realLength = len;
         } else {
             if (beg + len > realLength) len = realLength - beg;
-            int alen = realLength + rlen - (int)len;
+            int alen = realLength + rlen - len;
             if (alen >= valuesLength) spliceRealloc(alen, valuesLength);
 
             if (len != rlen) {
-                safeArrayCopy(values, begin + (int) (beg + len), values, begin + (int) beg + rlen, realLength - (int) (beg + len));
+                safeArrayCopy(values, begin + (beg + len), values, begin + beg + rlen, realLength - (beg + len));
                 realLength = alen;
             }
         }
 
         if (rlen > 0) {
-            rplArr.copyInto(values, begin + (int) beg, rlen);
+            rplArr.copyInto(values, begin + beg, rlen);
         }
     }
 
@@ -1029,7 +1038,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             }
         }
 
-        safeArraySet(values, begin + (int)beg, rpl);
+        safeArraySet(values, begin + (int) beg, rpl);
     }
 
     private void spliceRealloc(int length, int valuesLength) {
@@ -1096,12 +1105,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (pos == -1) pos = realLength;
         if (pos < 0) pos++;
 
-        RubyArray inserted = new RubyArray(getRuntime(), false);
+        final Ruby runtime = getRuntime();
+
+        RubyArray inserted = new RubyArray(runtime, false);
         inserted.values = args;
         inserted.begin = 1;
         inserted.realLength = args.length - 1;
 
-        splice(pos, 0, inserted, false); // rb_ary_new4
+        splice(runtime, (int) pos, 0, inserted, inserted.realLength); // rb_ary_new4
 
         return this;
     }
@@ -1278,14 +1289,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return push(items);
     }
 
-    @JRubyMethod(name = "push", required = 1)
+    @JRubyMethod(name = "push", alias = "append", required = 1)
     public RubyArray push(IRubyObject item) {
         append(item);
 
         return this;
     }
 
-    @JRubyMethod(name = "push", rest = true)
+    @JRubyMethod(name = "push", alias = "append", rest = true)
     public RubyArray push(IRubyObject[] items) {
         if (items.length == 0) modifyCheck();
         for (int i = 0; i < items.length; i++) {
@@ -1356,7 +1367,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
-    @JRubyMethod(name = "unshift")
+    @JRubyMethod(name = "unshift", alias = "prepend")
     public IRubyObject unshift() {
         modifyCheck();
         return this;
@@ -1370,7 +1381,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_unshift
      *
      */
-    @JRubyMethod(name = "unshift")
+    @JRubyMethod(name = "unshift", alias = "prepend")
     public IRubyObject unshift(IRubyObject item) {
         unpack();
         modifyCheck();
@@ -1405,7 +1416,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return unshift(item);
     }
 
-    @JRubyMethod(name = "unshift", rest = true)
+    @JRubyMethod(name = "unshift", alias = "prepend",  rest = true)
     public IRubyObject unshift(IRubyObject[] items) {
         unpack();
         modifyCheck();
@@ -1485,7 +1496,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             ThreadContext context = runtime.getCurrentContext();
             ArraySites sites = sites(context);
 
-            if (RubyRange.isRangeLike(context, arg0, sites.respond_to_begin, sites.respond_to_end)) {
+            if (RubyRange.isRangeLike(context, arg0, sites.begin_checked, sites.end_checked, sites.exclude_end_checked)) {
                 RubyRange range = RubyRange.rangeFromRangeLike(context, arg0, sites.begin, sites.end, sites.exclude_end);
 
                 long[] beglen = range.begLen(realLength, 0);
@@ -1533,17 +1544,17 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             store(((RubyFixnum)arg0).getLongValue(), arg1);
         } else if (arg0 instanceof RubyRange) {
             RubyRange range = (RubyRange)arg0;
-            long beg = range.begLen0(realLength);
-            splice(beg, range.begLen1(realLength, beg), arg1, true);
+            int beg = (int) range.begLen0(realLength);
+            splice(getRuntime(), beg, (int) range.begLen1(realLength, beg), arg1);
         } else {
             ThreadContext context = getRuntime().getCurrentContext();
             ArraySites sites = sites(context);
 
-            if (RubyRange.isRangeLike(context, arg0, sites.respond_to_begin, sites.respond_to_end)) {
+            if (RubyRange.isRangeLike(context, arg0, sites.begin_checked, sites.end_checked, sites.exclude_end_checked)) {
                 RubyRange range = RubyRange.rangeFromRangeLike(context, arg0, sites.begin, sites.end, sites.exclude_end);
 
-                long beg = range.begLen0(realLength);
-                splice(beg, range.begLen1(realLength, beg), arg1, true);
+                int beg = (int) range.begLen0(realLength);
+                splice(getRuntime(), beg, (int) range.begLen1(realLength, beg), arg1);
             } else {
                 store(RubyNumeric.num2long(arg0), arg1);
             }
@@ -1562,7 +1573,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "[]=")
     public IRubyObject aset(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         modifyCheck();
-        splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2, true);
+        splice(getRuntime(), RubyNumeric.num2int(arg0), RubyNumeric.num2int(arg1), arg2);
         return arg2;
     }
 
@@ -1586,14 +1597,17 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public RubyArray concat(ThreadContext context, IRubyObject obj) {
         modifyCheck();
 
-        RubyArray ary = obj.convertToArray();
+        concat(context.runtime, obj.convertToArray());
+        return this;
+    }
 
-        return aryAppend(ary);
+    private void concat(final Ruby runtime, RubyArray obj) {
+        splice(runtime, realLength, 0, obj, obj.realLength);
     }
 
     // MRI: ary_append
     public RubyArray aryAppend(RubyArray y) {
-        if (y.realLength > 0) splice(realLength, 0, y, false);
+        if (y.realLength > 0) splice(getRuntime(), realLength, 0, y, y.realLength);
 
         return this;
     }
@@ -1611,10 +1625,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             RubyArray tmp = newArray(runtime, objs.length);
 
             for (IRubyObject obj : objs) {
-                tmp.concat(context, obj);
+                tmp.concat(runtime, obj.convertToArray());
             }
 
-            aryAppend(tmp);
+            return aryAppend(tmp);
         }
 
         return this;
@@ -2027,13 +2041,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        if (this == obj) return context.runtime.getTrue();
+        if (this == obj) return context.tru;
 
         if (!(obj instanceof RubyArray)) {
-            if (obj == context.nil) return context.runtime.getFalse();
+            if (obj == context.nil) return context.fals;
 
             if (!sites(context).respond_to_to_ary.respondsTo(context, obj, obj)) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
             return Helpers.rbEqual(context, obj, this);
         }
@@ -2042,14 +2056,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public RubyBoolean compare(ThreadContext context, CallSite site, IRubyObject other) {
         if (!(other instanceof RubyArray)) {
-            if (!sites(context).respond_to_to_ary.respondsTo(context, other, other)) return context.runtime.getFalse();
+            if (!sites(context).respond_to_to_ary.respondsTo(context, other, other)) return context.fals;
 
             return Helpers.rbEqual(context, other, this);
         }
 
         RubyArray ary = (RubyArray) other;
 
-        if (realLength != ary.realLength) return context.runtime.getFalse();
+        if (realLength != ary.realLength) return context.fals;
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject a = elt(i);
@@ -2057,10 +2071,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
             if (a == b) continue; // matching MRI opt. mock frameworks can throw errors if we don't
 
-            if (!site.call(context, a, a, b).isTrue()) return context.runtime.getFalse();
+            if (!site.call(context, a, a, b).isTrue()) return context.fals;
         }
 
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     /** rb_ary_eql
@@ -2069,7 +2083,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql(ThreadContext context, IRubyObject obj) {
         if(!(obj instanceof RubyArray)) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         return RecursiveComparator.compare(context, sites(context).eql, this, obj);
     }
@@ -2958,29 +2972,27 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
-    private IRubyObject slice_internal(long pos, long len, Ruby runtime) {
-        if(len < 0) return runtime.getNil();
+    private IRubyObject slice_internal(final Ruby runtime, int pos, int len) {
+        if (len < 0) return runtime.getNil();
         int orig_len = realLength;
-        if(pos < 0) {
+        if (pos < 0) {
             pos += orig_len;
-            if(pos < 0) {
-                return runtime.getNil();
-            }
-        } else if(orig_len < pos) {
+            if (pos < 0) return runtime.getNil();
+        } else if (orig_len < pos) {
             return runtime.getNil();
         }
 
-        if(orig_len < pos + len) {
+        if (orig_len < pos + len) {
             len = orig_len - pos;
         }
-        if(len == 0) {
+        if (len == 0) {
             return runtime.newEmptyArray();
         }
 
         unpack();
 
-        IRubyObject result = makeShared(begin + (int)pos, (int)len, getMetaClass());
-        splice(pos, len, null, false);
+        RubyArray result = makeShared(begin + pos, len, getMetaClass());
+        splice(runtime, pos, len, null, 0);
 
         return result;
     }
@@ -2998,11 +3010,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 return runtime.getNil();
             }
 
-            long pos = range.begLen0(realLength);
-            long len = range.begLen1(realLength, pos);
-            return slice_internal(pos, len, runtime);
+            int pos = (int) range.begLen0(realLength);
+            int len = (int) range.begLen1(realLength, pos);
+            return slice_internal(runtime, pos, len);
         }
-        return delete_at((int) RubyNumeric.num2long(arg0));
+        return delete_at(RubyNumeric.num2int(arg0));
     }
 
     /** rb_ary_slice_bang
@@ -3011,9 +3023,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "slice!")
     public IRubyObject slice_bang(IRubyObject arg0, IRubyObject arg1) {
         modifyCheck();
-        long pos = RubyNumeric.num2long(arg0);
-        long len = RubyNumeric.num2long(arg1);
-        return slice_internal(pos, len, getRuntime());
+
+        return slice_internal(getRuntime(), RubyNumeric.num2int(arg0), RubyNumeric.num2int(arg1));
     }
 
     /** rb_ary_assoc
@@ -3322,7 +3333,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     public IRubyObject uniq_bang(ThreadContext context) {
         RubyHash hash = makeHash();
-        if (realLength == hash.size()) return context.runtime.getNil();
+        if (realLength == hash.size()) return context.nil;
 
         // TODO: (CON) This could be a no-op for packed arrays if size does not change
         unpack();
@@ -3342,7 +3353,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (!block.isGiven()) return uniq_bang(context);
         RubyHash hash = makeHash(context, block);
-        if (realLength == hash.size()) return context.runtime.getNil();
+        if (realLength == hash.size()) return context.nil;
 
         // after evaluating the block, a new modify check is needed
         modifyCheck();
@@ -3747,7 +3758,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "cycle", new IRubyObject[] {arg}, cycleSizeFn(context));
 
         long times = RubyNumeric.num2long(arg);
-        if (times <= 0) return context.runtime.getNil();
+        if (times <= 0) return context.nil;
 
         return cycleCommon(context, times, block);
     }
@@ -3758,7 +3769,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 block.yield(context, eltOk(i));
             }
         }
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     private SizeFn cycleSizeFn(final ThreadContext context) {
@@ -4164,7 +4175,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
             if (!hash.isNil()) {
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "random");
-                if (!rets[0].isNil()) randgen = rets[0];
+                if (rets[0] != UNDEF) randgen = rets[0];
             }
         }
         int i = realLength;
@@ -4205,7 +4216,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
                 if (!hash.isNil()) {
                     IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "random");
-                    if (!rets[0].isNil()) randgen = rets[0];
+                    if (rets[0] != UNDEF) randgen = rets[0];
                     args = ArraySupport.newCopy(args, args.length - 1);
                 }
             }
@@ -4376,44 +4387,52 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     // Enumerable direct implementations (non-"each" versions)
     // NOTE: not a @JRubyMethod(name = "all?") as there's no Array#all? on MRI
-    public IRubyObject all_p(ThreadContext context, Block block) {
-        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block);
+    public IRubyObject all_p(ThreadContext context, IRubyObject[] args, Block block) {
+        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, args, block);
         if (!block.isGiven()) return all_pBlockless(context);
 
         for (int i = 0; i < realLength; i++) {
-            if (!block.yield(context, eltOk(i)).isTrue()) return context.runtime.getFalse();
+            if (!block.yield(context, eltOk(i)).isTrue()) return context.fals;
         }
 
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     private IRubyObject all_pBlockless(ThreadContext context) {
         for (int i = 0; i < realLength; i++) {
-            if (!eltOk(i).isTrue()) return context.runtime.getFalse();
+            if (!eltOk(i).isTrue()) return context.fals;
         }
 
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
-    @JRubyMethod(name = "any?")
-    public IRubyObject any_p(ThreadContext context, Block block) {
-        if (isEmpty()) return context.runtime.getFalse();
-        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block);
-        if (!block.isGiven()) return any_pBlockless(context);
+    @JRubyMethod(name = "any?", optional = 1)
+    public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
+        if (isEmpty()) return context.fals;
+        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, args, block);
+        boolean patternGiven = args.length > 0;
+        if (!block.isGiven() || patternGiven) return any_pBlockless(context, args);
 
         for (int i = 0; i < realLength; i++) {
-            if (block.yield(context, eltOk(i)).isTrue()) return context.runtime.getTrue();
+            if (block.yield(context, eltOk(i)).isTrue()) return context.tru;
         }
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
-    private IRubyObject any_pBlockless(ThreadContext context) {
-        for (int i = 0; i < realLength; i++) {
-            if (eltOk(i).isTrue()) return context.runtime.getTrue();
+    private IRubyObject any_pBlockless(ThreadContext context, IRubyObject[] args) {
+        IRubyObject pattern = args.length > 0 ? args[0] : null;
+        if (pattern == null) {
+            for (int i = 0; i < realLength; i++) {
+                if (eltOk(i).isTrue()) return context.tru;
+            }
+        } else {
+            for (int i = 0; i < realLength; i++) {
+                if (pattern.callMethod(context, "===", eltOk(i)).isTrue()) return context.tru;
+            }
         }
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod

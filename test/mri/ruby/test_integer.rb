@@ -181,8 +181,8 @@ class TestInteger < Test::Unit::TestCase
     assert_int_equal(11111, 11111.round)
     assert_int_equal(11111, 11111.round(0))
 
-    assert_float_equal(11111.0, 11111.round(1))
-    assert_float_equal(11111.0, 11111.round(2))
+    assert_int_equal(11111, 11111.round(1))
+    assert_int_equal(11111, 11111.round(2))
 
     assert_int_equal(11110, 11111.round(-1))
     assert_int_equal(11100, 11111.round(-2))
@@ -249,14 +249,17 @@ class TestInteger < Test::Unit::TestCase
 
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1110, 1111_1111_1111_1111_1111_1111_1111_1111.round(-1))
     assert_int_equal(-1111_1111_1111_1111_1111_1111_1111_1110, (-1111_1111_1111_1111_1111_1111_1111_1111).round(-1))
+
+    assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1111, 1111_1111_1111_1111_1111_1111_1111_1111.round(1))
+    assert_int_equal(10**400, (10**400).round(1))
   end
 
   def test_floor
     assert_int_equal(11111, 11111.floor)
     assert_int_equal(11111, 11111.floor(0))
 
-    assert_float_equal(11111.0, 11111.floor(1))
-    assert_float_equal(11111.0, 11111.floor(2))
+    assert_int_equal(11111, 11111.floor(1))
+    assert_int_equal(11111, 11111.floor(2))
 
     assert_int_equal(11110, 11110.floor(-1))
     assert_int_equal(11110, 11119.floor(-1))
@@ -274,14 +277,17 @@ class TestInteger < Test::Unit::TestCase
 
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1110, 1111_1111_1111_1111_1111_1111_1111_1111.floor(-1))
     assert_int_equal(-1111_1111_1111_1111_1111_1111_1111_1120, (-1111_1111_1111_1111_1111_1111_1111_1111).floor(-1))
+
+    assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1111, 1111_1111_1111_1111_1111_1111_1111_1111.floor(1))
+    assert_int_equal(10**400, (10**400).floor(1))
   end
 
   def test_ceil
     assert_int_equal(11111, 11111.ceil)
     assert_int_equal(11111, 11111.ceil(0))
 
-    assert_float_equal(11111.0, 11111.ceil(1))
-    assert_float_equal(11111.0, 11111.ceil(2))
+    assert_int_equal(11111, 11111.ceil(1))
+    assert_int_equal(11111, 11111.ceil(2))
 
     assert_int_equal(11110, 11110.ceil(-1))
     assert_int_equal(11120, 11119.ceil(-1))
@@ -299,14 +305,17 @@ class TestInteger < Test::Unit::TestCase
 
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1120, 1111_1111_1111_1111_1111_1111_1111_1111.ceil(-1))
     assert_int_equal(-1111_1111_1111_1111_1111_1111_1111_1110, (-1111_1111_1111_1111_1111_1111_1111_1111).ceil(-1))
+
+    assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1111, 1111_1111_1111_1111_1111_1111_1111_1111.ceil(1))
+    assert_int_equal(10**400, (10**400).ceil(1))
   end
 
   def test_truncate
     assert_int_equal(11111, 11111.truncate)
     assert_int_equal(11111, 11111.truncate(0))
 
-    assert_float_equal(11111.0, 11111.truncate(1))
-    assert_float_equal(11111.0, 11111.truncate(2))
+    assert_int_equal(11111, 11111.truncate(1))
+    assert_int_equal(11111, 11111.truncate(2))
 
     assert_int_equal(11110, 11110.truncate(-1))
     assert_int_equal(11110, 11119.truncate(-1))
@@ -324,6 +333,9 @@ class TestInteger < Test::Unit::TestCase
 
     assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1110, 1111_1111_1111_1111_1111_1111_1111_1111.truncate(-1))
     assert_int_equal(-1111_1111_1111_1111_1111_1111_1111_1110, (-1111_1111_1111_1111_1111_1111_1111_1111).truncate(-1))
+
+    assert_int_equal(1111_1111_1111_1111_1111_1111_1111_1111, 1111_1111_1111_1111_1111_1111_1111_1111.truncate(1))
+    assert_int_equal(10**400, (10**400).truncate(1))
   end
 
   MimicInteger = Struct.new(:to_int)
@@ -463,5 +475,54 @@ class TestInteger < Test::Unit::TestCase
       end
     end
     assert_equal([0, 1], 10.digits(o))
+  end
+
+  def test_square_root
+    assert_raise(TypeError) {Integer.sqrt("x")}
+    assert_raise(Math::DomainError) {Integer.sqrt(-1)}
+    assert_equal(0, Integer.sqrt(0))
+    (1...4).each {|i| assert_equal(1, Integer.sqrt(i))}
+    (4...9).each {|i| assert_equal(2, Integer.sqrt(i))}
+    (9...16).each {|i| assert_equal(3, Integer.sqrt(i))}
+    (1..40).each do |i|
+      mesg = "10**#{i}"
+      s = Integer.sqrt(n = 10**i)
+      if i.even?
+        assert_equal(10**(i/2), Integer.sqrt(n), mesg)
+      else
+        assert_include((s**2)...(s+1)**2, n, mesg)
+      end
+    end
+    50.step(400, 10) do |i|
+      exact = 10**(i/2)
+      x = 10**i
+      assert_equal(exact, Integer.sqrt(x), "10**#{i}")
+      assert_equal(exact, Integer.sqrt(x+1), "10**#{i}+1")
+      assert_equal(exact-1, Integer.sqrt(x-1), "10**#{i}-1")
+    end
+
+    bug13440 = '[ruby-core:80696] [Bug #13440]'
+    failures = []
+    0.step(to: 50, by: 0.05) do |i|
+      n = (10**i).to_i
+      root = Integer.sqrt(n)
+      failures << n  unless root*root <= n && (root+1)*(root+1) > n
+    end
+    assert_empty(failures, bug13440)
+  end
+
+  def test_fdiv
+    assert_equal(1.0, 1.fdiv(1))
+    assert_equal(0.5, 1.fdiv(2))
+  end
+
+  def test_obj_fdiv
+    o = Object.new
+    def o.coerce(x); [x, 0.5]; end
+    assert_equal(2.0, 1.fdiv(o))
+    o = Object.new
+    def o.coerce(x); [self, x]; end
+    def o.fdiv(x); 1; end
+    assert_equal(1.0, 1.fdiv(o))
   end
 end

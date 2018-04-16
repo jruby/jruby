@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,12 +23,15 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import static org.jcodings.Encoding.CHAR_INVALID;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
+import org.jcodings.Config;
 import org.jcodings.Encoding;
+import org.jcodings.IntHolder;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
 import org.jcodings.exception.EncodingError;
@@ -43,6 +46,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -606,10 +610,12 @@ public final class StringSupport {
         return offset(str.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), pos);
     }
 
+    @Deprecated
     public static int toLower(Encoding enc, int c) {
         return Encoding.isAscii(c) ? AsciiTables.ToLowerCaseTable[c] : c;
     }
 
+    @Deprecated
     public static int toUpper(Encoding enc, int c) {
         return Encoding.isAscii(c) ? AsciiTables.ToUpperCaseTable[c] : c;
     }
@@ -1039,7 +1045,7 @@ public final class StringSupport {
         }
 
         int s = nth(enc, srcBytes, srcBeg, srcBeg + srcLen, pos);
-        
+
         return strRindex(srcBytes, srcBeg, srcLen, subString.getUnsafeBytes(), subString.getBegin(), subLen, s, pos, enc);
     }
 
@@ -2214,18 +2220,21 @@ public final class StringSupport {
                 oc = preciseCodePoint(enc, obytes, op, oend);
             }
 
-            int cl, ocl;
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c) && Encoding.isAscii(oc)) {
-                byte uc = AsciiTables.ToUpperCaseTable[c];
-                byte uoc = AsciiTables.ToUpperCaseTable[oc];
-                if (uc != uoc) {
-                    return uc < uoc ? -1 : 1;
+            final int cl, ocl;
+            if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
+                int dc = AsciiTables.ToUpperCaseTable[c];
+                int odc = AsciiTables.ToUpperCaseTable[oc];
+                if (dc != odc) return dc < odc ? -1 : 1;
+
+                if (enc.isAsciiCompatible()) {
+                    cl = ocl = 1;
+                } else {
+                    cl = preciseLength(enc, bytes, p, end);
+                    ocl = preciseLength(enc, obytes, op, oend);
                 }
-                cl = ocl = 1;
             } else {
                 cl = length(enc, bytes, p, end);
                 ocl = length(enc, obytes, op, oend);
-                // TODO: opt for 2 and 3 ?
                 int ret = caseCmp(bytes, p, obytes, op, cl < ocl ? cl : ocl);
                 if (ret != 0) return ret < 0 ? -1 : 1;
                 if (cl != ocl) return cl < ocl ? -1 : 1;
@@ -2293,52 +2302,6 @@ public final class StringSupport {
     public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
         try {
             return multiByteSqueeze(value, squeeze, tables, enc, isArg);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-    }
-
-    /**
-     * rb_str_swapcase / rb_str_swapcase_bang
-     */
-
-    public static boolean singleByteSwapcase(byte[] bytes, int s, int end) {
-        boolean modify = false;
-        while (s < end) {
-            int c = bytes[s] & 0xff;
-            if (ASCIIEncoding.INSTANCE.isUpper(c)) {
-                bytes[s] = AsciiTables.ToLowerCaseTable[c];
-                modify = true;
-            } else if (ASCIIEncoding.INSTANCE.isLower(c)) {
-                bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                modify = true;
-            }
-            s++;
-        }
-
-        return modify;
-    }
-
-    public static boolean multiByteSwapcase(Encoding enc, byte[] bytes, int s, int end) {
-        boolean modify = false;
-        while (s < end) {
-            int c = codePoint(enc, bytes, s, end);
-            if (enc.isUpper(c)) {
-                enc.codeToMbc(toLower(enc, c), bytes, s);
-                modify = true;
-            } else if (enc.isLower(c)) {
-                enc.codeToMbc(toUpper(enc, c), bytes, s);
-                modify = true;
-            }
-            s += codeLength(enc, c);
-        }
-
-        return modify;
-    }
-
-    public static boolean multiByteSwapcase(Ruby runtime, Encoding enc, byte[] bytes, int s, int end) {
-        try {
-            return multiByteSwapcase(enc, bytes, s, end);
         } catch (IllegalArgumentException e) {
             throw runtime.newArgumentError(e.getMessage());
         }
@@ -2455,81 +2418,112 @@ public final class StringSupport {
         return -1;
     }
 
-    public static boolean singleByteDowncase(byte[] bytes, int s, int end) {
-        boolean modify = false;
+    public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, IRubyObject arg1, int flags) {
+        RubySymbol turkic = runtime.newSymbol("turkic");
+        RubySymbol lithuanian = runtime.newSymbol("lithuanian");
 
-        while (s < end) {
-            int c = bytes[s] & 0xff;
-            if (ASCIIEncoding.INSTANCE.isUpper(c)) {
-                bytes[s] = AsciiTables.ToLowerCaseTable[c];
-                modify = true;
-            }
-            s++;
-        }
-
-        return modify;
-    }
-
-    public static boolean multiByteDowncase(Encoding enc, byte[] bytes, int s, int end) {
-        boolean modify = false;
-        int c;
-        while (s < end) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
-                if (ASCIIEncoding.INSTANCE.isUpper(c)) {
-                    bytes[s] = AsciiTables.ToLowerCaseTable[c];
-                    modify = true;
-                }
-                s++;
+        if (arg0.equals(turkic)) {
+            flags |= Config.CASE_FOLD_TURKISH_AZERI;
+            if (arg1.equals(lithuanian)) {
+                flags |= Config.CASE_FOLD_LITHUANIAN;
             } else {
-                c = codePoint(enc, bytes, s, end);
-                if (enc.isUpper(c)) {
-                    enc.codeToMbc(toLower(enc, c), bytes, s);
-                    modify = true;
-                }
-                s += codeLength(enc, c);
+                throw runtime.newArgumentError("invalid second option");
             }
-        }
-
-        return modify;
-    }
-
-    public static boolean singleByteUpcase(byte[] bytes, int s, int end) {
-        boolean modify = false;
-
-        while (s < end) {
-            int c = bytes[s] & 0xff;
-            if (ASCIIEncoding.INSTANCE.isLower(c)) {
-                bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                modify = true;
-            }
-            s++;
-        }
-
-        return modify;
-    }
-
-    public static boolean multiByteUpcase(Encoding enc, byte[] bytes, int s, int end) {
-        boolean modify = false;
-        int c;
-
-        while (s < end) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
-                if (ASCIIEncoding.INSTANCE.isLower(c)) {
-                    bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                    modify = true;
-                }
-                s++;
+        } else if (arg0.equals(lithuanian)) {
+            flags |= Config.CASE_FOLD_LITHUANIAN;
+            if (arg1.equals(turkic)) {
+                flags |= Config.CASE_FOLD_TURKISH_AZERI;
             } else {
-                c = codePoint(enc, bytes, s, end);
-                if (enc.isLower(c)) {
-                    enc.codeToMbc(toUpper(enc, c), bytes, s);
-                    modify = true;
-                }
-                s += codeLength(enc, c);
+                throw runtime.newArgumentError("invalid second option");
+            }
+        } else {
+            throw runtime.newArgumentError("invalid option");
+        }
+        return flags;
+    }
+
+    public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, int flags) {
+        if (arg0.equals(runtime.newSymbol("ascii"))) {
+            flags |= Config.CASE_ASCII_ONLY;
+        } else if (arg0.equals(runtime.newSymbol("fold"))) {
+            if ((flags & (Config.CASE_UPCASE | Config.CASE_DOWNCASE)) == Config.CASE_DOWNCASE) {
+                flags ^= Config.CASE_FOLD | Config.CASE_DOWNCASE;
+            } else {
+                throw runtime.newArgumentError("option :fold only allowed for downcasing");
+            }
+        } else if (arg0.equals(runtime.newSymbol("turkic"))) {
+            flags |= Config.CASE_FOLD_TURKISH_AZERI;
+        } else if (arg0.equals(runtime.newSymbol("lithuanian"))) {
+            flags |= Config.CASE_FOLD_LITHUANIAN;
+        } else {
+            throw runtime.newArgumentError("invalid option");
+        }
+        return flags;
+    }
+
+    private static final class MappingBuffer {
+        MappingBuffer next;
+        final byte[] bytes;
+        int used;
+
+        MappingBuffer() {
+            bytes = null;
+        }
+
+        MappingBuffer(int size) {
+            bytes = new byte[size];
+        }
+    }
+
+    private static final int CASE_MAPPING_ADDITIONAL_LENGTH = 20;
+
+    public static ByteList caseMap(Ruby runtime, ByteList src, IntHolder flags, Encoding enc) {
+        IntHolder pp = new IntHolder();
+        pp.value = src.getBegin();
+        int end = src.getRealSize() + pp.value;
+        byte[]bytes = src.getUnsafeBytes();
+        int tgtLen = 0;
+
+        int buffers = 0;
+        MappingBuffer root = new MappingBuffer();
+        MappingBuffer buffer = root;
+        while (pp.value < end) {
+            buffer.next = new MappingBuffer((end - pp.value) * ++buffers + CASE_MAPPING_ADDITIONAL_LENGTH);
+            buffer = buffer.next;
+            int len = enc.caseMap(flags, bytes, pp, end, buffer.bytes, 0, buffer.bytes.length);
+            if (len < 0) throw runtime.newArgumentError("input string invalid");
+            buffer.used = len;
+            tgtLen += len;
+        }
+
+        final ByteList tgt;
+        if (buffers == 1) {
+            tgt = new ByteList(buffer.bytes, 0, buffer.used, enc, false);
+        } else {
+            tgt = new ByteList(tgtLen);
+            tgt.setEncoding(enc);
+            buffer = root.next;
+            int tgtPos = 0;
+            while (buffer != null) {
+                System.arraycopy(buffer.bytes, 0, tgt.getUnsafeBytes(), tgtPos, buffer.used);
+                tgtPos += buffer.used;
+                buffer = buffer.next;
             }
         }
 
-        return modify;
+        return tgt;
+    }
+
+    public static void asciiOnlyCaseMap(Ruby runtime, ByteList value, IntHolder flags, Encoding enc) {
+        if (value.getRealSize() == 0) return;
+        int s = value.getBegin();
+        int end = s + value.getRealSize();
+        byte[]bytes = value.getUnsafeBytes();
+
+        IntHolder pp = new IntHolder();
+        pp.value = s;
+        int len = ASCIIEncoding.INSTANCE.caseMap(flags, bytes, pp, end, bytes, s, end);
+        if (len < 0) throw runtime.newArgumentError("input string invalid");
     }
 
     public static int encCoderangeClean(int cr) {

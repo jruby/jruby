@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.IOException;
@@ -62,6 +63,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -86,6 +88,7 @@ import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.common.IRubyWarnings.ID;
 
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
@@ -141,7 +144,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * it here to continue propagating it while handling thread shutdown
      * logic and abort_on_exception.
      */
-    private volatile RaiseException exitingException;
+    private volatile Throwable exitingException;
 
     /** The ThreadGroup to which this thread belongs */
     private volatile RubyThreadGroup threadGroup;
@@ -767,7 +770,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "pending_interrupt?", optional = 1)
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
         if (pendingInterruptQueue.isEmpty()) {
-            return context.runtime.getFalse();
+            return context.fals;
         } else {
             if (args.length == 1) {
                 IRubyObject err = args[0];
@@ -775,12 +778,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     throw context.runtime.newTypeError("class or module required for rescue clause");
                 }
                 if (pendingInterruptInclude(err)) {
-                    return context.runtime.getTrue();
+                    return context.tru;
                 } else {
-                    return context.runtime.getFalse();
+                    return context.fals;
                 }
             } else {
-                return context.runtime.getTrue();
+                return context.tru;
             }
         }
     }
@@ -922,6 +925,40 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public boolean isAlive(){
         return threadImpl.isAlive() && status.get() != Status.DEAD;
+    }
+
+    @JRubyMethod
+    public IRubyObject fetch(ThreadContext context, IRubyObject key, Block block) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject value = op_aref(key);
+
+        if (value.isNil()) {
+            if (block.isGiven()) return block.yield(context, key);
+
+            throw runtime.newKeyError("key not found: " + key.inspect(), this, key);
+        }
+
+        return value;
+    }
+
+    @JRubyMethod
+    public IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
+        Ruby runtime = context.runtime;
+        boolean blockGiven = block.isGiven();
+
+        if (blockGiven) {
+            runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
+        }
+
+        IRubyObject value = op_aref(key);
+
+        if (value.isNil()) {
+            if (blockGiven) return block.yield(context, key);
+            return _default;
+        }
+
+        return value;
     }
 
     @JRubyMethod(name = "[]", required = 1)
@@ -1073,11 +1110,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         if (exitingException != null) {
-            // Set $! in the current thread before exiting
-            runtime.getGlobalVariables().set("$!", (IRubyObject)exitingException.getException());
-            exceptionCaptured = true;
-            throw exitingException;
-
+            if (exitingException instanceof RaiseException) {
+                RaiseException raiseException = (RaiseException) exitingException;
+                // Set $! in the current thread before exiting
+                runtime.getGlobalVariables().set("$!", (IRubyObject) raiseException.getException());
+            } else {
+                runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exitingException));
+            }
+            Helpers.throwException(exitingException);
         }
 
         // check events before leaving
@@ -1684,50 +1724,50 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void exceptionRaised(RaiseException exception) {
-        assert isCurrent();
-
-        RubyException rubyException = exception.getException();
-        Ruby runtime = rubyException.getRuntime();
-        if (runtime.getSystemExit().isInstance(rubyException)) {
-            runtime.getThreadService().getMainThread().raise(rubyException);
-        } else if (abortOnException(runtime)) {
-            runtime.getThreadService().getMainThread().raise(rubyException);
-            return;
-        } else if (reportOnException.isTrue()) {
-            printReportExceptionWarning();
-            runtime.printError(exception.getException());
-        }
-        exitingException = exception;
+        exceptionRaised((Throwable) exception);
     }
 
     protected void printReportExceptionWarning() {
         Ruby runtime = getRuntime();
         String name = threadImpl.getReportName();
-        runtime.getErrorStream().println("warning: thread \"" + name + "\" terminated with exception:");
+        runtime.getErrorStream().println("warning: thread \"" + name + "\" terminated with exception (report_on_exception is true):");
     }
 
     /**
-     * For handling all non-Ruby exceptions bubbling out of threads
-     * @param exception
+     * For handling all exceptions bubbling out of threads
+     * @param throwable
      */
-    @SuppressWarnings("deprecation")
-    public void exceptionRaised(Throwable exception) {
-        if (exception instanceof RaiseException) {
-            exceptionRaised((RaiseException)exception);
-            return;
+    public void exceptionRaised(Throwable throwable) {
+        // if unrescuable (internal exceptions) just re-raise and let it be handled by thread handler
+        if (throwable instanceof Unrescuable) {
+            Helpers.throwException(throwable);
         }
+
+        Ruby runtime = getRuntime();
 
         assert isCurrent();
 
-        Ruby runtime = getRuntime();
-        if (abortOnException(runtime) && exception instanceof Error) {
-            // re-propagate on main thread
-            exceptionCaptured = true;
-            runtime.getThreadService().getMainThread().raise(JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
+        IRubyObject rubyException;
+
+        if (throwable instanceof RaiseException) {
+            RaiseException exception = (RaiseException) throwable;
+            rubyException = exception.getException();
         } else {
-            // just rethrow on this thread, let system handlers report it
-            Helpers.throwException(exception);
+            rubyException = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
         }
+
+        if (runtime.getSystemExit().isInstance(rubyException)) {
+            runtime.getThreadService().getMainThread().raise(rubyException);
+        } else if (abortOnException(runtime)) {
+            runtime.getThreadService().getMainThread().raise(rubyException);
+        } else if (reportOnException.isTrue()) {
+            printReportExceptionWarning();
+            runtime.printError(throwable);
+        } else if (runtime.isDebug()) {
+            runtime.printError(throwable);
+        }
+
+        exitingException = throwable;
     }
 
     private boolean abortOnException(Ruby runtime) {

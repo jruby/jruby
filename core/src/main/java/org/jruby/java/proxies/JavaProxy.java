@@ -309,7 +309,7 @@ public class JavaProxy extends RubyObject {
             boolean equal = getObject() == ((JavaProxy) other).getObject();
             return context.runtime.newBoolean(equal);
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod

@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,6 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import static org.jruby.util.Numeric.f_abs;
@@ -127,6 +128,7 @@ public class RubyComplex extends RubyNumeric {
         super(runtime, clazz);
         this.real = real;
         this.image = image;
+        this.flags |= FROZEN_F;
     }
 
     /** rb_complex_raw
@@ -770,7 +772,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "real?")
     @Override
     public IRubyObject real_p(ThreadContext context) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @Override
@@ -781,7 +783,7 @@ public class RubyComplex extends RubyNumeric {
      */
     // @JRubyMethod(name = "complex?")
     public IRubyObject complex_p(ThreadContext context) {
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     /** nucomp_exact_p
@@ -1006,39 +1008,42 @@ public class RubyComplex extends RubyNumeric {
 
     // MRI: f_finite_p
     public boolean checkFinite(ThreadContext context, IRubyObject value) {
-        IRubyObject magnitude = magnitude(context);
-
-        if (magnitude instanceof RubyInteger || magnitude instanceof RubyRational) {
+        if (value instanceof RubyInteger || value instanceof RubyRational) {
             return true;
         }
 
-        if (magnitude instanceof RubyFloat) {
-            return ((RubyFloat) magnitude).finite_p().isTrue();
+        if (value instanceof RubyFloat) {
+            return ((RubyFloat) value).finite_p().isTrue();
         }
 
-        if (magnitude instanceof RubyRational) {
+        if (value instanceof RubyRational) {
             return true;
         }
 
-        return sites(context).finite.call(context, magnitude, magnitude).isTrue();
+        return sites(context).finite.call(context, value, value).isTrue();
     }
 
     @JRubyMethod(name = "infinite?")
     @Override
     public IRubyObject infinite_p(ThreadContext context) {
-        IRubyObject magnitude = magnitude(context);
+        if (checkInfinite(context, real).isNil() && checkInfinite(context, image).isNil()) {
+            return context.nil;
+        }
+        return RubyFixnum.newFixnum(getRuntime(), 1);
+    }
 
-        if (magnitude instanceof RubyInteger || magnitude instanceof RubyRational) {
+    public IRubyObject checkInfinite(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyInteger || value instanceof RubyRational) {
             return context.nil;
         }
 
-        if (magnitude instanceof RubyFloat) {
-            return ((RubyFloat) magnitude).infinite_p();
+        if (value instanceof RubyFloat) {
+            return ((RubyFloat) value).infinite_p();
         }
 
-        return sites(context).infinite.call(context, magnitude, magnitude);
+        return sites(context).infinite.call(context, value, value);
     }
-    
+
     private static final ByteList SEP = RubyFile.SLASH;
     private static final ByteList _eE = new ByteList(new byte[] { '.', 'e', 'E' }, false);
 

@@ -241,17 +241,21 @@ module TupleSpaceTestModule
   end
 
   def test_ruby_talk_264062
-    th = Thread.new { @ts.take([:empty], 1) }
+    th = Thread.new {
+      assert_raise(Rinda::RequestExpiredError) do
+        @ts.take([:empty], 1)
+      end
+    }
     sleep(10)
-    assert_raise(Rinda::RequestExpiredError) do
-      thread_join(th)
-    end
+    thread_join(th)
 
-    th = Thread.new { @ts.read([:empty], 1) }
+    th = Thread.new {
+      assert_raise(Rinda::RequestExpiredError) do
+        @ts.read([:empty], 1)
+      end
+    }
     sleep(10)
-    assert_raise(Rinda::RequestExpiredError) do
-      thread_join(th)
-    end
+    thread_join(th)
   end
 
   def test_symbol_tuple
@@ -348,19 +352,18 @@ module TupleSpaceTestModule
 
     template = nil
     taker = Thread.new do
-      @ts.take([:take, nil], 10) do |t|
-        template = t
-	Thread.new do
-	  template.cancel
-	end
+      assert_raise(Rinda::RequestCanceledError) do
+        @ts.take([:take, nil], 10) do |t|
+          template = t
+          Thread.new do
+            template.cancel
+          end
+        end
       end
     end
 
     sleep(2)
-
-    assert_raise(Rinda::RequestCanceledError) do
-      assert_nil(thread_join(taker))
-    end
+    thread_join(taker)
 
     assert(template.canceled?)
 
@@ -377,19 +380,18 @@ module TupleSpaceTestModule
 
     template = nil
     reader = Thread.new do
-      @ts.read([:take, nil], 10) do |t|
-        template = t
-	Thread.new do
-	  template.cancel
-	end
+      assert_raise(Rinda::RequestCanceledError) do
+        @ts.read([:take, nil], 10) do |t|
+          template = t
+          Thread.new do
+            template.cancel
+          end
+        end
       end
     end
 
     sleep(2)
-
-    assert_raise(Rinda::RequestCanceledError) do
-      assert_nil(thread_join(reader))
-    end
+    thread_join(reader)
 
     assert(template.canceled?)
 
@@ -465,6 +467,7 @@ class TupleSpaceProxyTest < Test::Unit::TestCase
     ThreadGroup.new.add(Thread.current)
     @ts_base = Rinda::TupleSpace.new(1)
     @ts = Rinda::TupleSpaceProxy.new(@ts_base)
+    @server = DRb.start_service("druby://localhost:0")
   end
   def teardown
     # implementation-dependent
@@ -474,6 +477,7 @@ class TupleSpaceProxyTest < Test::Unit::TestCase
         th.join
       end
     }
+    @server.stop_service
   end
 
   def test_remote_array_and_hash
@@ -502,6 +506,8 @@ class TupleSpaceProxyTest < Test::Unit::TestCase
       ts = Rinda::TupleSpaceProxy.new(ro)
       th = Thread.new do
         ts.take([:test_take, nil])
+      rescue Interrupt
+        # Expected
       end
       Kernel.sleep(0.1)
       th.raise(Interrupt) # causes loss of the taken tuple
@@ -531,8 +537,6 @@ class TupleSpaceProxyTest < Test::Unit::TestCase
     Process.wait(write) if write && status.nil?
     Process.wait(take)  if take
   end
-
-  @server = DRb.primary_server || DRb.start_service("druby://localhost:0")
 end
 
 module RingIPv6
@@ -643,7 +647,11 @@ class TestRingServer < Test::Unit::TestCase
   end
 
   def test_make_socket_ipv4_multicast
-    v4mc = @rs.make_socket('239.0.0.1')
+    begin
+      v4mc = @rs.make_socket('239.0.0.1')
+    rescue Errno::ENOBUFS => e
+      skip "Missing multicast support in OS: #{e.message}"
+    end
 
     begin
       if Socket.const_defined?(:SO_REUSEPORT) then
@@ -670,6 +678,8 @@ class TestRingServer < Test::Unit::TestCase
       v6mc = @rs.make_socket('ff02::1')
     rescue Errno::EADDRNOTAVAIL
       return # IPv6 address for multicast not available
+    rescue Errno::ENOBUFS => e
+      skip "Missing multicast support in OS: #{e.message}"
     end
 
     if Socket.const_defined?(:SO_REUSEPORT) then
@@ -684,7 +694,12 @@ class TestRingServer < Test::Unit::TestCase
 
   def test_ring_server_ipv4_multicast
     @rs.shutdown
-    @rs = Rinda::RingServer.new(@ts, [['239.0.0.1', '0.0.0.0']], @port)
+    begin
+      @rs = Rinda::RingServer.new(@ts, [['239.0.0.1', '0.0.0.0']], @port)
+    rescue Errno::ENOBUFS => e
+      skip "Missing multicast support in OS: #{e.message}"
+    end
+
     v4mc = @rs.instance_variable_get('@sockets').first
 
     begin
@@ -831,4 +846,3 @@ class TestRingFinger < Test::Unit::TestCase
 end
 
 end
-

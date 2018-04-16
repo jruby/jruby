@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,6 +35,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.math.BigDecimal;
@@ -490,7 +491,7 @@ public class RubyFloat extends RubyNumeric {
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (Double.isNaN(value)) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
@@ -504,7 +505,7 @@ public class RubyFloat extends RubyNumeric {
 
     public IRubyObject op_equal(ThreadContext context, double other) {
         if (Double.isNaN(value)) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         return RubyBoolean.newBoolean(context.runtime, value == other);
     }
@@ -719,6 +720,11 @@ public class RubyFloat extends RubyNumeric {
     @Override
     public final boolean isZero() {
         return value == 0.0;
+    }
+
+    @Override
+    public IRubyObject nonzero_p(ThreadContext context) {
+        return isZero() ? context.nil : this;
     }
 
     /**
@@ -1111,7 +1117,11 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "nan?")
     public IRubyObject nan_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Double.isNaN(value));
+        return RubyBoolean.newBoolean(getRuntime(), isNaN());
+    }
+
+    public boolean isNaN() {
+        return Double.isNaN(value);
     }
 
     /** flo_is_infinite_p
@@ -1123,6 +1133,10 @@ public class RubyFloat extends RubyNumeric {
             return RubyFixnum.newFixnum(getRuntime(), value < 0 ? -1 : 1);
         }
         return getRuntime().getNil();
+    }
+
+    public boolean isInfinite() {
+        return Double.isInfinite(value);
     }
 
     /** flo_is_finite_p

@@ -4,13 +4,18 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+<<<<<<< HEAD
+ * Copyright (C) 2017 Miguel Landaeta <miguel@miguel.cc>
+ *
+=======
+>>>>>>> master
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -26,30 +31,35 @@
 
 package org.jruby;
 
-import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.KeyError;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- /**
- * The Java representation of a Ruby KeyError.
- *
- * @see KeyError
- * @see RubyEnumerator
- * @author kares
+ * @author Miguel Landaeta
  */
 @JRubyClass(name="KeyError", parent="IndexError")
 public class RubyKeyError extends RubyIndexError {
+    private IRubyObject receiver;
+    private IRubyObject key;
+
     protected RubyKeyError(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
     }
 
+    public RubyKeyError(Ruby runtime, RubyClass exceptionClass, String message, IRubyObject recv, IRubyObject key) {
+        super(runtime, exceptionClass, message);
+        this.receiver = recv;
+        this.key = key;
+    }
+
     static RubyClass define(Ruby runtime, RubyClass superClass) {
-        return runtime.defineClass("KeyError", superClass, (runtime1, klass) -> new RubyKeyError(runtime1, klass));
+        RubyClass KeyError = runtime.defineClass("KeyError", superClass, (runtime1, klass) -> new RubyKeyError(runtime1, klass));
+        KeyError.defineAnnotatedMethods(RubyKeyError.class);
+        KeyError.setReifiedClass(RubyKeyError.class);
+        return KeyError;
     }
 
     @Override
@@ -57,4 +67,13 @@ public class RubyKeyError extends RubyIndexError {
         return new KeyError(message, this);
     }
 
+    @JRubyMethod
+    public IRubyObject receiver() {
+        return receiver;
+    }
+
+    @JRubyMethod
+    public IRubyObject key() {
+        return key;
+    }
 }

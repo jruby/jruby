@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jcodings.Encoding;
@@ -514,7 +515,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     // MRI: special_object_p
     public boolean isSpecialObject() {
-        return isImmediate() || this instanceof RubyBignum || this instanceof RubyFloat;
+        return isImmediate() || this instanceof RubyBignum || this instanceof RubyFloat || this instanceof RubyRational || this instanceof RubyComplex;
     }
 
     /**
@@ -1303,7 +1304,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return this == obj ? context.runtime.getTrue() : context.runtime.getFalse();
+        return this == obj ? context.tru : context.fals;
     }
 
     @Deprecated
@@ -2004,7 +2005,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @JRubyMethod(name = "equal?", required = 1)
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
-        return this == other ? context.runtime.getTrue() : context.runtime.getFalse();
+        return this == other ? context.tru : context.fals;
     }
 
     @Deprecated
@@ -2164,7 +2165,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         port.callMethod(context, "write", this);
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     /** rb_obj_tainted
@@ -2262,11 +2263,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public RubyBoolean instance_of_p(ThreadContext context, IRubyObject type) {
         if (type() == type) {
-            return context.runtime.getTrue();
+            return context.tru;
         } else if (!(type instanceof RubyModule)) {
             throw context.runtime.newTypeError("class or module required");
         } else {
-            return context.runtime.getFalse();
+            return context.fals;
         }
     }
 
@@ -2778,7 +2779,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Only the object <i>nil</i> responds <code>true</code> to <code>nil?</code>.
      */
     public IRubyObject nil_p(ThreadContext context) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     /** rb_obj_pattern_match
@@ -2791,11 +2792,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  pattern-match semantics.
      */
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     /**

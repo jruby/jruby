@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.parser;
 
 import java.io.IOException;
@@ -239,8 +240,7 @@ public class RubyParser {
 %type <Node> mrhs_arg
 %type <Node> compstmt bodystmt stmts stmt expr arg primary command 
 %type <Node> stmt_or_begin
-%type <Node> expr_value primary_value opt_else cases if_tail exc_var
-   // ENEBO: missing call_args2, open_args
+%type <Node> expr_value primary_value opt_else cases if_tail exc_var rel_expr
 %type <Node> call_args opt_ensure paren_args superclass
 %type <Node> command_args var_ref opt_paren_args block_call block_command
 %type <Node> command_rhs arg_rhs
@@ -250,7 +250,6 @@ public class RubyParser {
 %type <ArgsNode> f_args f_larglist block_param block_param_def opt_block_param
 %type <Object> f_arglist
 %type <Node> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
-   // ENEBO: missing block_var == for_var, opt_block_var
 %type <Node> lhs none args
 %type <ListNode> qword_list word_list
 %type <ListNode> f_arg f_optarg
@@ -260,7 +259,6 @@ public class RubyParser {
 %type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
 %type <Node> f_kw, f_block_kw
 %type <ListNode> f_block_kwarg, f_kwarg
-   // ENEBO: missing when_args
 %type <HashNode> assoc_list
 %type <HashNode> assocs
 %type <KeyValuePair> assoc
@@ -268,14 +266,12 @@ public class RubyParser {
 %type <ListNode> f_block_optarg
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
 %type <BlockArgNode> opt_f_block_arg f_block_arg
-%type <IterNode> brace_block do_block cmd_brace_block
-   // ENEBO: missing mhls_entry
+%type <IterNode> brace_block do_block cmd_brace_block brace_body do_body
 %type <MultipleAsgnNode> mlhs mlhs_basic 
 %type <RescueBodyNode> opt_rescue
 %type <AssignableNode> var_lhs
 %type <LiteralNode> fsym
 %type <Node> fitem
-   // ENEBO: begin all new types
 %type <Node> f_arg_item
 %type <Node> bv_decls
 %type <Node> opt_bv_decl lambda_body 
@@ -283,20 +279,19 @@ public class RubyParser {
 %type <Node> mlhs_inner f_block_opt for_var
 %type <Node> opt_call_args f_marg f_margs
 %type <ByteList> bvar
-   // ENEBO: end all new types
-
-%type <ByteList> reswords f_bad_arg
+%type <ByteList> reswords f_bad_arg relop
 %type <ByteList> rparen rbracket 
 %type <Node> top_compstmt top_stmts top_stmt
 %token <ByteList> tSYMBOLS_BEG
 %token <ByteList> tQSYMBOLS_BEG
 %token <ByteList> tDSTAR
 %token <ByteList> tSTRING_DEND
-%type <ByteList> kwrest_mark, f_kwrest, f_label
+%type <ByteList> kwrest_mark f_kwrest f_label 
 %type <ByteList> call_op call_op2
 %type <ArgumentNode> f_arg_asgn
 %type <FCallNode> fcall
 %token <ByteList> tLABEL_END, tSTRING_DEND
+%type <ISourcePosition> k_return k_class k_module
 
 /*
  *    precedence table
@@ -571,11 +566,8 @@ block_command   : block_call
                 }
 
 // :brace_block - [!null]
-cmd_brace_block : tLBRACE_ARG {
-                    support.pushBlockScope();
-                } opt_block_param compstmt tRCURLY {
-                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
-                    support.popCurrentScope();
+cmd_brace_block : tLBRACE_ARG brace_body tRCURLY {
+                    $$ = $2;
                 }
 
 fcall           : operation {
@@ -609,7 +601,7 @@ command        : fcall command_args %prec tLOWEST {
                 | keyword_yield command_args {
                     $$ = support.new_yield($1, $2);
                 }
-                | keyword_return call_args {
+                | k_return call_args {
                     $$ = new ReturnNode($1, support.ret_args($2, $1));
                 }
                 | keyword_break call_args {
@@ -1226,17 +1218,8 @@ arg             : lhs '=' arg_rhs {
                 | arg tCMP arg {
                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
                 }
-                | arg tGT arg {
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
-                }
-                | arg tGEQ arg {
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
-                }
-                | arg tLT arg {
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
-                }
-                | arg tLEQ arg {
-                    $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
+                | rel_expr   %prec tCMP {
+                    $$ = $1;
                 }
                 | arg tEQ arg {
                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
@@ -1287,7 +1270,28 @@ arg             : lhs '=' arg_rhs {
                 | primary {
                     $$ = $1;
                 }
+ 
+relop           : tGT {
+                    $$ = $1;
+                }
+                | tLT  {
+                    $$ = $1;
+                }
+                | tGEQ {
+                     $$ = $1;
+                }
+                | tLEQ {
+                     $$ = $1;
+                }
 
+rel_expr        : arg relop arg   %prec tGT {
+                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
+                }
+		| rel_expr relop arg   %prec tGT {
+                     support.warning(ID.MISCELLANEOUS, lexer.getPosition(), "comparison '" + $2 + "%s' after comparison");
+                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
+                }
+ 
 arg_value       : arg {
                     value_expr(lexer, $1);
                     $$ = support.makeNullNil($1);
@@ -1494,7 +1498,7 @@ primary         : literal
                 | tLBRACE assoc_list tRCURLY {
                     $$ = $2;
                 }
-                | keyword_return {
+                | k_return {
                     $$ = new ReturnNode($1, NilImplicitNode.NIL);
                 }
                 | keyword_yield tLPAREN2 call_args rparen {
@@ -1567,19 +1571,22 @@ primary         : literal
                       // ENEBO: Lots of optz in 1.9 parser here
                     $$ = new ForNode($1, $2, $8, $5, support.getCurrentScope());
                 }
-                | keyword_class cpath superclass {
-                    if (support.isInDef() || support.isInSingle()) {
+                | k_class cpath superclass {
+                    if (support.isInDef()) {
                         support.yyerror("class definition in method body");
                     }
                     support.pushLocalScope();
+                    $$ = support.isInClass(); // MRI reuses $1 but we use the value for position.
+                    support.setIsInClass(true);
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($5);
 
                     $$ = new ClassNode($1, $<Colon3Node>2, support.getCurrentScope(), body, $3, lexer.getRubySourceline());
                     support.popCurrentScope();
+                    support.setIsInClass($<Boolean>4.booleanValue());
                 }
-                | keyword_class tLSHFT expr {
-                    $$ = Boolean.valueOf(support.isInDef());
+                | k_class tLSHFT expr {
+                    $$ = new Integer((support.isInClass() ? 2 : 0) & (support.isInDef() ? 1 : 0));
                     support.setInDef(false);
                 } term {
                     $$ = Integer.valueOf(support.getInSingle());
@@ -1590,35 +1597,43 @@ primary         : literal
 
                     $$ = new SClassNode($1, $3, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
-                    support.setInDef($<Boolean>4.booleanValue());
+                    support.setInDef((($<Integer>4.intValue()) & 1) != 0);
+                    support.setIsInClass((($<Integer>4.intValue()) & 2) != 0);
                     support.setInSingle($<Integer>6.intValue());
                 }
-                | keyword_module cpath {
-                    if (support.isInDef() || support.isInSingle()) { 
+                | k_module cpath {
+                    if (support.isInDef()) { 
                         support.yyerror("module definition in method body");
                     }
+                    $$ = support.isInClass();
+                    support.setIsInClass(true);
                     support.pushLocalScope();
                 } bodystmt keyword_end {
                     Node body = support.makeNullNil($4);
 
                     $$ = new ModuleNode($1, $<Colon3Node>2, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
+                    support.setIsInClass($<Boolean>3.booleanValue());
                 }
                 | keyword_def fname {
-                    support.setInDef(true);
                     support.pushLocalScope();
                     $$ = lexer.getCurrentArg();
                     lexer.setCurrentArg(null);
+                } {
+                    $$ = support.isInDef();
+                    support.setInDef(true);
                 } f_arglist bodystmt keyword_end {
-                    Node body = support.makeNullNil($5);
+                    Node body = support.makeNullNil($6);
 
-                    $$ = new DefnNode($1, support.symbolID($2), (ArgsNode) $4, support.getCurrentScope(), body, $6.getLine());
+                    $$ = new DefnNode($1, support.symbolID($2), (ArgsNode) $5, support.getCurrentScope(), body, $7.getLine());
                     support.popCurrentScope();
-                    support.setInDef(false);
+                    support.setInDef($<Boolean>4.booleanValue());
                     lexer.setCurrentArg($<ByteList>3);
                 }
                 | keyword_def singleton dot_or_colon {
                     lexer.setState(EXPR_FNAME);
+                    $$ = support.isInDef();
+                    support.setInDef(true);
                 } fname {
                     support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
@@ -1632,6 +1647,7 @@ primary         : literal
                     $$ = new DefsNode($1, $2, support.symbolID($5), (ArgsNode) $7, support.getCurrentScope(), body, $9.getLine());
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
+                    support.setInDef($<Boolean>4.booleanValue());
                     lexer.setCurrentArg($<ByteList>6);
                 }
                 | keyword_break {
@@ -1651,6 +1667,21 @@ primary_value   : primary {
                     value_expr(lexer, $1);
                     $$ = $1;
                     if ($$ == null) $$ = NilImplicitNode.NIL;
+                }
+
+k_class         : keyword_class {
+                    $$ = $1;
+                }
+
+k_module        : keyword_module {
+                    $$ = $1;
+                }
+
+k_return        : keyword_return {
+                    if (support.isInClass() && !support.isInDef() && !support.getCurrentScope().isBlockScope()) {
+                        lexer.compile_error(PID.TOP_LEVEL_RETURN, "Invalid return in class/module body");
+                    }
+                    $$ = $1;
                 }
 
 then            : term
@@ -1853,11 +1884,8 @@ lambda_body     : tLAMBEG compstmt tRCURLY {
                     $$ = $2;
                 }
 
-do_block        : keyword_do_block {
-                    support.pushBlockScope();
-                } opt_block_param compstmt keyword_end {
-                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
-                    support.popCurrentScope();
+do_block        : keyword_do_block do_body keyword_end {
+                    $$ = $2;
                 }
 
   // JRUBY-2326 and GH #305 both end up hitting this production whereas in
@@ -1925,19 +1953,35 @@ method_call     : fcall paren_args {
                     }
                 }
 
-brace_block     : tLCURLY {
-                    support.pushBlockScope();
-                } opt_block_param compstmt tRCURLY {
-                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
-                    support.popCurrentScope();
+brace_block     : tLCURLY brace_body tRCURLY {
+                    $$ = $2;
                 }
-                | keyword_do {
-                    support.pushBlockScope();
-                } opt_block_param compstmt keyword_end {
-                    $$ = new IterNode($1, $3, $4, support.getCurrentScope());
-                    support.popCurrentScope();
+                | keyword_do do_body keyword_end {
+                    $$ = $2;
                 }
 
+brace_body      : {
+                    support.pushBlockScope();
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack()) >> 1;
+                    lexer.getCmdArgumentState().reset();
+                } opt_block_param compstmt {
+                    // FIXME: probably need to correct location here
+                    $$ = new IterNode(lexer.getPosition(), $2, $3, support.getCurrentScope());
+                     support.popCurrentScope();
+                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
+                }
+
+do_body 	: {
+                    support.pushBlockScope();
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
+                    lexer.getCmdArgumentState().reset();
+                } opt_block_param bodystmt {
+                    // FIXME: probably need to correct location here
+                    $$ = new IterNode(lexer.getPosition(), $2, $3, support.getCurrentScope());
+                     support.popCurrentScope();
+                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
+                }
+ 
 case_body       : keyword_when args then compstmt cases {
                     $$ = support.newWhenNode($1, $2, $4, $5);
                 }
@@ -2041,11 +2085,8 @@ regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
                     $$ = support.newRegexpNode(support.getPosition($2), $2, (RegexpNode) $3);
                 }
 
-words           : tWORDS_BEG ' ' tSTRING_END {
-                    $$ = new ZArrayNode(lexer.getPosition());
-                }
-                | tWORDS_BEG word_list tSTRING_END {
-                    $$ = $2;
+words           : tWORDS_BEG ' ' word_list tSTRING_END {
+                    $$ = $3;
                 }
 
 word_list       : /* none */ {
@@ -2062,11 +2103,8 @@ word            : string_content {
                      $$ = support.literal_concat(support.getPosition($1), $1, $<Node>2);
                 }
 
-symbols         : tSYMBOLS_BEG ' ' tSTRING_END {
-                    $$ = new ArrayNode(lexer.getPosition());
-                }
-                | tSYMBOLS_BEG symbol_list tSTRING_END {
-                    $$ = $2;
+symbols         : tSYMBOLS_BEG ' ' symbol_list tSTRING_END {
+                    $$ = $3;
                 }
 
 symbol_list     : /* none */ {
@@ -2076,18 +2114,12 @@ symbol_list     : /* none */ {
                     $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode($1.getPosition()).add($2) : support.asSymbol($1.getPosition(), $2));
                 }
 
-qwords          : tQWORDS_BEG ' ' tSTRING_END {
-                     $$ = new ZArrayNode(lexer.getPosition());
-                }
-                | tQWORDS_BEG qword_list tSTRING_END {
-                    $$ = $2;
+qwords          : tQWORDS_BEG ' ' qword_list tSTRING_END {
+                    $$ = $3;
                 }
 
-qsymbols        : tQSYMBOLS_BEG ' ' tSTRING_END {
-                    $$ = new ZArrayNode(lexer.getPosition());
-                }
-                | tQSYMBOLS_BEG qsym_list tSTRING_END {
-                    $$ = $2;
+qsymbols        : tQSYMBOLS_BEG ' ' qsym_list tSTRING_END {
+                    $$ = $3;
                 }
 
 

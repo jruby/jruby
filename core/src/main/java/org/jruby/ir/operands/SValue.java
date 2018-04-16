@@ -77,7 +77,7 @@ public class SValue extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         Object val = array.retrieve(context, self, currScope, currDynScope, temp);
 
-        return (val instanceof RubyArray) ? val : context.runtime.getNil();
+        return (val instanceof RubyArray) ? val : context.nil;
     }
 
     @Override

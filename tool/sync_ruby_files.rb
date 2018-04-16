@@ -24,7 +24,6 @@ STDLIB_FILES = %w[
   irb
   irb.rb
   logger.rb
-  mathn.rb
   matrix
   matrix.rb
   monitor.rb
@@ -43,7 +42,6 @@ STDLIB_FILES = %w[
   profile.rb
   profiler.rb
   pstore.rb
-  rbconfig
   resolv-replace.rb
   resolv.rb
   rexml
@@ -64,7 +62,6 @@ STDLIB_FILES = %w[
   tsort.rb
   un.rb
   unicode_normalize
-  unicode_normalize.rb
   uri
   uri.rb
   weakref.rb
@@ -84,5 +81,8 @@ EXT_FILES = {
   'ext/socket/lib/socket.rb' => 'socket.rb',
   'ext/win32/lib/win32' => 'win32',
   'ext/fiddle/lib/fiddle.rb' => 'fiddle.rb',
-  'ext/fiddle/lib/fiddle' => 'fiddle'
+  'ext/fiddle/lib/fiddle' => 'fiddle',
+  'ext/ripper/lib/ripper' => 'ripper',
+  'ext/ripper/lib/ripper.rb' => 'ripper.rb',
+  'ext/io/console/lib/console' => 'io/console'
 }

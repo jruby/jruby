@@ -2,7 +2,6 @@ package org.jruby.ir.representations;
 
 import org.jruby.dirgra.DirectedGraph;
 import org.jruby.dirgra.Edge;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
@@ -474,6 +473,19 @@ public class CFG {
             removeEdge(a, b);
             for (Edge<BasicBlock> e : getOutgoingEdges(b)) {
                 addEdge(a, e.getDestination().getData(), e.getType());
+            }
+
+            // Move all incoming edges of b to be incoming edges of a.
+            for (Edge<BasicBlock> e : getIncomingEdges(b)) {
+                BasicBlock fixupBB = e.getSource().getData();
+                removeEdge(fixupBB, b);
+                addEdge(fixupBB, a, e.getType());
+
+                // a -fall-through->b handled above. Any jumps to b must be pointed to a's label.
+                Instr fixupLastInstr = fixupBB.getLastInstr();
+                if (fixupLastInstr instanceof JumpTargetInstr) {
+                    ((JumpTargetInstr) fixupLastInstr).setJumpTarget(a.getLabel());
+                }
             }
 
             // Delete bb

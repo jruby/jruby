@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,6 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.IOException;
@@ -90,6 +91,7 @@ public class RubyRational extends RubyNumeric {
         super(runtime, clazz);
         this.num = num;
         this.den = den;
+        this.flags |= FROZEN_F;
     }
 
     private RubyRational(Ruby runtime, RubyClass clazz, IRubyObject num, IRubyObject den) {
@@ -429,6 +431,11 @@ public class RubyRational extends RubyNumeric {
     @Override
     public final boolean isZero() {
         return num.isZero();
+    }
+
+    @Override
+    public IRubyObject nonzero_p(ThreadContext context) {
+        return isZero() ? context.nil : this;
     }
 
     @Override
@@ -1132,14 +1139,14 @@ public class RubyRational extends RubyNumeric {
         return getDoubleValue(getRuntime().getCurrentContext());
     }
 
-    private static long ML = (long)(Math.log(Double.MAX_VALUE) / Math.log(2.0) - 1);
+    private static final long ML = (long)(Math.log(Double.MAX_VALUE) / Math.log(2.0) - 1);
 
     public double getDoubleValue(ThreadContext context) {
-        Ruby runtime = context.runtime;
+
         if (f_zero_p(context, num)) return 0;
 
-        IRubyObject myNum = this.num;
-        IRubyObject myDen = this.den;
+        RubyInteger myNum = this.num;
+        RubyInteger myDen = this.den;
 
         boolean minus = false;
         if (f_negative_p(context, myNum)) {
@@ -1153,19 +1160,19 @@ public class RubyRational extends RubyNumeric {
         long ne = 0;
         if (nl > ML) {
             ne = nl - ML;
-            myNum = f_rshift(context, myNum, RubyFixnum.newFixnum(runtime, ne));
+            myNum = myNum.op_rshift(context, ne);
         }
 
         long de = 0;
         if (dl > ML) {
             de = dl - ML;
-            myDen = f_rshift(context, myDen, RubyFixnum.newFixnum(runtime, de));
+            myDen = myDen.op_rshift(context, de);
         }
 
         long e = ne - de;
 
         if (e > 1023 || e < -1022) {
-            runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
+            context.runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
             return e > 0 ? Double.MAX_VALUE : 0;
         }
 
@@ -1176,7 +1183,7 @@ public class RubyRational extends RubyNumeric {
         f = ldexp(f, e);
 
         if (Double.isInfinite(f) || Double.isNaN(f)) {
-            runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
+            context.runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
         }
 
         return f;
@@ -1228,12 +1235,21 @@ public class RubyRational extends RubyNumeric {
         return num.hashCode() ^ den.hashCode();
     }
 
+    @Override
+    public IRubyObject to_s() {
+        return to_s(getRuntime());
+    }
+
     /** nurat_to_s
      * 
      */
     @JRubyMethod(name = "to_s")
     public RubyString to_s(ThreadContext context) {
-        RubyString str = RubyString.newString(context.runtime, new ByteList(10), USASCIIEncoding.INSTANCE);
+        return to_s(context.runtime);
+    }
+
+    private RubyString to_s(final Ruby runtime) {
+        RubyString str = RubyString.newString(runtime, new ByteList(10), USASCIIEncoding.INSTANCE);
         str.append(num.to_s());
         str.cat((byte)'/');
         str.append(den.to_s());

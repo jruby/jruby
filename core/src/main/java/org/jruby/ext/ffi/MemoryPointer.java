@@ -135,13 +135,13 @@ public class MemoryPointer extends Pointer {
         ((AllocatedDirectMemoryIO) getMemoryIO()).free();
         // Replace memory object with one that throws an exception on any access
         setMemoryIO(new FreedMemoryIO(context.runtime));
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "autorelease=", required = 1)
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
         ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "autorelease?")
