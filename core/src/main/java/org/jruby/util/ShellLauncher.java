@@ -411,14 +411,38 @@ public class ShellLauncher {
         return pathFile;
     }
 
+    /**
+     * This is an older version of the path-finding logic used by our pure-Java process launching in backquote,
+     * system, etc. The newer version below, used by native process launching, appears to break execution of commands
+     * in the current working directory, e.g. "./testapp".
+     *
+     * MRI: Older version of logic for dln_find_exe_r used by popen logic
+     */
     public static File findPathExecutable(Ruby runtime, String fname) {
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
         IRubyObject pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
-        return findPathExecutable(runtime, fname, pathObject);
+        String[] pathNodes = null;
+        if (pathObject == null) {
+            pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee
+        }
+        else {
+            String pathSeparator = System.getProperty("path.separator");
+            String path = pathObject.toString();
+            if (Platform.IS_WINDOWS) {
+                // Windows-specific behavior
+                path = "." + pathSeparator + path;
+            }
+            pathNodes = path.split(pathSeparator);
+        }
+        return findPathFile(runtime, fname, pathNodes, true);
     }
 
-    // MRI: Hopefully close to dln_find_exe_r used by popen logic
-    public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
+    /**
+     * Search for the given executable using the given PATH or one provided by system defaults.
+     *
+     * This is the updated version of MRI: dln_find_exe_r logic.
+     */
+    public static File dlnFindExe(Ruby runtime, String fname, IRubyObject pathObject) {
         String[] pathNodes;
 
         if (pathObject == null || pathObject.isNil()) {

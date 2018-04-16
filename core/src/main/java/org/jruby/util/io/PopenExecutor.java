@@ -4,7 +4,6 @@ import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.enxio.channels.NativeDeviceChannel;
-import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.SpawnAttribute;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.transcode.EConvFlags;
@@ -21,7 +20,6 @@ import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.api.API;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -35,8 +33,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.channels.Channel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -2015,7 +2011,7 @@ public class PopenExecutor {
     }
 
     private static String dlnFindExeR(Ruby runtime, String fname, IRubyObject path) {
-        File exePath = ShellLauncher.findPathExecutable(runtime, fname, path);
+        File exePath = ShellLauncher.dlnFindExe(runtime, fname, path);
         return exePath != null ? exePath.getAbsolutePath() : null;
     }
 
