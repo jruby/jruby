@@ -2006,7 +2006,7 @@ public class PopenExecutor {
     }
 
     private static String dlnFindExeR(Ruby runtime, String fname, IRubyObject path) {
-        File exePath = ShellLauncher.findPathExecutable(runtime, fname, path);
+        File exePath = ShellLauncher.dlnFindExe(runtime, fname, path);
         return exePath != null ? exePath.getAbsolutePath() : null;
     }
 
