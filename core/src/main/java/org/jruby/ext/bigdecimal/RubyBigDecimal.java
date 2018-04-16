@@ -652,10 +652,11 @@ public class RubyBigDecimal extends RubyNumeric {
         try {
             decimal = new BigDecimal(str, s, e - s + 1, mathContext);
         }
+        catch (ArithmeticException ex) {
+            return checkOverUnderFlow(context.runtime, ex, false);
+        }
         catch (NumberFormatException ex) {
-            if (isOverflowExceptionMode(context.runtime)) throw context.runtime.newFloatDomainError("exponent overflow");
-
-            decimal = BigDecimal.ZERO;
+            throw context.runtime.newArgumentError("invalid value for BigDecimal(): \"" + arg + "\"");
         }
 
         // MRI behavior: -0 and +0 are two different things
@@ -935,12 +936,12 @@ public class RubyBigDecimal extends RubyNumeric {
             result = value.multiply(val.value, mathContext);
         }
         catch (ArithmeticException ex) {
-            return checkOverUnderFlow(runtime, ex);
+            return checkOverUnderFlow(runtime, ex, false);
         }
         return new RubyBigDecimal(runtime, result).setResult(0);
     }
 
-    private static RubyBigDecimal checkOverUnderFlow(final Ruby runtime, final ArithmeticException ex) {
+    private static RubyBigDecimal checkOverUnderFlow(final Ruby runtime, final ArithmeticException ex, boolean nullDefault) {
         String message = ex.getMessage();
         if (message == null) message = "";
         message = message.toLowerCase(Locale.ENGLISH);
@@ -952,6 +953,7 @@ public class RubyBigDecimal extends RubyNumeric {
             if (isOverflowExceptionMode(runtime)) throw runtime.newFloatDomainError(message);
             return newInfinity(runtime, 1); // TODO sign?
         }
+        if (nullDefault) return null;
         throw runtime.newFloatDomainError(message);
     }
 

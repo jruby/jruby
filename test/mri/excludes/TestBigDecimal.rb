@@ -4,7 +4,6 @@ exclude :test_BigMath_exp_under_gc_stress, "needs investigation"
 exclude :test_BigMath_log_under_gc_stress, "needs investigation"
 exclude :test_div, "does not pass due precision differences (ported to test/jruby/test_big_decimal.rb)"
 
-exclude :test_global_new_with_invalid_string, "error change in 2.4?"
 exclude :test_limit, "needs investigation"
 exclude :test_marshal, "needs investigation"
 exclude :test_new, "BigDecimal('_1_1_1') parses fine while in MRI raises"
