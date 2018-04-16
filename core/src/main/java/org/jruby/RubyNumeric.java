@@ -988,7 +988,7 @@ public class RubyNumeric extends RubyObject {
         }
         desc = numStepNegative(context, runtime, step);
         if (to.isNil()) {
-            newArgs[0] = to = desc ? dbl2num(runtime, Double.NEGATIVE_INFINITY) : dbl2num(runtime, Double.POSITIVE_INFINITY);
+            newArgs[0] = to = desc ? RubyFloat.newFloat(runtime, Double.NEGATIVE_INFINITY) : RubyFloat.newFloat(runtime, Double.POSITIVE_INFINITY);
         }
         return desc;
     }
