@@ -95,12 +95,12 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     @Override
     public void copyInto(IRubyObject[] target, int start, int len) {
         if (!packed()) {
-            super.copyInto(target, start);
+            super.copyInto(target, start, len);
             return;
         }
         if (len != 1) {
             unpack();
-            super.copyInto(target, start);
+            super.copyInto(target, start, len);
             return;
         }
         target[start] = value;
