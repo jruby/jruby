@@ -48,10 +48,6 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
         this(symbol.idString(), symbol.getBytes());
     }
 
-    public FrozenString(ByteList bytelist) {
-        this(internedStringFromByteList(bytelist), bytelist);
-    }
-
     /**
      * IRBuild.buildGetDefinition returns a frozen string and this is for all intern'd Java strings.
      */

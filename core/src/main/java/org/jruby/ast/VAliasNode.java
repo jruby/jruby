@@ -68,11 +68,7 @@ public class VAliasNode extends Node {
      * Gets the newName.
      * @return Returns a String
      */
-    public String getNewName() {
-        return newName.asJavaString();
-    }
-
-    public RubySymbol getNewSymbolName() {
+    public RubySymbol getNewName() {
         return newName;
     }
 
@@ -80,11 +76,7 @@ public class VAliasNode extends Node {
      * Gets the oldName.
      * @return Returns a String
      */
-    public String getOldName() {
-        return oldName.asJavaString();
-    }
-
-    public RubySymbol getOldSymbolName() {
+    public RubySymbol getOldName() {
         return oldName;
     }
 

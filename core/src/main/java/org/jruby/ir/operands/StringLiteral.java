@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -42,8 +43,8 @@ public class StringLiteral extends Operand implements Stringable {
         this.frozenString = new FrozenString(s);
     }
 
-    public StringLiteral(ByteList bytes) {
-        this.frozenString = new FrozenString(bytes);
+    public StringLiteral(RubySymbol symbol) {
+        frozenString = new FrozenString(symbol);
     }
 
     private StringLiteral(FrozenString frozenString) {

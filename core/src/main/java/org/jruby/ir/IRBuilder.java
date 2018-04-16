@@ -3048,7 +3048,7 @@ public class IRBuilder {
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {
-        return new StringLiteral(literalNode.getSymbolName().getBytes());
+        return new StringLiteral(literalNode.getSymbolName());
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
