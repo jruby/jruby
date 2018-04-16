@@ -704,7 +704,7 @@ public class Sprintf {
                     if (type != ClassIndex.FIXNUM && type != ClassIndex.BIGNUM) {
                         switch(type) {
                         case FLOAT:
-                            arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
+                            arg = RubyNumeric.doubleToInteger(arg.getRuntime(),((RubyFloat)arg).getValue());
                             break;
                         case STRING:
                             arg = ((RubyString)arg).stringToInum19(0, true);

@@ -420,7 +420,7 @@ public class RubyBignum extends RubyInteger {
             if (slash) {
                 return RubyFloat.newFloat(runtime, div);
             } else {
-                return RubyNumeric.dbl2num(runtime, div);
+                return RubyNumeric.doubleToInteger(runtime, div);
             }
         } else {
             return coerceBin(context, slash ? sites(context).op_quo : sites(context).div, other);
@@ -634,7 +634,7 @@ public class RubyBignum extends RubyInteger {
         if (Double.isInfinite(pow)) {
             return RubyFloat.newFloat(runtime, pow);
         }
-        return RubyNumeric.dbl2num(runtime, pow);
+        return RubyNumeric.doubleToInteger(runtime, pow);
     }
 
     /** rb_big_and
