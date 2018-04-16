@@ -2971,28 +2971,26 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private IRubyObject slice_internal(final Ruby runtime, int pos, int len) {
-        if(len < 0) return runtime.getNil();
+        if (len < 0) return runtime.getNil();
         int orig_len = realLength;
-        if(pos < 0) {
+        if (pos < 0) {
             pos += orig_len;
-            if(pos < 0) {
-                return runtime.getNil();
-            }
-        } else if(orig_len < pos) {
+            if (pos < 0) return runtime.getNil();
+        } else if (orig_len < pos) {
             return runtime.getNil();
         }
 
-        if(orig_len < pos + len) {
+        if (orig_len < pos + len) {
             len = orig_len - pos;
         }
-        if(len == 0) {
+        if (len == 0) {
             return runtime.newEmptyArray();
         }
 
         unpack();
 
         RubyArray result = makeShared(begin + pos, len, getMetaClass());
-        splice(runtime, pos, len, null);
+        splice(runtime, pos, len, null, 0);
 
         return result;
     }
