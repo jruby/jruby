@@ -3012,7 +3012,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "remove_method", rest = true, visibility = PRIVATE)
     public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
-            removeMethod(context, TypeConverter.checkID(args[i]).toString());
+            removeMethod(context, TypeConverter.checkID(args[i]).idString());
         }
         return this;
     }
@@ -4407,7 +4407,7 @@ public class RubyModule extends RubyObject {
         return symbol.idString();
     }
 
-    @Deprecated
+    // FIXME: bytelist_love: This should really be working with symbol segments (errorName is FQN).
     protected final String validateConstant(String name, IRubyObject errorName) {
         if (IdUtil.isValidConstantName19(name)) return name;
 

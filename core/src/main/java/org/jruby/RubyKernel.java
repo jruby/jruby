@@ -227,7 +227,7 @@ public class RubyKernel {
     }
 
     protected static IRubyObject methodMissingDirect(ThreadContext context, IRubyObject recv, RubySymbol symbol, Visibility lastVis, CallType lastCallType, IRubyObject[] args) {
-        return methodMissing(context, recv, symbol.toString(), lastVis, lastCallType, args, true);
+        return methodMissing(context, recv, symbol.idString(), lastVis, lastCallType, args, true);
     }
 
     public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args) {
@@ -774,8 +774,7 @@ public class RubyKernel {
         while (currentScope != null) {
             for (String id: currentScope.getStaticScope().getVariables()) {
                 RubySymbol name = runtime.newSymbol(id);
-                // FIXME: Technically a non-charset String will still not work here.
-                if (IdUtil.isLocal(name.toString()) && !encounteredLocalVariables.contains(name)) {
+                if (name.validLocalVariableName() && !encounteredLocalVariables.contains(name)) {
                     allLocalVariables.push(name);
                     encounteredLocalVariables.add(name);
                 }

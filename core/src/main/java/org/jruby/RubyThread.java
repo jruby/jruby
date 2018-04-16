@@ -749,7 +749,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object state) {
             if (value instanceof RubySymbol) {
                 RubySymbol sym = (RubySymbol) value;
-                switch (sym.toString()) {
+                switch (sym.idString()) {
                     case "immediate" : return;
                     case "on_blocking" : return;
                     case "never" : return;

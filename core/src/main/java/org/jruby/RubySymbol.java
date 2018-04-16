@@ -242,6 +242,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return valid && getBytes().length() >= 2; // FIXME: good enough on length check?  Trying to avoid counter.
     }
 
+    public boolean validLocalVariableName() {
+        boolean valid =  ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
+                index == 0 && (!encoding.isDigit(codepoint) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_')) ||
+                        index != 0 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
+
+        return valid && getBytes().length() >= 1;
+    }
+
     @Override
     public boolean isImmediate() {
     	return true;
