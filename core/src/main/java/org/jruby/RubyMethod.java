@@ -282,11 +282,6 @@ public class RubyMethod extends AbstractRubyMethod {
     }
 
     @JRubyMethod
-    public IRubyObject owner(ThreadContext context) {
-        return implementationModule;
-    }
-
-    @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
 
