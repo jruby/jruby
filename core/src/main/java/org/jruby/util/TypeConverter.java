@@ -50,6 +50,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 
 public class TypeConverter {
 
@@ -257,8 +258,9 @@ public class TypeConverter {
     }
 
     public static RaiseException newTypeError(Ruby runtime, IRubyObject obj, RubyClass target, String methodName, IRubyObject val) {
-        String className = obj.getMetaClass().toString();
-        return runtime.newTypeError("can't convert " + className + " to " + target.getName() + " (" + className + '#' + methodName + " gives " + val.getMetaClass().getName() + ')');
+        IRubyObject className =  types(runtime, obj.getMetaClass());
+        return runtime.newTypeError(str(runtime, "can't convert ", className, " to ", types(runtime, target), " (",
+                className, '#' + methodName + " gives ", types(runtime, val.getMetaClass()), ")"));
     }
 
     // rb_check_to_integer
@@ -383,7 +385,8 @@ public class TypeConverter {
 
         // MISSING: special error for T_DATA of a certain type
         if (xt != type.getClassIndex()) {
-            throw context.runtime.newTypeError("wrong argument type " + x.getMetaClass() + " (expected " + type.getName() + ')');
+            Ruby runtime = context.runtime;
+            throw context.runtime.newTypeError(str(runtime, "wrong argument type ", types(runtime, x.getMetaClass()), " (expected ", types(runtime, type), ")"));
         }
     }
 
@@ -457,7 +460,10 @@ public class TypeConverter {
     public static IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(obj, target, convertMethod, true);
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        if (!target.isInstance(val)) {
+            Ruby runtime = obj.getRuntime();
+            throw runtime.newTypeError(str(runtime, types(runtime, obj.getMetaClass()), "#" + convertMethod + " should return ", types(runtime, target)));
+        }
         return val;
     }
 
@@ -466,7 +472,10 @@ public class TypeConverter {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, false);
         if (val.isNil()) return val;
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        if (!target.isInstance(val)) {
+            Ruby runtime = obj.getRuntime();
+            throw runtime.newTypeError(str(runtime, types(runtime, obj.getMetaClass()), "#" + convertMethod + " should return ", types(runtime, target)));
+        }
         return val;
     }
 
@@ -495,7 +504,10 @@ public class TypeConverter {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, true);
         if (val.isNil()) return val;
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        if (!target.isInstance(val)) {
+            Ruby runtime = obj.getRuntime();
+            throw runtime.newTypeError(str(runtime, types(runtime, obj.getMetaClass()), "#" + convertMethod + " should return ", types(runtime, target)));
+        }
         return val;
     }
 }

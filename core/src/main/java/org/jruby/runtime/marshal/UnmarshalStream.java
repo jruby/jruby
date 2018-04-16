@@ -434,7 +434,7 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject defaultObjectUnmarshal() throws IOException {
         RubySymbol className = (RubySymbol) unmarshalObject(false);
 
-        RubyClass type = getClassFromPath(runtime, className.toString());
+        RubyClass type = getClassFromPath(runtime, className.idString());
 
         IRubyObject result = (IRubyObject)type.unmarshal(this);
 

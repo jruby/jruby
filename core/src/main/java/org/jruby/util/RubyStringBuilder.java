@@ -230,4 +230,21 @@ public class RubyStringBuilder {
 
         return buf.toString();
     }
+
+
+    public static String str(Ruby runtime, String messageBegin, IRubyObject value, String messageMiddle, RubyString value2,
+                              String messageMiddle2, IRubyObject value3, String messageMiddle3, RubyString value4, String messageEnd) {
+        RubyString buf = runtime.newString(messageBegin);
+
+        buf.cat19(value.asString());
+        buf.cat19(runtime.newString(messageMiddle));
+        buf.cat19(value2.asString());
+        buf.cat19(runtime.newString(messageMiddle2));
+        buf.cat19(value3.asString());
+        buf.cat19(runtime.newString(messageMiddle3));
+        buf.cat19(value4.asString());
+        buf.cat19(runtime.newString(messageEnd));
+
+        return buf.toString();
+    }
 }
