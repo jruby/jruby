@@ -51,8 +51,8 @@ public class IOInputStream extends InputStream {
     private final IRubyObject io;
     private final InputStream in;
     private final IRubyObject numOne;
-    private static final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
-    private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
+    private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
 
     /**
      * Creates a new InputStream with the object provided.

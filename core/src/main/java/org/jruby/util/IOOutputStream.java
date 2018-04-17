@@ -52,7 +52,7 @@ public class IOOutputStream extends OutputStream {
     private final IRubyObject io;
     private final OutputStream out;
     private final CallSite writeAdapter;
-    private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
     private final Encoding encoding;
 
     /**

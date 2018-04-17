@@ -31,6 +31,7 @@
 package org.jruby.internal.runtime;
 
 import java.lang.ref.SoftReference;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.ArrayList;
@@ -137,6 +138,8 @@ public class ThreadService {
     private final Map<Object, RubyThread> rubyThreadMap;
 
     private final ReentrantLock criticalLock = new ReentrantLock();
+
+    private final AtomicLong threadCount = new AtomicLong(0);
 
     public ThreadService(final Ruby runtime) {
         this.runtime = runtime;
@@ -290,6 +293,10 @@ public class ThreadService {
 
     public boolean getCritical() {
         return criticalLock.isHeldByCurrentThread();
+    }
+
+    public long incrementAndGetThreadCount() {
+        return threadCount.incrementAndGet();
     }
 
     @Deprecated
