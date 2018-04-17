@@ -4120,8 +4120,8 @@ public final class Ruby implements Constantizable {
         return newFrozenError(objectType, false);
     }
 
-    public RaiseException newFrozenError(RubyString type) {
-        return newRaiseException(getRuntimeError(), str(this, "can't modify frozen ", ids(this, type)));
+    public RaiseException newFrozenError(RubyModule type) {
+        return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", types(this, type)));
     }
 
     public RaiseException newFrozenError(String objectType, boolean runtimeError) {

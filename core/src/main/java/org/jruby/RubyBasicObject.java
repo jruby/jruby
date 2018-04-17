@@ -1653,7 +1653,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (this instanceof RubyModule) {
             throw getRuntime().newFrozenError("class/module ");
         } else {
-            throw getRuntime().newFrozenError(getMetaClass().toRubyString(getRuntime().getCurrentContext()));
+            throw getRuntime().newFrozenError(getMetaClass());
         }
     }
 
