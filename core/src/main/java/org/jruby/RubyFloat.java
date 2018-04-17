@@ -185,11 +185,6 @@ public class RubyFloat extends RubyNumeric {
         return getValue() > otherVal ? 1 : getValue() < otherVal ? -1 : 0;
     }
 
-    /**
-     * Construct a new Float object from the given double.
-     *
-     * MRI: DBL2NUM, rb_float_new
-     */
     public static RubyFloat newFloat(Ruby runtime, double value) {
         return new RubyFloat(runtime, value);
     }
@@ -416,7 +411,7 @@ public class RubyFloat extends RubyNumeric {
                 mod += y;
             }
             final Ruby runtime = getRuntime();
-            IRubyObject car = doubleToInteger(runtime, div);
+            IRubyObject car = dbl2num(runtime, div);
             RubyFloat cdr = RubyFloat.newFloat(runtime, mod);
             return RubyArray.newArray(runtime, car, cdr);
         default:
@@ -722,7 +717,7 @@ public class RubyFloat extends RubyNumeric {
         if (f > 0.0) f = Math.floor(f);
         if (f < 0.0) f = Math.ceil(f);
 
-        return doubleToInteger(getRuntime(), f);
+        return dbl2num(getRuntime(), f);
     }
 
     /** flo_numerator
@@ -761,7 +756,7 @@ public class RubyFloat extends RubyNumeric {
 
         Ruby runtime = context.runtime;
 
-        IRubyObject rf = RubyNumeric.doubleToInteger(runtime, f);
+        IRubyObject rf = RubyNumeric.dbl2num(runtime, f);
         IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
         return f_mul(context, rf, f_expt(context, RubyFixnum.newFixnum(runtime, FLT_RADIX), rn));
     }
@@ -791,7 +786,7 @@ public class RubyFloat extends RubyNumeric {
             long n = exp[0] - DBL_MANT_DIG;
 
 
-            IRubyObject rf = RubyNumeric.doubleToInteger(runtime, f);
+            IRubyObject rf = RubyNumeric.dbl2num(runtime, f);
             IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
 
             if (f_zero_p(context, rf) || !(f_negative_p(context, rn) || f_zero_p(context, rn)))
@@ -822,7 +817,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "floor")
     @Override
     public IRubyObject floor() {
-        return doubleToInteger(getRuntime(), Math.floor(value));
+        return dbl2num(getRuntime(), Math.floor(value));
     }
 
     /** flo_ceil
@@ -831,7 +826,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "ceil")
     @Override
     public IRubyObject ceil() {
-        return doubleToInteger(getRuntime(), Math.ceil(value));
+        return dbl2num(getRuntime(), Math.ceil(value));
     }
 
     /** flo_round
@@ -839,7 +834,7 @@ public class RubyFloat extends RubyNumeric {
      */
     @Override
     public IRubyObject round() {
-        return doubleToInteger(getRuntime(), val2dbl());
+        return dbl2num(getRuntime(), val2dbl());
     }
 
     @JRubyMethod(name = "round", optional = 1)
@@ -874,7 +869,7 @@ public class RubyFloat extends RubyNumeric {
             return RubyFloat.newFloat(context.runtime, number);
         }
         if (digits < -(binexp > 0 ? binexp / 3 + 1 : binexp / 4)) {
-            return doubleToInteger(context.runtime, (long) 0);
+            return dbl2num(context.runtime, (long) 0);
         }
 
         if (Double.isInfinite(magnifier)) {
@@ -903,7 +898,7 @@ public class RubyFloat extends RubyNumeric {
                 BigDecimal roundedNumber = new BigDecimal(Double.toString(number));
                 return RubyBignum.newBignum(context.runtime, roundedNumber.toBigInteger());
             }
-            return doubleToInteger(context.runtime, (long)number);
+            return dbl2num(context.runtime, (long)number);
         }
     }
 

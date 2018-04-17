@@ -433,7 +433,7 @@ public class TypeConverter {
                 double value = ((RubyFloat)val).getValue();
                 if (value <= RubyFixnum.MAX ||
                         value >= RubyFixnum.MIN) {
-                    return RubyNumeric.doubleToInteger(context.runtime, value);
+                    return RubyNumeric.dbl2num(context.runtime, value);
                 }
             } else if (val instanceof RubyFixnum || val instanceof RubyBignum) {
                 if (base != 0) raiseIntegerBaseError(context);

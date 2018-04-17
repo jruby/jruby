@@ -232,14 +232,10 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    /**
-     * MRI: rb_dbl2big + LONG2FIX at once (numeric.c)
+    /** rb_dbl2big + LONG2FIX at once (numeric.c)
      *
-     * Note this is NOT equivalent to DBL2NUM in MRI, which largely just constructs a new Float with the given value.
-     *
-     * @see RubyFloat#newFloat(Ruby, double)
      */
-    public static IRubyObject doubleToInteger(Ruby runtime, double val) {
+    public static IRubyObject dbl2num(Ruby runtime, double val) {
         if (Double.isInfinite(val)) {
             throw runtime.newFloatDomainError(val < 0 ? "-Infinity" : "Infinity");
         }
@@ -992,7 +988,7 @@ public class RubyNumeric extends RubyObject {
         }
         desc = numStepNegative(context, runtime, step);
         if (to.isNil()) {
-            newArgs[0] = to = desc ? RubyFloat.newFloat(runtime, Double.NEGATIVE_INFINITY) : doubleToInteger(runtime, Double.POSITIVE_INFINITY);
+            newArgs[0] = to = desc ? RubyFloat.newFloat(runtime, Double.NEGATIVE_INFINITY) : RubyFloat.newFloat(runtime, Double.POSITIVE_INFINITY);
         }
         return desc;
     }
@@ -1420,10 +1416,5 @@ public class RubyNumeric extends RubyObject {
     @Deprecated
     public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
         return str2fnum(runtime, arg, strict);
-    }
-
-    @Deprecated
-    public static IRubyObject dbl2num(Ruby runtime, double val) {
-        return doubleToInteger(runtime, val);
     }
 }
