@@ -1,8 +1,9 @@
 require 'test/unit'
 
-class TestNoStackTraceStomp < Test::Unit::TestCase
-  def raise_an_error 
-    raise "an error" 
+class TestException < Test::Unit::TestCase
+
+  def raise_an_error
+    raise "an error"
   end
 
   def rescue_an_error
@@ -20,4 +21,5 @@ class TestNoStackTraceStomp < Test::Unit::TestCase
       assert_match(/`raise_an_error'/, e.backtrace[0])
     end
   end
+
 end
