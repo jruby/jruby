@@ -478,6 +478,17 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_positive_infinite(BigDecimal("1E1111111111111111111"))
   end
 
+  def test_eqq_eql
+    assert_equal false, BigDecimal('1000.0') == nil
+    assert_equal true, BigDecimal('11000.0') != nil
+    assert_equal true, BigDecimal('12000.0') != true
+    assert_equal false, BigDecimal('1000.0').eql?(false)
+    assert_equal false, BigDecimal('0.0000') === nil
+    assert_raise(ArgumentError) { BigDecimal('1.001') >= true }
+    assert_raise(ArgumentError) { BigDecimal('2.200') < false }
+    assert_raise(ArgumentError) { BigDecimal('3.003') >=  nil }
+  end
+
   private
 
   def assert_nan(x)

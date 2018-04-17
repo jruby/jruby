@@ -652,10 +652,11 @@ public class RubyBigDecimal extends RubyNumeric {
         try {
             decimal = new BigDecimal(str, s, e - s + 1, mathContext);
         }
+        catch (ArithmeticException ex) {
+            return checkOverUnderFlow(context.runtime, ex, false);
+        }
         catch (NumberFormatException ex) {
-            if (isOverflowExceptionMode(context.runtime)) throw context.runtime.newFloatDomainError("exponent overflow");
-
-            decimal = BigDecimal.ZERO;
+            throw context.runtime.newArgumentError("invalid value for BigDecimal(): \"" + arg + "\"");
         }
 
         // MRI behavior: -0 and +0 are two different things
@@ -935,12 +936,12 @@ public class RubyBigDecimal extends RubyNumeric {
             result = value.multiply(val.value, mathContext);
         }
         catch (ArithmeticException ex) {
-            return checkOverUnderFlow(runtime, ex);
+            return checkOverUnderFlow(runtime, ex, false);
         }
         return new RubyBigDecimal(runtime, result).setResult(0);
     }
 
-    private static RubyBigDecimal checkOverUnderFlow(final Ruby runtime, final ArithmeticException ex) {
+    private static RubyBigDecimal checkOverUnderFlow(final Ruby runtime, final ArithmeticException ex, boolean nullDefault) {
         String message = ex.getMessage();
         if (message == null) message = "";
         message = message.toLowerCase(Locale.ENGLISH);
@@ -952,6 +953,7 @@ public class RubyBigDecimal extends RubyNumeric {
             if (isOverflowExceptionMode(runtime)) throw runtime.newFloatDomainError(message);
             return newInfinity(runtime, 1); // TODO sign?
         }
+        if (nullDefault) return null;
         throw runtime.newFloatDomainError(message);
     }
 
@@ -1339,19 +1341,36 @@ public class RubyBigDecimal extends RubyNumeric {
         final int e;
         RubyBigDecimal rb = getVpValue(context, arg, false);
         if (rb == null) {
-            IRubyObject cmp = callCoerced(context, sites(context).op_cmp, arg, false);
-            if ( cmp.isNil() ) { // arg.coerce failed
-                if (op == '*') return context.nil;
-                if (op == '=' || isNaN()) return context.fals;
+            String id = "!=";
+            switch (op) {
+                case '*':
+                    if (falsyEqlCheck(context, arg)) return context.nil;
+                    return callCoerced(context, sites(context).op_cmp, arg, false);
+                case '=': {
+                    if (falsyEqlCheck(context, arg)) return context.fals;
+                    IRubyObject res = callCoerced(context, sites(context).op_eql, arg, false);
+                    return context.runtime.newBoolean(res != context.nil && res != context.fals);
+                }
+                case '!':
+                    if (falsyEqlCheck(context, arg)) return context.tru;
+                    /* id = "!="; */ break;
+                case 'G': id = ">="; break;
+                case 'L': id = "<="; break;
+                case '<': id =  "<"; break;
+                case '>': id =  ">"; break;
+            }
+
+            IRubyObject cmp = callCoerced(context, id, arg);
+            if (cmp == context.nil) { // arg.coerce failed
                 throw context.runtime.newArgumentError("comparison of BigDecimal with "+ errMessageType(context, arg) +" failed");
             }
-            e = RubyNumeric.fix2int(cmp);
-        } else {
-            if (isNaN() || rb.isNaN()) return (op == '*') ? context.nil : context.fals;
-
-            e = infinitySign != 0 || rb.infinitySign != 0 ? infinitySign - rb.infinitySign : value.compareTo(rb.value);
+            return cmp;
         }
-        switch(op) {
+
+        if (isNaN() || rb.isNaN()) return (op == '*') ? context.nil : context.fals;
+        e = infinitySign != 0 || rb.infinitySign != 0 ? infinitySign - rb.infinitySign : value.compareTo(rb.value);
+
+        switch (op) {
             case '*': return context.runtime.newFixnum(e);
             case '=': return context.runtime.newBoolean(e == 0);
             case '!': return context.runtime.newBoolean(e != 0);
@@ -1363,15 +1382,27 @@ public class RubyBigDecimal extends RubyNumeric {
         return context.nil;
     }
 
+    // NOTE: otherwise `BD == nil` etc gets ___reeeaaally___ slow (due exception throwing)
+    private static boolean falsyEqlCheck(final ThreadContext context, final IRubyObject arg) {
+        return arg == context.nil || arg == context.fals || arg == context.tru;
+    }
+
     @Override
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg, '*');
     }
 
+    // NOTE: do not use BigDecimal#equals since ZERO.equals(new BD('0.0')) -> false
     @Override
-    @JRubyMethod(name = {"eql?", "==", "==="}, required = 1)
+    @JRubyMethod(name = {"eql?", "=="}, required = 1)
     public IRubyObject eql_p(ThreadContext context, IRubyObject arg) {
+        return cmp(context, arg, '=');
+    }
+
+    @Override
+    @JRubyMethod(name = "===", required = 1) // same as == (eql?)
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg, '=');
     }
 
