@@ -992,7 +992,7 @@ public class RubyNumeric extends RubyObject {
         }
         desc = numStepNegative(context, runtime, step);
         if (to.isNil()) {
-            newArgs[0] = to = desc ? RubyFloat.newFloat(runtime, Double.NEGATIVE_INFINITY) : RubyFloat.newFloat(runtime, Double.POSITIVE_INFINITY);
+            newArgs[0] = to = desc ? RubyFloat.newFloat(runtime, Double.NEGATIVE_INFINITY) : doubleToInteger(runtime, Double.POSITIVE_INFINITY);
         }
         return desc;
     }
