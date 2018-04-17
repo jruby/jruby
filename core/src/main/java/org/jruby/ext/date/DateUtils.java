@@ -1,6 +1,7 @@
 package org.jruby.ext.date;
 
 import org.jruby.*;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -230,7 +231,7 @@ abstract class DateUtils {
                 //if (d != n) rb_warning("fraction of offset is ignored");
                 return (int) n;
             case STRING:
-                vs = date_zone_to_diff(context, (RubyString) of);
+                vs = sites(context).zone_to_diff.call(context, of, of);
 
                 if (!(vs instanceof RubyFixnum)) return INVALID_OFFSET;
                 n = ((RubyFixnum) vs).getLongValue();
@@ -437,6 +438,10 @@ abstract class DateUtils {
                 style = GREGORIAN; // Double.NEGATIVE_INFINITY;
         }
         return style;
+    }
+
+    private static JavaSites.DateSites sites(ThreadContext context) {
+        return context.sites.Date;
     }
 
     private static final int JC_PERIOD0 = 1461;		/* 365.25 * 4 */

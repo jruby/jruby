@@ -234,7 +234,7 @@ public class RubyDate extends RubyObject {
 
     static final int DAY_IN_SECONDS = 86_400; // 24 * 60 * 60
     static final int DAY_MS = 86_400_000; // 24 * 60 * 60 * 1000
-    private static RubyFixnum DAY_MS_CACHE;
+    private RubyFixnum DAY_MS_CACHE;
 
     private long initMillis(final ThreadContext context, IRubyObject ajd) {
         final Ruby runtime = context.runtime;
@@ -272,7 +272,7 @@ public class RubyDate extends RubyObject {
         return ((RubyFixnum) millis).getLongValue();
     }
 
-    private static RubyFixnum DAY_MS(final ThreadContext context) {
+    private RubyFixnum DAY_MS(final ThreadContext context) {
         RubyFixnum v = DAY_MS_CACHE;
         if (v == null) v = DAY_MS_CACHE = context.runtime.newFixnum(DAY_MS);
         return v;
@@ -1392,13 +1392,6 @@ public class RubyDate extends RubyObject {
 
     static RubyRational newRationalConvert(ThreadContext context, IRubyObject num, long den) {
         return (RubyRational) RubyRational.newRationalConvert(context, num, context.runtime.newFixnum(den));
-    }
-
-    private static final CachingCallSite zone_to_diff = new FunctionalCachingCallSite("zone_to_diff");
-
-    static IRubyObject date_zone_to_diff(final ThreadContext context, RubyString str) {
-        final RubyClass klass = getDate(context.runtime);
-        return zone_to_diff.call(context, klass, klass, str);
     }
 
     // def jd_to_ajd(jd, fr, of=0) jd + fr - of - Rational(1, 2) end
