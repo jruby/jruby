@@ -1,8 +1,9 @@
 require 'test/unit'
-require 'yaml/store'
 
 class YAMLStoreTest < Test::Unit::TestCase
   def setup
+    require 'yaml/store'
+
     @yamlstore_file = "yamlstore.tmp.#{Process.pid}"
     @yamlstore = YAML::Store.new(@yamlstore_file)
   end
