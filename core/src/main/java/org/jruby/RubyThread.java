@@ -648,20 +648,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         thread.setName(newName);
     }
 
-    // TODO likely makes sense to have a counter or the Ruby class directly (could be included with JMX)
-    private static final WeakHashMap<Ruby, AtomicLong> threadCount = new WeakHashMap<Ruby, AtomicLong>(4);
-
     private static long incAndGetThreadCount(final Ruby runtime) {
-        AtomicLong counter = threadCount.get(runtime);
-        if ( counter == null ) {
-            synchronized (runtime) {
-                counter = threadCount.get(runtime);
-                if ( counter == null ) {
-                    threadCount.put(runtime, counter = new AtomicLong(0));
-                }
-            }
-        }
-        return counter.incrementAndGet();
+        return runtime.getThreadService().incrementAndGetThreadCount();
     }
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
