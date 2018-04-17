@@ -83,7 +83,7 @@ target
 test/pom.xml
 test/prawn
 test/rails
-test/testapp/testapp
+test/jruby/testapp/testapp
 tool/nailgun/Makefile
 tool/nailgun/config.log
 tool/nailgun/config.status
