@@ -377,7 +377,7 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod
     @Override
-    public IRubyObject inspect() {
+    public RubyString inspect() {
         if (str == null) return anyToString();
 
         Ruby runtime = getRuntime();

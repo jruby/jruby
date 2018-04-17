@@ -2343,7 +2343,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     @Override
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect() {
+    public RubyString inspect() {
         return inspect(getRuntime());
     }
 
@@ -2580,6 +2580,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return this;
         }
         RubyString otherStr = other.convertToString();
+        infectBy(otherStr);
+        return cat(otherStr.value);
+    }
+
+    public RubyString append(RubyString otherStr) {
+        modifyCheck();
         infectBy(otherStr);
         return cat(otherStr.value);
     }

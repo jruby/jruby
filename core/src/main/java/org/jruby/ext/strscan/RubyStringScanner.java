@@ -605,24 +605,26 @@ public class RubyStringScanner extends RubyObject {
 
     private static final int INSPECT_LENGTH = 5;
 
+    private static final byte[] DOT_BYTES = "...".getBytes();
+
     private IRubyObject inspect1() {
-        if (pos == 0) return RubyString.newEmptyString(getRuntime());
+        final Ruby runtime = getRuntime();
+        if (pos == 0) return RubyString.newEmptyString(runtime);
         if (pos > INSPECT_LENGTH) {
-            return RubyString.newStringNoCopy(getRuntime(), "...".getBytes()).
-            append(str.substr(getRuntime(), pos - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
-        } else {
-            return str.substr(getRuntime(), 0, pos).inspect();
+            return RubyString.newStringNoCopy(runtime, DOT_BYTES).
+                append(str.substr(runtime, pos - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
         }
+        return str.substr(runtime, 0, pos).inspect();
     }
 
     private IRubyObject inspect2() {
-        if (pos >= str.getByteList().getRealSize()) return RubyString.newEmptyString(getRuntime());
+        final Ruby runtime = getRuntime();
+        if (pos >= str.getByteList().getRealSize()) return RubyString.newEmptyString(runtime);
         int len = str.getByteList().getRealSize() - pos;
         if (len > INSPECT_LENGTH) {
-            return ((RubyString)str.substr(getRuntime(), pos, INSPECT_LENGTH)).cat("...".getBytes()).inspect();
-        } else {
-            return str.substr(getRuntime(), pos, len).inspect();
+            return ((RubyString) str.substr(runtime, pos, INSPECT_LENGTH)).cat(DOT_BYTES).inspect();
         }
+        return str.substr(runtime, pos, len).inspect();
     }
 
     @JRubyMethod(name = "must_C_version", meta = true)

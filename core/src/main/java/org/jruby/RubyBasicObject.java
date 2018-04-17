@@ -802,7 +802,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * format of a class name and a hex string inside of #<>.
      */
     @Override
-    public IRubyObject anyToString() {
+    public RubyString anyToString() {
         String cname = getMetaClass().getRealClass().getName();
         String hex = Integer.toHexString(System.identityHashCode(this));
         /* 6:tags 16:addr 1:eos */
@@ -1237,7 +1237,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "!")
     public IRubyObject op_not(ThreadContext context) {
-        return context.runtime.newBoolean(!this.isTrue());
+        return isTrue() ? context.fals : context.tru;
     }
 
     /**
