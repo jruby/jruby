@@ -232,10 +232,14 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
+    public static IRubyObject dbl2num(Ruby runtime, double val) {
+        return RubyFloat.newFloat(runtime, val);
+    }
+
     /** rb_dbl2big + LONG2FIX at once (numeric.c)
      *
      */
-    public static IRubyObject dbl2num(Ruby runtime, double val) {
+    public static IRubyObject dbl2ival(Ruby runtime, double val) {
         if (Double.isInfinite(val)) {
             throw runtime.newFloatDomainError(val < 0 ? "-Infinity" : "Infinity");
         }
