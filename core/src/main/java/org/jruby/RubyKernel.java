@@ -1222,7 +1222,7 @@ public class RubyKernel {
             if (!tmp.isNil()) {
                 kwargs = true;
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, "uplevel");
-                uplevel = RubyNumeric.num2int(rets[0]);
+                uplevel = rets[0] == UNDEF ? 0 : RubyNumeric.num2int(rets[0]);
             }
         }
 

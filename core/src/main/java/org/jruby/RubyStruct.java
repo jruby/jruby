@@ -355,6 +355,8 @@ public class RubyStruct extends RubyObject {
 
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), "__keyword_init__");
 
+        IRubyObject nil = context.nil;
+
         if (keywordInit.isTrue()) {
             if (args.length != 1 || !(args[0] instanceof RubyHash)) throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
             RubyHash kwArgs = args[0].convertToHash();
@@ -364,12 +366,15 @@ public class RubyStruct extends RubyObject {
                 .collect(Collectors.toList())
                 .toArray(new String[__members__.size()]);
             args = ArgsUtil.extractKeywordArgs(context, kwArgs, members);
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] == UNDEF) args[i] = nil;
+            }
         }
 
         System.arraycopy(args, 0, values, 0, args.length);
         Helpers.fillNil(values, args.length, values.length, context.runtime);
 
-        return context.nil;
+        return nil;
     }
 
     @JRubyMethod(visibility = PRIVATE)

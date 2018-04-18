@@ -199,7 +199,7 @@ public class RubyDir extends RubyObject {
             } else {
                 String[] keys = flags != null ? new String[] {"base", "flags"} : new String[] {"base"};
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
-                String base = rets[0].isNil() ? "" : RubyFile.get_path(context, rets[0]).asJavaString();
+                String base = rets[0] == UNDEF ? "" : RubyFile.get_path(context, rets[0]).asJavaString();
 
                 // Deep down in glob things are unhappy if base is not absolute.
                 if (!base.isEmpty()) {
@@ -212,7 +212,7 @@ public class RubyDir extends RubyObject {
                         base = new JRubyFile(runtime.getCurrentDirectory(), base).getAbsolutePath();
                     }
                 }
-                if (flags != null) flags[0] = rets[1].isNil() ? 0 : RubyNumeric.num2int(rets[1]);
+                if (flags != null) flags[0] = rets[1] == UNDEF ? 0 : RubyNumeric.num2int(rets[1]);
                 return base;
             }
         }
