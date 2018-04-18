@@ -32,7 +32,7 @@ import org.jruby.RubyFrozenError;
  *
  * @see RubyFrozenError
  */
-public class FrozenError extends StandardError {
+public class FrozenError extends RuntimeError {
     public FrozenError(String message, RubyFrozenError exception) {
         super(message, exception);
     }
