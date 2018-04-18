@@ -31,11 +31,11 @@ package org.jruby.util;
 import org.jcodings.Encoding;
 
 public enum KCode {
-    NIL(null, "ASCII", 0),
-    NONE("NONE", "ASCII", 0),
-    UTF8("UTF8", "UTF8", 64),
-    SJIS("SJIS", "SJIS", 48),
-    EUC("EUC", "EUCJP", 32);
+    NIL(null, "ASCII-8BIT", 0),
+    NONE("NONE", "ASCII-8BIT", 0),
+    UTF8("UTF8", "UTF-8", 64),
+    SJIS("SJIS", "Shift-JIS", 48),
+    EUC("EUC", "EUC_JP", 32);
 
     private final String kcode;
     private final String encodingName;
