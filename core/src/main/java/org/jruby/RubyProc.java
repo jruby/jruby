@@ -81,10 +81,8 @@ public class RubyProc extends RubyObject implements DataType {
 
 
     public RubyProc(Ruby runtime, RubyClass rubyClass, Block block, String file, int line) {
-        this(runtime, rubyClass, block.type);
+        this(runtime, rubyClass, block.type, file, line);
         this.block = block;
-        this.file = file;
-        this.line = line;
     }
 
     public static RubyClass createProcClass(Ruby runtime) {
