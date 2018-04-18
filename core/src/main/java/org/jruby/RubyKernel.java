@@ -1240,12 +1240,8 @@ public class RubyKernel {
         }
 
         for (int i = 0; i < numberOfMessages; i++) {
-            message.append(args[i]);
-            if (i + 1 < numberOfMessages) message.cat('\n');
-
+            warn(context, recv, args[1]);
         }
-
-        if (message.size() > 0) warn(context, recv, message);
 
         return context.nil;
     }
