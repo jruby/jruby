@@ -51,6 +51,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 
 import org.jruby.Ruby;
@@ -626,6 +627,13 @@ public class LoadService {
 
     public void removeBuiltinLibrary(String name) {
         builtinLibraries.remove(name);
+    }
+
+    /**
+     * Get a list of all libraries JRuby considers "built-in".
+     */
+    public List<String> getBuiltinLibraries() {
+        return builtinLibraries.keySet().stream().collect(Collectors.toList());
     }
 
     public void removeInternalLoadedFeature(String name) {

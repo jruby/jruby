@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'jruby/util'
 
 class TestJRubyCoreExt < Test::Unit::TestCase
 
@@ -74,6 +75,14 @@ class TestJRubyCoreExt < Test::Unit::TestCase
       assert_equal JRuby.runtime, org.jruby.Ruby.global_runtime
     end
     assert_equal other_runtime, org.jruby.Ruby.global_runtime
+  end
+
+  def test_internal_libraries
+    internal_libraries = JRuby::Util.internal_libraries
+
+    assert_equal Array, internal_libraries.class
+    assert_true internal_libraries.size > 0
+    assert_include internal_libraries, "cgi/escape.jar"
   end
 
   private

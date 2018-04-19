@@ -125,4 +125,20 @@ public class JRubyUtilLibrary implements Library {
 
         return stat;
     }
+
+    /**
+     * Return a list of files and extensions that JRuby treats as internal (or "built-in"), skipping load path and
+     * filesystem search.
+     *
+     * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
+     */
+    @JRubyMethod(module = true)
+    public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+        List<String> builtinLibraries = runtime.getLoadService().getBuiltinLibraries();
+
+        IRubyObject[] names = builtinLibraries.stream().map(name -> runtime.newString(name)).toArray(i->new IRubyObject[i]);
+
+        return runtime.newArrayNoCopy(names);
+    }
 }
