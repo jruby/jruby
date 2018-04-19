@@ -879,7 +879,7 @@ public class RubyLexer extends LexingCommon {
                 continue;
             case '#': {	/* it's a comment */
                 this.tokenSeen = tokenSeen;
-                if (!tokenSeen || !warnings.isVerbose()) {
+                if (!tokenSeen || warnings.isVerbose()) {
                     if (!parser_magic_comment(lexb.makeShared(lex_p, lex_pend - lex_p))) {
                         if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
                     }
