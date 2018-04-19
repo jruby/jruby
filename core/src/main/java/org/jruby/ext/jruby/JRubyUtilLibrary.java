@@ -110,6 +110,11 @@ public class JRubyUtilLibrary implements Library {
         }
     }
 
+    /**
+     * Provide stats on how many method and constant invalidations have occurred globally.
+     *
+     * This was added for Pry in https://github.com/jruby/jruby/issues/4384
+     */
     @JRubyMethod(name = "cache_stats", module = true)
     public static IRubyObject cache_stats(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
