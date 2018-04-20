@@ -89,6 +89,7 @@ public class JavaSites {
         public final CheckedSites to_hash_checked = new CheckedSites("to_hash");
         public final CallSite write = new FunctionalCachingCallSite("write");
         public final CallSite call = new FunctionalCachingCallSite("call");
+        public final CallSite warn = new FunctionalCachingCallSite("warn");
     }
 
     public static class ArraySites {

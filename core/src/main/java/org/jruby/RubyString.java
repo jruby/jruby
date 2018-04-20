@@ -4430,6 +4430,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return false;
     }
 
+    public boolean endsWithAsciiChar(char c) {
+        ByteList value = this.value;
+        int size;
+
+        return value.getEncoding().isAsciiCompatible() && (size = value.realSize()) > 0 && value.get(size - 1) == c;
+    }
+
     private static final ByteList SPACE_BYTELIST = RubyInteger.singleCharByteList((byte) ' ');
 
     private IRubyObject justify(Ruby runtime, IRubyObject arg0, int jflag) {

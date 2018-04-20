@@ -207,6 +207,9 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     @JRubyMethod
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
+
+        if (!runtime.warningsEnabled()) return context.nil;
+
         TypeConverter.checkType(context, arg, runtime.getString());
         RubyString str = (RubyString) arg;
         if (!str.getEncoding().isAsciiCompatible()) {
