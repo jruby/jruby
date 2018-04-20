@@ -88,8 +88,9 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 @JRubyClass(name="Time", include="Comparable")
 public class RubyTime extends RubyObject {
     public static final String UTC = "UTC";
-    public static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
-    public static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
+
+    private static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
+    private static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
 
     private DateTime dt;
     private long nsec;
@@ -1164,11 +1165,10 @@ public class RubyTime extends RubyObject {
                 // use Rational numerator and denominator to calculate nanos
                 RubyRational rational = (RubyRational) arg;
 
-                // These could have rounding errors if numerator or denominator are not integral and < long. Can they be?
-                long numerator = rational.getNumerator().getLongValue();
-                long denominator = rational.getDenominator().getLongValue();
+                BigInteger numerator = rational.getNumerator().getBigIntegerValue();
+                BigInteger denominator = rational.getDenominator().getBigIntegerValue();
 
-                BigDecimal nanosBD = BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), 50, BigDecimal.ROUND_HALF_UP).multiply(ONE_BILLION_BD);
+                BigDecimal nanosBD = new BigDecimal(numerator).divide(new BigDecimal(denominator), 50, BigDecimal.ROUND_HALF_UP).multiply(ONE_BILLION_BD);
                 BigInteger millis = nanosBD.divide(ONE_MILLION_BD).toBigInteger();
                 BigInteger nanos = nanosBD.remainder(ONE_MILLION_BD).toBigInteger();
 
