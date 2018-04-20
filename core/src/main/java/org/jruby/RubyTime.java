@@ -381,37 +381,52 @@ public class RubyTime extends RubyObject {
         return timeClass;
     }
 
-    /** Set the 4 to 9 decimal places of the time.
+    /**
+     * Set the nano-second (only) part for this time.
      *
-     * Note that {@code nsec} means the 4 to 9 decimal places, not entire the fraction part till nano.
+     * Note that {@code nsec} means the 4 to 9 decimal places of sec fractional part of time.
      * For example, 123456 for {@code nsec} means {@code .000123456}, not {@code .123456000}.
      *
-     * @param nsec the 4 to 9 decimal places to set
+     * @param nsec the nano second part only (4 to 9 decimal places) of time
      */
     public void setNSec(long nsec) {
         this.nsec = nsec;
     }
 
-    /** Get the 4 to 9 decimal places of the time.
+    /**
+     * Get the nano-second (only) part of the time.
      *
-     * Note that it returns the 4 to 9 decimal places, not entire the fraction part till nano.
-     * For example for an epoch second {@code 1500000000.123456789}, it returns {@code 456789},
-     * not {@code 123456789}.
+     * Note that it returns the 4 to 9 decimal places, not the entire sec fraction part till nano.
+     * For example for an epoch second {@code 1500000000.123456789} returns {@code 456789}.
      *
-     * @return the 4 to 9 decimal places of the time
+     * @return the nano second part (only) of time
      */
     public long getNSec() {
         return nsec;
     }
 
+    /**
+     * Set the micro-second (only) part of the time.
+     * @param usec
+     * @see #setNSec(long)
+     */
     public void setUSec(long usec) {
         this.nsec = 1000 * usec;
     }
 
+    /**
+     * Get the micro-second (only) part of the time.
+     * @return the micro-second only part of this time
+     * @see #getUSec()
+     */
     public long getUSec() {
         return nsec / 1000;
     }
 
+    /**
+     * Use {@link #setDateTime(DateTime)} instead.
+     */
+    @Deprecated
     public void updateCal(DateTime dt) {
         this.dt = dt;
     }
@@ -434,17 +449,19 @@ public class RubyTime extends RubyObject {
         return new RubyTime(runtime, runtime.getTime(), dt);
     }
 
-    /** Create new Time.
+    /**
+     * Create new (Ruby) Time instance.
      *
      * Note that {@code dt} of {@code org.joda.time.DateTime} represents the integer part and
-     * the fraction part to milliseconds, and {@code nsec} means the 4 to 9 decimal places.
+     * the fraction part to milliseconds, and {@code nsec} the nano part (4 to 9 decimal places).
      *
      * For example, {@code RubyTime.newTime(rt, new DateTime(987000), 345678)} creates an epoch
      * second of {@code 987.000345678}, not {@code 987000.345678}.
      *
-     * @param runtime the Ruby runtime
-     * @param dt the integer part and the fraction part in milliseconds
-     * @param nsec the 4 to 9 decimal places of the time
+     * @param runtime the runtime
+     * @param dt the integer part of time + the fraction part in milliseconds
+     * @param nsec the nanos only party of the time (millis excluded)
+     * @see #setNSec(long)
      * @return the new Time
      */
     public static RubyTime newTime(Ruby runtime, DateTime dt, long nsec) {
@@ -819,16 +836,17 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(getTimeInMillis() / 1000);
     }
 
-    /** Get the fraction part of the time in nanosecond.
+    /**
+     * Get the fractional part of time in nanoseconds.
      *
-     * Note that it returns entire the fraction part of the time in nanosecond, unlike
+     * Note that this returns the entire fraction part of the time in nanosecond, unlike
      * {@code RubyTime#getNSec}. This method represents Ruby's {@code nsec} method.
      *
-     * @return the fractional part of the time in nanosecond
+     * @return the (sec) fractional part of time (in nanos)
      */
     @JRubyMethod(name = {"nsec", "tv_nsec"})
     public RubyInteger nsec() {
-        return getRuntime().newFixnum((getTimeInMillis() % 1000) * 1000000 + nsec);
+        return getRuntime().newFixnum(getNanos());
     }
 
     @JRubyMethod
@@ -836,21 +854,76 @@ public class RubyTime extends RubyObject {
         return RubyRational.newRationalCanonicalize(context, getTimeInMillis() * 1000000 + nsec, 1000000000);
     }
 
+    /**
+     * Get the microsecond part of this time value.
+     *
+     * @return the (whole) microsecond part of time
+     */
     @JRubyMethod(name = {"usec", "tv_usec"})
     public RubyInteger usec() {
         return getRuntime().newFixnum(dt.getMillisOfSecond() * 1000 + getUSec());
     }
 
-    public void setMicroseconds(long mic) {
-        long millis = getTimeInMillis() % 1000;
-        long withoutMillis = getTimeInMillis() - millis;
-        withoutMillis += (mic / 1000);
-        dt = dt.withMillis(withoutMillis);
-        nsec = (mic % 1000) * 1000;
+    /**
+     * @return the total time in microseconds
+     * @see #getTimeInMillis()
+     */
+    public long getTimeInMicros() {
+        return getTimeInMillis() * 1000 + getUSec();
     }
 
+    /**
+     * Return the micro-seconds of this time.
+     * @return micro seconds (only)
+     * @see #getTimeInMicros()
+     */
+    public long getMicros() {
+        return getTimeInMillis() % 1000 * 1000 + getUSec();
+    }
+
+    /**
+     * Sets the microsecond part for this Time object.
+     * @param micros the microseconds to be set
+     * @see #getMicros()
+     */
+    public void setMicros(long micros) {
+        long millis = getTimeInMillis();
+        millis = ( millis - (millis % 1000) ) + (micros / 1000);
+        dt = dt.withMillis(millis);
+        nsec = (micros % 1000) * 1000;
+    }
+
+    /**
+     * @deprecated use {@link #setMicros(long)} instead
+     */
+    public void setMicroseconds(long micros) { setMicros(micros); }
+
+    /**
+     * @deprecated use {@link #getMicros()} instead
+     */
     public long microseconds() {
-    	return getTimeInMillis() % 1000 * 1000 + getUSec();
+    	return getMicros();
+    }
+
+
+    /**
+     * Return the nano-seconds of this time.
+     * @return nano seconds (only)
+     */
+    public long getNanos() {
+        return (getTimeInMillis() % 1000) * 1_000_000 + getNSec();
+    }
+
+    /**
+     * Sets the nanosecond part for this Time object.
+     * @param nanos the nanoseconds to be set
+     * @see #getNanos()
+     */
+    public void setNanos(long nanos) {
+        long millis = getTimeInMillis();
+        millis = ( millis - (millis % 1000) ) + (nanos / 1_000_000);
+        dt = dt.withMillis(millis);
+        nsec = (nanos % 1_000_000);
     }
 
     @JRubyMethod
@@ -893,14 +966,17 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(dt.getDayOfYear());
     }
 
-    @JRubyMethod
+    @Deprecated
     public IRubyObject subsec() {
-        Ruby runtime = getRuntime();
-        long nanosec = dt.getMillisOfSecond() * 1000000 + this.nsec;
+        return subsec(getRuntime().getCurrentContext());
+    }
 
-        if (nanosec % 1000000000 == 0) return RubyFixnum.zero(runtime);
+    @JRubyMethod
+    public RubyNumeric subsec(final ThreadContext context) {
+        long nanosec = dt.getMillisOfSecond() * 1_000_000 + this.nsec;
 
-        return runtime.newRationalReduced(nanosec, 1000000000);
+        RubyNumeric subsec = (RubyNumeric) RubyRational.newRationalCanonicalize(context, nanosec, 1_000_000_000);
+        return subsec.isZero() ? RubyFixnum.zero(context.runtime) : subsec;
     }
 
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
@@ -986,7 +1062,7 @@ public class RubyTime extends RubyObject {
     @Override
     public int hashCode() {
         // modified to match how hash is calculated in 1.8.2
-        return (int) (((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1;
+        return (int) (((dt.getMillis() / 1000) ^ getMicros()) << 1) >> 1;
     }
 
     @JRubyMethod(name = "_dump")
