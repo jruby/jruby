@@ -27,6 +27,7 @@
 package org.jruby.runtime.profile.builtin;
 
 import org.jruby.MetaClass;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig.ProfilingMode;
@@ -34,13 +35,15 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.IntHashMap.Entry;
 
 import java.io.PrintStream;
 import java.text.DecimalFormat;
+
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 
 public abstract class ProfilePrinter {
     
@@ -135,7 +138,6 @@ public abstract class ProfilePrinter {
             DynamicMethod method = profileMethod.getMethod();
             String id = profileMethod.getName();
             if (id == null) id = method.getName();
-            // FIXME: bytelist_love: we are still using id here but methodName should return either id or encoded name depending on how it is used.
             displayName = moduleHashMethod(method.getImplementationClass(), id.toString());
         } else {
             displayName = "<unknown>";
@@ -177,24 +179,26 @@ public abstract class ProfilePrinter {
     static final String PROFILER_PROFILE_METHOD = "JRuby::Profiler.profile";
     static final String PROFILER_PROFILED_CODE_METHOD = "JRuby::Profiler.profiled_code";
     
-    private static String moduleHashMethod(RubyModule module, String name) {
+    private static String moduleHashMethod(RubyModule module, String id) {
+        Ruby runtime = module.getRuntime();
+
         if (module instanceof MetaClass) {
             IRubyObject obj = ((MetaClass) module).getAttached();
             if (obj instanceof RubyModule) {
-                return ((RubyModule) obj).getName() + "." + name;
+                return str(runtime, types(runtime, (RubyModule) obj), ".", ids(runtime, id));
             } 
             if (obj instanceof RubyObject) {
-                return ((RubyObject) obj).getType().getName() + "(singleton)#" + name;
+                return str(runtime, types(runtime, ((RubyObject) obj).getType()), "(singleton)#", ids(runtime, id));
             }
-            return "unknown#" + name;
+            return str(runtime, "unknown#", ids(runtime, id));
         }
         if (module.isSingleton()) {
-            return ((RubyClass) module).getRealClass().getName() + "(singleton)#" + name;
+            return str(runtime, types(runtime, ((RubyClass) module).getRealClass()), "(singleton)#", ids(runtime, id));
         }
         if (module instanceof RubyClass) {
-            return module.getName() + "#" + name; // instance method
+            return str(runtime, types(runtime, module), "#", ids(runtime, id)); // instance method
         }
-        return module.getName() + "." + name; // module method
+        return str(runtime, types(runtime, module), ".", ids(runtime, id)); // module method
     }
     
     protected static void pad(PrintStream out, int size, String body) {

@@ -160,15 +160,7 @@ public class TypeConverter {
         if (obj instanceof org.jruby.runtime.marshal.DataType) return obj;
 
         Ruby runtime = obj.getRuntime();
-        // FIXME: bytelist_love: can this just use types() or should types() always be doing what typeAsString is doing?
-        throw runtime.newTypeError(str(runtime, "wrong argument type ", typeAsString(obj), " (expected Data)"));
-    }
-
-    private static RubyString typeAsString(IRubyObject obj) {
-        if (obj.isNil()) return obj.getRuntime().newString("nil");
-        if (obj instanceof RubyBoolean) return obj.getRuntime().newString(obj.isTrue() ? "true" : "false");
-
-        return obj.getMetaClass().getRealClass().rubyName();
+        throw runtime.newTypeError(str(runtime, "wrong argument type ", types(runtime, obj.getMetaClass()), " (expected Data)"));
     }
 
     /**
@@ -368,8 +360,7 @@ public class TypeConverter {
     }
 
     public static IRubyObject handleUncoercibleObject(Ruby runtime, IRubyObject obj, RubyClass target, boolean raise) {
-        // FIXME: bytelist_love: can this just use types() or should types() always be doing what typeAsString is doing?
-        if (raise) throw runtime.newTypeError(str(runtime, "no implicit conversion of ", typeAsString(obj), " into " , target));
+        if (raise) throw runtime.newTypeError(str(runtime, "no implicit conversion of ", types(runtime, obj.getMetaClass()), " into " , target));
         return runtime.getNil();
     }
 

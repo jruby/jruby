@@ -1144,14 +1144,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public synchronized IRubyObject inspect() {
         // FIXME: There's some code duplication here with RubyObject#inspect
         RubyString result = getRuntime().newString("#<");
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
 
-        result.cat(getMetaClass().getRealClass().toRubyString(getRuntime().getCurrentContext()));
+        result.cat(getMetaClass().getRealClass().toRubyString(context));
         result.cat(':');
         result.catString(identityString());
-        String name = threadImpl.getRubyName(); // thread.name
-        if (notEmpty(name)) {
+        String id = threadImpl.getRubyName(); // thread.name
+        if (notEmpty(id)) {
             result.cat('@');
-            result.catString(name);
+            result.append(getRuntime().newSymbol(id).to_s());
         }
         if (notEmpty(file) && line >= 0) {
             result.cat('@');
@@ -1165,8 +1167,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return result;
     }
 
-    private boolean notEmpty(CharSequence str) {
-        return str != null && str.toString().length() > 0;
+    private boolean notEmpty(String str) {
+        return str != null && str.length() > 0;
     }
 
     @JRubyMethod(name = "key?", required = 1)

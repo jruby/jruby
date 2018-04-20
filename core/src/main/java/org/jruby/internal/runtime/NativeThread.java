@@ -110,10 +110,9 @@ public class NativeThread implements ThreadLike {
         return nativeThread.get();
     }
 
-    // FIXME: bytelist_love: ThreadLike should deprecate these in favor of IRubyObject versions so we can properly encode names.
     @Override
-    public void setRubyName(String name) {
-        this.rubyName = name;
+    public void setRubyName(String id) {
+        this.rubyName = id;
         updateName();
     }
 

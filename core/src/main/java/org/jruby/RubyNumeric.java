@@ -654,8 +654,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "singleton_method_added")
     public static IRubyObject singleton_method_added(ThreadContext context, IRubyObject self, IRubyObject name) {
-        throw context.runtime.newTypeError(str(runtime,
-                "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, self.getType())));
+        Ruby runtime = context.runtime;
+        throw runtime.newTypeError(str(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, self.getType())));
     }
 
     /** num_init_copy

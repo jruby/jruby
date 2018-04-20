@@ -4,6 +4,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -19,9 +20,13 @@ import static org.jruby.util.StringSupport.codePoint;
  * Helper methods to make Ruby Strings without the ceremony of manually building the string up.
   */
 public class RubyStringBuilder {
-    // FIXME: bytelist_love: should this be variadic?
     public static RubyString types(Ruby runtime, RubyModule type) {
         ThreadContext context = runtime.getCurrentContext();
+
+        // FIXME: feels like toRubyString could handle this?
+        if (type.isNil()) return runtime.newString("nil");
+        if (type.equals(runtime.getFalseClass())) return runtime.newString("false");
+        if (type.equals(runtime.getTrueClass())) return runtime.newString("true");
 
         return inspectIdentifierByteList(runtime, type.toRubyString(context).getByteList());
     }
