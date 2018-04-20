@@ -1046,7 +1046,7 @@ public class RubyTime extends RubyObject {
             se >>>= 8;
         }
 
-        RubyString string = RubyString.newString(runtime, new ByteList(dumpValue));
+        RubyString string = RubyString.newString(runtime, new ByteList(dumpValue, false));
 
         // 1.9 includes more nsecs
         copyInstanceVariablesInto(string);
