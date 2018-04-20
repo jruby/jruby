@@ -372,7 +372,7 @@ public class TraceType {
 
         exception.printBacktrace(errorStream, 1);
 
-        return new String(baos.toByteArray());
+        return baos.toString();
     }
 
     private static final String FIRST_COLOR = "\033[0;31m";
