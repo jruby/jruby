@@ -114,20 +114,6 @@ public class RubyTime extends RubyObject {
 
     private boolean isTzRelative = false; // true if and only if #new is called with a numeric offset (e.g., "+03:00")
 
-    /* Some TZ values need to be overriden for Time#zone
-     */
-    private static final Map<String, String> SHORT_STD_TZNAME = Helpers.map(
-        "Etc/UCT", "UCT",
-        "MET", "MET", // needs to be overriden
-        "UCT", "UCT"
-    );
-
-    private static final Map<String, String> SHORT_DL_TZNAME = Helpers.map(
-        "Etc/UCT", "UCT",
-        "MET", "MEST", // needs to be overriden
-        "UCT", "UCT"
-    );
-
     private void setIsTzRelative(boolean tzRelative) {
         isTzRelative = tzRelative;
     }
@@ -930,11 +916,14 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     public IRubyObject zone() {
         if (isTzRelative) return getRuntime().getNil();
-        RubyString zone = getRuntime().newString(RubyTime.getRubyTimeZoneName(getRuntime(), dt));
 
+        RubyString zone = getRuntime().newString(getZoneName());
         if (zone.isAsciiOnly()) zone.setEncoding(USASCIIEncoding.INSTANCE);
-
         return zone;
+    }
+
+    public String getZoneName() {
+        return getRubyTimeZoneName(getRuntime(), dt);
     }
 
 	public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
@@ -943,13 +932,12 @@ public class RubyTime extends RubyObject {
 	}
 
 	public static String getRubyTimeZoneName(String envTZ, DateTime dt) {
-		// see declaration of SHORT_TZNAME
-        if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
-            return SHORT_STD_TZNAME.get(envTZ);
-        }
-
-        if (SHORT_DL_TZNAME.containsKey(envTZ) && dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
-            return SHORT_DL_TZNAME.get(envTZ);
+        switch (envTZ) { // Some TZ values need to be overriden for Time#zone
+            case "Etc/UCT":
+            case "UCT":
+                return "UCT";
+            case "MET":
+                return inDaylighTime(dt) ? "MEST" : "MET"; // needs to be overriden
         }
 
         String zone = dt.getZone().getShortName(dt.getMillis());
@@ -970,6 +958,10 @@ public class RubyTime extends RubyObject {
 
         return zone;
 	}
+
+	private static boolean inDaylighTime(final DateTime dt) {
+        return dt.getZone().toTimeZone().inDaylightTime(dt.toDate());
+    }
 
     public void setDateTime(DateTime dt) {
         this.dt = dt;
