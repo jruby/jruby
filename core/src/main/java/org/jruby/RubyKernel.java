@@ -48,6 +48,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -1207,47 +1208,62 @@ public class RubyKernel {
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject message) {
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject _message) {
         final Ruby runtime = context.runtime;
 
-        if (runtime.warningsEnabled()) RubyIO.puts1(context, runtime.getGlobalVariables().get("$stderr"), message);
+        if (_message instanceof RubyArray) {
+            RubyArray messageArray = _message.convertToArray();
+            for (int i = 0; i < messageArray.size(); i++) warn(context, recv, messageArray.eltOk(i));
+            return context.nil;
+        }
 
-        return context.nil;
+        RubyString message = _message.convertToString();
+        if (!message.endsWithAsciiChar('\n')) {
+            message = (RubyString) message.op_plus19(context, runtime.newString("\n"));
+        }
+
+        return sites(context).warn.call(context, recv, runtime.getWarning(), message);
     }
+
+    public static final String[] WARN_VALID_KEYS = {"uplevel"};
 
     @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
         boolean kwargs = false;
         int uplevel = -1;
         if (args.length > 1) {
             IRubyObject tmp = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
             if (!tmp.isNil()) {
                 kwargs = true;
-                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, "uplevel");
-                uplevel = RubyNumeric.num2int(rets[0]);
+                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, WARN_VALID_KEYS);
+                uplevel = rets[0] == UNDEF ? 0 : RubyNumeric.num2int(rets[0]);
             }
         }
 
-        RubyString message = context.runtime.newString();
+        // FIXME: This is not particularly efficient.
         int numberOfMessages = kwargs ? args.length - 1 : args.length;
+        IRubyObject newline = runtime.newString("\n");
 
-        if (uplevel >= 0) {
+        if (kwargs) {
             RubyStackTraceElement[] elements = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context).getBacktrace(context.runtime);
 
             // User can ask for level higher than stack
-            if (elements.length <= uplevel + 1) uplevel = 0;
+            if (elements.length <= uplevel + 1) uplevel = -1;
 
             int index = uplevel + 1;
-            message.catString(elements[index].getFileName() + ":" + (elements[index].getLineNumber()) + " warning: ");
+            RubyString baseMessage = context.runtime.newString();
+            baseMessage.catString(elements[index].getFileName() + ":" + (elements[index].getLineNumber()) + " warning: ");
+
+            for (int i = 0; i < numberOfMessages; i++) {
+                warn(context, recv, baseMessage.op_plus19(context, args[i]));
+            }
+        } else {
+            for (int i = 0; i < numberOfMessages; i++) {
+                warn(context, recv, args[i].convertToString());
+            }
         }
-
-        for (int i = 0; i < numberOfMessages; i++) {
-            message.append(args[i]);
-            if (i + 1 < numberOfMessages) message.cat('\n');
-
-        }
-
-        if (message.size() > 0) warn(context, recv, message);
 
         return context.nil;
     }

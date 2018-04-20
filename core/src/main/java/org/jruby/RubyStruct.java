@@ -33,6 +33,8 @@
 
 package org.jruby;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jruby.anno.JRubyClass;
@@ -355,21 +357,34 @@ public class RubyStruct extends RubyObject {
 
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), "__keyword_init__");
 
+        Ruby runtime = context.runtime;
+        IRubyObject nil = context.nil;
+
         if (keywordInit.isTrue()) {
-            if (args.length != 1 || !(args[0] instanceof RubyHash)) throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
-            RubyHash kwArgs = args[0].convertToHash();
+            IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, args);
+
+            if (maybeKwargs.isNil())
+                throw runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
+
+            RubyHash kwArgs = (RubyHash) maybeKwargs;
             RubyArray __members__ = __member__();
-            String[] members = Stream.of(__members__.toJavaArray())
-                .map(o -> RubySymbol.objectToSymbolString(o))
-                .collect(Collectors.toList())
-                .toArray(new String[__members__.size()]);
-            args = ArgsUtil.extractKeywordArgs(context, kwArgs, members);
+            Set<Map.Entry<IRubyObject, IRubyObject>> entries = kwArgs.directEntrySet();
+
+            entries.stream().forEach(
+                    entry -> {
+                        IRubyObject key = entry.getKey();
+                        if (!(key instanceof RubySymbol))
+                            key = runtime.newSymbol(key.convertToString().getByteList());
+                        IRubyObject index = __members__.index(context, key);
+                        if (index.isNil()) throw runtime.newArgumentError("unknown keywords: " + key);
+                        values[index.convertToInteger().getIntValue()] = entry.getValue();
+                    });
+        } else {
+            System.arraycopy(args, 0, values, 0, args.length);
+            Helpers.fillNil(values, args.length, values.length, runtime);
         }
 
-        System.arraycopy(args, 0, values, 0, args.length);
-        Helpers.fillNil(values, args.length, values.length, context.runtime);
-
-        return context.nil;
+        return nil;
     }
 
     @JRubyMethod(visibility = PRIVATE)

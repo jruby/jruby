@@ -29,23 +29,25 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.EUCJPEncoding;
+import org.jcodings.specific.SJISEncoding;
+import org.jcodings.specific.UTF8Encoding;
 
 public enum KCode {
-    NIL(null, "ASCII", 0),
-    NONE("NONE", "ASCII", 0),
-    UTF8("UTF8", "UTF8", 64),
-    SJIS("SJIS", "SJIS", 48),
-    EUC("EUC", "EUCJP", 32);
+    NIL(null, ASCIIEncoding.INSTANCE, 0),
+    NONE("NONE", ASCIIEncoding.INSTANCE, 0),
+    UTF8("UTF8", UTF8Encoding.INSTANCE, 64),
+    SJIS("SJIS", SJISEncoding.INSTANCE, 48),
+    EUC("EUC", EUCJPEncoding.INSTANCE, 32);
 
     private final String kcode;
-    private final String encodingName;
+    private final Encoding encoding;
     private final int code;
 
-    private volatile Encoding encoding;
-
-    private KCode(String kcode, String encodingName, int code) {
+    private KCode(String kcode, Encoding encoding, int code) {
         this.kcode = kcode;
-        this.encodingName = encodingName;
+        this.encoding = encoding;
         this.code = code;
     }
 
@@ -89,9 +91,6 @@ public enum KCode {
     }
 
     public Encoding getEncoding() {
-        if (encoding == null) {
-            encoding = Encoding.load(encodingName);
-        }
         return encoding;
     }
 

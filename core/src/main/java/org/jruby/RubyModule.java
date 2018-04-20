@@ -2297,7 +2297,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "to_s", alias = "inspect")
     @Override
-    public IRubyObject to_s() {
+    public RubyString to_s() {
         if(isSingleton()){
             IRubyObject attached = ((MetaClass) this).getAttached();
             RubyString buffer = getRuntime().newString("#<Class:");

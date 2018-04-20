@@ -50,13 +50,11 @@ import org.jruby.runtime.MethodIndex;
  * that it responds to read() like IO.
  */
 public class IOInputStream extends InputStream {
-
-    private static final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
-    private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
-
     private final IRubyObject io;
     private final InputStream in;
-    private final RubyFixnum numOne;
+    private final IRubyObject numOne;
+    private final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
+    private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
 
     /**
      * Creates a new InputStream with the object provided.

@@ -51,12 +51,10 @@ import org.jruby.runtime.MethodIndex;
  * @author <a href="mailto:Ola.Bini@ki.se">Ola Bini</a>
  */
 public class IOOutputStream extends OutputStream {
-
-    private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
-
     private final IRubyObject io;
     private final OutputStream out;
     private final CallSite writeAdapter;
+    private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
     private final Encoding encoding;
 
     /**

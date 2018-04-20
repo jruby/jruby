@@ -1272,9 +1272,9 @@ public class RubyRational extends RubyNumeric {
     private RubyString inspectImpl(Ruby runtime) {
         RubyString str = RubyString.newString(runtime, new ByteList(12), USASCIIEncoding.INSTANCE);
         str.cat((byte)'(');
-        str.append(num.inspect());
+        str.append((RubyString) num.inspect());
         str.cat((byte)'/');
-        str.append(den.inspect());
+        str.append((RubyString) den.inspect());
         str.cat((byte)')');
         return str;
     }

@@ -644,13 +644,17 @@ public class RubyNumeric extends RubyObject {
      *  ================
      */
 
+    @JRubyMethod(name = "!")
+    public IRubyObject op_not(ThreadContext context) {
+        return context.fals;
+    }
+
     /** num_sadded
      *
      */
     @JRubyMethod(name = "singleton_method_added")
-    public static IRubyObject sadded(IRubyObject self, IRubyObject name) {
-        Ruby runtime = self.getRuntime();
-        throw runtime.newTypeError(str(runtime,
+    public static IRubyObject singleton_method_added(ThreadContext context, IRubyObject self, IRubyObject name) {
+        throw context.runtime.newTypeError(str(runtime,
                 "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, self.getType())));
     }
 

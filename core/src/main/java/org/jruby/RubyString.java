@@ -2343,7 +2343,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     @Override
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect() {
+    public RubyString inspect() {
         return inspect(getRuntime());
     }
 
@@ -2580,6 +2580,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return this;
         }
         RubyString otherStr = other.convertToString();
+        infectBy(otherStr);
+        return cat(otherStr.value);
+    }
+
+    public RubyString append(RubyString otherStr) {
+        modifyCheck();
         infectBy(otherStr);
         return cat(otherStr.value);
     }
@@ -4422,6 +4428,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return true;
         }
         return false;
+    }
+
+    public boolean endsWithAsciiChar(char c) {
+        ByteList value = this.value;
+        int size;
+
+        return value.getEncoding().isAsciiCompatible() && (size = value.realSize()) > 0 && value.get(size - 1) == c;
     }
 
     private static final ByteList SPACE_BYTELIST = RubyInteger.singleCharByteList((byte) ' ');

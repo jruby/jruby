@@ -1,5 +1,6 @@
 package org.jruby.javasupport.binding;
 
+import com.headius.modulator.Modulator;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -538,6 +539,9 @@ public abstract class Initializer {
             final int mod = method.getModifiers();
             // Skip private methods, since they may mess with dispatch
             if ( Modifier.isPrivate(mod) ) continue;
+
+            // Skip protected methods if we can't set accessible
+            if ( !Modifier.isPublic(mod) && !Modulator.trySetAccessible(method)) continue;
 
             // ignore bridge methods because we'd rather directly call methods that this method
             // is bridging (and such methods are by definition always available.)

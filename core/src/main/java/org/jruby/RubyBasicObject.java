@@ -1247,7 +1247,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "!")
     public IRubyObject op_not(ThreadContext context) {
-        return context.runtime.newBoolean(!this.isTrue());
+        return isTrue() ? context.fals : context.tru;
     }
 
     /**
