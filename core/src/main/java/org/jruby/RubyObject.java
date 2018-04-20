@@ -479,18 +479,20 @@ public class RubyObject extends RubyBasicObject {
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
      */
-    public static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
-        if (a == b) {
-            return true;
-        } else if (a instanceof RubySymbol) {
-            return false;
-        } else if (a instanceof RubyFixnum && b instanceof RubyFixnum) {
-            return ((RubyFixnum)a).fastEqual((RubyFixnum) b);
-        } else if (a instanceof RubyFloat && b instanceof RubyFloat) {
-            return ((RubyFloat)a).fastEqual((RubyFloat)b);
-        } else {
-            return invokedynamic(context, a, OP_EQUAL, b).isTrue();
+    public static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
+        if (a == b) return true;
+        if (a instanceof RubySymbol) return false;
+
+        return fastNumEqualInternal(context, a, b);
+    }
+
+    private static boolean fastNumEqualInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
+        if (a instanceof RubyFixnum) {
+            if (b instanceof RubyFixnum) return ((RubyFixnum) a).fastEqual((RubyFixnum) b);
+        } else if (a instanceof RubyFloat) {
+            if (b instanceof RubyFloat) return ((RubyFloat) a).fastEqual((RubyFloat) b);
         }
+        return invokedynamic(context, a, OP_EQUAL, b).isTrue();
     }
 
     /**
@@ -498,16 +500,13 @@ public class RubyObject extends RubyBasicObject {
      * equality, and then calling the "eql?" method.
      */
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
-        if (a == b) {
-            return true;
-        } else if (a instanceof RubySymbol) {
-            return false;
-        } else if (a instanceof RubyNumeric) {
+        if (a == b) return true;
+        if (a instanceof RubySymbol) return false;
+        if (a instanceof RubyNumeric) {
             if (a.getClass() != b.getClass()) return false;
-            return equalInternal(context, a, b);
-        } else {
-            return invokedynamic(context, a, EQL, b).isTrue();
+            return fastNumEqualInternal(context, a, b);
         }
+        return invokedynamic(context, a, EQL, b).isTrue();
     }
 
     /**
