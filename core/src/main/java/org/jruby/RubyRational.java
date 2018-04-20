@@ -246,11 +246,9 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_canonicalize, value check part
     private static boolean canonicalizeShouldNegate(ThreadContext context, RubyInteger den) {
-        final Ruby runtime = context.runtime;
-        final RubyFixnum zero = RubyFixnum.zero(runtime);
-        long res = f_cmp(context, den, zero).getLongValue();
-        if (res == 0) throw runtime.newZeroDivisionError();
-        return res == -1;
+        final int signum = den.signum();
+        if (signum == 0) throw context.runtime.newZeroDivisionError();
+        return signum < 0;
     }
     
     /** nurat_s_new
