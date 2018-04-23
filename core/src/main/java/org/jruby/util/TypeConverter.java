@@ -160,8 +160,17 @@ public class TypeConverter {
         if (obj instanceof org.jruby.runtime.marshal.DataType) return obj;
 
         Ruby runtime = obj.getRuntime();
-        throw runtime.newTypeError(str(runtime, "wrong argument type ", types(runtime, obj.getMetaClass()), " (expected Data)"));
+        throw runtime.newTypeError(str(runtime, "wrong argument type ", typeAsString(obj), " (expected Data)"));
     }
+
+    public static RubyString typeAsString(IRubyObject obj) {
+        if (obj.isNil()) return obj.getRuntime().newString("nil");
+        if (obj instanceof RubyBoolean) return obj.getRuntime().newString(obj.isTrue() ? "true" : "false");
+
+        return obj.getMetaClass().getRealClass().rubyName();
+    }
+
+
 
     /**
      * Convert the supplied object into an internal identifier String.  Basically, symbols
@@ -360,7 +369,7 @@ public class TypeConverter {
     }
 
     public static IRubyObject handleUncoercibleObject(Ruby runtime, IRubyObject obj, RubyClass target, boolean raise) {
-        if (raise) throw runtime.newTypeError(str(runtime, "no implicit conversion of ", types(runtime, obj.getMetaClass()), " into " , target));
+        if (raise) throw runtime.newTypeError(str(runtime, "no implicit conversion of ", typeAsString(obj), " into " , target));
         return runtime.getNil();
     }
 

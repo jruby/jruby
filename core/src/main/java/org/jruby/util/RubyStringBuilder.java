@@ -23,11 +23,6 @@ public class RubyStringBuilder {
     public static RubyString types(Ruby runtime, RubyModule type) {
         ThreadContext context = runtime.getCurrentContext();
 
-        // FIXME: feels like toRubyString could handle this?
-        if (type.isNil()) return runtime.newString("nil");
-        if (type.equals(runtime.getFalseClass())) return runtime.newString("false");
-        if (type.equals(runtime.getTrueClass())) return runtime.newString("true");
-
         return inspectIdentifierByteList(runtime, type.toRubyString(context).getByteList());
     }
 
