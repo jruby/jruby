@@ -1062,6 +1062,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject insert(IRubyObject arg) {
         modifyCheck();
 
+        RubyNumeric.num2long(arg);
+
         return this;
     }
 
@@ -1080,7 +1082,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private void insert(long pos, IRubyObject val) {
         if (pos == -1) pos = realLength;
-        if (pos < 0) pos++;
+        else if (pos < 0) {
+            long minpos = -realLength - 1;
+            if (pos < minpos) {
+                throw getRuntime().newIndexError("index " + pos + " too small for array; minimum: " + minpos);
+            }
+            pos++;
+        }
 
         spliceOne(pos, val); // rb_ary_new4
     }
