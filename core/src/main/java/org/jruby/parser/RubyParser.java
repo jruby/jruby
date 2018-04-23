@@ -3374,7 +3374,7 @@ states[261] = new ParserState() {
 };
 states[262] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                     support.warning(ID.MISCELLANEOUS, lexer.getPosition(), "comparison '" + ((ByteList)yyVals[-1+yyTop]) + "%s' after comparison");
+                     support.warning(ID.MISCELLANEOUS, lexer.getPosition(), "comparison '" + ((ByteList)yyVals[-1+yyTop]) + "' after comparison");
                      yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ((ByteList)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
   }
