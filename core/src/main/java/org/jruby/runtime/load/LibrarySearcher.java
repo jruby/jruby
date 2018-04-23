@@ -170,12 +170,11 @@ class LibrarySearcher {
             if (resource.absolutePath() != resource.canonicalPath()) {
                 FileResource expandedResource = JRubyFile.createResourceAsFile(runtime, resource.canonicalPath());
                 if (expandedResource.exists()){
-                    resource = expandedResource;
-                    String scriptName = resolveScriptName(resource, resource.canonicalPath());
-                    String loadName = resolveLoadName(resource, searchName + suffix);
+                    String scriptName = resolveScriptName(expandedResource, expandedResource.canonicalPath());
+                    String loadName = resolveLoadName(expandedResource, searchName + suffix);
                     return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, resource), loadName);
                 }
-          }
+            }
             DebugLog.Resource.logFound(pathWithSuffix);
             String scriptName = resolveScriptName(resource, pathWithSuffix);
             String loadName = resolveLoadName(resource, searchName + suffix);
