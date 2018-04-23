@@ -55,7 +55,6 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.TimeSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -80,6 +79,8 @@ import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 
 /** The Time class.
  *
@@ -291,7 +292,8 @@ public class RubyTime extends RubyObject {
         }
 
         if (typeError) {
-            throw context.runtime.newTypeError("can't convert " + v.getMetaClass() + " into an exact number");
+            Ruby runtime = context.runtime;
+            throw runtime.newTypeError(str(runtime, "can't convert ", types(runtime, v.getMetaClass()), " into an exact number"));
         }
 
         return (RubyNumeric) v;
@@ -1378,7 +1380,7 @@ public class RubyTime extends RubyObject {
                 seconds += ((RubyNumeric) ((RubyArray) result).eltOk(1) ).getDoubleValue(); // mod
             }
             else {
-                throw runtime.newTypeError("unexpected divmod result: into %s" + result.getMetaClass().getName());
+                throw runtime.newTypeError(str(runtime, "unexpected divmod result: into %s", types(runtime, result.getMetaClass())));
             }
         }
         else {
@@ -1390,7 +1392,8 @@ public class RubyTime extends RubyObject {
             }
 
             if (raise) {
-                throw context.runtime.newTypeError("can't convert " + sec.getMetaClass().getName() + " into time interval");
+                Ruby runtime = context.runtime;
+                throw context.runtime.newTypeError(str(runtime, "can't convert ", types(runtime, sec.getMetaClass()), " into time interval"));
             }
         }
 

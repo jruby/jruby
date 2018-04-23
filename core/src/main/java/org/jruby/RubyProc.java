@@ -51,6 +51,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
+import static org.jruby.util.RubyStringBuilder.types;
+
 /**
  * @author  jpetersen
  */
@@ -219,16 +221,17 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s19() {
-        StringBuilder sb = new StringBuilder(32);
-        sb.append("#<Proc:0x").append(Integer.toString(System.identityHashCode(block), 16));
+        Ruby runtime = getRuntime();
+        RubyString string = runtime.newString("#<");
+
+        string.append(types(runtime, getMetaClass()));
+        string.catString(":0x" + Integer.toString(System.identityHashCode(block), 16));
 
         String file = block.getBody().getFile();
-        if (file != null) sb.append('@').append(file).append(':').append(block.getBody().getLine() + 1);
+        if (file != null) string.catString("@" + file + ":" + (block.getBody().getLine() + 1));
 
-        if (isLambda()) sb.append(" (lambda)");
-        sb.append('>');
-
-        IRubyObject string = RubyString.newString(getRuntime(), sb.toString());
+        if (isLambda()) string.catString(" (lambda)");
+        string.catString(">");
 
         if (isTaint()) string.setTaint(true);
 
