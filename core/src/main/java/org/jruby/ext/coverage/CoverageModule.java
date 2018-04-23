@@ -75,7 +75,7 @@ public class CoverageModule {
     }
 
     @JRubyMethod(name = "running?", module = true)
-    public static IRubyObject running_p(ThreadContext context) {
+    public static IRubyObject running_p(ThreadContext context, IRubyObject self) {
         return context.runtime.getCoverageData().isCoverageEnabled() ? context.tru : context.fals;
     }
 
