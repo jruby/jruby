@@ -91,25 +91,20 @@ public class RubyRational extends RubyNumeric {
         super(runtime, clazz);
         this.num = num;
         this.den = den;
-        this.flags |= FROZEN_F;
-    }
-
-    private RubyRational(Ruby runtime, RubyClass clazz, IRubyObject num, IRubyObject den) {
-        this(runtime, clazz, num.convertToInteger(), den.convertToInteger());
     }
 
     /** rb_rational_raw
      * 
      */
     public static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
-        return new RubyRational(runtime, runtime.getRational(), x, y);
+        return newRational(runtime, runtime.getRational(), x, y);
     }
 
     /** rb_rational_raw1
      * 
      */
     static RubyRational newRationalRaw(Ruby runtime, IRubyObject x) {
-        return new RubyRational(runtime, runtime.getRational(), x, RubyFixnum.one(runtime));
+        return newRational(runtime, runtime.getRational(), x, RubyFixnum.one(runtime));
     }
 
     /** rb_rational_new1
@@ -151,7 +146,7 @@ public class RubyRational extends RubyNumeric {
      */
     private static RubyRational newRationalBang(ThreadContext context, RubyClass clazz, IRubyObject x, IRubyObject y) {
         assert !f_negative_p(context, y) && !(f_zero_p(context, y));
-        return new RubyRational(context.runtime, clazz, x, y);
+        return newRational(context.runtime, clazz, x, y);
     }
 
     /** f_rational_new_bang1
@@ -225,7 +220,7 @@ public class RubyRational extends RubyNumeric {
 
         if (Numeric.CANON && canonicalization && f_one_p(context, _den)) return _num;
 
-        return new RubyRational(context.runtime, clazz, _num, _den);
+        return newRational(context.runtime, clazz, _num, _den);
     }
 
     /** nurat_s_canonicalize_internal_no_reduce
@@ -241,16 +236,14 @@ public class RubyRational extends RubyNumeric {
 
         if (Numeric.CANON && canonicalization && f_one_p(context, den)) return num;
 
-        return new RubyRational(context.runtime, clazz, num, den);
+        return newRational(context.runtime, clazz, num, den);
     }
 
     // MRI: nurat_canonicalize, value check part
     private static boolean canonicalizeShouldNegate(ThreadContext context, RubyInteger den) {
-        final Ruby runtime = context.runtime;
-        final RubyFixnum zero = RubyFixnum.zero(runtime);
-        long res = f_cmp(context, den, zero).getLongValue();
-        if (res == 0) throw runtime.newZeroDivisionError();
-        return res == -1;
+        final int signum = den.signum();
+        if (signum == 0) throw context.runtime.newZeroDivisionError();
+        return signum < 0;
     }
     
     /** nurat_s_new
@@ -311,7 +304,15 @@ public class RubyRational extends RubyNumeric {
     }
     
     public static RubyRational newRational(Ruby runtime, long x, long y) {
-        return new RubyRational(runtime, runtime.getRational(), runtime.newFixnum(x), runtime.newFixnum(y));
+        RubyRational rat = new RubyRational(runtime, runtime.getRational(), runtime.newFixnum(x), runtime.newFixnum(y));
+        rat.setFrozen(true);
+        return rat;
+    }
+
+    static RubyRational newRational(Ruby runtime, RubyClass clazz, IRubyObject x, IRubyObject y) {
+        RubyRational rat = new RubyRational(runtime, clazz, x.convertToInteger(), y.convertToInteger());
+        rat.setFrozen(true);
+        return rat;
     }
     
     @Deprecated

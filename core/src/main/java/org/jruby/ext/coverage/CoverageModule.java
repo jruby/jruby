@@ -74,6 +74,11 @@ public class CoverageModule {
         return convertCoverageToRuby(context, runtime, runtime.getCoverageData().getCoverage());
     }
 
+    @JRubyMethod(name = "running?", module = true)
+    public static IRubyObject running_p(ThreadContext context, IRubyObject self) {
+        return context.runtime.getCoverageData().isCoverageEnabled() ? context.tru : context.fals;
+    }
+
     private static IRubyObject convertCoverageToRuby(ThreadContext context, Ruby runtime, Map<String, int[]> coverage) {
         // populate a Ruby Hash with coverage data
         RubyHash covHash = RubyHash.newHash(runtime);

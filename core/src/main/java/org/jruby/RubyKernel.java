@@ -1261,7 +1261,7 @@ public class RubyKernel {
             }
         } else {
             for (int i = 0; i < numberOfMessages; i++) {
-                warn(context, recv, args[i].convertToString());
+                warn(context, recv, args[i]);
             }
         }
 
