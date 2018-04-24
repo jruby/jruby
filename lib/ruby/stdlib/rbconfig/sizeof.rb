@@ -11,6 +11,8 @@ module RbConfig
   limits = {}
   limits['FIXNUM_MAX'] = 0x8000000000000000
   limits['FIXNUM_MIN'] = 0x7fffffffffffffff
+  limits['LONG_MAX'] = limits['FIXNUM_MAX']
+  limits['LONG_MIN'] = limits['FIXNUM_MIN']
   limits.freeze
   LIMITS = limits
 end
