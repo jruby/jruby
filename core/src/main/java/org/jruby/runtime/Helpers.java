@@ -2083,7 +2083,7 @@ public class Helpers {
                 if (args[i] instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) args[i]).getName().getBytes()));
+                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) args[i]).getName()));
                 }
             }
         }
@@ -2096,7 +2096,7 @@ public class Helpers {
             for (int i = 0; i < optCount; i++) {
                 Node optNode = args[optIndex + i];
                 if (optNode instanceof INameNode) {
-                    descs.add(new ArgumentDescriptor(ArgumentType.opt, ((INameNode) optNode).getName().getBytes()));
+                    descs.add(new ArgumentDescriptor(ArgumentType.opt, ((INameNode) optNode).getName()));
                 } else {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonopt));
                 }
@@ -2108,7 +2108,7 @@ public class Helpers {
             if (restArg instanceof UnnamedRestArgNode) {
                 if (((UnnamedRestArgNode) restArg).isStar()) descs.add(new ArgumentDescriptor(ArgumentType.anonrest));
             } else {
-                descs.add(new ArgumentDescriptor(ArgumentType.rest, restArg.getName().getBytes()));
+                descs.add(new ArgumentDescriptor(ArgumentType.rest, restArg.getName()));
             }
         }
 
@@ -2120,7 +2120,7 @@ public class Helpers {
                 if (postNode instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode)postNode).getName().getBytes()));
+                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode)postNode).getName()));
                 }
             }
         }
@@ -2132,18 +2132,18 @@ public class Helpers {
                 Node keyWordNode = args[keywordsIndex + i];
                 for (Node asgnNode : keyWordNode.childNodes()) {
                     ArgumentType type = isRequiredKeywordArgumentValueNode(asgnNode) ? ArgumentType.keyreq : ArgumentType.key;
-                    descs.add(new ArgumentDescriptor(type, ((INameNode) asgnNode).getName().getBytes()));
+                    descs.add(new ArgumentDescriptor(type, ((INameNode) asgnNode).getName()));
                 }
             }
         }
 
         if (argsNode.getKeyRest() != null) {
-            ByteList argName = argsNode.getKeyRest().getName().getBytes();
+            RubySymbol argName = argsNode.getKeyRest().getName();
             // FIXME: Should a argName of "" really get saved that way here?
-            ArgumentType type = argName == null || argName.length() == 0 ? ArgumentType.anonkeyrest : ArgumentType.keyrest;
+            ArgumentType type = argName == null || argName.getBytes().length() == 0 ? ArgumentType.anonkeyrest : ArgumentType.keyrest;
             descs.add(new ArgumentDescriptor(type, argName));
         }
-        if (argsNode.getBlock() != null) descs.add(new ArgumentDescriptor(ArgumentType.block, argsNode.getBlock().getName().getBytes()));
+        if (argsNode.getBlock() != null) descs.add(new ArgumentDescriptor(ArgumentType.block, argsNode.getBlock().getName()));
 
         return descs.toArray(new ArgumentDescriptor[descs.size()]);
     }
@@ -2152,7 +2152,7 @@ public class Helpers {
      * Convert a parameter list from prefix format to ArgumentDescriptor format.  This source is expected to come
      * from a native path.  Therefore we will be assuming parameterList is UTF-8.
      */
-    public static ArgumentDescriptor[] parameterListToArgumentDescriptors(String[] parameterList, boolean isLambda) {
+    public static ArgumentDescriptor[] parameterListToArgumentDescriptors(Ruby runtime, String[] parameterList, boolean isLambda) {
         ArgumentDescriptor[] parms = new ArgumentDescriptor[parameterList.length];
 
         for (int i = 0; i < parameterList.length; i++) {
@@ -2168,7 +2168,7 @@ public class Helpers {
 
             // 'R', 'o', 'n' forms can get here without a name
             if (param.length() > 1) {
-                parms[i] = new ArgumentDescriptor(type, new ByteList(param.substring(1).getBytes(), UTF8Encoding.INSTANCE));
+                parms[i] = new ArgumentDescriptor(type, runtime.newSymbol(param.substring(1)));
             } else {
                 parms[i] = new ArgumentDescriptor(type.anonymousForm());
             }
@@ -2195,7 +2195,7 @@ public class Helpers {
         method = method.getRealMethod();
 
         if (method instanceof MethodArgs2) {
-            return parameterListToArgumentDescriptors(((MethodArgs2) method).getParameterList(), true);
+            return parameterListToArgumentDescriptors(method.getImplementationClass().getRuntime(), ((MethodArgs2) method).getParameterList(), true);
         } else if (method instanceof IRMethodArgs) {
             return ((IRMethodArgs) method).getArgumentDescriptors();
         } else {

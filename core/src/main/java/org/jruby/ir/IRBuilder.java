@@ -2063,10 +2063,8 @@ public class IRBuilder {
             argDesc = new ArgumentDescriptor[argumentDescriptions.size() / 2];
             for (int i = 0; i < argumentDescriptions.size(); i += 2) {
                 ArgumentType type = (ArgumentType) argumentDescriptions.get(i);
-                // FIXME: bytelist_love we should probably push symbol through here instead of bytelsit?
                 RubySymbol symbol = (RubySymbol) argumentDescriptions.get(i+1);
-                ByteList name = symbol == null ? null : symbol.getBytes();
-                argDesc[i / 2] = new ArgumentDescriptor(type, name);
+                argDesc[i / 2] = new ArgumentDescriptor(type, symbol);
             }
         }
 

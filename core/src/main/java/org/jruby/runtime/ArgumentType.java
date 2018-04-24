@@ -1,10 +1,8 @@
 package org.jruby.runtime;
 
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubySymbol;
-import org.jruby.util.ByteList;
 
 /**
  * The diffierent types of arguments identified in a method.
@@ -22,10 +20,10 @@ public enum ArgumentType {
     anonrest("rest", true),
     anonkeyrest("keyrest", true);
 
-    ArgumentType(String typeName, boolean anonymous) {
-        this.typeName = new ByteList(typeName.getBytes(), USASCIIEncoding.INSTANCE);
+    ArgumentType(String typeId, boolean anonymous) {
+        this.typeId = typeId;
         this.anonymous = anonymous;
-        this.name = new ByteList(toString().getBytes(), USASCIIEncoding.INSTANCE);
+        this.name = toString();
     }
 
     public static ArgumentType valueOf(char prefix) {
@@ -45,10 +43,10 @@ public enum ArgumentType {
         }
     }
 
-    public RubyArray toArrayForm(Ruby runtime, ByteList name) {
-        RubySymbol typeName = runtime.newSymbol(this.typeName);
+    public RubyArray toArrayForm(Ruby runtime, RubySymbol name) {
+        RubySymbol typeName = runtime.newSymbol(typeId);
 
-        return anonymous ? runtime.newArray(typeName) : runtime.newArray(typeName, runtime.newSymbol(name));
+        return anonymous ? runtime.newArray(typeName) : runtime.newArray(typeName, name);
     }
 
     public ArgumentType anonymousForm() {
@@ -61,7 +59,7 @@ public enum ArgumentType {
         return this;
     }
 
-    public final ByteList name;
-    public final ByteList typeName;
+    public final String name;
+    public final String typeId;
     public final boolean anonymous;
 }
