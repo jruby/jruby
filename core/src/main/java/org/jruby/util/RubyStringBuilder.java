@@ -48,10 +48,8 @@ public class RubyStringBuilder {
      * @param object
      */
     public static RubyString ids(Ruby runtime, IRubyObject object) {
-        // FIXME: bytelist_love - should this be convertToString()?
         ByteList identifier;
 
-        // FIXME: bytelist_love - Want something which gets bytes without any dyncalls I think? [needs test]
         if (object instanceof RubyString) {
             identifier = ((RubyString) object).getByteList();
         } else if (object instanceof RubySymbol) {

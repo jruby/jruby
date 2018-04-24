@@ -245,7 +245,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                 // either framed or scoped. Previously it only did this logic for
                 // send(:local_variables).
 
-                // FIXME: bytelist_love - This probably should be id-based and not get potentially encoded string.
+                // This says getString but I believe this will also always be an id string in this case so it is ok.
                 String sendName = ((StringLiteral) meth).getString();
                 if (MethodIndex.SCOPE_AWARE_METHODS.contains(sendName)) {
                     modifiedScope = true;

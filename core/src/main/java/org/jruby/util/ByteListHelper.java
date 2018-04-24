@@ -1,10 +1,7 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
 
-// FIXME: bytelist_love: Should we expand ByteList as a library to include more of this stuff?
 /**
  * Helpers for working with bytelists.
  */

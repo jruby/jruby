@@ -4406,7 +4406,7 @@ public class RubyModule extends RubyObject {
         return symbol.idString();
     }
 
-    // FIXME: bytelist_love: This should really be working with symbol segments (errorName is FQN).
+    // FIXME: This should really be working with symbol segments (errorName is FQN).
     protected final String validateConstant(String name, IRubyObject errorName) {
         if (IdUtil.isValidConstantName19(name)) return name;
 

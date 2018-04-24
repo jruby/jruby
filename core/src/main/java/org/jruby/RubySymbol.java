@@ -221,7 +221,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return other == this;
     }
 
-    // FIXME: bytelist_love: Symbol should get this set so we do not need to calculate it.
+    // FIXME: Symbol (like MRI) should get flag set for types of identifiers it can represent so we don't recalc this all the time (and others)
     /**
      * Is the string this constant represents a valid constant identifier name.
      */
@@ -330,7 +330,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
         if (bytes.length() == 0) {
-            // FIXME: bytelist_love: change NameError to accept symbol as name.
             throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), "");
         }
 

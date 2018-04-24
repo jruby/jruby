@@ -1023,8 +1023,6 @@ public class IRRuntimeHelpers {
         return result;
     }
 
-    // FIXME: bytelist_love - JIT still uses this and we use id string to retrieve symbol but JIT can maybe reify a symbol
-    // and then we can eliminate this method.
     public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String id, boolean acceptsKeywordArgument) {
         RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
 

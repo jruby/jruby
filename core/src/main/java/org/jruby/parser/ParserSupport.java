@@ -255,9 +255,10 @@ public class ParserSupport {
     }
 
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
-    public AssignableNode assignableInCurr(ByteList name, Node value) {
-        currentScope.addVariableThisScope(ID(name));
-        return currentScope.assign(lexer.getPosition(), symbolID(name), makeNullNil(value));
+    public AssignableNode assignableInCurr(ByteList nameBytes, Node value) {
+        RubySymbol name = symbolID(nameBytes);
+        currentScope.addVariableThisScope(name.idString());
+        return currentScope.assign(lexer.getPosition(), name, makeNullNil(value));
     }
 
     public Node getOperatorCallNode(Node firstNode, ByteList operator) {
@@ -828,12 +829,6 @@ public class ParserSupport {
         return RubySymbol.newIDSymbol(getConfiguration().getRuntime(), identifierValue);
     }
 
-    // FIXME: bytelist_love: Move to common helper location
-    // Return raw 8859_1 string which is used as key for identifier in symbol table.
-    private static String ID(ByteList identifier) {
-        return identifier.toString();
-    }
-
     public Node newOpAsgn(ISourcePosition position, Node receiverNode, ByteList callType, Node valueNode, ByteList variableName, ByteList operatorName) {
         return new OpAsgnNode(position, receiverNode, valueNode, symbolID(variableName), symbolID(operatorName), isLazy(callType));
     }
@@ -1294,20 +1289,22 @@ public class ParserSupport {
     }
 
     // 1.9
-    public ByteList shadowing_lvar(ByteList name) {
-        if (name.realSize() == 1 && name.charAt(0) == '_') return name;
+    public ByteList shadowing_lvar(ByteList nameBytes) {
+        if (nameBytes.realSize() == 1 && nameBytes.charAt(0) == '_') return nameBytes;
 
-        String id = ID(name);
+        RubySymbol name = symbolID(nameBytes);
+        String id = name.idString();
 
         StaticScope current = getCurrentScope();
         if (current.exists(id) >= 0) yyerror("duplicated argument name");
 
         if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(id) >= 0 &&
                 Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), "shadowing outer local variable - " + StringSupport.byteListAsString(name));
+            Ruby runtime = getConfiguration().getRuntime();
+            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), str(runtime, "shadowing outer local variable - ", ids(runtime, name)));
         }
 
-        return name;
+        return nameBytes;
     }
 
     @Deprecated
