@@ -5320,7 +5320,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString srcStr = src.convertToString();
 
         if (value.getRealSize() == 0) return context.nil;
-        if (replList.getRealSize() == 0) return delete_bang19(context, src);
+        if (replList.getRealSize() == 0) return delete_bang(context, src);
 
         CodeRangeable ret = StringSupport.trTransHelper(context.runtime, this, srcStr, replStr, sflag);
         return (ret == null) ? context.nil : (IRubyObject) ret;
