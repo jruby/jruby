@@ -1141,9 +1141,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return sites(context).equals.call(context, this, other, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
     }
 
-    @JRubyMethod(name = "-@") // -'foo' returns frozen string
+    @JRubyMethod(name = "-@") // -'foo' returns deduplicated (interned) string
     public final IRubyObject minus_at(ThreadContext context) {
-        return isFrozen() ? this : context.runtime.freezeAndDedupString(this);
+        return context.runtime.freezeAndDedupString(this);
     }
 
     @JRubyMethod(name = "+@") // +'foo' returns modifiable string
