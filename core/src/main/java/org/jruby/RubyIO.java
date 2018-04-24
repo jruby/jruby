@@ -41,6 +41,7 @@ import jnr.constants.platform.OpenFlags;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.POSIX;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.api.API;
 import org.jruby.runtime.Helpers;
@@ -3513,7 +3514,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     /* class methods for IO */
 
     // rb_io_s_foreach
-    private static IRubyObject foreachInternal19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    private static IRubyObject foreachInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
@@ -3552,7 +3553,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
 
-        return foreachInternal19(context, recv, args, block);
+        return foreachInternal(context, recv, args, block);
     }
 
     public static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
@@ -3653,10 +3654,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return read19(context, recv, args, Block.NULL_BLOCK);
-   }
-
     public static void failIfDirectory(Ruby runtime, RubyString pathStr) {
         if (RubyFileTest.directory_p(runtime, pathStr).isTrue()) {
             if (Platform.IS_WINDOWS) {
@@ -3670,51 +3667,67 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // open_key_args
     private static IRubyObject openKeyArgs(ThreadContext context, IRubyObject recv, IRubyObject[] argv, IRubyObject opt) {
         final Ruby runtime = context.runtime;
-        IRubyObject path, v;
+        IRubyObject path, vmode = context.nil, vperm = context.nil, v;
 
         path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, argv[0]));
         failIfDirectory(runtime, (RubyString) path); // only in JRuby
         // MRI increments args past 0 now, so remaining uses of args only see non-path args
 
         if (opt.isNil()) {
-            return ioOpen(context, path, runtime.newFixnum(ModeFlags.RDONLY), runtime.newFixnum(0666), opt);
+            vmode = runtime.newFixnum(ModeFlags.RDONLY);
+            vperm = runtime.newFixnum(0666);
+        } else if (!(v = ((RubyHash) opt).op_aref(context, runtime.newSymbol("open_args"))).isNil()) {
+            RubyArray vAry = v.convertToArray();
+            int n = vAry.size();
+            Arity.checkArgumentCount(runtime, n, 0, 3);
+            switch (n) {
+                case 3:
+                    opt = ArgsUtil.getOptionsArg(runtime, vAry.toJavaArrayMaybeUnsafe());
+                case 2:
+                    vperm = vAry.eltOk(1);
+                case 1:
+                    vmode = vAry.eltOk(0);
+            }
         }
 
-        v = ((RubyHash) opt).op_aref(context, runtime.newSymbol("open_args"));
-        if (v != context.nil) {
-            v = v.convertToArray();
-
-            RubyArray args = runtime.newArray( ((RubyArray) v).size() + 1 );
-            args.push(path);
-            args.concat(v);
-
-            return RubyKernel.open(context, recv, args.toJavaArrayMaybeUnsafe(), Block.NULL_BLOCK);
-        }
-
-        return ioOpen(context, path, context.nil, context.nil, opt);
+        return ioOpen(context, recv, path, vmode, vperm, opt);
     }
 
-    // rb_io_open
-    public static IRubyObject ioOpen(ThreadContext context, IRubyObject filename, IRubyObject vmode, IRubyObject vperm, IRubyObject opt) {
-        final Ruby runtime = context.runtime;
+    // MRI: rb_io_open
+    public static IRubyObject ioOpen(ThreadContext context, IRubyObject recv, IRubyObject filename, IRubyObject vmode, IRubyObject vperm, IRubyObject opt) {
         int[] oflags_p = {0}, fmode_p = {0};
+        ConvConfig convconfig = new ConvConfig();
         int perm;
+
+        Object pm = EncodingUtils.vmodeVperm(vmode, vperm);
+        EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
+        perm = (vperm(pm) == null || vperm(pm).isNil()) ? 0666 : RubyNumeric.num2int(vperm(pm));
+
+        return ioOpenGeneric(context, recv, filename, oflags_p[0], fmode_p[0], convconfig, perm);
+    }
+
+    // MRI: rb_io_open_generic
+    private static RubyIO ioOpenGeneric(ThreadContext context, IRubyObject recv, IRubyObject filename, int oflags, int fmode, IOEncodable convconfig, int perm) {
+        final Ruby runtime = context.runtime;
         IRubyObject cmd;
 
         if ((filename instanceof RubyString) && ((RubyString) filename).isEmpty()) {
             throw runtime.newErrnoENOENTError();
         }
 
-        Object pm = EncodingUtils.vmodeVperm(vmode, vperm);
+        boolean warn = recv == runtime.getFile();
+        if ((warn || recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
+            if (recv != runtime.getIO()) {
+                // FIXME: use actual called name instead of "open" as in MRI
+                String message = "IO.open called on " + recv + " to invoke external command";
+                if (warn) {
+                    runtime.getWarnings().warn(message);
+                }
+            }
 
-        IOEncodable convconfig = new IOEncodable.ConvConfig();
-        EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
-        perm = (vperm(pm) == null || vperm(pm).isNil()) ? 0666 : RubyNumeric.num2int(vperm(pm));
-
-        if (( cmd = PopenExecutor.checkPipeCommand(context, filename) ) != context.nil) {
-            return PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags_p[0]), fmode_p[0], convconfig);
+            return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags), fmode, convconfig);
         }
-        return ((RubyFile) runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);
+        return (RubyIO) ((RubyFile) runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
     }
 
     /**
@@ -3732,6 +3745,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IRubyObject path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
         IRubyObject length, offset;
         length = offset = context.nil;
+        IOEncodable convconfig = new IOEncodable.ConvConfig();
+
+        int fmode = OpenFile.READABLE | OpenFile.BINMODE;
+        OpenFlags oBinary = OpenFlags.O_BINARY;
+        int oflags = OpenFlags.O_RDONLY.intValue() | (oBinary.defined() ? oBinary.intValue() : 0);
 
         if (args.length > 2) {
             offset = args[2];
@@ -3739,8 +3757,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         } else if (args.length > 1) {
             length = args[1];
         }
-        RubyClass File = runtime.getFile();
-        RubyIO file = (RubyIO) sites(context).new_.call(context, File, File, path, runtime.newString("rb:ASCII-8BIT"));
+        convconfig.setEnc(ASCIIEncoding.INSTANCE);
+        RubyIO file = ioOpenGeneric(context, recv, path, oflags, fmode, convconfig, 0);
+
+        if (file.isNil()) return context.nil;
 
         try {
             if (!offset.isNil()) {
@@ -3754,7 +3774,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // Enebo: annotation processing forced me to do pangea method here...
     @JRubyMethod(name = "read", meta = true, required = 1, optional = 3)
-    public static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
         IRubyObject path = args[0];
         IRubyObject length, offset, options;
@@ -3796,6 +3816,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         } finally  {
             file.close();
         }
+    }
+
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return read(context, recv, args, Block.NULL_BLOCK);
     }
 
     // rb_io_s_binwrite
@@ -5162,6 +5186,16 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @Deprecated
     public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash) {
         return PopenExecutor.checkExecEnv(context, hash, null);
+    }
+
+    @Deprecated
+    public static IRubyObject ioOpen(ThreadContext context, IRubyObject filename, IRubyObject vmode, IRubyObject vperm, IRubyObject opt) {
+        return ioOpen(context, context.runtime.getIO(), filename, vmode, vperm, opt);
+    }
+
+    @Deprecated
+    public static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        return read(context, recv, args, unusedBlock);
     }
 
     protected OpenFile openFile;

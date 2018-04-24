@@ -501,12 +501,12 @@ public class PopenExecutor {
     private Errno errno = null;
 
     // MRI: pipe_open
-    private IRubyObject pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
+    private RubyIO pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
         final Ruby runtime = context.runtime;
         IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.command_name : eargp.command_name) : null;
         long pid = 0;
         OpenFile fptr;
-        IRubyObject port;
+        RubyIO port;
         OpenFile write_fptr;
         IRubyObject write_port;
         PosixShim posix = new PosixShim(runtime);
@@ -625,8 +625,8 @@ public class PopenExecutor {
             fd = pair[1];
         }
 
-        port = runtime.getIO().allocate();
-        fptr = ((RubyIO)port).MakeOpenFile();
+        port = (RubyIO) runtime.getIO().allocate();
+        fptr = port.MakeOpenFile();
         fptr.setChannel(new NativeDeviceChannel(fd));
         fptr.setMode(fmode | (OpenFile.SYNC|OpenFile.DUPLEX));
         if (convconfig != null) {
@@ -658,7 +658,7 @@ public class PopenExecutor {
             write_fptr.setMode((fmode & ~OpenFile.READABLE)| OpenFile.SYNC|OpenFile.DUPLEX);
             fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
             fptr.tiedIOForWriting = (RubyIO)write_port;
-            ((RubyIO)port).setInstanceVariable("@tied_io_for_writing", write_port);
+            port.setInstanceVariable("@tied_io_for_writing", write_port);
         }
 
 //        fptr.setFinalizer(fptr.PIPE_FINALIZE);
