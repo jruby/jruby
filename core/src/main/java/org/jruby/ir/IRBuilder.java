@@ -1043,9 +1043,10 @@ public class IRBuilder {
 
     public Operand buildCall(Variable result, CallNode callNode) {
         Node receiverNode = callNode.getReceiverNode();
+        String name = callNode.getName();
 
         // Frozen string optimization: check for "string".freeze
-        if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
+        if (receiverNode instanceof StrNode && (name.equals("freeze") || name.equals("-@"))) {
             StrNode asString = (StrNode) receiverNode;
             return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFileName(), asString.getPosition().getLine());
         }
@@ -1059,7 +1060,7 @@ public class IRBuilder {
         ArrayNode argsAry;
         if (
                 !callNode.isLazy() &&
-                callNode.getName().equals("[]") &&
+                name.equals("[]") &&
                 callNode.getArgsNode() instanceof ArrayNode &&
                 (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
                 argsAry.get(0) instanceof StrNode &&
@@ -1087,15 +1088,15 @@ public class IRBuilder {
             Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
             List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
             block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, callNode.getName(), receiver, args, block, kwargs);
+            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, name, receiver, args, block, kwargs);
         } else {
             Operand[] args = setupCallArgs(callNode.getArgsNode());
             block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.create(scope, result, callNode.getName(), receiver, args, block);
+            callInstr = CallInstr.create(scope, result, name, receiver, args, block);
         }
 
         determineIfWeNeedLineNumber(callNode);
-        determineIfProcNew(receiverNode, callNode.getName(), callInstr);
+        determineIfProcNew(receiverNode, name, callInstr);
         receiveBreakException(block, callInstr);
 
         if (callNode.isLazy()) {
