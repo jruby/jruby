@@ -1222,7 +1222,11 @@ public class RubyKernel {
             message = (RubyString) message.op_plus19(context, runtime.newString("\n"));
         }
 
-        return sites(context).warn.call(context, recv, runtime.getWarning(), message);
+        if (recv == runtime.getWarning()) {
+            return RubyWarnings.warn(context, recv, message);
+        } else {
+            return sites(context).warn.call(context, recv, runtime.getWarning(), message);
+        }
     }
 
     public static final String[] WARN_VALID_KEYS = {"uplevel"};
@@ -1254,7 +1258,7 @@ public class RubyKernel {
 
             int index = uplevel + 1;
             RubyString baseMessage = context.runtime.newString();
-            baseMessage.catString(elements[index].getFileName() + ":" + (elements[index].getLineNumber()) + " warning: ");
+            baseMessage.catString(elements[index].getFileName() + ":" + (elements[index].getLineNumber()) + ": warning: ");
 
             for (int i = 0; i < numberOfMessages; i++) {
                 warn(context, recv, baseMessage.op_plus19(context, args[i]));

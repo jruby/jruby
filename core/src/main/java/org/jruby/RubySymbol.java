@@ -50,6 +50,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
@@ -108,10 +109,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         this.symbolBytes = symbolBytes;
         this.id = runtime.allocSymbolId();
 
+        long k0 = Helpers.hashStart(runtime, id);
         long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(
-                symbolHashSeedK0, 0, symbolBytes.getUnsafeBytes(),
+                k0, 0, symbolBytes.getUnsafeBytes(),
                 symbolBytes.getBegin(), symbolBytes.getRealSize()) :
-                PerlHash.hash(symbolHashSeedK0, symbolBytes.getUnsafeBytes(),
+                PerlHash.hash(k0, symbolBytes.getUnsafeBytes(),
                 symbolBytes.getBegin(), symbolBytes.getRealSize());
         this.hashCode = (int) hash;
         setFrozen(true);

@@ -1288,7 +1288,7 @@ rel_expr        : arg relop arg   %prec tGT {
                      $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
                 }
 		| rel_expr relop arg   %prec tGT {
-                     support.warning(ID.MISCELLANEOUS, lexer.getPosition(), "comparison '" + $2 + "%s' after comparison");
+                     support.warning(ID.MISCELLANEOUS, lexer.getPosition(), "comparison '" + $2 + "' after comparison");
                      $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
                 }
  

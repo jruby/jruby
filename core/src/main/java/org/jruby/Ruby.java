@@ -730,7 +730,7 @@ public final class Ruby implements Constantizable {
         BlockNode whileBody = new BlockNode(pos);
         newBody.add(new WhileNode(pos, new VCallNode(pos, newSymbol("gets")), whileBody));
 
-        if (processLineEndings) whileBody.add(new CallNode(pos, dollarUnderscore, newSymbol("chop!"), null, null, false));
+        if (processLineEndings) whileBody.add(new CallNode(pos, dollarUnderscore, newSymbol("chomp!"), null, null, false));
         if (split) whileBody.add(new GlobalAsgnNode(pos, newSymbol("$F"), new CallNode(pos, dollarUnderscore, newSymbol("split"), null, null, false)));
 
         if (oldRoot.getBodyNode() instanceof BlockNode) {   // common case n stmts

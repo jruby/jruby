@@ -60,6 +60,7 @@ import org.jruby.RubyContinuation;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyKernel;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.JumpException;
@@ -469,12 +470,10 @@ public class LoadService {
     }
 
     protected void warnCircularRequire(String requireName) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("loading in progress, circular require considered harmful - " + requireName);
 
         runtime.getCurrentContext().renderCurrentBacktrace(sb);
-
-        runtime.getWarnings().warn("loading in progress, circular require considered harmful - " + requireName);
-        runtime.getErr().print(sb.toString());
+        runtime.getWarnings().warn(sb.toString());
     }
 
     /**

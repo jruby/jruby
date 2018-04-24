@@ -7,6 +7,8 @@ exclude :test_loading_fifo_threading_raise, "we do not use IO to read files and 
 exclude :test_loading_fifo_threading_success, "we do not use IO to read files and so will not show as stopped while loading"
 exclude :test_race_exception, "needs investigation"
 exclude :test_require_changed_home, "needs investigation"
+exclude :test_require_insecure_path, "JRuby does not have null-terminated strings nor tainting"
+exclude :test_require_insecure_path_shift_jis, "JRuby does not have null-terminated strings nor tainting"
 exclude :test_require_nonascii, "needs investigation"
 exclude :test_require_nonascii_path_shift_jis, "needs investigation"
 exclude :test_require_path_home_1, "needs investigation"

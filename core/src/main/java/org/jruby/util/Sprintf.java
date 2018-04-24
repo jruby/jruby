@@ -91,7 +91,7 @@ public class Sprintf {
     private static final String ERR_MALFORMED_DOT_NUM = "malformed format string - %.[0-9]";
     private static final String ERR_MALFORMED_STAR_NUM = "malformed format string - %*[0-9]";
     private static final String ERR_ILLEGAL_FORMAT_CHAR = "illegal format character - %";
-    private static final String ERR_INCOMPLETE_FORMAT_SPEC = "incomplete format specifier; use %%%% (double %%) instead";
+    private static final String ERR_INCOMPLETE_FORMAT_SPEC = "incomplete format specifier; use %% (double %) instead";
     private static final String ERR_MALFORMED_NAME = "malformed name - unmatched parenthesis";
 
     private static final ThreadLocal<Map<Locale, NumberFormat>> LOCALE_NUMBER_FORMATS = new ThreadLocal<Map<Locale, NumberFormat>>();

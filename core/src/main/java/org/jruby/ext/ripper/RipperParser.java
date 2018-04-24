@@ -2772,7 +2772,7 @@ states[265] = new RipperParserState() {
 };
 states[266] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                     p.warning("comparison '" + ((IRubyObject)yyVals[-1+yyTop]) + "%s' after comparison");
+                     p.warning("comparison '" + ((IRubyObject)yyVals[-1+yyTop]) + "' after comparison");
                      yyVal = p.dispatch("on_binary", ((IRubyObject)yyVals[-2+yyTop]), p.intern(">"), ((IRubyObject)yyVals[0+yyTop]));
     return yyVal;
   }
