@@ -2051,7 +2051,7 @@ public final class StringSupport {
             }
         }
 
-        if (cr == CR_VALID) {
+        if (cr == CR_VALID && enc.isAsciiCompatible()) {
             cr = CR_7BIT;
         }
         self.modifyAndKeepCodeRange();
