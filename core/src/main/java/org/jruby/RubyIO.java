@@ -45,7 +45,7 @@ import org.jcodings.transcode.EConvFlags;
 import org.jruby.api.API;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IOSites;
-import org.jruby.runtime.callsite.RespondToCallSite;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.IOChannel;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
@@ -2619,14 +2619,20 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             line = string.getByteList();
         }
 
-        if (string != null) {
-            write(context, maybeIO, string);
-        } else {
-            write(context, maybeIO, line);
-        }
+        boolean writeSeparator = line.length() == 0 || !line.endsWith(separator.getByteList());
 
-        if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
-            write(context, maybeIO, separator);
+        if (string != null) {
+            if (writeSeparator) {
+                write(context, maybeIO, string, separator);
+            } else {
+                write(context, maybeIO, string);
+            }
+        } else {
+            if (writeSeparator) {
+                write(context, maybeIO, line, separator);
+            } else {
+                write(context, maybeIO, line);
+            }
         }
     }
 
@@ -2639,16 +2645,42 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    protected IRubyObject write(ThreadContext context, ByteList byteList) {
-        return sites(context).write.call(context, this, this, RubyString.newStringShared(context.runtime, byteList));
+    protected static IRubyObject write(ThreadContext context, IRubyObject maybeIO, ByteList byteList) {
+        return write(context, maybeIO, RubyString.newStringShared(context.runtime, byteList));
     }
 
-    protected static IRubyObject write(ThreadContext context, IRubyObject maybeIO, ByteList byteList) {
-        return sites(context).write.call(context, maybeIO, maybeIO, RubyString.newStringShared(context.runtime, byteList));
+    // MRI: rb_io_writev with string as ByteList
+    protected static IRubyObject write(ThreadContext context, IRubyObject maybeIO, ByteList byteList, IRubyObject sep) {
+        return write(context, maybeIO, RubyString.newStringShared(context.runtime, byteList), sep);
     }
 
     public static IRubyObject write(ThreadContext context, IRubyObject maybeIO, IRubyObject str) {
         return sites(context).write.call(context, maybeIO, maybeIO, str);
+    }
+
+    // MRI: rb_io_writev with string as IRubyObject
+    public static IRubyObject write(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1) {
+        CachingCallSite write = sites(context).write;
+
+        // In MRI this is used for all multi-arg puts calls to write. Here, we just do it for two
+        if (write.retrieveCache(maybeIO.getMetaClass()).method.getArity() == Arity.ONE_ARGUMENT) {
+            Ruby runtime = context.runtime;
+            if (maybeIO != runtime.getGlobalVariables().get("$stderr") && runtime.isVerbose()) {
+                IRubyObject klass = maybeIO.getMetaClass();
+                char sep;
+                if (((RubyClass) klass).isSingleton()) {
+                    klass = maybeIO;
+                    sep = '.';
+                } else {
+                    sep = '#';
+                }
+                runtime.getWarnings().warning(klass.toString() + sep + "write is outdated interface which accepts just one argument");
+            }
+            write.call(context, maybeIO, maybeIO, arg0);
+            write.call(context, maybeIO, maybeIO, arg1);
+            return arg0;         /* unused right now */
+        }
+        return write.call(context, maybeIO, maybeIO, arg0, arg1);
     }
 
     @JRubyMethod
