@@ -1928,12 +1928,12 @@ public class IRRuntimeHelpers {
      * Create a new Symbol.to_proc for the given symbol name and encoding.
      *
      * @param context
-     * @param symbol
+     * @param id
      * @return
      */
     @JIT
-    public static RubyProc newSymbolProc(ThreadContext context, ByteList symbol) {
-        return (RubyProc) context.runtime.newSymbol(symbol).to_proc(context);
+    public static RubyProc newSymbolProc(ThreadContext context, String id) {
+        return (RubyProc) context.runtime.newSymbol(id).to_proc(context);
     }
 
     /**

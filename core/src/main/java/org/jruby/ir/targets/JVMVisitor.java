@@ -2608,8 +2608,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void SymbolProc(SymbolProc symbolproc) {
-        // FIXME: bytelist_love - we can also do getId() is we will just cache lookup for symbol?
-        jvmMethod().pushSymbolProc(symbolproc.getName().getBytes());
+        jvmMethod().pushSymbolProc(symbolproc.getId());
     }
 
     @Override
