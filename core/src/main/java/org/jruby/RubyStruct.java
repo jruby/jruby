@@ -362,9 +362,10 @@ public class RubyStruct extends RubyObject {
 
         if (keywordInit.isTrue()) {
             IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, args);
+            int argc = maybeKwargs.isNil() ? args.length : args.length - 1;
 
-            if (maybeKwargs.isNil())
-                throw runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
+            if (argc >= 1)
+                throw runtime.newArgumentError("wrong number of arguments (given " + argc + ", expected 0)");
 
             RubyHash kwArgs = (RubyHash) maybeKwargs;
             RubyArray __members__ = __member__();
