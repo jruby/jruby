@@ -1748,11 +1748,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         if (runtime.getSystemExit().isInstance(rubyException)) {
             runtime.getThreadService().getMainThread().raise(rubyException);
-        } else if (abortOnException(runtime)) {
-            runtime.getThreadService().getMainThread().raise(rubyException);
-        } else if (reportOnException.isTrue()) {
-            printReportExceptionWarning();
-            runtime.printError(throwable);
+        } else if (abortOnException(runtime) || reportOnException.isTrue()) {
+            if (reportOnException.isTrue()) {
+                printReportExceptionWarning();
+                runtime.printError(throwable);
+            }
+            if (abortOnException(runtime)) {
+                runtime.getThreadService().getMainThread().raise(rubyException);
+            }
         } else if (runtime.isDebug()) {
             runtime.printError(throwable);
         }
