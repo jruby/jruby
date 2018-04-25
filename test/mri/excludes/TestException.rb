@@ -17,3 +17,5 @@ exclude :test_output_string_encoding, "Exception messages always go through Java
 exclude :test_redefined_backtrace, "Our backtrace is lazily set up and the flow does not work with this change"
 exclude :test_stackoverflow, reason
 exclude :test_too_many_args_in_eval, "MRI raises SystemStackError for huge number of args, for some reason"
+exclude :test_warning_warn, "we warn a line at a time"
+exclude :test_warning_warn_circular_require_backtrace, "we do not support #path objects in loaded features"
