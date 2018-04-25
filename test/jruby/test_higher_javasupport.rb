@@ -1256,7 +1256,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
       list.get(5)
       assert(false)
     rescue java.lang.IndexOutOfBoundsException => e
-      assert(e.message =~ /Index: 5, Size: 0$/)
+      if JAVA_9
+        assert(e.message =~ /Index 5.*?length 0$/)
+      else
+        assert(e.message =~ /Index: 5, Size: 0$/)
+      end
     end
   end
 
