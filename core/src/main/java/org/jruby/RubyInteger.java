@@ -485,7 +485,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /*
      * MRI: rb_int_round
      */
-    private RubyNumeric roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
+    public RubyNumeric roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
         Ruby runtime = context.runtime;
 
         RubyNumeric f, h, n, r;
