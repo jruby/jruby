@@ -1518,7 +1518,7 @@ public class EncodingUtils {
         outStop.p = outStart.p + newLen;
     }
 
-    // io_set_encoding_by_bom
+    // MRI: io_set_encoding_by_bom
     public static void ioSetEncodingByBOM(ThreadContext context, RubyIO io) {
         Ruby runtime = context.runtime;
         Encoding bomEncoding = ioStripBOM(context, io);
@@ -1534,15 +1534,13 @@ public class EncodingUtils {
         }
     }
 
-    // mri: io_strip_bom
-    @Deprecated
-    public static Encoding ioStripBOM(RubyIO io) {
-        return ioStripBOM(io.getRuntime().getCurrentContext(), io);
-    }
+    // MRI: io_strip_bom
     public static Encoding ioStripBOM(ThreadContext context, RubyIO io) {
         IRubyObject b1, b2, b3, b4;
 
+        if ((io.getOpenFile().getMode() & OpenFile.READABLE) == 0) return null;
         if ((b1 = io.getbyte(context)).isNil()) return null;
+
         switch ((int)((RubyFixnum)b1).getLongValue()) {
             case 0xEF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
@@ -2278,6 +2276,11 @@ public class EncodingUtils {
             throw context.runtime.newArgumentError("invalid codepoint " + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
         }
         return n;
+    }
+
+    @Deprecated
+    public static Encoding ioStripBOM(RubyIO io) {
+        return ioStripBOM(io.getRuntime().getCurrentContext(), io);
     }
 
 }
