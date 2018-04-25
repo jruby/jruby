@@ -215,16 +215,12 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @Override
-    public IRubyObject to_s() {
-        return to_s19();
-    }
-
     @JRubyMethod(name = "to_s", alias = "inspect")
-    public IRubyObject to_s19() {
+    public IRubyObject to_s() {
         Ruby runtime = getRuntime();
         RubyString string = runtime.newString("#<");
 
-        string.append(types(runtime, getMetaClass()));
+        string.append(types(runtime, type()));
         string.catString(":0x" + Integer.toString(System.identityHashCode(block), 16));
 
         String file = block.getBody().getFile();
@@ -347,6 +343,11 @@ public class RubyProc extends RubyObject implements DataType {
     @Deprecated
     public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
         return call(context, args, block);
+    }
+
+    @Deprecated
+    public IRubyObject to_s19() {
+        return to_s();
     }
 
 }
