@@ -45,6 +45,7 @@ exclude :test_fallback_to_sh, "Errno::ENOENT: No such file or directory - tmp_sc
 exclude :test_fd_inheritance, "unimplemented: cyclic redirects in child are not supported"
 exclude :test_gid_re_exchangeable_p, "unimplemented"
 exclude :test_gid_sid_available?, "unimplemented"
+exclude :test_initgroups, "unimplemented"
 exclude :test_kill_at_spawn_failure, "thread lifecycle at process boundaries?"
 exclude :test_no_curdir, "won't work due changed wd detection (since 1e30600bdbbf483a)"
 exclude :test_popen_exit, "terminates test run"
