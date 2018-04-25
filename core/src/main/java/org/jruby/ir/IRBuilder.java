@@ -3792,6 +3792,10 @@ public class IRBuilder {
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
 
+        scope.computeScopeFlagsEarly(instructions);
+        // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
+        if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
+
         return scope.allocateInterpreterContext(instructions);
     }
 
