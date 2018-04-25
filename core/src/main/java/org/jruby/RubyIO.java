@@ -3679,10 +3679,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         } else if (!(v = ((RubyHash) opt).op_aref(context, runtime.newSymbol("open_args"))).isNil()) {
             RubyArray vAry = v.convertToArray();
             int n = vAry.size();
+
             Arity.checkArgumentCount(runtime, n, 0, 3);
+
+            opt = ArgsUtil.getOptionsArg(runtime, vAry.toJavaArrayMaybeUnsafe());
+            
+            if (!opt.isNil()) n--;
             switch (n) {
-                case 3:
-                    opt = ArgsUtil.getOptionsArg(runtime, vAry.toJavaArrayMaybeUnsafe());
                 case 2:
                     vperm = vAry.eltOk(1);
                 case 1:
