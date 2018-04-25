@@ -617,6 +617,21 @@ public class JRubyEngineTest {
     }
 
     /**
+     * Test of invokeMethod method throwing an exception with a null message.
+     */
+    @Test
+    public void testInvokeMethodWithJavaException() throws Exception {
+        ScriptEngine instance = newScriptEngine();
+        instance.eval("def trigger_npe\nraise java.lang.NullPointerException.new\nend");
+        try {
+            Object result = ((Invocable) instance).invokeMethod(Object.class,"trigger_npe", null);
+            fail("Expected javax.script.ScriptException");
+        } catch (javax.script.ScriptException sex) {
+            // javax.script.ScriptException is expected
+        }
+    }
+
+    /**
      * Test of invokeFunction method, of class Jsr223JRubyEngine.
      */
     //@Test
@@ -640,6 +655,21 @@ public class JRubyEngineTest {
         assertTrue(((String)result).startsWith("Happy") || ((String) result).startsWith("You have"));
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
+    }
+
+    /**
+     * Test of invokeFunction method throwing an exception with a null message.
+     */
+    @Test
+    public void testInvokeFunctionWithJavaException() throws Exception {
+        ScriptEngine instance = newScriptEngine();
+        instance.eval("def trigger_npe\nraise java.lang.NullPointerException.new\nend");
+        try {
+            Object result = ((Invocable) instance).invokeFunction("trigger_npe", null);
+            fail("Expected javax.script.ScriptException");
+        } catch (javax.script.ScriptException sex) {
+            // javax.script.ScriptException is expected
+        }
     }
 
     /**

@@ -214,7 +214,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             }
             return container.callMethod(receiver, method, args, Object.class);
         } catch (Exception e) {
-            if (e.getCause().getMessage().contains("undefined method")) {
+            if (e.getCause() != null && e.getCause().getMessage() != null
+                    && e.getCause().getMessage().contains("undefined method")) {
                 throw wrapMethodException(e);
             }
             throw wrapException(e);
@@ -239,7 +240,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             }
             return container.callMethod(container.getProvider().getRuntime().getTopSelf(), method, args, Object.class);
         } catch (Exception e) {
-            if (e.getCause().getMessage().contains("undefined method")) {
+            if (e.getCause() != null && e.getCause().getMessage() != null
+                    && e.getCause().getMessage().contains("undefined method")) {
                 throw wrapMethodException(e);
             }
             throw wrapException(e);
