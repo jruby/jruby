@@ -1234,32 +1234,11 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject sqrt(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        // TODO: this not exactly the same as MRI
-
         if (isNegative()) {
             throw runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
         }
-        return bignorm(runtime, sqrt(value));
-    }
 
-    /**
-     * A simple public-domain iterative BigInteger sqrt.
-     *
-     * @param x
-     * @return
-     */
-    public static BigInteger sqrt(BigInteger x) {
-        BigInteger div = BigInteger.ZERO.setBit(x.bitLength()/2);
-        BigInteger div2 = div;
-        // Loop until we hit the same value twice in a row, or wind
-        // up alternating.
-        for(;;) {
-            BigInteger y = div.add(x.divide(div)).shiftRight(1);
-            if (y.equals(div) || y.equals(div2))
-                return y;
-            div2 = div;
-            div = y;
-        }
+        return bignorm(runtime, floorSqrt(value));
     }
 
     private static JavaSites.BignumSites sites(ThreadContext context) {

@@ -1472,13 +1472,14 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public IRubyObject sqrt(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        // TODO: this not exactly the same as MRI
-
         if (isNegative()) {
             throw runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
         }
+
         long n = value;
-        long sq = (long) Math.sqrt(n);
+        // FIXME: this is obviously not super efficient, but floorSqrt(long) did not pass tests
+        long sq = floorSqrt(BigInteger.valueOf(n)).longValue();
+        
         return RubyFixnum.newFixnum(runtime, sq);
     }
 
