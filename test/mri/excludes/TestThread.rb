@@ -1,6 +1,7 @@
 # frozen_string_literal: false
 exclude(/_stack_size$/, 'often too expensive')
 exclude :test_abort_on_exception, "very sensitive to thread timing and parallelism"
+exclude :test_inspect_with_fiber, "Thread.current is known to reflect the fiber, not the thread, in JRuby"
 exclude :test_handle_interrupt, "handle_interrupt is not working properly"
 exclude :test_handle_interrupt_and_p, "handle_interrupt is not working properly"
 exclude :test_handle_interrupt_blocking, "handle_interrupt is not working properly"
