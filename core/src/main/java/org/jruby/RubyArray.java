@@ -1910,10 +1910,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return join19(context);
     }
 
-    // 1.9 MRI: ary_join_0
+    // MRI: ary_join_0
     protected RubyString joinStrings(RubyString sep, int max, RubyString result) {
-        IRubyObject first = eltOk(0);
-        if (max > 0 && first instanceof EncodingCapable) {
+        IRubyObject first;
+        if (max > 0 && (first = eltOk(0)) instanceof EncodingCapable) {
             result.setEncoding(((EncodingCapable) first).getEncoding());
         }
 
@@ -1929,7 +1929,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
-    // 1.9 MRI: ary_join_1
+    // MRI: ary_join_1
     private RubyString joinAny(ThreadContext context, RubyString sep, int i, RubyString result, boolean[] first) {
         assert i >= 0 : "joining elements before beginning of array";
 
@@ -1967,6 +1967,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
+    // MRI: ary_join_1, str_join label
     private void strJoin(RubyString result, IRubyObject tmp, boolean[] first) {
         result.append19(tmp);
         if (first[0]) {
@@ -1980,6 +1981,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (ary == this) throw context.runtime.newArgumentError("recursive array join");
 
+        first[0] = false;
+        
         context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result, first), outValue, "join", true);
     }
 
@@ -2006,10 +2009,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             IRubyObject val = eltOk(i);
             IRubyObject tmp = val.checkStringType();
             if (tmp == context.nil || tmp != val) {
-                len += (realLength - i) * 10;
-                RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
                 if (first == null) first = new boolean[] {false};
                 else first[0] = false;
+                len += (realLength - i) * 10;
+                RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
                 joinStrings(sepString, i, result);
                 first[0] = i == 0;
                 return joinAny(context, sepString, i, result, first);
