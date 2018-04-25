@@ -106,7 +106,7 @@ public class JRubyLibrary implements Library {
      * version uses ObjectProxyCache to guarantee the same wrapper is returned
      * as long as it is in use somewhere.
      */
-    @JRubyMethod(module = true)
+    @JRubyMethod(module = true, name = {"reference", "ref"})
     public static IRubyObject reference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return Java.getInstance(context.runtime, obj, false);
     }
@@ -129,7 +129,7 @@ public class JRubyLibrary implements Library {
      * Unwrap the given Java-integration-wrapped object, returning the unwrapped
      * object. If the wrapped object is not a Ruby object, an error will raise.
      */
-    @JRubyMethod(module = true)
+    @JRubyMethod(module = true, name = {"dereference", "deref"})
     public static IRubyObject dereference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Object unwrapped = JavaUtil.unwrapIfJavaObject(obj);
         if (unwrapped == obj) {
