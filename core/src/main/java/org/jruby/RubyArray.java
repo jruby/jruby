@@ -1930,7 +1930,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     // 1.9 MRI: ary_join_1
-    private RubyString joinAny(ThreadContext context, RubyString sep, int i, RubyString result) {
+    private RubyString joinAny(ThreadContext context, RubyString sep, int i, RubyString result, boolean[] first) {
         assert i >= 0 : "joining elements before beginning of array";
 
         RubyClass arrayClass = context.runtime.getArray();
@@ -1942,13 +1942,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             IRubyObject val = eltOk(i);
 
             if (val instanceof RubyString) {
-                result.append19(val);
+                strJoin(result, val, first);
             } else if (val instanceof RubyArray) {
-                recursiveJoin(context, val, sep, result, (RubyArray) val);
+                recursiveJoin(context, val, sep, result, (RubyArray) val, first);
             } else {
                 IRubyObject tmp = val.checkStringType();
                 if (tmp != context.nil) {
-                    result.append19(tmp);
+                    strJoin(result, tmp, first);
                     continue;
                 }
 
@@ -1956,9 +1956,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
                 tmp = TypeConverter.convertToTypeWithCheck(context, val, arrayClass, to_ary_checked);
                 if (tmp != context.nil) {
-                    recursiveJoin(context, val, sep, result, (RubyArray) tmp);
+                    recursiveJoin(context, val, sep, result, (RubyArray) tmp, first);
                 } else {
-                    result.append19(RubyString.objAsString(context, val));
+                    val = RubyString.objAsString(context, val);
+                    strJoin(result, val, first);
                 }
             }
         }
@@ -1966,12 +1967,20 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
+    private void strJoin(RubyString result, IRubyObject tmp, boolean[] first) {
+        result.append19(tmp);
+        if (first[0]) {
+            result.setEncoding(((RubyString) tmp).getEncoding());
+            first[0] = false;
+        }
+    }
+
     private void recursiveJoin(final ThreadContext context, final IRubyObject outValue,
-                               final RubyString sep, final RubyString result, final RubyArray ary) {
+                               final RubyString sep, final RubyString result, final RubyArray ary, final boolean[] first) {
 
         if (ary == this) throw context.runtime.newArgumentError("recursive array join");
 
-        context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result), outValue, "join", true);
+        context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result, first), outValue, "join", true);
     }
 
     /** rb_ary_join
@@ -1992,14 +2001,18 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             len += sepString.size() * (realLength - 1);
         }
 
+        boolean[] first = null;
         for (int i = 0; i < realLength; i++) {
             IRubyObject val = eltOk(i);
             IRubyObject tmp = val.checkStringType();
             if (tmp == context.nil || tmp != val) {
                 len += (realLength - i) * 10;
                 RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
-
-                return joinAny(context, sepString, i, joinStrings(sepString, i, result));
+                if (first == null) first = new boolean[] {false};
+                else first[0] = false;
+                joinStrings(sepString, i, result);
+                first[0] = i == 0;
+                return joinAny(context, sepString, i, result, first);
             }
 
             len += ((RubyString) tmp).getByteList().length();
@@ -5137,19 +5150,21 @@ float_loop:
             //private final IRubyObject outValue;
             private final RubyString sep;
             private final RubyString result;
+            private final boolean[] first;
 
-            State(RubyArray ary, IRubyObject outValue, RubyString sep, RubyString result) {
+            State(RubyArray ary, IRubyObject outValue, RubyString sep, RubyString result, boolean[] first) {
                 this.ary = ary;
                 //this.outValue = outValue;
                 this.sep = sep;
                 this.result = result;
+                this.first = first;
             }
         }
 
         public IRubyObject call(ThreadContext context, State state, IRubyObject obj, boolean recur) {
             if (recur) throw context.runtime.newArgumentError("recursive array join");
 
-            state.ary.joinAny(context, state.sep, 0, state.result);
+            state.ary.joinAny(context, state.sep, 0, state.result, state.first);
 
             return context.nil;
         }
