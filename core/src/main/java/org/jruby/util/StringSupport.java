@@ -1850,7 +1850,7 @@ public final class StringSupport {
                         if (EncodingUtils.encAscget(strBytes, subend, pend, n, enc) != '\r') {
                             n[0] = 0;
                         }
-                        rslen = n[0] + enc.length(strBytes, subend + n[0], pend);
+                        rslen = n[0] + length(enc, strBytes, subend + n[0], pend);
                         if (enc.isNewLine(strBytes, subend + n[0], pend)) {
                             if (eol == subend) break;
                             subend += rslen;
