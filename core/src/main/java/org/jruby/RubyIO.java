@@ -3683,7 +3683,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             Arity.checkArgumentCount(runtime, n, 0, 3);
 
             opt = ArgsUtil.getOptionsArg(runtime, vAry.toJavaArrayMaybeUnsafe());
-            
+
             if (!opt.isNil()) n--;
             switch (n) {
                 case 2:
