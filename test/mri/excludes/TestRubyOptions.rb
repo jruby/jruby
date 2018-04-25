@@ -1,6 +1,7 @@
 exclude :test_assignment_in_conditional, "line numbers don't match MRI"
 exclude :test_chdir, "needs investigation"
 exclude :test_copyright, "needs investigation"
+exclude :test_cwd_encoding, "can't do chdir and env yet #5145"
 exclude :test_debug, "needs investigation"
 exclude :test_dump_insns_with_rflag, "MRI-specific format"
 exclude :test_dump_parsetree_with_rflag, "MRI-specific format"
