@@ -154,7 +154,7 @@ public class IRRuntimeHelpers {
             StaticScope staticScope = dynScope.getStaticScope();
             IRScope scope = staticScope.getIRScope();
 
-            // 1) method 2) lambda 3) closure (define_method) for zsuper
+            // 1) method 2) root of script 3) lambda 3) closure (define_method) for zsuper
             if (scope instanceof IRMethod
                     || scope instanceof IRScriptBody
                     || (scope instanceof IRClosure && (dynScope.isLambda() || staticScope.isArgumentScope()))) return dynScope;
