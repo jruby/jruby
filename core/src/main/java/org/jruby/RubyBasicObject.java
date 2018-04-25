@@ -2533,7 +2533,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject method(IRubyObject name) {
         final RubySymbol symbol = TypeConverter.checkID(name);
-        return getMetaClass().newMethod(this, symbol.asJavaString(), true, null, true);
+        return getMetaClass().newMethod(this, symbol.idString(), true, null, true);
     }
 
     @Deprecated

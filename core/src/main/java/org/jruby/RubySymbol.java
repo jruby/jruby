@@ -160,10 +160,16 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return symbol;
     }
 
+    /**
+     * Print a string for internal debugging purposes.  This does a half-hearted attempt at representing the string in
+     * a displayable fashion for for error messages you should use RubyStringBuilder.str + ids + types to build up the
+     * error message.  For identifier strings you should use idString().  For non-identifier strings where you want a
+     * raw String you should use asJavaString().
+     *
+     * @return a String
+     */
     @Override
     public final String toString() {
-        // FIXME: This is not efficient but in theory this is just for display purposes
-        // which generally are for errors?
         return StringSupport.byteListAsString(symbolBytes);
     }
 
@@ -175,7 +181,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * Make an instance variable out of this symbol (e.g. :foo will generate :foo=).
      * @return the new symbol
      */
-    public RubySymbol asAccessor() {
+    public RubySymbol asWriter() {
         ByteList bytes = getBytes().dup();
 
         bytes.append((byte) '=');

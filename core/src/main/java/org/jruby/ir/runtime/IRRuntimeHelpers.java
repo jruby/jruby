@@ -1646,8 +1646,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RaiseException newRequiredKeywordArgumentError(ThreadContext context, String name) {
-        return context.runtime.newArgumentError("missing keyword: " + name);
+    public static RaiseException newRequiredKeywordArgumentError(ThreadContext context, String id) {
+        return context.runtime.newArgumentError(str(context.runtime, "missing keyword: ", ids(context.runtime, id)));
     }
 
     @JIT

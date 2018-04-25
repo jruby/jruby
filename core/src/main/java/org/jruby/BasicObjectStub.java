@@ -42,6 +42,8 @@ import org.jruby.runtime.builtin.Variable;
 
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.util.RubyStringBuilder.str;
+
 import org.jruby.util.TypeConverter;
 
 public final class BasicObjectStub {
@@ -146,8 +148,9 @@ public final class BasicObjectStub {
 
     public static String asJavaString(IRubyObject self) {
         IRubyObject asString = checkStringType(self);
-        if(!asString.isNil()) return ((RubyString)asString).asJavaString();
-        throw getRuntime(self).newTypeError(inspect(self).toString() + " is not a string");
+        if(!asString.isNil()) return asString.asJavaString();
+        Ruby runtime = getRuntime(self);
+        throw runtime.newTypeError(str(runtime, "", inspect(self), " is not a string"));
     }
 
     public static RubyString asString(IRubyObject self) {

@@ -574,8 +574,7 @@ public class RubyStruct extends RubyObject {
                 buffer.cat(' ');
             }
             RubySymbol slot = (RubySymbol) member.eltInternal(i);
-            String name = slot.toString();
-            if (IdUtil.isLocal(name) || IdUtil.isConstant(name)) {
+            if (slot.validLocalVariableName() || slot.validConstantName()) {
                 buffer.cat19(RubyString.objAsString(context, slot));
             } else {
                 buffer.cat19(((RubyString) slot.inspect(context)));

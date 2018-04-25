@@ -380,7 +380,7 @@ public class RubyConverter extends RubyObject {
 
         if (ret instanceof RubySymbol) {
             RubySymbol retSym = (RubySymbol)ret;
-            String retStr = retSym.toString();
+            String retStr = retSym.asJavaString(); // 7bit comparison
 
             if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
                     retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
@@ -419,7 +419,7 @@ public class RubyConverter extends RubyObject {
 
         if (ret instanceof RubySymbol) {
             RubySymbol retSym = (RubySymbol)ret;
-            String retStr = retSym.toString();
+            String retStr = retSym.asJavaString(); // 7 bit comparison
 
             if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
                     retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||

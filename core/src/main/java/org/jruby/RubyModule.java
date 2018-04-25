@@ -89,7 +89,6 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -102,7 +101,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -1891,7 +1889,7 @@ public class RubyModule extends RubyObject {
             callMethod(context, "method_added", identifier);
         }
         if (writeable) {
-            identifier = identifier.asAccessor();
+            identifier = identifier.asWriter();
             addMethod(identifier.idString(), new AttrWriterMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
         }

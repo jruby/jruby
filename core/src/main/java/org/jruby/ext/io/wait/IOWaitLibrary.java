@@ -134,7 +134,7 @@ public class IOWaitLibrary implements Library {
         if (argv.length == 2) {
             if (argv[1] instanceof RubySymbol) {
                 RubySymbol sym = (RubySymbol) argv[1];
-                switch (sym.toString()) {
+                switch (sym.asJavaString()) { // 7 bit comparison
                     case "r":
                     case "read":
                     case "readable":

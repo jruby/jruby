@@ -62,7 +62,7 @@ public class OpAsgnNode extends Node {
         this.valueNode = valueNode;
         this.variableName = variableName;
         this.operatorName = operatorName;
-        this.variableNameAsgn = variableName.asAccessor();
+        this.variableNameAsgn = variableName.asWriter();
         this.isLazy = isLazy;
     }
 

@@ -437,7 +437,7 @@ public class TraceType {
             buffer.append("  ");
 
             // method name
-            String methodName = runtime == null ? frame.getMethodName() : runtime.newSymbol(frame.getMethodName()).toString();
+            String methodName = runtime == null ? frame.getMethodName() : runtime.newSymbol(frame.getMethodName()).idString();
             for (int j = 0; j < longestMethod - methodName.length(); j++) {
                 buffer.append(' ');
             }

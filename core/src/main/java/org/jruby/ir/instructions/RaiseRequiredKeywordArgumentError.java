@@ -47,8 +47,7 @@ public class RaiseRequiredKeywordArgumentError extends NoOperandInstr implements
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        // FIXME: Make bytelist version
-        throw IRRuntimeHelpers.newRequiredKeywordArgumentError(context, name.toString());
+        throw IRRuntimeHelpers.newRequiredKeywordArgumentError(context, name.idString());
     }
 
     @Override
