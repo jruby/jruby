@@ -49,7 +49,7 @@ public class RipperParser extends RipperParserBase {
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 52 "-"
+					// line 53 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -759,20 +759,20 @@ public class RipperParser extends RipperParserBase {
     "modifier_rescue","keyword_alias","keyword_defined","keyword_BEGIN",
     "keyword_END","keyword__LINE__","keyword__FILE__",
     "keyword__ENCODING__","keyword_do_lambda","tIDENTIFIER","tFID",
-    "tGVAR","tIVAR","tCONSTANT","tCVAR","tLABEL","tCHAR","tUPLUS",
-    "tUMINUS","tUMINUS_NUM","tPOW","tCMP","tEQ","tEQQ","tNEQ","tGEQ",
-    "tLEQ","tANDOP","tOROP","tMATCH","tNMATCH","tDOT","tDOT2","tDOT3",
-    "tAREF","tASET","tLSHFT","tRSHFT","tANDDOT","tCOLON2","tCOLON3",
-    "tOP_ASGN","tASSOC","tLPAREN","tLPAREN2","tRPAREN","tLPAREN_ARG",
-    "tLBRACK","tRBRACK","tLBRACE","tLBRACE_ARG","tSTAR","tSTAR2","tAMPER",
-    "tAMPER2","tTILDE","tPERCENT","tDIVIDE","tPLUS","tMINUS","tLT","tGT",
-    "tPIPE","tBANG","tCARET","tLCURLY","tRCURLY","tBACK_REF2","tSYMBEG",
+    "tGVAR","tIVAR","tCONSTANT","tCVAR","tLABEL","tCHAR","unary+",
+"unary-","tUMINUS_NUM","'**'","'<=>'","'=='","'==='","'!='","'>='",
+"'<='","'&&'","'||'","'=~'","'!~'","'.'","'..'","'...'",
+"'[]'","'[]='","'<<'","'>>'","'&.'","'::'","':: at EXPR_BEG'",
+    "tOP_ASGN","'=>'","'('","'( arg'","')'","'['",
+"'{'","'{ arg'","'['","'[ args'","'*'","'*'","'&'",
+"'&'","'~'","'%'","'/'","'+'","'-'","'<'","'>'",
+"'|'","'!'","'^'","'{'","'}'","'`'","':'",
     "tSTRING_BEG","tXSTRING_BEG","tREGEXP_BEG","tWORDS_BEG","tQWORDS_BEG",
-    "tSTRING_DBEG","tSTRING_DVAR","tSTRING_END","tLAMBDA","tLAMBEG",
+    "tSTRING_DBEG","tSTRING_DVAR","tSTRING_END","'->'","tLAMBEG",
     "tNTH_REF","tBACK_REF","tSTRING_CONTENT","tINTEGER","tIMAGINARY",
     "tFLOAT","tRATIONAL","tREGEXP_END","tIGNORED_NL","tCOMMENT",
     "tEMBDOC_BEG","tEMBDOC","tEMBDOC_END","tSP","tHEREDOC_BEG",
-    "tHEREDOC_END","tSYMBOLS_BEG","tQSYMBOLS_BEG","tDSTAR","tSTRING_DEND",
+    "tHEREDOC_END","tSYMBOLS_BEG","tQSYMBOLS_BEG","'**'","tSTRING_DEND",
     "tLABEL_END","tLOWEST","k__END__",
     };
 
@@ -4846,6 +4846,6 @@ states[649] = new RipperParserState() {
   }
 };
 }
-					// line 2186 "RipperParser.y"
+					// line 2187 "RipperParser.y"
 }
-					// line 9736 "-"
+					// line 9737 "-"
