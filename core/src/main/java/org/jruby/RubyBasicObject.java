@@ -809,13 +809,19 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         Ruby runtime = getRuntime();
 
         /* 6:tags 16:addr 1:eos */
-        RubyString bytes = runtime.newString("#<");
-        bytes.cat(getMetaClass().getRealClass().toRubyString(runtime.getCurrentContext()));
-        bytes.catString(":0x");
-        bytes.catString(Integer.toHexString(System.identityHashCode(this)));
-        bytes.catString(">");
-        bytes.setTaint(isTaint());
-        return bytes;
+        String hex = Integer.toHexString(System.identityHashCode(this));
+        ByteList className = getMetaClass().getRealClass().toRubyString(runtime.getCurrentContext()).getByteList();
+        ByteList bytes = new ByteList(2 + className.realSize() + 3 + hex.length() + 1);
+        bytes.setEncoding(className.getEncoding());
+        bytes.append('#').append('<');
+        bytes.append(className);
+        bytes.append(':').append('0').append('x');
+        bytes.append(hex.getBytes());
+        bytes.append('>');
+
+        RubyString str = RubyString.newString(runtime, bytes);
+        str.setTaint(isTaint());
+        return str;
     }
 
     /**
