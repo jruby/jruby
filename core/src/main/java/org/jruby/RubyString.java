@@ -1141,9 +1141,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return sites(context).equals.call(context, this, other, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
     }
 
-    @JRubyMethod(name = "-@") // -'foo' returns deduplicated (interned) string
+    @JRubyMethod(name = "-@") // -'foo' returns frozen string
     public final IRubyObject minus_at(ThreadContext context) {
-        return context.runtime.freezeAndDedupString(this);
+        return isFrozen() ? this : context.runtime.freezeAndDedupString(this);
     }
 
     @JRubyMethod(name = "+@") // +'foo' returns modifiable string
@@ -3941,7 +3941,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (lim <= 0) {
             return splitCommon(context, arg0, false, lim, 1, true);
         } else {
-            if (lim == 1) return value.getRealSize() == 0 ? context.runtime.newArray() : context.runtime.newArray(this);
+            if (lim == 1) {
+                Ruby runtime = context.runtime;
+                return value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime));
+            }
             return splitCommon(context, arg0, true, lim, 1, true);
         }
     }
@@ -4620,7 +4623,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private RubyArray partitionMismatch(Ruby runtime) {
         final Encoding enc = getEncoding();
-        return RubyArray.newArrayMayCopy(runtime, this, newEmptyString(runtime, enc), newEmptyString(runtime, enc));
+        return RubyArray.newArrayMayCopy(runtime, this.strDup(runtime), newEmptyString(runtime, enc), newEmptyString(runtime, enc));
     }
 
     @JRubyMethod(name = "rpartition", reads = BACKREF, writes = BACKREF)
@@ -4649,7 +4652,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private IRubyObject rpartitionMismatch(Ruby runtime) {
         final Encoding enc = getEncoding();
-        return RubyArray.newArray(runtime, new IRubyObject[]{newEmptyString(runtime, enc), newEmptyString(runtime, enc), this});
+        return RubyArray.newArray(runtime, new IRubyObject[]{newEmptyString(runtime, enc), newEmptyString(runtime, enc), this.strDup(runtime)});
     }
 
     /** rb_str_chop / rb_str_chop_bang
@@ -5317,7 +5320,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString srcStr = src.convertToString();
 
         if (value.getRealSize() == 0) return context.nil;
-        if (replList.getRealSize() == 0) return delete_bang19(context, src);
+        if (replList.getRealSize() == 0) return delete_bang(context, src);
 
         CodeRangeable ret = StringSupport.trTransHelper(context.runtime, this, srcStr, replStr, sflag);
         return (ret == null) ? context.nil : (IRubyObject) ret;

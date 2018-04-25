@@ -1041,9 +1041,11 @@ public class IRBuilder {
 
     public Operand buildCall(Variable result, CallNode callNode) {
         Node receiverNode = callNode.getReceiverNode();
+        RubySymbol name = callNode.getName();
 
         // Frozen string optimization: check for "string".freeze
-        if (receiverNode instanceof StrNode && CommonByteLists.FREEZE_METHOD.equals(callNode.getName().getBytes())) {
+        String id = name.idString(); // ID Str ok here since it is 7bit check.
+        if (receiverNode instanceof StrNode && (id.equals("freeze") || id.equals("-@"))) {
             StrNode asString = (StrNode) receiverNode;
             return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFileName(), asString.getPosition().getLine());
         }
@@ -1056,7 +1058,7 @@ public class IRBuilder {
         // obj["string"] optimization for Hash
         ArrayNode argsAry;
         if (!callNode.isLazy() &&
-                CommonByteLists.AREF_METHOD.equals(callNode.getName().getBytes()) &&
+                id.equals("[]") &&
                 callNode.getArgsNode() instanceof ArrayNode &&
                 (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
                 argsAry.get(0) instanceof StrNode &&
@@ -1080,7 +1082,6 @@ public class IRBuilder {
 
         CallInstr callInstr;
         Operand block;
-        RubySymbol name = callNode.getName();
         if (keywordArgs != null) {
             Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
             List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
@@ -3789,6 +3790,10 @@ public class IRBuilder {
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
+
+        scope.computeScopeFlagsEarly(instructions);
+        // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
+        if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
         return scope.allocateInterpreterContext(instructions);
     }

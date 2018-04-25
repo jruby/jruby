@@ -39,6 +39,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.Exception;
 import org.jruby.exceptions.JumpException.FlowControlException;
 import org.jruby.exceptions.RaiseException;
@@ -52,6 +53,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -69,6 +71,7 @@ public class RubyException extends RubyObject {
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;
     public static final int TRACE_MAX = RubyException.TRACE_HEAD + RubyException.TRACE_TAIL + 6;
+    public static final String[] FULL_MESSAGE_KEYS = {"highlight", "order"};
     protected BacktraceData backtraceData;
     IRubyObject message;
     // We initialize this to UNDEF to know whether cause has been initialized (from ruby space we will just see nil
@@ -174,8 +177,41 @@ public class RubyException extends RubyObject {
         return exceptionClass.callMethod(context, "new", message.convertToString());
     }
 
+    @JRubyMethod
     public IRubyObject full_message(ThreadContext context) {
         return RubyString.newString(context.runtime, TraceType.Format.MRI.printBacktrace(this, false));
+    }
+
+    @JRubyMethod
+    public IRubyObject full_message(ThreadContext context, IRubyObject opts) {
+        Ruby runtime = context.runtime;
+        IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
+        boolean highlight = false;
+        boolean reverse = false;
+
+        if (!optArg.isNil()) {
+            IRubyObject[] highlightOrder = ArgsUtil.extractKeywordArgs(context, (RubyHash) optArg, FULL_MESSAGE_KEYS);
+
+            IRubyObject vHigh = highlightOrder[0];
+            if (vHigh == UNDEF) vHigh = context.nil;
+            if (vHigh != context.nil && vHigh != context.fals && vHigh != context.tru) {
+                throw runtime.newArgumentError("expected true or false as highlight: " + vHigh);
+            }
+            highlight = vHigh.isTrue();
+
+            IRubyObject vOrder = highlightOrder[1];
+            if (vOrder != UNDEF) {
+                vOrder = TypeConverter.checkID(vOrder);
+                if (vOrder == runtime.newSymbol("bottom")) reverse = true;
+                else if (vOrder == runtime.newSymbol("top")) reverse = false;
+                else {
+                    throw runtime.newArgumentError("expected :top or :bottom as order: " + vOrder);
+                }
+            }
+        }
+
+        // TODO: reverse
+        return RubyString.newString(runtime, TraceType.Format.MRI.printBacktrace(this, highlight));
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)

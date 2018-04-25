@@ -38,7 +38,6 @@
 
 package org.jruby;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.Locale;
@@ -48,7 +47,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites.FloatSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -63,7 +61,6 @@ import org.jruby.util.Sprintf;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_expt;
-import static org.jruby.util.Numeric.f_lshift;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negate;
 import static org.jruby.util.Numeric.f_negative_p;
@@ -90,6 +87,7 @@ public class RubyFloat extends RubyNumeric {
     public static final double EPSILON = 2.2204460492503131e-16;
     public static final double INFINITY = Double.POSITIVE_INFINITY;
     public static final double NAN = Double.NaN;
+    public static final int FLOAT_DIG = DIG + 2;
 
     public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -855,26 +853,32 @@ public class RubyFloat extends RubyNumeric {
             return ((RubyInteger) truncate(context)).floor(context, digits);
         }
 
+        Ruby runtime = context.runtime;
         number = value;
+
+        if (number == 0.0) {
+            return ndigits > 0 ? this : RubyFixnum.zero(runtime);
+        }
 
         if (ndigits > 0) {
             RubyNumeric[] num = {this};
-            Ruby runtime = context.runtime;
-            if (floatInvariantRound(runtime, number, ndigits, num)) return num[0];
+            long[] binexp = {0};
+            frexp(number, binexp);
+            if (floatRoundOverflow(ndigits, binexp)) return num[0];
+            if (number > 0.0 && floatRoundUnderflow(ndigits, binexp))
+                return newFloat(runtime, 0.0);
             f = Math.pow(10, ndigits);
             f = Math.floor(number * f) / f;
             return dbl2num(runtime, f);
+        } else {
+            RubyInteger num = dbl2ival(runtime, Math.floor(number));
+            if (ndigits < 0) num = (RubyInteger) num.floor(context, digits);
+            return num;
         }
-
-        return floor(context);
     }
 
-     // MRI: float_invariant_round
-     private static boolean floatInvariantRound(Ruby runtime, double number, int ndigits, RubyNumeric[] num)    {
-        int float_dig = DIG+2;
-        long[] binexp = {0L};
-
-        frexp(number, binexp);
+     // MRI: float_round_overflow
+     private static boolean floatRoundOverflow(int ndigits, long[] binexp) {
 
         /* Let `exp` be such that `number` is written as:"0.#{digits}e#{exp}",
            i.e. such that  10 ** (exp - 1) <= |number| < 10 ** exp
@@ -894,13 +898,16 @@ public class RubyFloat extends RubyNumeric {
                 If ndigits + ceil(binexp/(3 or 4)) < 0 the result is 0
         */
 
-        if (Double.isInfinite(number) || Double.isNaN(number) ||
-                (ndigits >= float_dig - (binexp[0] > 0 ? binexp[0] / 4 : binexp[0] / 3 - 1))) {
+        if (ndigits >= FLOAT_DIG - (binexp[0] > 0 ? binexp[0] / 4 : binexp[0] / 3 - 1)) {
             return true;
         }
 
+        return false;
+    }
+
+    // MRI: float_round_underflow
+    private static boolean floatRoundUnderflow(int ndigits, long[] binexp) {
         if (ndigits < - (binexp[0] > 0 ? binexp[0] / 3 + 1 : binexp[0] / 4)) {
-            num[0] = RubyFixnum.zero(runtime);
             return true;
         }
 
@@ -928,20 +935,25 @@ public class RubyFloat extends RubyNumeric {
 
         number = value;
 
-        if (ndigits < 0) {
-            return ((RubyInteger) dbl2ival(runtime, Math.ceil(number))).ceil(context, digits);
+        if (number == 0.0) {
+            return ndigits > 0 ? this : RubyFixnum.zero(runtime);
+        }
+        if (ndigits > 0) {
+            long[] binexp = {0};
+            frexp(number, binexp);
+            if (floatRoundOverflow(ndigits, binexp)) return this;
+            if (number < 0.0 && floatRoundUnderflow(ndigits, binexp))
+                return newFloat(runtime, 0.0);
+            f = Math.pow(10, ndigits);
+            f = Math.ceil(number * f) / f;
+            return newFloat(runtime, f);
+        }
+        else {
+            IRubyObject num = dbl2ival(runtime, Math.ceil(number));
+            if (ndigits < 0) num = ((RubyInteger) num).ceil(context, digits);
+            return num;
         }
 
-        if (ndigits == 0) {
-            return dbl2ival(runtime, Math.ceil(number));
-        }
-
-        RubyNumeric[] num = {this};
-        if (floatInvariantRound(runtime, number, ndigits, num)) return num[0];
-
-        f = Math.pow(10, ndigits);
-
-        return RubyFloat.newFloat(runtime, Math.ceil(number * f) / f);
     }
 
     /**
@@ -950,7 +962,7 @@ public class RubyFloat extends RubyNumeric {
     @Override
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context) {
-        return roundShared(context, RoundingMode.HALF_UP, 0);
+        return roundShared(context, 0, RoundingMode.HALF_UP);
     }
 
     /**
@@ -969,7 +981,7 @@ public class RubyFloat extends RubyNumeric {
 
         RoundingMode roundingMode = getRoundingMode(context, opts);
 
-        return roundShared(context, roundingMode, digits);
+        return roundShared(context, digits, roundingMode);
     }
 
     /**
@@ -986,35 +998,39 @@ public class RubyFloat extends RubyNumeric {
 
         RoundingMode roundingMode = getRoundingMode(context, opts);
 
-        return roundShared(context, roundingMode, digits);
+        return roundShared(context, digits, roundingMode);
     }
 
-    private IRubyObject roundShared(ThreadContext context, RoundingMode roundingMode, int ndigits) {
+    /*
+     * MRI: flo_round main body
+     */
+    public IRubyObject roundShared(ThreadContext context, int ndigits, RoundingMode mode) {
+        Ruby runtime = context.runtime;
         double number, f, x;
 
-        if (Double.isInfinite(value)) {
-            if (ndigits <= 0) throw context.runtime.newFloatDomainError(value < 0 ? "-Infinity" : "Infinity");
-            return this;
-        }
-
-        if (Double.isNaN(value)) {
-            if (ndigits <= 0) throw context.runtime.newFloatDomainError("NaN");
-            return this;
-        }
-
-        if (ndigits < 0) {
-            return ((RubyInteger) truncate(context)).round(context, ndigits);
-        }
         number = value;
-        if (ndigits == 0) {
-            x = doRound(context, roundingMode, number, 1.0);
-            return dbl2ival(context.runtime, x);
+
+        if (number == 0.0) {
+            return ndigits > 0 ? this : RubyFixnum.zero(runtime);
         }
-        RubyNumeric[] num = {this};
-        if (floatInvariantRound(context.runtime, number, ndigits, num)) return num[0];
-        f = Math.pow(10, ndigits);
-        x = doRound(context, roundingMode, number, f);
-        return dbl2num(context.runtime, x / f);
+        if (ndigits < 0) {
+            return ((RubyInteger) to_int(context)).roundShared(context, ndigits, mode);
+        }
+        if (ndigits == 0) {
+            x = doRound(context, mode, number, 1.0);
+            return dbl2ival(runtime, x);
+        }
+        if (Double.isFinite(value)) {
+            long[] binexp = {0};
+            frexp(number, binexp);
+            if (floatRoundOverflow(ndigits, binexp)) return this;
+            if (floatRoundUnderflow(ndigits, binexp)) return newFloat(runtime, 0);
+            f = Math.pow(10, ndigits);
+            x = doRound(context, mode, number, f);
+            return newFloat(runtime, x / f);
+        }
+
+        return this;
     }
 
     private static double doRound(ThreadContext context, RoundingMode roundingMode, double number, double scale) {

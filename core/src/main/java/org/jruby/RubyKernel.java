@@ -890,7 +890,7 @@ public class RubyKernel {
             printExceptionSummary(runtime, raise.getException());
         }
 
-        if (forceCause || argc > 0 && raise.getException().getCause() == UNDEF && cause != raise.getException()) {
+        if (forceCause || argc > 0 && raise.getException().getCause() == null && cause != raise.getException()) {
             raise.getException().setCause(cause);
         }
 

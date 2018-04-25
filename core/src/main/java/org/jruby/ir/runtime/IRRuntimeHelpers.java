@@ -119,12 +119,15 @@ public class IRRuntimeHelpers {
         if (inLambda(blockType)) return; // break/return in lambda unconditionally a return.
 
         dynScope = getContainingMethodsDynamicScope(dynScope);
-        boolean inDefineMethod = dynScope != null &&  dynScope.getStaticScope().isArgumentScope() && dynScope.getStaticScope().getScopeType().isBlock();
+        StaticScope staticScope = dynScope.getStaticScope();
+        boolean inDefineMethod = dynScope != null &&  staticScope.isArgumentScope() && staticScope.getScopeType().isBlock();
+        boolean topLevel = staticScope.getScopeType() == IRScopeType.SCRIPT_BODY;
 
-        // Is our proc in something unreturnable (e.g. module/class) or has it migrated (lexical parent method not in stack any more)?
-        if (!definedWithinMethod && !inDefineMethod || !context.scopeExistsOnCallStack(dynScope)) {
-            throw IRException.RETURN_LocalJumpError.getException(context.runtime);
+        if ((definedWithinMethod || inDefineMethod || topLevel) && context.scopeExistsOnCallStack(dynScope)) {
+            return;
         }
+
+        throw IRException.RETURN_LocalJumpError.getException(context.runtime);
     }
 
     // Create a jump for a non-local return which will return from nearest lambda (which may be itself) or method.
@@ -141,7 +144,7 @@ public class IRRuntimeHelpers {
             IRScopeType scopeType = scope.getScopeType();
 
             // We hit a method boundary (actual method or a define_method closure).
-            if (scopeType.isMethodType() || scopeType.isBlock() && scope.isArgumentScope()) return dynScope;
+            if (scopeType.isMethodType() || scopeType.isBlock() && scope.isArgumentScope() || scopeType == IRScopeType.SCRIPT_BODY) return dynScope;
         }
 
         return null;
@@ -154,9 +157,10 @@ public class IRRuntimeHelpers {
             StaticScope staticScope = dynScope.getStaticScope();
             IRScope scope = staticScope.getIRScope();
 
-            // 1) method 2) lambda 3) closure (define_method) for zsuper
-            if (scope instanceof IRMethod ||
-                    (scope instanceof IRClosure && (dynScope.isLambda() || staticScope.isArgumentScope()))) return dynScope;
+            // 1) method 2) root of script 3) lambda 3) closure (define_method) for zsuper
+            if (scope instanceof IRMethod
+                    || scope instanceof IRScriptBody
+                    || (scope instanceof IRClosure && (dynScope.isLambda() || staticScope.isArgumentScope()))) return dynScope;
         }
 
         return null;

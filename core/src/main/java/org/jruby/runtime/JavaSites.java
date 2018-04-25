@@ -327,7 +327,7 @@ public class JavaSites {
         public final CheckedSites to_path_checked1 = new CheckedSites("to_path");
         public final CheckedSites to_path_checked2 = new CheckedSites("to_path");
         public final RespondToCallSite respond_to_write = new RespondToCallSite("write");
-        public final CallSite write = new FunctionalCachingCallSite("write");
+        public final CachingCallSite write = new FunctionalCachingCallSite("write");
         public final RespondToCallSite respond_to_read = new RespondToCallSite("read");
         public final CallSite read = new FunctionalCachingCallSite("read");
         public final CallSite to_f = new FunctionalCachingCallSite("to_f");

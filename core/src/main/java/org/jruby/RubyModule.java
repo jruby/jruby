@@ -90,6 +90,7 @@ import org.jruby.javasupport.binding.Initializer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
@@ -1972,31 +1973,30 @@ public class RubyModule extends RubyObject {
     }
 
     public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
-        final CallSite site;
+        final String methodName;
+
         public RespondToMissingMethod(RubyModule implClass, Visibility visibility, String methodName) {
             super(implClass, visibility, methodName);
 
             setParameterList(REST);
-            site = new FunctionalCachingCallSite(methodName);
+            this.methodName = methodName;
         }
+
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            return site.call(context, self, self, args, block);
+            return Helpers.callMethodMissing(context, self, getVisibility(), name, CallType.UNKNOWN, args, block);
         }
 
         @Override
         public boolean equals(Object other) {
-            if ( ! (other instanceof RespondToMissingMethod) ) return false;
-
-            RespondToMissingMethod that = (RespondToMissingMethod) other;
-
-            return this.site.methodName.equals(that.site.methodName) &&
-                    isImplementedBy(that.getImplementationClass());
+            return this == other ||
+                    (other instanceof RespondToMissingMethod &&
+                            ((RespondToMissingMethod) other).methodName.equals(methodName));
         }
 
         @Override
         public int hashCode() {
-            return /* getImplementationClass().hashCode() + */ 7 * this.site.methodName.hashCode();
+            return methodName.hashCode();
         }
 
     }
