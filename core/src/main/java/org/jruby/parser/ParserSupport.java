@@ -92,7 +92,6 @@ public class ParserSupport {
     private RubyParserResult result;
 
     public void reset() {
-        inSingleton = 0;
         inDefinition = false;
     }
 
@@ -939,20 +938,6 @@ public class ParserSupport {
         result.setScope(scope);
     }
 
-    /** Getter for property inSingle.
-     * @return Value of property inSingle.
-     */
-    public boolean isInSingle() {
-        return inSingleton != 0;
-    }
-
-    /** Setter for property inSingle.
-     * @param inSingle New value of property inSingle.
-     */
-    public void setInSingle(int inSingle) {
-        this.inSingleton = inSingle;
-    }
-
     public boolean isInDef() {
         return inDefinition;
     }
@@ -977,14 +962,6 @@ public class ParserSupport {
      */
     public boolean isBlockTopLevel() {
         return getConfiguration().isEvalParse();
-    }
-
-
-    /** Getter for property inSingle.
-     * @return Value of property inSingle.
-     */
-    public int getInSingle() {
-        return inSingleton;
     }
 
     /**

@@ -1626,11 +1626,10 @@ primary         : literal
                     lexer.setCurrentArg($<ByteList>3);
                 }
                 | keyword_def singleton dot_or_colon {
-                    lexer.setState(EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME); 
                     $$ = support.isInDef();
                     support.setInDef(true);
-                } fname {
-                    support.setInSingle(support.getInSingle() + 1);
+               } fname {
                     support.pushLocalScope();
                     lexer.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
                     $$ = lexer.getCurrentArg();
@@ -1641,7 +1640,6 @@ primary         : literal
 
                     $$ = new DefsNode($1, $2, support.symbolID($5), (ArgsNode) $7, support.getCurrentScope(), body, $9.getLine());
                     support.popCurrentScope();
-                    support.setInSingle(support.getInSingle() - 1);
                     support.setInDef($<Boolean>4.booleanValue());
                     lexer.setCurrentArg($<ByteList>6);
                 }
@@ -2313,7 +2311,7 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new GlobalAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
+                    if (support.isInDef()) support.compile_error("dynamic constant assignment");
 
                     $$ = new ConstDeclNode(lexer.tokline, support.symbolID($1), null, NilImplicitNode.NIL);
                 }

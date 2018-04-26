@@ -3922,7 +3922,7 @@ states[352] = new ParserState() {
 };
 states[353] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    lexer.setState(EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME); 
                     yyVal = support.isInDef();
                     support.setInDef(true);
     return yyVal;
@@ -3930,7 +3930,6 @@ states[353] = new ParserState() {
 };
 states[354] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
                     lexer.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
                     yyVal = lexer.getCurrentArg();
@@ -3945,7 +3944,6 @@ states[355] = new ParserState() {
 
                     yyVal = new DefsNode(((ISourcePosition)yyVals[-8+yyTop]), ((Node)yyVals[-7+yyTop]), support.symbolID(((ByteList)yyVals[-4+yyTop])), (ArgsNode) yyVals[-2+yyTop], support.getCurrentScope(), body, ((ISourcePosition)yyVals[0+yyTop]).getLine());
                     support.popCurrentScope();
-                    support.setInSingle(support.getInSingle() - 1);
                     support.setInDef(((Boolean)yyVals[-5+yyTop]).booleanValue());
                     lexer.setCurrentArg(((ByteList)yyVals[-3+yyTop]));
     return yyVal;
@@ -5005,7 +5003,7 @@ states[527] = new ParserState() {
 };
 states[528] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
+                    if (support.isInDef()) support.compile_error("dynamic constant assignment");
 
                     yyVal = new ConstDeclNode(lexer.tokline, support.symbolID(((ByteList)yyVals[0+yyTop])), null, NilImplicitNode.NIL);
     return yyVal;
@@ -5710,7 +5708,7 @@ states[646] = new ParserState() {
   }
 };
 }
-					// line 2761 "RubyParser.y"
+					// line 2759 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5725,4 +5723,4 @@ states[646] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10544 "-"
+					// line 10542 "-"

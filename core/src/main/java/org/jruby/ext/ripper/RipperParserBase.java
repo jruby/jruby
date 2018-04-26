@@ -110,7 +110,7 @@ public class RipperParserBase {
     }
 
     public IRubyObject assignableConstant(IRubyObject value) {
-        if (isInDef() || isInSingle()) {
+        if (isInDef()) {
             value = dispatch("on_assign_error", value);
             error();
         }
@@ -290,8 +290,12 @@ public class RipperParserBase {
         return inDefinition;
     }
 
-    public boolean isInSingle() {
-        return inSingleton != 0;
+    public boolean isInClass() {
+        return inClass;
+    }
+
+    public void setIsInClass(boolean inClass) {
+        this.inClass = inClass;
     }
 
     public StrTerm getStrTerm() {
@@ -431,6 +435,7 @@ public class RipperParserBase {
     protected RipperLexer lexer;
     protected StaticScope currentScope;
     protected boolean inDefinition;
+    protected boolean inClass;
     protected boolean yydebug; // FIXME: Hook up to yydebug
     protected boolean isError;
     

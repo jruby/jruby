@@ -1170,28 +1170,31 @@ primary         : literal
                         p.yyerror("class definition in method body");
                     }
                     p.pushLocalScope();
+                    $$ = p.isInClass(); // MRI reuses $1 but we use the value for position.
+                    p.setIsInClass(true);
                 } bodystmt keyword_end {
                     $$ = p.dispatch("on_class", $2, $3, $5);
                     p.popCurrentScope();
+                    p.setIsInClass($<Boolean>4.booleanValue());
                 }
                 | keyword_class tLSHFT expr {
-                    $$ = Boolean.valueOf(p.isInDef());
+                    $$ = new Integer((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
                     p.setInDef(false);
-                } term {
-                    $$ = Integer.valueOf(p.getInSingle());
-                    p.setInSingle(0);
+                    p.setIsInClass(false);
                     p.pushLocalScope();
-                } bodystmt keyword_end {
-                    $$ = p.dispatch("on_sclass", $3, $7);
+                } term bodystmt keyword_end {
+                    $$ = p.dispatch("on_sclass", $3, $6);
 
                     p.popCurrentScope();
-                    p.setInDef($<Boolean>4.booleanValue());
-                    p.setInSingle($<Integer>6.intValue());
+                    p.setInDef((($<Integer>4.intValue()) & 1) != 0);
+                    p.setIsInClass((($<Integer>4.intValue()) & 2) != 0);
                 }
                 | keyword_module cpath {
                     if (p.isInDef()) { 
                         p.yyerror("module definition in method body");
                     }
+                    $$ = p.isInClass();
+                    p.setIsInClass(true);
                     p.pushLocalScope();
                 } bodystmt keyword_end {
                     $$ = p.dispatch("on_module", $2, $4);
@@ -1211,8 +1214,9 @@ primary         : literal
                 }
                 | keyword_def singleton dot_or_colon {
                     p.setState(EXPR_FNAME);
+                    $$ = p.isInDef();
+                    p.setInDef(true);
                 } fname {
-                    p.setInSingle(p.getInSingle() + 1);
                     p.pushLocalScope();
                     p.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
                     $$ = p.getCurrentArg();
@@ -1221,7 +1225,7 @@ primary         : literal
                     $$ = p.dispatch("on_defs", $2, $3, $5, $7, $8);
 
                     p.popCurrentScope();
-                    p.setInSingle(p.getInSingle() - 1);
+                    p.setInDef($<Boolean>4.booleanValue());
                     p.setCurrentArg($<IRubyObject>6);
                 }
                 | keyword_break {
