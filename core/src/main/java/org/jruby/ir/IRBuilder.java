@@ -472,7 +472,7 @@ public class IRBuilder {
             case PREEXENODE: return buildPreExe((PreExeNode) node);
             case POSTEXENODE: return buildPostExe((PostExeNode) node);
             case RATIONALNODE: return buildRational((RationalNode) node);
-            case REDONODE: return buildRedo();
+            case REDONODE: return buildRedo((RedoNode) node);
             case REGEXPNODE: return buildRegexp((RegexpNode) node);
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + scope.getFileName() + ":" + node.getLine());
@@ -941,34 +941,36 @@ public class IRBuilder {
     public Operand buildBreak(BreakNode breakNode) {
         IRLoop currLoop = getCurrentLoop();
 
-        Operand rv = build(breakNode.getValueNode());
-
         if (currLoop != null) {
             // If we have ensure blocks, have to run those first!
-            if (!activeEnsureBlockStack.empty()) {
-                emitEnsureBlocks(currLoop);
-             }
-            addInstr(new CopyInstr(currLoop.loopResult, rv));
+            if (!activeEnsureBlockStack.empty()) emitEnsureBlocks(currLoop);
+
+            addInstr(new CopyInstr(currLoop.loopResult, build(breakNode.getValueNode())));
             addInstr(new JumpInstr(currLoop.loopEndLabel));
         } else {
             if (scope instanceof IRClosure) {
                 // This lexical scope value is only used (and valid) in regular block contexts.
                 // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
                 IRScope returnScope = scope.getLexicalParent();
-                // In 1.9 and later modes, no breaks from evals
                 if (scope instanceof IREvalScript || returnScope == null) {
-                    addInstr(new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
+                    // We are not in a closure or a loop => bad break instr!
+                    throwSyntaxError(breakNode, "Can't escape from eval with redo");
                 } else {
-                    addInstr(new BreakInstr(rv, returnScope.getName()));
+                    addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getName()));
                 }
             } else {
                 // We are not in a closure or a loop => bad break instr!
-                addInstr(new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
+                throwSyntaxError(breakNode, "Invalid break");
             }
         }
 
         // Once the break instruction executes, control exits this scope
         return U_NIL;
+    }
+
+    private void throwSyntaxError(Node node, String message) {
+        String errorMessage = getFileName() + ":" + (node.getLine() + 1) + ": " + message;
+        throw scope.getManager().getRuntime().newSyntaxError(errorMessage);
     }
 
     private void handleNonlocalReturnInMethod() {
@@ -3182,9 +3184,13 @@ public class IRBuilder {
             addInstr(new ThreadPollInstr(true));
             // If a closure, the next is simply a return from the closure!
             if (scope instanceof IRClosure) {
-                addInstr(new ReturnInstr(rv));
+                if (scope instanceof IREvalScript) {
+                    throwSyntaxError(nextNode, "Can't escape from eval with next");
+                } else {
+                    addInstr(new ReturnInstr(rv));
+                }
             } else {
-                addInstr(new ThrowExceptionInstr(IRException.NEXT_LocalJumpError));
+                throwSyntaxError(nextNode, "Invalid next");
             }
         }
 
@@ -3494,7 +3500,7 @@ public class IRBuilder {
                 (ImmutableLiteral) build(rationalNode.getDenominator()));
     }
 
-    public Operand buildRedo() {
+    public Operand buildRedo(RedoNode redoNode) {
         // If we have ensure blocks, have to run those first!
         if (!activeEnsureBlockStack.empty()) {
             emitEnsureBlocks(getCurrentLoop());
@@ -3502,16 +3508,20 @@ public class IRBuilder {
 
         // If in a loop, a redo is a jump to the beginning of the loop.
         // If not, for closures, a redo is a jump to the beginning of the closure.
-        // If not in a loop or a closure, it is a local jump error
+        // If not in a loop or a closure, it is a compile/syntax error
         IRLoop currLoop = getCurrentLoop();
         if (currLoop != null) {
              addInstr(new JumpInstr(currLoop.iterStartLabel));
         } else {
             if (scope instanceof IRClosure) {
-                addInstr(new ThreadPollInstr(true));
-                addInstr(new JumpInstr(((IRClosure) scope).startLabel));
+                if (scope instanceof IREvalScript) {
+                    throwSyntaxError(redoNode, "Can't escape from eval with redo");
+                } else {
+                    addInstr(new ThreadPollInstr(true));
+                    addInstr(new JumpInstr(((IRClosure) scope).startLabel));
+                }
             } else {
-                addInstr(new ThrowExceptionInstr(IRException.REDO_LocalJumpError));
+                throwSyntaxError(redoNode, "Invalid redo");
             }
         }
         return manager.getNil();
@@ -3955,6 +3965,8 @@ public class IRBuilder {
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
+        if (scope instanceof IRScriptBody) throwSyntaxError(node, "Invalid yield");
+
         boolean unwrap = true;
         Node argNode = node.getArgsNode();
         // Get rid of one level of array wrapping
