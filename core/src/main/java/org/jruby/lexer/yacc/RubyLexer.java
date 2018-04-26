@@ -508,7 +508,7 @@ public class RubyLexer extends LexingCommon {
             type = RubyParser.tIMAGINARY;
         }
 
-        setState(EXPR_ENDARG);
+        setState(EXPR_END|EXPR_ENDARG);
         return type;
     }
 
@@ -1568,9 +1568,8 @@ public class RubyLexer extends LexingCommon {
         parenNest++;
         int c = '[';
         if (isAfterOperator()) {
-            setState(EXPR_ARG);
-            
             if ((c = nextc()) == ']') {
+                setState(EXPR_ARG);
                 if (peek('=')) {
                     nextc();
                     yaccValue = LBRACKET_RBRACKET_EQ;
@@ -1580,7 +1579,7 @@ public class RubyLexer extends LexingCommon {
                 return RubyParser.tAREF;
             }
             pushback(c);
-            setState(getState() | EXPR_LABEL);
+            setState(EXPR_ARG|EXPR_LABEL);
             yaccValue = LBRACKET;
             return '[';
         } else if (isBEG() || (isARG() && (spaceSeen || isLexState(lex_state, EXPR_LABELED)))) {
@@ -1620,8 +1619,7 @@ public class RubyLexer extends LexingCommon {
 
         conditionState.stop();
         cmdArgumentState.stop();
-        setState(EXPR_BEG);
-        if (c != RubyParser.tLBRACE_ARG) setState(getState() | EXPR_LABEL);
+        setState(c == RubyParser.tLBRACE_ARG ? EXPR_BEG : EXPR_BEG|EXPR_LABEL);
         if (c != RubyParser.tLBRACE) commandStart = true;
         yaccValue = getPosition();
 
@@ -1907,7 +1905,7 @@ public class RubyLexer extends LexingCommon {
         parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(EXPR_ENDARG);
+        setState(EXPR_END);
         yaccValue = RBRACKET;
         return RubyParser.tRBRACK;
     }
@@ -1915,7 +1913,7 @@ public class RubyLexer extends LexingCommon {
     private int rightCurly() {
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(EXPR_ENDARG);
+        setState(EXPR_END);
         yaccValue = RCURLY;
         int tok = braceNest == 0 ? RubyParser.tSTRING_DEND : RubyParser.tRCURLY;
         braceNest--;

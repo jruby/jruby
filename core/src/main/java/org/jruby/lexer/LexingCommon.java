@@ -257,6 +257,10 @@ public abstract class LexingCommon {
         return heredoc_indent;
     }
 
+    public int getHeredocLineIndent() {
+        return heredoc_line_indent;
+    }
+
     public int getLeftParenBegin() {
         return leftParenBegin;
     }

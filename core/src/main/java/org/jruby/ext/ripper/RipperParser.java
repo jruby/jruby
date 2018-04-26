@@ -1674,7 +1674,7 @@ states[7] = new RipperParserState() {
 };
 states[9] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                  if (p.isInDef() || p.isInSingle()) {
+                  if (p.isInDef()) {
                       p.yyerror("BEGIN in method");
                   }
     return yyVal;
@@ -1809,7 +1809,7 @@ states[30] = new RipperParserState() {
 };
 states[31] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         p.warn("END in method; use at_exit");
                     }
                     yyVal = p.dispatch("on_END", ((IRubyObject)yyVals[-1+yyTop]));
@@ -2242,7 +2242,7 @@ states[108] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         yyVal = p.dispatch("on_assign_error", ((IRubyObject)yyVal));
                         p.error();
                     }
@@ -2253,7 +2253,7 @@ states[109] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = p.dispatch("on_top_const_field", ((IRubyObject)yyVals[0+yyTop]));
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         yyVal = p.dispatch("on_assign_error", ((IRubyObject)yyVal));
                         p.error();
                     }
@@ -2374,7 +2374,7 @@ states[127] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     IRubyObject val = p.dispatch("on_const_path_field", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         val = p.dispatch("on_assign_error", val);
                         p.error();
                     }
@@ -2387,7 +2387,7 @@ states[128] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
                     IRubyObject val = p.dispatch("on_top_const_field", ((IRubyObject)yyVals[0+yyTop]));
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         val = p.dispatch("on_assign_error", val);
                         p.error();
                     }
@@ -3202,7 +3202,7 @@ states[347] = new RipperParserState() {
 };
 states[348] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         p.yyerror("class definition in method body");
                     }
                     p.pushLocalScope();
@@ -3243,7 +3243,7 @@ states[352] = new RipperParserState() {
 };
 states[353] = new RipperParserState() {
   @Override public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (p.isInDef() || p.isInSingle()) { 
+                    if (p.isInDef()) { 
                         p.yyerror("module definition in method body");
                     }
                     p.pushLocalScope();

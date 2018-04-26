@@ -244,7 +244,7 @@ top_stmts     : none {
 
 top_stmt      : stmt
               | keyword_BEGIN {
-                  if (p.isInDef() || p.isInSingle()) {
+                  if (p.isInDef()) {
                       p.yyerror("BEGIN in method");
                   }
               } tLCURLY top_compstmt tRCURLY {
@@ -316,7 +316,7 @@ stmt            : keyword_alias fitem {
                     $$ = p.dispatch("on_rescue_mod", $1, $3);
                 }
                 | keyword_END tLCURLY compstmt tRCURLY {
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         p.warn("END in method; use at_exit");
                     }
                     $$ = p.dispatch("on_END", $3);
@@ -595,7 +595,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 | primary_value tCOLON2 tCONSTANT {
                     $$ = p.dispatch("on_const_path_field", $1, $3);
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         $$ = p.dispatch("on_assign_error", $<IRubyObject>$);
                         p.error();
                     }
@@ -603,7 +603,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 | tCOLON3 tCONSTANT {
                     $$ = p.dispatch("on_top_const_field", $2);
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         $$ = p.dispatch("on_assign_error", $<IRubyObject>$);
                         p.error();
                     }
@@ -671,7 +671,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 | primary_value tCOLON2 tCONSTANT {
                     IRubyObject val = p.dispatch("on_const_path_field", $1, $3);
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         val = p.dispatch("on_assign_error", val);
                         p.error();
                     }
@@ -681,7 +681,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 | tCOLON3 tCONSTANT {
                     IRubyObject val = p.dispatch("on_top_const_field", $2);
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         val = p.dispatch("on_assign_error", val);
                         p.error();
                     }
@@ -1166,7 +1166,7 @@ primary         : literal
                     $$ = p.dispatch("on_for", $2, $5, $8);
                 }
                 | keyword_class cpath superclass {
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         p.yyerror("class definition in method body");
                     }
                     p.pushLocalScope();
@@ -1189,7 +1189,7 @@ primary         : literal
                     p.setInSingle($<Integer>6.intValue());
                 }
                 | keyword_module cpath {
-                    if (p.isInDef() || p.isInSingle()) { 
+                    if (p.isInDef()) { 
                         p.yyerror("module definition in method body");
                     }
                     p.pushLocalScope();
