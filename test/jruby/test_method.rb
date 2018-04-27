@@ -8,14 +8,6 @@ class TestMethod < Test::Unit::TestCase
     end
   end
 
-  def test_function_break
-    obj = Object.new
-    def obj.broken_method
-      break # TODO this is a SyntaxError at parse time on MRI 2.5
-    end
-    assert_raise(SyntaxError){ obj.broken_method }
-  end
-
   module Methods
     def self.req2(a1, a2); a1 || a2 end
     def self.opt1(a1, a2 = {}); a1 if a2 end
