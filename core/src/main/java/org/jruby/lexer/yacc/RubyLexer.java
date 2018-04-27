@@ -2342,7 +2342,7 @@ public class RubyLexer extends LexingCommon {
                 pushback(c);
                 return scanOct(3);
             case 'x' : // hex constant
-                return scanHex(2, false, "Invalid escape character syntax");
+                return scanHex(2, false, "Invalid hex escape");
             case 'b' : // backspace
                 return '\010';
             case 's' : // space
