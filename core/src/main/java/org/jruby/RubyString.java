@@ -4331,101 +4331,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
       }
     }
 
-    @JRubyMethod(name = "delete_prefix")
-    public IRubyObject delete_prefix(ThreadContext context, IRubyObject prefix) {
-        int prefixlen;
-
-        prefixlen = deletedPrefixLength(prefix);
-        if (prefixlen <= 0) return strDup(context.runtime);
-
-        return makeShared(context.runtime, prefixlen, size() - prefixlen);
-    }
-
-    @JRubyMethod(name = "delete_suffix")
-    public IRubyObject delete_suffix(ThreadContext context, IRubyObject suffix) {
-        int suffixlen;
-
-        suffixlen = deletedSuffixLength(suffix);
-        if (suffixlen <= 0) return strDup(context.runtime);
-
-        return makeShared(context.runtime, 0, size() - suffixlen);
-    }
-
-    @JRubyMethod(name = "delete_prefix!")
-    public IRubyObject delete_prefix_bang(ThreadContext context, IRubyObject prefix) {
-        modifyAndKeepCodeRange();
-        int prefixlen = deletedPrefixLength(prefix);
-        if (prefixlen <= 0) return context.nil;
-
-        value.view(prefixlen, value.realSize() - prefixlen);
-        return this;
-    }
-
-    @JRubyMethod(name = "delete_suffix!")
-    public IRubyObject delete_suffix_bang(ThreadContext context, IRubyObject suffix) {
-        int olen, suffixlen, len;
-        checkFrozen();
-
-        suffixlen = deletedSuffixLength(suffix);
-        if (suffixlen <= 0) return context.nil;
-
-        olen = size();
-        modifyAndKeepCodeRange();
-        len = olen - suffixlen;
-        value.realSize(len);
-        if (!isCodeRangeAsciiOnly()) {
-            clearCodeRange();
-        }
-        return this;
-    }
-
-    private int deletedPrefixLength(IRubyObject _prefix) {
-        int strptr, prefixptr;
-        int olen, prefixlen;
-
-        RubyString prefix = _prefix.convertToString();
-        if (prefix.isBrokenString()) return 0;
-        checkEncoding(prefix);
-
-        /* return 0 if not start with prefix */
-        prefixlen = prefix.size();
-        if (prefixlen <= 0) return 0;
-        olen = size();
-        if (olen < prefixlen) return 0;
-        byte[] strBytes = value.unsafeBytes();
-        strptr = value.begin();
-        byte[] prefixBytes = prefix.value.unsafeBytes();
-        prefixptr = prefix.value.begin();
-        if (ByteList.memcmp(strBytes, strptr, prefixBytes, prefixptr, prefixlen) != 0) return 0;
-
-        return prefixlen;
-    }
-
-    private int deletedSuffixLength(IRubyObject _suffix) {
-        int strptr, suffixptr, s;
-        int olen, suffixlen;
-        Encoding enc;
-
-        RubyString suffix = _suffix.convertToString();
-        if (suffix.isBrokenString()) return 0;
-        enc = checkEncoding(suffix);
-
-        /* return 0 if not start with suffix */
-        suffixlen = suffix.size();
-        if (suffixlen <= 0) return 0;
-        olen = size();
-        if (olen < suffixlen) return 0;
-        byte[] strBytes = value.unsafeBytes();
-        strptr = value.begin();
-        byte[] suffixBytes = suffix.value.unsafeBytes();
-        suffixptr = suffix.value.begin();
-        s = strptr + olen - suffixlen;
-        if (ByteList.memcmp(strBytes, s, suffixBytes, suffixptr, suffixlen) != 0) return 0;
-        if (enc.leftAdjustCharHead(strBytes, strptr, s, strptr + olen) != s) return 0;
-
-        return suffixlen;
-    }
-
     @JRubyMethod(name = "start_with?", rest = true)
     public IRubyObject start_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
@@ -4497,6 +4402,117 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int size;
 
         return value.getEncoding().isAsciiCompatible() && (size = value.realSize()) > 0 && value.get(size - 1) == c;
+    }
+
+    @JRubyMethod(name = "delete_prefix")
+    public IRubyObject delete_prefix(ThreadContext context, IRubyObject prefix) {
+        int prefixlen = deletedPrefixLength(prefix);
+
+        if (prefixlen <= 0) return strDup(context.runtime);
+
+        return makeShared(context.runtime, prefixlen, size() - prefixlen);
+    }
+
+    @JRubyMethod(name = "delete_suffix")
+    public IRubyObject delete_suffix(ThreadContext context, IRubyObject suffix) {
+        int suffixlen = deletedSuffixLength(suffix);
+
+        if (suffixlen <= 0) return strDup(context.runtime);
+
+        return makeShared(context.runtime, 0, size() - suffixlen);
+    }
+
+    @JRubyMethod(name = "delete_prefix!")
+    public IRubyObject delete_prefix_bang(ThreadContext context, IRubyObject prefix) {
+        modifyAndKeepCodeRange();
+
+        int prefixlen = deletedPrefixLength(prefix);
+
+        if (prefixlen <= 0) return context.nil;
+
+        // MRI: rb_str_drop_bytes, in a nutshell
+        modify();
+        value.view(prefixlen, value.realSize() - prefixlen);
+        clearCodeRange();
+
+        return this;
+    }
+
+    @JRubyMethod(name = "delete_suffix!")
+    public IRubyObject delete_suffix_bang(ThreadContext context, IRubyObject suffix) {
+        checkFrozen();
+
+        int suffixlen = deletedSuffixLength(suffix);
+
+        if (suffixlen <= 0) return context.nil;
+
+        int olen = size();
+
+        modifyAndKeepCodeRange();
+
+        int len = olen - suffixlen;
+
+        value.realSize(len);
+
+        if (!isCodeRangeAsciiOnly()) {
+            clearCodeRange();
+        }
+
+        return this;
+    }
+
+    private int deletedPrefixLength(IRubyObject _prefix) {
+        RubyString prefix = _prefix.convertToString();
+
+        if (prefix.isBrokenString()) return 0;
+
+        checkEncoding(prefix);
+
+        /* return 0 if not start with prefix */
+        int prefixlen = prefix.size();
+
+        if (prefixlen <= 0) return 0;
+
+        int olen = size();
+
+        if (olen < prefixlen) return 0;
+
+        byte[] strBytes = value.unsafeBytes();
+        int strptr = value.begin();
+        byte[] prefixBytes = prefix.value.unsafeBytes();
+        int prefixptr = prefix.value.begin();
+
+        if (ByteList.memcmp(strBytes, strptr, prefixBytes, prefixptr, prefixlen) != 0) return 0;
+
+        return prefixlen;
+    }
+
+    private int deletedSuffixLength(IRubyObject _suffix) {
+        RubyString suffix = _suffix.convertToString();
+
+        if (suffix.isBrokenString()) return 0;
+
+        Encoding enc = checkEncoding(suffix);
+
+        /* return 0 if not start with suffix */
+        int suffixlen = suffix.size();
+
+        if (suffixlen <= 0) return 0;
+
+        int olen = size();
+
+        if (olen < suffixlen) return 0;
+        byte[] strBytes = value.unsafeBytes();
+        int strptr = value.begin();
+        byte[] suffixBytes = suffix.value.unsafeBytes();
+        int suffixptr = suffix.value.begin();
+        int s = strptr + olen - suffixlen;
+
+        if (ByteList.memcmp(strBytes, s, suffixBytes, suffixptr, suffixlen) != 0) return 0;
+
+        if (enc.leftAdjustCharHead(strBytes, strptr, s, strptr + olen) != s) return 0;
+
+        return suffixlen;
     }
 
     private static final ByteList SPACE_BYTELIST = RubyInteger.singleCharByteList((byte) ' ');
