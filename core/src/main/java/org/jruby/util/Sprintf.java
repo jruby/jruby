@@ -545,6 +545,7 @@ public class Sprintf {
                     if (width < 0) {
                         flags |= FLAG_MINUS;
                         width = -width;
+                        if (width < 0) throw runtime.newArgumentError("width too big");
                     }
 
                     break;
