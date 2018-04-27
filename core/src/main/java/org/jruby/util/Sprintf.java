@@ -182,7 +182,7 @@ public class Sprintf {
                 object = rubyHash.getIfNone();
                 if (object == RubyBasicObject.UNDEF) {
                     RubyString nameStr = RubyString.newString(runtime, name);
-                    raiseKeyError("key" + startDelim + nameStr + endDelim + " not found", rubyHash, nameStr);
+                    raiseKeyError("key" + startDelim + nameStr + endDelim + " not found", rubyHash, nameSym);
                 } else if (rubyHash.hasDefaultProc()) {
                     object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                 }
@@ -269,7 +269,7 @@ public class Sprintf {
                     object = rubyHash.getIfNone();
                     if (object == RubyBasicObject.UNDEF) {
                         RubyString nameStr = RubyString.newString(runtime, name);
-                        raiseKeyError("key<" + name + "> not found", rubyHash, nameStr);
+                        raiseKeyError("key<" + name + "> not found", rubyHash, nameSym);
                     } else if (rubyHash.hasDefaultProc()) {
                         object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                     }
