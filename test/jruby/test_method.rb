@@ -11,9 +11,9 @@ class TestMethod < Test::Unit::TestCase
   def test_function_break
     obj = Object.new
     def obj.broken_method
-      break # TODO this is a SyntaxError on MRI 2.2.2
+      break # TODO this is a SyntaxError at parse time on MRI 2.5
     end
-    assert_raise(LocalJumpError){ obj.broken_method }
+    assert_raise(SyntaxError){ obj.broken_method }
   end
 
   module Methods
