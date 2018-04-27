@@ -415,12 +415,12 @@ public class LoadService {
 
     private final RequireLocks requireLocks = new RequireLocks();
 
-    private static final class RequireLocks {
+    enum LockResult { LOCKED, CIRCULAR }
+
+    private final class RequireLocks {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
         //private final ReentrantLock globalLock;
-
-        public enum LockResult { LOCKED, CIRCULAR }
 
         private RequireLocks() {
             this.pool = new ConcurrentHashMap<>(8, 0.75f, 2);
@@ -448,7 +448,13 @@ public class LoadService {
 
             if (lock.isHeldByCurrentThread()) return LockResult.CIRCULAR;
 
-            lock.lock();
+            try {
+                runtime.getCurrentContext().getThread().enterSleep();
+                lock.lock();
+            } finally {
+                runtime.getCurrentContext().getThread().exitSleep();
+            }
+
 
             return LockResult.LOCKED;
         }
@@ -508,7 +514,7 @@ public class LoadService {
             throw runtime.newLoadError("no such file to load -- " + file, file);
         }
 
-        if (requireLocks.lock(state.loadName) == RequireLocks.LockResult.CIRCULAR) {
+        if (requireLocks.lock(state.loadName) == LockResult.CIRCULAR) {
             if (circularRequireWarning && runtime.isVerbose()) {
                 warnCircularRequire(state.loadName);
             }
