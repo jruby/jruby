@@ -3675,7 +3675,7 @@ states[422] = new RipperParserState() {
                     p.getCmdArgumentState().restart();
                     yyVal = p.dispatch("on_lambda", ((IRubyObject)yyVals[-2+yyTop]), ((IRubyObject)yyVals[0+yyTop]));
                     p.setLeftParenBegin(((Integer)yyVals[-3+yyTop]));
-                    support.popCurrentScope();
+                    p.popCurrentScope();
     return yyVal;
   }
 };

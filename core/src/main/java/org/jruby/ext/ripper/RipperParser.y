@@ -1457,7 +1457,7 @@ lambda          : /* none */  {
                     p.getCmdArgumentState().restart();
                     $$ = p.dispatch("on_lambda", $2, $4);
                     p.setLeftParenBegin($<Integer>1);
-                    support.popCurrentScope();
+                    p.popCurrentScope();
                 }
  
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
